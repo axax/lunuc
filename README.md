@@ -1,0 +1,166 @@
+# App
+
+[![npm][npm]][npm-url]
+[![node][node]][node-url]
+[![deps][deps]][deps-url]
+[![tests][tests]][tests-url]
+[![coverage][cover]][cover-url]
+[![chat][chat]][chat-url]
+
+
+**This is just another full-stack setup**
+* React for UI
+* Redux architecture
+* Babel for ECMAScript 2016 / 2017
+* Webpack bundler
+* Jest for testing
+* Eslint for code quality
+* mongodb
+* Database-as-a-Service by mlap.com
+* GraphQL API
+* Express Server
+* Apollo GraphQL Client
+* Optimistic UI
+
+## Installation & Usage
+
+1. `npm install`
+
+### Client
+2. `npm run client`
+3. visit `http://localhost:8080`
+
+### Server
+2. `npm run api`
+3. visit `http://localhost:3000`
+
+ 
+## Implementation
+
+### Dependencies
+
+| Name  | Description |
+| ------------- | ------------- |
+| [react](https://github.com/facebook/react)  | React is a JavaScript library for building user interfaces.  | 
+| [react-dom](https://github.com/facebook/react/tree/master/packages/react-dom)  | The entry point of the DOM-related rendering paths  | 
+| [webpack](https://github.com/webpack/webpack)  | A bundler for javascript and friends. Packs many modules into a few bundled assets. Similar to Browserify and Gulp or Grunt.  | 
+| [webpack-dev-server](https://github.com/webpack/webpack-dev-server/)  | Use webpack with a development server that provides live reloading  | 
+| [bable-core](https://github.com/babel/babel)  | The compiler for writing next generation JavaScript. | 
+| [babel-loader](https://github.com/babel/babel-loader)  | Allows transpiling JavaScript files using Babel and webpack  | 
+| [babel-preset-es2015](https://github.com/babel/babel/tree/master/packages/babel-preset-es2015)  | Babel preset for all es2015 plugins.  | 
+| [babel-preset-react](https://github.com/babel/babel/tree/master/packages/babel-preset-react)  | Babel preset for all React plugins.  | 
+| [babel-preset-stage-0](https://github.com/babel/babel/tree/master/packages/babel-preset-stage-0)  | Babel preset for stage 0 plugins.  | 
+| [react-redux](https://github.com/reactjs/react-redux)  | Predictable state container for JavaScript apps.  | 
+| [redux](https://github.com/reactjs/redux)  | The entry point of the DOM-related rendering paths  | 
+| [immutable](https://github.com/facebook/immutable-js/)  | Immutable collections for JavaScript  | 
+| [jest](https://github.com/facebook/jest)  | A complete and easy to set up JavaScript testing solution. In fact, Jest works out of the box for any React project.  | 
+| [react-test-renderer](https://github.com/facebook/react/tree/master/packages/react-test-renderer)  | This package provides an experimental React renderer that can be used to render React components to pure JavaScript objects, without depending on the DOM or a native mobile environment.  | 
+| [babel-jest](https://github.com/facebook/jest/tree/master/packages/babel-jest)  | Babel jest plugin | 
+| [eslint](https://github.com/eslint/eslint)  | A fully pluggable tool for identifying and reporting on patterns in JavaScript | 
+| [eslint-plugin-react](https://github.com/yannickcr/eslint-plugin-react)  | React specific linting rules for ESLint | 
+| [babel-eslint](https://github.com/babel/babel-eslint)  | Allows you to lint ALL valid Babel code with the fantastic ESLint. | 
+| [nodemon](https://github.com/remy/nodemon)  | Monitor for any changes in your node.js application and automatically restart the server - perfect for development | 
+| [graphql](https://github.com/graphql/graphql-js)  | The JavaScript reference implementation for GraphQL, a query language for APIs created by Facebook. | 
+| [express](https://github.com/expressjs/express)  | Fast, unopinionated, minimalist web framework for node | 
+| [express-graphql](https://github.com/graphql/express-graphql)  | Create a GraphQL HTTP server with Express. | 
+| [react-apollo](https://github.com/apollographql/react-apollo)  | React data container for the Apollo graphql Client. | 
+| [mongodb](https://github.com/mongodb/node-mongodb-native)  | Mongo DB Native NodeJS Driver  | 
+
+
+### Folder structure
+
+```text
+├── api
+├── src
+│   ├── actions
+│   ├── components
+│   ├── constants
+│   ├── containers
+│   ├── middleware
+│   ├── reducers
+│   └── store
+└── test
+```
+
+- actions contains all actions
+
+### Redux architecure
+
+- A single store
+- State being read-only (immutability)
+- Mutations written as pure functions
+
+```text
++------------+        +------------+        +-------------+
+|            |        |            |        |             |
+|   Action   +------->+  Reducers  +------->+    Store    |
+|            |        |            |        |             |
++-----+------+        +------------+        +------+------+
+      ^                                            |
+      |                                            |
+      |                                            |
+      |               +------------+               |
+      |   dispatch    |            |    subscribe  |
+      +---------------+    View    +<--------------+
+                      |            |
+                      +------------+
+
+```
+
+### Debugging
+
+#### Webstorm
+> Run – Edit configurations… – Add – JavaScript Debug
+ Paste URL of your app (http://localhost:3000/) into the URL field.
+[read more](https://blog.jetbrains.com/webstorm/2017/01/debugging-react-apps/)
+
+
+> Redux DevTools
+[read more](https://github.com/zalmoxisus/redux-devtools-extension)
+
+### Testing
+
+### Code quality
+
+#### Eslint`
+
+Configuration eslint:
+
+```
+./node_modules/.bin/eslint --init
+```
+
+##FAQ
+
+Feedback, issues, etc. are more than welcome!
+
+
+## Misc
+
+### Updating local packages
+`npm outdated`
+
+`npm update --save`
+
+
+## Contributors
+
+### Contribution Guidelines
+
+Please ensure your pull request adheres to the following guidelines:
+
+- Search previous suggestions before making a new one, as yours may be a duplicate.
+- Suggested READMEs should be beautiful or stand out in some way.
+- Make an individual pull request for each suggestion.
+- New categories, or improvements to the existing categorization are welcome.
+- Keep descriptions short and simple, but descriptive.
+- Start the description with a capital and end with a full stop/period.
+- Check your spelling and grammar.
+- Make sure your text editor is set to remove trailing whitespace.
+
+Thank you for your suggestions!
+
+## License
+
+[MIT](./LICENSE)
+

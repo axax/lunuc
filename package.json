@@ -1,0 +1,60 @@
+{
+  "name": "lunuc",
+  "version": "0.0.1",
+  "description": "This is just another full-stack setup",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint src/**/*.js server/**/*.js api/**/*.js test/**/*.js",
+    "test": "jest",
+    "test:watch": "npm test -- --watch",
+    "client": "webpack-dev-server",
+    "build": "NODE_ENV=production webpack -p",
+    "api": "nodemon ./api/index.js --watch api",
+    "start": "echo \"Use npm run client instead\" && npm run client"
+  },
+  "keywords": [
+    "React for UI",
+    "Redux architecture",
+    "Babel for ECMAScript 2016 / 2017",
+    "Webpack bundler",
+    "Jest for testing",
+    "Eslint for code quality",
+    "mongodb",
+    "Database-as-a-Service by mlap.com",
+    "GraphQL API",
+    "Express Server",
+    "Apollo GraphQL Client",
+    "Optimistic UI"
+  ],
+  "author": "simonschaerer <axax@gmx.net>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/axax/issues"
+  },
+  "devDependencies": {
+    "babel-core": "^6.24.0",
+    "babel-eslint": "^7.1.1",
+    "babel-jest": "^19.0.0",
+    "babel-loader": "^6.4.0",
+    "babel-preset-es2015": "^6.24.0",
+    "babel-preset-react": "^6.23.0",
+    "babel-preset-stage-0": "^6.22.0",
+    "eslint": "^3.18.0",
+    "eslint-plugin-react": "^6.10.2",
+    "express": "^4.15.2",
+    "express-graphql": "^0.6.3",
+    "graphql": "^0.9.1",
+    "immutable": "^3.8.1",
+    "jest": "^19.0.2",
+    "mongodb": "^2.2.25",
+    "nodemon": "^1.11.0",
+    "react": "^15.4.2",
+    "react-apollo": "^1.0.0",
+    "react-dom": "^15.4.2",
+    "react-redux": "^5.0.3",
+    "react-test-renderer": "^15.4.2",
+    "redux": "^3.6.0",
+    "webpack": "^2.2.1",
+    "webpack-dev-server": "^2.4.1"
+  }
+}
