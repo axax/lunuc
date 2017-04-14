@@ -5,9 +5,11 @@ import * as Actions from '../actions/KeyValueAction'
 import KeyValuePair from '../components/KeyValuePair'
 import KeyValuePairAdder from '../components/KeyValuePairAdder'
 import {gql, graphql, compose} from 'react-apollo'
+import update from 'immutability-helper'
+
 
 const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}) => {
-
+	console.log(keyvalue)
 	const handelValueChange = (key, e) => {
 		/**
 		 * Set a new value for a certain key
@@ -16,26 +18,38 @@ const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}
 		 key: key,
 		 value: e.target.value
 		 })*/
+
+
 		setValue({
-				key: key,
-				value: e.target.value
+			key: key,
+			value: e.target.value
 		}).then(({data}) => {
 			//console.log('got data', data);
 		})
 	}
 
 	const handleAddNewKeyValue = ({key, value}) => {
-		actions.setKeyValue({
+		/*actions.setKeyValue({
+		 key: key,
+		 value: value
+		 })*/
+
+
+		setValue({
 			key: key,
 			value: value
+		}).then(({data}) => {
+			//console.log('got data', data);
 		})
+
+
 	}
 
-	let pairs = []
+	let pairs = [], localPairs = []
 
 	localKeyvalue.keySeq().forEach(
-		(k) => pairs.push(<KeyValuePair key={k} keyvalue={{key: k, value: localKeyvalue.get(k)}}
-																		onChange={handelValueChange.bind(this, k)}/>)
+		(k) => localPairs.push(<KeyValuePair key={k} keyvalue={{key: k, value: localKeyvalue.get(k)}}
+																				 onChange={handelValueChange.bind(this, k)}/>)
 	)
 
 	if (keyvalue) {
@@ -111,19 +125,24 @@ const gqlKeyValueUpdate = gql`
 
 const KeyValueContainerWithGql = compose(
 	graphql(gqlKeyValueQuery, {
-		options: {
-			variables: {
-				key: 'key2'
-			},
-			forcePolicy: 'cache-first'
+		options() {
+			return {
+				variables: {
+					key: 'key2'
+				},
+				reducer: (prev, {operationName, type, result: {data}}) => {
+					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'KeyValueUpdate' && data) {
+						return update(prev, {keyvalue: {$push: [data.setValue]}})
+					}
+					return prev
+				}
+			}
 		},
-		/*props: (d)=>{
-		 console.log("xxx",d)
-		 },*/
 		props: ({data: {loading, keyvalue}}) => ({
 			keyvalue,
 			loading
-		}),
+		})
+
 	}),
 	graphql(gqlKeyValueUpdate, {
 		props: ({ownProps, mutate}) => ({

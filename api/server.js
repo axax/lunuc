@@ -15,8 +15,8 @@ dbConnection((db) => {
 
 	// delay response
 	/*app.use(function (req, res, next) {
-	 setTimeout(next, 1000)
-	 })*/
+	 setTimeout(next, 5000)
+	})*/
 
 	app.use('/graphql', graphqlHTTP({
 		schema: schema,

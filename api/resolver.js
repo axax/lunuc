@@ -1,21 +1,27 @@
-var data = {
-	keyvalue: {
-		key1: 'value1',
-		key2: 'value2',
-		key3: 'value3'
-	}
-}
-
 // The root provides a resolver function for each API endpoint
 export const resolver = (db) => ({
 	keyvalue: () => {
-		console.log(db)
-		return Object.keys(data.keyvalue).map((k) => ({key: k, id: k, value: data.keyvalue[k]}))
+		// return all keyvalue pairs
+		return db.collection('keyvalue').find().toArray().then((docs) => {
+			return docs.map((o) => ({key: o.key, id: o.key, value: o.value}))
+		}).catch((err) => {
+			console.error(err)
+		})
 	},
-	value: ({key}) => (data.keyvalue[key]),
+	value: ({key}) => {
+		// return a single value
+		return db.collection('keyvalue').findOne({key:key}).then((doc) => {
+			return doc.value
+		}).catch((err) => {
+			console.error(err)
+		})
+	},
 	setValue: ({key, value}) => {
-		data.keyvalue[key] = value
-		// id is only needed for apollo to identify the object (dataIdFromObject)
-		return {id: key, key: key, value: value}
+		// update or insert if not exists
+		return db.collection('keyvalue').updateOne({key: key}, {key: key, value: value}, {upsert: true}).then((docs) => {
+			return {key: key, id: key, value: value}
+		}).catch((err) => {
+			console.error(err)
+		})
 	}
 })

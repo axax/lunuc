@@ -53,6 +53,7 @@
 | [react-redux](https://github.com/reactjs/react-redux)  | Predictable state container for JavaScript apps.  | 
 | [redux](https://github.com/reactjs/redux)  | The entry point of the DOM-related rendering paths  | 
 | [immutable](https://github.com/facebook/immutable-js/)  | Immutable collections for JavaScript  | 
+| [immutability-helper](https://github.com/kolodny/immutability-helper)  | mutate a copy of data without changing the original source  | 
 | [jest](https://github.com/facebook/jest)  | A complete and easy to set up JavaScript testing solution. In fact, Jest works out of the box for any React project.  | 
 | [react-test-renderer](https://github.com/facebook/react/tree/master/packages/react-test-renderer)  | This package provides an experimental React renderer that can be used to render React components to pure JavaScript objects, without depending on the DOM or a native mobile environment.  | 
 | [babel-jest](https://github.com/facebook/jest/tree/master/packages/babel-jest)  | Babel jest plugin | 
