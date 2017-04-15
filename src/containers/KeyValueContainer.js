@@ -10,7 +10,6 @@ import update from 'immutability-helper'
 
 
 const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}) => {
-	console.log(keyvalue)
 	const handelValueChange = (key, e) => {
 		/**
 		 * Set a new value for a certain key

@@ -1,7 +1,5 @@
 import React from 'react'
 import {render} from 'react-dom'
-import App from './components/App'
-
 
 /*
  * The Provider component provides
@@ -10,17 +8,18 @@ import App from './components/App'
  * it explicitly to all the components.
  */
 //import {Provider} from 'react-redux'
-import { ApolloProvider } from 'react-apollo'
-import { client } from './middleware/index'
+import {ApolloProvider} from 'react-apollo'
+import {client} from './middleware/index'
 
+import Routes from './routes'
 
 import configureStore from './store/index'
 
 const store = configureStore()
 
 render(
-  <ApolloProvider store={store} client={client}>
-    <App />
-  </ApolloProvider>,
-  document.getElementById('app')
+	<ApolloProvider store={store} client={client}>
+		<Routes />
+	</ApolloProvider>,
+	document.getElementById('app')
 )

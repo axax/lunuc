@@ -4,6 +4,7 @@
 
 *Here are some features:*
 * React for UI
+* Declarative routing
 * Redux architecture
 * Babel for ECMAScript 2016 / 2017
 * Webpack bundler
@@ -16,7 +17,6 @@
 * Apollo GraphQL Client
 * Optimistic UI
 * Persist and Rehydrate
-
 
 *comming soon*
 * Authentication 
@@ -49,6 +49,9 @@
 | [prop-types](https://github.com/reactjs/prop-types)  | Runtime type checking for React props and similar objects  | 
 | [redux-persist](https://github.com/rt2zz/redux-persist)  | Persist and rehydrate a redux store.  | 
 | [react-dom](https://github.com/facebook/react/tree/master/packages/react-dom)  | The entry point of the DOM-related rendering paths  | 
+| [redux](https://github.com/reactjs/redux)  | The entry point of the DOM-related rendering paths  | 
+| [react-redux](https://github.com/reactjs/react-redux)  | Predictable state container for JavaScript apps.  | 
+| [react-router-dom](https://github.com/ReactTraining/react-router/tree/master/packages/react-router-dom)  | Declarative routing for React  | 
 | [webpack](https://github.com/webpack/webpack)  | A bundler for javascript and friends. Packs many modules into a few bundled assets. Similar to Browserify and Gulp or Grunt.  | 
 | [webpack-dev-server](https://github.com/webpack/webpack-dev-server/)  | Use webpack with a development server that provides live reloading  | 
 | [bable-core](https://github.com/babel/babel)  | The compiler for writing next generation JavaScript. | 
@@ -56,8 +59,6 @@
 | [babel-preset-es2015](https://github.com/babel/babel/tree/master/packages/babel-preset-es2015)  | Babel preset for all es2015 plugins.  | 
 | [babel-preset-react](https://github.com/babel/babel/tree/master/packages/babel-preset-react)  | Babel preset for all React plugins.  | 
 | [babel-preset-stage-0](https://github.com/babel/babel/tree/master/packages/babel-preset-stage-0)  | Babel preset for stage 0 plugins.  | 
-| [react-redux](https://github.com/reactjs/react-redux)  | Predictable state container for JavaScript apps.  | 
-| [redux](https://github.com/reactjs/redux)  | The entry point of the DOM-related rendering paths  | 
 | [immutable](https://github.com/facebook/immutable-js/)  | Immutable collections for JavaScript  | 
 | [immutability-helper](https://github.com/kolodny/immutability-helper)  | mutate a copy of data without changing the original source  | 
 | [jest](https://github.com/facebook/jest)  | A complete and easy to set up JavaScript testing solution. In fact, Jest works out of the box for any React project.  | 

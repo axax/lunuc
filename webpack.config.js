@@ -32,6 +32,7 @@ if (devMode) {
 	console.log('Build for developing')
 
 	config.devServer = {
+		historyApiFallback: true,
 		inline: true,
 		hot: true,
 		port: 3000,
