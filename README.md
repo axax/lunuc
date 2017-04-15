@@ -1,14 +1,8 @@
 # App
 
-[![npm][npm]][npm-url]
-[![node][node]][node-url]
-[![deps][deps]][deps-url]
-[![tests][tests]][tests-url]
-[![coverage][cover]][cover-url]
-[![chat][chat]][chat-url]
+**This is just another full-stack setup (to build progressive web apps & to play around with the latest web technologies)**
 
-
-**This is just another full-stack setup**
+*Here are some features:*
 * React for UI
 * Redux architecture
 * Babel for ECMAScript 2016 / 2017
@@ -21,6 +15,16 @@
 * Express Server
 * Apollo GraphQL Client
 * Optimistic UI
+* Persist and Rehydrate
+
+
+*comming soon*
+* Authentication 
+* Use of sockets
+* Use of Service worker
+* Travis yml
+* Docker integration
+* Use of AWS lambda
 
 ## Installation & Usage
 
@@ -42,6 +46,8 @@
 | Name  | Description |
 | ------------- | ------------- |
 | [react](https://github.com/facebook/react)  | React is a JavaScript library for building user interfaces.  | 
+| [prop-types](https://github.com/reactjs/prop-types)  | Runtime type checking for React props and similar objects  | 
+| [redux-persist](https://github.com/rt2zz/redux-persist)  | Persist and rehydrate a redux store.  | 
 | [react-dom](https://github.com/facebook/react/tree/master/packages/react-dom)  | The entry point of the DOM-related rendering paths  | 
 | [webpack](https://github.com/webpack/webpack)  | A bundler for javascript and friends. Packs many modules into a few bundled assets. Similar to Browserify and Gulp or Grunt.  | 
 | [webpack-dev-server](https://github.com/webpack/webpack-dev-server/)  | Use webpack with a development server that provides live reloading  | 
@@ -66,6 +72,7 @@
 | [express-graphql](https://github.com/graphql/express-graphql)  | Create a GraphQL HTTP server with Express. | 
 | [react-apollo](https://github.com/apollographql/react-apollo)  | React data container for the Apollo graphql Client. | 
 | [mongodb](https://github.com/mongodb/node-mongodb-native)  | Mongo DB Native NodeJS Driver  | 
+| [passport](https://github.com/jaredhanson/passport)  | Simple, unobtrusive authentication for Node.js.   | 
 
 
 ### Folder structure

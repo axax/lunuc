@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 
 const KeyValuePair = ({keyvalue, onChange}) => {
 	return <div>
@@ -9,8 +10,8 @@ const KeyValuePair = ({keyvalue, onChange}) => {
 }
 
 KeyValuePair.propTypes = {
-	keyvalue: React.PropTypes.object.isRequired,
-	onChange: React.PropTypes.func
+	keyvalue: PropTypes.object.isRequired,
+	onChange: PropTypes.func
 }
 
 export default KeyValuePair

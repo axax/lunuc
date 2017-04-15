@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
 import * as Actions from '../actions/KeyValueAction'
@@ -69,13 +70,13 @@ const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}
 
 
 KeyValueContainer.propTypes = {
-	localKeyvalue: React.PropTypes.object.isRequired,
-	actions: React.PropTypes.object.isRequired,
+	localKeyvalue: PropTypes.object.isRequired,
+	actions: PropTypes.object.isRequired,
 
 	/* apollo client props */
-	keyvalue: React.PropTypes.array,
-	loading: React.PropTypes.bool,
-	setValue: React.PropTypes.func.isRequired,
+	keyvalue: PropTypes.array,
+	loading: PropTypes.bool,
+	setValue: PropTypes.func.isRequired,
 }
 
 
@@ -127,6 +128,7 @@ const KeyValueContainerWithGql = compose(
 	graphql(gqlKeyValueQuery, {
 		options() {
 			return {
+				fetchPolicy: 'cache-and-network',
 				variables: {
 					key: 'key2'
 				},
@@ -138,6 +140,7 @@ const KeyValueContainerWithGql = compose(
 				}
 			}
 		},
+
 		props: ({data: {loading, keyvalue}}) => ({
 			keyvalue,
 			loading
