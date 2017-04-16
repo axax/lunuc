@@ -71,9 +71,11 @@
 | [graphql](https://github.com/graphql/graphql-js)  | The JavaScript reference implementation for GraphQL, a query language for APIs created by Facebook. | 
 | [express](https://github.com/expressjs/express)  | Fast, unopinionated, minimalist web framework for node | 
 | [express-graphql](https://github.com/graphql/express-graphql)  | Create a GraphQL HTTP server with Express. | 
+| [express-jwt](https://github.com/auth0/express-jwt)  | connect/express middleware that validates a JsonWebToken (JWT) and set the req.user with the attributes | 
 | [react-apollo](https://github.com/apollographql/react-apollo)  | React data container for the Apollo graphql Client. | 
 | [mongodb](https://github.com/mongodb/node-mongodb-native)  | Mongo DB Native NodeJS Driver  | 
 | [passport](https://github.com/jaredhanson/passport)  | Simple, unobtrusive authentication for Node.js.   | 
+| [passport-local](https://github.com/jaredhanson/passport-local)  | Username and password authentication strategy for Passport and Node.js. | 
 
 
 ### Folder structure

@@ -2,14 +2,23 @@ import {buildSchema} from 'graphql'
 
 // a trailling ! = required (must not be null)
 const schemaRaw = `
+
+	type User {
+    id: ID!
+    username: String!
+  }
+  
 	type keyvalue {
 		id: String!
 		key: String!
 		value: String
 	}
+	
+	
   type Query {
     keyvalue: [keyvalue]
     value(key: String!): String
+    me: User
   }
 		
 	# this schema allows the following mutation:

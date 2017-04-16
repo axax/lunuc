@@ -4,6 +4,7 @@ import graphqlHTTP from 'express-graphql'
 import {schema} from './schema'
 import {resolver} from './resolver'
 import {dbConnection} from './database'
+import {auth} from './auth'
 
 const PORT = 8080
 
@@ -16,15 +17,21 @@ dbConnection((db) => {
 	// delay response
 	/*app.use(function (req, res, next) {
 	 setTimeout(next, 5000)
-	})*/
+	 })*/
 
-	app.use('/graphql', graphqlHTTP({
-		schema: schema,
-		rootValue: resolver(db),
-		graphiql: true,
-		extensions({document, variables, operationName, result}) {
-		}
-	}))
+	// Authentication
+	auth(app, db)
+
+
+	app.use('/graphql', graphqlHTTP((req) => ({
+			schema: schema,
+			rootValue: resolver(db),
+			graphiql: true,
+			extensions({document, variables, operationName, result}) {
+			},
+			context: req.context
+		}))
+	)
 
 
 	// Launch the api
