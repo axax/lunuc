@@ -10,6 +10,7 @@ import update from 'immutability-helper'
 
 
 const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}) => {
+
 	const handelValueChange = (key, e) => {
 		/**
 		 * Set a new value for a certain key
@@ -23,9 +24,7 @@ const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}
 		setValue({
 			key: key,
 			value: e.target.value
-		}).then(({data}) => {
-			//console.log('got data', data);
-		})
+		}).then(({data}) => {})
 	}
 
 	const handleAddNewKeyValue = ({key, value}) => {
@@ -38,9 +37,7 @@ const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}
 		setValue({
 			key: key,
 			value: value
-		}).then(({data}) => {
-			//console.log('got data', data);
-		})
+		}).then(({data}) => {})
 
 
 	}
@@ -132,8 +129,13 @@ const KeyValueContainerWithGql = compose(
 					key: 'key2'
 				},
 				reducer: (prev, {operationName, type, result: {data}}) => {
-					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'KeyValueUpdate' && data) {
-						return update(prev, {keyvalue: {$push: [data.setValue]}})
+					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'KeyValueUpdate' && data && data.setValue && data.setValue.key ) {
+
+						let found=prev.keyvalue.find(x => x.key === data.setValue.key )
+
+						if( !found ) {
+							return update(prev, {keyvalue: {$push: [data.setValue]}})
+						}
 					}
 					return prev
 				}
