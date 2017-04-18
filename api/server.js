@@ -20,7 +20,7 @@ dbConnection((db) => {
 	 })*/
 
 	// Authentication
-	auth(app, db)
+	auth.initialize(app, db)
 
 
 	app.use('/graphql', graphqlHTTP((req) => ({
@@ -28,8 +28,7 @@ dbConnection((db) => {
 			rootValue: resolver(db),
 			graphiql: true,
 			extensions({document, variables, operationName, result}) {
-			},
-			context: req.context
+			}
 		}))
 	)
 

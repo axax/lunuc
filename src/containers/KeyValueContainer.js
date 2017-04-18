@@ -132,7 +132,6 @@ const KeyValueContainerWithGql = compose(
 					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'KeyValueUpdate' && data && data.setValue && data.setValue.key ) {
 
 						let found=prev.keyvalue.find(x => x.key === data.setValue.key )
-
 						if( !found ) {
 							return update(prev, {keyvalue: {$push: [data.setValue]}})
 						}

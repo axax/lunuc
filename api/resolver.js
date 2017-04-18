@@ -1,9 +1,18 @@
 // The root provides a resolver function for each API endpoint
 export const resolver = (db) => ({
-	me: (data, context) => {
+	me: (data, {context}) => {
 
-		if (context.user) {
-			return context.user
+		console.log(context)
+
+		if (context.userId) {
+
+			// return all keyvalue pairs
+			return db.collection('User').findOne({id: context.userId}).then((docs) => {
+				return docs
+			}).catch((err) => {
+				console.error(err)
+			})
+
 		}
 
 		throw new Error('User is not logged in (or authenticated).')

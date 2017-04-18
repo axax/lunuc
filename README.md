@@ -59,23 +59,21 @@
 | [babel-preset-es2015](https://github.com/babel/babel/tree/master/packages/babel-preset-es2015)  | Babel preset for all es2015 plugins.  | 
 | [babel-preset-react](https://github.com/babel/babel/tree/master/packages/babel-preset-react)  | Babel preset for all React plugins.  | 
 | [babel-preset-stage-0](https://github.com/babel/babel/tree/master/packages/babel-preset-stage-0)  | Babel preset for stage 0 plugins.  | 
+| [babel-jest](https://github.com/facebook/jest/tree/master/packages/babel-jest)  | Babel jest plugin | 
+| [babel-eslint](https://github.com/babel/babel-eslint)  | Allows you to lint ALL valid Babel code with the fantastic ESLint. | 
 | [immutable](https://github.com/facebook/immutable-js/)  | Immutable collections for JavaScript  | 
 | [immutability-helper](https://github.com/kolodny/immutability-helper)  | mutate a copy of data without changing the original source  | 
 | [jest](https://github.com/facebook/jest)  | A complete and easy to set up JavaScript testing solution. In fact, Jest works out of the box for any React project.  | 
 | [react-test-renderer](https://github.com/facebook/react/tree/master/packages/react-test-renderer)  | This package provides an experimental React renderer that can be used to render React components to pure JavaScript objects, without depending on the DOM or a native mobile environment.  | 
-| [babel-jest](https://github.com/facebook/jest/tree/master/packages/babel-jest)  | Babel jest plugin | 
 | [eslint](https://github.com/eslint/eslint)  | A fully pluggable tool for identifying and reporting on patterns in JavaScript | 
 | [eslint-plugin-react](https://github.com/yannickcr/eslint-plugin-react)  | React specific linting rules for ESLint | 
-| [babel-eslint](https://github.com/babel/babel-eslint)  | Allows you to lint ALL valid Babel code with the fantastic ESLint. | 
 | [nodemon](https://github.com/remy/nodemon)  | Monitor for any changes in your node.js application and automatically restart the server - perfect for development | 
 | [graphql](https://github.com/graphql/graphql-js)  | The JavaScript reference implementation for GraphQL, a query language for APIs created by Facebook. | 
 | [express](https://github.com/expressjs/express)  | Fast, unopinionated, minimalist web framework for node | 
 | [express-graphql](https://github.com/graphql/express-graphql)  | Create a GraphQL HTTP server with Express. | 
-| [express-jwt](https://github.com/auth0/express-jwt)  | connect/express middleware that validates a JsonWebToken (JWT) and set the req.user with the attributes | 
 | [react-apollo](https://github.com/apollographql/react-apollo)  | React data container for the Apollo graphql Client. | 
 | [mongodb](https://github.com/mongodb/node-mongodb-native)  | Mongo DB Native NodeJS Driver  | 
-| [passport](https://github.com/jaredhanson/passport)  | Simple, unobtrusive authentication for Node.js.   | 
-| [passport-local](https://github.com/jaredhanson/passport-local)  | Username and password authentication strategy for Passport and Node.js. | 
+| [body-parser](https://github.com/expressjs/body-parser)  | Node.js body parsing middleware | 
 
 
 ### Folder structure
