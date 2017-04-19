@@ -74,6 +74,7 @@
 | [react-apollo](https://github.com/apollographql/react-apollo)  | React data container for the Apollo graphql Client. | 
 | [mongodb](https://github.com/mongodb/node-mongodb-native)  | Mongo DB Native NodeJS Driver  | 
 | [body-parser](https://github.com/expressjs/body-parser)  | Node.js body parsing middleware | 
+| [bcrypt](https://github.com/pyca/bcrypt) | Modern password hashing for your software and your servers | 
 
 
 ### Folder structure

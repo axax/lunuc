@@ -4,30 +4,37 @@ import {buildSchema} from 'graphql'
 const schemaRaw = `
 
 	type User {
-    id: ID!
+		objectId: ID!
     username: String!
+    password: String!
+    email: String!
   }
   
-	type keyvalue {
-		id: String!
+	type KeyValue {
+		objectId: ID!
 		key: String!
 		value: String
 	}
 	
 	
   type Query {
-    keyvalue: [keyvalue]
-    value(key: String!): String
+    keyvalue(key: String): [KeyValue]
+    keyvalueOne(key: String!): KeyValue
     me: User
   }
 		
 	# this schema allows the following mutation:
 	type Mutation {
 		setValue (
-			id: String
 			key: String!
 			value: String
-		): keyvalue
+		): KeyValue		
+		
+		createUser (
+			email: String!
+			username: String!
+			password: String!
+		): User
 	}
 `
 

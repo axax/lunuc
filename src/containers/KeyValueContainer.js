@@ -102,18 +102,19 @@ const gqlKeyValueQuery = gql`
   query KeyValueQuery($key: String!) {
   	# return all keyvalue pairs
   	keyvalue {
-  		id
 			key
 			value
 		}
 		# return a single value
-    value(key: $key)
+    keyvalueOne(key: $key) {
+    	key
+    	value
+    }
   }`
 
 const gqlKeyValueUpdate = gql`
   mutation KeyValueUpdate($key: String!, $value: String!) {
   	setValue(key: $key, value: $value){
-  		id
     	key
     	value
   	}
@@ -151,14 +152,13 @@ const KeyValueContainerWithGql = compose(
 		props: ({ownProps, mutate}) => ({
 			setValue: ({key, value}) => {
 				return mutate({
-					variables: {key, value, id: key},
+					variables: {key, value},
 					optimisticResponse: {
 						__typename: 'Mutation',
 						setValue: {
-							id: key, // id is only needed for apollo to identify the object (dataIdFromObject)
 							key: key,
 							value: value,
-							__typename: 'keyvalue'
+							__typename: 'KeyValue'
 						}
 					}
 				})
