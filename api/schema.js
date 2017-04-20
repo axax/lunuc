@@ -4,6 +4,7 @@ import {buildSchema} from 'graphql'
 const schemaRaw = `
 
 	type User {
+	_id: ID!
 		objectId: ID!
     username: String!
     password: String!

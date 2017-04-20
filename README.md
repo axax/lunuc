@@ -55,6 +55,7 @@
 | [webpack](https://github.com/webpack/webpack)  | A bundler for javascript and friends. Packs many modules into a few bundled assets. Similar to Browserify and Gulp or Grunt.  | 
 | [webpack-dev-server](https://github.com/webpack/webpack-dev-server/)  | Use webpack with a development server that provides live reloading  | 
 | [bable-core](https://github.com/babel/babel)  | The compiler for writing next generation JavaScript. | 
+| [babel-polyfill](https://github.com/babel/babel/tree/master/packages/babel-polyfill)  | Babel includes a polyfill that includes a custom regenerator runtime  | 
 | [babel-loader](https://github.com/babel/babel-loader)  | Allows transpiling JavaScript files using Babel and webpack  | 
 | [babel-preset-es2015](https://github.com/babel/babel/tree/master/packages/babel-preset-es2015)  | Babel preset for all es2015 plugins.  | 
 | [babel-preset-react](https://github.com/babel/babel/tree/master/packages/babel-preset-react)  | Babel preset for all React plugins.  | 
