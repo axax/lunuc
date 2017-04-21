@@ -8,6 +8,9 @@ const Util = {
 	hashPassword: (pw) => {
 		return bcrypt.hashSync(pw, bcrypt.genSaltSync(10))
 	},
+	compareWithHashedPassword: (pw, hashedPw) => {
+		return bcrypt.hashSync(pw, hashedPw)===hashedPw
+	},
 	validatePassword: (pw) => {
 		var err = []
 

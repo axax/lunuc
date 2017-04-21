@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
 import bodyParser from 'body-parser'
+import Util from './util'
 
 
 const AUTH_HEADER = 'authorization',
@@ -53,15 +54,18 @@ export const auth = {
 		})
 
 
-		app.post('/login', (req, res) => {
+		app.post('/login', async (req, res) => {
 			const {username, password} = req.body
 
 			// usually this would be a database call:
-			const user = fakeUsers.find((x) => (x.username === username))
+			//const user = fakeUsers.find((x) => (x.username === username))
+			const userCollection = db.collection('User')
+
+			const user = await userCollection.findOne({$or: [{'eemail': username}, {'username': username}]})
 
 			if (!user) {
 				res.status(401).json({message: 'no such user found'})
-			} else if (user.password === password) {
+			} else if (Util.compareWithHashedPassword(password, user.password)) {
 				// from now on we'll identify the user by the id and the id is the only personalized value that goes into our token
 				const payload = {userId: user.id}
 				const token = jwt.sign(payload, SECRET_KEY, {expiresIn: '1h'})
