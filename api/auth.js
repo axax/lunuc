@@ -61,7 +61,7 @@ export const auth = {
 			//const user = fakeUsers.find((x) => (x.username === username))
 			const userCollection = db.collection('User')
 
-			const user = await userCollection.findOne({$or: [{'eemail': username}, {'username': username}]})
+			const user = await userCollection.findOne({$or: [{'email': username}, {'username': username}]})
 
 			if (!user) {
 				res.status(401).json({message: 'no such user found'})
