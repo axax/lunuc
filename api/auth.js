@@ -71,7 +71,7 @@ export const auth = {
 				const token = jwt.sign(payload, SECRET_KEY, {expiresIn: '1h'})
 				res.json({message: 'ok', token: token})
 			} else {
-				res.status(401).json({message: 'passwords did not match'})
+				res.status(401).json({message: 'password did not match'})
 			}
 		})
 
