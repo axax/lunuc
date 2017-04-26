@@ -1,22 +1,52 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {Redirect} from 'react-router-dom'
+import { withApollo } from 'react-apollo'
+import ApolloClient from 'apollo-client'
 
 class LoginContainer extends React.Component {
 	state = {
-		redirectToReferrer: false
+		redirectToReferrer: false,
+		loading: false,
+		username: '',
+		password: ''
 	}
 
-	login = () => {
-		fakeAuth.authenticate(() => {
-			this.setState({ redirectToReferrer: true })
+
+
+	handleInputChange = (e) => {
+		const target = e.target
+		const value = target.type === 'checkbox' ? target.checked : target.value
+		const name = target.name
+
+		this.setState({
+			[target.name]: value
 		})
 	}
 
-	render() {
-		const { from } = this.props.location.state || { from: { pathname: '/' } }
-		const { redirectToReferrer } = this.state
 
+	login = (e) => {
+		e.preventDefault()
+
+		this.setState({loading:true})
+
+
+		console.log('-->', this.state.username)
+
+		/*
+		fakeAuth.authenticate(() => {
+			this.setState({ redirectToReferrer: true })
+		})*/
+	}
+	// this.setState({ type: 'info', message: 'Sending...' }, this.sendFormData);
+
+
+	render() {
+		console.log(this.props.client)
+		const { from } = this.props.location.state || { from: { pathname: '/' } }
+		const { redirectToReferrer, loading, username, password } = this.state
+
+		console.log(redirectToReferrer)
 		if (redirectToReferrer) {
 			return (
 				<Redirect to={from}/>
@@ -26,8 +56,25 @@ class LoginContainer extends React.Component {
 		return (
 			<div>
 				<p>You must log in to view the page at {from.pathname}</p>
-				<button onClick={this.login}>Log in</button>
+				{loading ? <span>loading...</span> : ''}
+				<form onSubmit={this.login.bind(this)}>
+					<label><b>Username</b></label>
+					<input value={username} onChange={this.handleInputChange} type="text" placeholder="Enter Username" name="username" required />
+
+					<label><b>Password</b></label>
+					<input value={password} onChange={this.handleInputChange} type="password" placeholder="Enter Password" name="password" required />
+
+					<button type="submit">Login</button>
+				</form>
 			</div>
 		)
 	}
 }
+
+
+LoginContainer.propTypes = {
+	client: React.PropTypes.instanceOf(ApolloClient).isRequired
+}
+const LoginContainerWithApollo = withApollo(LoginContainer)
+
+export default LoginContainerWithApollo

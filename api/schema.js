@@ -4,19 +4,23 @@ import {buildSchema} from 'graphql'
 const schemaRaw = `
 
 	type User {
-	_id: ID!
-		objectId: ID!
+		_id: ID!
     username: String!
     password: String!
     email: String!
+    note: [Note]
   }
   
 	type KeyValue {
-		objectId: ID!
+		_id: ID!
 		key: String!
 		value: String
 	}
 	
+	type Note {
+		_id: ID!
+		value: String!
+	}
 	
   type Query {
     keyvalue(key: String): [KeyValue]
@@ -36,6 +40,12 @@ const schemaRaw = `
 			username: String!
 			password: String!
 		): User
+		
+		setNote (
+			_id: ID
+			value: String
+		): Note
+		
 	}
 `
 

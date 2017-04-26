@@ -5,21 +5,8 @@ import Util from './util'
 
 const AUTH_HEADER = 'authorization',
 	AUTH_SCHEME = 'JWT',
-	SECRET_KEY = 'fa-+3452sdfas!ä$$34dää$'
-
-// Fake user database
-const fakeUsers = [
-	{
-		id: 1,
-		username: 'user1',
-		password: 'password'
-	},
-	{
-		id: 2,
-		username: 'user2',
-		password: 'password'
-	}
-];
+	SECRET_KEY = 'fa-+3452sdfas!ä$$34dää$',
+	AUTH_EXPIRES_IN = '999y'
 
 
 export const auth = {
@@ -38,14 +25,15 @@ export const auth = {
 
 				let matches = token.match(/(\S+)\s+(\S+)/)
 
-				if (matches[1] === AUTH_SCHEME) {
+				if ( matches && matches.length > 1 && matches[1] === AUTH_SCHEME) {
 
 					// verify a token symmetric - synchronous
 					jwt.verify(matches[2], SECRET_KEY, function (err, decoded) {
 						if (!err) {
-
 							// now if auth is needed we can check if the context is available
 							req.context = decoded
+						} else {
+							console.error(err)
 						}
 					})
 				}
@@ -57,8 +45,6 @@ export const auth = {
 		app.post('/login', async (req, res) => {
 			const {username, password} = req.body
 
-			// usually this would be a database call:
-			//const user = fakeUsers.find((x) => (x.username === username))
 			const userCollection = db.collection('User')
 
 			const user = await userCollection.findOne({$or: [{'email': username}, {'username': username}]})
@@ -67,8 +53,9 @@ export const auth = {
 				res.status(401).json({message: 'no such user found'})
 			} else if (Util.compareWithHashedPassword(password, user.password)) {
 				// from now on we'll identify the user by the id and the id is the only personalized value that goes into our token
-				const payload = {userId: user.id}
-				const token = jwt.sign(payload, SECRET_KEY, {expiresIn: '1h'})
+				const payload = {'username': user.username, 'id': user._id}
+				const token = jwt.sign(payload, SECRET_KEY, {expiresIn: AUTH_EXPIRES_IN})
+				//console.log( jwt.verify(token, SECRET_KEY))
 				res.json({message: 'ok', token: token})
 			} else {
 				res.status(401).json({message: 'password did not match'})

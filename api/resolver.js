@@ -1,4 +1,5 @@
 import Util from './util'
+import {ObjectId} from 'mongodb'
 
 // The root provides a resolver function for each API endpoint
 export const resolver = (db) => ({
@@ -36,26 +37,47 @@ export const resolver = (db) => ({
 			return {email: doc.email, username: doc.username, password: doc.password, objectId: doc._id}
 		}
 	},
-	me: (data, {context}) => {
+	setNote: async ({_id,value},{context}) => {
+		Util.checkIfUserIsLoggedIn(context)
 
-		console.log(context)
 
-		if (context.userId) {
+		const userCollection = db.collection('User')
 
-			// return all keyvalue pairs
-			return db.collection('User').findOne({id: context.userId}).then((docs) => {
-				return docs
-			}).catch((err) => {
-				console.error(err)
-			})
+		var result = null
+		if( !_id ) {
+			_id = ObjectId()
+			result = (await userCollection.updateOne({_id: ObjectId(context.id)}, {$push: {note: {value: value, _id: _id}}}))
+			if( result.modifiedCount !== 1){
+				throw new Error('Note was not inserted')
+			}
+		}else{
+			result = (await userCollection.updateOne({_id: ObjectId(context.id),'note._id': ObjectId(_id) },{$set: {'note.$.value': value}}))
 
+			if( result.matchedCount === 1) {
+				if (result.modifiedCount !== 1) {
+					//throw new Error('Note was not modified')
+				}
+			}else{
+				throw new Error('Note doesn\'t exist')
+			}
 		}
-		throw new Error('User is not logged in (or authenticated).')
+
+		return {value: value, _id: _id}
 	},
-	keyvalue: () => {
+	me: (data,{context}) => {
+
+		Util.checkIfUserIsLoggedIn(context)
+
+		return db.collection('User').findOne({_id: ObjectId(context.id)}).then((doc) => {
+			return doc
+		}).catch((err) => {
+			console.error(err)
+		})
+	},
+	keyvalue: (data,{context}) => {
 		// return all keyvalue pairs
 		return db.collection('KeyValue').find().toArray().then((docs) => {
-			return docs.map((o) => ({key: o.key, objectId: o._id, value: o.value}))
+			return docs
 		}).catch((err) => {
 			console.error(err)
 		})
@@ -63,7 +85,7 @@ export const resolver = (db) => ({
 	keyvalueOne: ({key}) => {
 		// return a single value
 		return db.collection('KeyValue').findOne({key: key}).then((doc) => {
-			return {key: doc.key, value: doc.value, objectId: doc._id}
+			return doc
 		}).catch((err) => {
 			console.error(err)
 		})
@@ -71,7 +93,7 @@ export const resolver = (db) => ({
 	setValue: ({key, value}) => {
 		// update or insert if not exists
 		return db.collection('KeyValue').updateOne({key: key}, {key: key, value: value}, {upsert: true}).then((doc) => {
-			return {key: key, value: value, objectId: doc._id}
+			return doc
 		}).catch((err) => {
 			console.error(err)
 		})

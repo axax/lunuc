@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import {BrowserRouter as Router, Route, Link, Redirect} from 'react-router-dom'
 
 import App from './components/App'
+import LoginContainer from './containers/LoginContainer'
+import UserProfileContainer from './containers/UserProfileContainer'
 
 
 
@@ -12,15 +14,16 @@ const Routes = () => (
 			<ul>
 				<li><Link to="/">Home</Link></li>
 				<li><Link to="/about">About</Link></li>
-				<li><Link to="/protected">Protected</Link></li>
+				<li><Link to="/profile">Profile</Link></li>
 			</ul>
 
 			<hr/>
 
 			<Route exact path="/" component={App}/>
 			<Route path="/about" component={About}/>
+			<Route path="/login" component={LoginContainer}/>
 
-			<PrivateRoute path="/protected" component={Protected}/>
+			<PrivateRoute path="/profile" component={UserProfileContainer}/>
 		</div>
 	</Router>
 )
@@ -28,12 +31,6 @@ const Routes = () => (
 const About = () => (
 	<div>
 		<h2>About</h2>
-	</div>
-)
-
-const Protected = () => (
-	<div>
-		<h2>Protected</h2>
 	</div>
 )
 
