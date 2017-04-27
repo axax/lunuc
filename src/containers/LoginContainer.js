@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {Redirect} from 'react-router-dom'
-import { withApollo } from 'react-apollo'
+import {withApollo,gql} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 
 class LoginContainer extends React.Component {
@@ -11,7 +11,6 @@ class LoginContainer extends React.Component {
 		username: '',
 		password: ''
 	}
-
 
 
 	handleInputChange = (e) => {
@@ -28,23 +27,32 @@ class LoginContainer extends React.Component {
 	login = (e) => {
 		e.preventDefault()
 
-		this.setState({loading:true})
+		this.setState({loading: true})
+		const {client} = this.props
 
 
 		console.log('-->', this.state.username)
+		client.query({
+			query: gql`query KeyValueQuery($username: String!, $password: String!) { login(username: $username, password: $password) { token error }}`,
+			variables: {
+				username: this.state.username,
+				password: this.state.password
+			},
+			operationName: 'Query1',
+		})
 
 		/*
-		fakeAuth.authenticate(() => {
-			this.setState({ redirectToReferrer: true })
-		})*/
+		 fakeAuth.authenticate(() => {
+		 this.setState({ redirectToReferrer: true })
+		 })*/
 	}
 	// this.setState({ type: 'info', message: 'Sending...' }, this.sendFormData);
 
 
 	render() {
-		console.log(this.props.client)
-		const { from } = this.props.location.state || { from: { pathname: '/' } }
-		const { redirectToReferrer, loading, username, password } = this.state
+
+		const {from} = this.props.location.state || {from: {pathname: '/'}}
+		const {redirectToReferrer, loading, username, password} = this.state
 
 		console.log(redirectToReferrer)
 		if (redirectToReferrer) {
@@ -59,10 +67,12 @@ class LoginContainer extends React.Component {
 				{loading ? <span>loading...</span> : ''}
 				<form onSubmit={this.login.bind(this)}>
 					<label><b>Username</b></label>
-					<input value={username} onChange={this.handleInputChange} type="text" placeholder="Enter Username" name="username" required />
+					<input value={username} onChange={this.handleInputChange} type="text" placeholder="Enter Username"
+								 name="username" required/>
 
 					<label><b>Password</b></label>
-					<input value={password} onChange={this.handleInputChange} type="password" placeholder="Enter Password" name="password" required />
+					<input value={password} onChange={this.handleInputChange} type="password" placeholder="Enter Password"
+								 name="password" required/>
 
 					<button type="submit">Login</button>
 				</form>

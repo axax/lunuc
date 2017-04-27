@@ -1,5 +1,6 @@
 import Util from './util'
 import {ObjectId} from 'mongodb'
+import {auth} from './auth'
 
 // The root provides a resolver function for each API endpoint
 export const resolver = (db) => ({
@@ -73,6 +74,14 @@ export const resolver = (db) => ({
 		}).catch((err) => {
 			console.error(err)
 		})
+	},
+	login: async ({username, password}) => {
+		const result = await auth.createToken(username,password,db)
+
+
+
+		return result
+
 	},
 	keyvalue: (data,{context}) => {
 		// return all keyvalue pairs

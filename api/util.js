@@ -29,11 +29,6 @@ const Util = {
 		if (!context || !context.username) {
 			throw new Error('User is not logged in (or authenticated).')
 		}
-	},
-	returnAnId: (doc) => {
-		/*if ( !doc.id ){
-			doc
-		}*/
 	}
 }
 

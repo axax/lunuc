@@ -22,10 +22,16 @@ const schemaRaw = `
 		value: String!
 	}
 	
+	type Token {
+		token: String
+		error: String
+	}
+	
   type Query {
     keyvalue(key: String): [KeyValue]
     keyvalueOne(key: String!): KeyValue
     me: User
+    login(username: String!, password: String!): Token
   }
 		
 	# this schema allows the following mutation:
