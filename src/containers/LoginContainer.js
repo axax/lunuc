@@ -1,13 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {Redirect} from 'react-router-dom'
-import {withApollo,gql} from 'react-apollo'
+import {withApollo, gql} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 
 class LoginContainer extends React.Component {
 	state = {
 		redirectToReferrer: false,
 		loading: false,
+		error: null,
 		username: '',
 		password: ''
 	}
@@ -39,7 +40,18 @@ class LoginContainer extends React.Component {
 				password: this.state.password
 			},
 			operationName: 'Query1',
-		})
+		}).then(response => {
+			this.setState({loading: false})
+			this.setState({error: response.data.login.error})
+
+			if (!response.data.login.error) {
+
+				localStorage.setItem('token', response.data.login.token)
+				this.setState({redirectToReferrer: true})
+			}
+
+		}).catch(error => console.error(error))
+
 
 		/*
 		 fakeAuth.authenticate(() => {
@@ -52,9 +64,8 @@ class LoginContainer extends React.Component {
 	render() {
 
 		const {from} = this.props.location.state || {from: {pathname: '/'}}
-		const {redirectToReferrer, loading, username, password} = this.state
+		const {redirectToReferrer, loading, username, password, error} = this.state
 
-		console.log(redirectToReferrer)
 		if (redirectToReferrer) {
 			return (
 				<Redirect to={from}/>
@@ -65,6 +76,8 @@ class LoginContainer extends React.Component {
 			<div>
 				<p>You must log in to view the page at {from.pathname}</p>
 				{loading ? <span>loading...</span> : ''}
+				{error ? <span>{error}</span> : ''}
+
 				<form onSubmit={this.login.bind(this)}>
 					<label><b>Username</b></label>
 					<input value={username} onChange={this.handleInputChange} type="text" placeholder="Enter Username"
