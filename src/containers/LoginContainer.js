@@ -32,7 +32,6 @@ class LoginContainer extends React.Component {
 		const {client} = this.props
 
 
-		console.log('-->', this.state.username)
 		client.query({
 			query: gql`query KeyValueQuery($username: String!, $password: String!) { login(username: $username, password: $password) { token error }}`,
 			variables: {
@@ -52,14 +51,7 @@ class LoginContainer extends React.Component {
 
 		}).catch(error => console.error(error))
 
-
-		/*
-		 fakeAuth.authenticate(() => {
-		 this.setState({ redirectToReferrer: true })
-		 })*/
 	}
-	// this.setState({ type: 'info', message: 'Sending...' }, this.sendFormData);
-
 
 	render() {
 
