@@ -1,9 +1,8 @@
-import Util from './util'
+import Util from '../util'
 import {ObjectId} from 'mongodb'
-import {auth} from './auth'
+import {auth} from '../auth'
 
-// The root provides a resolver function for each API endpoint
-export const resolver = (db) => ({
+export const userResolver = (db) => ({
 
 	createUser: async ({username, password, email}) => {
 
@@ -37,6 +36,16 @@ export const resolver = (db) => ({
 			const doc = insertResult.ops[0]
 			return {email: doc.email, username: doc.username, password: doc.password, objectId: doc._id}
 		}
+	},
+	changeMe: async (user,{context}) => {
+		Util.checkIfUserIsLoggedIn(context)
+
+
+		const result = (await db.collection('User').updateOne({_id: ObjectId(context.id)}, user))
+		if( result.modifiedCount !== 1){
+			throw new Error('User was not changed')
+		}
+		return user
 	},
 	setNote: async ({_id,value},{context}) => {
 		Util.checkIfUserIsLoggedIn(context)
@@ -78,33 +87,6 @@ export const resolver = (db) => ({
 	login: async ({username, password}) => {
 		const result = await auth.createToken(username,password,db)
 
-
-
 		return result
-
-	},
-	keyvalue: (data,{context}) => {
-		// return all keyvalue pairs
-		return db.collection('KeyValue').find().toArray().then((docs) => {
-			return docs
-		}).catch((err) => {
-			console.error(err)
-		})
-	},
-	keyvalueOne: ({key}) => {
-		// return a single value
-		return db.collection('KeyValue').findOne({key: key}).then((doc) => {
-			return doc
-		}).catch((err) => {
-			console.error(err)
-		})
-	},
-	setValue: ({key, value}) => {
-		// update or insert if not exists
-		return db.collection('KeyValue').updateOne({key: key}, {key: key, value: value}, {upsert: true}).then((doc) => {
-			return doc
-		}).catch((err) => {
-			console.error(err)
-		})
 	}
 })

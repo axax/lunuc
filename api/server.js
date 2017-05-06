@@ -1,8 +1,8 @@
 import express from 'express'
 import graphqlHTTP from 'express-graphql'
 
-import {schema} from './schema'
-import {resolver} from './resolver'
+import {schema} from './schema/index'
+import {resolver} from './resolver/index'
 import {dbConnection} from './database'
 import {auth} from './auth'
 

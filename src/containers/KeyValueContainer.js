@@ -20,7 +20,7 @@ const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}
 		 value: e.target.value
 		 })*/
 
-
+		console.log(key, e.target.value)
 		setValue({
 			key: key,
 			value: e.target.value

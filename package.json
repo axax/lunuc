@@ -46,6 +46,7 @@
     "eslint-plugin-react": "^6.10.2",
     "express": "^4.15.2",
     "express-graphql": "^0.6.3",
+    "gql-merge": "0.0.6",
     "graphql": "^0.9.3",
     "immutability-helper": "^2.1.2",
     "immutable": "^3.8.1",
@@ -64,5 +65,16 @@
     "redux-persist": "^4.6.0",
     "webpack": "^2.4.0",
     "webpack-dev-server": "^2.4.1"
+  },
+  "dependencies": {
+    "babel-eslint": "^7.2.3",
+    "graphql": "^0.9.6",
+    "immutability-helper": "^2.2.0",
+    "jsonwebtoken": "^7.4.0",
+    "mongodb": "^2.2.26",
+    "react-apollo": "^1.2.0",
+    "redux-persist": "^4.8.0",
+    "webpack": "^2.5.0",
+    "webpack-dev-server": "^2.4.5"
   }
 }

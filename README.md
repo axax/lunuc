@@ -70,6 +70,7 @@
 | [eslint-plugin-react](https://github.com/yannickcr/eslint-plugin-react)  | React specific linting rules for ESLint | 
 | [nodemon](https://github.com/remy/nodemon)  | Monitor for any changes in your node.js application and automatically restart the server - perfect for development | 
 | [graphql](https://github.com/graphql/graphql-js)  | The JavaScript reference implementation for GraphQL, a query language for APIs created by Facebook. | 
+| [gql-merge](https://github.com/liamcurry/gql/tree/master/packages/gql-merge)  | Tools for merging GraphQL documents | 
 | [express](https://github.com/expressjs/express)  | Fast, unopinionated, minimalist web framework for node | 
 | [express-graphql](https://github.com/graphql/express-graphql)  | Create a GraphQL HTTP server with Express. | 
 | [react-apollo](https://github.com/apollographql/react-apollo)  | React data container for the Apollo graphql Client. | 
