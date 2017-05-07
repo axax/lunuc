@@ -34,18 +34,17 @@ export const userResolver = (db) => ({
 
 		if (insertResult.insertedCount) {
 			const doc = insertResult.ops[0]
-			return {email: doc.email, username: doc.username, password: doc.password, objectId: doc._id}
+			return doc
 		}
 	},
 	changeMe: async (user,{context}) => {
 		Util.checkIfUserIsLoggedIn(context)
-
-
-		const result = (await db.collection('User').updateOne({_id: ObjectId(context.id)}, user))
-		if( result.modifiedCount !== 1){
-			throw new Error('User was not changed')
+		const result = (await db.collection('User').updateOne({_id: ObjectId(context.id)}, {$set:user}))
+		console.log(result)
+		if( result.matchedCount !== 1){
+			throw new Error('User could not be changed')
 		}
-		return user
+		return Object.assign({_id:context.id}, user)
 	},
 	setNote: async ({_id,value},{context}) => {
 		Util.checkIfUserIsLoggedIn(context)

@@ -6,14 +6,35 @@ import {gql, graphql, compose} from 'react-apollo'
 
 class UserProfileContainer extends React.Component {
 	state = {
+		username: ''
+	}
+
+	handleInputChange = (e) => {
+		const target = e.target
+		const value = target.type === 'checkbox' ? target.checked : target.value
+		const name = target.name
+
+		this.setState({
+			[target.name]: value
+		})
+	}
+
+	componentWillReceiveProps(nextProps) {
+		this.setState({username: nextProps.me.username})
+	}
+
+
+	updateProfile = (e) => {
+		e.preventDefault()
+		this.props.changeMe({username:this.state.username})
 	}
 
 
 	render() {
-		const {loading, me} = this.props
-		console.log(loading,me)
-	
-		const LogoutButton = withRouter(({ history }) => (
+		const {username} = this.state
+		const {loading} = this.props
+
+		const LogoutButton = withRouter(({history}) => (
 			<button onClick={() => {
 				localStorage.removeItem('token')
 				history.push('/')
@@ -22,12 +43,15 @@ class UserProfileContainer extends React.Component {
 
 		return (
 			<div>
-				<h1>Profile</h1>
 				<LogoutButton />
+				<h1>Profile</h1>
+					{loading ? <span>loading...</span> :
+						<form onSubmit={this.updateProfile.bind(this)}>
+							<input type="text" name="username" value={username} onChange={this.handleInputChange}/>
 
-				{loading ? <span>loading...</span> : ''}
-				{me ?
-				<input type="text" defaultValue={me.username}/> :''}
+							<button type="submit">Update profile</button>
+						</form>
+					}
 			</div>
 		)
 	}
@@ -37,9 +61,9 @@ class UserProfileContainer extends React.Component {
 UserProfileContainer.propTypes = {
 	/* apollo client props */
 	me: PropTypes.object,
+	changeMe: PropTypes.func.isRequired,
 	loading: PropTypes.bool,
 }
-
 
 
 const gqlQuery = gql`
@@ -50,6 +74,11 @@ const gqlQuery = gql`
 		}
   }`
 
+
+const gqlUpdate = gql`
+  mutation changeMe($username: String){ changeMe(username:$username){_id}}
+`
+
 const UserProfileContainerWithGql = compose(
 	graphql(gqlQuery, {
 		options() {
@@ -59,11 +88,11 @@ const UserProfileContainerWithGql = compose(
 				reducer: (prev, {operationName, type, result: {data}}) => {
 					/*if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'KeyValueUpdate' && data && data.setValue && data.setValue.key ) {
 
-						let found=prev.keyvalue.find(x => x.key === data.setValue.key )
-						if( !found ) {
-							return update(prev, {keyvalue: {$push: [data.setValue]}})
-						}
-					}*/
+					 let found=prev.keyvalue.find(x => x.key === data.setValue.key )
+					 if( !found ) {
+					 return update(prev, {keyvalue: {$push: [data.setValue]}})
+					 }
+					 }*/
 					return prev
 				}
 			}
@@ -71,6 +100,23 @@ const UserProfileContainerWithGql = compose(
 		props: ({data: {loading, me}}) => ({
 			me,
 			loading
+		})
+	}),
+	graphql(gqlUpdate, {
+		props: ({ownProps, mutate}) => ({
+			changeMe: ({username}) => {
+				return mutate({
+					variables: {username},
+					/*optimisticResponse: {
+					 __typename: 'Mutation',
+					 setValue: {
+					 key: key,
+					 value: value,
+					 __typename: 'KeyValue'
+					 }
+					 }*/
+				})
+			}
 		})
 	})
 )(UserProfileContainer)

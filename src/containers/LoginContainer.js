@@ -38,7 +38,7 @@ class LoginContainer extends React.Component {
 				username: this.state.username,
 				password: this.state.password
 			},
-			operationName: 'Query1',
+			operationName: 'login',
 		}).then(response => {
 			this.setState({loading: false})
 			this.setState({error: response.data.login.error})
