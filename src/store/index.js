@@ -1,5 +1,5 @@
 import {createStore, compose, applyMiddleware} from 'redux'
-import {persistStore, autoRehydrate} from 'redux-persist'
+import {persistStore, autoRehydrate, createTransform} from 'redux-persist'
 
 import rootReducer from '../reducers/index'
 import { client } from '../middleware/index'
@@ -41,8 +41,33 @@ export default function configureStore(initialState) {
 		autoRehydrate()
 	))
 
+
+
+	const transform = createTransform(
+		(state, key) => {
+
+			return state
+		},
+		(state, key) => {
+			let newState = Object.assign({},state)
+
+				newState.mutations=null
+
+			 // Filter some queries we don't want to persist
+			 newState.data = Object.keys(state.data)
+			 .filter( key => key.indexOf('$ROOT_QUERY.login')<0)
+			 .reduce( (res, key) => (res[key] = state.data[key], res), {} )
+
+
+			return newState
+		},
+		{ whitelist: ['remote'] }
+	)
+
+
+
 	// begin periodically persisting the store
-	persistStore(store, {blacklist: ['keyvalue']}, () => {
+	persistStore(store, {transforms: [transform], blacklist: ['keyvalue']}, () => {
 		console.log('rehydration complete')
 	})
 
