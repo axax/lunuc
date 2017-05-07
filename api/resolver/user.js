@@ -22,7 +22,7 @@ export const userResolver = (db) => ({
 		const userCollection = db.collection('User')
 
 
-		const userExists = (await userCollection.findOne({$or: [{'eemail': email}, {'username': username}]})) != null
+		const userExists = (await userCollection.findOne({$or: [{'email': email}, {'username': username}]})) != null
 
 		if (userExists) {
 			throw new Error('Username or email already taken')
@@ -39,11 +39,21 @@ export const userResolver = (db) => ({
 	},
 	changeMe: async (user,{context}) => {
 		Util.checkIfUserIsLoggedIn(context)
-		const result = (await db.collection('User').findOneAndUpdate({_id: ObjectId(context.id)}, {$set:user}))
-		if( result.ok !== 1){
-			throw new Error('User could not be changed')
+
+		const userCollection = db.collection('User')
+
+		let existingUser = (await userCollection.findOne({$or: [{'username': user.username}]}))
+		if( existingUser!=null && existingUser._id.toString() !== context.id ){
+			throw new Error(`Username ${user.username} already taken`)
+		}else {
+
+
+			const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}))
+			if (result.ok !== 1) {
+				throw new Error('User could not be changed')
+			}
+			return result.value
 		}
-		return result.value
 	},
 	setNote: async ({_id,value},{context}) => {
 		Util.checkIfUserIsLoggedIn(context)
