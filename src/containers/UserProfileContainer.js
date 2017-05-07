@@ -45,13 +45,12 @@ class UserProfileContainer extends React.Component {
 			<div>
 				<LogoutButton />
 				<h1>Profile</h1>
-					{loading ? <span>loading...</span> :
-						<form onSubmit={this.updateProfile.bind(this)}>
-							<input type="text" name="username" value={username} onChange={this.handleInputChange}/>
+					{loading ? <span>loading...</span> : ''}
+					<form onSubmit={this.updateProfile.bind(this)}>
+						<input type="text" name="username" value={username} onChange={this.handleInputChange}/>
 
-							<button type="submit">Update profile</button>
-						</form>
-					}
+						<button type="submit">Update profile</button>
+					</form>
 			</div>
 		)
 	}
@@ -71,6 +70,7 @@ const gqlQuery = gql`
   	me {
 			username
 			email
+			_id
 		}
   }`
 

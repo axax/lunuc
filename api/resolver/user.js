@@ -39,12 +39,11 @@ export const userResolver = (db) => ({
 	},
 	changeMe: async (user,{context}) => {
 		Util.checkIfUserIsLoggedIn(context)
-		const result = (await db.collection('User').updateOne({_id: ObjectId(context.id)}, {$set:user}))
-		console.log(result)
-		if( result.matchedCount !== 1){
+		const result = (await db.collection('User').findOneAndUpdate({_id: ObjectId(context.id)}, {$set:user}))
+		if( result.ok !== 1){
 			throw new Error('User could not be changed')
 		}
-		return Object.assign({_id:context.id}, user)
+		return result.value
 	},
 	setNote: async ({_id,value},{context}) => {
 		Util.checkIfUserIsLoggedIn(context)
