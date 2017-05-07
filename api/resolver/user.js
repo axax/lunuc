@@ -48,7 +48,7 @@ export const userResolver = (db) => ({
 		}else {
 
 
-			const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}))
+			const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}, {returnOriginal: false}))
 			if (result.ok !== 1) {
 				throw new Error('User could not be changed')
 			}

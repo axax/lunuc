@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {withRouter} from 'react-router-dom'
 import {gql, graphql, compose} from 'react-apollo'
+import update from 'immutability-helper'
 
 
 class UserProfileContainer extends React.Component {
@@ -26,7 +27,7 @@ class UserProfileContainer extends React.Component {
 
 	updateProfile = (e) => {
 		e.preventDefault()
-		this.props.changeMe({username:this.state.username})
+		this.props.changeMe({username:this.state.username}).catch( error => console.error(error) )
 	}
 
 
@@ -76,7 +77,7 @@ const gqlQuery = gql`
 
 
 const gqlUpdate = gql`
-  mutation changeMe($username: String){ changeMe(username:$username){_id}}
+  mutation changeMe($username: String){ changeMe(username:$username){_id username}}
 `
 
 const UserProfileContainerWithGql = compose(
@@ -86,13 +87,9 @@ const UserProfileContainerWithGql = compose(
 				fetchPolicy: 'cache-and-network',
 
 				reducer: (prev, {operationName, type, result: {data}}) => {
-					/*if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'KeyValueUpdate' && data && data.setValue && data.setValue.key ) {
-
-					 let found=prev.keyvalue.find(x => x.key === data.setValue.key )
-					 if( !found ) {
-					 return update(prev, {keyvalue: {$push: [data.setValue]}})
-					 }
-					 }*/
+					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'changeMe' && data && data.changeMe && data.changeMe.username ) {
+					 	return update(prev, {me: {username: {$set:data.changeMe.username}}})
+					}
 					return prev
 				}
 			}

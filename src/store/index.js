@@ -51,11 +51,12 @@ export default function configureStore(initialState) {
 		(state, key) => {
 			let newState = Object.assign({},state)
 
-				newState.mutations=null
+				//newState.mutations={}
+				//newState.queries={}
 
 			 // Filter some queries we don't want to persist
 			 newState.data = Object.keys(state.data)
-			 .filter( key => key.indexOf('$ROOT_QUERY.login')<0)
+			 .filter( key => key.indexOf('$ROOT_QUERY.login')<0 )
 			 .reduce( (res, key) => (res[key] = state.data[key], res), {} )
 
 

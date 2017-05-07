@@ -28,11 +28,12 @@ class LoginContainer extends React.Component {
 	login = (e) => {
 		e.preventDefault()
 
-		this.setState({loading: true})
+		this.setState({loading: true, error: null})
 		const {client} = this.props
 
 
 		client.query({
+			fetchPolicy: 'network-only',
 			query: gql`query KeyValueQuery($username: String!, $password: String!) { login(username: $username, password: $password) { token error }}`,
 			variables: {
 				username: this.state.username,
@@ -41,14 +42,15 @@ class LoginContainer extends React.Component {
 			operationName: 'login',
 		}).then(response => {
 			this.setState({loading: false})
-			this.setState({error: response.data.login.error})
+			if( response.data && response.data.login ) {
+				this.setState({error: response.data.login.error})
 
-			if (!response.data.login.error) {
+				if (!response.data.login.error) {
 
-				localStorage.setItem('token', response.data.login.token)
-				this.setState({redirectToReferrer: true})
+					localStorage.setItem('token', response.data.login.token)
+					this.setState({redirectToReferrer: true})
+				}
 			}
-
 		}).catch(error => console.error(error))
 
 	}
