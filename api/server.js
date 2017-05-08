@@ -5,6 +5,7 @@ import {schema} from './schema/index'
 import {resolver} from './resolver/index'
 import {dbConnection} from './database'
 import {auth} from './auth'
+import {formatError} from './error'
 
 const PORT = 8080
 
@@ -27,6 +28,7 @@ dbConnection((db) => {
 			schema: schema,
 			rootValue: resolver(db),
 			graphiql: true,
+			formatError:formatError,
 			extensions({document, variables, operationName, result}) {
 			}
 		}))

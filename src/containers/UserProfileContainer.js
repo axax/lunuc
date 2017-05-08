@@ -7,7 +7,10 @@ import update from 'immutability-helper'
 
 class UserProfileContainer extends React.Component {
 	state = {
-		username: ''
+		username: '',
+		usernameError: '',
+		message: '',
+		loading: false
 	}
 
 	handleInputChange = (e) => {
@@ -27,13 +30,26 @@ class UserProfileContainer extends React.Component {
 
 	updateProfile = (e) => {
 		e.preventDefault()
-		this.props.changeMe({username:this.state.username}).catch( error => console.error(error) )
+		this.setState({usernameError: '',loading:true})
+
+		this.props.changeMe({username: this.state.username})
+			.then(resp => {
+				this.setState({loading:false})
+			})
+			.catch(error => {
+				this.setState({loading:false})
+				if (error.graphQLErrors.length > 0) {
+					const e = error.graphQLErrors[0]
+					if (e.key === 'username.taken') {
+						this.setState({username: this.props.me.username, usernameError: e.message})
+					}
+				}
+			})
 	}
 
 
 	render() {
-		const {username} = this.state
-		const {loading} = this.props
+		const {username, usernameError, loading} = this.state
 
 		const LogoutButton = withRouter(({history}) => (
 			<button onClick={() => {
@@ -46,12 +62,17 @@ class UserProfileContainer extends React.Component {
 			<div>
 				<LogoutButton />
 				<h1>Profile</h1>
-					{loading ? <span>loading...</span> : ''}
-					<form onSubmit={this.updateProfile.bind(this)}>
+				{this.props.loading|loading ? <span>loading...</span> : ''}
+				<form onSubmit={this.updateProfile.bind(this)}>
+					<div>
 						<input type="text" name="username" value={username} onChange={this.handleInputChange}/>
+						{usernameError ? <strong>{usernameError}</strong> : ''}
+					</div>
 
+					<div>
 						<button type="submit">Update profile</button>
-					</form>
+					</div>
+				</form>
 			</div>
 		)
 	}
@@ -72,6 +93,7 @@ const gqlQuery = gql`
 			username
 			email
 			_id
+			node {value}
 		}
   }`
 
@@ -85,10 +107,9 @@ const UserProfileContainerWithGql = compose(
 		options() {
 			return {
 				fetchPolicy: 'cache-and-network',
-
 				reducer: (prev, {operationName, type, result: {data}}) => {
-					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'changeMe' && data && data.changeMe && data.changeMe.username ) {
-					 	return update(prev, {me: {username: {$set:data.changeMe.username}}})
+					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'changeMe' && data && data.changeMe && data.changeMe.username) {
+						return update(prev, {me: {username: {$set: data.changeMe.username}}})
 					}
 					return prev
 				}
@@ -105,13 +126,12 @@ const UserProfileContainerWithGql = compose(
 				return mutate({
 					variables: {username},
 					/*optimisticResponse: {
-					 __typename: 'Mutation',
-					 setValue: {
-					 key: key,
-					 value: value,
-					 __typename: 'KeyValue'
-					 }
-					 }*/
+						__typename: 'Mutation',
+						changeMe: {
+							username:username,
+							__typename: 'User'
+						}
+					}*/
 				})
 			}
 		})

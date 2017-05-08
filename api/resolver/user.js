@@ -1,6 +1,8 @@
 import Util from '../util'
 import {ObjectId} from 'mongodb'
 import {auth} from '../auth'
+import {ApiError} from '../error'
+
 
 export const userResolver = (db) => ({
 
@@ -44,13 +46,13 @@ export const userResolver = (db) => ({
 
 		let existingUser = (await userCollection.findOne({$or: [{'username': user.username}]}))
 		if( existingUser!=null && existingUser._id.toString() !== context.id ){
-			throw new Error(`Username ${user.username} already taken`)
+			throw new ApiError(`Username ${user.username} already taken`,'username.taken',{x :'sss'})
 		}else {
 
 
 			const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}, {returnOriginal: false}))
 			if (result.ok !== 1) {
-				throw new Error('User could not be changed')
+				throw new ApiError('User could not be changed')
 			}
 			return result.value
 		}
