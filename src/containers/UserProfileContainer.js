@@ -10,7 +10,8 @@ class UserProfileContainer extends React.Component {
 		username: '',
 		usernameError: '',
 		message: '',
-		loading: false
+		loading: false,
+		note: []
 	}
 
 	handleInputChange = (e) => {
@@ -24,7 +25,8 @@ class UserProfileContainer extends React.Component {
 	}
 
 	componentWillReceiveProps(nextProps) {
-		this.setState({username: nextProps.me.username})
+		if( nextProps.me )
+			this.setState({username: nextProps.me.username, note: nextProps.me.note})
 	}
 
 
@@ -49,7 +51,7 @@ class UserProfileContainer extends React.Component {
 
 
 	render() {
-		const {username, usernameError, loading} = this.state
+		const {username, usernameError, loading, note} = this.state
 
 		const LogoutButton = withRouter(({history}) => (
 			<button onClick={() => {
@@ -57,6 +59,13 @@ class UserProfileContainer extends React.Component {
 				history.push('/')
 			}}>Logout</button>
 		))
+
+		let noteElements = []
+
+		note.forEach(
+			(o) => noteElements.push(<textarea>{o.value}</textarea>)
+		)
+
 
 		return (
 			<div>
@@ -72,6 +81,8 @@ class UserProfileContainer extends React.Component {
 					<div>
 						<button type="submit">Update profile</button>
 					</div>
+					<hr />
+					{noteElements}
 				</form>
 			</div>
 		)
@@ -93,7 +104,9 @@ const gqlQuery = gql`
 			username
 			email
 			_id
-			node {value}
+			note {
+				value
+			}
 		}
   }`
 

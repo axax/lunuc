@@ -11,6 +11,7 @@ export const userSchemaRaw = `
 	type Note {
 		_id: ID!
 		value: String!
+		firstline: String!
 	}
 	
 	type Token {
