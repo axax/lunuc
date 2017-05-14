@@ -152,7 +152,7 @@ Feedback, issues, etc. are more than welcome!
 ### Updating local packages
 `npm outdated`
 
-`npm update --save`
+`npm update --save-dev`
 
 
 ## Contributors

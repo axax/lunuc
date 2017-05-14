@@ -84,15 +84,14 @@ export const userResolver = (db) => ({
 
 		return {value: value, _id: _id}
 	},
-	me: (data,{context}) => {
-
+	me: async (data,{context}) => {
 		Util.checkIfUserIsLoggedIn(context)
+		var user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
 
-		return db.collection('User').findOne({_id: ObjectId(context.id)}).then((doc) => {
-			return doc
-		}).catch((err) => {
-			console.error(err)
-		})
+		if( !user ){
+			throw new Error('User doesn\'t exist')
+		}
+		return user
 	},
 	login: async ({username, password}) => {
 		const result = await auth.createToken(username,password,db)

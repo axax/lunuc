@@ -38,7 +38,7 @@ export default function configureStore(initialState) {
 			logger,
 			client.middleware() // apollo client middleware
 		),
-		autoRehydrate()
+		autoRehydrate({log:true})
 	))
 
 
@@ -67,10 +67,12 @@ export default function configureStore(initialState) {
 
 
 
+
+	return store
+
+
 	// begin periodically persisting the store
 	persistStore(store, {transforms: [transform], blacklist: ['keyvalue']}, () => {
 		console.log('rehydration complete')
 	})
-
-	return store
 }

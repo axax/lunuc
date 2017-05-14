@@ -19,9 +19,23 @@ class UserProfileContainer extends React.Component {
 		const value = target.type === 'checkbox' ? target.checked : target.value
 		const name = target.name
 
-		this.setState({
-			[target.name]: value
-		})
+		if ( target.name === 'note'){
+			let note = this.state.note.map(
+				(o) => {
+					if( target.id===o._id){
+						return Object.assign({},o,{value:value})
+					}
+					return o
+				}
+			)
+			this.setState({
+				[target.name]: note
+			})
+		}else{
+			this.setState({
+				[target.name]: value
+			})
+		}
 	}
 
 	componentWillReceiveProps(nextProps) {
@@ -49,6 +63,27 @@ class UserProfileContainer extends React.Component {
 			})
 	}
 
+	updateNote = (e) => {
+		e.preventDefault()
+		this.setState({usernameError: '',loading:true})
+
+		this.props.changeMe({username: this.state.username})
+			.then(resp => {
+				this.setState({loading:false})
+			})
+			.catch(error => {
+				this.setState({loading:false})
+				if (error.graphQLErrors.length > 0) {
+					const e = error.graphQLErrors[0]
+					if (e.key === 'username.taken') {
+						this.setState({username: this.props.me.username, usernameError: e.message})
+					}
+				}
+			})
+	}
+
+
+
 
 	render() {
 		const {username, usernameError, loading, note} = this.state
@@ -62,8 +97,9 @@ class UserProfileContainer extends React.Component {
 
 		let noteElements = []
 
+
 		note.forEach(
-			(o) => noteElements.push(<textarea>{o.value}</textarea>)
+			(o) => noteElements.push(<textarea name="note" id={o._id} key={o._id} onChange={this.handleInputChange} defaultValue={o.value}/>)
 		)
 
 
@@ -105,6 +141,7 @@ const gqlQuery = gql`
 			email
 			_id
 			note {
+				_id
 				value
 			}
 		}
