@@ -2,15 +2,17 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {BrowserRouter as Router, Route, Link, Redirect} from 'react-router-dom'
 
-import App from './components/App'
-import LoginContainer from './containers/LoginContainer'
-import UserProfileContainer from './containers/UserProfileContainer'
-
+import LoginContainer from '../containers/LoginContainer'
+import UserProfileContainer from '../containers/UserProfileContainer'
+import KeyValueContainer from '../containers/KeyValueContainer'
+import ErrorHandlerContainer from '../containers/ErrorHandlerContainer'
 
 
 const Routes = () => (
 	<Router>
 		<div>
+			<ErrorHandlerContainer />
+
 			<ul>
 				<li><Link to="/">Home</Link></li>
 				<li><Link to="/about">About</Link></li>
@@ -19,7 +21,7 @@ const Routes = () => (
 
 			<hr/>
 
-			<Route exact path="/" component={App}/>
+			<Route exact path="/" component={KeyValueContainer}/>
 			<Route path="/about" component={About}/>
 			<Route path="/login" component={LoginContainer}/>
 

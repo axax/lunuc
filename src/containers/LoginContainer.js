@@ -51,7 +51,9 @@ class LoginContainer extends React.Component {
 					this.setState({redirectToReferrer: true})
 				}
 			}
-		}).catch(error => console.error(error))
+		}).catch(error => {
+			this.setState({loading: false})
+		})
 
 	}
 

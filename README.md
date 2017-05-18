@@ -17,10 +17,10 @@
 * Apollo GraphQL Client
 * Optimistic UI
 * Persist and Rehydrate
+* Authentication 
 
 *comming soon*
-* Authentication 
-* Use of sockets
+* Use of sockets (subscriptions-transport-ws)
 * Use of Service worker
 * Travis yml
 * Docker integration

@@ -16,9 +16,9 @@ dbConnection((db) => {
 
 
 	// delay response
-	app.use(function (req, res, next) {
-	 setTimeout(next, 1000)
-	 })
+	/*app.use(function (req, res, next) {
+	 setTimeout(next, 2000)
+	 })*/
 
 	// Authentication
 	auth.initialize(app, db)

@@ -14,6 +14,28 @@ class UserProfileContainer extends React.Component {
 		note: []
 	}
 
+	saveNoteTimeouts = {}
+
+	saveNote = (id, value) => {
+		clearTimeout(this.saveNoteTimeouts[id])
+		this.saveNoteTimeouts[id] = setTimeout(() => {
+			console.log('save note', value)
+			this.setState({loading:true})
+
+			this.props.setNote({value: value, id: id})
+				.then(resp => {
+					this.setState({loading:false})
+				})
+				.catch(error => {
+					this.setState({loading:false})
+					console.error(error)
+				})
+
+		},3000)
+	}
+
+
+
 	handleInputChange = (e) => {
 		const target = e.target
 		const value = target.type === 'checkbox' ? target.checked : target.value
@@ -31,6 +53,8 @@ class UserProfileContainer extends React.Component {
 			this.setState({
 				[target.name]: note
 			})
+			// auto save
+			this.saveNote(target.id,value)
 		}else{
 			this.setState({
 				[target.name]: value
@@ -39,6 +63,7 @@ class UserProfileContainer extends React.Component {
 	}
 
 	componentWillReceiveProps(nextProps) {
+		console.log('prop',nextProps)
 		if( nextProps.me )
 			this.setState({username: nextProps.me.username, note: nextProps.me.note})
 	}
@@ -99,7 +124,7 @@ class UserProfileContainer extends React.Component {
 
 
 		note.forEach(
-			(o) => noteElements.push(<textarea name="note" id={o._id} key={o._id} onChange={this.handleInputChange} defaultValue={o.value}/>)
+			(o) => noteElements.push(<textarea name="note" id={o._id} key={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange} defaultValue={o.value}/>)
 		)
 
 
@@ -130,6 +155,7 @@ UserProfileContainer.propTypes = {
 	/* apollo client props */
 	me: PropTypes.object,
 	changeMe: PropTypes.func.isRequired,
+	setNote: PropTypes.func.isRequired,
 	loading: PropTypes.bool,
 }
 
@@ -152,12 +178,18 @@ const gqlUpdate = gql`
   mutation changeMe($username: String){ changeMe(username:$username){_id username}}
 `
 
+const gqlUpdateNote = gql`
+	mutation setNote($id: ID!, $value: String){ setNote(value:$value,_id:$id){_id value}}
+`
+
+
 const UserProfileContainerWithGql = compose(
 	graphql(gqlQuery, {
 		options() {
 			return {
 				fetchPolicy: 'cache-and-network',
 				reducer: (prev, {operationName, type, result: {data}}) => {
+					console.log('xxxxx',prev)
 					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'changeMe' && data && data.changeMe && data.changeMe.username) {
 						return update(prev, {me: {username: {$set: data.changeMe.username}}})
 					}
@@ -165,7 +197,7 @@ const UserProfileContainerWithGql = compose(
 				}
 			}
 		},
-		props: ({data: {loading, me}}) => ({
+		props: ({data: {loading, me }}) => ({
 			me,
 			loading
 		})
@@ -184,6 +216,11 @@ const UserProfileContainerWithGql = compose(
 					}*/
 				})
 			}
+		})
+	}),
+	graphql(gqlUpdateNote, {
+		props: ({ownProps, mutate}) => ({
+			setNote: (args) => mutate({variables: args})
 		})
 	})
 )(UserProfileContainer)

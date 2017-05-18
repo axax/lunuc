@@ -1,5 +1,5 @@
 import {createStore, compose, applyMiddleware} from 'redux'
-import {persistStore, autoRehydrate, createTransform} from 'redux-persist'
+import {autoRehydrate} from 'redux-persist'
 
 import rootReducer from '../reducers/index'
 import { client } from '../middleware/index'
@@ -22,7 +22,6 @@ function logger({ getState }) {
 }
 
 
-
 // Enhander for Redux DevTools Extension
 const composeEnhancers =
 	typeof window === 'object' &&
@@ -34,45 +33,11 @@ const composeEnhancers =
 
 export default function configureStore(initialState) {
 	const store = createStore(rootReducer, initialState, composeEnhancers(
+		autoRehydrate({log:true}),
 		applyMiddleware(
-			logger,
-			client.middleware() // apollo client middleware
-		),
-		autoRehydrate({log:true})
+				logger,
+				client.middleware() // apollo client middleware
+		)
 	))
-
-
-
-	const transform = createTransform(
-		(state, key) => {
-
-			return state
-		},
-		(state, key) => {
-			let newState = Object.assign({},state)
-
-				//newState.mutations={}
-				//newState.queries={}
-
-			 // Filter some queries we don't want to persist
-			 newState.data = Object.keys(state.data)
-			 .filter( key => key.indexOf('$ROOT_QUERY.login')<0 )
-			 .reduce( (res, key) => (res[key] = state.data[key], res), {} )
-
-
-			return newState
-		},
-		{ whitelist: ['remote'] }
-	)
-
-
-
-
 	return store
-
-
-	// begin periodically persisting the store
-	persistStore(store, {transforms: [transform], blacklist: ['keyvalue']}, () => {
-		console.log('rehydration complete')
-	})
 }

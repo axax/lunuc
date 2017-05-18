@@ -1,5 +1,6 @@
 import ApolloClient, {createNetworkInterface} from 'apollo-client'
 import {applyMiddleware} from 'redux'
+import * as Actions from '../actions/ErrorHandlerAction'
 
 const networkInterface = createNetworkInterface({
 	uri: `http://${window.location.hostname}:3000/graphql`,
@@ -15,6 +16,16 @@ networkInterface.use([{
 		// get the authentication token from local storage if it exists
 		const token = localStorage.getItem('token')
 		req.options.headers.authorization = token ? `JWT ${token}` : null
+		next()
+	}
+}]).useAfter([{
+	applyAfterware({ response }, next ) {
+		if (response.status !== 200) {
+			client.store.dispatch(Actions.addError({key:'api_error',msg:response.status+' '+response.statusText}))
+			if( response.status === 504 ){
+				localStorage.removeItem('token')
+			}
+		}
 		next()
 	}
 }])

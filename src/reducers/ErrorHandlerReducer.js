@@ -1,0 +1,12 @@
+import * as types from '../constants/ActionTypes'
+import update from 'immutability-helper'
+
+
+export default function errorHandler(state = {messages:{}}, action) {
+	switch (action.type) {
+		case types.ADD_ERROR:
+			return update(state, {messages:{$merge: {[action.key]: {msg: action.msg, type: 'error'}}}})
+		default:
+			return state
+	}
+}
