@@ -57,19 +57,14 @@ export const userResolver = (db) => ({
 			return result.value
 		}
 	},
-	setNote: async ({_id,value},{context}) => {
+	updateNote: async ({_id,value},{context}) => {
 		Util.checkIfUserIsLoggedIn(context)
-
 
 		const userCollection = db.collection('User')
 
 		var result = null
 		if( !_id ) {
-			_id = ObjectId()
-			result = (await userCollection.updateOne({_id: ObjectId(context.id)}, {$push: {note: {value: value, _id: _id}}}))
-			if( result.modifiedCount !== 1){
-				throw new Error('Note was not inserted')
-			}
+			throw new Error('Note id is missing')
 		}else{
 			result = (await userCollection.updateOne({_id: ObjectId(context.id),'note._id': ObjectId(_id) },{$set: {'note.$.value': value}}))
 
@@ -83,6 +78,17 @@ export const userResolver = (db) => ({
 		}
 
 		return {value: value, _id: _id}
+	},
+	createNote: async (data,{context}) => {
+		Util.checkIfUserIsLoggedIn(context)
+
+		const userCollection = db.collection('User')
+		const _id = ObjectId()
+		let result = (await userCollection.updateOne({_id: ObjectId(context.id)}, {$push: {note: {value: '', _id: _id}}}))
+		if( result.modifiedCount !== 1){
+			throw new Error('Note was not inserted')
+		}
+		return {value: '', _id: _id}
 	},
 	me: async (data,{context}) => {
 		Util.checkIfUserIsLoggedIn(context)

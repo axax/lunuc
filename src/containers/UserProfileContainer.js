@@ -16,13 +16,13 @@ class UserProfileContainer extends React.Component {
 
 	saveNoteTimeouts = {}
 
-	saveNote = (id, value) => {
+	saveNote = (id, value, timeout ) => {
 		clearTimeout(this.saveNoteTimeouts[id])
 		this.saveNoteTimeouts[id] = setTimeout(() => {
 			console.log('save note', value)
 			this.setState({loading:true})
 
-			this.props.setNote({value: value, id: id})
+			this.props.updateNote({value: value, id: id})
 				.then(resp => {
 					this.setState({loading:false})
 				})
@@ -30,8 +30,7 @@ class UserProfileContainer extends React.Component {
 					this.setState({loading:false})
 					console.error(error)
 				})
-
-		},3000)
+		},timeout)
 	}
 
 
@@ -53,8 +52,8 @@ class UserProfileContainer extends React.Component {
 			this.setState({
 				[target.name]: note
 			})
-			// auto save
-			this.saveNote(target.id,value)
+			// auto save note after 5s
+			this.saveNote(target.id,value,5000)
 		}else{
 			this.setState({
 				[target.name]: value
@@ -62,8 +61,18 @@ class UserProfileContainer extends React.Component {
 		}
 	}
 
+
+
+	handleBlur = (e) => {
+		const target = e.target
+		const value = target.type === 'checkbox' ? target.checked : target.value
+
+		if( this.saveNoteTimeouts[target.id] ){
+			this.saveNote(target.id,value,0)
+		}
+	}
+
 	componentWillReceiveProps(nextProps) {
-		console.log('prop',nextProps)
 		if( nextProps.me )
 			this.setState({username: nextProps.me.username, note: nextProps.me.note})
 	}
@@ -88,22 +97,17 @@ class UserProfileContainer extends React.Component {
 			})
 	}
 
-	updateNote = (e) => {
+	createNote = (e) => {
 		e.preventDefault()
-		this.setState({usernameError: '',loading:true})
+		this.setState({loading:true})
 
-		this.props.changeMe({username: this.state.username})
+		console.log(e)
+		this.props.createNote()
 			.then(resp => {
 				this.setState({loading:false})
 			})
 			.catch(error => {
 				this.setState({loading:false})
-				if (error.graphQLErrors.length > 0) {
-					const e = error.graphQLErrors[0]
-					if (e.key === 'username.taken') {
-						this.setState({username: this.props.me.username, usernameError: e.message})
-					}
-				}
 			})
 	}
 
@@ -142,9 +146,13 @@ class UserProfileContainer extends React.Component {
 					<div>
 						<button type="submit">Update profile</button>
 					</div>
-					<hr />
-					{noteElements}
 				</form>
+
+				<hr />
+				{noteElements}
+				<br />
+				<button onClick={this.createNote}>Add new note</button>
+
 			</div>
 		)
 	}
@@ -155,7 +163,8 @@ UserProfileContainer.propTypes = {
 	/* apollo client props */
 	me: PropTypes.object,
 	changeMe: PropTypes.func.isRequired,
-	setNote: PropTypes.func.isRequired,
+	createNote: PropTypes.func.isRequired,
+	updateNote: PropTypes.func.isRequired,
 	loading: PropTypes.bool,
 }
 
@@ -179,7 +188,12 @@ const gqlUpdate = gql`
 `
 
 const gqlUpdateNote = gql`
-	mutation setNote($id: ID!, $value: String){ setNote(value:$value,_id:$id){_id value}}
+	mutation updateNote($id: ID, $value: String){ updateNote(value:$value,_id:$id){_id value}}
+`
+
+
+const gqlCreateNote = gql`
+	mutation createNote{createNote{_id value}}
 `
 
 
@@ -189,9 +203,12 @@ const UserProfileContainerWithGql = compose(
 			return {
 				fetchPolicy: 'cache-and-network',
 				reducer: (prev, {operationName, type, result: {data}}) => {
-					console.log('xxxxx',prev)
-					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'changeMe' && data && data.changeMe && data.changeMe.username) {
-						return update(prev, {me: {username: {$set: data.changeMe.username}}})
+					if (type === 'APOLLO_MUTATION_RESULT' ) {
+						if (operationName === 'changeMe' && data && data.changeMe && data.changeMe.username) {
+							return update(prev, {me: {username: {$set: data.changeMe.username}}})
+						}else if (operationName === 'createNote' && data && data.createNote && data.createNote._id ) {
+							return update(prev, {me: {note:{$push: [data.createNote]}}})
+						}
 					}
 					return prev
 				}
@@ -220,7 +237,12 @@ const UserProfileContainerWithGql = compose(
 	}),
 	graphql(gqlUpdateNote, {
 		props: ({ownProps, mutate}) => ({
-			setNote: (args) => mutate({variables: args})
+			updateNote: (args) => mutate({variables: args})
+		})
+	}),
+	graphql(gqlCreateNote, {
+		props: ({ownProps, mutate}) => ({
+			createNote: () => mutate()
 		})
 	})
 )(UserProfileContainer)
