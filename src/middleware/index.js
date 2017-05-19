@@ -6,8 +6,24 @@ const networkInterface = createNetworkInterface({
 	uri: `http://${window.location.hostname}:3000/graphql`,
 })
 
+const logErrors = networkInterface => ({
+	query: request => networkInterface.query(request).then(d => {
+		// check for mongodb/graphql errors
+		if( d.errors && d.errors.length ){
+			client.store.dispatch(Actions.addError({key:'graphql_error',msg:d.errors[0].message}))
+		}
+		return d
+	}).catch( e => {
+		// check for server status error like 500, 504...
+		client.store.dispatch(Actions.addError({key:'api_error',msg:e.message}))
+		return e
+	}),
+	use: middlewares => networkInterface.use(middlewares)
+})
 
-networkInterface.use([{
+const networkInterfaceDecorator = logErrors(networkInterface)
+
+networkInterfaceDecorator.use([{
 	applyMiddleware(req, next) {
 		if (!req.options.headers) {
 			req.options.headers = {}  // Create the header object if needed.
@@ -18,22 +34,12 @@ networkInterface.use([{
 		req.options.headers.authorization = token ? `JWT ${token}` : null
 		next()
 	}
-}]).useAfter([{
-	applyAfterware({ response }, next ) {
-		if (response.status !== 200) {
-			client.store.dispatch(Actions.addError({key:'api_error',msg:response.status+' '+response.statusText}))
-			if( response.status === 504 ){
-				localStorage.removeItem('token')
-			}
-		}
-		next()
-	}
 }])
 
 
 export const client = new ApolloClient({
 	reduxRootSelector: state => state.remote,
-	networkInterface: networkInterface,
+	networkInterface: networkInterfaceDecorator,
 	dataIdFromObject: (o) => {
 		if (o.__typename === 'KeyValue') {
 			return o.__typename + o.key
