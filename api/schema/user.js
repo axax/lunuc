@@ -31,7 +31,7 @@ export const userSchemaRaw = `
 			password: String!
 		): User
 						
-		changeMe (
+		updateMe (
 			email: String
 			username: String
 		): User

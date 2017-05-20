@@ -39,7 +39,7 @@ export const userResolver = (db) => ({
 			return doc
 		}
 	},
-	changeMe: async (user,{context}) => {
+	updateMe: async (user,{context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
 		const userCollection = db.collection('User')

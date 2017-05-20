@@ -82,7 +82,7 @@ class UserProfileContainer extends React.Component {
 		e.preventDefault()
 		this.setState({usernameError: '',loading:true})
 
-		this.props.changeMe({username: this.state.username})
+		this.props.updateMe({username: this.state.username})
 			.then(resp => {
 				this.setState({loading:false})
 			})
@@ -162,7 +162,7 @@ class UserProfileContainer extends React.Component {
 UserProfileContainer.propTypes = {
 	/* apollo client props */
 	me: PropTypes.object,
-	changeMe: PropTypes.func.isRequired,
+	updateMe: PropTypes.func.isRequired,
 	createNote: PropTypes.func.isRequired,
 	updateNote: PropTypes.func.isRequired,
 	loading: PropTypes.bool,
@@ -184,7 +184,7 @@ const gqlQuery = gql`
 
 
 const gqlUpdate = gql`
-  mutation changeMe($username: String){ changeMe(username:$username){_id username}}
+  mutation updateMe($username: String){ updateMe(username:$username){_id username}}
 `
 
 const gqlUpdateNote = gql`
@@ -204,8 +204,8 @@ const UserProfileContainerWithGql = compose(
 				fetchPolicy: 'cache-and-network',
 				reducer: (prev, {operationName, type, result: {data}}) => {
 					if (type === 'APOLLO_MUTATION_RESULT' ) {
-						if (operationName === 'changeMe' && data && data.changeMe && data.changeMe.username) {
-							return update(prev, {me: {username: {$set: data.changeMe.username}}})
+						if (operationName === 'updateMe' && data && data.updateMe && data.updateMe.username) {
+							return update(prev, {me: {username: {$set: data.updateMe.username}}})
 						}else if (operationName === 'createNote' && data && data.createNote && data.createNote._id ) {
 							return update(prev, {me: {note:{$push: [data.createNote]}}})
 						}
@@ -221,12 +221,12 @@ const UserProfileContainerWithGql = compose(
 	}),
 	graphql(gqlUpdate, {
 		props: ({ownProps, mutate}) => ({
-			changeMe: ({username}) => {
+			updateMe: ({username}) => {
 				return mutate({
 					variables: {username},
 					/*optimisticResponse: {
 						__typename: 'Mutation',
-						changeMe: {
+						updateMe: {
 							username:username,
 							__typename: 'User'
 						}
