@@ -39,15 +39,29 @@ export const userResolver = (db) => ({
 			return doc
 		}
 	},
-	updateMe: async (user,{context}) => {
+	login: async ({username, password}) => {
+		const result = await auth.createToken(username, password, db)
+
+		return result
+	},
+	me: async (data, {context}) => {
+		Util.checkIfUserIsLoggedIn(context)
+		var user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
+
+		if (!user) {
+			throw new Error('User doesn\'t exist')
+		}
+		return user
+	},
+	updateMe: async (user, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
 		const userCollection = db.collection('User')
 
 		let existingUser = (await userCollection.findOne({$or: [{'username': user.username}]}))
-		if( existingUser!=null && existingUser._id.toString() !== context.id ){
-			throw new ApiError(`Username ${user.username} already taken`,'username.taken',{x :'sss'})
-		}else {
+		if (existingUser != null && existingUser._id.toString() !== context.id) {
+			throw new ApiError(`Username ${user.username} already taken`, 'username.taken', {x: 'sss'})
+		} else {
 
 
 			const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}, {returnOriginal: false}))
@@ -57,51 +71,70 @@ export const userResolver = (db) => ({
 			return result.value
 		}
 	},
-	updateNote: async ({_id,value},{context}) => {
+	updateNote: async ({_id, value}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
 		const userCollection = db.collection('User')
-
 		var result = null
-		if( !_id ) {
+		if (!_id) {
 			throw new Error('Note id is missing')
-		}else{
-			result = (await userCollection.updateOne({_id: ObjectId(context.id),'note._id': ObjectId(_id) },{$set: {'note.$.value': value}}))
-
-			if( result.matchedCount === 1) {
+		} else {
+			result = (await userCollection.updateOne({
+				_id: ObjectId(context.id),
+				'note._id': ObjectId(_id)
+			}, {$set: {'note.$.value': value}}))
+			if (result.matchedCount === 1) {
 				if (result.modifiedCount !== 1) {
 					//throw new Error('Note was not modified')
 				}
-			}else{
-				throw new Error('Note doesn\'t exist')
+			} else {
+				throw new Error('User or Note doesn\'t exist')
 			}
 		}
 
 		return {value: value, _id: _id}
 	},
-	createNote: async (data,{context}) => {
+	createNote: async ({value}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
+
+		if (!value) value = ''
 
 		const userCollection = db.collection('User')
 		const _id = ObjectId()
-		let result = (await userCollection.updateOne({_id: ObjectId(context.id)}, {$push: {note: {value: '', _id: _id}}}))
-		if( result.modifiedCount !== 1){
+		let result = (await userCollection.updateOne({_id: ObjectId(context.id)}, {
+			$push: {
+				note: {
+					value: value,
+					_id: _id
+				}
+			}
+		}))
+
+		if (result.modifiedCount !== 1) {
 			throw new Error('Note was not inserted')
 		}
-		return {value: '', _id: _id}
+		return {value: value, _id: _id}
 	},
-	me: async (data,{context}) => {
+	deleteNote: async ({_id}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
-		var user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
 
-		if( !user ){
-			throw new Error('User doesn\'t exist')
+		const userCollection = db.collection('User')
+
+		var result = null
+		if (!_id) {
+			throw new Error('Note id is missing')
+		} else {
+			result = (await userCollection.updateOne({_id: ObjectId(context.id)}, {$pull: {note: {_id: ObjectId(_id)}}}))
+
+			if (result.matchedCount === 1) {
+				if (result.modifiedCount !== 1) {
+					throw new Error('Note doesn\'t exist')
+				}
+			} else {
+				throw new Error('User doesn\'t exist')
+			}
 		}
-		return user
-	},
-	login: async ({username, password}) => {
-		const result = await auth.createToken(username,password,db)
 
-		return result
+		return {value: '', _id: _id}
 	}
 })

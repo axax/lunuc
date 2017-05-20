@@ -100,9 +100,20 @@ class UserProfileContainer extends React.Component {
 	createNote = (e) => {
 		e.preventDefault()
 		this.setState({loading:true})
-
-		console.log(e)
 		this.props.createNote()
+			.then(resp => {
+				this.setState({loading:false})
+			})
+			.catch(error => {
+				this.setState({loading:false})
+			})
+	}
+
+	deleteNote = (e) => {
+		e.preventDefault()
+		this.setState({loading:true})
+
+		this.props.deleteNote({id:e.target.id})
 			.then(resp => {
 				this.setState({loading:false})
 			})
@@ -128,7 +139,10 @@ class UserProfileContainer extends React.Component {
 
 
 		note.forEach(
-			(o) => noteElements.push(<textarea name="note" id={o._id} key={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange} defaultValue={o.value}/>)
+			(o) => noteElements.push(<div key={o._id}>
+				<textarea name="note" id={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange} defaultValue={o.value}/>
+				<button id={o._id} onClick={this.deleteNote}>Delete</button>
+			</div>)
 		)
 
 
@@ -188,12 +202,16 @@ const gqlUpdate = gql`
 `
 
 const gqlUpdateNote = gql`
-	mutation updateNote($id: ID, $value: String){ updateNote(value:$value,_id:$id){_id value}}
+	mutation updateNote($id: ID!, $value: String){ updateNote(value:$value,_id:$id){_id value}}
 `
 
 
 const gqlCreateNote = gql`
 	mutation createNote{createNote{_id value}}
+`
+
+const gqlDeleteNote = gql`
+	mutation deleteNote($id: ID!){deleteNote(_id:$id){_id value}}
 `
 
 
@@ -208,6 +226,8 @@ const UserProfileContainerWithGql = compose(
 							return update(prev, {me: {username: {$set: data.updateMe.username}}})
 						}else if (operationName === 'createNote' && data && data.createNote && data.createNote._id ) {
 							return update(prev, {me: {note:{$push: [data.createNote]}}})
+						}else if (operationName === 'deleteNote' && data && data.deleteNote && data.deleteNote._id ) {
+							return update(prev, {me: {note:{$apply: notes => notes.filter(note => note._id !== data.deleteNote._id)}}})
 						}
 					}
 					return prev
@@ -243,6 +263,11 @@ const UserProfileContainerWithGql = compose(
 	graphql(gqlCreateNote, {
 		props: ({ownProps, mutate}) => ({
 			createNote: () => mutate()
+		})
+	}),
+	graphql(gqlDeleteNote, {
+		props: ({ownProps, mutate}) => ({
+			deleteNote: (args) => mutate({variables: args})
 		})
 	})
 )(UserProfileContainer)

@@ -37,11 +37,15 @@ export const userSchemaRaw = `
 		): User
 		
 		updateNote (
-			_id: ID
+			_id: ID!
 			value: String
 		): Note
 		
-		createNote: Note
+		deleteNote (
+			_id: ID!
+		): Note
+		
+		createNote(value: String): Note
 		
 	}
 `
