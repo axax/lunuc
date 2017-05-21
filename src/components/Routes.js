@@ -4,8 +4,8 @@ import {BrowserRouter as Router, Route, Link, Redirect} from 'react-router-dom'
 
 import LoginContainer from '../containers/LoginContainer'
 import UserProfileContainer from '../containers/UserProfileContainer'
-import KeyValueContainer from '../containers/KeyValueContainer'
 import ErrorHandlerContainer from '../containers/ErrorHandlerContainer'
+import SearchWhileSpeakContainer from '../containers/SearchWhileSpeakContainer'
 
 
 const Routes = () => (
@@ -15,14 +15,14 @@ const Routes = () => (
 
 			<ul>
 				<li><Link to="/">Home</Link></li>
-				<li><Link to="/about">About</Link></li>
+				<li><Link to="/search">Search</Link></li>
 				<li><Link to="/profile">Profile</Link></li>
 			</ul>
 
 			<hr/>
 
-			<Route exact path="/" component={KeyValueContainer}/>
-			<Route path="/about" component={About}/>
+			<Route exact path="/" component={Home}/>
+			<Route exact path="/search" component={SearchWhileSpeakContainer}/>
 			<Route path="/login" component={LoginContainer}/>
 
 			<PrivateRoute path="/profile" component={UserProfileContainer}/>
@@ -30,9 +30,9 @@ const Routes = () => (
 	</Router>
 )
 
-const About = () => (
+const Home = () => (
 	<div>
-		<h2>About</h2>
+		<h2>Welcome</h2>
 	</div>
 )
 
