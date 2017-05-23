@@ -1,8 +1,4 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import {connect} from 'react-redux'
-import {bindActionCreators} from 'redux'
-import {gql, graphql, compose} from 'react-apollo'
 
 
 class SearchWhileSpeakContainer extends React.Component {
@@ -10,8 +6,9 @@ class SearchWhileSpeakContainer extends React.Component {
 	recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)()
 
 	state = {
-		recording: true,
-		recorded: []
+		recording: false,
+		recorded: [],
+		search: ''
 	}
 
 	constructor(props) {
@@ -23,13 +20,12 @@ class SearchWhileSpeakContainer extends React.Component {
 		this.recognition.lang = 'en-US'
 		this.recognition.interimResults = false
 		this.recognition.maxAlternatives = 1
-		//recognition.continuous = true
+		this.recognition.continuous = true
 
 		this.recognition.onresult = function(event) {
 			self.setState((state) => ({ recorded: state.recorded.concat(event.results[0][0].transcript)}))
 		}
 		this.recognition.onend = function(e) {
-			console.log('restart')
 			if( self.state.recording ) {
 				self.recognition.start()
 			}
@@ -38,6 +34,17 @@ class SearchWhileSpeakContainer extends React.Component {
 		if( this.state.recording ) {
 			this.recognition.start()
 		}
+	}
+
+
+	handleInputChange = (e) => {
+		const target = e.target
+		const value = target.type === 'checkbox' ? target.checked : target.value
+		const name = target.name
+
+		this.setState({
+			[target.name]: value
+		})
 	}
 
 
@@ -52,7 +59,7 @@ class SearchWhileSpeakContainer extends React.Component {
 		)
 
 		console.log('render')
-		return <div><h1>Search</h1>Recorder: {this.state.recording?'on':'off'}{pairs}</div>
+		return <div><h1>Search</h1><input type="text" name="search" value={this.state.search} onChange={this.handleInputChange}/>Recorder: {this.state.recording?'on':'off'}{pairs}</div>
 	}
 }
 

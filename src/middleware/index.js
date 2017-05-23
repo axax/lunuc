@@ -1,11 +1,24 @@
 import ApolloClient, {createNetworkInterface} from 'apollo-client'
+import {SubscriptionClient, addGraphQLSubscriptions} from 'subscriptions-transport-ws'
 import {applyMiddleware} from 'redux'
 import * as Actions from '../actions/ErrorHandlerAction'
+import {gql} from 'react-apollo'
 
+
+// Create regular NetworkInterface by using apollo-client's API
 const networkInterface = createNetworkInterface({
 	uri: `http://${window.location.hostname}:3000/graphql`,
 })
 
+// Create WebSocket client for subsciption
+const wsClient = new SubscriptionClient('ws://localhost:5000/', {
+	reconnect: true,
+	connectionParams: {
+		// Pass any arguments you want for initialization
+	}
+})
+
+// Error handler
 const logErrors = networkInterface => ({
 	query: request => networkInterface.query(request).then(d => {
 		// check for mongodb/graphql errors
@@ -37,9 +50,16 @@ networkInterfaceDecorator.use([{
 }])
 
 
+// Extend the network interface with the WebSocket
+const networkInterfaceWithSubscriptions = addGraphQLSubscriptions(
+	networkInterfaceDecorator,
+	wsClient
+)
+
+
 export const client = new ApolloClient({
 	reduxRootSelector: state => state.remote,
-	networkInterface: networkInterfaceDecorator,
+	networkInterface: networkInterfaceWithSubscriptions,
 	dataIdFromObject: (o) => {
 		if (o.__typename === 'KeyValue') {
 			return o.__typename + o.key
@@ -51,3 +71,17 @@ export const client = new ApolloClient({
 		return null
 	} // will be used by Apollo Client caching
 })
+
+/*
+wsClient.subscribeToMore({
+	document: gql`
+        subscription notify {
+            key
+            message
+        }`,
+	variables: {},
+	updateQuery: (prev, {subscriptionData}) => {
+		console.log(subscriptionData)
+		// Modify your store and return new state with the new arrived data
+	}
+})*/

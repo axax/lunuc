@@ -19,12 +19,13 @@
 * Persist and Rehydrate
 * Authentication 
 
-*comming soon*
+*todos*
 * Use of sockets (subscriptions-transport-ws)
 * Use of Service worker
 * Travis yml
 * Docker integration
 * Use of AWS lambda
+* Remove immutable package as we use immutability-helper now
 
 ## Installation & Usage
 
@@ -77,6 +78,7 @@
 | [mongodb](https://github.com/mongodb/node-mongodb-native)  | Mongo DB Native NodeJS Driver  | 
 | [body-parser](https://github.com/expressjs/body-parser)  | Node.js body parsing middleware | 
 | [bcrypt](https://github.com/pyca/bcrypt) | Modern password hashing for your software and your servers | 
+| [subscriptions-transport-ws](https://github.com/apollographql/subscriptions-transport-ws) |  A WebSocket client + server for GraphQL subscriptions | 
 
 
 ### Folder structure

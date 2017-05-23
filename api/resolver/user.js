@@ -2,6 +2,7 @@ import Util from '../util'
 import {ObjectId} from 'mongodb'
 import {auth} from '../auth'
 import {ApiError} from '../error'
+import { pubsub } from '../subscription'
 
 
 export const userResolver = (db) => ({
@@ -113,6 +114,10 @@ export const userResolver = (db) => ({
 		if (result.modifiedCount !== 1) {
 			throw new Error('Note was not inserted')
 		}
+
+		pubsub.publish('notification', {notification: {key: 'note.added', message: 'User added a note'}} )
+
+
 		return {value: value, _id: _id}
 	},
 	deleteNote: async ({_id}, {context}) => {

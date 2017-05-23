@@ -1,8 +1,10 @@
 import {userResolver} from './user'
+import {notificationResolver} from './notification'
 
 // The root provides a resolver function for each API endpoint
 export const resolver = (db) => ({
 	...userResolver(db),
+	...notificationResolver(db),
 	keyvalue: (data,{context}) => {
 		// return all keyvalue pairs
 		return db.collection('KeyValue').find().toArray().then((docs) => {

@@ -5,6 +5,7 @@ import {BrowserRouter as Router, Route, Link, Redirect} from 'react-router-dom'
 import LoginContainer from '../containers/LoginContainer'
 import UserProfileContainer from '../containers/UserProfileContainer'
 import ErrorHandlerContainer from '../containers/ErrorHandlerContainer'
+import NotificationContainer from '../containers/NotificationContainer'
 import SearchWhileSpeakContainer from '../containers/SearchWhileSpeakContainer'
 
 
@@ -12,6 +13,7 @@ const Routes = () => (
 	<Router>
 		<div>
 			<ErrorHandlerContainer />
+			<NotificationContainer />
 
 			<ul>
 				<li><Link to="/">Home</Link></li>
