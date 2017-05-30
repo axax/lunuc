@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {withRouter} from 'react-router-dom'
 import {gql, graphql, compose} from 'react-apollo'
+import ApolloClient from 'apollo-client'
 import update from 'immutability-helper'
 
 
@@ -15,7 +16,7 @@ export class NotificationContainer extends React.Component {
 		const {notifications} = this.props
 		if (notifications) {
 			notifications.forEach(
-				(notification) => pairs.push(<div key={notification.key}>{notification.message}</div>)
+				(notification ) => pairs.push(<div key={notification.key}>{notification.message}</div>)
 			)
 		}
 
@@ -31,7 +32,7 @@ export class NotificationContainer extends React.Component {
 
 
 NotificationContainer.propTypes = {
-	notifications: PropTypes.array.isRequired,
+	notifications: PropTypes.array,
 	newNotification: PropTypes.func.isRequired
 }
 
@@ -57,6 +58,7 @@ const gqlSubscriptionNotification = gql`
 const NotificationContainerWithGql = compose(graphql(gqlQueryNotification, {
 	name: 'notifications',
 	options: ({ params }) => ({
+		fetchPolicy: 'network-only',
 		variables: {
 		},
 	}),
@@ -69,14 +71,21 @@ const NotificationContainerWithGql = compose(graphql(gqlQueryNotification, {
 					variables: {
 					},
 					updateQuery: (prev, {subscriptionData}) => {
-						console.log(subscriptionData)
 						if (!subscriptionData.data) {
 							return prev
 						}
-						const newNotifications = subscriptionData.data.notification
-						return Object.assign({}, prev, {
-							notifications: [newNotifications, ...prev.notifications]
-						})
+						const newNotification = subscriptionData.data.notification
+
+						let newNotifications = []
+						if( prev.notifications ) {
+							newNotifications = prev.notifications.filter((n) => {
+								return (n.key !== newNotification.key)
+							})
+						}
+						newNotifications.push(newNotification)
+
+						return update(prev, {notifications: {$set: newNotifications}})
+
 					}
 				})
 			}

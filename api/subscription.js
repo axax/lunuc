@@ -21,5 +21,12 @@ const subscriptionManager = new SubscriptionManager({
 	}
 })
 
+// send test notifications
+/*var counter=0
+setInterval(()=>{
+	counter++
+	pubsub.publish('notification', {notification: {key: 'test.notification', message: `Notification Nr. ${counter}`}} )
+},10000)*/
+
 
 export { subscriptionManager, pubsub }

@@ -27,15 +27,13 @@ class App extends React.Component {
 			},
 			(state, key) => {
 				let newState = Object.assign({},state)
-
 				newState.mutations={}
 				newState.queries={}
 
 				// Filter some queries we don't want to persist
 				newState.data = Object.keys(state.data)
-					.filter( key => key.indexOf('$ROOT_QUERY.login')<0 )
+					.filter( key => key.indexOf('$ROOT_QUERY.login')<0 && key.indexOf('ROOT_QUERY.notification')<0 && key.indexOf('ROOT_SUBSCRIPTION.notification')<0 )
 					.reduce( (res, key) => (res[key] = state.data[key], res), {} )
-
 
 				return newState
 			},
