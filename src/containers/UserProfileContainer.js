@@ -179,7 +179,8 @@ UserProfileContainer.propTypes = {
 	updateMe: PropTypes.func.isRequired,
 	createNote: PropTypes.func.isRequired,
 	updateNote: PropTypes.func.isRequired,
-	loading: PropTypes.bool,
+	deleteNote: PropTypes.func.isRequired,
+	loading: PropTypes.bool
 }
 
 

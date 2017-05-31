@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {Redirect} from 'react-router-dom'
 import {withApollo, gql} from 'react-apollo'
 import ApolloClient from 'apollo-client'
+import {Link} from 'react-router-dom'
 
 class LoginContainer extends React.Component {
 	state = {
@@ -34,7 +35,7 @@ class LoginContainer extends React.Component {
 
 		client.query({
 			fetchPolicy: 'network-only',
-			query: gql`query KeyValueQuery($username: String!, $password: String!) { login(username: $username, password: $password) { token error }}`,
+			query: gql`query startLogin($username: String!, $password: String!) { login(username: $username, password: $password) { token error }}`,
 			variables: {
 				username: this.state.username,
 				password: this.state.password
@@ -85,6 +86,8 @@ class LoginContainer extends React.Component {
 
 					<button type="submit">Login</button>
 				</form>
+
+				<p>Don't have an account? <Link to="/signup">Sign up</Link></p>
 			</div>
 		)
 	}
@@ -92,7 +95,8 @@ class LoginContainer extends React.Component {
 
 
 LoginContainer.propTypes = {
-	client: React.PropTypes.instanceOf(ApolloClient).isRequired
+	client: PropTypes.instanceOf(ApolloClient).isRequired,
+	location: PropTypes.object
 }
 const LoginContainerWithApollo = withApollo(LoginContainer)
 

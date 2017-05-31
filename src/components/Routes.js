@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {BrowserRouter as Router, Route, Link, Redirect} from 'react-router-dom'
 
 import LoginContainer from '../containers/LoginContainer'
+import SignUpContainer from '../containers/SignUpContainer'
 import UserProfileContainer from '../containers/UserProfileContainer'
 import ErrorHandlerContainer from '../containers/ErrorHandlerContainer'
 import NotificationContainer from '../containers/NotificationContainer'
@@ -26,6 +27,7 @@ const Routes = () => (
 			<Route exact path="/" component={Home}/>
 			<Route exact path="/search" component={SearchWhileSpeakContainer}/>
 			<Route path="/login" component={LoginContainer}/>
+			<Route path="/signup" component={SignUpContainer}/>
 
 			<PrivateRoute path="/profile" component={UserProfileContainer}/>
 		</div>

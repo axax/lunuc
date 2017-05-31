@@ -22,8 +22,10 @@ const wsClient = new SubscriptionClient('ws://localhost:5000/', {
 const logErrors = networkInterface => ({
 	query: request => networkInterface.query(request).then(d => {
 		// check for mongodb/graphql errors
-		if( d.errors && d.errors.length ){
-			client.store.dispatch(Actions.addError({key:'graphql_error',msg:d.errors[0].message}))
+		if( !request.variables || request.variables._errorHandling!==false ) {
+			if (d.errors && d.errors.length) {
+				client.store.dispatch(Actions.addError({key: 'graphql_error', msg: d.errors[0].message}))
+			}
 		}
 		return d
 	}).catch( e => {
