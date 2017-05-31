@@ -33,7 +33,7 @@ export const userResolver = (db) => ({
 
 
 		const hashedPw = Util.hashPassword(password)
-		const insertResult = await userCollection.insertOne({email: email, username: username, password: hashedPw})
+		const insertResult = await userCollection.insertOne({emailConfirmed: false, email: email, username: username, password: hashedPw})
 
 		if (insertResult.insertedCount) {
 			const doc = insertResult.ops[0]

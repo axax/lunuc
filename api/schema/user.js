@@ -5,6 +5,7 @@ export const userSchemaRaw = `
     username: String!
     password: String!
     email: String!
+    emailConfirmed: Boolean!
     note: [Note]
   }
 	
