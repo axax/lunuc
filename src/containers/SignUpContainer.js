@@ -10,7 +10,8 @@ class SignUpContainer extends React.Component {
 		error: null,
 		username: '',
 		password: '',
-		email: ''
+		email: '',
+		signupFinished:false
 	}
 
 
@@ -40,7 +41,7 @@ class SignUpContainer extends React.Component {
 				password: this.state.password
 			}
 		}).then(({data}) => {
-			this.setState({loading: false})
+			this.setState({loading: false,signupFinished:true})
 
 			console.log('got data', data)
 		}).catch((error) => {
@@ -51,8 +52,15 @@ class SignUpContainer extends React.Component {
 
 	render() {
 
-		const {loading, email, username, password, error} = this.state
+		const {signupFinished, loading, email, username, password, error} = this.state
 
+		if (signupFinished) {
+			return (
+				<div>
+					<p>Thanks for your registration! <Link to="/login">Login</Link></p>
+				</div>
+			)
+		}
 		return (
 			<div>
 				<p>Sign up to use this service</p>
