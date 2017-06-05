@@ -33,7 +33,9 @@ export const userResolver = (db) => ({
 
 
 		const hashedPw = Util.hashPassword(password)
-		const insertResult = await userCollection.insertOne({emailConfirmed: false, email: email, username: username, password: hashedPw})
+		const userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
+
+		const insertResult = await userCollection.insertOne({role: userRole._id,emailConfirmed: false, email: email, username: username, password: hashedPw})
 
 		if (insertResult.insertedCount) {
 			const doc = insertResult.ops[0]
@@ -51,6 +53,19 @@ export const userResolver = (db) => ({
 
 		if (!user) {
 			throw new Error('User doesn\'t exist')
+		}else{
+			var userRole = null
+			// query user role
+			if( user.role ) {
+				userRole = (await db.collection('UserRole').findOne({_id: ObjectId(user.role)}))
+			}
+
+			// set default user role
+			if (userRole === null ){
+				userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
+			}
+			user.role = userRole
+
 		}
 		return user
 	},

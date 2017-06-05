@@ -2,6 +2,7 @@ import {buildSchema} from 'graphql'
 import { mergeStrings } from 'gql-merge'
 import {userSchemaRaw} from './user'
 import {notificationSchemaRaw} from './notification'
+import {chatSchemaRaw} from './chat'
 
 // a trailling ! = required (must not be null)
 const schemaRaw = `
@@ -35,4 +36,4 @@ const schemaRaw = `
 
 
 // Construct a schema, using GraphQL schema language
-export const schema = buildSchema( mergeStrings([schemaRaw,userSchemaRaw,notificationSchemaRaw]) )
+export const schema = buildSchema( mergeStrings([schemaRaw,userSchemaRaw,notificationSchemaRaw,chatSchemaRaw]) )

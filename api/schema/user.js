@@ -1,5 +1,12 @@
 
 export const userSchemaRaw = `
+
+	type UserRole {
+		_id: ID!
+    name: String!
+    capabilities: [String]!
+  }
+  
 	type User {
 		_id: ID!
     username: String!
@@ -7,6 +14,7 @@ export const userSchemaRaw = `
     email: String!
     emailConfirmed: Boolean!
     note: [Note]
+    role: UserRole!
   }
 	
 	type Note {

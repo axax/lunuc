@@ -7,7 +7,6 @@ export const notificationSchemaRaw = `
   
   type Query {
     notifications: [Notification]
-
   }
  
 	type Subscription {
