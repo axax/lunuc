@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt'
+import {ObjectId} from 'mongodb'
 
 
 const PASSWORD_MIN_LENGTH = 5
@@ -29,6 +30,24 @@ const Util = {
 		if (!context || !context.username) {
 			throw new Error('User is not logged in (or authenticated).')
 		}
+	},
+	checkIfUserHasCapability: async (db, context, capability) => {
+		const hasCapability = await Util.userHasCapability(db, context,capability)
+		if (!hasCapability) {
+			throw new Error(`User has not given premission for this operation. Missing capability "${capability}"`)
+		}
+	},
+	userHasCapability: async ( db, context, capability ) => {
+		if (context && context.id) {
+			// TODO: Cache implementation
+			const user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
+			if( user.role ) {
+				const userRole = (await db.collection('UserRole').findOne({_id: ObjectId(user.role)}))
+				return userRole.capabilities.includes(capability)
+			}
+
+		}
+		return false
 	}
 }
 export default Util
