@@ -20,11 +20,12 @@ const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}
 		 value: e.target.value
 		 })*/
 
-		console.log(key, e.target.value)
 		setValue({
 			key: key,
 			value: e.target.value
-		}).then(({data}) => {})
+		}).then(({data}) => {}).catch((e) => {
+			console.log(e)
+		})
 	}
 
 	const handleAddNewKeyValue = ({key, value}) => {
@@ -130,6 +131,7 @@ const KeyValueContainerWithGql = compose(
 					key: 'key2'
 				},
 				reducer: (prev, {operationName, type, result: {data}}) => {
+
 					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'KeyValueUpdate' && data && data.setValue && data.setValue.key ) {
 
 						let found=prev.keyvalue.find(x => x.key === data.setValue.key )

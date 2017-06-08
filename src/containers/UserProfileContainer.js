@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {withRouter} from 'react-router-dom'
 import {gql, graphql, compose} from 'react-apollo'
 import update from 'immutability-helper'
+import KeyValueContainer from './KeyValueContainer'
 
 
 class UserProfileContainer extends React.Component {
@@ -127,6 +128,7 @@ class UserProfileContainer extends React.Component {
 
 	render() {
 		const {username, usernameError, loading, note} = this.state
+		const {me} = this.props
 
 		const LogoutButton = withRouter(({history}) => (
 			<button onClick={() => {
@@ -137,13 +139,18 @@ class UserProfileContainer extends React.Component {
 
 		let noteElements = []
 
+		let hasManageKeyvalue = me.role.capabilities.includes('manage_keyvalues')
 
-		note.forEach(
-			(o) => noteElements.push(<div key={o._id}>
-				<textarea name="note" id={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange} defaultValue={o.value}/>
-				<button id={o._id} onClick={this.deleteNote}>Delete</button>
-			</div>)
-		)
+
+		if( note ) {
+			note.forEach(
+				(o) => noteElements.push(<div key={o._id}>
+					<textarea name="note" id={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange}
+										defaultValue={o.value}/>
+					<button id={o._id} onClick={this.deleteNote}>Delete</button>
+				</div>)
+			)
+		}
 
 
 		return (
@@ -163,10 +170,16 @@ class UserProfileContainer extends React.Component {
 				</form>
 
 				<hr />
+				<h2>Notes</h2>
 				{noteElements}
 				<br />
 				<button onClick={this.createNote}>Add new note</button>
-
+				{hasManageKeyvalue?
+				<div>
+					<hr />
+					<h2>KeyValue</h2>
+					<KeyValueContainer />
+				</div>:''}
 			</div>
 		)
 	}
@@ -193,6 +206,9 @@ const gqlQuery = gql`
 			note {
 				_id
 				value
+			}
+			role {
+				capabilities
 			}
 		}
   }`
