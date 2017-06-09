@@ -132,7 +132,6 @@ class UserProfileContainer extends React.Component {
 	render() {
 		const {username, usernameError, loading, note} = this.state
 		const {me,userActions} = this.props
-		console.log('eeee',me)
 
 		const LogoutButton = withRouter(({history}) => (
 			<button onClick={() => {

@@ -3,9 +3,9 @@ import PropTypes from 'prop-types'
 import { Route, Redirect} from 'react-router-dom'
 
 
-const PrivateRoute = ({ component: Component, ...rest }) => (
+const PrivateRoute = ({ component: Component, isAuthenticated, ...rest }) => (
 	<Route {...rest} render={props => (
-		props.isAuthenticated ? (
+		isAuthenticated ? (
 			<Component {...props}/>
 		) : (
 			<Redirect to={{
