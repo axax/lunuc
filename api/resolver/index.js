@@ -27,5 +27,5 @@ export const resolver = (db) => {
 				return {key: key, value: value}
 			})
 		}
-	});
+	})
 }

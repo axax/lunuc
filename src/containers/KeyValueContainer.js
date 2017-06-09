@@ -56,7 +56,6 @@ const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}
 																			onChange={handelValueChange.bind(this, o.key)}/>)
 		)
 	}
-
 	return <div>
 		{loading ? <span>loading...</span> : ''}
 		{pairs}
@@ -90,9 +89,9 @@ const mapStateToProps = (state) => {
 /**
  * Map the actions to props.
  */
-const mapDispatchToProps = (dispatch) => ({
-	actions: bindActionCreators(Actions, dispatch)
-})
+const mapDispatchToProps = (dispatch) => {
+	return {actions: bindActionCreators(Actions, dispatch)}
+}
 
 
 /**

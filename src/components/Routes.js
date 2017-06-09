@@ -1,5 +1,8 @@
 import React from 'react'
+import {bindActionCreators} from 'redux'
+import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
+
 import {BrowserRouter as Router, Route, Link, Redirect} from 'react-router-dom'
 
 import LoginContainer from '../containers/LoginContainer'
@@ -8,31 +11,44 @@ import UserProfileContainer from '../containers/UserProfileContainer'
 import ErrorHandlerContainer from '../containers/ErrorHandlerContainer'
 import NotificationContainer from '../containers/NotificationContainer'
 import SearchWhileSpeakContainer from '../containers/SearchWhileSpeakContainer'
+import PrivateRoute from './PrivateRoute'
+
+class Routes extends React.Component {
 
 
-const Routes = () => (
-	<Router>
-		<div>
-			<ErrorHandlerContainer />
-			<NotificationContainer />
+	render() {
 
-			<ul>
-				<li><Link to="/">Home</Link></li>
-				<li><Link to="/search">Search</Link></li>
-				<li><Link to="/profile">Profile</Link></li>
-			</ul>
+		const {isAuthenticated} = this.props
 
-			<hr/>
+		return <Router>
+			<div>
+				<ErrorHandlerContainer />
+				<NotificationContainer />
+				<ul>
+					<li><Link to="/">Home</Link></li>
+					{isAuthenticated?<li><Link to="/search">Search</Link></li>:''}
+					<li><Link to="/profile">Profile</Link></li>
+				</ul>
 
-			<Route exact path="/" component={Home}/>
-			<Route exact path="/search" component={SearchWhileSpeakContainer}/>
-			<Route path="/login" component={LoginContainer}/>
-			<Route path="/signup" component={SignUpContainer}/>
+				<hr/>
 
-			<PrivateRoute path="/profile" component={UserProfileContainer}/>
-		</div>
-	</Router>
-)
+				<Route exact path="/" component={Home}/>
+				<Route exact path="/search" component={SearchWhileSpeakContainer}/>
+				<Route path="/login" component={LoginContainer}/>
+				<Route path="/signup" component={SignUpContainer}/>
+
+				<PrivateRoute path="/profile" isAuthenticated={isAuthenticated} component={UserProfileContainer}/>
+			</div>
+		</Router>
+	}
+}
+
+
+Routes.propTypes = {
+	/* UserReducer */
+	isAuthenticated: PropTypes.bool
+}
+
 
 const Home = () => (
 	<div>
@@ -41,29 +57,22 @@ const Home = () => (
 )
 
 
-const isAuthenticated = () => {
-	return localStorage.getItem('token') != null
-}
 
-const PrivateRoute = ({ component: Component, ...rest }) => (
-	<Route {...rest} render={props => (
-		isAuthenticated() ? (
-			<Component {...props}/>
-		) : (
-			<Redirect to={{
-				pathname: '/login',
-				state: { from: props.location }
-			}}/>
-		)
-	)}/>
-)
-
-
-PrivateRoute.propTypes = {
-	component: PropTypes.func.isRequired,
-	location: PropTypes.object
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = (store) => {
+	const {user} = store
+	return {
+		isAuthenticated: user.isAuthenticated
+	}
 }
 
 
-
-export default Routes
+/**
+ * Connect the component to
+ * the Redux store.
+ */
+export default connect(
+	mapStateToProps
+)(Routes)

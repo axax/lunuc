@@ -14,9 +14,10 @@ import {ApolloProvider} from 'react-apollo'
 import {client} from '../middleware/index'
 
 import Routes from './Routes'
+import UserDataContainer from '../containers/UserDataContainer'
 
 
-class App extends React.Component {
+class App extends React.PureComponent {
 	state = { rehydrated: false }
 
 	componentWillMount() {
@@ -40,7 +41,7 @@ class App extends React.Component {
 			{ whitelist: ['remote'] }
 		)
 
-		persistStore(this.props.store, {transforms: [transform], blacklist: ['keyvalue','errorHandler']}, () => {
+		persistStore(this.props.store, {transforms: [transform], blacklist: ['keyvalue','errorHandler','user']}, () => {
 			this.setState({ rehydrated: true })
 		})
 	}
@@ -51,7 +52,9 @@ class App extends React.Component {
 
 		return (
 			<ApolloProvider store={this.props.store} client={client}>
-				<Routes />
+				<UserDataContainer>
+					<Routes />
+				</UserDataContainer>
 			</ApolloProvider>
 		)
 	}

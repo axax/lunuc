@@ -1,9 +1,12 @@
 import React from 'react'
+import {bindActionCreators} from 'redux'
+import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
 import {withRouter} from 'react-router-dom'
 import {gql, graphql, compose} from 'react-apollo'
 import update from 'immutability-helper'
 import KeyValueContainer from './KeyValueContainer'
+import * as UserActions from '../actions/UserAction'
 
 
 class UserProfileContainer extends React.Component {
@@ -128,11 +131,13 @@ class UserProfileContainer extends React.Component {
 
 	render() {
 		const {username, usernameError, loading, note} = this.state
-		const {me} = this.props
+		const {me,userActions} = this.props
+		console.log('eeee',me)
 
 		const LogoutButton = withRouter(({history}) => (
 			<button onClick={() => {
 				localStorage.removeItem('token')
+				userActions.setUser(null,false)
 				history.push('/')
 			}}>Logout</button>
 		))
@@ -193,25 +198,30 @@ UserProfileContainer.propTypes = {
 	createNote: PropTypes.func.isRequired,
 	updateNote: PropTypes.func.isRequired,
 	deleteNote: PropTypes.func.isRequired,
-	loading: PropTypes.bool
+	loading: PropTypes.bool,
+	/* User Reducer */
+	userActions: PropTypes.object.isRequired
 }
 
 
-const gqlQuery = gql`
-  query {
-  	me {
-			username
-			email
-			_id
-			note {
-				_id
-				value
-			}
-			role {
-				capabilities
-			}
-		}
-  }`
+
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = () => {
+	return {}
+}
+
+/**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => ({
+	userActions: bindActionCreators(UserActions, dispatch)
+})
+
+
+
+const gqlQuery = gql`query {me{username email _id note{_id value}role{capabilities}}}`
 
 
 const gqlUpdate = gql`
@@ -290,4 +300,11 @@ const UserProfileContainerWithGql = compose(
 )(UserProfileContainer)
 
 
-export default UserProfileContainerWithGql
+/**
+ * Connect the component to
+ * the Redux store.
+ */
+export default connect(
+	mapStateToProps,
+	mapDispatchToProps
+)(UserProfileContainerWithGql)

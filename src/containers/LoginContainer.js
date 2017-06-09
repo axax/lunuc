@@ -1,9 +1,12 @@
 import React from 'react'
+import {bindActionCreators} from 'redux'
+import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
 import {Redirect} from 'react-router-dom'
 import {withApollo, gql} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import {Link} from 'react-router-dom'
+import * as UserActions from '../actions/UserAction'
 
 class LoginContainer extends React.Component {
 	state = {
@@ -30,7 +33,7 @@ class LoginContainer extends React.Component {
 		e.preventDefault()
 
 		this.setState({loading: true, error: null})
-		const {client} = this.props
+		const {client,userActions} = this.props
 
 
 		client.query({
@@ -49,6 +52,7 @@ class LoginContainer extends React.Component {
 				if (!response.data.login.error) {
 
 					localStorage.setItem('token', response.data.login.token)
+					userActions.setUser({username:this.state.username},true)
 					this.setState({redirectToReferrer: true})
 				}
 			}
@@ -96,8 +100,36 @@ class LoginContainer extends React.Component {
 
 LoginContainer.propTypes = {
 	client: PropTypes.instanceOf(ApolloClient).isRequired,
-	location: PropTypes.object
+	location: PropTypes.object,
+	/* UserReducer */
+	userActions: PropTypes.object.isRequired
 }
+
+
+
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = () => {
+	return {}
+}
+
+/**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => ({
+	userActions: bindActionCreators(UserActions, dispatch)
+})
+
+
+
 const LoginContainerWithApollo = withApollo(LoginContainer)
 
-export default LoginContainerWithApollo
+/**
+ * Connect the component to
+ * the Redux store.
+ */
+export default connect(
+	mapStateToProps,
+	mapDispatchToProps
+)(LoginContainerWithApollo)
