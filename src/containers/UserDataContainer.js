@@ -22,8 +22,8 @@ class UserDataContainer extends React.PureComponent {
 				_errorHandling: false
 			}
 		}).then(response => {
-			this.setState({loading: false})
 			userActions.setUser(response.data.me,true)
+			this.setState({loading: false})
 		}).catch(error => {
 			this.setState({loading: false})
 		})

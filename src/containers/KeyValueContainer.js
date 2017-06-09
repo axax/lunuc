@@ -1,25 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {connect} from 'react-redux'
-import {bindActionCreators} from 'redux'
-import * as Actions from '../actions/KeyValueAction'
 import KeyValuePair from '../components/KeyValuePair'
 import KeyValuePairAdder from '../components/KeyValuePairAdder'
 import {gql, graphql, compose} from 'react-apollo'
 import update from 'immutability-helper'
 
 
-const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}) => {
+const KeyValueContainer = ({keyvalue, loading, setValue}) => {
 
 	const handelValueChange = (key, e) => {
-		/**
-		 * Set a new value for a certain key
-		 */
-		/*actions.setKeyValue({
-		 key: key,
-		 value: e.target.value
-		 })*/
-
 		setValue({
 			key: key,
 			value: e.target.value
@@ -29,26 +18,13 @@ const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}
 	}
 
 	const handleAddNewKeyValue = ({key, value}) => {
-		/*actions.setKeyValue({
-		 key: key,
-		 value: value
-		 })*/
-
-
 		setValue({
 			key: key,
 			value: value
 		}).then(({data}) => {})
-
-
 	}
 
-	let pairs = [], localPairs = []
-
-	localKeyvalue.keySeq().forEach(
-		(k) => localPairs.push(<KeyValuePair key={k} keyvalue={{key: k, value: localKeyvalue.get(k)}}
-																				 onChange={handelValueChange.bind(this, k)}/>)
-	)
+	let pairs = []
 
 	if (keyvalue) {
 		keyvalue.forEach(
@@ -66,33 +42,11 @@ const KeyValueContainer = ({localKeyvalue, actions, keyvalue, loading, setValue}
 
 
 KeyValueContainer.propTypes = {
-	localKeyvalue: PropTypes.object.isRequired,
-	actions: PropTypes.object.isRequired,
-
 	/* apollo client props */
 	keyvalue: PropTypes.array,
 	loading: PropTypes.bool,
 	setValue: PropTypes.func.isRequired,
 }
-
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = (state) => {
-	const {keyvalue} = state
-	return {
-		localKeyvalue: keyvalue.get('pairs')
-	}
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => {
-	return {actions: bindActionCreators(Actions, dispatch)}
-}
-
 
 /**
  * GraphQL query with apollo client
@@ -173,8 +127,5 @@ const KeyValueContainerWithGql = compose(
  * Connect the component to
  * the Redux store.
  */
-export default connect(
-	mapStateToProps,
-	mapDispatchToProps
-)(KeyValueContainerWithGql)
+export default KeyValueContainerWithGql
 

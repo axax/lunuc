@@ -25,7 +25,6 @@
 * Travis yml
 * Docker integration
 * Use of AWS lambda
-* Remove immutable package as we use immutability-helper now
 
 ## Installation & Usage
 
