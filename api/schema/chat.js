@@ -2,27 +2,33 @@ export const chatSchemaRaw = `
   type Message {
   	_id: ID! # unique id for message
     to: Chat! # chat message was sent in
-    from: User! # user who sent the message
+    from: UserPublic! # user who sent the message
     text: String! # message text
   }
   
 	type Chat {
 		_id: ID! # unique id for chat
 		name: String! # name of the chat
-		createdBy: User! # id of user
-    users: [User]! # users in the chat
+		createdBy: UserPublic! # id of user
+    users: [UserPublic]! # users in the chat
     messages(limit: Int, offset: Int): [Message] # messages sent to the chat
   }
   
   
   type Query {
+    chat(chatId: String!,limit: Int, offset: Int): Chat
     chats(limit: Int, offset: Int): [Chat]
+    chatsWithMessages(limit: Int, offset: Int): [Chat]
   }
   
 	type Mutation {
 		createChat(name: String!): Chat	
-		joinChat(chatId: String!,username: String!): Chat
-		leaveChat(chatId: String!,username: String!): Chat
+		createMessage(chatId: ID!, text: String!): Message
+		
+		
+		
+		joinChat(chatId: ID!,userId: ID!): Chat
+		leaveChat(chatId: ID!,userId: ID!): Chat
 	}
 	
 	

@@ -16,6 +16,11 @@ export const userSchemaRaw = `
     note: [Note]
     role: UserRole!
   }
+  
+	type UserPublic  {
+		_id: ID!
+    username: String!
+  }
 	
 	type Note {
 		_id: ID!
