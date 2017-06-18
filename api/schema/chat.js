@@ -27,8 +27,8 @@ export const chatSchemaRaw = `
 		
 		
 		
-		joinChat(chatId: ID!,userId: ID!): Chat
-		leaveChat(chatId: ID!,userId: ID!): Chat
+		addUserToChat(userId: ID!, chatId: ID!): Chat
+		removeUserToChat(userId: ID!, chatId: ID!): Chat
 	}
 	
 	

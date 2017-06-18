@@ -53,23 +53,45 @@ export const chatResolver = (db) => ({
 
 		return newMessage
 	},
-	joinChat: async ({chatId, userId}, {context}) => {
+	addUserToChat: async ({chatId, userId}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
 
 		const chatCollection = db.collection('Chat')
 
+		const result = await chatCollection.updateOne({
+				_id: ObjectId(chatId)
+			},
+			{
+				$addToSet: {users: ObjectId(userId)}
+			})
 
-		const insertResult = await chatCollection.insertOne({
-			name: name,
-			createdBy: ObjectId(context.id),
-			users: [ObjectId(context.id)]
-		})
 
-		if (insertResult.insertedCount) {
-			const doc = insertResult.ops[0]
-			return doc
+		if (result.matchedCount === 0) {
+			throw new Error('Chat doesnt exist')
 		}
+
+		return {_id: chatId}
+	},
+	removeUserToChat: async ({chatId, userId}, {context}) => {
+		Util.checkIfUserIsLoggedIn(context)
+
+
+		const chatCollection = db.collection('Chat')
+
+		const result = await chatCollection.updateOne({
+				_id: ObjectId(chatId)
+			},
+			{
+				$pull: {users: ObjectId(userId)}
+			})
+
+
+		if (result.matchedCount === 0) {
+			throw new Error('Chat doesnt exist')
+		}
+
+		return {_id: chatId}
 	},
 	chats: async ({}, {context, query}) => {
 		Util.checkIfUserIsLoggedIn(context)
@@ -102,17 +124,17 @@ export const chatResolver = (db) => ({
 					as: 'createdBy'
 				}
 			},
+			// Group back to arrays
 			{
-				'$project': {
-					'users': 1,
-					'name': 1,
-					'createdBy': {'$arrayElemAt': ['$createdBy', 0]} // return as as single doc not an array
+				$group: {
+					_id: '$_id',
+					name: {'$first':'$name'},
+					createdBy: {'$first':{$arrayElemAt: ['$createdBy', 0]} }, // return as as single doc not an array
+					users: {$addToSet: {_id:'$users._id',username:'$users.username'} }
 				}
 			}
 		]).toArray())
 
-
-		//console.log(query.query)
 
 
 		console.log(chats)
@@ -128,7 +150,8 @@ export const chatResolver = (db) => ({
 			{
 				$match: {
 					users: {$in: [ObjectId(context.id)]}
-				}
+				},
+				$limit : 5
 			},
 			{
 				$unwind: '$users' /* unwind because localFiled users is an array -> https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/ */
@@ -161,16 +184,17 @@ export const chatResolver = (db) => ({
 				}
 			},
 			{$unwind: '$messageFrom'},
+			// Group back to arrays
 			{
-				'$project': {
-					'messages': [{
-						'_id': '$messages._id',
+				$group: {
+					_id: '$_id',
+					name: {'$first':'$name'},
+					createdBy: {'$first':{$arrayElemAt: ['$createdBy', 0]} }, // return as as single doc not an array
+					users: {$addToSet: {_id:'$users._id',username:'$users.username'} },
+					messages: {$addToSet: {'_id': '$messages._id',
 						'from': '$messageFrom',
-						'text': '$messages.text'
-					}],
-					'users': 1,
-					'name': 1,
-					'createdBy': {'$arrayElemAt': ['$createdBy', 0]} // return as as single doc not an array
+						'to': '$messageTo',
+						'text': '$messages.text'} }
 				}
 			}
 		]).toArray())
@@ -231,17 +255,17 @@ export const chatResolver = (db) => ({
 				}
 			},
 			{$unwind: '$messageTo'},
+			// Group back to arrays
 			{
-				'$project': {
-					'users': 1,
-					'name': 1,
-					'createdBy': {'$arrayElemAt': ['$createdBy', 0]}, // return as as single doc not an array
-					'messages': [{
-						'_id': '$messages._id',
+				$group: {
+					_id: '$_id',
+					name: {'$first':'$name'},
+					createdBy: {'$first':{$arrayElemAt: ['$createdBy', 0]} }, // return as as single doc not an array
+					users: {$addToSet: {_id:'$users._id',username:'$users.username'} },
+					messages: {$addToSet: {'_id': '$messages._id',
 						'from': '$messageFrom',
 						'to': '$messageTo',
-						'text': '$messages.text'
-					}]
+						'text': '$messages.text'} }
 				}
 			}
 		]).next())
