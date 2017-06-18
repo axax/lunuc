@@ -137,7 +137,6 @@ export const chatResolver = (db) => ({
 
 
 
-		console.log(chats)
 		return chats
 	},
 	chatsWithMessages: async ({}, {context, query}) => {
@@ -270,11 +269,6 @@ export const chatResolver = (db) => ({
 			}
 		]).next())
 
-
-		//console.log(query.query)
-
-
-		console.log(chat)
 		return chat
 	}
 })
