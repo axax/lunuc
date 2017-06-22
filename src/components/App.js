@@ -15,35 +15,38 @@ import {client} from '../middleware/index'
 
 import Routes from './Routes'
 import UserDataContainer from '../containers/UserDataContainer'
+import Environment from '../environment'
 
 
 class App extends React.PureComponent {
-	state = { rehydrated: false }
+	state = { rehydrated: !Environment.REDUX_PERSIST }
 
 	componentWillMount() {
-		const transform = createTransform(
-			(state, key) => {
+		if( Environment.REDUX_PERSIST ) {
+			const transform = createTransform(
+				(state, key) => {
 
-				return state
-			},
-			(state, key) => {
-				let newState = Object.assign({},state)
-				newState.mutations={}
-				newState.queries={}
+					return state
+				},
+				(state, key) => {
+					let newState = Object.assign({}, state)
+					newState.mutations = {}
+					newState.queries = {}
 
-				// Filter some queries we don't want to persist
-				newState.data = Object.keys(state.data)
-					.filter( key => key.indexOf('$ROOT_QUERY.login')<0 && key.indexOf('ROOT_QUERY.notification')<0 && key.indexOf('ROOT_SUBSCRIPTION.notification')<0 )
-					.reduce( (res, key) => (res[key] = state.data[key], res), {} )
+					// Filter some queries we don't want to persist
+					newState.data = Object.keys(state.data)
+						.filter(key => key.indexOf('$ROOT_QUERY.login') < 0 && key.indexOf('ROOT_QUERY.notification') < 0 && key.indexOf('ROOT_SUBSCRIPTION.notification') < 0)
+						.reduce((res, key) => (res[key] = state.data[key], res), {})
 
-				return newState
-			},
-			{ whitelist: ['remote'] }
-		)
+					return newState
+				},
+				{whitelist: ['remote']}
+			)
 
-		persistStore(this.props.store, {transforms: [transform], blacklist: ['keyvalue','errorHandler','user']}, () => {
-			this.setState({ rehydrated: true })
-		})
+			persistStore(this.props.store, {transforms: [transform], blacklist: ['keyvalue', 'errorHandler', 'user']}, () => {
+				this.setState({rehydrated: true})
+			})
+		}
 	}
 
 	render() {

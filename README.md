@@ -62,7 +62,6 @@
 | [babel-preset-stage-0](https://github.com/babel/babel/tree/master/packages/babel-preset-stage-0)  | Babel preset for stage 0 plugins.  | 
 | [babel-jest](https://github.com/facebook/jest/tree/master/packages/babel-jest)  | Babel jest plugin | 
 | [babel-eslint](https://github.com/babel/babel-eslint)  | Allows you to lint ALL valid Babel code with the fantastic ESLint. | 
-| [immutable](https://github.com/facebook/immutable-js/)  | Immutable collections for JavaScript  | 
 | [immutability-helper](https://github.com/kolodny/immutability-helper)  | mutate a copy of data without changing the original source  | 
 | [jest](https://github.com/facebook/jest)  | A complete and easy to set up JavaScript testing solution. In fact, Jest works out of the box for any React project.  | 
 | [react-test-renderer](https://github.com/facebook/react/tree/master/packages/react-test-renderer)  | This package provides an experimental React renderer that can be used to render React components to pure JavaScript objects, without depending on the DOM or a native mobile environment.  | 
@@ -78,6 +77,7 @@
 | [body-parser](https://github.com/expressjs/body-parser)  | Node.js body parsing middleware | 
 | [bcrypt](https://github.com/pyca/bcrypt) | Modern password hashing for your software and your servers | 
 | [subscriptions-transport-ws](https://github.com/apollographql/subscriptions-transport-ws) |  A WebSocket client + server for GraphQL subscriptions | 
+| [aws-sdk](https://github.com/aws/aws-sdk-js) |  AWS SDK for JavaScript in the browser and Node.js | 
 
 
 ### Folder structure

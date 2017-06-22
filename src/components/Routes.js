@@ -11,6 +11,7 @@ import UserProfileContainer from '../containers/UserProfileContainer'
 import ErrorHandlerContainer from '../containers/ErrorHandlerContainer'
 import NotificationContainer from '../containers/NotificationContainer'
 import SearchWhileSpeakContainer from '../containers/SearchWhileSpeakContainer'
+import ChatContainer from '../containers/ChatContainer'
 import PrivateRoute from './PrivateRoute'
 
 class Routes extends React.Component {
@@ -19,7 +20,6 @@ class Routes extends React.Component {
 	render() {
 
 		const {isAuthenticated} = this.props
-
 		return <Router>
 			<div>
 				<ErrorHandlerContainer />
@@ -27,6 +27,7 @@ class Routes extends React.Component {
 				<ul>
 					<li><Link to="/">Home</Link></li>
 					{isAuthenticated?<li><Link to="/search">Search</Link></li>:''}
+					{isAuthenticated?<li><Link to="/chat">Chat</Link></li>:''}
 					<li><Link to="/profile">Profile</Link></li>
 				</ul>
 
@@ -34,6 +35,7 @@ class Routes extends React.Component {
 
 				<Route exact path="/" component={Home}/>
 				<Route exact path="/search" component={SearchWhileSpeakContainer}/>
+				<Route exact path="/chat" component={ChatContainer}/>
 				<Route path="/login" component={LoginContainer}/>
 				<Route path="/signup" component={SignUpContainer}/>
 

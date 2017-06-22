@@ -37,6 +37,7 @@ class UserDataContainer extends React.PureComponent {
 	render() {
 
 		const {loading} = this.state
+
 		if (loading)
 			return <div>loading user data...</div>
 

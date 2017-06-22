@@ -6,6 +6,7 @@ import App from './components/App'
 import configureStore from './store/index'
 
 const store = configureStore()
+
 render(
 	<App store={store} />,
 	document.getElementById('app')

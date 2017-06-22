@@ -59,7 +59,6 @@ class LoginContainer extends React.Component {
 		}).catch(error => {
 			this.setState({loading: false})
 		})
-
 	}
 
 	render() {
@@ -69,7 +68,7 @@ class LoginContainer extends React.Component {
 
 		if (redirectToReferrer) {
 			return (
-				<Redirect to={from}/>
+				<Redirect to={from} push={false}/>
 			)
 		}
 

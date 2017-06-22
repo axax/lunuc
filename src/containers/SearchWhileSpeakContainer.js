@@ -53,7 +53,6 @@ class SearchWhileSpeakContainer extends React.Component {
 
 	render() {
 
-
 		let pairs = []
 
 		this.state.recorded.forEach(

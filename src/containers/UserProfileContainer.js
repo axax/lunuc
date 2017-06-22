@@ -10,6 +10,7 @@ import * as UserActions from '../actions/UserAction'
 
 
 class UserProfileContainer extends React.Component {
+	
 	state = {
 		username: '',
 		usernameError: '',
@@ -20,6 +21,7 @@ class UserProfileContainer extends React.Component {
 
 	saveNoteTimeouts = {}
 
+	
 	saveNote = (id, value, timeout ) => {
 		clearTimeout(this.saveNoteTimeouts[id])
 		this.saveNoteTimeouts[id] = setTimeout(() => {
@@ -76,11 +78,6 @@ class UserProfileContainer extends React.Component {
 		}
 	}
 
-	componentWillReceiveProps(nextProps) {
-		if( nextProps.me )
-			this.setState({username: nextProps.me.username, note: nextProps.me.note})
-	}
-
 
 	updateProfile = (e) => {
 		e.preventDefault()
@@ -126,8 +123,10 @@ class UserProfileContainer extends React.Component {
 			})
 	}
 
-
-
+	componentWillReceiveProps(nextProps) {
+		if( nextProps.me )
+			this.setState({username: nextProps.me.username, note: nextProps.me.note})
+	}
 
 	render() {
 		const {username, usernameError, loading, note} = this.state
@@ -143,7 +142,7 @@ class UserProfileContainer extends React.Component {
 
 		let noteElements = []
 
-		let hasManageKeyvalue = me.role.capabilities.includes('manage_keyvalues')
+		let hasManageKeyvalue = me && me.role.capabilities.includes('manage_keyvalues')
 
 
 		if( note ) {

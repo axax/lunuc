@@ -148,9 +148,11 @@ export const chatResolver = (db) => ({
 		let chats = (await chatCollection.aggregate([
 			{
 				$match: {
-					users: {$in: [ObjectId(context.id)]}
-				},
-				$limit : 5
+					users: {$in: [ObjectId(context.id)]},
+				}
+			},
+			{
+				$limit: 5
 			},
 			{
 				$unwind: '$users' /* unwind because localFiled users is an array -> https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/ */
