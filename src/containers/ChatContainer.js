@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {gql, graphql, compose} from 'react-apollo'
 import ChatLink from '../components/chat/ChatLink'
 import ChatMessage from '../components/chat/ChatMessage'
+import AddChatMessage from '../components/chat/AddChatMessage'
 
 
 class ChatContainer extends React.Component {
@@ -22,6 +23,10 @@ class ChatContainer extends React.Component {
 		this.setState({selectedChat:chat})
 	}
 
+	handleAddChatMessageClick = (data) => {
+		console.log(data)
+	}
+	
 	render() {
 		const {chatsWithMessages,loading} = this.props
 		const {selectedChat} = this.state
@@ -43,6 +48,7 @@ class ChatContainer extends React.Component {
 						{selectedChat.messages.map((message, i)=>{
 							return <ChatMessage key={i} message={message} />
 						})}
+						<AddChatMessage onClick={this.handleAddChatMessageClick}/>
 					</div>
 					:''}
 			</div>
