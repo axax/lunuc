@@ -128,13 +128,12 @@ export const chatResolver = (db) => ({
 			{
 				$group: {
 					_id: '$_id',
-					name: {'$first':'$name'},
-					createdBy: {'$first':{$arrayElemAt: ['$createdBy', 0]} }, // return as as single doc not an array
-					users: {$addToSet: {_id:'$users._id',username:'$users.username'} }
+					name: {'$first': '$name'},
+					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
+					users: {$addToSet: {_id: '$users._id', username: '$users.username'}}
 				}
 			}
 		]).toArray())
-
 
 
 		return chats
@@ -173,6 +172,13 @@ export const chatResolver = (db) => ({
 					as: 'createdBy'
 				}
 			},
+			{$project: {
+				name: 1,
+				createdBy: 1,
+				users: 1,
+				/* return only the last 10 messages */
+				messages: {$slice: ['$messages', -10]}}
+			},
 			/* Resolve also user who sent message */
 			{$unwind: '$messages'},
 			{$unwind: '$messages.from'},
@@ -189,13 +195,17 @@ export const chatResolver = (db) => ({
 			{
 				$group: {
 					_id: '$_id',
-					name: {'$first':'$name'},
-					createdBy: {'$first':{$arrayElemAt: ['$createdBy', 0]} }, // return as as single doc not an array
-					users: {$addToSet: {_id:'$users._id',username:'$users.username'} },
-					messages: {$addToSet: {'_id': '$messages._id',
-						'from': '$messageFrom',
-						'to': '$messageTo',
-						'text': '$messages.text'} }
+					name: {'$first': '$name'},
+					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
+					users: {$addToSet: {_id: '$users._id', username: '$users.username'}},
+					messages: {
+						$addToSet: {
+							'_id': '$messages._id',
+							'from': '$messageFrom',
+							'to': '$messageTo',
+							'text': '$messages.text'
+						}
+					}
 				}
 			}
 		]).toArray())
@@ -260,13 +270,17 @@ export const chatResolver = (db) => ({
 			{
 				$group: {
 					_id: '$_id',
-					name: {'$first':'$name'},
-					createdBy: {'$first':{$arrayElemAt: ['$createdBy', 0]} }, // return as as single doc not an array
-					users: {$addToSet: {_id:'$users._id',username:'$users.username'} },
-					messages: {$addToSet: {'_id': '$messages._id',
-						'from': '$messageFrom',
-						'to': '$messageTo',
-						'text': '$messages.text'} }
+					name: {'$first': '$name'},
+					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
+					users: {$addToSet: {_id: '$users._id', username: '$users.username'}},
+					messages: {
+						$addToSet: {
+							'_id': '$messages._id',
+							'from': '$messageFrom',
+							'to': '$messageTo',
+							'text': '$messages.text'
+						}
+					}
 				}
 			}
 		]).next())
