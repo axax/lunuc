@@ -1,4 +1,6 @@
 export const chatSchemaRaw = `
+
+  # Same as above but with ids resolved
   type Message {
   	_id: ID! # unique id for message
     to: Chat! # chat message was sent in

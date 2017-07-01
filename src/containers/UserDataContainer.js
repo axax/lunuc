@@ -16,7 +16,7 @@ class UserDataContainer extends React.PureComponent {
 		const {client, userActions} = this.props
 
 		client.query({
-			fetchPolicy: 'network-only',
+			fetchPolicy: 'cache-first',
 			query: gql`query {me{username email _id note{_id value}role{capabilities}}}`,
 			variables: {
 				_errorHandling: false

@@ -51,7 +51,19 @@ export const chatResolver = (db) => ({
 			throw new Error('Message was not inserted')
 		}
 
-		return newMessage
+
+
+		return {
+			_id: newMessage._id,
+			to: {
+				_id: newMessage.to
+			},
+			from:{
+				_id: newMessage.from,
+				username: context.username
+			},
+			text: newMessage.text
+		}
 	},
 	addUserToChat: async ({chatId, userId}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
@@ -180,8 +192,8 @@ export const chatResolver = (db) => ({
 				messages: {$slice: ['$messages', -10]}}
 			},
 			/* Resolve also user who sent message */
-			{$unwind: '$messages'},
-			{$unwind: '$messages.from'},
+			{$unwind: {path:'$messages',preserveNullAndEmptyArrays: true}},
+			{$unwind: {path:'$messages.from',preserveNullAndEmptyArrays: true}},
 			{
 				$lookup: {
 					from: 'User',
@@ -190,7 +202,7 @@ export const chatResolver = (db) => ({
 					as: 'messageFrom'
 				}
 			},
-			{$unwind: '$messageFrom'},
+			{$unwind: {path:'$messageFrom',preserveNullAndEmptyArrays: true}},
 			// Group back to arrays
 			{
 				$group: {
@@ -199,16 +211,27 @@ export const chatResolver = (db) => ({
 					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
 					users: {$addToSet: {_id: '$users._id', username: '$users.username'}},
 					messages: {
-						$addToSet: {
-							'_id': '$messages._id',
-							'from': '$messageFrom',
-							'to': '$messageTo',
-							'text': '$messages.text'
+						$addToSet:{
+							_id: '$messages._id',
+							from: '$messageFrom',
+							to: '$messageTo',
+							text: '$messages.text'
 						}
 					}
 				}
+			},
+			{
+				$project: {
+					name: 1,
+					createdBy: 1,
+					users: 1,
+					/* return empty array if there are no messages */
+					messages: {$cond:[{$eq:[{$arrayElemAt: ['$messages', 0]}, {}]},[],'$messages']}
+				}
 			}
 		]).toArray())
+
+		//console.log(chats)
 
 		return chats
 	},

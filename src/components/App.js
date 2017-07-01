@@ -25,14 +25,16 @@ class App extends React.PureComponent {
 		if( Environment.REDUX_PERSIST ) {
 			const transform = createTransform(
 				(state, key) => {
-
+					if( state.optimistic.length > 0) {
+						console.log('optimistic call')
+						return
+					}
 					return state
 				},
 				(state, key) => {
 					let newState = Object.assign({}, state)
 					newState.mutations = {}
 					newState.queries = {}
-
 					// Filter some queries we don't want to persist
 					newState.data = Object.keys(state.data)
 						.filter(key => key.indexOf('$ROOT_QUERY.login') < 0 && key.indexOf('ROOT_QUERY.notification') < 0 && key.indexOf('ROOT_SUBSCRIPTION.notification') < 0)
