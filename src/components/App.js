@@ -13,7 +13,7 @@ import PropTypes from 'prop-types'
 import {ApolloProvider} from 'react-apollo'
 import {client} from '../middleware/index'
 
-import Routes from './Routes'
+import Routes from './routing/Routes'
 import UserDataContainer from '../containers/UserDataContainer'
 import Environment from '../environment'
 

@@ -32,7 +32,7 @@
     "url": "https://github.com/axax/issues"
   },
   "devDependencies": {
-    "aws-sdk": "^2.75.0",
+    "aws-sdk": "^2.80.0",
     "babel-core": "^6.25.0",
     "babel-eslint": "^7.2.3",
     "babel-jest": "^19.0.0",
@@ -61,8 +61,8 @@
     "react-redux": "^5.0.5",
     "react-router-dom": "^4.1.1",
     "react-test-renderer": "^15.6.1",
-    "redux": "^3.7.0",
-    "redux-persist": "^4.8.1",
+    "redux": "^3.7.1",
+    "redux-persist": "^4.8.2",
     "subscriptions-transport-ws": "^0.6.0",
     "webpack": "^2.6.1",
     "webpack-dev-server": "^2.5.0"

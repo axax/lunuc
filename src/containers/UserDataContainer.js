@@ -1,7 +1,7 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
-import PropTypes from 'prop-types'
 import * as UserActions from '../actions/UserAction'
 import {withApollo, gql} from 'react-apollo'
 import ApolloClient from 'apollo-client'
@@ -47,7 +47,7 @@ class UserDataContainer extends React.PureComponent {
 
 
 UserDataContainer.propTypes = {
-	client: React.PropTypes.instanceOf(ApolloClient).isRequired,
+	client: PropTypes.instanceOf(ApolloClient).isRequired,
 	children: PropTypes.object.isRequired,
 	/* UserReducer */
 	userActions: PropTypes.object.isRequired

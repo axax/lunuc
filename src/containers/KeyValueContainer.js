@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import KeyValuePair from '../components/KeyValuePair'
-import KeyValuePairAdder from '../components/KeyValuePairAdder'
+import KeyValuePair from '../components/keyvalue/KeyValuePair'
+import KeyValuePairAdder from '../components/keyvalue/KeyValuePairAdder'
 import {gql, graphql, compose} from 'react-apollo'
 import update from 'immutability-helper'
 

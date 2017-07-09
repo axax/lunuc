@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 
@@ -68,7 +69,7 @@ class SearchWhileSpeakContainer extends React.Component {
 
 
 SearchWhileSpeakContainer.propTypes = {
-	client: React.PropTypes.instanceOf(ApolloClient).isRequired
+	client: PropTypes.instanceOf(ApolloClient).isRequired
 }
 const SearchWhileSpeakContainerWithApollo = withApollo(SearchWhileSpeakContainer)
 

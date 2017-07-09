@@ -26,7 +26,7 @@ export const chatSchemaRaw = `
 	type Mutation {
 		createChat(name: String!): Chat	
 		createMessage(chatId: ID!, text: String!): Message
-		
+		deleteMessage(messageId: ID!): Message
 		
 		
 		addUserToChat(userId: ID!, chatId: ID!): Chat

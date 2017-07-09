@@ -25,6 +25,11 @@ class ChatContainer extends React.Component {
 		this.setState({selectedChatId:chat._id})
 	}
 
+	handleMessageDeleteClick = (message) => {
+		console.log('delete',message)
+		
+	}
+
 	handleAddChatMessageClick = (data) => {
 		const {selectedChatId} = this.state
 		const {createMessage} = this.props
@@ -43,7 +48,7 @@ class ChatContainer extends React.Component {
 		if( !chatsWithMessages )
 			return null
 
-		console.log('render')
+		console.log('render chat', loading)
 
 		let selectedChat=false
 
@@ -62,8 +67,17 @@ class ChatContainer extends React.Component {
 				{selectedChat?
 					<div>
 						<h2>{selectedChat.name}</h2>
+
+						<div>
+							<strong>users: </strong>
+							{selectedChat.users.map((user, i)=>{
+								const isCreator = user._id===selectedChat.createdBy._id
+								return <span key={i} style={{fontWeight:(isCreator?'bold':'normal')}}>{user.username}{(i<selectedChat.users.length-1?', ':'')}</span>
+							})}
+						</div>
+
 						{selectedChat.messages.slice(0).reverse().map((message, i)=>{
-							return <ChatMessage key={i} message={message} />
+							return <ChatMessage key={i} message={message} onDeleteClick={this.handleMessageDeleteClick.bind(this,message)} />
 						})}
 						<AddChatMessage onClick={this.handleAddChatMessageClick}/>
 					</div>
@@ -89,6 +103,10 @@ const gqlQuery = gql`query{chatsWithMessages{_id name messages{_id text from{use
 
 const gqlInsertMessage = gql`mutation createMessage($chatId: ID!, $text: String!) {
 		createMessage(chatId:$chatId,text:$text){_id text to{_id} from{_id,username}}
+	}`
+
+const gqlDeleteMessage = gql`mutation deleteMessage($messageId: ID!) {
+		deleteMessage(messageId:$messageId){_id}
 	}`
 
 const ChatContainerWithGql = compose(
@@ -122,7 +140,6 @@ const ChatContainerWithGql = compose(
 					optimisticResponse: {
 						__typename: 'Mutation',
 						createMessage: {
-							optimimstic:true,
 							_id: '#'+new Date().getTime(),
 							from:{
 								__typename:'UserPublic',

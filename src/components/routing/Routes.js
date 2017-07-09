@@ -5,13 +5,13 @@ import PropTypes from 'prop-types'
 
 import {BrowserRouter as Router, Route, Link, Redirect} from 'react-router-dom'
 
-import LoginContainer from '../containers/LoginContainer'
-import SignUpContainer from '../containers/SignUpContainer'
-import UserProfileContainer from '../containers/UserProfileContainer'
-import ErrorHandlerContainer from '../containers/ErrorHandlerContainer'
-import NotificationContainer from '../containers/NotificationContainer'
-import SearchWhileSpeakContainer from '../containers/SearchWhileSpeakContainer'
-import ChatContainer from '../containers/ChatContainer'
+import LoginContainer from '../../containers/LoginContainer'
+import SignUpContainer from '../../containers/SignUpContainer'
+import UserProfileContainer from '../../containers/UserProfileContainer'
+import ErrorHandlerContainer from '../../containers/ErrorHandlerContainer'
+import NotificationContainer from '../../containers/NotificationContainer'
+import SearchWhileSpeakContainer from '../../containers/SearchWhileSpeakContainer'
+import ChatContainer from '../../containers/ChatContainer'
 import PrivateRoute from './PrivateRoute'
 
 class Routes extends React.Component {

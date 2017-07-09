@@ -309,5 +309,28 @@ export const chatResolver = (db) => ({
 		]).next())
 
 		return chat
+	},
+	deleteMessage: async ({messageId}, {context}) => {
+		Util.checkIfUserIsLoggedIn(context)
+		const chatCollection = db.collection('Chat')
+
+		var result = null
+		if (!messageId) {
+			throw new Error('MessageId is missing')
+		} else {
+			//result = (await chatCollection.findOne({'messages._id': ObjectId(messageId)}))
+			result = (await chatCollection.updateOne({'messages._id': ObjectId(messageId)}, {$pull: {messages: {_id: ObjectId(messageId)}}}))
+
+
+			console.log(result)
+			//
+
+			if (result.matchedCount !== 1 || result.modifiedCount !== 1) {
+				throw new Error('Message doesn\'t exist')
+			}
+		}
+
+		return {value: '', _id: messageId}
+
 	}
 })
