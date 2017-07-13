@@ -52,17 +52,17 @@ export const chatResolver = (db) => ({
 		}
 
 
-
 		return {
 			_id: newMessage._id,
 			to: {
 				_id: newMessage.to
 			},
-			from:{
+			from: {
 				_id: newMessage.from,
 				username: context.username
 			},
-			text: newMessage.text
+			text: newMessage.text,
+			status: 'created'
 		}
 	},
 	addUserToChat: async ({chatId, userId}, {context}) => {
@@ -184,16 +184,18 @@ export const chatResolver = (db) => ({
 					as: 'createdBy'
 				}
 			},
-			{$project: {
-				name: 1,
-				createdBy: 1,
-				users: 1,
-				/* return only the last 10 messages */
-				messages: {$slice: ['$messages', -10]}}
+			{
+				$project: {
+					name: 1,
+					createdBy: 1,
+					users: 1,
+					/* return only the last 10 messages */
+					messages: {$slice: ['$messages', -10]}
+				}
 			},
 			/* Resolve also user who sent message */
-			{$unwind: {path:'$messages',preserveNullAndEmptyArrays: true}},
-			{$unwind: {path:'$messages.from',preserveNullAndEmptyArrays: true}},
+			{$unwind: {path: '$messages', preserveNullAndEmptyArrays: true}},
+			{$unwind: {path: '$messages.from', preserveNullAndEmptyArrays: true}},
 			{
 				$lookup: {
 					from: 'User',
@@ -202,7 +204,7 @@ export const chatResolver = (db) => ({
 					as: 'messageFrom'
 				}
 			},
-			{$unwind: {path:'$messageFrom',preserveNullAndEmptyArrays: true}},
+			{$unwind: {path: '$messageFrom', preserveNullAndEmptyArrays: true}},
 			// Group back to arrays
 			{
 				$group: {
@@ -211,7 +213,7 @@ export const chatResolver = (db) => ({
 					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
 					users: {$addToSet: {_id: '$users._id', username: '$users.username'}},
 					messages: {
-						$addToSet:{
+						$addToSet: {
 							_id: '$messages._id',
 							from: '$messageFrom',
 							to: '$messageTo',
@@ -226,7 +228,7 @@ export const chatResolver = (db) => ({
 					createdBy: 1,
 					users: 1,
 					/* return empty array if there are no messages */
-					messages: {$cond:[{$eq:[{$arrayElemAt: ['$messages', 0]}, {}]},[],'$messages']}
+					messages: {$cond: [{$eq: [{$arrayElemAt: ['$messages', 0]}, {}]}, [], '$messages']}
 				}
 			}
 		]).toArray())
@@ -310,7 +312,7 @@ export const chatResolver = (db) => ({
 
 		return chat
 	},
-	deleteMessage: async ({messageId}, {context}) => {
+	deleteMessage: async ({messageId, chatId}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 		const chatCollection = db.collection('Chat')
 
@@ -318,19 +320,16 @@ export const chatResolver = (db) => ({
 		if (!messageId) {
 			throw new Error('MessageId is missing')
 		} else {
-			//result = (await chatCollection.findOne({'messages._id': ObjectId(messageId)}))
 			result = (await chatCollection.updateOne({'messages._id': ObjectId(messageId)}, {$pull: {messages: {_id: ObjectId(messageId)}}}))
 
-
-			console.log(result)
-			//
+			//console.log(result)
 
 			if (result.matchedCount !== 1 || result.modifiedCount !== 1) {
 				throw new Error('Message doesn\'t exist')
 			}
 		}
 
-		return {value: '', _id: messageId}
+		return {value: '', _id: messageId, to: {_id: chatId}, status: 'deleted'}
 
 	}
 })

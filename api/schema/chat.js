@@ -6,6 +6,7 @@ export const chatSchemaRaw = `
     to: Chat! # chat message was sent in
     from: UserPublic! # user who sent the message
     text: String! # message text
+    status: String # status of the message
   }
   
 	type Chat {
@@ -26,7 +27,7 @@ export const chatSchemaRaw = `
 	type Mutation {
 		createChat(name: String!): Chat	
 		createMessage(chatId: ID!, text: String!): Message
-		deleteMessage(messageId: ID!): Message
+		deleteMessage(messageId: ID!, chatId: ID): Message #chatId is optional. you can set it if you need it in the response
 		
 		
 		addUserToChat(userId: ID!, chatId: ID!): Chat

@@ -3,11 +3,26 @@ import PropTypes from 'prop-types'
 import Util from '../../util'
 
 const ChatMessage = ({message, onClick, onDeleteClick}) => {
-	return <div onClick={onClick} style={{padding:20+'px',marginBottom: 20+'px',width: 'auto', backgroundColor: (message._id.indexOf('#')===0?'#90afe5':'#fffcea')}}>
+
+	const statusBackgroundColor = (status) => {
+		if(status==='creating'){
+			return '#90afe5'
+		}else if(status==='deleting'){
+			return '#ff0000'
+		}
+		return '#fffcea'
+	}
+
+	if ( message.status=='deleted'){
+		return null
+	}
+
+	return <div onClick={onClick} style={{padding:20+'px',marginBottom: 20+'px',width: 'auto', backgroundColor: statusBackgroundColor(message.status) }}>
 		<strong><small>{message.from.username}</small></strong><br />
 		{message.text}<br />
 		<small><small>{Util.formattedDatetimeFromObjectId(message._id)}</small></small>
-		<button onClick={onDeleteClick}>Delete</button>
+		{message.status!=='deleting'?
+		<button onClick={onDeleteClick}>Delete</button>:''}
 	</div>
 }
 
