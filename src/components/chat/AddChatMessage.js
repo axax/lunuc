@@ -14,6 +14,7 @@ export default class AddChatMessage extends React.Component {
 	onSendCick = () => {
 		this.props.onClick({message: this.state.message})
 		this.setState({message:''})
+		this.textInput.focus()
 	}
 
 	handleKeyPress = (e) => {
@@ -27,7 +28,7 @@ export default class AddChatMessage extends React.Component {
 	render() {
 		return (
 			<div>
-				<textarea onChange={this.onChangeMessage} onKeyPress={this.handleKeyPress} value={this.state.message}/>
+				<textarea ref={(e) => { this.textInput = e }} onChange={this.onChangeMessage} onKeyPress={this.handleKeyPress} value={this.state.message}/>
 				<button onClick={this.onSendCick}>Send</button>
 			</div>
 		)
