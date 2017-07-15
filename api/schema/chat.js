@@ -34,7 +34,6 @@ export const chatSchemaRaw = `
 		removeUserToChat(userId: ID!, chatId: ID!): Chat
 	}
 	
-	
 	type Subscription {
 		newMessage: Message
 	}

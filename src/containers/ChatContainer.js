@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {gql, graphql, compose} from 'react-apollo'
-import ChatLink from '../components/chat/ChatLink'
+import {Link} from 'react-router-dom'
 import ChatMessage from '../components/chat/ChatMessage'
 import AddChatMessage from '../components/chat/AddChatMessage'
 import update from 'immutability-helper'
@@ -9,51 +9,39 @@ import {connect} from 'react-redux'
 
 
 class ChatContainer extends React.Component {
-	state = {
-		selectedChatId: false
-	}
 
-	shouldComponentUpdate(nextProps) {
-		// It is not nessecary to render component again
-		/*if( nextProps.loading===true)
-		 return false*/
-		return true
-	}
-
-
-	handleChatClick = (chat) => {
-		this.setState({selectedChatId: chat._id})
+	componentWillMount() {
+		this.props.newMessageSubscribe()
 	}
 
 	handleMessageDeleteClick = (message) => {
-		const {selectedChatId} = this.state
-		const {deleteMessage} = this.props
+		const {deleteMessage, match} = this.props
+		const selectedChatId = match.params.id
 
 		deleteMessage({
 			messageId: message._id,
 			chatId: selectedChatId
-		}).then(({data}) => {
-		})
+		}).then(({data}) => {})
 
 
 	}
 
 	handleAddChatMessageClick = (data) => {
-		const {selectedChatId} = this.state
-		const {createMessage} = this.props
+		const {createMessage, match} = this.props
+		const selectedChatId = match.params.id
 
 		if (selectedChatId) {
 			createMessage({
 				chatId: selectedChatId,
 				text: data.message
-			}).then(({data}) => {
-			})
+			}).then(({data}) => {})
 		}
 	}
 
 	render() {
-		const {chatsWithMessages, loading} = this.props
-		const {selectedChatId} = this.state
+		const {chatsWithMessages, loading, match} = this.props
+		const selectedChatId = match.params.id
+
 		if (!chatsWithMessages)
 			return null
 
@@ -69,7 +57,8 @@ class ChatContainer extends React.Component {
 						if (chat._id === selectedChatId) {
 							selectedChat = chat
 						}
-						return <ChatLink onClick={this.handleChatClick.bind(this, chat)} chat={chat} key={i}/>
+						const url = '/chat/'+chat._id
+						return <Link to={url} key={i}>{chat.name}</Link>
 					})}
 				</ul>
 
@@ -100,24 +89,24 @@ class ChatContainer extends React.Component {
 
 
 ChatContainer.propTypes = {
+	/* routing params */
+	match: PropTypes.object,
 	/* apollo client props */
 	chatsWithMessages: PropTypes.array,
 	loading: PropTypes.bool,
 	createMessage: PropTypes.func.isRequired,
 	deleteMessage: PropTypes.func.isRequired,
-	user: PropTypes.object.isRequired
+	user: PropTypes.object.isRequired,
+	/*Subscribtion*/
+	newMessageSubscribe: PropTypes.func.isRequired
 }
 
 
 const gqlQuery = gql`query{chatsWithMessages{_id name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
+const gqlInsertMessage = gql`mutation createMessage($chatId: ID!, $text: String!) {createMessage(chatId:$chatId,text:$text){_id text status to{_id} from{_id,username}}}`
+const gqlDeleteMessage = gql`mutation deleteMessage($messageId: ID!,$chatId: ID) {deleteMessage(messageId:$messageId,chatId:$chatId){_id status to{_id}}}`
+const gqlNewMessage = gql`subscription{newMessage{_id}}`
 
-const gqlInsertMessage = gql`mutation createMessage($chatId: ID!, $text: String!) {
-		createMessage(chatId:$chatId,text:$text){_id text status to{_id} from{_id,username}}
-	}`
-
-const gqlDeleteMessage = gql`mutation deleteMessage($messageId: ID!,$chatId: ID) {
-		deleteMessage(messageId:$messageId,chatId:$chatId){_id status to{_id}}
-	}`
 
 const ChatContainerWithGql = compose(
 	graphql(gqlQuery, {
@@ -125,13 +114,11 @@ const ChatContainerWithGql = compose(
 			return {
 				fetchPolicy: 'cache-and-network',
 				reducer: (prev, {operationName, type, result: {data}}) => {
+
 					if (type === 'APOLLO_MUTATION_RESULT') {
-
 						if (operationName === 'createMessage' && data && data.createMessage && data.createMessage._id) {
-
 							const idx = prev.chatsWithMessages.findIndex((e) => e._id === data.createMessage.to._id)
 							if (idx >= 0) {
-								//console.log(prev,update(prev, {chatsWithMessages:{[idx]:{messages: {$splice: [[0,0,data.createMessage]] }}}}) )
 								return update(prev, {chatsWithMessages: {[idx]: {messages: {$splice: [[0, 0, data.createMessage]]}}}})
 							}
 						}
@@ -140,10 +127,21 @@ const ChatContainerWithGql = compose(
 				}
 			}
 		},
-		props: ({data: {loading, chatsWithMessages}}) => ({
-			chatsWithMessages,
-			loading
-		})
+		props: props => {
+			const {loading,chatsWithMessages} = props.data
+			return {
+				chatsWithMessages,
+				loading,
+				newMessageSubscribe: params => {
+					return props.data.subscribeToMore({
+						document: gqlNewMessage,
+						updateQuery: (prev, {subscriptionData}) => {
+							console.log('xxxx',subscriptionData)
+						}
+					})
+				}
+			}
+		}
 	}),
 	graphql(gqlInsertMessage, {
 		props: ({ownProps, mutate}) => ({

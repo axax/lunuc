@@ -27,7 +27,7 @@ class Routes extends React.Component {
 				<ul>
 					<li><Link to="/">Home</Link></li>
 					{isAuthenticated?<li><Link to="/search">Search</Link></li>:''}
-					{isAuthenticated?<li><Link to="/chat">Chat</Link></li>:''}
+					{isAuthenticated?<li><Link to="/chat">My chats</Link></li>:''}
 					<li><Link to="/profile">Profile</Link></li>
 				</ul>
 
@@ -35,7 +35,7 @@ class Routes extends React.Component {
 
 				<Route exact path="/" component={Home}/>
 				<Route exact path="/search" component={SearchWhileSpeakContainer}/>
-				<Route exact path="/chat" component={ChatContainer}/>
+				<Route exact path="/chat/:id*" component={ChatContainer}/>
 				<Route path="/login" component={LoginContainer}/>
 				<Route path="/signup" component={SignUpContainer}/>
 

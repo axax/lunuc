@@ -1,12 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {withRouter} from 'react-router-dom'
 import {gql, graphql, compose} from 'react-apollo'
-import ApolloClient from 'apollo-client'
 import update from 'immutability-helper'
 
 
-export class NotificationContainer extends React.Component {
+class NotificationContainer extends React.Component {
 	componentWillMount() {
 		this.props.newNotification()
 	}

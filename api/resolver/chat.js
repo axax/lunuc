@@ -6,7 +6,6 @@ import {pubsub} from '../subscription'
 
 
 export const chatResolver = (db) => ({
-
 	createChat: async ({name}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
@@ -52,7 +51,7 @@ export const chatResolver = (db) => ({
 		}
 
 
-		return {
+		const returnMessage = {
 			_id: newMessage._id,
 			to: {
 				_id: newMessage.to
@@ -64,6 +63,31 @@ export const chatResolver = (db) => ({
 			text: newMessage.text,
 			status: 'created'
 		}
+
+		pubsub.publish('newMessage', returnMessage )
+
+
+		return returnMessage
+	},
+	deleteMessage: async ({messageId, chatId}, {context}) => {
+		Util.checkIfUserIsLoggedIn(context)
+		const chatCollection = db.collection('Chat')
+
+		var result = null
+		if (!messageId) {
+			throw new Error('MessageId is missing')
+		} else {
+			result = (await chatCollection.updateOne({'messages._id': ObjectId(messageId)}, {$pull: {messages: {_id: ObjectId(messageId)}}}))
+
+			//console.log(result)
+
+			if (result.matchedCount !== 1 || result.modifiedCount !== 1) {
+				throw new Error('Message doesn\'t exist')
+			}
+		}
+
+		return {value: '', _id: messageId, to: {_id: chatId}, status: 'deleted'}
+
 	},
 	addUserToChat: async ({chatId, userId}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
@@ -311,25 +335,5 @@ export const chatResolver = (db) => ({
 		]).next())
 
 		return chat
-	},
-	deleteMessage: async ({messageId, chatId}, {context}) => {
-		Util.checkIfUserIsLoggedIn(context)
-		const chatCollection = db.collection('Chat')
-
-		var result = null
-		if (!messageId) {
-			throw new Error('MessageId is missing')
-		} else {
-			result = (await chatCollection.updateOne({'messages._id': ObjectId(messageId)}, {$pull: {messages: {_id: ObjectId(messageId)}}}))
-
-			//console.log(result)
-
-			if (result.matchedCount !== 1 || result.modifiedCount !== 1) {
-				throw new Error('Message doesn\'t exist')
-			}
-		}
-
-		return {value: '', _id: messageId, to: {_id: chatId}, status: 'deleted'}
-
 	}
 })

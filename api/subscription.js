@@ -17,6 +17,17 @@ const subscriptionManager = new SubscriptionManager({
 					}
 				},
 			}
+		},
+		newMessage: (options, args) => {
+			return {
+				newMessage: {
+					filter: (data) => {
+						console.log('newMessage',data)
+						return true
+						//return testRun.id === args.testRunId;
+					}
+				},
+			}
 		}
 	}
 })
@@ -26,7 +37,7 @@ const subscriptionManager = new SubscriptionManager({
 setInterval(()=>{
 	counter++
 	pubsub.publish('notification', {notification: {key: 'test.notification', message: `Notification Nr. ${counter}`}} )
-},10000)*/
+},4000)*/
 
 
 export { subscriptionManager, pubsub }
