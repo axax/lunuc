@@ -1,5 +1,5 @@
 import React from 'react'
-import {persistStore,createTransform} from 'redux-persist'
+import {persistStore, createTransform} from 'redux-persist'
 import PropTypes from 'prop-types'
 
 
@@ -19,25 +19,33 @@ import Environment from '../environment'
 
 
 class App extends React.PureComponent {
-	state = { rehydrated: !Environment.REDUX_PERSIST }
+	state = {rehydrated: !Environment.REDUX_PERSIST}
 
 	componentWillMount() {
-		if( Environment.REDUX_PERSIST ) {
+		if (Environment.REDUX_PERSIST) {
 			const transform = createTransform(
 				(state, key) => {
-					if( state.optimistic.length > 0) {
+
+					if (state.optimistic.length > 0) {
 						console.log('optimistic call')
 						return
 					}
+
 					return state
 				},
 				(state, key) => {
 					let newState = Object.assign({}, state)
-					newState.mutations = {}
-					newState.queries = {}
+					/* newState.mutations = {}
+					 newState.queries = {}*/
+
 					// Filter some queries we don't want to persist
 					newState.data = Object.keys(state.data)
-						.filter(key => key.indexOf('$ROOT_QUERY.login') < 0 && key.indexOf('ROOT_QUERY.notification') < 0 && key.indexOf('ROOT_SUBSCRIPTION.notification') < 0)
+						.filter(key => (
+								key.indexOf('$ROOT_QUERY.login') < 0 &&
+								key.indexOf('ROOT_QUERY.notification') < 0 &&
+								key.indexOf('ROOT_SUBSCRIPTION.notification') < 0
+							)
+						)
 						.reduce((res, key) => (res[key] = state.data[key], res), {})
 
 					return newState
@@ -52,7 +60,7 @@ class App extends React.PureComponent {
 	}
 
 	render() {
-		if(!this.state.rehydrated)
+		if (!this.state.rehydrated)
 			return <div>loading...</div>
 
 		return (

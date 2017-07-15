@@ -21,7 +21,7 @@ const ChatMessage = ({message, onClick, onDeleteClick}) => {
 		<strong><small>{message.from.username}</small></strong><br />
 		{message.text}<br />
 		<small><small>{Util.formattedDatetimeFromObjectId(message._id)}</small></small>
-		{message.status!=='deleting'?
+		{message.status!=='deleting' && message.status!=='creating'?
 		<button onClick={onDeleteClick}>Delete</button>:''}
 	</div>
 }

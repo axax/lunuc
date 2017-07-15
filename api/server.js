@@ -20,7 +20,7 @@ dbConnection((db) => dbPreparation(db, () => {
 
 		// delay response
 		/*app.use(function (req, res, next) {
-		 setTimeout(next, 8000)
+		 setTimeout(next, 4000)
 		 })*/
 
 		// Authentication

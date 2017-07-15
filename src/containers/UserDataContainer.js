@@ -12,21 +12,28 @@ class UserDataContainer extends React.PureComponent {
 	}
 
 	getUserData = () => {
-		this.setState({loading: true})
 		const {client, userActions} = this.props
 
-		client.query({
-			fetchPolicy: 'cache-first',
-			query: gql`query {me{username email _id note{_id value}role{capabilities}}}`,
-			variables: {
-				_errorHandling: false
-			}
-		}).then(response => {
-			userActions.setUser(response.data.me,true)
-			this.setState({loading: false})
-		}).catch(error => {
-			this.setState({loading: false})
-		})
+		const token = localStorage.getItem('token')
+
+		if( token && token != ''){
+			this.setState({loading: true})
+
+			client.query({
+				fetchPolicy: 'cache-first',
+				query: gql`query {me{username email _id note{_id value}role{capabilities}}}`,
+				variables: {
+					_errorHandling: false
+				}
+			}).then(response => {
+				userActions.setUser(response.data.me, true)
+				this.setState({loading: false})
+			}).catch(error => {
+				this.setState({loading: false})
+			})
+		}
+
+
 	}
 
 	componentWillMount() {
