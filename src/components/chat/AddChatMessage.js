@@ -29,7 +29,7 @@ export default class AddChatMessage extends React.Component {
 		return (
 			<div>
 				<textarea ref={(e) => { this.textInput = e }} onChange={this.onChangeMessage} onKeyPress={this.handleKeyPress} value={this.state.message}/>
-				<button onClick={this.onSendCick}>Send</button>
+				<button onClick={this.onSendCick} disabled={(this.state.message.trim()=='')}>Send</button>
 			</div>
 		)
 	}
