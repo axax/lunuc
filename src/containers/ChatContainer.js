@@ -21,7 +21,8 @@ class ChatContainer extends React.Component {
 		deleteMessage({
 			messageId: message._id,
 			chatId: selectedChatId
-		}).then(({data}) => {})
+		}).then(({data}) => {
+		})
 
 
 	}
@@ -34,7 +35,8 @@ class ChatContainer extends React.Component {
 			createMessage({
 				chatId: selectedChatId,
 				text: data.message
-			}).then(({data}) => {})
+			}).then(({data}) => {
+			})
 		}
 	}
 
@@ -57,7 +59,7 @@ class ChatContainer extends React.Component {
 						if (chat._id === selectedChatId) {
 							selectedChat = chat
 						}
-						const url = '/chat/'+chat._id
+						const url = '/chat/' + chat._id
 						return <Link to={url} key={i}>{chat.name}</Link>
 					})}
 				</ul>
@@ -105,8 +107,20 @@ ChatContainer.propTypes = {
 const gqlQuery = gql`query{chatsWithMessages{_id name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
 const gqlInsertMessage = gql`mutation createMessage($chatId: ID!, $text: String!) {createMessage(chatId:$chatId,text:$text){_id text status to{_id} from{_id,username}}}`
 const gqlDeleteMessage = gql`mutation deleteMessage($messageId: ID!,$chatId: ID) {deleteMessage(messageId:$messageId,chatId:$chatId){_id status to{_id}}}`
-const gqlNewMessage = gql`subscription{newMessage{_id}}`
+const gqlNewMessage = gql`subscription{newMessage{_id text status from{_id}to{_id}}}`
 
+
+const insertMessage = (prev, newMessage) => {
+	const chatIdx = prev.chatsWithMessages.findIndex((e) => e._id === newMessage.to._id)
+
+	if (chatIdx >= 0) {
+		const msgIdx = prev.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === newMessage._id)
+		if (msgIdx < 0) {
+			return update(prev, {chatsWithMessages: {[chatIdx]: {messages: {$splice: [[0, 0, newMessage]]}}}})
+		}
+	}
+	return prev
+}
 
 const ChatContainerWithGql = compose(
 	graphql(gqlQuery, {
@@ -114,13 +128,9 @@ const ChatContainerWithGql = compose(
 			return {
 				fetchPolicy: 'cache-and-network',
 				reducer: (prev, {operationName, type, result: {data}}) => {
-
 					if (type === 'APOLLO_MUTATION_RESULT') {
 						if (operationName === 'createMessage' && data && data.createMessage && data.createMessage._id) {
-							const idx = prev.chatsWithMessages.findIndex((e) => e._id === data.createMessage.to._id)
-							if (idx >= 0) {
-								return update(prev, {chatsWithMessages: {[idx]: {messages: {$splice: [[0, 0, data.createMessage]]}}}})
-							}
+							return insertMessage(prev, data.createMessage)
 						}
 					}
 					return prev
@@ -128,7 +138,7 @@ const ChatContainerWithGql = compose(
 			}
 		},
 		props: props => {
-			const {loading,chatsWithMessages} = props.data
+			const {loading, chatsWithMessages} = props.data
 			return {
 				chatsWithMessages,
 				loading,
@@ -136,7 +146,7 @@ const ChatContainerWithGql = compose(
 					return props.data.subscribeToMore({
 						document: gqlNewMessage,
 						updateQuery: (prev, {subscriptionData}) => {
-							console.log('xxxx',subscriptionData)
+							return insertMessage(prev, subscriptionData.data.newMessage)
 						}
 					})
 				}
@@ -192,13 +202,13 @@ const ChatContainerWithGql = compose(
 						// Read the data from the cache for this query.
 						/*const data = store.readQuery({query: gqlQuery})
 
-						// Add our Message from the mutation to the end.
-						const idx = data.chatsWithMessages.findIndex((e) => e._id === deleteMessage.to._id)
-						if (idx >= 0) {
-							const msgIdx = data.chatsWithMessages[idx].messages.findIndex((e) => e._id === deleteMessage._id)
-							// Write the data back to the cache.
-							store.writeQuery({query: gqlQuery, data})
-						}*/
+						 // Add our Message from the mutation to the end.
+						 const idx = data.chatsWithMessages.findIndex((e) => e._id === deleteMessage.to._id)
+						 if (idx >= 0) {
+						 const msgIdx = data.chatsWithMessages[idx].messages.findIndex((e) => e._id === deleteMessage._id)
+						 // Write the data back to the cache.
+						 store.writeQuery({query: gqlQuery, data})
+						 }*/
 					}
 				})
 			}

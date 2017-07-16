@@ -64,7 +64,7 @@ export const chatResolver = (db) => ({
 			status: 'created'
 		}
 
-		pubsub.publish('newMessage', returnMessage )
+		pubsub.publish('newMessage', {newMessage:returnMessage} )
 
 
 		return returnMessage

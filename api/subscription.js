@@ -22,9 +22,7 @@ const subscriptionManager = new SubscriptionManager({
 			return {
 				newMessage: {
 					filter: (data) => {
-						console.log('newMessage',data)
 						return true
-						//return testRun.id === args.testRunId;
 					}
 				},
 			}
