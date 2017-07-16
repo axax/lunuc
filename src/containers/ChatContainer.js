@@ -11,7 +11,8 @@ import {connect} from 'react-redux'
 class ChatContainer extends React.Component {
 
 	componentWillMount() {
-		this.props.newMessageSubscribe()
+		this.props.onCreateMessage()
+		this.props.onDeleteMessage()
 	}
 
 	handleMessageDeleteClick = (message) => {
@@ -100,27 +101,29 @@ ChatContainer.propTypes = {
 	deleteMessage: PropTypes.func.isRequired,
 	user: PropTypes.object.isRequired,
 	/*Subscribtion*/
-	newMessageSubscribe: PropTypes.func.isRequired
+	onCreateMessage: PropTypes.func.isRequired,
+	onDeleteMessage: PropTypes.func.isRequired
 }
 
 
 const gqlQuery = gql`query{chatsWithMessages{_id name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
 const gqlInsertMessage = gql`mutation createMessage($chatId: ID!, $text: String!) {createMessage(chatId:$chatId,text:$text){_id text status to{_id} from{_id,username}}}`
 const gqlDeleteMessage = gql`mutation deleteMessage($messageId: ID!,$chatId: ID) {deleteMessage(messageId:$messageId,chatId:$chatId){_id status to{_id}}}`
-const gqlNewMessage = gql`subscription{newMessage{_id text status from{_id}to{_id}}}`
+const gqlOnCreateMessage = gql`subscription{createMessage{_id text status from{_id username}to{_id}}}`
+const gqlOnDeleteMessage = gql`subscription{deleteMessage{_id status to{_id}}}`
 
 
-const insertMessage = (prev, newMessage) => {
-	const chatIdx = prev.chatsWithMessages.findIndex((e) => e._id === newMessage.to._id)
-
+const createMessage = (prev, message) => {
+	const chatIdx = prev.chatsWithMessages.findIndex((e) => e._id === message.to._id)
 	if (chatIdx >= 0) {
-		const msgIdx = prev.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === newMessage._id)
+		const msgIdx = prev.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === message._id)
 		if (msgIdx < 0) {
-			return update(prev, {chatsWithMessages: {[chatIdx]: {messages: {$splice: [[0, 0, newMessage]]}}}})
+			return update(prev, {chatsWithMessages: {[chatIdx]: {messages: {$splice: [[0, 0, message]]}}}})
 		}
 	}
 	return prev
 }
+
 
 const ChatContainerWithGql = compose(
 	graphql(gqlQuery, {
@@ -130,7 +133,7 @@ const ChatContainerWithGql = compose(
 				reducer: (prev, {operationName, type, result: {data}}) => {
 					if (type === 'APOLLO_MUTATION_RESULT') {
 						if (operationName === 'createMessage' && data && data.createMessage && data.createMessage._id) {
-							return insertMessage(prev, data.createMessage)
+							return createMessage(prev, data.createMessage)
 						}
 					}
 					return prev
@@ -142,11 +145,19 @@ const ChatContainerWithGql = compose(
 			return {
 				chatsWithMessages,
 				loading,
-				newMessageSubscribe: params => {
+				onCreateMessage: params => {
 					return props.data.subscribeToMore({
-						document: gqlNewMessage,
+						document: gqlOnCreateMessage,
 						updateQuery: (prev, {subscriptionData}) => {
-							return insertMessage(prev, subscriptionData.data.newMessage)
+							return createMessage(prev, subscriptionData.data.createMessage)
+						}
+					})
+				},
+				onDeleteMessage: params => {
+					return props.data.subscribeToMore({
+						document: gqlOnDeleteMessage,
+						updateQuery: (prev, {subscriptionData}) => {
+							return prev
 						}
 					})
 				}

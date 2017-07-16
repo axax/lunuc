@@ -18,9 +18,18 @@ const subscriptionManager = new SubscriptionManager({
 				},
 			}
 		},
-		newMessage: (options, args) => {
+		createMessage: (options, args) => {
 			return {
-				newMessage: {
+				createMessage: {
+					filter: (data) => {
+						return true
+					}
+				},
+			}
+		},
+		deleteMessage: (options, args) => {
+			return {
+				deleteMessage: {
 					filter: (data) => {
 						return true
 					}

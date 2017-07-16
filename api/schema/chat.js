@@ -35,7 +35,8 @@ export const chatSchemaRaw = `
 	}
 	
 	type Subscription {
-		newMessage: Message
+		createMessage: Message
+		deleteMessage: Message
 	}
 	
 `

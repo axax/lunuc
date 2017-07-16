@@ -64,7 +64,7 @@ export const chatResolver = (db) => ({
 			status: 'created'
 		}
 
-		pubsub.publish('newMessage', {newMessage:returnMessage} )
+		pubsub.publish('createMessage', {createMessage:returnMessage} )
 
 
 		return returnMessage
@@ -79,14 +79,16 @@ export const chatResolver = (db) => ({
 		} else {
 			result = (await chatCollection.updateOne({'messages._id': ObjectId(messageId)}, {$pull: {messages: {_id: ObjectId(messageId)}}}))
 
-			//console.log(result)
-
 			if (result.matchedCount !== 1 || result.modifiedCount !== 1) {
 				throw new Error('Message doesn\'t exist')
 			}
 		}
 
-		return {value: '', _id: messageId, to: {_id: chatId}, status: 'deleted'}
+		const returnMessage = {_id: messageId, to: {_id: chatId}, status: 'deleted'}
+
+		pubsub.publish('deleteMessage', {deleteMessage:returnMessage} )
+
+		return returnMessage
 
 	},
 	addUserToChat: async ({chatId, userId}, {context}) => {
