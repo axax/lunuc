@@ -176,11 +176,10 @@ export const chatResolver = (db) => ({
 
 		return chats
 	},
-	chatsWithMessages: async ({}, {context, query}) => {
+	chatsWithMessages: async ({limit, offset, messageLimit, messageOffset}, {context, query}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
 		const chatCollection = db.collection('Chat')
-
 
 		let chats = (await chatCollection.aggregate([
 			{
@@ -189,7 +188,10 @@ export const chatResolver = (db) => ({
 				}
 			},
 			{
-				$limit: 5
+				$skip: offset,
+			},
+			{
+				$limit: limit
 			},
 			{
 				$unwind: '$users' /* unwind because localFiled users is an array -> https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/ */
@@ -215,8 +217,8 @@ export const chatResolver = (db) => ({
 					name: 1,
 					createdBy: 1,
 					users: 1,
-					/* return only the last 10 messages */
-					messages: {$slice: ['$messages', -10]}
+					/* return only the last n messages */
+					messages: {$slice: ['$messages', -(messageLimit+messageOffset), messageLimit]}
 				}
 			},
 			/* Resolve also user who sent message */
@@ -263,11 +265,10 @@ export const chatResolver = (db) => ({
 
 		return chats
 	},
-	chat: async ({chatId}, {context, query}) => {
+	chat: async ({chatId,messageLimit, messageOffset}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
 		const chatCollection = db.collection('Chat')
-
 
 		const chat = (await chatCollection.aggregate([
 			{
@@ -293,6 +294,15 @@ export const chatResolver = (db) => ({
 					localField: 'createdBy',
 					foreignField: '_id',
 					as: 'createdBy'
+				}
+			},
+			{
+				$project: {
+					name: 1,
+					createdBy: 1,
+					users: 1,
+					/* return only the last n messages */
+					messages: {$slice: ['$messages', -(messageLimit+messageOffset), messageLimit]}
 				}
 			},
 			/* Resolve also user who sent message */
@@ -337,5 +347,62 @@ export const chatResolver = (db) => ({
 		]).next())
 
 		return chat
+	},
+	chatMessages: async ({chatId,messageLimit, messageOffset}, {context}) => {
+		Util.checkIfUserIsLoggedIn(context)
+
+		const chatCollection = db.collection('Chat')
+
+		const chat = (await chatCollection.aggregate([
+			{
+				$match: {
+					_id: ObjectId(chatId),
+					users: {$in: [ObjectId(context.id)]}
+				}
+			},
+			{
+				$project: {
+					/* return only the last n messages */
+					messages: {$slice: ['$messages', -(messageLimit+messageOffset), messageLimit]}
+				}
+			},
+			/* Resolve also user who sent message */
+			{$unwind: '$messages'},
+			{$unwind: '$messages.from'},
+			{
+				$lookup: {
+					from: 'User',
+					localField: 'messages.from',
+					foreignField: '_id',
+					as: 'messageFrom'
+				}
+			},
+			{$unwind: '$messageFrom'},
+			{$unwind: '$messages.to'},
+			{
+				$lookup: {
+					from: 'Chat',
+					localField: 'messages.to',
+					foreignField: '_id',
+					as: 'messageTo'
+				}
+			},
+			{$unwind: '$messageTo'},
+			// Group back to arrays
+			{
+				$group: {
+					_id: '$_id',
+					messages: {
+						$addToSet: {
+							'_id': '$messages._id',
+							'from': '$messageFrom',
+							'to': '$messageTo',
+							'text': '$messages.text'
+						}
+					}
+				}
+			}
+		]).next())
+		return chat.messages
 	}
 })

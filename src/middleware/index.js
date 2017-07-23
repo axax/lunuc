@@ -68,7 +68,6 @@ export const client = new ApolloClient({
 		} else if (o._id) {
 			return o.__typename +o._id
 		}
-
 		// Make sure to return null if this object doesn't have an ID
 		return null
 	} // will be used by Apollo Client caching

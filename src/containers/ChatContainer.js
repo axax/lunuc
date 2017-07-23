@@ -41,6 +41,18 @@ class ChatContainer extends React.Component {
 		}
 	}
 
+	handleOnLoadMore = (selectedChat) => {
+		const {loadMoreMessages} = this.props
+
+		if (selectedChat) {
+			loadMoreMessages({
+				chatId: selectedChat._id,
+				messageOffset: selectedChat.messages.length
+			}).then(({data}) => {
+			})
+		}
+	}
+
 	render() {
 		const {chatsWithMessages, loading, match} = this.props
 		const selectedChatId = match.params.id
@@ -78,6 +90,7 @@ class ChatContainer extends React.Component {
 							})}
 						</div>
 
+						<button onClick={this.handleOnLoadMore.bind(this, selectedChat)}>load more</button>
 						{selectedChat.messages.slice(0).reverse().map((message, i) => {
 							return <ChatMessage key={i} message={message}
 																	onDeleteClick={this.handleMessageDeleteClick.bind(this, message)}/>
@@ -102,11 +115,19 @@ ChatContainer.propTypes = {
 	user: PropTypes.object.isRequired,
 	/*Subscribtion*/
 	onCreateMessage: PropTypes.func.isRequired,
-	onDeleteMessage: PropTypes.func.isRequired
+	onDeleteMessage: PropTypes.func.isRequired,
+	loadMoreMessages: PropTypes.func.isRequired
 }
 
+const MESSAGES_PER_PAGE = 2
 
-const gqlQuery = gql`query{chatsWithMessages{_id name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
+const gqlQuery = gql`query{chatsWithMessages(messageLimit: ${MESSAGES_PER_PAGE}){_id name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
+const gqlQueryMoreMessages = gql`query chatMessages($chatId: String!, $messageOffset: Int, $messageLimit: Int){
+	chatMessages(chatId:$chatId, messageOffset:$messageOffset, messageLimit:$messageLimit){
+		_id text status from{username _id}
+	}
+}`
+
 const gqlInsertMessage = gql`mutation createMessage($chatId: ID!, $text: String!) {createMessage(chatId:$chatId,text:$text){_id text status to{_id} from{_id,username}}}`
 const gqlDeleteMessage = gql`mutation deleteMessage($messageId: ID!,$chatId: ID) {deleteMessage(messageId:$messageId,chatId:$chatId){_id status to{_id}}}`
 const gqlOnCreateMessage = gql`subscription{createMessage{_id text status from{_id username}to{_id}}}`
@@ -141,7 +162,7 @@ const ChatContainerWithGql = compose(
 			}
 		},
 		props: props => {
-			const {loading, chatsWithMessages} = props.data
+			const {loading, chatsWithMessages, fetchMore} = props.data
 			return {
 				chatsWithMessages,
 				loading,
@@ -158,6 +179,28 @@ const ChatContainerWithGql = compose(
 						document: gqlOnDeleteMessage,
 						updateQuery: (prev, {subscriptionData}) => {
 							return prev
+						}
+					})
+				},
+				loadMoreMessages({chatId, messageOffset})
+				{
+
+					return fetchMore({
+						query: gqlQueryMoreMessages,
+						variables: {
+							chatId,
+							messageOffset,
+							messageLimit: MESSAGES_PER_PAGE
+						},
+						updateQuery: (previousResult, {fetchMoreResult}) => {
+							if (fetchMoreResult) {
+								const chatIdx = previousResult.chatsWithMessages.findIndex((e) => e._id === chatId)
+								if (chatIdx >= 0) {
+									return update(previousResult, {chatsWithMessages: {[chatIdx]: {messages: {$push: fetchMoreResult.chatMessages }}}})
+								}
+							}
+							return previousResult
+
 						}
 					})
 				}

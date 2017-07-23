@@ -19,9 +19,10 @@ export const chatSchemaRaw = `
   
   
   type Query {
-    chat(chatId: String!,limit: Int, offset: Int): Chat
-    chats(limit: Int, offset: Int): [Chat]
-    chatsWithMessages(limit: Int, offset: Int): [Chat]
+    chat(chatId: String!, messageLimit: Int=10, messageOffset: Int=0): Chat
+    chatMessages(chatId: String!, messageLimit: Int=10, messageOffset: Int=0): [Message]
+    chats(limit: Int=10, offset: Int=0): [Chat]
+    chatsWithMessages(limit: Int=10, offset: Int=0, messageLimit: Int=10, messageOffset: Int=0): [Chat]
   }
   
 	type Mutation {
