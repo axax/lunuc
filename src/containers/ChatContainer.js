@@ -193,6 +193,7 @@ const ChatContainerWithGql = compose(
 							messageLimit: MESSAGES_PER_PAGE
 						},
 						updateQuery: (previousResult, {fetchMoreResult}) => {
+							console.log(fetchMoreResult)
 							if (fetchMoreResult) {
 								const chatIdx = previousResult.chatsWithMessages.findIndex((e) => e._id === chatId)
 								if (chatIdx >= 0) {

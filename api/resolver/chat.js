@@ -64,7 +64,7 @@ export const chatResolver = (db) => ({
 			status: 'created'
 		}
 
-		pubsub.publish('createMessage', {createMessage:returnMessage} )
+		pubsub.publish('createMessage', {createMessage: returnMessage})
 
 
 		return returnMessage
@@ -86,7 +86,7 @@ export const chatResolver = (db) => ({
 
 		const returnMessage = {_id: messageId, to: {_id: chatId}, status: 'deleted'}
 
-		pubsub.publish('deleteMessage', {deleteMessage:returnMessage} )
+		pubsub.publish('deleteMessage', {deleteMessage: returnMessage})
 
 		return returnMessage
 
@@ -218,7 +218,7 @@ export const chatResolver = (db) => ({
 					createdBy: 1,
 					users: 1,
 					/* return only the last n messages */
-					messages: {$slice: ['$messages', -(messageLimit+messageOffset), messageLimit]}
+					messages: {$slice: ['$messages', -(messageLimit + messageOffset), messageLimit]}
 				}
 			},
 			/* Resolve also user who sent message */
@@ -265,7 +265,7 @@ export const chatResolver = (db) => ({
 
 		return chats
 	},
-	chat: async ({chatId,messageLimit, messageOffset}, {context}) => {
+	chat: async ({chatId, messageLimit, messageOffset}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
 		const chatCollection = db.collection('Chat')
@@ -302,12 +302,12 @@ export const chatResolver = (db) => ({
 					createdBy: 1,
 					users: 1,
 					/* return only the last n messages */
-					messages: {$slice: ['$messages', -(messageLimit+messageOffset), messageLimit]}
+					messages: {$slice: ['$messages', -(messageLimit + messageOffset), messageLimit]}
 				}
 			},
 			/* Resolve also user who sent message */
-			{$unwind: '$messages'},
-			{$unwind: '$messages.from'},
+			{$unwind: {path: '$messages', preserveNullAndEmptyArrays: true}},
+			{$unwind: {path: '$messages.from', preserveNullAndEmptyArrays: true}},
 			{
 				$lookup: {
 					from: 'User',
@@ -316,8 +316,8 @@ export const chatResolver = (db) => ({
 					as: 'messageFrom'
 				}
 			},
-			{$unwind: '$messageFrom'},
-			{$unwind: '$messages.to'},
+			{$unwind: {path: '$messageFrom', preserveNullAndEmptyArrays: true}},
+			{$unwind: {path: '$messages.to', preserveNullAndEmptyArrays: true}},
 			{
 				$lookup: {
 					from: 'Chat',
@@ -326,7 +326,7 @@ export const chatResolver = (db) => ({
 					as: 'messageTo'
 				}
 			},
-			{$unwind: '$messageTo'},
+			{$unwind: {path: '$messageTo', preserveNullAndEmptyArrays: true}},
 			// Group back to arrays
 			{
 				$group: {
@@ -348,10 +348,15 @@ export const chatResolver = (db) => ({
 
 		return chat
 	},
-	chatMessages: async ({chatId,messageLimit, messageOffset}, {context}) => {
+	chatMessages: async ({chatId, messageLimit, messageOffset}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
+		if( messageLimit<=0)
+			return []
+
 		const chatCollection = db.collection('Chat')
+
+
 
 		const chat = (await chatCollection.aggregate([
 			{
@@ -362,13 +367,47 @@ export const chatResolver = (db) => ({
 			},
 			{
 				$project: {
+					_id: 1,
+					messages: 1,
+					calcOffset: {
+						$let: {
+							vars: {
+								messageCount: {$size: '$messages'}
+							},
+							in: {$subtract: ['$$messageCount', messageOffset + messageLimit]}
+						}
+					},
+					calcLimit: {
+						$let: {
+							vars: {
+								messageCount: {$size: '$messages'}
+							},
+							in: {$subtract: ['$$messageCount', messageOffset]}
+						}
+					}
+				}
+			},
+			{
+				$project: {
 					/* return only the last n messages */
-					messages: {$slice: ['$messages', -(messageLimit+messageOffset), messageLimit]}
+					messages: {
+						$cond: {
+							if: {$gte: ['$calcOffset', 0]},
+							then: {$slice: ['$messages', '$calcOffset', messageLimit]},
+							else: {
+								$cond: {
+									if: {$gt: ['$calcLimit', 0]},
+									then: {$slice: ['$messages', 0, '$calcLimit']},
+									else: [],
+								},
+							}
+						}
+					}
 				}
 			},
 			/* Resolve also user who sent message */
-			{$unwind: '$messages'},
-			{$unwind: '$messages.from'},
+			{$unwind: {path: '$messages', preserveNullAndEmptyArrays: true}},
+			{$unwind: {path: '$messages.from', preserveNullAndEmptyArrays: true}},
 			{
 				$lookup: {
 					from: 'User',
@@ -377,8 +416,8 @@ export const chatResolver = (db) => ({
 					as: 'messageFrom'
 				}
 			},
-			{$unwind: '$messageFrom'},
-			{$unwind: '$messages.to'},
+			{$unwind: {path: '$messageFrom', preserveNullAndEmptyArrays: true}},
+			{$unwind: {path: '$messages.to', preserveNullAndEmptyArrays: true}},
 			{
 				$lookup: {
 					from: 'Chat',
@@ -387,7 +426,7 @@ export const chatResolver = (db) => ({
 					as: 'messageTo'
 				}
 			},
-			{$unwind: '$messageTo'},
+			{$unwind: {path: '$messageTo', preserveNullAndEmptyArrays: true}},
 			// Group back to arrays
 			{
 				$group: {
@@ -400,6 +439,13 @@ export const chatResolver = (db) => ({
 							'text': '$messages.text'
 						}
 					}
+				}
+			},
+			{
+				$project: {
+					_id: 1,
+					/* return empty array if there are no messages */
+					messages: {$cond: [{$eq: [{$arrayElemAt: ['$messages', 0]}, {}]}, [], '$messages']}
 				}
 			}
 		]).next())
