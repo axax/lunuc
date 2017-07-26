@@ -212,13 +212,52 @@ export const chatResolver = (db) => ({
 					as: 'createdBy'
 				}
 			},
+			/* Calculate limit and offset */
 			{
 				$project: {
 					name: 1,
 					createdBy: 1,
 					users: 1,
-					/* return only the last n messages */
-					messages: {$slice: ['$messages', -(messageLimit + messageOffset), messageLimit]}
+					messages: 1,
+					messageCount: {$size: '$messages'},
+					calcOffset: {
+						$let: {
+							vars: {
+								messageCount: {$size: '$messages'}
+							},
+							in: {$subtract: ['$$messageCount', messageOffset + messageLimit]}
+						}
+					},
+					calcLimit: {
+						$let: {
+							vars: {
+								messageCount: {$size: '$messages'}
+							},
+							in: {$subtract: ['$$messageCount', messageOffset]}
+						}
+					}
+				}
+			},
+			/* return messages based on limit and offset */
+			{
+				$project: {
+					name: 1,
+					createdBy: 1,
+					users: 1,
+					messageCount: 1,
+					messages: {
+						$cond: {
+							if: {$gte: ['$calcOffset', 0]},
+							then: {$slice: ['$messages', '$calcOffset', messageLimit]},
+							else: {
+								$cond: {
+									if: {$gt: ['$calcLimit', 0]},
+									then: {$slice: ['$messages', 0, '$calcLimit']},
+									else: [],
+								},
+							}
+						}
+					}
 				}
 			},
 			/* Resolve also user who sent message */
@@ -240,6 +279,7 @@ export const chatResolver = (db) => ({
 					name: {'$first': '$name'},
 					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
 					users: {$addToSet: {_id: '$users._id', username: '$users.username'}},
+					messageCount: {'$first': '$messageCount'},
 					messages: {
 						$addToSet: {
 							_id: '$messages._id',
@@ -255,6 +295,7 @@ export const chatResolver = (db) => ({
 					name: 1,
 					createdBy: 1,
 					users: 1,
+					messageCount: 1,
 					/* return empty array if there are no messages */
 					messages: {$cond: [{$eq: [{$arrayElemAt: ['$messages', 0]}, {}]}, [], '$messages']}
 				}
@@ -280,6 +321,7 @@ export const chatResolver = (db) => ({
 			{
 				$unwind: '$users' /* unwind because localFiled users is an array -> https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/ */
 			},
+			/* Resolve users in this chat */
 			{
 				$lookup: {
 					from: 'User',
@@ -288,6 +330,7 @@ export const chatResolver = (db) => ({
 					as: 'users'
 				}
 			},
+			/* Resolve creator of this chat */
 			{
 				$lookup: {
 					from: 'User',
@@ -296,13 +339,52 @@ export const chatResolver = (db) => ({
 					as: 'createdBy'
 				}
 			},
+			/* Calculate limit and offset */
 			{
 				$project: {
 					name: 1,
 					createdBy: 1,
 					users: 1,
-					/* return only the last n messages */
-					messages: {$slice: ['$messages', -(messageLimit + messageOffset), messageLimit]}
+					messages: 1,
+					messageCount: {$size: '$messages'},
+					calcOffset: {
+						$let: {
+							vars: {
+								messageCount: {$size: '$messages'}
+							},
+							in: {$subtract: ['$$messageCount', messageOffset + messageLimit]}
+						}
+					},
+					calcLimit: {
+						$let: {
+							vars: {
+								messageCount: {$size: '$messages'}
+							},
+							in: {$subtract: ['$$messageCount', messageOffset]}
+						}
+					}
+				}
+			},
+			/* return messages based on limit and offset */
+			{
+				$project: {
+					name: 1,
+					createdBy: 1,
+					users: 1,
+					messageCount: 1,
+					messages: {
+						$cond: {
+							if: {$gte: ['$calcOffset', 0]},
+							then: {$slice: ['$messages', '$calcOffset', messageLimit]},
+							else: {
+								$cond: {
+									if: {$gt: ['$calcLimit', 0]},
+									then: {$slice: ['$messages', 0, '$calcLimit']},
+									else: [],
+								},
+							}
+						}
+					}
 				}
 			},
 			/* Resolve also user who sent message */
@@ -334,6 +416,7 @@ export const chatResolver = (db) => ({
 					name: {'$first': '$name'},
 					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
 					users: {$addToSet: {_id: '$users._id', username: '$users.username'}},
+					messageCount: {'$first': '$messageCount'},
 					messages: {
 						$addToSet: {
 							'_id': '$messages._id',
@@ -343,6 +426,16 @@ export const chatResolver = (db) => ({
 						}
 					}
 				}
+			},
+			/* return empty array if there are no messages */
+			{
+				$project: {
+					name: 1,
+					createdBy: 1,
+					users: 1,
+					messageCount: 1,
+					messages: {$cond: [{$eq: [{$arrayElemAt: ['$messages', 0]}, {}]}, [], '$messages']}
+				}
 			}
 		]).next())
 
@@ -351,11 +444,10 @@ export const chatResolver = (db) => ({
 	chatMessages: async ({chatId, messageLimit, messageOffset}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
-		if( messageLimit<=0)
+		if (messageLimit <= 0)
 			return []
 
 		const chatCollection = db.collection('Chat')
-
 
 
 		const chat = (await chatCollection.aggregate([
@@ -365,9 +457,9 @@ export const chatResolver = (db) => ({
 					users: {$in: [ObjectId(context.id)]}
 				}
 			},
+			/* Calculate limit and offset */
 			{
 				$project: {
-					_id: 1,
 					messages: 1,
 					calcOffset: {
 						$let: {
@@ -387,9 +479,9 @@ export const chatResolver = (db) => ({
 					}
 				}
 			},
+			/* return messages based on limit and offset */
 			{
 				$project: {
-					/* return only the last n messages */
 					messages: {
 						$cond: {
 							if: {$gte: ['$calcOffset', 0]},
@@ -441,10 +533,9 @@ export const chatResolver = (db) => ({
 					}
 				}
 			},
+			/* return empty array if there are no messages */
 			{
 				$project: {
-					_id: 1,
-					/* return empty array if there are no messages */
 					messages: {$cond: [{$eq: [{$arrayElemAt: ['$messages', 0]}, {}]}, [], '$messages']}
 				}
 			}
