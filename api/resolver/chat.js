@@ -21,7 +21,13 @@ export const chatResolver = (db) => ({
 
 		if (insertResult.insertedCount) {
 			const doc = insertResult.ops[0]
-			return doc
+			return {
+				_id: doc._id,
+				name: name,
+				messages: [],
+				createdBy: {_id: context.id, username: context.username},
+				users: [{_id: context.id, username: context.username}]
+			}
 		}
 	},
 	createMessage: async ({chatId, text}, {context}) => {
@@ -219,11 +225,11 @@ export const chatResolver = (db) => ({
 					createdBy: 1,
 					users: 1,
 					messages: 1,
-					messageCount: {$size: '$messages'},
+					messageCount: {$size: { $ifNull: [ '$messages', [] ] } },
 					calcOffset: {
 						$let: {
 							vars: {
-								messageCount: {$size: '$messages'}
+								messageCount: {$size: { $ifNull: [ '$messages', [] ] }}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset + messageLimit]}
 						}
@@ -231,7 +237,7 @@ export const chatResolver = (db) => ({
 					calcLimit: {
 						$let: {
 							vars: {
-								messageCount: {$size: '$messages'}
+								messageCount: {$size: { $ifNull: [ '$messages', [] ] } }
 							},
 							in: {$subtract: ['$$messageCount', messageOffset]}
 						}
