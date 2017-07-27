@@ -26,7 +26,8 @@ export const chatResolver = (db) => ({
 				name: name,
 				messages: [],
 				createdBy: {_id: context.id, username: context.username},
-				users: [{_id: context.id, username: context.username}]
+				users: [{_id: context.id, username: context.username}],
+				status: 'created'
 			}
 		}
 	},

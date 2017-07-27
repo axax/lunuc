@@ -16,6 +16,7 @@ export const chatSchemaRaw = `
     users: [UserPublic]! # users in the chat
     messageCount: Int # returns the total number of messages
     messages(limit: Int, offset: Int): [Message] # messages sent to the chat
+    status: String # status of the chat
   }
   
   
