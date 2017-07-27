@@ -29,6 +29,7 @@ export const chatSchemaRaw = `
   
 	type Mutation {
 		createChat(name: String!): Chat	
+		deleteChat(chatId: ID!): Chat	
 		createMessage(chatId: ID!, text: String!): Message
 		deleteMessage(messageId: ID!, chatId: ID): Message #chatId is optional. you can set it if you need it in the response
 		

@@ -31,6 +31,27 @@ export const chatResolver = (db) => ({
 			}
 		}
 	},
+	deleteChat: async ({chatId}, {context}) => {
+		Util.checkIfUserIsLoggedIn(context)
+
+		const chatCollection = db.collection('Chat')
+
+		const deletedResult = await chatCollection.deleteOne({
+			_id: ObjectId(chatId)
+		})
+
+		if (deletedResult.deletedCount) {
+			return {
+				_id: chatId,
+				status: 'deleted'
+			}
+		}else{
+			return {
+				_id: chatId,
+				status: 'error'
+			}
+		}
+	},
 	createMessage: async ({chatId, text}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
