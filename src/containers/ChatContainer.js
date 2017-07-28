@@ -3,9 +3,11 @@ import PropTypes from 'prop-types'
 import {gql, graphql, compose} from 'react-apollo'
 import {Link} from 'react-router-dom'
 import ChatMessage from '../components/chat/ChatMessage'
+import CreateChat from '../components/chat/CreateChat'
 import AddChatMessage from '../components/chat/AddChatMessage'
 import update from 'immutability-helper'
 import {connect} from 'react-redux'
+import Util from '../util'
 
 
 class ChatContainer extends React.Component {
@@ -24,8 +26,15 @@ class ChatContainer extends React.Component {
 			chatId: selectedChatId
 		}).then(({data}) => {
 		})
+	}
 
+	handleChatDeleteClick = (chat) => {
+		const {deleteChat} = this.props
 
+		deleteChat({
+			chatId: chat._id
+		}).then(({data}) => {
+		})
 	}
 
 	handleAddChatMessageClick = (data) => {
@@ -39,6 +48,15 @@ class ChatContainer extends React.Component {
 			}).then(({data}) => {
 			})
 		}
+	}
+
+	handleCreateChatClick = (data) => {
+		const {createChat, match} = this.props
+
+		createChat({
+			name: data.name
+		}).then(({data}) => {
+		})
 	}
 
 	handleOnLoadMore = (selectedChat) => {
@@ -68,14 +86,18 @@ class ChatContainer extends React.Component {
 			<div>
 				<h1>Chats</h1>
 				<ul>
-					{chatsWithMessages.map((chat, i) => {
+					{chatsWithMessages.slice(0).reverse().map((chat, i) => {
 						if (chat._id === selectedChatId) {
 							selectedChat = chat
 						}
 						const url = '/chat/' + chat._id
-						return <Link to={url} key={i}>{chat.name}</Link>
+						return <li key={i}>{['creating','deleting'].indexOf(chat.status)>-1 ? <div>{chat.name}
+						</div>:<div><Link to={url}>{chat.name}</Link> <button onClick={this.handleChatDeleteClick.bind(this, chat)}>x</button></div>}
+							<small><small>{Util.formattedDatetimeFromObjectId(chat._id)}</small></small></li>
 					})}
 				</ul>
+
+				<CreateChat onClick={this.handleCreateChatClick}/>
 
 				{selectedChat ?
 					<div>
@@ -90,7 +112,7 @@ class ChatContainer extends React.Component {
 							})}
 						</div>
 
-						<button onClick={this.handleOnLoadMore.bind(this, selectedChat)}>load more</button>
+						<button onClick={this.handleOnLoadMore.bind(this, selectedChat)}>load older</button>
 						{selectedChat.messages.slice(0).reverse().map((message, i) => {
 							return <ChatMessage key={i} message={message}
 																	onDeleteClick={this.handleMessageDeleteClick.bind(this, message)}/>
@@ -108,28 +130,36 @@ ChatContainer.propTypes = {
 	/* routing params */
 	match: PropTypes.object,
 	/* apollo client props */
-	chatsWithMessages: PropTypes.array,
 	loading: PropTypes.bool,
+	chatsWithMessages: PropTypes.array,
+	createChat: PropTypes.func.isRequired,
+	deleteChat: PropTypes.func.isRequired,
 	createMessage: PropTypes.func.isRequired,
 	deleteMessage: PropTypes.func.isRequired,
 	user: PropTypes.object.isRequired,
 	/*Subscribtion*/
 	onCreateMessage: PropTypes.func.isRequired,
 	onDeleteMessage: PropTypes.func.isRequired,
+	/*load more*/
 	loadMoreMessages: PropTypes.func.isRequired
 }
 
 const MESSAGES_PER_PAGE = 2
 
-const gqlQuery = gql`query{chatsWithMessages(messageLimit: ${MESSAGES_PER_PAGE}){_id name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
+const gqlQuery = gql`query{chatsWithMessages(messageLimit: ${MESSAGES_PER_PAGE}){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
 const gqlQueryMoreMessages = gql`query chatMessages($chatId: String!, $messageOffset: Int, $messageLimit: Int){
 	chatMessages(chatId:$chatId, messageOffset:$messageOffset, messageLimit:$messageLimit){
 		_id text status from{username _id}
 	}
 }`
 
+const gqlCreateChat = gql`mutation createChat($name: String!){createChat(name:$name){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
+const gqlDeleteChat = gql`mutation deleteChat($chatId: ID!){deleteChat(chatId:$chatId){_id status}}`
+
 const gqlInsertMessage = gql`mutation createMessage($chatId: ID!, $text: String!) {createMessage(chatId:$chatId,text:$text){_id text status to{_id} from{_id,username}}}`
 const gqlDeleteMessage = gql`mutation deleteMessage($messageId: ID!,$chatId: ID) {deleteMessage(messageId:$messageId,chatId:$chatId){_id status to{_id}}}`
+
+/*Subscriptions*/
 const gqlOnCreateMessage = gql`subscription{createMessage{_id text status from{_id username}to{_id}}}`
 const gqlOnDeleteMessage = gql`subscription{deleteMessage{_id status to{_id}}}`
 
@@ -196,7 +226,7 @@ const ChatContainerWithGql = compose(
 							if (fetchMoreResult) {
 								const chatIdx = previousResult.chatsWithMessages.findIndex((e) => e._id === chatId)
 								if (chatIdx >= 0) {
-									return update(previousResult, {chatsWithMessages: {[chatIdx]: {messages: {$push: fetchMoreResult.chatMessages }}}})
+									return update(previousResult, {chatsWithMessages: {[chatIdx]: {messages: {$push: fetchMoreResult.chatMessages}}}})
 								}
 							}
 							return previousResult
@@ -206,6 +236,80 @@ const ChatContainerWithGql = compose(
 				}
 			}
 		}
+	}),
+	graphql(gqlCreateChat, {
+		props: ({ownProps, mutate}) => ({
+			createChat: ({name}) => {
+				return mutate({
+					variables: {name},
+					optimisticResponse: {
+						__typename: 'Mutation',
+						// Optimistic message
+						createChat: {
+							_id: '#' + new Date().getTime(),
+							name,
+							status: 'creating',
+							messages: [],
+							createdBy: {
+								_id: ownProps.user.userData._id,
+								username: ownProps.user.userData.username,
+								__typename: 'UserPublic'
+							},
+							users: [
+								{
+									_id: ownProps.user.userData._id,
+									username: ownProps.user.userData.username,
+									__typename: 'UserPublic'
+								}
+							],
+							__typename: 'Chat'
+						}
+					},
+					update: (store, {data: {createChat}}) => {
+						console.log('createChat', createChat)
+						// Read the data from the cache for this query.
+						const data = store.readQuery({query: gqlQuery})
+
+						data.chatsWithMessages.push(createChat)
+						store.writeQuery({query: gqlQuery, data})
+					}
+				})
+			}
+		}),
+	}),
+	graphql(gqlDeleteChat, {
+		props: ({ownProps, mutate}) => ({
+			deleteChat: ({chatId}) => {
+				return mutate({
+					variables: {chatId},
+					optimisticResponse: {
+						__typename: 'Mutation',
+						deleteChat: {
+							_id: chatId,
+							status: 'deleting',
+							__typename: 'Chat'
+						}
+					},
+					update: (store, {data: {deleteChat}}) => {
+						console.log('deleteChat', deleteChat)
+						// Read the data from the cache for this query.
+						const data = store.readQuery({query: gqlQuery})
+
+						const chatIdx = data.chatsWithMessages.findIndex((e) => e._id === deleteChat._id)
+						if (chatIdx >= 0) {
+							if( deleteChat.status == 'deleting' ){
+								console.log(data.chatsWithMessages[chatIdx])
+								data.chatsWithMessages[chatIdx].status = 'deleting'
+							}else {
+								data.chatsWithMessages.splice(chatIdx, 1)
+							}
+							store.writeQuery({query: gqlQuery, data})
+						}
+
+					}
+				})
+			}
+		})
 	}),
 	graphql(gqlInsertMessage, {
 		props: ({ownProps, mutate}) => ({
