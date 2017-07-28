@@ -374,11 +374,11 @@ export const chatResolver = (db) => ({
 					createdBy: 1,
 					users: 1,
 					messages: 1,
-					messageCount: {$size: '$messages'},
+					messageCount: {$size: { $ifNull: [ '$messages', [] ] }},
 					calcOffset: {
 						$let: {
 							vars: {
-								messageCount: {$size: '$messages'}
+								messageCount: {$size: { $ifNull: [ '$messages', [] ] }}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset + messageLimit]}
 						}
@@ -386,7 +386,7 @@ export const chatResolver = (db) => ({
 					calcLimit: {
 						$let: {
 							vars: {
-								messageCount: {$size: '$messages'}
+								messageCount: {$size: { $ifNull: [ '$messages', [] ] }}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset]}
 						}
@@ -492,7 +492,7 @@ export const chatResolver = (db) => ({
 					calcOffset: {
 						$let: {
 							vars: {
-								messageCount: {$size: '$messages'}
+								messageCount: {$size: { $ifNull: [ '$messages', [] ] }}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset + messageLimit]}
 						}
@@ -500,7 +500,7 @@ export const chatResolver = (db) => ({
 					calcLimit: {
 						$let: {
 							vars: {
-								messageCount: {$size: '$messages'}
+								messageCount: {$size: { $ifNull: [ '$messages', [] ] }}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset]}
 						}
