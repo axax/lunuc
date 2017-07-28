@@ -35,7 +35,8 @@ export const userSchemaRaw = `
 	
   type Query {
     me: User
-    login(username: String!, password: String!): Token
+    login(username: String!, password: String!): Token,
+    users(limit: Int=10, offset: Int=0): [UserPublic]
   }
 		
 	type Mutation {

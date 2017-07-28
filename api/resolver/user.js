@@ -153,5 +153,34 @@ export const userResolver = (db) => ({
 		}
 
 		return {value: '', _id: _id}
+	},
+	users: async ({limit, offset}, {context, query}) => {
+		Util.checkIfUserIsLoggedIn(context)
+
+		const userCollection = db.collection('User')
+
+
+		let users = (await userCollection.aggregate([
+			/*{
+				$match: {
+					users: {$in: [ObjectId(context.id)]}
+				}
+			},*/
+			{
+				$skip: offset,
+			},
+			{
+				$limit: limit
+			},
+			{
+				$project: {
+					username: 1
+				}
+			}
+
+		]).toArray())
+
+
+		return users
 	}
 })
