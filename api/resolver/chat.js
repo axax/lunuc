@@ -159,7 +159,7 @@ export const chatResolver = (db) => ({
 
 		return {_id: chatId}
 	},
-	chats: async ({}, {context, query}) => {
+	chats: async ({limit, offset}, {context, query}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
 		const chatCollection = db.collection('Chat')
@@ -170,6 +170,12 @@ export const chatResolver = (db) => ({
 				$match: {
 					users: {$in: [ObjectId(context.id)]}
 				}
+			},
+			{
+				$skip: offset,
+			},
+			{
+				$limit: limit
 			},
 			{
 				$unwind: '$users' /* unwind because localFiled users is an array -> https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/ */
