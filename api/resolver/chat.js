@@ -122,9 +122,16 @@ export const chatResolver = (db) => ({
 	addUserToChat: async ({chatId, userId}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
+		// check if user exists
+		const userCollection = db.collection('User')
+		const user = (await userCollection.findOne({_id: ObjectId(userId)}))
 
+		if( !user ){
+			throw new Error('User doesnt exist')
+		}
+
+		// add user to chat
 		const chatCollection = db.collection('Chat')
-
 		const result = await chatCollection.updateOne({
 				_id: ObjectId(chatId)
 			},
@@ -132,12 +139,14 @@ export const chatResolver = (db) => ({
 				$addToSet: {users: ObjectId(userId)}
 			})
 
-
+		
 		if (result.matchedCount === 0) {
 			throw new Error('Chat doesnt exist')
+		}else if(result.modifiedCount === 0){
+			throw new Error('User is already added to the chat')
 		}
 
-		return {_id: chatId, status: 'user_added'}
+		return {_id: chatId, status: 'user_added', users: [{_id:user._id, username: user.username}]}
 	},
 	removeUserToChat: async ({chatId, userId}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
