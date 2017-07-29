@@ -137,7 +137,7 @@ export const chatResolver = (db) => ({
 			throw new Error('Chat doesnt exist')
 		}
 
-		return {_id: chatId}
+		return {_id: chatId, status: 'user_added'}
 	},
 	removeUserToChat: async ({chatId, userId}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
@@ -168,7 +168,7 @@ export const chatResolver = (db) => ({
 		let chats = (await chatCollection.aggregate([
 			{
 				$match: {
-					users: {$in: [ObjectId(context.id)]}
+					$or: [{ users: {$in: [ObjectId(context.id)]} }, { createdBy: ObjectId(context.id) }]
 				}
 			},
 			{
@@ -218,7 +218,7 @@ export const chatResolver = (db) => ({
 		let chats = (await chatCollection.aggregate([
 			{
 				$match: {
-					users: {$in: [ObjectId(context.id)]},
+					$or: [{ users: {$in: [ObjectId(context.id)]} }, { createdBy: ObjectId(context.id) }]
 				}
 			},
 			{
@@ -349,7 +349,7 @@ export const chatResolver = (db) => ({
 			{
 				$match: {
 					_id: ObjectId(chatId),
-					users: {$in: [ObjectId(context.id)]}
+					$or: [{ users: {$in: [ObjectId(context.id)]} }, { createdBy: ObjectId(context.id) }]
 				}
 			},
 			{
@@ -488,7 +488,7 @@ export const chatResolver = (db) => ({
 			{
 				$match: {
 					_id: ObjectId(chatId),
-					users: {$in: [ObjectId(context.id)]}
+					$or: [{ users: {$in: [ObjectId(context.id)]} }, { createdBy: ObjectId(context.id) }]
 				}
 			},
 			/* Calculate limit and offset */
