@@ -35,7 +35,7 @@ export const chatSchemaRaw = `
 		
 		
 		addUserToChat(userId: ID!, chatId: ID!): Chat
-		removeUserToChat(userId: ID!, chatId: ID!): Chat
+		removeUserFromChat(userId: ID!, chatId: ID!): Chat
 	}
 	
 	type Subscription {

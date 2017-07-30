@@ -148,7 +148,7 @@ export const chatResolver = (db) => ({
 
 		return {_id: chatId, status: 'user_added', users: [{_id:user._id, username: user.username}]}
 	},
-	removeUserToChat: async ({chatId, userId}, {context}) => {
+	removeUserFromChat: async ({chatId, userId}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 
 
@@ -166,7 +166,7 @@ export const chatResolver = (db) => ({
 			throw new Error('Chat doesnt exist')
 		}
 
-		return {_id: chatId}
+		return {_id: chatId, status: 'user_removed', users: [{_id:userId}]}
 	},
 	chats: async ({limit, offset}, {context, query}) => {
 		Util.checkIfUserIsLoggedIn(context)
@@ -213,7 +213,8 @@ export const chatResolver = (db) => ({
 					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
 					users: {$addToSet: {_id: '$users._id', username: '$users.username'}}
 				}
-			}
+			},
+			{ $sort : { _id: 1 } }
 		]).toArray())
 
 
@@ -342,7 +343,8 @@ export const chatResolver = (db) => ({
 					/* return empty array if there are no messages */
 					messages: {$cond: [{$eq: [{$arrayElemAt: ['$messages', 0]}, {}]}, [], '$messages']}
 				}
-			}
+			},
+			{ $sort : { _id: 1 } }
 		]).toArray())
 
 		//console.log(chats)
