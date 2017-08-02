@@ -146,7 +146,7 @@ export const chatResolver = (db) => ({
 			throw new Error('User is already added to the chat')
 		}
 
-		return {_id: chatId, status: 'user_added' }
+		return {_id: chatId, status: 'user_added'}
 	},
 	removeUserFromChat: async ({chatId, userId}, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)

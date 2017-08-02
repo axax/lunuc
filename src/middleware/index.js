@@ -63,7 +63,7 @@ export const client = new ApolloClient({
 	reduxRootSelector: state => state.remote,
 	networkInterface: networkInterfaceWithSubscriptions,
 	dataIdFromObject: (o) => {
-		if (o.__typename === 'KeyValue') {
+		if (o.__typxename === 'KeyValue') {
 			return o.__typename + o.key
 		} else if (o._id) {
 			return o.__typename +o._id

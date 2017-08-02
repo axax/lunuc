@@ -4,6 +4,7 @@ import {gql, graphql, compose} from 'react-apollo'
 import {Link} from 'react-router-dom'
 import ChatMessage from '../components/chat/ChatMessage'
 import CreateChat from '../components/chat/CreateChat'
+import AddChatUser from '../components/chat/AddChatUser'
 import AddChatMessage from '../components/chat/AddChatMessage'
 import update from 'immutability-helper'
 import {connect} from 'react-redux'
@@ -50,6 +51,31 @@ class ChatContainer extends React.Component {
 		}
 	}
 
+	handleAddChatUserClick = (data) => {
+		const {addUserToChat, match} = this.props
+
+		const selectedChatId = match.params.id
+
+		if (selectedChatId) {
+			addUserToChat({
+				userId: data.selected,
+				chatId: selectedChatId
+			}).then(({data}) => {
+			})
+		}
+	}
+
+	handleRemoveUserFromChatClick = (chat, user) => {
+		const {removeUserFromChat} = this.props
+		if ( chat && chat._id ) {
+			removeUserFromChat({
+				userId: user._id,
+				chatId: chat._id
+			}).then(({data}) => {
+			})
+		}
+	}
+
 	handleCreateChatClick = (data) => {
 		const {createChat, match} = this.props
 
@@ -72,7 +98,7 @@ class ChatContainer extends React.Component {
 	}
 
 	render() {
-		const {chatsWithMessages, loading, match} = this.props
+		const {chatsWithMessages, users, loading, match} = this.props
 		const selectedChatId = match.params.id
 
 		if (!chatsWithMessages)
@@ -108,8 +134,9 @@ class ChatContainer extends React.Component {
 							{selectedChat.users.map((user, i) => {
 								const isCreator = user._id === selectedChat.createdBy._id
 								return <span key={i}
-														 style={{fontWeight: (isCreator ? 'bold' : 'normal')}}>{user.username}{(i < selectedChat.users.length - 1 ? ', ' : '')}</span>
+														 style={{fontWeight: (isCreator ? 'bold' : 'normal')}}>{user.username}{isCreator?'': <button onClick={this.handleRemoveUserFromChatClick.bind(this, selectedChat, user)}>x</button>}{(i < selectedChat.users.length - 1 ? ', ' : '')}</span>
 							})}
+							<AddChatUser users={users} selectedUsers={selectedChat.users} onClick={this.handleAddChatUserClick}/>
 						</div>
 
 						<button onClick={this.handleOnLoadMore.bind(this, selectedChat)}>load older</button>
@@ -132,7 +159,10 @@ ChatContainer.propTypes = {
 	/* apollo client props */
 	loading: PropTypes.bool,
 	chatsWithMessages: PropTypes.array,
+	users: PropTypes.array,
 	createChat: PropTypes.func.isRequired,
+	addUserToChat: PropTypes.func.isRequired,
+	removeUserFromChat: PropTypes.func.isRequired,
 	deleteChat: PropTypes.func.isRequired,
 	createMessage: PropTypes.func.isRequired,
 	deleteMessage: PropTypes.func.isRequired,
@@ -144,16 +174,21 @@ ChatContainer.propTypes = {
 	loadMoreMessages: PropTypes.func.isRequired
 }
 
-const MESSAGES_PER_PAGE = 2
+const MESSAGES_PER_PAGE = 10
+const CHATS_PER_PAGE = 99
 
-const gqlQuery = gql`query{chatsWithMessages(messageLimit: ${MESSAGES_PER_PAGE}){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
+const gqlQuery = gql`query{users{_id username} chatsWithMessages(limit: ${CHATS_PER_PAGE}, messageLimit: ${MESSAGES_PER_PAGE}){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
 const gqlQueryMoreMessages = gql`query chatMessages($chatId: String!, $messageOffset: Int, $messageLimit: Int){
 	chatMessages(chatId:$chatId, messageOffset:$messageOffset, messageLimit:$messageLimit){
 		_id text status from{username _id}
 	}
 }`
 
+
+
 const gqlCreateChat = gql`mutation createChat($name: String!){createChat(name:$name){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
+const gqlAddUserToChat = gql`mutation addUserToChat($userId: ID!, $chatId: ID!){addUserToChat(userId:$userId,chatId:$chatId){_id status}}`
+const gqlRemoveUserFromChat = gql`mutation removeUserFromChat($userId: ID!, $chatId: ID!){removeUserFromChat(userId:$userId,chatId:$chatId){_id status}}`
 const gqlDeleteChat = gql`mutation deleteChat($chatId: ID!){deleteChat(chatId:$chatId){_id status}}`
 
 const gqlInsertMessage = gql`mutation createMessage($chatId: ID!, $text: String!) {createMessage(chatId:$chatId,text:$text){_id text status to{_id} from{_id,username}}}`
@@ -192,9 +227,10 @@ const ChatContainerWithGql = compose(
 			}
 		},
 		props: props => {
-			const {loading, chatsWithMessages, fetchMore} = props.data
+			const {loading, chatsWithMessages, users, fetchMore} = props.data
 			return {
 				chatsWithMessages,
+				users,
 				loading,
 				onCreateMessage: params => {
 					return props.data.subscribeToMore({
@@ -271,6 +307,69 @@ const ChatContainerWithGql = compose(
 						const data = store.readQuery({query: gqlQuery})
 
 						data.chatsWithMessages.push(createChat)
+						store.writeQuery({query: gqlQuery, data})
+					}
+				})
+			}
+		}),
+	}),
+	graphql(gqlAddUserToChat, {
+		props: ({ownProps, mutate}) => ({
+			addUserToChat: ({userId, chatId}) => {
+				const user = ownProps.users.find(u => u._id === userId)
+
+				return mutate({
+				  fetchPolicy: 'network-only',
+					variables: {userId, chatId},
+					optimisticResponse: {
+						__typename: 'Mutation',
+						// Optimistic message
+						addUserToChat: {
+							_id: chatId,
+							status: 'adding_user',
+							__typename: 'Chat'
+						}
+					},
+					update: (store, {data: {addUserToChat}}) => {
+						// Read the data from the cache for this query.
+						const data = store.readQuery({query: gqlQuery})
+
+						const chatIdx = data.chatsWithMessages.findIndex((e) => e._id === chatId)
+						const userIdx = data.users.findIndex((e) => e._id === userId)
+						if (chatIdx >= 0 && userIdx >= 0) {
+							data.chatsWithMessages[chatIdx].users.unshift(data.users[userIdx])
+						}
+
+
+						store.writeQuery({query: gqlQuery, data})
+					}
+				})
+			}
+		}),
+	}),
+	graphql(gqlRemoveUserFromChat, {
+		props: ({ownProps, mutate}) => ({
+			removeUserFromChat: ({userId, chatId}) => {
+				return mutate({
+					variables: {userId, chatId},
+					optimisticResponse: {
+						__typename: 'Mutation',
+						// Optimistic message
+						removeUserFromChat: {
+							_id: chatId,
+							status: 'removing_user',
+							__typename: 'Chat'
+						}
+					},
+					update: (store, {data: {removeUserFromChat}}) => {
+						// Read the data from the cache for this query.
+						const data = store.readQuery({query: gqlQuery})
+
+						const chatIdx = data.chatsWithMessages.findIndex((e) => e._id === chatId)
+						if (chatIdx >= 0) {
+							data.chatsWithMessages[chatIdx].users = data.chatsWithMessages[chatIdx].users.filter(u => u._id !== userId)
+						}
+
 						store.writeQuery({query: gqlQuery, data})
 					}
 				})
