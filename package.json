@@ -32,7 +32,7 @@
     "url": "https://github.com/axax/issues"
   },
   "devDependencies": {
-    "aws-sdk": "^2.89.0",
+    "aws-sdk": "^2.94.0",
     "babel-core": "^6.25.0",
     "babel-eslint": "^7.2.3",
     "babel-jest": "^19.0.0",
@@ -46,7 +46,7 @@
     "eslint": "^3.19.0",
     "eslint-plugin-react": "^6.10.2",
     "express": "^4.15.3",
-    "express-graphql": "^0.6.6",
+    "express-graphql": "^0.6.7",
     "gql-merge": "0.0.6",
     "graphql": "^0.10.5",
     "immutability-helper": "^2.3.0",
@@ -56,13 +56,13 @@
     "nodemon": "^1.11.0",
     "prop-types": "^15.5.10",
     "react": "^15.6.1",
-    "react-apollo": "^1.4.8",
+    "react-apollo": "^1.4.10",
     "react-dom": "^15.6.1",
     "react-redux": "^5.0.5",
     "react-router-dom": "^4.1.2",
     "react-test-renderer": "^15.6.1",
     "redux": "^3.7.2",
-    "redux-persist": "^4.8.2",
+    "redux-persist": "^4.8.3",
     "subscriptions-transport-ws": "^0.6.0",
     "webpack": "^2.7.0",
     "webpack-dev-server": "^2.6.1"
