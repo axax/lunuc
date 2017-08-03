@@ -12,7 +12,8 @@ const KeyValueContainer = ({keyvalue, loading, setValue}) => {
 		setValue({
 			key: key,
 			value: e.target.value
-		}).then(({data}) => {}).catch((e) => {
+		}).then(({data}) => {
+		}).catch((e) => {
 			console.log(e)
 		})
 	}
@@ -21,7 +22,8 @@ const KeyValueContainer = ({keyvalue, loading, setValue}) => {
 		setValue({
 			key: key,
 			value: value
-		}).then(({data}) => {})
+		}).then(({data}) => {
+		})
 	}
 
 	let pairs = []
@@ -53,17 +55,10 @@ KeyValueContainer.propTypes = {
  */
 
 const gqlKeyValueQuery = gql`
-  query KeyValueQuery($key: String!) {
-  	# return all keyvalue pairs
-  	keyvalue {
+  query{keyvalue {
 			key
 			value
-		}
-		# return a single value
-    keyvalueOne(key: $key) {
-    	key
-    	value
-    }
+			}
   }`
 
 const gqlKeyValueUpdate = gql`
@@ -80,15 +75,13 @@ const KeyValueContainerWithGql = compose(
 		options() {
 			return {
 				fetchPolicy: 'cache-and-network',
-				variables: {
-					key: 'key2'
-				},
 				reducer: (prev, {operationName, type, result: {data}}) => {
 
-					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'KeyValueUpdate' && data && data.setValue && data.setValue.key ) {
-
-						let found=prev.keyvalue.find(x => x.key === data.setValue.key )
-						if( !found ) {
+					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'KeyValueUpdate' && data && data.setValue && data.setValue.key) {
+						const idx = prev.keyvalue.findIndex(x => x.key === data.setValue.key)
+						if (idx > -1) {
+							return update(prev, {keyvalue: {[idx]: {value: {$set: data.setValue.value}}}})
+						} else {
 							return update(prev, {keyvalue: {$push: [data.setValue]}})
 						}
 					}
