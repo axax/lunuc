@@ -10,8 +10,8 @@ import {auth} from './auth'
 import {formatError} from './error'
 import {subscriptionManager} from './subscription'
 
-const PORT = 8080
-const WS_PORT = 5000
+const PORT = (process.env.PORT || 3000)
+const WS_PORT = (process.env.WS_PORT || 5000)
 
 dbConnection((db) => dbPreparation(db, () => {
 
