@@ -36,7 +36,7 @@
   "bugs": {
     "url": "https://github.com/axax/issues"
   },
-  "devDependencies": {
+  "dependencies": {
     "aws-sdk": "^2.94.0",
     "babel-core": "^6.25.0",
     "babel-eslint": "^7.2.3",
