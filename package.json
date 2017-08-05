@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "This is just another full-stack setup",
   "main": "index.js",
+  "engines": {
+    "node": "6.11.2"
+  },
   "scripts": {
     "lint": "eslint src/**/*.js server/**/*.js api/**/*.js test/**/*.js",
     "test": "jest",
@@ -10,7 +13,7 @@
     "client": "webpack-dev-server",
     "build": "NODE_ENV=production webpack -p",
     "api": "nodemon ./api/index.js --watch api",
-    "start": "echo \"Use npm run client instead\" && npm run client"
+    "start": "echo \"Starting api and client concurrently\" && npm run api & npm run client"
   },
   "keywords": [
     "React for UI",
