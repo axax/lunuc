@@ -71,6 +71,7 @@
 | [graphql](https://github.com/graphql/graphql-js)  | The JavaScript reference implementation for GraphQL, a query language for APIs created by Facebook. | 
 | [gql-merge](https://github.com/liamcurry/gql/tree/master/packages/gql-merge)  | Tools for merging GraphQL documents | 
 | [express](https://github.com/expressjs/express)  | Fast, unopinionated, minimalist web framework for node | 
+| [express-http-proxy](https://github.com/villadora/express-http-proxy)  | Proxy middleware for express/connect | 
 | [express-graphql](https://github.com/graphql/express-graphql)  | Create a GraphQL HTTP server with Express. | 
 | [react-apollo](https://github.com/apollographql/react-apollo)  | React data container for the Apollo graphql Client. | 
 | [mongodb](https://github.com/mongodb/node-mongodb-native)  | Mongo DB Native NodeJS Driver  | 
