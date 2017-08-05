@@ -7,11 +7,11 @@ import {gql} from 'react-apollo'
 
 // Create regular NetworkInterface by using apollo-client's API
 const networkInterface = createNetworkInterface({
-	uri: `http://${window.location.hostname}:3000/graphql`,
+	uri: `http://${window.location.hostname}:${window.location.port}/graphql`,
 })
 
 // Create WebSocket client for subsciption
-const wsClient = new SubscriptionClient('ws://localhost:5000/', {
+const wsClient = new SubscriptionClient(`ws://${window.location.hostname}:5000/`, {
 	reconnect: true,
 	connectionParams: {
 		// Pass any arguments you want for initialization
