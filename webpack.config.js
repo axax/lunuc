@@ -1,4 +1,4 @@
-var devMode = process.env.NODE_ENV !== 'production'
+var devMode = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1
 
 var path = require('path')
 var webpack = require('webpack')
@@ -31,14 +31,18 @@ var config = {
 if (devMode) {
 	console.log('Build for developing')
 
+
+	const PORT = (process.env.PORT || 8080)
+	const API_PORT = (process.env.WS_PORT || 3000)
+
 	config.devServer = {
 		historyApiFallback: true,
 		inline: true,
 		hot: true,
-		port: 3000,
-		host: '127.0.0.1',
+		port: PORT,
+		host: '0.0.0.0',
 		proxy: {
-			'/graphql': {target: 'http://127.0.0.1:8080'}
+			'/graphql': {target: `http://0.0.0.0:${API_PORT}`}
 		}
 	}
 
@@ -50,7 +54,7 @@ if (devMode) {
 } else {
 	console.log('Build for production')
 
-	config.devtool = 'source-map'
+	//config.devtool = 'source-map'
 }
 
 
