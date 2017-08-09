@@ -161,6 +161,12 @@ Feedback, issues, etc. are more than welcome!
 
 `npm update --save-dev`
 
+#### force all packages to update to latest version
+`npm i -g npm-check-updates`
+
+check with `ncu -u` 
+
+update with `ncu -a`
 
 ## Contributors
 
