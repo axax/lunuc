@@ -21,7 +21,7 @@
     "api": "PORT=3000 WS_PORT=5000 nodemon ./api/index.js --watch api",
     "start": "echo \"Build and start api and client concurrently\" && npm run build && npm run api & npm run client",
     "dev": "echo \"Start api and client in dev mode concurrently\" && npm run api & npm run client_dev",
-    "postinstall":"npm run build"
+    "postinstall": "npm run build"
   },
   "keywords": [
     "React for UI",
@@ -42,7 +42,7 @@
   "bugs": {
     "url": "https://github.com/axax/issues"
   },
-  "devDependencies": {
+  "dependencies": {
     "aws-sdk": "^2.94.0",
     "babel-core": "^6.25.0",
     "babel-eslint": "^7.2.3",
@@ -76,7 +76,9 @@
     "redux": "^3.7.2",
     "redux-persist": "^4.8.3",
     "subscriptions-transport-ws": "^0.6.0",
-    "webpack": "^2.7.0",
+    "webpack": "^2.7.0"
+  },
+  "devDependencies": {
     "webpack-dev-server": "^2.6.1"
   }
 }
