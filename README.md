@@ -18,9 +18,9 @@
 * Optimistic UI
 * Persist and Rehydrate
 * Authentication 
+* Use of sockets (subscriptions-transport-ws)
 
 *todos*
-* Use of sockets (subscriptions-transport-ws)
 * Use of Service worker
 * Travis yml
 * Docker integration
@@ -28,15 +28,20 @@
 
 ## Installation & Usage
 
-1. `npm install`
+### Environment
+Url to access the mongo database
+1. `export LUNUC_MONGO_URL mongodb://user:password@ds145780.mlab.com:45780/app`
 
-### Client
-2. `npm run client`
-3. visit `http://localhost:8080`
+### Install
+2. `npm install`
 
-### Server
-2. `npm run api`
-3. visit `http://localhost:3000`
+### Development
+3. `npm run dev`
+4. visit `http://localhost:8080`
+
+### Production
+5. `npm start`
+6. visit `http://localhost:8080`
 
  
 ## Implementation

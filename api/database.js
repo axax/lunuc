@@ -1,10 +1,8 @@
 import {MongoClient, ObjectId} from 'mongodb'
 
-const MONGO_URL = 'mongodb://lunuc:sommer2017@ds145780.mlab.com:45780/lunuc'
-
+const MONGO_URL = process.env.LUNUC_MONGO_URL
 
 export const dbPreparation = async (db,cb) => {
-
 
 
 	const userRoleCollection = db.collection('UserRole')
@@ -28,6 +26,10 @@ export const dbPreparation = async (db,cb) => {
 
 
 export const dbConnection = (cb) => {
+	if( !MONGO_URL || MONGO_URL===''){
+		console.error('Mongo URL missing. Please set env variable (export LUNUC_MONGO_URL=mongodb://user:password@mongodb/)')
+		return
+	}
 	MongoClient.connect(MONGO_URL,
 		{
 			/* http://mongodb.github.io/node-mongodb-native/2.1/reference/connecting/connection-settings/ */
