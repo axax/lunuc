@@ -71,3 +71,5 @@ typings/
 
 # macOS attribute file
 .DS_Store
+
+package-lock.json
