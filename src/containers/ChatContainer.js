@@ -195,8 +195,8 @@ const gqlInsertMessage = gql`mutation createMessage($chatId: ID!, $text: String!
 const gqlDeleteMessage = gql`mutation deleteMessage($messageId: ID!,$chatId: ID) {deleteMessage(messageId:$messageId,chatId:$chatId){_id status to{_id}}}`
 
 /*Subscriptions*/
-const gqlOnCreateMessage = gql`subscription{createMessage{_id text status from{_id username}to{_id}}}`
-const gqlOnDeleteMessage = gql`subscription{deleteMessage{_id status to{_id}}}`
+const gqlOnCreateMessage = gql`subscription{messageCreated{_id text status from{_id username}to{_id}}}`
+const gqlOnDeleteMessage = gql`subscription{messageDeleted{_id status to{_id}}}`
 
 
 const createMessage = (prev, message) => {
@@ -236,7 +236,7 @@ const ChatContainerWithGql = compose(
 					return props.data.subscribeToMore({
 						document: gqlOnCreateMessage,
 						updateQuery: (prev, {subscriptionData}) => {
-							return createMessage(prev, subscriptionData.data.createMessage)
+							return createMessage(prev, subscriptionData.data.messageCreated)
 						}
 					})
 				},

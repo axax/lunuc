@@ -3,6 +3,7 @@ import {ObjectId} from 'mongodb'
 import {auth} from '../auth'
 import {ApiError} from '../error'
 import {pubsub} from '../subscription'
+import {withFilter} from 'graphql-subscriptions'
 
 
 export const chatResolver = (db) => ({
@@ -92,7 +93,7 @@ export const chatResolver = (db) => ({
 			status: 'created'
 		}
 
-		pubsub.publish('createMessage', {createMessage: returnMessage})
+		pubsub.publish('messageCreated', {messageCreated: returnMessage})
 
 
 		return returnMessage
@@ -114,7 +115,7 @@ export const chatResolver = (db) => ({
 
 		const returnMessage = {_id: messageId, to: {_id: chatId}, status: 'deleted'}
 
-		pubsub.publish('deleteMessage', {deleteMessage: returnMessage})
+		pubsub.publish('messageDeleted', {messageDeleted: returnMessage})
 
 		return returnMessage
 
@@ -586,5 +587,15 @@ export const chatResolver = (db) => ({
 			}
 		]).next())
 		return chat.messages
-	}
+	},
+	messageCreated: withFilter(() => pubsub.asyncIterator('messageCreated'),
+		(payload, args) => {
+			return true
+		}
+	),
+	messageDeleted: withFilter(() => pubsub.asyncIterator('messageDeleted'),
+		(payload, args) => {
+			return true
+		}
+	)
 })

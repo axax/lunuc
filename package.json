@@ -15,7 +15,7 @@
     "lint": "eslint src/**/*.js server/**/*.js api/**/*.js test/**/*.js",
     "test": "jest",
     "test:watch": "npm test -- --watch",
-    "client": "API_PORT=3000 nodemon ./server/index.js",
+    "client": "API_PORT=3000 nodemon ./server/index.js --watch server",
     "client_dev": "API_PORT=3000 webpack-dev-server",
     "build": "NODE_ENV=production webpack -p",
     "api": "PORT=3000 WS_PORT=5000 nodemon ./api/index.js --watch api",

@@ -41,3 +41,16 @@ const server = app.listen(PORT, () => {
 
 	console.log(`Listening at http://${address}:${port}`)
 })
+
+// proxy for websocket
+/*app.use('/ws', proxy(`localhost:${API_PORT}`, {
+	proxyReqPathResolver: function(req) {
+		console.log(req)
+		return require('url').parse(req.url).path
+	}
+}))*/
+/*app.on('upgrade', function (req, socket, head) {
+	console.log(head)
+
+	proxy.ws(req, socket, head)
+})*/

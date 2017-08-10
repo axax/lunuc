@@ -2,6 +2,7 @@ import express from 'express'
 import graphqlHTTP from 'express-graphql'
 import {createServer} from 'http'
 import {SubscriptionServer} from 'subscriptions-transport-ws'
+import {execute, subscribe} from 'graphql'
 
 import {schema} from './schema/index'
 import {resolver} from './resolver/index'
@@ -11,57 +12,54 @@ import {formatError} from './error'
 import {subscriptionManager} from './subscription'
 
 const PORT = (process.env.PORT || 3000)
-const WS_PORT = (process.env.WS_PORT || 5000)
 
 dbConnection((db) => dbPreparation(db, () => {
 
-		// Initialize http api
-		const app = express()
+	// Initialize http api
+	const app = express()
 
-		// delay response
-		/*app.use(function (req, res, next) {
-		 setTimeout(next, 4000)
-		 })*/
+	// delay response
+	/*app.use(function (req, res, next) {
+	 setTimeout(next, 4000)
+	 })*/
 
-		// Authentication
-		auth.initialize(app, db)
-
-
-		app.use('/graphql', graphqlHTTP((req) => ({
-				schema: schema,
-				rootValue: resolver(db),
-				graphiql: true,
-				formatError: formatError,
-				extensions({document, variables, operationName, result}) {
-				}
-			}))
-		)
-
-		// Launch the api
-		const server = app.listen(PORT, () => {
-			const {port} = server.address()
-			console.log(`Running a GraphQL API server at http://localhost:${port}/graphql`)
-		})
+	// Authentication
+	auth.initialize(app, db)
 
 
-		// Create WebSocket listener server
-		const appWs = createServer((request, response) => {
-			response.writeHead(404)
-			response.end()
-		})
+	const rootValue = resolver(db)
 
 
-		// Bind it to port and start listening
-		appWs.listen(WS_PORT, () => console.log(
-			`Websocket Server is now running on http://localhost:${WS_PORT}`
-		))
-
-		const subscriptionServer = new SubscriptionServer(
-			{
-				subscriptionManager: subscriptionManager
-			},
-			{
-				server: appWs
+	app.use('/graphql', graphqlHTTP((req) => ({
+			schema,
+			rootValue,
+			graphiql: true,
+			formatError: formatError,
+			extensions({document, variables, operationName, result}) {
 			}
-		)
-	}))
+		}))
+	)
+
+
+	// Create WebSocket listener server
+	const appWs = createServer(app)
+
+
+	// Bind it to port and start listening
+	appWs.listen(PORT, () => console.log(
+		`Server/Websocket is now running on http://localhost:${PORT}`
+	))
+
+	const subscriptionServer = SubscriptionServer.create(
+		{
+			schema,
+			execute,
+			subscribe,
+			rootValue
+		},
+		{
+			server: appWs
+		}
+	)
+
+}))

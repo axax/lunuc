@@ -2,11 +2,66 @@ import Util from '../util'
 import {ObjectId} from 'mongodb'
 import {auth} from '../auth'
 import {ApiError} from '../error'
-import { pubsub } from '../subscription'
+import {pubsub} from '../subscription'
 
 
 export const userResolver = (db) => ({
+	me: async (data, {context}) => {
+		Util.checkIfUserIsLoggedIn(context)
+		var user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
 
+		if (!user) {
+			throw new Error('User doesn\'t exist')
+		} else {
+			var userRole = null
+			// query user role
+			if (user.role) {
+				userRole = (await db.collection('UserRole').findOne({_id: ObjectId(user.role)}))
+			}
+
+			// set default user role
+			if (userRole === null) {
+				userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
+			}
+			user.role = userRole
+
+		}
+		return user
+	},
+	users: async ({limit, offset}, {context, query}) => {
+		Util.checkIfUserIsLoggedIn(context)
+
+		const userCollection = db.collection('User')
+
+
+		let users = (await userCollection.aggregate([
+			/*{
+			 $match: {
+			 users: {$in: [ObjectId(context.id)]}
+			 }
+			 },*/
+			{
+				$skip: offset,
+			},
+			{
+				$limit: limit
+			},
+			{
+				$project: {
+					username: 1
+				}
+			}
+
+		]).toArray())
+
+
+		return users
+	},
+	login: async ({username, password}) => {
+		const result = await auth.createToken(username, password, db)
+
+		return result
+	},
 	createUser: async ({username, password, email}) => {
 
 		//TODO: Improve error handling -> https://medium.com/@tarkus/validation-and-user-errors-in-graphql-mutations-39ca79cd00bf
@@ -35,39 +90,18 @@ export const userResolver = (db) => ({
 		const hashedPw = Util.hashPassword(password)
 		const userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
 
-		const insertResult = await userCollection.insertOne({role: userRole._id,emailConfirmed: false, email: email, username: username, password: hashedPw})
+		const insertResult = await userCollection.insertOne({
+			role: userRole._id,
+			emailConfirmed: false,
+			email: email,
+			username: username,
+			password: hashedPw
+		})
 
 		if (insertResult.insertedCount) {
 			const doc = insertResult.ops[0]
 			return doc
 		}
-	},
-	login: async ({username, password}) => {
-		const result = await auth.createToken(username, password, db)
-
-		return result
-	},
-	me: async (data, {context}) => {
-		Util.checkIfUserIsLoggedIn(context)
-		var user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
-
-		if (!user) {
-			throw new Error('User doesn\'t exist')
-		}else{
-			var userRole = null
-			// query user role
-			if( user.role ) {
-				userRole = (await db.collection('UserRole').findOne({_id: ObjectId(user.role)}))
-			}
-
-			// set default user role
-			if (userRole === null ){
-				userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
-			}
-			user.role = userRole
-
-		}
-		return user
 	},
 	updateMe: async (user, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
@@ -153,34 +187,5 @@ export const userResolver = (db) => ({
 		}
 
 		return {value: '', _id: _id}
-	},
-	users: async ({limit, offset}, {context, query}) => {
-		Util.checkIfUserIsLoggedIn(context)
-
-		const userCollection = db.collection('User')
-
-
-		let users = (await userCollection.aggregate([
-			/*{
-				$match: {
-					users: {$in: [ObjectId(context.id)]}
-				}
-			},*/
-			{
-				$skip: offset,
-			},
-			{
-				$limit: limit
-			},
-			{
-				$project: {
-					username: 1
-				}
-			}
-
-		]).toArray())
-
-
-		return users
 	}
 })

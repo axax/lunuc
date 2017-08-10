@@ -11,7 +11,7 @@ const networkInterface = createNetworkInterface({
 })
 
 // Create WebSocket client for subsciption
-const wsClient = new SubscriptionClient((window.location.protocol==='https:'?'wss':'ws')+`://${window.location.hostname}:5000/`, {
+const wsClient = new SubscriptionClient((window.location.protocol==='https:'?'wss':'ws')+`://${window.location.hostname}:${window.location.port}/ws`, {
 	reconnect: true,
 	connectionParams: {
 		// Pass any arguments you want for initialization

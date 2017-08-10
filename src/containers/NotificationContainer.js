@@ -46,7 +46,7 @@ const gqlQueryNotification = gql`
 
 const gqlSubscriptionNotification = gql`
   subscription{
-  	notification{
+  	newNotification{
 			key
 			message
 		}
@@ -72,7 +72,7 @@ const NotificationContainerWithGql = compose(graphql(gqlQueryNotification, {
 						if (!subscriptionData.data) {
 							return prev
 						}
-						const newNotification = subscriptionData.data.notification
+						const {newNotification} = subscriptionData.data
 
 						let newNotifications = []
 						if( prev.notifications ) {

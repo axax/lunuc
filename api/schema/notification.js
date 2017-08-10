@@ -10,6 +10,6 @@ export const notificationSchemaRaw = `
   }
  
 	type Subscription {
-		notification: Notification
+		newNotification: Notification
 	}
 `
