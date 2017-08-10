@@ -1,56 +1,81 @@
+import httpProxy from 'http-proxy'
+import http from 'http'
+import url from 'url'
 import express from 'express'
 import path from 'path'
-import proxy from 'express-http-proxy'
+import fs from 'fs'
 
 // Port to listen to
 const PORT = (process.env.PORT || 8080)
 const API_PORT = (process.env.API_PORT || 3000)
 
-// Build dir
-var build_dir = path.join(__dirname, '../build')
 
+// Build dir
+const build_dir = path.join(__dirname, '../build')
+
+const mimeTypes = {
+	'html': 'text/html',
+	'jpeg': 'image/jpeg',
+	'jpg': 'image/jpeg',
+	'png': 'image/png',
+	'ico': 'image/x-icon',
+	'js': 'text/javascript',
+	'css': 'text/css'
+};
 
 // Initialize http api
-const app = express()
+const app = http.createServer(function (req, res) {
+
+		const uri = url.parse(req.url).pathname
+		if (uri === '/graphql') {
+			proxy.web(req, res, { target: `http://localhost:${API_PORT}/graphql`})
+
+		} else {
+			const filename = path.join(process.cwd() + '/build', uri),
+				ext = path.extname(filename).split('.')[1]
+
+			if( ext ) {
 
 
-//Serving the files on the dist folder
-app.use(express.static(build_dir))
+				fs.stat(filename, function (err, stats) {
+					if (err) {
+						console.log('not exists: ' + filename)
+						res.writeHead(404, {'Content-Type': 'text/plain'})
+						res.write('404 Not Found\n')
+						res.end()
+					} else {
+						const mimeType = mimeTypes[path.extname(filename).split('.')[1]]
+						res.writeHead(200, mimeType)
 
-// Proxy for API
-app.use('/graphql', proxy(`localhost:${API_PORT}`, {
-	proxyReqPathResolver: function(req) {
-		return '/graphql'+require('url').parse(req.url).path
+						const fileStream = fs.createReadStream(filename)
+						fileStream.pipe(res)
+					}
+				})
+			}else{
+					// send index.html
+				const indexfile = path.join(process.cwd(), '/index.html')
+				res.writeHead(200, mimeTypes['html'])
+
+				const fileStream = fs.createReadStream(indexfile)
+				fileStream.pipe(res)
+			}
+		}
 	}
-}))
+)
 
-//Send index.html when the user access the web
-app.get('/graphql', function (req, res) {
-	console.log('graphql',req)
+//
+// Setup our server to proxy standard HTTP requests
+//
+const proxy = new httpProxy.createProxyServer()
+
+//
+// Listen to the `upgrade` event and proxy the
+// WebSocket requests as well.
+//
+app.on('upgrade', function (req, socket, head) {
+	proxy.ws(req, socket, head, { target: `ws://localhost:${API_PORT}/ws`, ws: true})
 })
 
-
-//Send index.html when the user access the web
-app.get('*', function (req, res) {
-	res.sendFile(path.join(build_dir, '/../index.html'))
-})
-
-// Launch the server
-const server = app.listen(PORT, () => {
-	const {address, port} = server.address()
-
-	console.log(`Listening at http://${address}:${port}`)
-})
-
-// proxy for websocket
-/*app.use('/ws', proxy(`localhost:${API_PORT}`, {
-	proxyReqPathResolver: function(req) {
-		console.log(req)
-		return require('url').parse(req.url).path
-	}
-}))*/
-/*app.on('upgrade', function (req, socket, head) {
-	console.log(head)
-
-	proxy.ws(req, socket, head)
-})*/
+app.listen(PORT, () => console.log(
+	`Listening at http://localhost:${PORT}`
+))
