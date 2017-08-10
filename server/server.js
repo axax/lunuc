@@ -31,7 +31,7 @@ const app = http.createServer(function (req, res) {
 			proxy.web(req, res, { target: `http://localhost:${API_PORT}/graphql`})
 
 		} else {
-			const filename = path.join(process.cwd() + '/build', uri),
+			const filename = path.join(build_dir, uri),
 				ext = path.extname(filename).split('.')[1]
 
 			if( ext ) {
@@ -53,7 +53,7 @@ const app = http.createServer(function (req, res) {
 				})
 			}else{
 					// send index.html
-				const indexfile = path.join(process.cwd(), '/index.html')
+				const indexfile = path.join(build_dir, '/../index.html')
 				res.writeHead(200, mimeTypes['html'])
 
 				const fileStream = fs.createReadStream(indexfile)
