@@ -21,7 +21,21 @@ const mimeTypes = {
 	'ico': 'image/x-icon',
 	'js': 'text/javascript',
 	'css': 'text/css'
-};
+}
+
+
+//
+// Setup our server to proxy standard HTTP requests
+//
+const proxy = new httpProxy.createProxyServer()
+
+
+//
+// Listen for the `error` event on `proxy`.
+proxy.on('error', function (err, req, res) {
+	// error handling
+	//console.log(err)
+})
 
 // Initialize http api
 const app = http.createServer(function (req, res) {
@@ -29,7 +43,6 @@ const app = http.createServer(function (req, res) {
 		const uri = url.parse(req.url).pathname
 		if (uri === '/graphql') {
 			proxy.web(req, res, { target: `http://localhost:${API_PORT}/graphql`})
-
 		} else {
 			const filename = path.join(build_dir, uri),
 				ext = path.extname(filename).split('.')[1]
@@ -63,10 +76,6 @@ const app = http.createServer(function (req, res) {
 	}
 )
 
-//
-// Setup our server to proxy standard HTTP requests
-//
-const proxy = new httpProxy.createProxyServer()
 
 //
 // Listen to the `upgrade` event and proxy the
