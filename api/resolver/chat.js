@@ -46,7 +46,7 @@ export const chatResolver = (db) => ({
 				_id: chatId,
 				status: 'deleted'
 			}
-		}else{
+		} else {
 			return {
 				_id: chatId,
 				status: 'error'
@@ -127,7 +127,7 @@ export const chatResolver = (db) => ({
 		const userCollection = db.collection('User')
 		const user = (await userCollection.findOne({_id: ObjectId(userId)}))
 
-		if( !user ){
+		if (!user) {
 			throw new Error('User doesnt exist')
 		}
 
@@ -140,10 +140,10 @@ export const chatResolver = (db) => ({
 				$addToSet: {users: ObjectId(userId)}
 			})
 
-		
+
 		if (result.matchedCount === 0) {
 			throw new Error('Chat doesnt exist')
-		}else if(result.modifiedCount === 0){
+		} else if (result.modifiedCount === 0) {
 			throw new Error('User is already added to the chat')
 		}
 
@@ -178,7 +178,7 @@ export const chatResolver = (db) => ({
 		let chats = (await chatCollection.aggregate([
 			{
 				$match: {
-					$or: [{ users: {$in: [ObjectId(context.id)]} }, { createdBy: ObjectId(context.id) }]
+					$or: [{users: {$in: [ObjectId(context.id)]}}, {createdBy: ObjectId(context.id)}]
 				}
 			},
 			{
@@ -215,7 +215,7 @@ export const chatResolver = (db) => ({
 					users: {$addToSet: {_id: '$users._id', username: '$users.username'}}
 				}
 			},
-			{ $sort : { _id: 1 } }
+			{$sort: {_id: 1}}
 		]).toArray())
 
 
@@ -229,7 +229,7 @@ export const chatResolver = (db) => ({
 		let chats = (await chatCollection.aggregate([
 			{
 				$match: {
-					$or: [{ users: {$in: [ObjectId(context.id)]} }, { createdBy: ObjectId(context.id) }]
+					$or: [{users: {$in: [ObjectId(context.id)]}}, {createdBy: ObjectId(context.id)}]
 				}
 			},
 			{
@@ -264,11 +264,11 @@ export const chatResolver = (db) => ({
 					createdBy: 1,
 					users: 1,
 					messages: 1,
-					messageCount: {$size: { $ifNull: [ '$messages', [] ] } },
+					messageCount: {$size: {$ifNull: ['$messages', []]}},
 					calcOffset: {
 						$let: {
 							vars: {
-								messageCount: {$size: { $ifNull: [ '$messages', [] ] }}
+								messageCount: {$size: {$ifNull: ['$messages', []]}}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset + messageLimit]}
 						}
@@ -276,7 +276,7 @@ export const chatResolver = (db) => ({
 					calcLimit: {
 						$let: {
 							vars: {
-								messageCount: {$size: { $ifNull: [ '$messages', [] ] } }
+								messageCount: {$size: {$ifNull: ['$messages', []]}}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset]}
 						}
@@ -335,6 +335,19 @@ export const chatResolver = (db) => ({
 					}
 				}
 			},
+			/* unwind messages again to do the sorting */
+			{$unwind: {path: '$messages', preserveNullAndEmptyArrays: true}},
+			{$sort: {'messages._id': -1}},
+			{
+				$group: {
+					_id: '$_id',
+					name: {'$first': '$name'},
+					createdBy: {'$first': '$createdBy'},
+					users: {'$first': '$users'},
+					messageCount: {'$first': '$messageCount'},
+					messages: {$push: '$messages'}
+				}
+			},
 			{
 				$project: {
 					name: 1,
@@ -345,7 +358,7 @@ export const chatResolver = (db) => ({
 					messages: {$cond: [{$eq: [{$arrayElemAt: ['$messages', 0]}, {}]}, [], '$messages']}
 				}
 			},
-			{ $sort : { _id: 1 } }
+			{$sort: {_id: 1}}
 		]).toArray())
 
 		//console.log(chats)
@@ -361,7 +374,7 @@ export const chatResolver = (db) => ({
 			{
 				$match: {
 					_id: ObjectId(chatId),
-					$or: [{ users: {$in: [ObjectId(context.id)]} }, { createdBy: ObjectId(context.id) }]
+					$or: [{users: {$in: [ObjectId(context.id)]}}, {createdBy: ObjectId(context.id)}]
 				}
 			},
 			{
@@ -392,11 +405,11 @@ export const chatResolver = (db) => ({
 					createdBy: 1,
 					users: 1,
 					messages: 1,
-					messageCount: {$size: { $ifNull: [ '$messages', [] ] }},
+					messageCount: {$size: {$ifNull: ['$messages', []]}},
 					calcOffset: {
 						$let: {
 							vars: {
-								messageCount: {$size: { $ifNull: [ '$messages', [] ] }}
+								messageCount: {$size: {$ifNull: ['$messages', []]}}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset + messageLimit]}
 						}
@@ -404,7 +417,7 @@ export const chatResolver = (db) => ({
 					calcLimit: {
 						$let: {
 							vars: {
-								messageCount: {$size: { $ifNull: [ '$messages', [] ] }}
+								messageCount: {$size: {$ifNull: ['$messages', []]}}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset]}
 						}
@@ -473,6 +486,19 @@ export const chatResolver = (db) => ({
 					}
 				}
 			},
+			/* unwind messages again to do the sorting */
+			{$unwind: {path: '$messages', preserveNullAndEmptyArrays: true}},
+			{$sort: {'messages._id': -1}},
+			{
+				$group: {
+					_id: '$_id',
+					name: {'$first': '$name'},
+					createdBy: {'$first': '$createdBy'},
+					users: {'$first': '$users'},
+					messageCount: {'$first': '$messageCount'},
+					messages: {$push: '$messages'}
+				}
+			},
 			/* return empty array if there are no messages */
 			{
 				$project: {
@@ -500,7 +526,7 @@ export const chatResolver = (db) => ({
 			{
 				$match: {
 					_id: ObjectId(chatId),
-					$or: [{ users: {$in: [ObjectId(context.id)]} }, { createdBy: ObjectId(context.id) }]
+					$or: [{users: {$in: [ObjectId(context.id)]}}, {createdBy: ObjectId(context.id)}]
 				}
 			},
 			/* Calculate limit and offset */
@@ -510,7 +536,7 @@ export const chatResolver = (db) => ({
 					calcOffset: {
 						$let: {
 							vars: {
-								messageCount: {$size: { $ifNull: [ '$messages', [] ] }}
+								messageCount: {$size: {$ifNull: ['$messages', []]}}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset + messageLimit]}
 						}
@@ -518,7 +544,7 @@ export const chatResolver = (db) => ({
 					calcLimit: {
 						$let: {
 							vars: {
-								messageCount: {$size: { $ifNull: [ '$messages', [] ] }}
+								messageCount: {$size: {$ifNull: ['$messages', []]}}
 							},
 							in: {$subtract: ['$$messageCount', messageOffset]}
 						}
@@ -579,6 +605,10 @@ export const chatResolver = (db) => ({
 					}
 				}
 			},
+			/* unwind messages again to do the sorting */
+			{$unwind: {path: '$messages', preserveNullAndEmptyArrays: true}},
+			{$sort: {'messages._id': -1}},
+			{$group: {_id: '$_id', 'messages': {$push: '$messages'}}},
 			/* return empty array if there are no messages */
 			{
 				$project: {
