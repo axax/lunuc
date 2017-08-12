@@ -11,7 +11,8 @@ class SearchWhileSpeakContainer extends React.Component {
 	state = {
 		recording: false,
 		recorded: [],
-		search: ''
+		search: '',
+		language: 'en-US'
 	}
 
 	constructor(props) {
@@ -19,23 +20,72 @@ class SearchWhileSpeakContainer extends React.Component {
 	}
 
 	componentDidMount() {
+		this.createRecorder()
+	}
+
+	componentWillUnmount(){
+		this.recognition.abort()
+	}
+
+
+	createRecorder = () => {
 		const self = this
-		this.recognition.lang = 'en-US'
+		this.recognition.lang = this.state.language
 		this.recognition.interimResults = false
 		this.recognition.maxAlternatives = 1
-		this.recognition.continuous = true
+		this.recognition.continuous = false
+		this.recognition.recognizing = false // this is a custom flag to determin wheater recognition is running
 
-		this.recognition.onresult = function(event) {
-			self.setState((state) => ({ recorded: state.recorded.concat(event.results[0][0].transcript)}))
+
+		this.recognition.onstart = function () {
+			this.recognizing = true
 		}
-		this.recognition.onend = function(e) {
-			if( self.state.recording ) {
-				self.recognition.start()
+
+		this.recognition.onerror = function (event) {
+			this.recognizing = false
+		}
+
+		this.recognition.onresult = function (event) {
+
+			const results = event.results
+
+			for (const result of results) {
+				if( result.isFinal ){
+
+					for (const alternativ of result) {
+						console.log(alternativ)
+						if( alternativ.confidence > 0.75){
+
+							/*var msg = new SpeechSynthesisUtterance(alternativ.transcript)
+							msg.lang = self.state.language
+							//msg.pitch = 2
+							window.speechSynthesis.speak(msg)*/
+
+
+							self.setState((state) => ({recorded: state.recorded.concat(alternativ.transcript)}))
+
+						}
+					}
+				}
 			}
 		}
-
-		if( this.state.recording ) {
-			this.recognition.start()
+		this.recognition.onend = function (e) {
+			this.recognizing = false
+			console.log('end')
+			self.handleRecorder(self.state.recording)
+		}
+		this.handleRecorder(this.state.recording)
+	}
+	
+	
+	handleRecorder = (start) => {
+		if (start) {
+			if( !this.recognition.recognizing ){
+				this.recognition.start()
+			}
+		}else{
+			this.recognition.stop()
+			this.recognition.abort()
 		}
 	}
 
@@ -44,12 +94,18 @@ class SearchWhileSpeakContainer extends React.Component {
 		const target = e.target
 		const value = target.type === 'checkbox' ? target.checked : target.value
 		const name = target.name
-
 		this.setState({
 			[target.name]: value
 		})
-	}
 
+		if( target.type === 'checkbox' ) {
+			this.handleRecorder(value)
+		}
+		if( name === 'language'){
+			console.log('change language to',value)
+			this.recognition.lang = value
+		}
+	}
 
 
 	render() {
@@ -57,15 +113,25 @@ class SearchWhileSpeakContainer extends React.Component {
 		let pairs = []
 
 		this.state.recorded.forEach(
-			(k,i) => pairs.push(<p key={i}>{k}</p>)
+			(k, i) => pairs.push(<p key={i}>{k}</p>)
 		)
 
 		console.log('render')
-		return <div><h1>Search</h1><input type="text" name="search" value={this.state.search} onChange={this.handleInputChange}/>Recorder: {this.state.recording?'on':'off'}{pairs}</div>
+		return <div><h1>Search</h1><input type="text" name="search" value={this.state.search}
+																			onChange={this.handleInputChange}/>
+			<select name="language" value={this.state.value} onChange={this.handleInputChange}>
+				<option value="en-US">English</option>
+				<option value="de-DE">Deutsch</option>
+			</select>
+			<input
+				name="recording"
+				type="checkbox"
+				checked={this.state.recording}
+				onChange={this.handleInputChange}/>
+			Recorder: {this.state.recording ? 'on' : 'off'}{pairs}
+		</div>
 	}
 }
-
-
 
 
 SearchWhileSpeakContainer.propTypes = {
