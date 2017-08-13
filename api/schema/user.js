@@ -6,6 +6,10 @@ export const userSchemaRaw = `
     name: String!
     capabilities: [String]!
   }
+    
+	type UserSettings {
+		speechLang: String!
+  }
   
 	type User {
 		_id: ID!
@@ -15,6 +19,8 @@ export const userSchemaRaw = `
     emailConfirmed: Boolean!
     note: [Note]
     role: UserRole!
+    settings: UserSettings
+    
   }
   
 	type UserPublic  {
