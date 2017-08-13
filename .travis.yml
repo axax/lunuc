@@ -1,6 +1,15 @@
-language:
-  node_js:
+sudo: false
+language: node_js
+cache:
+  directories:
+    - node_modules
+notifications:
+  email: false
+node_js:
     - "iojs"
     - 6
     - 8
-  install: true
+before_install: .travis/script-before-install.sh
+before_script: .travis/script-before.sh
+script: .travis/script-build.sh
+after_success: .travis/script-after-success.sh
