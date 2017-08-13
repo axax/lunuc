@@ -1,6 +1,11 @@
-# App
+# Starter App
 
-**This is just another full-stack setup (to build progressive web apps & to play around with the latest web technologies)**
+[![Build Status](https://travis-ci.org/axax/lunuc.svg?branch=master)](https://travis-ci.org/axax/lunuc)
+
+**This is a boilerplate / app template. A full-stack setup to build progressive web apps and to play around with the latest web technologies. Everything is up and running.  **
+
+** This demo a app is deployed on heroku
+https://lunuc.herokuapp.com/
 
 *Here are some features:*
 * React for UI
@@ -19,29 +24,33 @@
 * Persist and Rehydrate
 * Authentication 
 * Use of sockets (subscriptions-transport-ws)
-
-*todos*
-* Use of Service worker
 * Travis yml
+* Depolymet to heroku
+
+*Todos*
+* Use of Service worker
 * Docker integration
 * Use of AWS lambda
 
 ## Installation & Usage
 
 ### Environment
-Url to access the mongo database
-1. `export LUNUC_MONGO_URL mongodb://user:password@ds145780.mlab.com:45780/app`
+Setup your environment. 
+
+Url to access the mongo database:
+
+* `export LUNUC_MONGO_URL mongodb://user:password@ds145780.mlab.com:45780/app`
 
 ### Install
-2. `npm install`
+* `npm install`
 
 ### Development
-3. `npm run dev`
-4. visit `http://localhost:8080`
+* `npm run dev`
+* visit `http://localhost:8080`
 
 ### Production
-5. `npm start`
-6. visit `http://localhost:8080`
+* `npm start`
+* visit `http://localhost:8080`
 
  
 ## Implementation
