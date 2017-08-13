@@ -2,12 +2,12 @@
 
 [![Build Status](https://travis-ci.org/axax/lunuc.svg?branch=master)](https://travis-ci.org/axax/lunuc)
 
-**This is a boilerplate / app template. A full-stack setup to build progressive web apps and to play around with the latest web technologies. Everything is up and running.  **
+__This is a boilerplate / app template. A full-stack setup to build progressive web apps and to play around with the latest web technologies. Everything is up and running.__
 
-** This demo a app is deployed on heroku
+This demo app is also deployed on heroku 
 https://lunuc.herokuapp.com/
 
-*Here are some features:*
+*Here is a list with the main features:*
 * React for UI
 * Declarative routing
 * Redux architecture
