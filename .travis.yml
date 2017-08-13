@@ -6,7 +6,6 @@ cache:
 notifications:
   email: false
 node_js:
-    - "iojs"
     - 6
     - 8
 before_install: .travis/script-before-install.sh
