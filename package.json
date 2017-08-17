@@ -13,8 +13,10 @@
   },
   "scripts": {
     "lint": "eslint src/**/*.js server/**/*.js api/**/*.js test/**/*.js",
-    "test": "jest",
-    "test:watch": "npm test -- --watch",
+    "pretest": "pkill -2 mongod; rm -rf mongodb_tmp; mkdir mongodb_tmp; mongod --port 27018 --dbpath mongodb_tmp --fork --logpath /dev/null",
+    "test": "LUNUC_MONGO_URL=mongodb://localhost:27018; echo \"test\"",
+    "posttest": "pkill -2 mongod && rm -rf mongodb_tmp",
+    "test:watch": "npm test --watch",
     "client": "API_PORT=3000 nodemon ./server/index.js --watch server",
     "client_dev": "API_PORT=3000 webpack-dev-server",
     "build": "NODE_ENV=production webpack -p",
