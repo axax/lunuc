@@ -13,6 +13,8 @@ import {subscriptionManager} from './subscription'
 
 const PORT = (process.env.PORT || 3000)
 
+let appWs = null
+
 export const start = (cb) => {
     dbConnection((db) => dbPreparation(db, () => {
 
@@ -43,7 +45,7 @@ export const start = (cb) => {
 
 
         // Create WebSocket listener server
-        const appWs = createServer(app)
+        appWs = createServer(app)
 
 
         // Bind it to port and start listening
@@ -67,4 +69,12 @@ export const start = (cb) => {
         )
 
     }))
+}
+
+export const stop = (cb) => {
+    if ( appWs ){
+        console.log( `Stop server running on http://localhost:${PORT}`)
+        appWs.close(cb)
+        process.exit( 0 )
+    }
 }
