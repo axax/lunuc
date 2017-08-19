@@ -13,53 +13,58 @@ import {subscriptionManager} from './subscription'
 
 const PORT = (process.env.PORT || 3000)
 
-dbConnection((db) => dbPreparation(db, () => {
+export const start = (cb) => {
+    dbConnection((db) => dbPreparation(db, () => {
 
-	// Initialize http api
-	const app = express()
+        // Initialize http api
+        const app = express()
 
-	// delay response
-	/*app.use(function (req, res, next) {
-	 setTimeout(next, 4000)
-	 })*/
+        // delay response
+        /*app.use(function (req, res, next) {
+         setTimeout(next, 4000)
+         })*/
 
-	// Authentication
-	auth.initialize(app, db)
-
-
-	const rootValue = resolver(db)
+        // Authentication
+        auth.initialize(app, db)
 
 
-	app.use('/graphql', graphqlHTTP((req) => ({
-			schema,
-			rootValue,
-			graphiql: true,
-			formatError: formatError,
-			extensions({document, variables, operationName, result}) {
-			}
-		}))
-	)
+        const rootValue = resolver(db)
 
 
-	// Create WebSocket listener server
-	const appWs = createServer(app)
+        app.use('/graphql', graphqlHTTP((req) => ({
+                schema,
+                rootValue,
+                graphiql: true,
+                formatError: formatError,
+                extensions({document, variables, operationName, result}) {
+                }
+            }))
+        )
 
 
-	// Bind it to port and start listening
-	appWs.listen(PORT, () => console.log(
-		`Server/Websocket is now running on http://localhost:${PORT}`
-	))
+        // Create WebSocket listener server
+        const appWs = createServer(app)
 
-	const subscriptionServer = SubscriptionServer.create(
-		{
-			schema,
-			execute,
-			subscribe,
-			rootValue
-		},
-		{
-			server: appWs
-		}
-	)
 
-}))
+        // Bind it to port and start listening
+        appWs.listen(PORT, () => {
+            console.log( `Server/Websocket is now running on http://localhost:${PORT}`)
+            if (typeof cb === 'function'){
+                cb(appWs)
+            }
+        })
+
+        const subscriptionServer = SubscriptionServer.create(
+            {
+                schema,
+                execute,
+                subscribe,
+                rootValue
+            },
+            {
+                server: appWs
+            }
+        )
+
+    }))
+}

@@ -5,4 +5,6 @@ require('babel-register')
 
 
 // Entry point for our server
-require('./server')
+const server = require('./server')
+
+server.start()
