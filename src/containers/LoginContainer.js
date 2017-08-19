@@ -90,7 +90,7 @@ class LoginContainer extends React.Component {
 					<button type="submit">Login</button>
 				</form>
 
-				<p>Don't have an account? <Link to="/signup">Sign up</Link></p>
+				<p>Don&apos;t have an account? <Link to="/signup">Sign up</Link></p>
 			</div>
 		)
 	}
