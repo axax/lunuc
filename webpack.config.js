@@ -33,7 +33,7 @@ if (devMode) {
 
 
 	const PORT = (process.env.PORT || 8080)
-	const API_PORT = (process.env.WS_PORT || 3000)
+	const API_PORT = (process.env.API_PORT || 3000)
 
 	config.devServer = {
 		historyApiFallback: true,

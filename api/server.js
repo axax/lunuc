@@ -13,68 +13,82 @@ import {subscriptionManager} from './subscription'
 
 const PORT = (process.env.PORT || 3000)
 
-let appWs = null
-
-export const start = (cb) => {
-    dbConnection((db) => dbPreparation(db, () => {
-
-        // Initialize http api
-        const app = express()
-
-        // delay response
-        /*app.use(function (req, res, next) {
-         setTimeout(next, 4000)
-         })*/
-
-        // Authentication
-        auth.initialize(app, db)
+export const start = (done) => {
 
 
-        const rootValue = resolver(db)
+    dbConnection((err, db) => dbPreparation(db, () => {
+
+        if (!db) {
+            reject(err)
+        } else {
+            // Initialize http api
+            const app = express()
+
+            // delay response
+            /*app.use(function (req, res, next) {
+             setTimeout(next, 4000)
+             })*/
+
+            // Authentication
+            auth.initialize(app, db)
 
 
-        app.use('/graphql', graphqlHTTP((req) => ({
-                schema,
-                rootValue,
-                graphiql: true,
-                formatError: formatError,
-                extensions({document, variables, operationName, result}) {
+            const rootValue = resolver(db)
+
+            app.use('/graphql', graphqlHTTP((req) => ({
+                    schema,
+                    rootValue,
+                    graphiql: true,
+                    formatError: formatError,
+                    extensions({document, variables, operationName, result}) {
+                    }
+                }))
+            )
+
+
+            // Create WebSocket listener server
+            const appWs = createServer(app)
+
+
+            // Bind it to port and start listening
+            const server = appWs.listen(PORT, () => {
+                console.log(`Server/Websocket is now running on http://localhost:${PORT}`)
+                if (typeof done === 'function') {
+                    done(server)
                 }
-            }))
-        )
+            })
 
+            // attach db reference to server
+            server._db=db
 
-        // Create WebSocket listener server
-        appWs = createServer(app)
-
-
-        // Bind it to port and start listening
-        appWs.listen(PORT, () => {
-            console.log( `Server/Websocket is now running on http://localhost:${PORT}`)
-            if (typeof cb === 'function'){
-                cb(appWs)
-            }
-        })
-
-        const subscriptionServer = SubscriptionServer.create(
-            {
-                schema,
-                execute,
-                subscribe,
-                rootValue
-            },
-            {
-                server: appWs
-            }
-        )
-
+            const subscriptionServer = SubscriptionServer.create(
+                {
+                    schema,
+                    execute,
+                    subscribe,
+                    rootValue
+                },
+                {
+                    server: appWs
+                }
+            )
+        }
     }))
 }
 
-export const stop = (cb) => {
-    if ( appWs ){
-        console.log( `Stop server running on http://localhost:${PORT}`)
-        appWs.close(cb)
-        process.exit( 0 )
+
+export const stop = (server, done) => {
+    if (server) {
+
+        console.log(`Stop server running on http://localhost:${PORT}`)
+        server._db.close(()=> {
+            server.close(() => {
+                done()
+            })
+        })
+    }else {
+        done()
     }
 }
+
+export default {start, stop}

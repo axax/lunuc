@@ -12,6 +12,7 @@ import ErrorHandlerContainer from '../../containers/ErrorHandlerContainer'
 import NotificationContainer from '../../containers/NotificationContainer'
 import SearchWhileSpeakContainer from '../../containers/SearchWhileSpeakContainer'
 import ChatContainer from '../../containers/ChatContainer'
+import Home from '../Home'
 import PrivateRoute from './PrivateRoute'
 
 class Routes extends React.Component {
@@ -50,14 +51,6 @@ Routes.propTypes = {
 	/* UserReducer */
 	isAuthenticated: PropTypes.bool
 }
-
-
-const Home = () => (
-	<div>
-		<h2>Welcome</h2>
-	</div>
-)
-
 
 
 /**

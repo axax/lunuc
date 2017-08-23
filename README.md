@@ -39,7 +39,7 @@ Setup your environment.
 
 Url to access the mongo database:
 
-* `export LUNUC_MONGO_URL mongodb://user:password@ds145780.mlab.com:45780/app`
+* `export MONGO_URL mongodb://user:password@ds145780.mlab.com:45780/app`
 
 ### Install
 * `npm install`
@@ -93,6 +93,7 @@ Url to access the mongo database:
 | [bcrypt](https://github.com/pyca/bcrypt) | Modern password hashing for your software and your servers | 
 | [subscriptions-transport-ws](https://github.com/apollographql/subscriptions-transport-ws) |  A WebSocket client + server for GraphQL subscriptions | 
 | [aws-sdk](https://github.com/aws/aws-sdk-js) |  AWS SDK for JavaScript in the browser and Node.js | 
+| [request-promise](https://github.com/request/request-promise) |  The simplified HTTP request client 'request' with Promise support. Powered by Bluebird. |
 
 
 ### Folder structure

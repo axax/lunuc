@@ -11,21 +11,23 @@
     "node": "6.11.2",
     "npm": "5.3.0"
   },
+  "jest": {
+    "verbose": true
+  },
   "scripts": {
     "lint": "eslint src/**/*.js server/**/*.js api/**/*.js test/**/*.js",
-    "mongodb:clear":"pkill -2 mongod & rm -rf mongodb_tmp",
-    "mongodb:start":"mkdir -p mongodb_tmp && mongod --port 27018 --dbpath mongodb_tmp --fork --logpath /dev/null",
-    "mongodb":"npm run mongodb:clear && npm run mongodb:start",
+    "mongodb:clear": "pkill -2 mongod & rm -rf mongodb_tmp",
+    "mongodb:start": "mkdir -p mongodb_tmp && mongod --port 27018 --dbpath mongodb_tmp --fork --logpath /dev/null",
+    "mongodb": "npm run mongodb:clear && npm run mongodb:start",
     "pretest": "npm run mongodb",
-    "test": "echo \"run tests\"; jest",
-    "test:watch": "npm test --watch",
+    "test": "export PORT=3001;export MONGO_URL=mongodb://localhost:27018; jest",
     "posttest": "npm run mongodb:clear",
     "client": "API_PORT=3000 nodemon ./server/index.js --watch server",
-    "client_dev": "API_PORT=3000 webpack-dev-server",
+    "client:dev": "API_PORT=3000 webpack-dev-server",
     "build": "NODE_ENV=production webpack -p",
-    "api": "PORT=3000 WS_PORT=5000 nodemon ./api/index.js --watch api",
+    "api": "PORT=3000 nodemon ./api/index.js --watch api",
     "start": "echo \"Build and start api and client concurrently\" && npm run build && npm run api & npm run client",
-    "dev": "echo \"Start api and client in dev mode concurrently\" && npm run api & npm run client_dev",
+    "start:dev": "echo \"Start api and client in dev mode concurrently\" && npm run api & npm run client:dev",
     "postinstall": "npm run build"
   },
   "keywords": [
@@ -80,6 +82,7 @@
     "react-test-renderer": "^15.6.1",
     "redux": "^3.7.2",
     "redux-persist": "^4.8.3",
+    "request-promise": "^4.2.1",
     "subscriptions-transport-ws": "^0.8.2",
     "webpack": "^3.5.1"
   },
