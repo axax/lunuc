@@ -5,14 +5,14 @@ export const commonSchemaRaw = `
         name: String
     }
       
-    type List{
+    type SingleSelection{
         data: [ListEntry]
-        selection: [String]
+        selection: ListEntry
     }
       
       
     type Query {
-        speechLanguages: List
+        speechLanguages: SingleSelection
     }
     
 `

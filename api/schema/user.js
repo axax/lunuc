@@ -1,32 +1,34 @@
-
 export const userSchemaRaw = `
 
 	type UserRole {
 		_id: ID!
-    name: String!
-    capabilities: [String]!
-  }
+        name: String!
+        capabilities: [String]!
+    }
     
 	type UserSettings {
-		speechLang: String!
-  }
+		speechLang: SingleSelection!
+    }
+    
+	input UserSettingsInput {
+		speechLang: String
+    }
   
 	type User {
 		_id: ID!
-    username: String!
-    password: String!
-    email: String!
-    emailConfirmed: Boolean!
-    note: [Note]
-    role: UserRole!
-    settings: UserSettings
-    
-  }
+        username: String!
+        password: String!
+        email: String!
+        emailConfirmed: Boolean!
+        note: [Note]
+        role: UserRole!
+        settings: UserSettings!
+    }
   
 	type UserPublic  {
 		_id: ID!
-    username: String!
-  }
+        username: String!
+    }
 	
 	type Note {
 		_id: ID!
@@ -39,22 +41,24 @@ export const userSchemaRaw = `
 		error: String
 	}
 	
-  type Query {
-    me: User
-    login(username: String!, password: String!): Token,
-    users(limit: Int=10, offset: Int=0): [UserPublic]
-  }
+    type Query {
+        me: User
+        login(username: String!, password: String!): Token,
+        users(limit: Int=10, offset: Int=0): [UserPublic]
+    }
 		
 	type Mutation {
 		createUser (
 			email: String!
 			username: String!
 			password: String!
+			settings: UserSettingsInput
 		): User
 						
 		updateMe (
 			email: String
 			username: String
+			settings: UserSettingsInput
 		): User
 		
 		updateNote (
@@ -67,6 +71,5 @@ export const userSchemaRaw = `
 		): Note
 		
 		createNote(value: String): Note
-		
 	}
 `

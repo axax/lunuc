@@ -3,6 +3,7 @@ import {ObjectId} from 'mongodb'
 import {auth} from '../auth'
 import {ApiError} from '../error'
 import {pubsub} from '../subscription'
+import {speechLanguages} from '../data/common'
 
 
 export const userResolver = (db) => ({
@@ -24,6 +25,24 @@ export const userResolver = (db) => ({
 				userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
 			}
 			user.role = userRole
+
+            // settings
+            const settings = {
+                speechLang: {
+                    data: speechLanguages,
+                    selection: null
+                }
+            }
+
+            if( user.settings && user.settings.speechLang ){
+
+                const filtered= speechLanguages.filter(lang => lang.key === user.settings.speechLang)
+                if( filtered.length > 0 ){
+                    settings.speechLang.selection=filtered[0]
+                }
+            }
+
+            user.settings = settings
 
 		}
 		return user
@@ -112,8 +131,6 @@ export const userResolver = (db) => ({
 		if (existingUser != null && existingUser._id.toString() !== context.id) {
 			throw new ApiError(`Username ${user.username} already taken`, 'username.taken', {x: 'sss'})
 		} else {
-
-
 			const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}, {returnOriginal: false}))
 			if (result.ok !== 1) {
 				throw new ApiError('User could not be changed')
