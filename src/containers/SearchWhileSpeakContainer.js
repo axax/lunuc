@@ -2,21 +2,22 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
+import {gql, graphql, compose} from 'react-apollo'
+import {connect} from 'react-redux'
 
 
 class SearchWhileSpeakContainer extends React.Component {
 
 	recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)()
 
-	state = {
-		recording: false,
-		recorded: [],
-		search: '',
-		language: 'en-US'
-	}
-
 	constructor(props) {
 		super(props)
+        this.state = {
+            recording: false,
+            recorded: [],
+            search: '',
+            language: (props.me.settings.speechLang.selection?props.me.settings.speechLang.selection.key:'en-US')
+        }
 	}
 
 	componentDidMount() {
@@ -27,6 +28,11 @@ class SearchWhileSpeakContainer extends React.Component {
 		this.recognition.abort()
 	}
 
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.me.settings.speechLang.selection &&  nextProps.me.settings.speechLang.selection.key !== this.state.language) {
+            this.setState({ language: nextProps.me.settings.speechLang.selection.key })
+        }
+    }
 
 	createRecorder = () => {
 		const self = this
@@ -102,13 +108,17 @@ class SearchWhileSpeakContainer extends React.Component {
 			this.handleRecorder(value)
 		}
 		if( name === 'language'){
-			console.log('change language to',value)
-			this.recognition.lang = value
+            this.props.updateMe({speechLang:value}).then(()=>{
+                console.log('change language to',value)
+                this.recognition.lang = value
+            })
 		}
 	}
 
 
 	render() {
+
+	    const langs = this.props.me.settings.speechLang.data
 
 		let pairs = []
 
@@ -116,12 +126,13 @@ class SearchWhileSpeakContainer extends React.Component {
 			(k, i) => pairs.push(<p key={i}>{k}</p>)
 		)
 
-		console.log('render')
+		console.log('render', this.state)
 		return <div><h1>Search</h1><input type="text" name="search" value={this.state.search}
 																			onChange={this.handleInputChange}/>
-			<select name="language" value={this.state.value} onChange={this.handleInputChange}>
-				<option value="en-US">English</option>
-				<option value="de-DE">Deutsch</option>
+			<select name="language" value={this.state.language} onChange={this.handleInputChange}>
+                {langs.map((lang,i) => {
+                    return <option key={i} value={lang.key}>{lang.name}</option>
+                })}
 			</select>
 			<input
 				name="recording"
@@ -135,9 +146,35 @@ class SearchWhileSpeakContainer extends React.Component {
 
 
 SearchWhileSpeakContainer.propTypes = {
-	client: PropTypes.instanceOf(ApolloClient).isRequired
+	client: PropTypes.instanceOf(ApolloClient).isRequired,
+    me: PropTypes.object.isRequired,
+    updateMe: PropTypes.func.isRequired,
 }
-const SearchWhileSpeakContainerWithApollo = withApollo(SearchWhileSpeakContainer)
+
+
+
+
+const SearchWhileSpeakContainerWithGql = compose(
+    graphql(gql`query {me{_id settings{speechLang{selection{key name}data{key name}}}}}`, {
+        props: ({data: {loading, me }}) => ({
+            me,
+            loading
+        })
+    }),
+    graphql(gql`mutation updateMe($speechLang: String!){updateMe(settings: {speechLang:$speechLang}){_id settings{speechLang{selection{key name}}}}}`, {
+        props: ({ownProps, mutate}) => ({
+            updateMe: ({speechLang}) => {
+                return mutate({
+                    variables: {speechLang},
+
+                })
+            }
+        })
+    })
+)(SearchWhileSpeakContainer)
+
+
+const SearchWhileSpeakContainerWithApollo = withApollo(SearchWhileSpeakContainerWithGql)
 
 
 export default SearchWhileSpeakContainerWithApollo
