@@ -17,11 +17,23 @@ export const wordResolver = (db) => ({
                 $limit: limit
             },
             {
-                $project: {
-                    en: 1,
-                    de: 1
+                $lookup: {
+                    from: 'User',
+                    localField: 'createdBy',
+                    foreignField: '_id',
+                    as: 'createdBy'
                 }
-            }
+            },
+            // Group back to arrays
+            {
+                $group: {
+                    _id: '$_id',
+                    en: {'$first': '$en'},
+                    de: {'$first': '$de'},
+                    createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
+                }
+            },
+            {$sort: {_id: 1}}
         ]).toArray())
 
 
