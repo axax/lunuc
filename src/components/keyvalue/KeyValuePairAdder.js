@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import KeyValuePair from './KeyValuePair'
 
 /* Component with a state */
 export default class KeyValuePairAdder extends React.Component {
