@@ -4,7 +4,8 @@ export const wordSchemaRaw = `
         createdBy: UserPublic! # id of user
         en: String!
         de: String
-        categories: [WordCategory]
+        categories: [WordCategory]    
+        status: String
     }
     
     type WordCategory {

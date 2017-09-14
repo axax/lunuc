@@ -1,14 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {gql, graphql, compose} from 'react-apollo'
-import {Link} from 'react-router-dom'
-import ChatMessage from '../components/chat/ChatMessage'
-import CreateChat from '../components/chat/CreateChat'
-import AddChatUser from '../components/chat/AddChatUser'
-import AddChatMessage from '../components/chat/AddChatMessage'
-import update from 'immutability-helper'
 import {connect} from 'react-redux'
-import Util from '../util'
+import AddNewWord from '../components/word/AddNewWord'
 
 
 class WordContainer extends React.Component {
@@ -19,7 +13,9 @@ class WordContainer extends React.Component {
 	handleAddWordClick = (data) => {
 		const {createWord } = this.props
 
-        createMessage({
+        console.log(data)
+
+        createWord({
             en: data.en,
             de: data.de
         })
@@ -39,6 +35,7 @@ class WordContainer extends React.Component {
 						return <li key={i}>{word.de}={word.en} ({word.createdBy.username})</li>
 					}):'')}
 				</ul>
+                <AddNewWord onClick={this.handleAddWordClick}/>
 			</div>
 		)
 	}
@@ -56,9 +53,9 @@ WordContainer.propTypes = {
 
 const WORDS_PER_PAGE=10
 
-
+const gqlQuery=gql`query{words(limit: ${WORDS_PER_PAGE}){_id de en createdBy{_id username}}}`
 const WordContainerWithGql = compose(
-	graphql(gql`query{words(limit: ${WORDS_PER_PAGE}){_id de en  createdBy{_id username}}}`, {
+	graphql(gqlQuery, {
 		options() {
 			return {
 				fetchPolicy: 'cache-and-network',
@@ -77,41 +74,34 @@ const WordContainerWithGql = compose(
             loading
         })
 	}),
-	graphql(gql`mutation createWord($en: String!, $de: String){createWord(en:$en,de:$de){_id en de}}`, {
+	graphql(gql`mutation createWord($en: String!, $de: String){createWord(en:$en,de:$de){_id en de createdBy{_id username} status}}`, {
 		props: ({ownProps, mutate}) => ({
-            createWord: ({name}) => {
+            createWord: ({en, de}) => {
 				return mutate({
-					variables: {name},
+					variables: {en, de},
 					optimisticResponse: {
 						__typename: 'Mutation',
 						// Optimistic message
                         createWord: {
 							_id: '#' + new Date().getTime(),
-							name,
+							en,
+							de,
 							status: 'creating',
-							messages: [],
 							createdBy: {
 								_id: ownProps.user.userData._id,
 								username: ownProps.user.userData.username,
 								__typename: 'UserPublic'
 							},
-							users: [
-								{
-									_id: ownProps.user.userData._id,
-									username: ownProps.user.userData.username,
-									__typename: 'UserPublic'
-								}
-							],
-							__typename: 'Chat'
+							__typename: 'Word'
 						}
 					},
-					update: (store, {data: {createChat}}) => {
-						/*console.log('createChat', createChat)
+					update: (store, {data: {createWord}}) => {
+						console.log('createWord', createWord)
 						// Read the data from the cache for this query.
 						const data = store.readQuery({query: gqlQuery})
 
-						data.chatsWithMessages.push(createChat)
-						store.writeQuery({query: gqlQuery, data})*/
+						data.words.push(createWord)
+						store.writeQuery({query: gqlQuery, data})
 					}
 				})
 			}

@@ -53,7 +53,18 @@ export const wordResolver = (db) => ({
 
         if (insertResult.insertedCount) {
             const doc = insertResult.ops[0]
-            return doc
+
+
+            return {
+                _id: doc._id,
+                en,
+                de,
+                createdBy: {
+                    _id: ObjectId(context.id),
+                    username: context.username
+                },
+                status: 'created'
+            }
         }
     },
 })
