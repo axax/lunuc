@@ -67,4 +67,29 @@ export const wordResolver = (db) => ({
             }
         }
     },
+    deleteWord: async ({id}, {context}) => {
+        Util.checkIfUserIsLoggedIn(context)
+
+        const wordCollection = db.collection('Word')
+
+        if (!id) {
+            throw new Error('Id is missing')
+        }
+
+        const deletedResult = await wordCollection.deleteOne({
+            _id: ObjectId(id)
+        })
+
+        if (deletedResult.deletedCount) {
+            return {
+                _id: id,
+                status: 'deleted'
+            }
+        } else {
+            return {
+                _id: id,
+                status: 'error'
+            }
+        }
+    }
 })

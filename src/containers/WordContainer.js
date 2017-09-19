@@ -12,14 +12,18 @@ class WordContainer extends React.Component {
 
 	handleAddWordClick = (data) => {
 		const {createWord } = this.props
-
-        console.log(data)
-
         createWord({
             en: data.en,
             de: data.de
         })
 	}
+
+    handleDeleteWordClick = (data) => {
+        const {deleteWord} = this.props
+        deleteWord({
+            id: data._id
+        })
+    }
 
 	render() {
 		const { words, loading } = this.props
@@ -32,7 +36,7 @@ class WordContainer extends React.Component {
 				<h1>Words</h1>
 				<ul>
 					{(words?words.slice(0).reverse().map((word, i) => {
-						return <li key={i}>{word.de}={word.en} ({word.createdBy.username})</li>
+                        return <li key={i}>{word.de}={word.en} ({word.createdBy.username}) <button disabled={(word.status=='deleting')} onClick={this.handleDeleteWordClick.bind(this,word)}>X</button></li>
 					}):'')}
 				</ul>
                 <AddNewWord onClick={this.handleAddWordClick}/>
@@ -48,7 +52,8 @@ WordContainer.propTypes = {
 	/* apollo client props */
 	loading: PropTypes.bool,
 	words: PropTypes.array,
-	createWord: PropTypes.func.isRequired
+	createWord: PropTypes.func.isRequired,
+	deleteWord: PropTypes.func.isRequired
 }
 
 const WORDS_PER_PAGE=10
@@ -106,7 +111,41 @@ const WordContainerWithGql = compose(
 				})
 			}
 		}),
-	})
+	}),
+    graphql(gql`mutation deleteWord($id: ID!){deleteWord(id: $id){_id status}}`, {
+        props: ({ownProps, mutate}) => ({
+            deleteWord: ({id}) => {
+                return mutate({
+                    variables: {id},
+                    optimisticResponse: {
+                        __typename: 'Mutation',
+                        deleteWord: {
+                            _id: id,
+                            status: 'deleting',
+                            __typename: 'Word'
+                        }
+                    },
+                    update: (store, {data: {deleteWord}}) => {
+                        console.log('deleteWord', deleteWord)
+                        // Read the data from the cache for this query.
+                        const data = store.readQuery({query: gqlQuery})
+
+                        const idx = data.words.findIndex((e) => e._id === deleteWord._id)
+                        if (idx >= 0) {
+                            if( deleteWord.status == 'deleting' ){
+                                console.log(data.words[idx])
+                                data.words[idx].status = 'deleting'
+                            }else {
+                                data.words.splice(idx, 1)
+                            }
+                            store.writeQuery({query: gqlQuery, data})
+                        }
+
+                    }
+                })
+            }
+        })
+    })
 )(WordContainer)
 
 
