@@ -8,6 +8,11 @@ export const wordSchemaRaw = `
         status: String
     }
     
+    type Translation {
+        text: String,
+        fromIso: String
+    }
+    
     type WordCategory {
         _id: ID! # unique id for category
         createdBy: UserPublic! # id of user
@@ -17,6 +22,7 @@ export const wordSchemaRaw = `
     
     type Query {
     	words(limit: Int=10, offset: Int=0): [Word]
+    	translate(text: String): Translation
     }
     
     

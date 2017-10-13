@@ -1,9 +1,18 @@
 import Util from '../util'
 import {ObjectId} from 'mongodb'
 
+import translate from 'google-translate-api'
+
 
 export const wordResolver = (db) => ({
-    words: async ({limit, offset}, { context} ) => {
+
+    translate: async ({text}, {context}) => {
+
+        const res = (await translate(text, {to: 'en'}))
+        return {text:res.text, fromIso:res.from.language.iso}
+
+    },
+    words: async ({limit, offset}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
 
         const wordCollection = db.collection('Word')

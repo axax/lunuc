@@ -178,6 +178,9 @@ check with `ncu -u`
 
 update with `ncu -a`
 
+### Rebuild bcrypt
+`npm rebuild bcrypt --update-binary`
+
 ## Contributors
 
 ### Contribution Guidelines

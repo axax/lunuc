@@ -65,6 +65,7 @@
     "eslint-plugin-react": "^7.1.0",
     "express": "^4.15.4",
     "express-graphql": "^0.6.7",
+    "google-translate-api": "^2.3.0",
     "gql-merge": "0.0.6",
     "graphql": "^0.10.5",
     "http-proxy": "^1.16.2",
