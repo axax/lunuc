@@ -8,6 +8,7 @@ import {connect} from 'react-redux'
 
 class SearchWhileSpeechContainer extends React.Component {
 
+    mounted = false
     recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)()
 
     constructor(props) {
@@ -22,10 +23,12 @@ class SearchWhileSpeechContainer extends React.Component {
     }
 
     componentDidMount() {
+        this.mounted=true
         this.createRecorder()
     }
 
     componentWillUnmount() {
+        this.mounted=false
         this.recognition.abort()
     }
 
@@ -53,9 +56,7 @@ class SearchWhileSpeechContainer extends React.Component {
         }
 
         this.recognition.onresult = function (event) {
-
             const results = event.results
-            console.log(results)
 
             for (const result of results) {
                 if (result.isFinal) {
@@ -71,7 +72,6 @@ class SearchWhileSpeechContainer extends React.Component {
         }
         this.recognition.onend = function (e) {
             this.recognizing = false
-            console.log('end')
             self.handleRecorder(self.state.recording)
         }
         this.handleRecorder(this.state.recording)
@@ -79,7 +79,7 @@ class SearchWhileSpeechContainer extends React.Component {
 
 
     handleRecorder = (start) => {
-        if (start) {
+        if (start && this.mounted ) {
             if (!this.recognition.recognizing) {
                 this.recognition.start()
             }
@@ -126,7 +126,6 @@ class SearchWhileSpeechContainer extends React.Component {
             (k, i) => pairs.push(<p key={i}>{k}</p>)
         )
 
-        console.log('render', this.state)
         return <div><h1>Search</h1><input type="text" name="search" value={this.state.search}
                                           onChange={this.handleInputChange}/>
             <select disabled={!this.state.recording} name="language" value={this.state.language}
