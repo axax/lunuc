@@ -6,10 +6,15 @@ import translate from 'google-translate-api'
 
 export const wordResolver = (db) => ({
 
-    translate: async ({text}, {context}) => {
+    translate: async ({text, toIso}, {context}) => {
 
-        const res = (await translate(text, {to: 'en'}))
-        return {text:res.text, fromIso:res.from.language.iso}
+        if( !toIso ){
+            toIso = 'en'
+        }
+
+
+        const res = (await translate(text, {to: toIso}))
+        return {text:res.text, fromIso:res.from.language.iso, toIso}
 
     },
     words: async ({limit, offset}, {context}) => {

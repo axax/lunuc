@@ -6,6 +6,27 @@ import {pubsub} from '../subscription'
 import {speechLanguages} from '../data/common'
 
 
+const enhanceUserSettings = (user) => {
+    // settings
+    const settings = {
+        speechLang: {
+            data: speechLanguages,
+            selection: null
+        }
+    }
+
+    if( user.settings && user.settings.speechLang ){
+
+        const filtered= speechLanguages.filter(lang => lang.key === user.settings.speechLang)
+        if( filtered.length > 0 ){
+            settings.speechLang.selection=filtered[0]
+        }
+    }
+
+    user.settings = settings
+}
+
+
 export const userResolver = (db) => ({
 	me: async (data, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
@@ -26,23 +47,7 @@ export const userResolver = (db) => ({
 			}
 			user.role = userRole
 
-            // settings
-            const settings = {
-                speechLang: {
-                    data: speechLanguages,
-                    selection: null
-                }
-            }
-
-            if( user.settings && user.settings.speechLang ){
-
-                const filtered= speechLanguages.filter(lang => lang.key === user.settings.speechLang)
-                if( filtered.length > 0 ){
-                    settings.speechLang.selection=filtered[0]
-                }
-            }
-
-            user.settings = settings
+            enhanceUserSettings(user)
 
 		}
 		return user
@@ -135,6 +140,7 @@ export const userResolver = (db) => ({
 			if (result.ok !== 1) {
 				throw new ApiError('User could not be changed')
 			}
+            enhanceUserSettings(result.value)
 			return result.value
 		}
 	},

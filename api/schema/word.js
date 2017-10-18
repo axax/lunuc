@@ -10,7 +10,8 @@ export const wordSchemaRaw = `
     
     type Translation {
         text: String,
-        fromIso: String
+        fromIso: String,
+        toIso: String
     }
     
     type WordCategory {
@@ -22,7 +23,7 @@ export const wordSchemaRaw = `
     
     type Query {
     	words(limit: Int=10, offset: Int=0): [Word]
-    	translate(text: String): Translation
+    	translate(text: String, toIso: String): Translation
     }
     
     
