@@ -3,7 +3,7 @@ import {ObjectId} from 'mongodb'
 import {auth} from '../auth'
 import {ApiError} from '../error'
 import {pubsub} from '../subscription'
-import {speechLanguages} from '../data/common'
+import {speechLanguages, translateLanguages} from '../data/common'
 
 
 const enhanceUserSettings = (user) => {
@@ -12,15 +12,26 @@ const enhanceUserSettings = (user) => {
         speechLang: {
             data: speechLanguages,
             selection: null
+        },
+        translateLang: {
+            data: translateLanguages,
+            selection: null
         }
     }
 
-    if( user.settings && user.settings.speechLang ){
-
-        const filtered= speechLanguages.filter(lang => lang.key === user.settings.speechLang)
-        if( filtered.length > 0 ){
-            settings.speechLang.selection=filtered[0]
-        }
+    if( user.settings ){
+    	if( user.settings.speechLang ){
+			const filtered= speechLanguages.filter(lang => lang.key === user.settings.speechLang)
+			if( filtered.length > 0 ){
+				settings.speechLang.selection=filtered[0]
+			}
+		}
+		if( user.settings.translateLang ){
+			const filtered= translateLanguages.filter(lang => lang.key === user.settings.translateLang)
+			if( filtered.length > 0 ){
+				settings.translateLang.selection=filtered[0]
+			}
+		}
     }
 
     user.settings = settings

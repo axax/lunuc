@@ -8,10 +8,12 @@ export const userSchemaRaw = `
     
 	type UserSettings {
 		speechLang: SingleSelection!
+		translateLang: SingleSelection!
     }
     
 	input UserSettingsInput {
-		speechLang: String
+		speechLang: String,
+		translateLang: String
     }
   
 	type User {

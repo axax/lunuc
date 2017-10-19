@@ -1,3 +1,6 @@
+import googleTranslateApi from 'google-translate-api/languages'
+
+
 export const allAvailableLanguages = [
     {
         'language': 'Afrikaans',
@@ -491,4 +494,13 @@ allAvailableLanguages.forEach(function(item){
     }else{
         speechLanguages.push({key:item.countryCodes[0].langCode,name:item.language})
     }
+})
+
+
+
+export const translateLanguages = []
+
+Object.keys(googleTranslateApi).forEach(key => {
+    if( typeof(googleTranslateApi[key]) === 'string')
+        translateLanguages.push({key, name: googleTranslateApi[key]})
 })

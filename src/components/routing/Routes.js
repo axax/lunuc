@@ -10,7 +10,8 @@ import SignUpContainer from '../../containers/SignUpContainer'
 import UserProfileContainer from '../../containers/UserProfileContainer'
 import ErrorHandlerContainer from '../../containers/ErrorHandlerContainer'
 import NotificationContainer from '../../containers/NotificationContainer'
-import SearchWhileSpeakContainer from '../../containers/SearchWhileSpeakContainer'
+import SearchWhileSpeechContainer from '../../containers/SearchWhileSpeechContainer'
+import LiveSpeechTranslaterContainer from '../../containers/LiveSpeechTranslaterContainer'
 import ChatContainer from '../../containers/ChatContainer'
 import WordContainer from '../../containers/WordContainer'
 import Home from '../Home'
@@ -29,6 +30,7 @@ class Routes extends React.Component {
 				<ul>
 					<li><Link to="/">Home</Link></li>
 					{isAuthenticated?<li><Link to="/search">Search</Link></li>:''}
+					{isAuthenticated?<li><Link to="/translate">Translate</Link></li>:''}
 					{isAuthenticated?<li><Link to="/chat">My chats</Link></li>:''}
 					{isAuthenticated?<li><Link to="/word">Word</Link></li>:''}
 					<li><Link to="/profile">Profile</Link></li>
@@ -37,7 +39,8 @@ class Routes extends React.Component {
 				<hr/>
 
 				<Route exact path="/" component={Home}/>
-				<Route exact path="/search" component={SearchWhileSpeakContainer}/>
+				<Route exact path="/search" component={SearchWhileSpeechContainer}/>
+				<Route exact path="/translate" component={LiveSpeechTranslaterContainer}/>
 				<Route exact path="/chat/:id*" component={ChatContainer}/>
 				<Route exact path="/word" component={WordContainer}/>
 				<Route path="/login" component={LoginContainer}/>

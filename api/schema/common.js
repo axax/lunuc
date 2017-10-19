@@ -13,6 +13,7 @@ export const commonSchemaRaw = `
       
     type Query {
         speechLanguages: SingleSelection
+        translateLanguages: SingleSelection
     }
     
 `
