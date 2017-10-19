@@ -26,9 +26,10 @@ https://lunuc.herokuapp.com/
 * Use of sockets (subscriptions-transport-ws)
 * Travis yml
 * Depolymet to heroku
+* Use of Service worker
 
 *Todos*
-* Use of Service worker
+* Push notification
 * Docker integration
 * Use of AWS lambda
 
