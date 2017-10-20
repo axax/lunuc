@@ -29,7 +29,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
     componentWillUnmount() {
         this.mounted=false
-        this.recognition.abort()
+        this.handleRecorder(false)
     }
 
     componentWillReceiveProps(nextProps) {
@@ -60,17 +60,19 @@ class LiveSpeechTranslaterContainer extends React.Component {
         this.recognition.continuous = false
         this.recognition.recognizing = false // this is a custom flag to determin wheater recognition is running
 
-        var isSpeacking=false
+        var isSpeacking=false, utterance=false
 
         this.recognition.onstart = function () {
             this.recognizing = true
         }
 
         this.recognition.onerror = function (event) {
+            console.warn(event)
             this.recognizing = false
         }
 
         this.recognition.onresult = function (event) {
+
             const results = event.results
 
             for (const result of results) {
@@ -84,16 +86,18 @@ class LiveSpeechTranslaterContainer extends React.Component {
                                 isSpeacking=true
                                 self.handleRecorder(false)
 
-                                var msg = new SpeechSynthesisUtterance(response.data.translate.text)
-                                msg.lang = response.data.translate.toIso
-                                //msg.pitch = 2
-                                window.speechSynthesis.speak(msg)
+                                utterance = new SpeechSynthesisUtterance(response.data.translate.text)
+                                utterance.lang = response.data.translate.toIso
 
-
-                                msg.onend = function(event) {
+                                utterance.onend = function(event) {
                                     isSpeacking=false
                                     self.handleRecorder(self.state.recording)
                                 }
+
+                                //msg.pitch = 2
+                                window.speechSynthesis.speak(utterance)
+
+
 
                                 self.setState((state) => ({recorded: state.recorded.concat(alternativ.transcript+' = '+response.data.translate.text)}))
 
@@ -108,6 +112,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
             }
         }
         this.recognition.onend = function (e) {
+            console.log('recording ended',e)
             this.recognizing = false
             if( !isSpeacking ) {
                 self.handleRecorder(self.state.recording)
@@ -123,7 +128,6 @@ class LiveSpeechTranslaterContainer extends React.Component {
                 this.recognition.start()
             }
         } else {
-            this.recognition.stop()
             this.recognition.abort()
             this.recognition.recognizing = false
         }
