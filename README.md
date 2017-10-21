@@ -72,7 +72,7 @@ Url to access the mongo database:
 | [bable-core](https://github.com/babel/babel)  | The compiler for writing next generation JavaScript. | 
 | [babel-polyfill](https://github.com/babel/babel/tree/master/packages/babel-polyfill)  | Babel includes a polyfill that includes a custom regenerator runtime  | 
 | [babel-loader](https://github.com/babel/babel-loader)  | Allows transpiling JavaScript files using Babel and webpack  | 
-| [babel-preset-es2015](https://github.com/babel/babel/tree/master/packages/babel-preset-es2015)  | Babel preset for all es2015 plugins.  | 
+| [babel-preset-env](https://github.com/babel/babel-preset-env)  | Autoprefixer for Babel: compile less (moved)  | 
 | [babel-preset-react](https://github.com/babel/babel/tree/master/packages/babel-preset-react)  | Babel preset for all React plugins.  | 
 | [babel-preset-stage-0](https://github.com/babel/babel/tree/master/packages/babel-preset-stage-0)  | Babel preset for stage 0 plugins.  | 
 | [babel-jest](https://github.com/facebook/jest/tree/master/packages/babel-jest)  | Babel jest plugin | 
