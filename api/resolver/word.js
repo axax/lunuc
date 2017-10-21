@@ -81,17 +81,17 @@ export const wordResolver = (db) => ({
             }
         }
     },
-    updateWord: async ({id, en, de}, {context}) => {
+    updateWord: async ({_id, en, de}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
 
         const wordCollection = db.collection('Word')
 
-        const result = (await wordCollection.findOneAndUpdate({_id: ObjectId(id)}, {$set: {en,de}}, {returnOriginal: false}))
+        const result = (await wordCollection.findOneAndUpdate({_id: ObjectId(_id)}, {$set: {en,de}}, {returnOriginal: false}))
         if (result.ok !== 1) {
             throw new ApiError('Word could not be changed')
         }
         return {
-                _id: id,
+                _id,
                 en,
                 de,
                 createdBy: {

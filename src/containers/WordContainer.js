@@ -3,10 +3,13 @@ import PropTypes from 'prop-types'
 import {gql, graphql, compose} from 'react-apollo'
 import {connect} from 'react-redux'
 import AddNewWord from '../components/word/AddNewWord'
+import update from 'immutability-helper'
 
 
 class WordContainer extends React.Component {
-
+    constructor(props) {
+        super(props)
+    }
 	componentWillMount() {
 	}
 
@@ -16,6 +19,17 @@ class WordContainer extends React.Component {
             en: data.en,
             de: data.de
         })
+	}
+
+	handleWordChange = (event,data,lang) => {
+
+        const t=event.target.innerText
+		if( t!= data[lang] ) {
+            const {updateWord} = this.props
+            updateWord(
+                update(data, {[lang]: {$set: t}})
+			)
+        }
 	}
 
     handleDeleteWordClick = (data) => {
@@ -34,9 +48,13 @@ class WordContainer extends React.Component {
 		return (
 			<div>
 				<h1>Words</h1>
-				<ul>
+				<ul suppressContentEditableWarning={true}>
 					{(words?words.slice(0).reverse().map((word, i) => {
-                        return <li key={i}>{word.de}={word.en} ({word.createdBy.username}) <button disabled={(word.status=='deleting')} onClick={this.handleDeleteWordClick.bind(this,word)}>X</button></li>
+                        return 	<li key={i}>
+									<span onBlur={(e) => this.handleWordChange.bind(this)(e,word,'de')} suppressContentEditableWarning contentEditable>{word.de}</span>=
+									<span onBlur={(e) => this.handleWordChange.bind(this)(e,word,'en')} suppressContentEditableWarning contentEditable>{word.en}</span> ({word.createdBy.username})
+									<button disabled={(word.status=='deleting' || word.status=='updating')} onClick={this.handleDeleteWordClick.bind(this,word)}>X</button>
+						</li>
 					}):'')}
 				</ul>
                 <AddNewWord onClick={this.handleAddWordClick}/>
@@ -53,12 +71,13 @@ WordContainer.propTypes = {
 	loading: PropTypes.bool,
 	words: PropTypes.array,
 	createWord: PropTypes.func.isRequired,
+	updateWord: PropTypes.func.isRequired,
 	deleteWord: PropTypes.func.isRequired
 }
 
 const WORDS_PER_PAGE=10
 
-const gqlQuery=gql`query{words(limit: ${WORDS_PER_PAGE}){_id de en createdBy{_id username}}}`
+const gqlQuery=gql`query{words(limit: ${WORDS_PER_PAGE}){_id de en status createdBy{_id username}}}`
 const WordContainerWithGql = compose(
 	graphql(gqlQuery, {
 		options() {
@@ -107,6 +126,41 @@ const WordContainerWithGql = compose(
 
 						data.words.push(createWord)
 						store.writeQuery({query: gqlQuery, data})
+					}
+				})
+			}
+		}),
+	}),
+	graphql(gql`mutation updateWord($_id: ID!,$en: String, $de: String){updateWord(_id:$_id,en:$en,de:$de){_id en de createdBy{_id username} status}}`, {
+		props: ({ownProps, mutate}) => ({
+            updateWord: ({_id, en, de}) => {
+				return mutate({
+					variables: {_id, en, de},
+					optimisticResponse: {
+						__typename: 'Mutation',
+						// Optimistic message
+                        updateWord: {
+							_id,
+							en,
+							de,
+							status: 'updating',
+							createdBy: {
+								_id: ownProps.user.userData._id,
+								username: ownProps.user.userData.username,
+								__typename: 'UserPublic'
+							},
+							__typename: 'Word'
+						}
+					},
+					update: (store, {data: {updateWord}}) => {
+						console.log('updateWord', updateWord)
+						// Read the data from the cache for this query.
+						const data = store.readQuery({query: gqlQuery})
+                        const idx = data.words.findIndex(x => x._id === updateWord._id)
+                        if (idx > -1) {
+							data.words[idx]=updateWord
+                            store.writeQuery({query: gqlQuery, data})
+                        }
 					}
 				})
 			}

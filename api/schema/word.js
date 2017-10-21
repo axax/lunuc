@@ -32,7 +32,7 @@ export const wordSchemaRaw = `
 			en: String!
 			de: String
 		): Word
-		updateWord(id: ID!, en: String, de: String): Word	
+		updateWord(_id: ID!, en: String, de: String): Word	
 		deleteWord(id: ID!): Word
 	}
 `
