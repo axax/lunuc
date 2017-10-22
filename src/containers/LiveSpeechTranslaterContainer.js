@@ -209,13 +209,21 @@ const LiveSpeechTranslaterContainerWithGql = compose(
     graphql(gql`query {me{_id settings{speechLang{selection{key name}data{key name}}translateLang{selection{key name}data{key name}}}}}`, {
         options() {
             return {
-                fetchPolicy: 'cache-and-network'
+                fetchPolicy: 'cache-and-network',
+                variables: {
+                    _errorHandling: false
+                }
             }
         },
-        props: ({data: {loading, me}}) => ({
-            me,
-            loading
-        })
+        props: ({data: {loading, me, error}}) => {
+
+        //console.log('err',error)
+            return {
+                error,
+                me,
+                loading
+            }
+        }
     }),
     graphql(gql`mutation updateMe($speechLang: String!,$translateLang: String!){updateMe(settings: {speechLang:$speechLang, translateLang:$translateLang}){_id settings{speechLang{selection{key name}}translateLang{selection{key name}}}}}`, {
         props: ({ownProps, mutate}) => ({
