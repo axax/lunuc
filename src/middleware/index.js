@@ -36,6 +36,15 @@ const logErrors = networkInterface => ({
 	use: middlewares => networkInterface.use(middlewares)
 })
 
+
+networkInterface.useAfter([{
+    applyAfterware({ response }, next) {
+    	console.log(response)
+		next()
+    }
+}])
+
+
 const networkInterfaceDecorator = logErrors(networkInterface)
 
 networkInterfaceDecorator.use([{
