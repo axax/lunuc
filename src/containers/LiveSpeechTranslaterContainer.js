@@ -33,7 +33,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        if (nextProps.me.settings.speechLang.selection && nextProps.me.settings.speechLang.selection.key !== this.state.language) {
+        if (nextProps.me && nextProps.me.settings.speechLang.selection && nextProps.me.settings.speechLang.selection.key !== this.state.language) {
             this.setState({language: nextProps.me.settings.speechLang.selection.key,languageTo: nextProps.me.settings.translateLang.selection.key})
         }
     }
@@ -79,7 +79,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
                 if (result.isFinal) {
 
                     for (const alternativ of result) {
-                        console.log(alternativ)
+                        //console.log(alternativ)
                         if (alternativ.confidence > 0.60) {
 
                             self.translate({text:alternativ.transcript,toIso:self.state.languageTo,fromIso:self.state.language.substr(0,2)}).then(response => {
@@ -112,7 +112,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
             }
         }
         this.recognition.onend = function (e) {
-            console.log('recording ended',e)
+            //console.log('recording ended',e)
             this.recognizing = false
             if( !isSpeacking ) {
                 self.handleRecorder(self.state.recording)
@@ -158,7 +158,10 @@ class LiveSpeechTranslaterContainer extends React.Component {
         if (!this.props.me)
             return null
 
-        const speechLang = this.props.me.settings.speechLang.data, translateLang = this.props.me.settings.translateLang.data
+
+
+        const   speechLang = (this.props.me.settings?this.props.me.settings.speechLang.data:'en'),
+                translateLang = (this.props.me.settings?this.props.me.settings.translateLang.data:'de')
 
         let pairs = []
 
@@ -211,15 +214,12 @@ const LiveSpeechTranslaterContainerWithGql = compose(
             return {
                 fetchPolicy: 'cache-and-network',
                 variables: {
-                    _errorHandling: false
+                    _ignoreErrors: true
                 }
             }
         },
-        props: ({data: {loading, me, error}}) => {
-
-        //console.log('err',error)
+        props: ({data: {loading, me}}) => {
             return {
-                error,
                 me,
                 loading
             }
