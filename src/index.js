@@ -19,7 +19,7 @@ if ('serviceWorker' in navigator ) {
 	if( 'PushManager' in window ){
 		console.log('Push is supported')
 
-		navigator.serviceWorker.register('serviceworker.js')
+		navigator.serviceWorker.register('/serviceworker.js')
 			.then(function (swReg) {
 				console.log('Service Worker is registered', swReg)
 			})
