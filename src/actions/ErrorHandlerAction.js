@@ -5,3 +5,7 @@ export const addError = ({key, msg}) => ({
 	key,
 	msg
 })
+
+export const clearErrors = () => ({
+	type: types.CLEAR_ERRORS
+})

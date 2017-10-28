@@ -29,7 +29,7 @@ class Routes extends React.Component {
 				<NotificationContainer />
 				<ul>
 					<li><Link to="/">Home</Link></li>
-					<li><Link to="/translate">Translate</Link></li>
+                    {isAuthenticated?<li><Link to="/translate">Translate</Link></li>:''}
 					{isAuthenticated?<li><Link to="/search">Search</Link></li>:''}
 					{isAuthenticated?<li><Link to="/chat">My chats</Link></li>:''}
 					{isAuthenticated?<li><Link to="/word">Word</Link></li>:''}

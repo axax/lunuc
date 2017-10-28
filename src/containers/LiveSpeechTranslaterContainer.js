@@ -123,7 +123,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
 
     handleRecorder = (start) => {
-        if (start && this.mounted ) {
+        if (start && this.mounted && this.props.me) {
             if (!this.recognition.recognizing) {
                 this.recognition.start()
             }
@@ -155,13 +155,12 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
 
     render() {
-        if (!this.props.me)
+        if (!this.props.me) {
             return null
+        }
 
-
-
-        const   speechLang = (this.props.me.settings?this.props.me.settings.speechLang.data:'en'),
-                translateLang = (this.props.me.settings?this.props.me.settings.translateLang.data:'de')
+        const   speechLang = this.props.me.settings.speechLang.data,
+                translateLang = this.props.me.settings.translateLang.data
 
         let pairs = []
 
@@ -212,10 +211,7 @@ const LiveSpeechTranslaterContainerWithGql = compose(
     graphql(gql`query {me{_id settings{speechLang{selection{key name}data{key name}}translateLang{selection{key name}data{key name}}}}}`, {
         options() {
             return {
-                fetchPolicy: 'cache-and-network',
-                variables: {
-                    _ignoreErrors: true
-                }
+                fetchPolicy: 'cache-and-network'
             }
         },
         props: ({data: {loading, me}}) => {

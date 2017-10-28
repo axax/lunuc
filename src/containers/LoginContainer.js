@@ -7,6 +7,7 @@ import {withApollo, gql} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import {Link} from 'react-router-dom'
 import * as UserActions from '../actions/UserAction'
+import * as ErrorHandlerAction from '../actions/ErrorHandlerAction'
 
 class LoginContainer extends React.Component {
 	state = {
@@ -33,7 +34,7 @@ class LoginContainer extends React.Component {
 		e.preventDefault()
 
 		this.setState({loading: true, error: null})
-		const {client,userActions} = this.props
+		const {client,userActions,errorHandlerAction} = this.props
 
 
 		client.query({
@@ -53,6 +54,8 @@ class LoginContainer extends React.Component {
 
 					localStorage.setItem('token', response.data.login.token)
 					userActions.setUser({username:this.state.username},true)
+                    errorHandlerAction.clearErrors()
+
 					this.setState({redirectToReferrer: true})
 				}
 			}
@@ -101,7 +104,8 @@ LoginContainer.propTypes = {
 	client: PropTypes.instanceOf(ApolloClient).isRequired,
 	location: PropTypes.object,
 	/* UserReducer */
-	userActions: PropTypes.object.isRequired
+	userActions: PropTypes.object.isRequired,
+    errorHandlerAction: PropTypes.object.isRequired
 }
 
 
@@ -117,7 +121,8 @@ const mapStateToProps = () => {
  * Map the actions to props.
  */
 const mapDispatchToProps = (dispatch) => ({
-	userActions: bindActionCreators(UserActions, dispatch)
+	userActions: bindActionCreators(UserActions, dispatch),
+    errorHandlerAction: bindActionCreators(ErrorHandlerAction, dispatch)
 })
 
 

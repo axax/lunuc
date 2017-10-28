@@ -22,7 +22,7 @@ const wsClient = new SubscriptionClient((window.location.protocol==='https:'?'ws
 const logErrors = networkInterface => ({
 	query: request => networkInterface.query(request).then(d => {
 		// check for mongodb/graphql errors
-        if( request.variables._ignoreErrors ) {
+        if( request.variables && request.variables._ignoreErrors ) {
             d.errors = null
         }else if( !request.variables || request.variables._errorHandling!==false ) {
 			if (d.errors && d.errors.length) {
