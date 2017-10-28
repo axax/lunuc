@@ -35,7 +35,7 @@ class WordContainer extends React.Component {
     handleDeleteWordClick = (data) => {
         const {deleteWord} = this.props
         deleteWord({
-            id: data._id
+            _id: data._id
         })
     }
 
@@ -166,15 +166,15 @@ const WordContainerWithGql = compose(
 			}
 		}),
 	}),
-    graphql(gql`mutation deleteWord($id: ID!){deleteWord(id: $id){_id status}}`, {
+    graphql(gql`mutation deleteWord($_id: ID!){deleteWord(_id: $_id){_id status}}`, {
         props: ({ownProps, mutate}) => ({
-            deleteWord: ({id}) => {
+            deleteWord: ({_id}) => {
                 return mutate({
-                    variables: {id},
+                    variables: {_id},
                     optimisticResponse: {
                         __typename: 'Mutation',
                         deleteWord: {
-                            _id: id,
+                            _id: _id,
                             status: 'deleting',
                             __typename: 'Word'
                         }
