@@ -5,11 +5,11 @@ import { PubSub } from 'graphql-subscriptions'
 const pubsub = new PubSub()
 
 // send test notifications
-var counter=0
+/*var counter=0
 setInterval(()=>{
 	counter++
 	pubsub.publish('newNotification', {newNotification: {key: 'test.notification', message: `Notification Nr. ${counter}`}} )
-},4000)
+},4000)*/
 
 
 export { pubsub }

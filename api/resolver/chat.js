@@ -212,12 +212,11 @@ export const chatResolver = (db) => ({
 					_id: '$_id',
 					name: {'$first': '$name'},
 					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
-					users: {$addToSet: {_id: '$users._id', username: '$users.username'}}
+					users: {$addToSet: {_id: {$arrayElemAt: ['$users._id', 0]}, username: {$arrayElemAt: ['$users.username', 0]}}}
 				}
 			},
 			{$sort: {_id: 1}}
 		]).toArray())
-
 
 		return chats
 	},
@@ -323,7 +322,7 @@ export const chatResolver = (db) => ({
 					_id: '$_id',
 					name: {'$first': '$name'},
 					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
-					users: {$addToSet: {_id: '$users._id', username: '$users.username'}},
+					users: {$addToSet: {_id: {$arrayElemAt: ['$users._id', 0]}, username: {$arrayElemAt: ['$users.username', 0]}}},
 					messageCount: {'$first': '$messageCount'},
 					messages: {
 						$addToSet: {
@@ -474,7 +473,7 @@ export const chatResolver = (db) => ({
 					_id: '$_id',
 					name: {'$first': '$name'},
 					createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
-					users: {$addToSet: {_id: '$users._id', username: '$users.username'}},
+					users: {$addToSet: {_id: {$arrayElemAt: ['$users._id', 0]}, username: {$arrayElemAt: ['$users.username', 0]}}},
 					messageCount: {'$first': '$messageCount'},
 					messages: {
 						$addToSet: {

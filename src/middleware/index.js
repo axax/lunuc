@@ -64,7 +64,7 @@ const networkInterfaceWithSubscriptions = addGraphQLSubscriptions(
 
 export const client = new ApolloClient({
 	reduxRootSelector: state => state.remote,
-	networkInterface: networkInterfaceWithSubscriptions,
+	networkInterface: networkInterfaceDecorator,
 	dataIdFromObject: (o) => {
 		if (o.__typxename === 'KeyValue') {
 			return o.__typename + o.key

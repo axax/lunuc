@@ -1,9 +1,9 @@
 import {createStore, compose, applyMiddleware} from 'redux'
-import {autoRehydrate} from 'redux-persist'
-
 import rootReducer from '../reducers/index'
 import { client } from '../middleware/index'
 import Environment from '../environment'
+import { persistStore } from 'redux-persist'
+
 
 
 // A middleware logger
@@ -33,12 +33,18 @@ const composeEnhancers =
 
 
 export default function configureStore(initialState) {
+
 	const store = createStore(rootReducer, initialState, composeEnhancers(
-		(Environment.REDUX_PERSIST?autoRehydrate({log:true}):(e)=>e),
 		applyMiddleware(
 				logger,
 				client.middleware() // apollo client middleware
 		)
 	))
-	return store
+
+    if( Environment.REDUX_PERSIST ) {
+        let persistor = persistStore(store)
+        return { persistor, store }
+    }
+
+    return {store}
 }

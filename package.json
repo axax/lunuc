@@ -57,7 +57,7 @@
     "express-graphql": "^0.6.11",
     "google-translate-api": "^2.3.0",
     "gql-merge": "0.0.6",
-    "graphql": "^0.11.7",
+    "graphql": "^0.10.5",
     "http-proxy": "^1.16.2",
     "immutability-helper": "^2.4.0",
     "jest": "^21.2.1",
@@ -72,9 +72,9 @@
     "react-router-dom": "^4.2.2",
     "react-test-renderer": "^16.0.0",
     "redux": "^3.7.2",
-    "redux-persist": "^4.10.2",
+    "redux-persist": "^5.1.0",
     "request-promise": "^4.2.2",
-    "subscriptions-transport-ws": "^0.8.3",
+    "subscriptions-transport-ws": "^0.8.2",
     "webpack": "^3.8.1"
   },
   "devDependencies": {
