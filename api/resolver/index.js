@@ -2,6 +2,7 @@ import {commonResolver} from './common'
 import {userResolver} from './user'
 import {chatResolver} from './chat'
 import {wordResolver} from './word'
+import {postResolver} from './post'
 import {notificationResolver} from './notification'
 import {keyvalueResolver} from './keyvalue'
 
@@ -13,6 +14,7 @@ export const resolver = (db) => {
 		...userResolver(db),
 		...notificationResolver(db),
 		...keyvalueResolver(db),
-		...wordResolver(db)
+		...wordResolver(db),
+		...postResolver(db)
 	})
 }

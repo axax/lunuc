@@ -14,6 +14,7 @@ import SearchWhileSpeechContainer from '../../containers/SearchWhileSpeechContai
 import LiveSpeechTranslaterContainer from '../../containers/LiveSpeechTranslaterContainer'
 import ChatContainer from '../../containers/ChatContainer'
 import WordContainer from '../../containers/WordContainer'
+import PostContainer from '../../containers/PostContainer'
 import Home from '../Home'
 import PrivateRoute from './PrivateRoute'
 
@@ -33,6 +34,7 @@ class Routes extends React.Component {
 					{isAuthenticated?<li><Link to="/search">Search</Link></li>:''}
 					{isAuthenticated?<li><Link to="/chat">My chats</Link></li>:''}
 					{isAuthenticated?<li><Link to="/word">Word</Link></li>:''}
+					{isAuthenticated?<li><Link to="/post">Post</Link></li>:''}
 					<li><Link to="/profile">Profile</Link></li>
 				</ul>
 
@@ -43,6 +45,7 @@ class Routes extends React.Component {
 				<Route exact path="/translate" component={LiveSpeechTranslaterContainer}/>
 				<Route exact path="/chat/:id*" component={ChatContainer}/>
 				<Route exact path="/word" component={WordContainer}/>
+				<Route exact path="/post/:id*" component={PostContainer}/>
 				<Route path="/login" component={LoginContainer}/>
 				<Route path="/signup" component={SignUpContainer}/>
 

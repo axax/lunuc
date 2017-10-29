@@ -64,7 +64,7 @@ class SearchWhileSpeechContainer extends React.Component {
                     for (const alternativ of result) {
                         console.log(alternativ)
                         if (alternativ.confidence > 0.60) {
-                            self.setState((state) => ({recorded: state.recorded.concat(alternativ.transcript)}))
+                            self.setState((state) => ({search:alternativ.transcript, recorded: state.recorded.concat(alternativ.transcript)}))
                         }
                     }
                 }
@@ -139,7 +139,8 @@ class SearchWhileSpeechContainer extends React.Component {
                 type="checkbox"
                 checked={this.state.recording}
                 onChange={this.handleInputChange}/>
-            Voice Recorder: {this.state.recording ? 'on' : 'off'}{pairs}
+            Voice Recorder: {this.state.recording ? 'on' : 'off'}
+
         </div>
     }
 }

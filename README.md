@@ -95,6 +95,7 @@ Url to access the mongo database:
 | [subscriptions-transport-ws](https://github.com/apollographql/subscriptions-transport-ws) |  A WebSocket client + server for GraphQL subscriptions | 
 | [aws-sdk](https://github.com/aws/aws-sdk-js) |  AWS SDK for JavaScript in the browser and Node.js | 
 | [request-promise](https://github.com/request/request-promise) |  The simplified HTTP request client 'request' with Promise support. Powered by Bluebird. |
+| [draft-js](https://github.com/facebook/draft-js) | A React framework for building text editors. |
 
 
 ### Folder structure

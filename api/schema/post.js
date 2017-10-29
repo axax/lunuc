@@ -2,8 +2,8 @@ export const postSchemaRaw = `
     type Post {
         _id: ID! # unique id for words
         createdBy: UserPublic! # id of user
-        subject: String!
-        content: String
+        title: String!
+        body: String
         status: String
     }
     
@@ -15,10 +15,10 @@ export const postSchemaRaw = `
 		
 	type Mutation {
 		createPost (
-			subject: String!
-			content: String
+			title: String!
+			body: String
 		): Post
-		updatePost(_id: ID!, subject: String, content: String): Post	
-		deletePost(id: ID!): Post
+		updatePost(_id: ID!, title: String, body: String): Post	
+		deletePost(_id: ID!): Post
 	}
 `

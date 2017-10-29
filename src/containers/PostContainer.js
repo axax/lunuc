@@ -1,0 +1,237 @@
+import React from 'react'
+import PropTypes from 'prop-types'
+import {gql, graphql, compose} from 'react-apollo'
+import {connect} from 'react-redux'
+import AddNewPost from '../components/post/AddNewPost'
+import PostEditor from '../components/post/PostEditor'
+import update from 'immutability-helper'
+import Util from '../util'
+import {Link} from 'react-router-dom'
+
+
+class PostContainer extends React.Component {
+    constructor(props) {
+        super(props)
+    }
+
+	componentWillMount() {
+	}
+
+
+    handleAddPostClick = (post) => {
+		const {createPost } = this.props
+        createPost(post)
+	}
+
+	handleBodyChange = (post,data) => {
+        const {updatePost} = this.props
+        updatePost(
+            update(post, {body: {$set:data }})
+        )
+	}
+
+    handlePostDeleteClick = (post) => {
+        const {deletePost} = this.props
+        deletePost({
+            _id: post._id
+        })
+    }
+
+	render() {
+		const { posts, loading, match} = this.props
+        const selectedPostId = match.params.id
+
+		if( !posts )
+			return null
+
+		var selectedPost = false
+
+		return (
+			<div>
+				<h1>Posts</h1>
+				<ul>
+                    {posts.map((post, i) => {
+                        if (post._id === selectedPostId) {
+                            selectedPost = post
+                        }
+                        const url = '/post/' + post._id
+                        return <li key={i}>{['creating','deleting'].indexOf(post.status)>-1 ? <div>{post.title}
+						</div>:<div><Link to={url}>{post.title}</Link> <button onClick={this.handlePostDeleteClick.bind(this, post)}>x</button></div>}
+							<small><small>{Util.formattedDatetimeFromObjectId(post._id)}</small></small></li>
+                    })}
+				</ul>
+                <AddNewPost onClick={this.handleAddPostClick}/>
+
+
+                {selectedPost ?
+					<div>
+						<h2>{selectedPost.title}</h2>
+						<PostEditor onChange={this.handleBodyChange.bind(this,selectedPost)} body={selectedPost.body}/>
+
+
+					</div>
+                    : ''}
+			</div>
+		)
+	}
+}
+
+
+PostContainer.propTypes = {
+	/* routing params */
+	match: PropTypes.object,
+	/* apollo client props */
+	loading: PropTypes.bool,
+	posts: PropTypes.array,
+	createPost: PropTypes.func.isRequired,
+	updatePost: PropTypes.func.isRequired,
+	deletePost: PropTypes.func.isRequired
+}
+
+const POSTS_PER_PAGE=10
+
+const gqlQuery=gql`query{posts(limit: ${POSTS_PER_PAGE}){_id title body status createdBy{_id username}}}`
+const PostContainerWithGql = compose(
+	graphql(gqlQuery, {
+		options() {
+			return {
+				fetchPolicy: 'cache-and-network',
+				reducer: (prev, {operationName, type, result: {data}}) => {
+					if (type === 'APOLLO_MUTATION_RESULT') {
+						/*if (operationName === 'createMessage' && data && data.createMessage && data.createMessage._id) {
+							return createMessage(prev, data.createMessage)
+						}*/
+					}
+					return prev
+				}
+			}
+		},
+        props: ({data: {loading, posts}}) => ({
+            posts,
+            loading
+        })
+	}),
+	graphql(gql`mutation createPost($title: String!, $body: String){createPost(title:$title,body:$body){_id title body createdBy{_id username} status}}`, {
+		props: ({ownProps, mutate}) => ({
+            createPost: ({title, body}) => {
+				return mutate({
+					variables: {title, body},
+					optimisticResponse: {
+						__typename: 'Mutation',
+						// Optimistic message
+                        createPost: {
+							_id: '#' + new Date().getTime(),
+							body,
+							title,
+							status: 'creating',
+							createdBy: {
+								_id: ownProps.user.userData._id,
+								username: ownProps.user.userData.username,
+								__typename: 'UserPublic'
+							},
+							__typename: 'Post'
+						}
+					},
+					update: (store, {data: {createPost}}) => {
+						//console.log('createPost', createPost)
+						// Read the data from the cache for this query.
+						const data = store.readQuery({query: gqlQuery})
+
+						data.posts.push(createPost)
+						store.writeQuery({query: gqlQuery, data})
+					}
+				})
+			}
+		}),
+	}),
+	graphql(gql`mutation updatePost($_id: ID!,$body: String, $title: String){updatePost(_id:$_id,body:$body,title:$title){_id body title createdBy{_id username} status}}`, {
+		props: ({ownProps, mutate}) => ({
+            updatePost: ({_id, body, title}) => {
+				return mutate({
+					variables: {_id, body, title},
+					optimisticResponse: {
+						__typename: 'Mutation',
+						// Optimistic message
+                        updatePost: {
+							_id,
+							body,
+							title,
+							status: 'updating',
+							createdBy: {
+								_id: ownProps.user.userData._id,
+								username: ownProps.user.userData.username,
+								__typename: 'UserPublic'
+							},
+							__typename: 'Post'
+						}
+					},
+					update: (store, {data: {updatePost}}) => {
+						//console.log('updatePost', updatePost)
+						// Read the data from the cache for this query.
+						const data = store.readQuery({query: gqlQuery})
+                        const idx = data.posts.findIndex(x => x._id === updatePost._id)
+                        if (idx > -1) {
+							data.posts[idx]=updatePost
+                            store.writeQuery({query: gqlQuery, data})
+                        }
+					}
+				})
+			}
+		}),
+	}),
+    graphql(gql`mutation deletePost($_id: ID!){deletePost(_id: $_id){_id status}}`, {
+        props: ({ownProps, mutate}) => ({
+            deletePost: ({_id}) => {
+                return mutate({
+                    variables: {_id},
+                    optimisticResponse: {
+                        __typename: 'Mutation',
+                        deletePost: {
+                            _id: _id,
+                            status: 'deleting',
+                            __typename: 'Post'
+                        }
+                    },
+                    update: (store, {data: {deletePost}}) => {
+                        console.log('deletePost', deletePost)
+                        // Read the data from the cache for this query.
+                        const data = store.readQuery({query: gqlQuery})
+
+                        const idx = data.posts.findIndex((e) => e._id === deletePost._id)
+                        if (idx >= 0) {
+                            if( deletePost.status == 'deleting' ){
+                                console.log(data.posts[idx])
+                                data.posts[idx].status = 'deleting'
+                            }else {
+                                data.posts.splice(idx, 1)
+                            }
+                            store.writeQuery({query: gqlQuery, data})
+                        }
+
+                    }
+                })
+            }
+        })
+    })
+)(PostContainer)
+
+
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = (store) => {
+	const {user} = store
+	return {
+		user
+	}
+}
+
+
+/**
+ * Connect the component to
+ * the Redux store.
+ */
+export default connect(
+	mapStateToProps
+)(PostContainerWithGql)
+
