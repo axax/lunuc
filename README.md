@@ -84,6 +84,7 @@ Url to access the mongo database:
 | [eslint-plugin-react](https://github.com/yannickcr/eslint-plugin-react)  | React specific linting rules for ESLint | 
 | [nodemon](https://github.com/remy/nodemon)  | Monitor for any changes in your node.js application and automatically restart the server - perfect for development | 
 | [graphql](https://github.com/graphql/graphql-js)  | The JavaScript reference implementation for GraphQL, a query language for APIs created by Facebook. | 
+| [graphql-subscriptions](https://github.com/apollographql/graphql-subscriptions)  | A small module that implements GraphQL subscriptions for Node.js | 
 | [gql-merge](https://github.com/liamcurry/gql/tree/master/packages/gql-merge)  | Tools for merging GraphQL documents | 
 | [express](https://github.com/expressjs/express)  | Fast, unopinionated, minimalist web framework for node | 
 | [http-proxy](https://github.com/nodejitsu/node-http-proxy)  | A full-featured http proxy for node.js  | 

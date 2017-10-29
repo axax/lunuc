@@ -1,4 +1,4 @@
-import ApolloClient, {createNetworkInterface} from 'apollo-client'
+import ApolloClient, {createNetworkInterface} from 'react-apollo'
 import {SubscriptionClient, addGraphQLSubscriptions} from 'subscriptions-transport-ws'
 import {applyMiddleware} from 'redux'
 import * as Actions from '../actions/ErrorHandlerAction'
