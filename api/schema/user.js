@@ -41,6 +41,8 @@ export const userSchemaRaw = `
 	type Token {
 		token: String
 		error: String
+		_id: ID,
+		username: String
 	}
 	
     type Query {

@@ -39,7 +39,7 @@ class LoginContainer extends React.Component {
 
 		client.query({
 			fetchPolicy: 'network-only',
-			query: gql`query startLogin($username: String!, $password: String!) { login(username: $username, password: $password) { token error }}`,
+			query: gql`query startLogin($username: String!, $password: String!) { login(username: $username, password: $password) { token error _id username }}`,
 			variables: {
 				username: this.state.username,
 				password: this.state.password
@@ -51,9 +51,8 @@ class LoginContainer extends React.Component {
 				this.setState({error: response.data.login.error})
 
 				if (!response.data.login.error) {
-
 					localStorage.setItem('token', response.data.login.token)
-					userActions.setUser({username:this.state.username},true)
+					userActions.setUser(response.data.login,true)
                     errorHandlerAction.clearErrors()
 
 					this.setState({redirectToReferrer: true})

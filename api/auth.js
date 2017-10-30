@@ -22,9 +22,9 @@ export const auth = {
 			const payload = {'username': user.username, 'id': user._id}
 			const token = jwt.sign(payload, SECRET_KEY, {expiresIn: AUTH_EXPIRES_IN})
 			//console.log( jwt.verify(token, SECRET_KEY))
-			return {token: token}
+			return {token: token, username: user.username, _id: user._id}
 		} else {
-			return {error: 'password did not match', token: null}
+			return {error: 'password did not match', token: null, username: username,id: null}
 		}
 	},
 	initialize: (app, db) => {
