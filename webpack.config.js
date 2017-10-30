@@ -11,16 +11,20 @@ var config = {
 		filename: 'bundle.js'
 	},
 	module: {
-		loaders: [
-			{
-				test: /\.js$/,
-				loader: 'babel-loader',
-				exclude: /node_modules/,
-				query: {
-					presets: ['env', 'react', 'stage-0']
-				}
-			}
-		]
+        rules: [
+            {
+                test: /\.js$/,
+                loader: 'babel-loader',
+                exclude: /node_modules/,
+                query: {
+                    presets: ['env', 'react', 'stage-0']
+                }
+            },
+            {
+                test: /\.css$/,
+                use: [ 'style-loader', 'css-loader' ]
+            }
+        ]
 	},
 	plugins: []
 }

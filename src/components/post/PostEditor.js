@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {convertToRaw, convertFromRaw, convertFromHTML, ContentState, Editor, EditorState, RichUtils} from 'draft-js'
+import './PostEditor.css'
 
 export default class PostEditor extends React.Component {
     constructor(props) {

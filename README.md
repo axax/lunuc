@@ -97,6 +97,8 @@ Url to access the mongo database:
 | [aws-sdk](https://github.com/aws/aws-sdk-js) |  AWS SDK for JavaScript in the browser and Node.js | 
 | [request-promise](https://github.com/request/request-promise) |  The simplified HTTP request client 'request' with Promise support. Powered by Bluebird. |
 | [draft-js](https://github.com/facebook/draft-js) | A React framework for building text editors. |
+| [css-loader](https://github.com/webpack-contrib/css-loader) | css loader module for webpack |
+| [style-loader](https://github.com/webpack-contrib/style-loader) | style loader module for webpack |
 
 
 ### Folder structure
