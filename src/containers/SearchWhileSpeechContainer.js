@@ -9,10 +9,14 @@ import {connect} from 'react-redux'
 class SearchWhileSpeechContainer extends React.Component {
 
     mounted = false
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)()
+    recognition = false
 
     constructor(props) {
         super(props)
+        const rec = window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition
+        if( rec ){
+            this.recognition = new ( rec)()
+        }
         this.state = {
             recording: true,
             recorded: [],
@@ -20,6 +24,8 @@ class SearchWhileSpeechContainer extends React.Component {
             language: 'de-DE',
             data: []
         }
+
+
     }
 
     componentDidMount() {
@@ -39,6 +45,9 @@ class SearchWhileSpeechContainer extends React.Component {
     }
 
     createRecorder = () => {
+        if( !this.recognition )
+            return false
+
         const self = this
         this.recognition.lang = this.state.language
         this.recognition.interimResults = false
@@ -79,6 +88,9 @@ class SearchWhileSpeechContainer extends React.Component {
 
 
     handleRecorder = (start) => {
+        if( !this.recognition )
+            return false
+
         if (start && this.mounted ) {
             if (!this.recognition.recognizing) {
                 this.recognition.start()
@@ -105,7 +117,8 @@ class SearchWhileSpeechContainer extends React.Component {
             this.props.updateMe({speechLang: value}).then(() => {
                 console.log('change language to', value)
 
-                this.recognition.lang = value
+                if( !this.recognition )
+                    this.recognition.lang = value
             })
         } else if (name === 'search') {
             this.setState((state) => ({recorded: state.recorded.concat(value)}))
@@ -126,20 +139,26 @@ class SearchWhileSpeechContainer extends React.Component {
             (k, i) => pairs.push(<p key={i}>{k}</p>)
         )
 
-        return <div><h1>Search</h1><input type="text" name="search" value={this.state.search}
+        return <div><h1>Search</h1>
+
+            {this.recognition?<div>
+                <select disabled={!this.state.recording} name="language" value={this.state.language}
+                        onChange={this.handleInputChange}>
+                    {langs.map((lang, i) => {
+                        return <option key={i} value={lang.key}>{lang.name}</option>
+                    })}
+                </select>
+                <input
+                    name="recording"
+                    type="checkbox"
+                    checked={this.state.recording}
+                    onChange={this.handleInputChange}/>
+                Voice Recorder: {this.state.recording ? 'on' : 'off'}</div>:<div>Speech recognition is not supported by this browser. Check <a href="http://caniuse.com/#feat=speech-recognition">Can I use</a> for browser support</div>}
+
+
+            <br />Search <input type="text" name="search" value={this.state.search}
                                           onChange={this.handleInputChange}/>
-            <select disabled={!this.state.recording} name="language" value={this.state.language}
-                    onChange={this.handleInputChange}>
-                {langs.map((lang, i) => {
-                    return <option key={i} value={lang.key}>{lang.name}</option>
-                })}
-            </select>
-            <input
-                name="recording"
-                type="checkbox"
-                checked={this.state.recording}
-                onChange={this.handleInputChange}/>
-            Voice Recorder: {this.state.recording ? 'on' : 'off'}
+
 
         </div>
     }

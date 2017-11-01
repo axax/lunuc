@@ -9,10 +9,14 @@ import {connect} from 'react-redux'
 class LiveSpeechTranslaterContainer extends React.Component {
 
     mounted = false
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)()
+    recognition = false
 
     constructor(props) {
         super(props)
+        const rec = window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition
+        if( rec ){
+            this.recognition = new ( rec)()
+        }
         this.state = {
             recording: true,
             recorded: [],
@@ -53,6 +57,9 @@ class LiveSpeechTranslaterContainer extends React.Component {
     }
 
     createRecorder = () => {
+        if( !this.recognition )
+            return false
+
         const self = this
         this.recognition.lang = this.state.language
         this.recognition.interimResults = false
@@ -123,6 +130,9 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
 
     handleRecorder = (start) => {
+        if( !this.recognition )
+            return false
+
         if (start && this.mounted && this.props.me) {
             if (!this.recognition.recognizing) {
                 this.recognition.start()
@@ -158,6 +168,11 @@ class LiveSpeechTranslaterContainer extends React.Component {
         if (!this.props.me) {
             return null
         }
+
+        if( !this.recognition ){
+            return <div><h1>Translate</h1>Speech recognition is not supported by this browser. Check <a href="http://caniuse.com/#feat=speech-recognition">Can I use</a> for browser support</div>
+        }
+
 
         const   speechLang = this.props.me.settings.speechLang.data,
                 translateLang = this.props.me.settings.translateLang.data
