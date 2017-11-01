@@ -35,7 +35,8 @@ class SearchWhileSpeechContainer extends React.Component {
 
     componentWillUnmount() {
         this.mounted=false
-        this.recognition.abort()
+        if( this.recognition )
+            this.recognition.abort()
     }
 
     componentWillReceiveProps(nextProps) {
