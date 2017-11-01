@@ -23,11 +23,19 @@ class PostContainer extends React.Component {
         createPost(post)
 	}
 
-	handleBodyChange = (post,data) => {
-        const {updatePost} = this.props
-        updatePost(
-            update(post, {body: {$set:data }})
-        )
+
+    saveBodyTimeouts = {}
+    handleBodyChange = (post,data) => {
+        clearTimeout(this.saveBodyTimeouts[post._id])
+        this.saveBodyTimeouts[post._id] = setTimeout(() => {
+            console.log('save post')
+
+            const {updatePost} = this.props
+            updatePost(
+                update(post, {body: {$set:data }})
+            )
+
+        },2000)
 	}
 
     handlePostDeleteClick = (post) => {
@@ -35,6 +43,14 @@ class PostContainer extends React.Component {
         deletePost({
             _id: post._id
         })
+    }
+
+    handleTitleChange = (event,post,lang) => {
+        const t=event.target.innerText
+        const {updatePost} = this.props
+        updatePost(
+            update(post, {title: {$set:t }})
+        )
     }
 
 	render() {
@@ -65,7 +81,7 @@ class PostContainer extends React.Component {
 
                 {selectedPost ?
 					<div>
-						<h2>{selectedPost.title}</h2>
+						<h2 onBlur={(e) => this.handleTitleChange.bind(this)(e,selectedPost)} suppressContentEditableWarning contentEditable>{selectedPost.title}</h2>
 						<PostEditor onChange={this.handleBodyChange.bind(this,selectedPost)} body={selectedPost.body}/>
 
 
