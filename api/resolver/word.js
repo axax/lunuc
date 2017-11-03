@@ -25,6 +25,9 @@ export const wordResolver = (db) => ({
 
         let words = (await wordCollection.aggregate([
             {
+                $match: {createdBy: ObjectId(context.id)}
+            },
+            {
                 $skip: offset,
             },
             {
