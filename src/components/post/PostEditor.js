@@ -7,24 +7,34 @@ export default class PostEditor extends React.Component {
     constructor(props) {
         super(props)
 
-        this._currentRawData = this.props.body
+        this._currentRawData = this.props.post.body
 
-        this.state = {editorState: this._getEditorState(this.props.body)}
+        this.state = {editorState: this._getEditorState(this.props.post.body)}
 
 
         this.focus = () => this.editor.focus()
+
+        this.changeTimeout = false
+
         this.onChange = (editorState) => {
             this.setState({editorState})
 
             if (this.state.editorState.getCurrentContent() !== editorState.getCurrentContent()) {
                 console.log('state changed')
+                clearTimeout(this.changeTimeout)
+                this.changeTimeout = setTimeout(this.onChangeDelayed,5000)
 
-                const contentState = editorState.getCurrentContent()
-                const rawContent = JSON.stringify(convertToRaw(contentState))
-                this._currentRawData = rawContent
-
-                this.props.onChange(rawContent)
             }
+        }
+
+        this.onChangeDelayed = () => {
+            this.changeTimeout = false
+            const contentState = this.state.editorState.getCurrentContent()
+            const rawContentJson = convertToRaw(contentState)
+            const rawContent = JSON.stringify(rawContentJson)
+            this._currentRawData = rawContent
+
+            this.props.onChange(rawContent)
         }
 
         this.handleKeyCommand = (command) => this._handleKeyCommand(command)
@@ -33,11 +43,21 @@ export default class PostEditor extends React.Component {
         this.toggleInlineStyle = (style) => this._toggleInlineStyle(style)
     }
 
+
     componentWillReceiveProps(nextProps) {
-        if (this._currentRawData != nextProps.body) {
-            const contentState = this.state.editorState.getCurrentContent()
-            this.setState({editorState: this._getEditorState(nextProps.body)})
-            this._currentRawData = nextProps.body
+        if (nextProps.post ){
+            if( this.props.post._id !== nextProps.post._id){
+                if( this.changeTimeout ) {
+                    clearTimeout(this.changeTimeout)
+                    this.onChangeDelayed()
+                }
+            }
+
+            if( this._currentRawData != nextProps.post.body ) {
+                const contentState = this.state.editorState.getCurrentContent()
+                this.setState({editorState: this._getEditorState(nextProps.post.body)})
+                this._currentRawData = nextProps.post.body
+            }
         }
     }
 
@@ -143,7 +163,7 @@ export default class PostEditor extends React.Component {
 
 PostEditor.propTypes = {
     onChange: PropTypes.func,
-    body: PropTypes.string
+    post: PropTypes.object.isRequired
 }
 
 

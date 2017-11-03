@@ -82,7 +82,7 @@ class PostContainer extends React.Component {
                 {selectedPost ?
 					<div>
 						<h2 onBlur={(e) => this.handleTitleChange.bind(this)(e,selectedPost)} suppressContentEditableWarning contentEditable>{selectedPost.title}</h2>
-						<PostEditor onChange={this.handleBodyChange.bind(this,selectedPost)} body={selectedPost.body}/>
+						<PostEditor onChange={this.handleBodyChange.bind(this,selectedPost)} post={selectedPost}/>
 
 
 					</div>
