@@ -21,8 +21,12 @@ export const wordSchemaRaw = `
         de: String
     }
     
+    type WordResult {
+        results: [Word]
+    }
+    
     type Query {
-    	words(limit: Int=10, offset: Int=0): [Word]
+    	words(limit: Int=10, offset: Int=0): WordResult
     	translate(text: String!, toIso: String!, fromIso: String): Translation
     }
     

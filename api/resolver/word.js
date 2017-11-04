@@ -27,6 +27,7 @@ export const wordResolver = (db) => ({
             {
                 $match: {createdBy: ObjectId(context.id)}
             },
+            {$sort: {_id: -1}},
             {
                 $skip: offset,
             },
@@ -50,11 +51,11 @@ export const wordResolver = (db) => ({
                     createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
                 }
             },
-            {$sort: {_id: 1}}
+            {$sort: {_id: -1}}
         ]).toArray())
 
 
-        return words
+        return {results:words}
     },
     createWord: async ({en, de}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)

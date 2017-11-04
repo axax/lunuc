@@ -42,14 +42,15 @@ class WordContainer extends React.Component {
 	render() {
 		const { words, loading } = this.props
 
-		console.log('render word', words)
+		//console.log('render word', words)
 
 
 		return (
 			<div>
 				<h1>Words</h1>
+				<AddNewWord onClick={this.handleAddWordClick}/>
 				<ul suppressContentEditableWarning={true}>
-					{(words?words.slice(0).reverse().map((word, i) => {
+					{(words&&words.results?words.results.map((word, i) => {
                         return 	<li key={i}>
 									<span onBlur={(e) => this.handleWordChange.bind(this)(e,word,'de')} suppressContentEditableWarning contentEditable>{word.de}</span>=
 									<span onBlur={(e) => this.handleWordChange.bind(this)(e,word,'en')} suppressContentEditableWarning contentEditable>{word.en}</span> ({word.createdBy.username})
@@ -57,7 +58,6 @@ class WordContainer extends React.Component {
 						</li>
 					}):'')}
 				</ul>
-                <AddNewWord onClick={this.handleAddWordClick}/>
 			</div>
 		)
 	}
@@ -69,7 +69,7 @@ WordContainer.propTypes = {
 	match: PropTypes.object,
 	/* apollo client props */
 	loading: PropTypes.bool,
-	words: PropTypes.array,
+	words: PropTypes.object,
 	createWord: PropTypes.func.isRequired,
 	updateWord: PropTypes.func.isRequired,
 	deleteWord: PropTypes.func.isRequired
@@ -77,7 +77,7 @@ WordContainer.propTypes = {
 
 const WORDS_PER_PAGE=10
 
-const gqlQuery=gql`query{words(limit: ${WORDS_PER_PAGE}){_id de en status createdBy{_id username}}}`
+const gqlQuery=gql`query{words(limit: ${WORDS_PER_PAGE}){ results{ _id de en status createdBy{_id username}} }}`
 const WordContainerWithGql = compose(
 	graphql(gqlQuery, {
 		options() {
@@ -124,7 +124,7 @@ const WordContainerWithGql = compose(
 						// Read the data from the cache for this query.
 						const data = store.readQuery({query: gqlQuery})
 
-						data.words.push(createWord)
+						data.words.results.unshift(createWord)
 						store.writeQuery({query: gqlQuery, data})
 					}
 				})
@@ -156,9 +156,9 @@ const WordContainerWithGql = compose(
 						console.log('updateWord', updateWord)
 						// Read the data from the cache for this query.
 						const data = store.readQuery({query: gqlQuery})
-                        const idx = data.words.findIndex(x => x._id === updateWord._id)
+                        const idx = data.words.results.findIndex(x => x._id === updateWord._id)
                         if (idx > -1) {
-							data.words[idx]=updateWord
+							data.words.results[idx]=updateWord
                             store.writeQuery({query: gqlQuery, data})
                         }
 					}
@@ -184,13 +184,13 @@ const WordContainerWithGql = compose(
                         // Read the data from the cache for this query.
                         const data = store.readQuery({query: gqlQuery})
 
-                        const idx = data.words.findIndex((e) => e._id === deleteWord._id)
+                        const idx = data.words.results.findIndex((e) => e._id === deleteWord._id)
                         if (idx >= 0) {
                             if( deleteWord.status == 'deleting' ){
-                                console.log(data.words[idx])
-                                data.words[idx].status = 'deleting'
+                                console.log(data.words.results[idx])
+                                data.words.results[idx].status = 'deleting'
                             }else {
-                                data.words.splice(idx, 1)
+                                data.words.results.splice(idx, 1)
                             }
                             store.writeQuery({query: gqlQuery, data})
                         }

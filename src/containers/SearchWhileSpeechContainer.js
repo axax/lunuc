@@ -19,7 +19,7 @@ class SearchWhileSpeechContainer extends React.Component {
         }
         this.state = {
             recording: true,
-            recorded: [],
+            searchResults: [],
             search: '',
             language: 'de-DE',
             data: []
@@ -43,6 +43,33 @@ class SearchWhileSpeechContainer extends React.Component {
         if (nextProps.me.settings.speechLang.selection && nextProps.me.settings.speechLang.selection.key !== this.state.language) {
             this.setState({language: nextProps.me.settings.speechLang.selection.key})
         }
+    }
+
+
+
+    search = ({query}) => {
+        if( query === '' )
+            return
+        const {client} = this.props
+        client.query({
+            fetchPolicy: 'cache-first',
+            query: gql`query posts($query: String){posts(query:$query){title body searchScore search{headerOne unstyled} _id}}`,
+            variables: {
+                query
+            }
+        }).then(response => {
+
+            if( response.data && response.data.posts && response.data.posts.length > 0 ) {
+                this.setState(prevState => ({
+                    searchResults: [...prevState.searchResults, {query, data: response.data}]
+                }))
+                console.log(this.state.searchResults)
+            }
+
+
+        }).catch(error => {
+            console.log(error)
+        })
     }
 
     createRecorder = () => {
@@ -73,8 +100,9 @@ class SearchWhileSpeechContainer extends React.Component {
 
                     for (const alternativ of result) {
                         console.log(alternativ)
-                        if (alternativ.confidence > 0.60) {
-                            self.setState((state) => ({search:alternativ.transcript, recorded: state.recorded.concat(alternativ.transcript)}))
+                        if (alternativ.confidence > 0.50) {
+                            self.setState((state) => ({search:alternativ.transcript}))
+                            self.search({query:alternativ.transcript})
                         }
                     }
                 }
@@ -122,7 +150,9 @@ class SearchWhileSpeechContainer extends React.Component {
                     this.recognition.lang = value
             })
         } else if (name === 'search') {
-            this.setState((state) => ({recorded: state.recorded.concat(value)}))
+            this.search({query:value})
+
+            ///this.setState((state) => ({recorded: state.recorded.concat(value)}))
 
         }
     }
@@ -135,9 +165,8 @@ class SearchWhileSpeechContainer extends React.Component {
         const langs = this.props.me.settings.speechLang.data
 
         let pairs = []
-
-        this.state.recorded.forEach(
-            (k, i) => pairs.push(<p key={i}>{k}</p>)
+        this.state.searchResults.forEach(
+            (k, i) => k.data.posts.forEach( (k2, i2 ) => pairs.push(<p key={i+'-'+i2}>{k2.title} {k2.search.unstyled}</p>))
         )
 
         return <div><h1>Search</h1>
@@ -160,7 +189,7 @@ class SearchWhileSpeechContainer extends React.Component {
             <br />Search <input type="text" name="search" value={this.state.search}
                                           onChange={this.handleInputChange}/>
 
-
+            {pairs}
         </div>
     }
 }
