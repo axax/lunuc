@@ -23,6 +23,9 @@ export const wordSchemaRaw = `
     
     type WordResult {
         results: [Word]
+        offset: Int
+        limit: Int
+        total: Int
     }
     
     type Query {

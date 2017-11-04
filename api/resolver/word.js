@@ -8,13 +8,13 @@ export const wordResolver = (db) => ({
 
     translate: async ({text, toIso, fromIso}, {context}) => {
 
-        if( !toIso ){
+        if (!toIso) {
             toIso = 'en'
         }
 
 
-        const res = (await translate(text, {to: toIso, from:fromIso}))
-        return {text:res.text, fromIso:res.from.language.iso, toIso}
+        const res = (await translate(text, {to: toIso, from: fromIso}))
+        return {text: res.text, fromIso: res.from.language.iso, toIso}
 
     },
     words: async ({limit, offset}, {context}) => {
@@ -26,13 +26,6 @@ export const wordResolver = (db) => ({
         let words = (await wordCollection.aggregate([
             {
                 $match: {createdBy: ObjectId(context.id)}
-            },
-            {$sort: {_id: -1}},
-            {
-                $skip: offset,
-            },
-            {
-                $limit: limit
             },
             {
                 $lookup: {
@@ -51,11 +44,30 @@ export const wordResolver = (db) => ({
                     createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
                 }
             },
-            {$sort: {_id: -1}}
+            {$sort: {_id: -1}},
+            {
+                $group: {
+                    _id: null,
+                    // get a count of every result that matches until now
+                    total: {$sum: 1},
+                    // keep our results for the next operation
+                    results: {$push: '$$ROOT'}
+                }
+            },
+            // and finally trim the results to within the range given by start/endRow
+            {
+                $project: {
+                    total: 1,
+                    results: {$slice: ['$results', offset, limit]}
+                }
+            },
+            // return offset and limit
+            {
+                $addFields: { limit, offset }
+            }
         ]).toArray())
 
-
-        return {results:words}
+        return words[0]
     },
     createWord: async ({en, de}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
@@ -90,20 +102,25 @@ export const wordResolver = (db) => ({
 
         const wordCollection = db.collection('Word')
 
-        const result = (await wordCollection.findOneAndUpdate({_id: ObjectId(_id)}, {$set: {en,de}}, {returnOriginal: false}))
+        const result = (await wordCollection.findOneAndUpdate({_id: ObjectId(_id)}, {
+            $set: {
+                en,
+                de
+            }
+        }, {returnOriginal: false}))
         if (result.ok !== 1) {
             throw new ApiError('Word could not be changed')
         }
         return {
-                _id,
-                en,
-                de,
-                createdBy: {
-                    _id: ObjectId(context.id),
-                    username: context.username
-                },
-                status: 'updated'
-            }
+            _id,
+            en,
+            de,
+            createdBy: {
+                _id: ObjectId(context.id),
+                username: context.username
+            },
+            status: 'updated'
+        }
     },
     deleteWord: async ({_id}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)

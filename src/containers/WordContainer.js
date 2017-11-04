@@ -42,6 +42,9 @@ class WordContainer extends React.Component {
 	render() {
 		const { words, loading } = this.props
 
+        if( !words )
+            return null
+
 		//console.log('render word', words)
 
 
@@ -49,8 +52,10 @@ class WordContainer extends React.Component {
 			<div>
 				<h1>Words</h1>
 				<AddNewWord onClick={this.handleAddWordClick}/>
+
+                <i>words {words.offset} to {words.offset+words.results.length} of total {words.total}</i>
 				<ul suppressContentEditableWarning={true}>
-					{(words&&words.results?words.results.map((word, i) => {
+					{(words.results?words.results.map((word, i) => {
                         return 	<li key={i}>
 									<span onBlur={(e) => this.handleWordChange.bind(this)(e,word,'de')} suppressContentEditableWarning contentEditable>{word.de}</span>=
 									<span onBlur={(e) => this.handleWordChange.bind(this)(e,word,'en')} suppressContentEditableWarning contentEditable>{word.en}</span> ({word.createdBy.username})
@@ -77,7 +82,7 @@ WordContainer.propTypes = {
 
 const WORDS_PER_PAGE=10
 
-const gqlQuery=gql`query{words(limit: ${WORDS_PER_PAGE}){ results{ _id de en status createdBy{_id username}} }}`
+const gqlQuery=gql`query{words(limit: ${WORDS_PER_PAGE}){ limit offset total results{ _id de en status createdBy{_id username}} }}`
 const WordContainerWithGql = compose(
 	graphql(gqlQuery, {
 		options() {
