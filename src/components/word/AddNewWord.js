@@ -20,6 +20,7 @@ export default class AddNewWord extends React.Component {
 
 	onAddClick = () => {
 		this.props.onClick({en: this.state.en, de: this.state.de})
+		this.setState({en: '', de: ''})
 	}
 
 	render() {

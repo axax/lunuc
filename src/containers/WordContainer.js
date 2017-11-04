@@ -140,11 +140,15 @@ const WordContainerWithGql = compose(
 					},
 					update: (store, {data: {createWord}}) => {
 						console.log('createWord', createWord)
-						// Read the data from the cache for this query.
-						const data = store.readQuery({query: gqlQuery})
+                        let pageNr=(ownProps.match.params.page || 1)-1
 
-						data.words.results.unshift(createWord)
-						store.writeQuery({query: gqlQuery, data})
+                        // Read the data from the cache for this query.
+						const data = store.readQuery({query: gqlQuery, variables: { limit: WORDS_PER_PAGE, offset: pageNr*WORDS_PER_PAGE}})
+						if( data.words ) {
+                            data.words.results.unshift(createWord)
+                            data.words.total +=1
+                            store.writeQuery({query: gqlQuery,variables: { limit: WORDS_PER_PAGE, offset: pageNr*WORDS_PER_PAGE}, data})
+                        }
 					}
 				})
 			}
@@ -173,12 +177,14 @@ const WordContainerWithGql = compose(
 					},
 					update: (store, {data: {updateWord}}) => {
 						console.log('updateWord', updateWord)
-						// Read the data from the cache for this query.
-						const data = store.readQuery({query: gqlQuery})
+                        let pageNr=(ownProps.match.params.page || 1)-1
+
+                        // Read the data from the cache for this query.
+						const data = store.readQuery({query: gqlQuery,variables: { limit: WORDS_PER_PAGE, offset: pageNr*WORDS_PER_PAGE}})
                         const idx = data.words.results.findIndex(x => x._id === updateWord._id)
                         if (idx > -1) {
 							data.words.results[idx]=updateWord
-                            store.writeQuery({query: gqlQuery, data})
+                            store.writeQuery({query: gqlQuery,variables: { limit: WORDS_PER_PAGE, offset: pageNr*WORDS_PER_PAGE}, data})
                         }
 					}
 				})
@@ -200,8 +206,10 @@ const WordContainerWithGql = compose(
                     },
                     update: (store, {data: {deleteWord}}) => {
                         console.log('deleteWord', deleteWord)
+                        let pageNr=(ownProps.match.params.page || 1)-1
+
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery})
+                        const data = store.readQuery({query: gqlQuery,variables: { limit: WORDS_PER_PAGE, offset: pageNr*WORDS_PER_PAGE}})
 
                         const idx = data.words.results.findIndex((e) => e._id === deleteWord._id)
                         if (idx >= 0) {
@@ -211,7 +219,8 @@ const WordContainerWithGql = compose(
                             }else {
                                 data.words.results.splice(idx, 1)
                             }
-                            store.writeQuery({query: gqlQuery, data})
+                            data.words.total -=1
+                            store.writeQuery({query: gqlQuery,variables: { limit: WORDS_PER_PAGE, offset: pageNr*WORDS_PER_PAGE}, data})
                         }
 
                     }
