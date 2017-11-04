@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {gql, graphql, compose} from 'react-apollo'
 import {connect} from 'react-redux'
 import AddNewWord from '../components/word/AddNewWord'
+import Pagination from '../components/Pagination'
 import update from 'immutability-helper'
 
 
@@ -47,13 +48,15 @@ class WordContainer extends React.Component {
 
 		//console.log('render word', words)
 
+        const totalPages = Math.ceil(words.total/WORDS_PER_PAGE),
+		        currentPage = Math.ceil(words.offset/WORDS_PER_PAGE)+1
 
 		return (
 			<div>
 				<h1>Words</h1>
 				<AddNewWord onClick={this.handleAddWordClick}/>
 
-                <i>words {words.offset} to {words.offset+words.results.length} of total {words.total}</i>
+                <i>words from {words.offset+1} to {words.offset+words.results.length} of total {words.total}</i>
 				<ul suppressContentEditableWarning={true}>
 					{(words.results?words.results.map((word, i) => {
                         return 	<li key={i}>
@@ -63,6 +66,12 @@ class WordContainer extends React.Component {
 						</li>
 					}):'')}
 				</ul>
+
+                Page {currentPage} of {totalPages}
+
+                <Pagination baseLink='/word/' currentPage={currentPage} totalPages={totalPages}/>
+
+
 			</div>
 		)
 	}
@@ -82,12 +91,17 @@ WordContainer.propTypes = {
 
 const WORDS_PER_PAGE=10
 
-const gqlQuery=gql`query{words(limit: ${WORDS_PER_PAGE}){ limit offset total results{ _id de en status createdBy{_id username}} }}`
+const gqlQuery=gql`query words($limit: Int, $offset: Int){words(limit: $limit, offset:$offset){ limit offset total results{ _id de en status createdBy{_id username}} }}`
 const WordContainerWithGql = compose(
 	graphql(gqlQuery, {
-		options() {
+		options(ownProps) {
+		    let pageNr=(ownProps.match.params.page || 1)-1
 			return {
-				fetchPolicy: 'cache-and-network',
+                variables: {
+                    limit: WORDS_PER_PAGE,
+                    offset: pageNr*WORDS_PER_PAGE
+                },
+                fetchPolicy: 'cache-and-network',
 				reducer: (prev, {operationName, type, result: {data}}) => {
 					if (type === 'APOLLO_MUTATION_RESULT') {
 						/*if (operationName === 'createMessage' && data && data.createMessage && data.createMessage._id) {

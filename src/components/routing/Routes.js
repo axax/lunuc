@@ -44,7 +44,7 @@ class Routes extends React.Component {
 				<Route exact path="/search" component={SearchWhileSpeechContainer}/>
 				<Route exact path="/translate" component={LiveSpeechTranslaterContainer}/>
 				<Route exact path="/chat/:id*" component={ChatContainer}/>
-				<Route exact path="/word" component={WordContainer}/>
+				<Route exact path="/word/:page*" component={WordContainer}/>
 				<Route exact path="/post/:id*" component={PostContainer}/>
 				<Route path="/login" component={LoginContainer}/>
 				<Route path="/signup" component={SignUpContainer}/>
