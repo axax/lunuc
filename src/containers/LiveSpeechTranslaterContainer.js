@@ -87,7 +87,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
                     for (const alternativ of result) {
                         //console.log(alternativ)
-                        if (alternativ.confidence > 0.60) {
+                        if (alternativ.confidence > 0.50) {
 
                             self.translate({text:alternativ.transcript,toIso:self.state.languageTo,fromIso:self.state.language.substr(0,2)}).then(response => {
                                 isSpeacking=true

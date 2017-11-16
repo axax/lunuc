@@ -97,6 +97,8 @@ Url to access the mongo database:
 | [aws-sdk](https://github.com/aws/aws-sdk-js) |  AWS SDK for JavaScript in the browser and Node.js | 
 | [request-promise](https://github.com/request/request-promise) |  The simplified HTTP request client 'request' with Promise support. Powered by Bluebird. |
 | [draft-js](https://github.com/facebook/draft-js) | A React framework for building text editors. |
+| [draft-js-plugins](https://github.com/draft-js-plugins/draft-js-plugins) | React Plugin Architecture for DraftJS including Slack-Like Emojis, FB-Like Mentions and Stickers  |
+| [draft-js-image-plugin](https://github.com/draft-js-plugins/draft-js-plugins/tree/master/draft-js-image-plugin) | This is a plugin for the draft-js-plugins-editor  |
 | [css-loader](https://github.com/webpack-contrib/css-loader) | css loader module for webpack |
 | [style-loader](https://github.com/webpack-contrib/style-loader) | style loader module for webpack |
 

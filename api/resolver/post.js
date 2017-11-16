@@ -9,7 +9,6 @@ export const postResolver = (db) => ({
         Util.checkIfUserIsLoggedIn(context)
 
         const postCollection = db.collection('Post')
-        console.log(query)
 
         const pipe = []
 
