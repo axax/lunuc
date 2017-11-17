@@ -3,7 +3,8 @@ import PropTypes from 'prop-types'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import * as UserActions from '../actions/UserAction'
-import {withApollo, gql} from 'react-apollo'
+import {withApollo} from 'react-apollo'
+import gql from 'graphql-tag'
 import ApolloClient from 'apollo-client'
 
 class UserDataContainer extends React.PureComponent {

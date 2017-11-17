@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {gql, graphql, compose} from 'react-apollo'
+import {graphql, compose} from 'react-apollo'
+import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import AddNewPost from '../components/post/AddNewPost'
 import PostEditor from '../components/post/PostEditor'

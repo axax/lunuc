@@ -47,6 +47,9 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
+    "apollo-client-preset": "^1.0.3",
+    "apollo-link-context": "^1.0.1",
+    "apollo-link-error": "^1.0.1",
     "aws-sdk": "^2.141.0",
     "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",
@@ -63,7 +66,8 @@
     "express-graphql": "^0.6.11",
     "google-translate-api": "^2.3.0",
     "gql-merge": "0.0.6",
-    "graphql": "^0.10.5",
+    "graphql": "^0.11.7",
+    "graphql-tag": "^2.5.0",
     "http-proxy": "^1.16.2",
     "immutability-helper": "^2.4.0",
     "jest": "^21.2.1",
@@ -72,7 +76,7 @@
     "nodemon": "^1.12.1",
     "prop-types": "^15.6.0",
     "react": "^16.0.0",
-    "react-apollo": "^1.4.15",
+    "react-apollo": "^2.0.1",
     "react-dom": "^16.0.0",
     "react-redux": "^5.0.6",
     "react-router-dom": "^4.2.2",
