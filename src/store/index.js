@@ -37,7 +37,7 @@ export default function configureStore(initialState) {
 	const store = createStore(rootReducer, initialState, composeEnhancers(
 		applyMiddleware(
 				logger,
-				client.middleware() // apollo client middleware
+				/*client.middleware()*/ // apollo client middleware
 		)
 	))
 

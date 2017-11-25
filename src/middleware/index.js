@@ -8,11 +8,12 @@ import {SubscriptionClient, addGraphQLSubscriptions} from 'subscriptions-transpo
 import {applyMiddleware} from 'redux'
 import * as Actions from '../actions/ErrorHandlerAction'
 
+
 // the link to our graphql api
 const httpLink = createHttpLink({uri: `${window.location.protocol}//${window.location.hostname}:${window.location.port}/graphql`})
 
 // create a middleware link with the authentication
-const middlewareLink = setContext(() => {
+const middlewareLink = setContext((req) => {
     // get the authentication token from local storage if it exists
     const token = localStorage.getItem('token')
     return {
@@ -23,18 +24,30 @@ const middlewareLink = setContext(() => {
 })
 
 
-const errorLink = onError(({ networkError, graphQLErrors }) => {
+const errorLink = onError(({ networkError, graphQLErrors, operation, response }) => {
+    console.log(operation, graphQLErrors)
 
-
+    // check for mongodb/graphql errors
+    if (operation.variables && operation.variables._ignoreErrors) {
+        //d.errors = null
+    } else if (!operation.variables || operation.variables._errorHandling !== false) {
+       /* if (d.errors && d.errors.length) {
+            client.store.dispatch(Actions.addError({key: 'graphql_error', msg: d.errors[0].message}))
+        }*/
+    }
 })
 
+const httpLinkWithError = errorLink.concat(httpLink)
+
+
+
 // use with apollo-client
-const link = middlewareLink.concat(errorLink,httpLink)
+const link = middlewareLink.concat(httpLinkWithError)
 
 // cache
 const cache = new InMemoryCache({
-    dataIdFromObject: () => (o) => {
-        if (o.__typxename === 'KeyValue') {
+    dataIdFromObject: (o) => {
+        if (o.__typename === 'KeyValue') {
             return o.__typename + o.key
         } else if (o._id) {
             return o.__typename + o._id
@@ -71,18 +84,6 @@ const cache = new InMemoryCache({
 
 
 
-/*networkInterfaceDecorator.use([{
-    applyMiddleware(req, next) {
-        if (!req.options.headers) {
-            req.options.headers = {}  // Create the header object if needed.
-        }
-
-        // get the authentication token from local storage if it exists
-        const token = localStorage.getItem('token')
-        req.options.headers.authorization = token ? `JWT ${token}` : null
-        next()
-    }
-}])*/
 
 
 /*
@@ -101,20 +102,6 @@ const cache = new InMemoryCache({
     wsClient
 )*/
 
-
-/*export const client = new ApolloClient({
-    reduxRootSelector: state => state.remote,
-    networkInterface: networkInterfaceDecorator,
-    dataIdFromObject: (o) => {
-        if (o.__typxename === 'KeyValue') {
-            return o.__typename + o.key
-        } else if (o._id) {
-            return o.__typename + o._id
-        }
-        // Make sure to return null if this object doesn't have an ID
-        return null
-    } // will be used by Apollo Client caching
-})*/
 
 
 // create the apollo client

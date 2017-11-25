@@ -1,7 +1,7 @@
 var _Environments = {
 	production:  {REDUX_PERSIST:true},
 	staging:     {REDUX_PERSIST:true},
-	development: {REDUX_PERSIST:true}
+	development: {REDUX_PERSIST:false}
 }
 
 function getEnvironment() {

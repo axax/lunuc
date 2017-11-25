@@ -47,6 +47,8 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
+    "apollo-cache-inmemory": "^1.1.1",
+    "apollo-client": "^2.0.3",
     "apollo-client-preset": "^1.0.3",
     "apollo-link-context": "^1.0.1",
     "apollo-link-error": "^1.0.1",
@@ -68,6 +70,7 @@
     "google-translate-api": "^2.3.0",
     "gql-merge": "0.0.6",
     "graphql": "^0.11.7",
+    "graphql-subscriptions": "^0.5.5",
     "graphql-tag": "^2.5.0",
     "http-proxy": "^1.16.2",
     "immutability-helper": "^2.5.0",

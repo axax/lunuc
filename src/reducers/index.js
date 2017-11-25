@@ -46,13 +46,13 @@ if( Environment.REDUX_PERSIST ){
     }, {
         errorHandler,
         user,
-        remote: client.reducer()
+        /*remote: client.reducer()*/
     })
 }else{
     rootReducer = combineReducers({
         errorHandler,
         user,
-        remote: client.reducer()
+        /*remote: client.reducer()*/
     })
 }
 
