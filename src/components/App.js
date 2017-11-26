@@ -11,7 +11,7 @@ import UserDataContainer from '../containers/UserDataContainer'
  * it explicitly to all the components.
  */
 import {ApolloProvider} from 'react-apollo'
-import {client} from '../middleware/index'
+import {configureMiddleware} from '../middleware/index'
 import {Provider} from 'react-redux'
 
 
@@ -23,6 +23,8 @@ class App extends React.PureComponent {
         const onBeforeLift = () => {
             // take some action before the gate lifts
         }
+
+        const client = configureMiddleware(this.props.store)
 
         const afterPersist = <Provider store={this.props.store}>
             <ApolloProvider client={client}>
