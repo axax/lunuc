@@ -112,15 +112,7 @@ const PostContainerWithGql = compose(
 	graphql(gqlQuery, {
 		options() {
 			return {
-				fetchPolicy: 'cache-and-network',
-				reducer: (prev, {operationName, type, result: {data}}) => {
-					if (type === 'APOLLO_MUTATION_RESULT') {
-						/*if (operationName === 'createMessage' && data && data.createMessage && data.createMessage._id) {
-							return createMessage(prev, data.createMessage)
-						}*/
-					}
-					return prev
-				}
+				fetchPolicy: 'cache-and-network'
 			}
 		},
         props: ({data: {loading, posts}}) => ({

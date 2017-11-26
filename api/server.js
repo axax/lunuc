@@ -25,9 +25,9 @@ export const start = (done) => {
             const app = express()
 
             // delay response
-            /*app.use(function (req, res, next) {
-             setTimeout(next, 4000)
-             })*/
+            app.use(function (req, res, next) {
+             setTimeout(next, 1000)
+             })
 
             // Authentication
             auth.initialize(app, db)
