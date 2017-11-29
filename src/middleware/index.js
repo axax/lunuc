@@ -80,7 +80,37 @@ export function configureMiddleware(store) {
 
 
     // cache
-    const cache = new InMemoryCache({
+    const CACHE_KEY = "@APOLLO_OFFLINE_CACHE";
+
+    class OfflineCache extends InMemoryCache {
+        constructor(...args) {
+            super(...args);
+            this.restore(JSON.parse(window.localStorage.getItem(CACHE_KEY)))
+        }
+
+        saveToLocalStorage() {
+            const state = this.extract();
+            // Filter some queries we don't want to persist
+            const newstate = Object.keys(state)
+                .filter(key => (
+                        key.indexOf('$ROOT_QUERY.login') < 0 &&
+                        key.indexOf('ROOT_QUERY.notification') < 0 &&
+                        key.indexOf('ROOT_SUBSCRIPTION.notification') < 0
+                    )
+                )
+                .reduce((res, key) => (res[key] = state[key], res), {})
+
+            console.log("save to local storage");
+            window.localStorage.setItem(CACHE_KEY,JSON.stringify(newstate))
+        }
+
+        broadcastWatches() {
+            super.broadcastWatches();
+            this.saveToLocalStorage();
+        }
+    }
+
+    const cacheOptions = {
         dataIdFromObject: (o) => {
             if (o.__typename === 'KeyValue') {
                 return o.__typename + o.key
@@ -91,7 +121,9 @@ export function configureMiddleware(store) {
             return null
         },
         addTypename: true
-    })
+    }
+
+    const cache = new OfflineCache(cacheOptions)
 
     // create the apollo client
     return new ApolloClient({

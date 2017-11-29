@@ -1,7 +1,7 @@
 var _Environments = {
-	production:  {REDUX_PERSIST:true},
-	staging:     {REDUX_PERSIST:true},
-	development: {REDUX_PERSIST:false}
+	production:  {APOLLO_CACHE: true },
+	staging:     {APOLLO_CACHE: true },
+	development: {APOLLO_CACHE: true }
 }
 
 function getEnvironment() {

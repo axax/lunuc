@@ -1,12 +1,9 @@
 import {createStore, compose, applyMiddleware} from 'redux'
 import rootReducer from '../reducers/index'
-import Environment from '../environment'
-import { persistStore } from 'redux-persist'
-
 
 
 // A middleware logger
-function logger({ getState }) {
+function reduxLogger({ getState }) {
 	return (next) => (action) => {
 		//console.log('will dispatch', action)
 
@@ -35,14 +32,9 @@ export default function configureStore(initialState) {
 
 	const store = createStore(rootReducer, initialState, composeEnhancers(
 		applyMiddleware(
-				logger
+            reduxLogger
 		)
 	))
-
-    if( Environment.REDUX_PERSIST ) {
-        let persistor = persistStore(store)
-        return { persistor, store }
-    }
 
     return {store}
 }

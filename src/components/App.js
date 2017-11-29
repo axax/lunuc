@@ -20,45 +20,22 @@ class App extends React.PureComponent {
 
     render() {
 
-        const onBeforeLift = () => {
-            // take some action before the gate lifts
-        }
-
         const client = configureMiddleware(this.props.store)
 
-        const afterPersist = <Provider store={this.props.store}>
-            <ApolloProvider client={client}>
-                <UserDataContainer>
-                    <Routes />
-                </UserDataContainer>
-            </ApolloProvider>
-        </Provider>
-
-        const Loading = () => (
-            <div>
-                <strong>...loading</strong>
-            </div>
-        )
-
-        if (this.props.persistor) {
-            return (
-                <PersistGate
-                    loading={<Loading />}
-                    onBeforeLift={onBeforeLift}
-                    persistor={this.props.persistor}>
-                    {afterPersist}
-                </PersistGate>)
-        } else {
-            return afterPersist
-        }
+        return <Provider store={this.props.store}>
+                <ApolloProvider client={client}>
+                    <UserDataContainer>
+                        <Routes />
+                    </UserDataContainer>
+                </ApolloProvider>
+            </Provider>
 
     }
 }
 
 
 App.propTypes = {
-    store: PropTypes.object.isRequired,
-    persistor: PropTypes.object
+    store: PropTypes.object.isRequired
 }
 
 export default App
