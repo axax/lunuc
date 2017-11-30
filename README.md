@@ -29,6 +29,7 @@ https://lunuc.herokuapp.com/
 * Use of Service worker
 
 *Todos*
+* Styling
 * Push notification
 * Docker integration
 * Use of AWS lambda

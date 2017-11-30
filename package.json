@@ -54,7 +54,7 @@
     "apollo-link-error": "^1.0.1",
     "apollo-link-http": "^1.2.0",
     "apollo-link-ws": "^1.0.1",
-    "aws-sdk": "^2.158.0",
+    "aws-sdk": "^2.160.0",
     "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",
     "draft-js": "^0.10.4",
@@ -64,7 +64,7 @@
     "draft-js-image-plugin": "^2.0.1",
     "draft-js-plugins-editor": "^2.0.3",
     "draft-js-resizeable-plugin": "^2.0.1",
-    "eslint": "^4.12.0",
+    "eslint": "^4.12.1",
     "eslint-plugin-react": "^7.5.1",
     "express": "^4.16.2",
     "express-graphql": "^0.6.11",
@@ -75,7 +75,6 @@
     "graphql-tag": "^2.5.0",
     "http-proxy": "^1.16.2",
     "immutability-helper": "^2.5.1",
-    "jest": "^21.2.1",
     "jsonwebtoken": "^8.1.0",
     "mongodb": "^2.2.33",
     "nodemon": "^1.12.1",
@@ -101,6 +100,7 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "css-loader": "^0.28.7",
+    "jest-cli": "^21.2.1",
     "style-loader": "^0.19.0",
     "webpack-dev-server": "^2.9.5"
   }
