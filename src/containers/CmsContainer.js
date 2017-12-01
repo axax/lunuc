@@ -1,76 +1,76 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import {graphql, compose} from 'react-apollo'
-import gql from 'graphql-tag'
-import {connect} from 'react-redux'
+import GenericForm from '../components/generic/GenericForm'
+import Pagination from '../components/generic/Pagination'
+import update from 'immutability-helper'
+import genericComposer from './generic/genericComposer'
+
+const CMS_PAGES_PER_PAGE = 10
+
 
 
 class CmsContainer extends React.Component {
     constructor(props) {
         super(props)
     }
-	componentWillMount() {
-	}
-	render() {
-		const { cmsPage, loading } = this.props
 
-		console.log('render cmsContainer', loading)
-        if( !cmsPage )
+    render() {
+        const {cmsPages, loading} = this.props
+
+        if (!cmsPages)
             return null
 
-		return (
-			<div>
-				<h1>{cmsPage.slug}</h1>
-			</div>
-		)
-	}
-}
+
+        const totalPages = Math.ceil(cmsPages.total / CMS_PAGES_PER_PAGE),
+            currentPage = Math.ceil(cmsPages.offset / CMS_PAGES_PER_PAGE) + 1
+        return (
+            <div>
+                <h1>Cms Pages</h1>
+                <GenericForm fields={{slug:{value:'',placeholder:'slug name'}}} onClick={this.handleAddCmsPageClick} />
+
+                <ul suppressContentEditableWarning={true}>
+                    {(cmsPages.results ? cmsPages.results.map((cmsPage, i) => {
+                        if( cmsPage ) {
+                            return <li key={i}>
+                            <span onBlur={(e) => this.handleCmsPageChange.bind(this)(e, cmsPage, 'slug')}
+                                  suppressContentEditableWarning contentEditable>{cmsPage.slug}</span>
+                                ({cmsPage.createdBy.username})
+                                <button disabled={(cmsPage.status == 'deleting' || cmsPage.status == 'updating')}
+                                        onClick={this.handleDeleteCmsPageClick.bind(this, cmsPage)}>X
+                                </button>
+                            </li>
+                        }
+                    }) : '')}
+                </ul>
+                <Pagination baseLink='/cms/' currentPage={currentPage} totalPages={totalPages}/>
+
+            </div>
+        )
+    }
 
 
-CmsContainer.propTypes = {
-	/* routing params */
-	match: PropTypes.object,
-	/* apollo client props */
-	loading: PropTypes.bool,
-    cmsPage: PropTypes.object
-}
+    handleAddCmsPageClick = (data) => {
+        const {createCmsPage} = this.props
+        createCmsPage(data)
+    }
 
-const gqlQuery=gql`query cmsPage($slug: String!){ cmsPage(slug: $slug){slug _id createdBy{_id username}}}`
-const CmsContainerWithGql = compose(
-	graphql(gqlQuery, {
-		options(ownProps) {
-		    let slug=(ownProps.match.params.slug)
-			return {
-                variables: {
-                   slug
-                },
-                fetchPolicy: 'cache-and-network'
-			}
-		},
-        props: ({data: {loading, cmsPage}}) => ({
-            cmsPage,
-            loading
+    handleCmsPageChange = (event, data, key) => {
+
+        const t = event.target.innerText
+        if (t != data[key]) {
+            const {updateCmsPage} = this.props
+            updateCmsPage(
+                update(data, {[key]: {$set: t}})
+            )
+        }
+    }
+
+    handleDeleteCmsPageClick = (data) => {
+        const {deleteCmsPage} = this.props
+        deleteCmsPage({
+            _id: data._id
         })
-    })
-)(CmsContainer)
-
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store) => {
-	const {user} = store
-	return {
-		user
-	}
+    }
 }
 
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-	mapStateToProps
-)(CmsContainerWithGql)
+export default genericComposer(CmsContainer, 'cmsPage', {fields: {'slug': 'String!'},limitPerPage:CMS_PAGES_PER_PAGE})
 

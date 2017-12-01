@@ -1,5 +1,3 @@
-import Util from '../util'
-import {ObjectId} from 'mongodb'
 import GenericResolver from './genericResolver'
 
 
@@ -13,6 +11,9 @@ export const cmsResolver = (db) => ({
         return cmsPages[0]
     },
     createCmsPage: async ({slug}, {context}) => {
+        if( !slug || slug.trim() === '' ){
+            throw new Error(`Slug is empty or invalid`)
+        }
         return await GenericResolver.createEnity(db,context,'CmsPage',{slug})
     },
     updateCmsPage: async ({_id, slug}, {context}) => {

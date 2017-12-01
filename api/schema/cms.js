@@ -6,8 +6,16 @@ export const cmsSchemaRaw = `
         status: String
     }
     
+    
+    type CmsPageResult {
+        results: [CmsPage]
+        offset: Int
+        limit: Int
+        total: Int
+    }
+    
     type Query {
-    	cmsPages(limit: Int=10, offset: Int=0): [CmsPage]
+    	cmsPages(limit: Int=10, offset: Int=0): CmsPageResult
     	cmsPage(slug: String!): CmsPage
     }
     

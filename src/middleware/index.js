@@ -6,7 +6,6 @@ import {WebSocketLink} from 'apollo-link-ws'
 import {ApolloLink} from 'apollo-link'
 import {getOperationAST} from 'graphql'
 import {OfflineCache} from './cache'
-import {applyMiddleware} from 'redux'
 import * as Actions from '../actions/ErrorHandlerAction'
 
 

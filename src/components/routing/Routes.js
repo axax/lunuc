@@ -15,6 +15,7 @@ import LiveSpeechTranslaterContainer from '../../containers/LiveSpeechTranslater
 import ChatContainer from '../../containers/ChatContainer'
 import WordContainer from '../../containers/WordContainer'
 import PostContainer from '../../containers/PostContainer'
+import CmsViewContainer from '../../containers/CmsViewContainer'
 import CmsContainer from '../../containers/CmsContainer'
 import Home from '../Home'
 import PrivateRoute from './PrivateRoute'
@@ -36,6 +37,7 @@ class Routes extends React.Component {
 					{isAuthenticated?<li><Link to="/chat">My chats</Link></li>:''}
 					{isAuthenticated?<li><Link to="/word">Word</Link></li>:''}
 					{isAuthenticated?<li><Link to="/post">Post</Link></li>:''}
+					{isAuthenticated?<li><Link to="/cms">Cms</Link></li>:''}
 					<li><Link to="/profile">Profile</Link></li>
 				</ul>
 
@@ -47,7 +49,8 @@ class Routes extends React.Component {
 				<Route exact path="/chat/:id*" component={ChatContainer}/>
 				<Route exact path="/word/:page*" component={WordContainer}/>
 				<Route exact path="/post/:id*" component={PostContainer}/>
-				<Route exact path="/cms/:slug*" component={CmsContainer}/>
+				<Route exact path="/cms/view/:slug" component={CmsViewContainer}/>
+				<Route exact path="/cms/:page*" component={CmsContainer}/>
 				<Route path="/login" component={LoginContainer}/>
 				<Route path="/signup" component={SignUpContainer}/>
 
