@@ -58,7 +58,7 @@ export const start = (done) => {
                 }
             })
 
-            // attach db reference to server
+            // attach index reference to server
             server._db=db
 
             const subscriptionServer = SubscriptionServer.create(
