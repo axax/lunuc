@@ -15,6 +15,7 @@ import LiveSpeechTranslaterContainer from '../../containers/LiveSpeechTranslater
 import ChatContainer from '../../containers/ChatContainer'
 import WordContainer from '../../containers/WordContainer'
 import PostContainer from '../../containers/PostContainer'
+import CmsContainer from '../../containers/CmsContainer'
 import Home from '../Home'
 import PrivateRoute from './PrivateRoute'
 
@@ -46,6 +47,7 @@ class Routes extends React.Component {
 				<Route exact path="/chat/:id*" component={ChatContainer}/>
 				<Route exact path="/word/:page*" component={WordContainer}/>
 				<Route exact path="/post/:id*" component={PostContainer}/>
+				<Route exact path="/cms/:slug*" component={CmsContainer}/>
 				<Route path="/login" component={LoginContainer}/>
 				<Route path="/signup" component={SignUpContainer}/>
 
