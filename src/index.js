@@ -5,10 +5,10 @@ import App from './components/App'
 
 import configureStore from './store/index'
 
-const {store,persistor} = configureStore()
+const {store} = configureStore()
 
 render(
-	<App store={store} persistor={persistor} />,
+	<App store={store} />,
 	document.getElementById('app')
 )
 

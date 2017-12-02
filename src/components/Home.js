@@ -1,9 +1,10 @@
 import React from 'react'
+import BaseLayout from './layout/BaseLayout'
 
 const Home = () => (
-    <div>
+    <BaseLayout>
         <h2>Welcome</h2>
-    </div>
+    </BaseLayout>
 )
 
 export default Home

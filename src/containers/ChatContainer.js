@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {gql, graphql, compose} from 'react-apollo'
+import {graphql, compose} from 'react-apollo'
+import gql from 'graphql-tag'
 import {Link} from 'react-router-dom'
 import ChatMessage from '../components/chat/ChatMessage'
 import CreateChat from '../components/chat/CreateChat'
@@ -9,6 +10,7 @@ import AddChatMessage from '../components/chat/AddChatMessage'
 import update from 'immutability-helper'
 import {connect} from 'react-redux'
 import Util from '../util'
+import BaseLayout from '../components/layout/BaseLayout'
 
 
 class ChatContainer extends React.Component {
@@ -101,15 +103,18 @@ class ChatContainer extends React.Component {
 		const {chatsWithMessages, users, loading, match} = this.props
 		const selectedChatId = match.params.id
 
-		if (!chatsWithMessages)
-			return null
+		if (!chatsWithMessages) {
+			if( loading )
+				return <div>loading chats</div>
+            return null
+        }
 
 		console.log('render chat', loading)
 
 		let selectedChat = false
 
 		return (
-			<div>
+			<BaseLayout>
 				<h1>Chats</h1>
 				<ul>
 					{chatsWithMessages.slice(0).reverse().map((chat, i) => {
@@ -147,7 +152,7 @@ class ChatContainer extends React.Component {
 						<AddChatMessage onClick={this.handleAddChatMessageClick}/>
 					</div>
 					: ''}
-			</div>
+			</BaseLayout>
 		)
 	}
 }
@@ -199,15 +204,8 @@ const gqlOnCreateMessage = gql`subscription{messageCreated{_id text status from{
 const gqlOnDeleteMessage = gql`subscription{messageDeleted{_id status to{_id}}}`
 
 
-const createMessage = (prev, message) => {
-	const chatIdx = prev.chatsWithMessages.findIndex((e) => e._id === message.to._id)
-	if (chatIdx >= 0) {
-		const msgIdx = prev.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === message._id)
-		if (msgIdx < 0) {
-			return update(prev, {chatsWithMessages: {[chatIdx]: {messages: {$splice: [[0, 0, message]]}}}})
-		}
-	}
-	return prev
+const fnCreateMessage = (prev, message) => {
+
 }
 
 
@@ -215,15 +213,7 @@ const ChatContainerWithGql = compose(
 	graphql(gqlQuery, {
 		options() {
 			return {
-				fetchPolicy: 'cache-and-network',
-				reducer: (prev, {operationName, type, result: {data}}) => {
-					if (type === 'APOLLO_MUTATION_RESULT') {
-						if (operationName === 'createMessage' && data && data.createMessage && data.createMessage._id) {
-							return createMessage(prev, data.createMessage)
-						}
-					}
-					return prev
-				}
+				fetchPolicy: 'cache-and-network'
 			}
 		},
 		props: props => {
@@ -236,7 +226,15 @@ const ChatContainerWithGql = compose(
 					return props.data.subscribeToMore({
 						document: gqlOnCreateMessage,
 						updateQuery: (prev, {subscriptionData}) => {
-							return createMessage(prev, subscriptionData.data.messageCreated)
+							const message= subscriptionData.data.messageCreated
+                            const chatIdx = prev.chatsWithMessages.findIndex((e) => e._id === message.to._id)
+                            if (chatIdx >= 0) {
+                                const msgIdx = prev.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === message._id)
+                                if (msgIdx < 0) {
+                                    return update(prev, {chatsWithMessages: {[chatIdx]: {messages: {$splice: [[0, 0, message]]}}}})
+                                }
+                            }
+                            return prev
 						}
 					})
 				},
@@ -413,13 +411,14 @@ const ChatContainerWithGql = compose(
 	graphql(gqlInsertMessage, {
 		props: ({ownProps, mutate}) => ({
 			createMessage: ({chatId, text}) => {
+				const oid = '#' + new Date().getTime()
 				return mutate({
 					variables: {chatId, text},
 					optimisticResponse: {
 						__typename: 'Mutation',
 						// Optimistic message
 						createMessage: {
-							_id: '#' + new Date().getTime(),
+							_id: oid,
 							status: 'creating',
 							from: {
 								__typename: 'UserPublic',
@@ -433,7 +432,26 @@ const ChatContainerWithGql = compose(
 							text,
 							__typename: 'Message'
 						}
-					}
+					},
+
+                    update: (store, {data: {createMessage}}) => {
+                        // Read the data from the cache for this query.
+                        const data = store.readQuery({query: gqlQuery})
+
+                        const chatIdx = data.chatsWithMessages.findIndex((e) => e._id === createMessage.to._id)
+                        if (chatIdx >= 0) {
+                        	// remove optimistic id
+                            const msgOIdx = data.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === oid)
+							if( msgOIdx>-1 ) {
+                                data.chatsWithMessages[chatIdx].messages.splice(msgOIdx,1)
+                            }
+                            const msgIdx = data.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === createMessage._id)
+                            if (msgIdx < 0) {
+                                data.chatsWithMessages[chatIdx].messages.unshift(createMessage)
+                            }
+                            store.writeQuery({query: gqlQuery, data})
+                        }
+                    }
 				})
 			}
 		}),

@@ -3,220 +3,217 @@ import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
 import {withRouter} from 'react-router-dom'
-import {gql, graphql, compose} from 'react-apollo'
-import update from 'immutability-helper'
+import {graphql, compose} from 'react-apollo'
+import gql from 'graphql-tag'
 import KeyValueContainer from './KeyValueContainer'
 import * as UserActions from '../actions/UserAction'
+import BaseLayout from '../components/layout/BaseLayout'
 
 
 class UserProfileContainer extends React.Component {
-	
-	state = {
-		username: '',
-		usernameError: '',
-		message: '',
-		loading: false,
-		note: []
-	}
 
-	saveNoteTimeouts = {}
+    state = {
+        username: '',
+        usernameError: '',
+        message: '',
+        loading: false,
+        note: []
+    }
 
-	
-	saveNote = (id, value, timeout ) => {
-		clearTimeout(this.saveNoteTimeouts[id])
-		this.saveNoteTimeouts[id] = setTimeout(() => {
-			console.log('save note', value)
-			this.setState({loading:true})
-
-			this.props.updateNote({value: value, id: id})
-				.then(resp => {
-					this.setState({loading:false})
-				})
-				.catch(error => {
-					this.setState({loading:false})
-					console.error(error)
-				})
-		},timeout)
-	}
+    saveNoteTimeouts = {}
 
 
+    saveNote = (id, value, timeout) => {
+        clearTimeout(this.saveNoteTimeouts[id])
+        this.saveNoteTimeouts[id] = setTimeout(() => {
+            console.log('save note', value)
+            this.setState({loading: true})
 
-	handleInputChange = (e) => {
-		const target = e.target
-		const value = target.type === 'checkbox' ? target.checked : target.value
-		const name = target.name
-
-		if ( target.name === 'note'){
-			let note = this.state.note.map(
-				(o) => {
-					if( target.id===o._id){
-						return Object.assign({},o,{value:value})
-					}
-					return o
-				}
-			)
-			this.setState({
-				[target.name]: note
-			})
-			// auto save note after 5s
-			this.saveNote(target.id,value,5000)
-		}else{
-			this.setState({
-				[target.name]: value
-			})
-		}
-	}
+            this.props.updateNote({value: value, id: id})
+                .then(resp => {
+                    this.setState({loading: false})
+                })
+                .catch(error => {
+                    this.setState({loading: false})
+                    console.error(error)
+                })
+        }, timeout)
+    }
 
 
+    handleInputChange = (e) => {
+        const target = e.target
+        const value = target.type === 'checkbox' ? target.checked : target.value
+        const name = target.name
 
-	handleBlur = (e) => {
-		const target = e.target
-		const value = target.type === 'checkbox' ? target.checked : target.value
-
-		if( this.saveNoteTimeouts[target.id] ){
-			this.saveNote(target.id,value,0)
-		}
-	}
-
-
-	updateProfile = (e) => {
-		e.preventDefault()
-		this.setState({usernameError: '',loading:true})
-
-		this.props.updateMe({username: this.state.username})
-			.then(resp => {
-				this.setState({loading:false})
-			})
-			.catch(error => {
-				this.setState({loading:false})
-				if (error.graphQLErrors.length > 0) {
-					const e = error.graphQLErrors[0]
-					if (e.key === 'username.taken') {
-						this.setState({username: this.props.me.username, usernameError: e.message})
-					}
-				}
-			})
-	}
-
-	createNote = (e) => {
-		e.preventDefault()
-		this.setState({loading:true})
-		this.props.createNote()
-			.then(resp => {
-				this.setState({loading:false})
-			})
-			.catch(error => {
-				this.setState({loading:false})
-			})
-	}
-
-	deleteNote = (e) => {
-		e.preventDefault()
-		this.setState({loading:true})
-
-		this.props.deleteNote({id:e.target.id})
-			.then(resp => {
-				this.setState({loading:false})
-			})
-			.catch(error => {
-				this.setState({loading:false})
-			})
-	}
-
-	componentWillReceiveProps(nextProps) {
-		if( nextProps.me )
-			this.setState({username: nextProps.me.username, note: nextProps.me.note})
-	}
-
-	render() {
-		const {username, usernameError, loading, note} = this.state
-		const {me,userActions} = this.props
-
-		const LogoutButton = withRouter(({history}) => (
-			<button onClick={() => {
-				localStorage.removeItem('token')
-				userActions.setUser(null,false)
-				history.push('/')
-			}}>Logout</button>
-		))
-
-		let noteElements = []
-
-		let hasManageKeyvalue = me && me.role.capabilities.includes('manage_keyvalues')
+        if (target.name === 'note') {
+            let note = this.state.note.map(
+                (o) => {
+                    if (target.id === o._id) {
+                        return Object.assign({}, o, {value: value})
+                    }
+                    return o
+                }
+            )
+            this.setState({
+                [target.name]: note
+            })
+            // auto save note after 5s
+            this.saveNote(target.id, value, 5000)
+        } else {
+            this.setState({
+                [target.name]: value
+            })
+        }
+    }
 
 
-		if( note ) {
-			note.forEach(
-				(o) => noteElements.push(<div key={o._id}>
+    handleBlur = (e) => {
+        const target = e.target
+        const value = target.type === 'checkbox' ? target.checked : target.value
+
+        if (this.saveNoteTimeouts[target.id]) {
+            this.saveNote(target.id, value, 0)
+        }
+    }
+
+
+    updateProfile = (e) => {
+        e.preventDefault()
+        this.setState({usernameError: '', loading: true})
+
+        this.props.updateMe({username: this.state.username})
+            .then(resp => {
+                this.setState({loading: false})
+            })
+            .catch(error => {
+                this.setState({loading: false})
+                if (error.graphQLErrors.length > 0) {
+                    const e = error.graphQLErrors[0]
+                    if (e.key === 'username.taken') {
+                        this.setState({username: this.props.me.username, usernameError: e.message})
+                    }
+                }
+            })
+    }
+
+    createNote = (e) => {
+        e.preventDefault()
+        this.setState({loading: true})
+        this.props.createNote()
+            .then(resp => {
+                this.setState({loading: false})
+            })
+            .catch(error => {
+                this.setState({loading: false})
+            })
+    }
+
+    deleteNote = (e) => {
+        e.preventDefault()
+        this.setState({loading: true})
+
+        this.props.deleteNote({id: e.target.id})
+            .then(resp => {
+                this.setState({loading: false})
+            })
+            .catch(error => {
+                this.setState({loading: false})
+            })
+    }
+
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.me)
+            this.setState({username: nextProps.me.username, note: nextProps.me.note})
+    }
+
+    render() {
+        const {username, usernameError, loading, note} = this.state
+        const {me, userActions} = this.props
+
+        const LogoutButton = withRouter(({history}) => (
+            <button onClick={() => {
+                localStorage.removeItem('token')
+                userActions.setUser(null, false)
+                history.push('/')
+            }}>Logout</button>
+        ))
+
+        let noteElements = []
+
+        let hasManageKeyvalue = me && me.role.capabilities.includes('manage_keyvalues')
+
+
+        if (note) {
+            note.forEach(
+                (o) => noteElements.push(<div key={o._id}>
 					<textarea name="note" id={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange}
-										defaultValue={o.value}/>
-					<button id={o._id} onClick={this.deleteNote}>Delete</button>
-				</div>)
-			)
-		}
+                              defaultValue={o.value}/>
+                    <button id={o._id} onClick={this.deleteNote}>Delete</button>
+                </div>)
+            )
+        }
 
 
-		return (
-			<div>
-				<LogoutButton />
-				<h1>Profile</h1>
-				{this.props.loading|loading ? <span>loading...</span> : ''}
-				<form onSubmit={this.updateProfile.bind(this)}>
-					<div>
-						<input type="text" name="username" value={username} onChange={this.handleInputChange}/>
-						{usernameError ? <strong>{usernameError}</strong> : ''}
-					</div>
+        return (
+            <BaseLayout>
+                <LogoutButton />
+                <h1>Profile</h1>
+                {this.props.loading | loading ? <span>loading...</span> : ''}
+                <form onSubmit={this.updateProfile.bind(this)}>
+                    <div>
+                        <input type="text" name="username" value={username} onChange={this.handleInputChange}/>
+                        {usernameError ? <strong>{usernameError}</strong> : ''}
+                    </div>
 
-					<div>
-						<button type="submit">Update profile</button>
-					</div>
-				</form>
+                    <div>
+                        <button type="submit">Update profile</button>
+                    </div>
+                </form>
 
-				<hr />
-				<h2>Notes</h2>
-				{noteElements}
-				<br />
-				<button onClick={this.createNote}>Add new note</button>
-				{hasManageKeyvalue?
-				<div>
-					<hr />
-					<h2>KeyValue</h2>
-					<KeyValueContainer />
-				</div>:''}
-			</div>
-		)
-	}
+                <hr />
+                <h2>Notes</h2>
+                {noteElements}
+                <br />
+                <button onClick={this.createNote}>Add new note</button>
+                {hasManageKeyvalue ?
+                    <div>
+                        <hr />
+                        <h2>KeyValue</h2>
+                        <KeyValueContainer />
+                    </div> : ''}
+            </BaseLayout>
+        )
+    }
 }
 
 
 UserProfileContainer.propTypes = {
-	/* apollo client props */
-	me: PropTypes.object,
-	updateMe: PropTypes.func.isRequired,
-	createNote: PropTypes.func.isRequired,
-	updateNote: PropTypes.func.isRequired,
-	deleteNote: PropTypes.func.isRequired,
-	loading: PropTypes.bool,
-	/* User Reducer */
-	userActions: PropTypes.object.isRequired
+    /* apollo client props */
+    me: PropTypes.object,
+    updateMe: PropTypes.func.isRequired,
+    createNote: PropTypes.func.isRequired,
+    updateNote: PropTypes.func.isRequired,
+    deleteNote: PropTypes.func.isRequired,
+    loading: PropTypes.bool,
+    /* User Reducer */
+    userActions: PropTypes.object.isRequired
 }
-
 
 
 /**
  * Map the state to props.
  */
 const mapStateToProps = () => {
-	return {}
+    return {}
 }
 
 /**
  * Map the actions to props.
  */
 const mapDispatchToProps = (dispatch) => ({
-	userActions: bindActionCreators(UserActions, dispatch)
+    userActions: bindActionCreators(UserActions, dispatch)
 })
-
 
 
 const gqlQuery = gql`query {me{username email _id note{_id value}role{capabilities}}}`
@@ -241,61 +238,80 @@ const gqlDeleteNote = gql`
 
 
 const UserProfileContainerWithGql = compose(
-	graphql(gqlQuery, {
-		options() {
-			return {
-				fetchPolicy: 'cache-and-network',
-				reducer: (prev, {operationName, type, result: {data}}) => {
-					if (type === 'APOLLO_MUTATION_RESULT' ) {
-						if (operationName === 'updateMe' && data && data.updateMe && data.updateMe.username) {
-							return update(prev, {me: {username: {$set: data.updateMe.username}}})
-						}else if (operationName === 'createNote' && data && data.createNote && data.createNote._id ) {
-							return update(prev, {me: {note:{$push: [data.createNote]}}})
-						}else if (operationName === 'deleteNote' && data && data.deleteNote && data.deleteNote._id ) {
-							return update(prev, {me: {note:{$apply: notes => notes.filter(note => note._id !== data.deleteNote._id)}}})
-						}
-					}
-					return prev
-				}
-			}
-		},
-		props: ({data: {loading, me }}) => ({
-			me,
-			loading
-		})
-	}),
-	graphql(gqlUpdate, {
-		props: ({ownProps, mutate}) => ({
-			updateMe: ({username}) => {
-				return mutate({
-					variables: {username},
-					/*optimisticResponse: {
-						__typename: 'Mutation',
-						updateMe: {
-							username:username,
-							__typename: 'User'
-						}
-					}*/
-				})
-			}
-		})
-	}),
-	graphql(gqlUpdateNote, {
-		props: ({ownProps, mutate}) => ({
-			updateNote: (args) => mutate({variables: args})
-		})
-	}),
-	graphql(gqlCreateNote, {
-		props: ({ownProps, mutate}) => ({
-			createNote: () => mutate()
-		})
-	}),
-	graphql(gqlDeleteNote, {
-		props: ({ownProps, mutate}) => ({
-			deleteNote: (args) => mutate({variables: args})
-		})
-	})
-)(UserProfileContainer)
+    graphql(gqlQuery, {
+        options() {
+            return {
+                fetchPolicy: 'cache-and-network'
+            }
+        },
+        props: ({data: {loading, me}}) => ({
+            me,
+            loading
+        })
+    }),
+    graphql(gqlUpdate, {
+        props: ({ownProps, mutate}) => ({
+            updateMe: ({username}) => {
+                return mutate({
+                    variables: {username}
+                })
+            }
+        })
+    }),
+    graphql(gqlUpdateNote, {
+        props: ({ownProps, mutate}) => ({
+            updateNote: (args) => mutate({variables: args})
+        })
+    }),
+    graphql(gqlCreateNote, {
+        props: ({ownProps, mutate}) => ({
+            createNote: () => mutate({
+                optimisticResponse: {
+                    __typename: 'Mutation',
+                    createNote: {
+                        __typename: 'Note',
+                        _id: '#' + new Date().getTime(),
+                        status: 'creating',
+                        value: ''
+                    }
+                },
+                update: (proxy, {data: {createNote}}) => {
+                    // Read the data from our cache for this query.
+                    const data = proxy.readQuery({query: gqlQuery})
+                    // Add our note from the mutation to the end.
+                    data.me.note.push(createNote)
+                    // Write our data back to the cache.
+                    proxy.writeQuery({query: gqlQuery, data})
+                },
+            })
+        })
+    }),
+    graphql(gqlDeleteNote, {
+        props: ({ownProps, mutate}) => ({
+            deleteNote: (args) => mutate({
+                variables: args,
+                optimisticResponse: {
+                    __typename: 'Mutation',
+                    deleteNote: {
+                        __typename: 'Note',
+                        _id: args.id,
+                        status: 'deleting',
+                        value:''
+                    }
+                },
+                update: (proxy, {data: {deleteNote}}) => {
+                    // Read the data from our cache for this query.
+                    const data = proxy.readQuery({query: gqlQuery})
+                    // Add our note from the mutation to the end.
+                    data.me.note=data.me.note.filter(note => note._id !== deleteNote._id)
+                    // Write our data back to the cache.
+                    proxy.writeQuery({query: gqlQuery, data})
+                },
+            })
+        })
+    })
+)
+(UserProfileContainer)
 
 
 /**
@@ -303,6 +319,6 @@ const UserProfileContainerWithGql = compose(
  * the Redux store.
  */
 export default connect(
-	mapStateToProps,
-	mapDispatchToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(UserProfileContainerWithGql)

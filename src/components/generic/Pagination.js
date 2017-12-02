@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom'
 
 const Pagination = ({baseLink, currentPage, totalPages}) => {
 
-    if( totalPages<1){
+    if( totalPages<=1){
         return null
     }
 

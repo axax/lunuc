@@ -1,12 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {gql, graphql, compose} from 'react-apollo'
+import {graphql, compose} from 'react-apollo'
+import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import AddNewPost from '../components/post/AddNewPost'
 import PostEditor from '../components/post/PostEditor'
 import update from 'immutability-helper'
 import Util from '../util'
 import {Link} from 'react-router-dom'
+import BaseLayout from '../components/layout/BaseLayout'
 
 
 class PostContainer extends React.Component {
@@ -63,7 +65,7 @@ class PostContainer extends React.Component {
 		var selectedPost = false
 
 		return (
-			<div>
+			<BaseLayout>
 				<h1>Posts</h1>
 				<ul>
                     {posts.map((post, i) => {
@@ -87,7 +89,7 @@ class PostContainer extends React.Component {
 
 					</div>
                     : ''}
-			</div>
+			</BaseLayout>
 		)
 	}
 }
@@ -111,15 +113,7 @@ const PostContainerWithGql = compose(
 	graphql(gqlQuery, {
 		options() {
 			return {
-				fetchPolicy: 'cache-and-network',
-				reducer: (prev, {operationName, type, result: {data}}) => {
-					if (type === 'APOLLO_MUTATION_RESULT') {
-						/*if (operationName === 'createMessage' && data && data.createMessage && data.createMessage._id) {
-							return createMessage(prev, data.createMessage)
-						}*/
-					}
-					return prev
-				}
+				fetchPolicy: 'cache-and-network'
 			}
 		},
         props: ({data: {loading, posts}}) => ({

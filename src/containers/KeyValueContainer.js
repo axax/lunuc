@@ -2,7 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import KeyValuePair from '../components/keyvalue/KeyValuePair'
 import KeyValuePairAdder from '../components/keyvalue/KeyValuePairAdder'
-import {gql, graphql, compose} from 'react-apollo'
+import {graphql, compose} from 'react-apollo'
+import gql from 'graphql-tag'
 import update from 'immutability-helper'
 
 
@@ -75,26 +76,12 @@ const KeyValueContainerWithGql = compose(
 		options() {
 			return {
 				fetchPolicy: 'cache-and-network',
-				reducer: (prev, {operationName, type, result: {data}}) => {
-
-					if (type === 'APOLLO_MUTATION_RESULT' && operationName === 'KeyValueUpdate' && data && data.setValue && data.setValue.key) {
-						const idx = prev.keyvalue.findIndex(x => x.key === data.setValue.key)
-						if (idx > -1) {
-							return update(prev, {keyvalue: {[idx]: {value: {$set: data.setValue.value}}}})
-						} else {
-							return update(prev, {keyvalue: {$push: [data.setValue]}})
-						}
-					}
-					return prev
-				}
 			}
 		},
-
 		props: ({data: {loading, keyvalue}}) => ({
 			keyvalue,
 			loading
 		})
-
 	}),
 	graphql(gqlKeyValueUpdate, {
 		props: ({ownProps, mutate}) => ({
@@ -108,7 +95,20 @@ const KeyValueContainerWithGql = compose(
 							value: value,
 							__typename: 'KeyValue'
 						}
-					}
+					},
+                    update: (proxy, {data: {setValue}}) => {
+                        // Read the data from our cache for this query.
+                        const data = proxy.readQuery({query: gqlKeyValueQuery})
+                        // Add our note from the mutation to the end.
+                        const idx = data.keyvalue.findIndex(x => x.key === setValue.key)
+                        if (idx > -1) {
+                            data.keyvalue[idx].value = setValue.value
+                        } else {
+                            data.keyvalue.push(setValue)
+                        }
+                        // Write our data back to the cache.
+                        proxy.writeQuery({query: gqlKeyValueQuery, data})
+                    }
 				})
 			}
 		})
