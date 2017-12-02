@@ -10,6 +10,7 @@ import AddChatMessage from '../components/chat/AddChatMessage'
 import update from 'immutability-helper'
 import {connect} from 'react-redux'
 import Util from '../util'
+import BaseLayout from '../components/layout/BaseLayout'
 
 
 class ChatContainer extends React.Component {
@@ -113,7 +114,7 @@ class ChatContainer extends React.Component {
 		let selectedChat = false
 
 		return (
-			<div>
+			<BaseLayout>
 				<h1>Chats</h1>
 				<ul>
 					{chatsWithMessages.slice(0).reverse().map((chat, i) => {
@@ -151,7 +152,7 @@ class ChatContainer extends React.Component {
 						<AddChatMessage onClick={this.handleAddChatMessageClick}/>
 					</div>
 					: ''}
-			</div>
+			</BaseLayout>
 		)
 	}
 }

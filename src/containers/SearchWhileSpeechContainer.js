@@ -5,6 +5,7 @@ import ApolloClient from 'apollo-client'
 import { graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
+import BaseLayout from '../components/layout/BaseLayout'
 
 
 class SearchWhileSpeechContainer extends React.Component {
@@ -170,7 +171,7 @@ class SearchWhileSpeechContainer extends React.Component {
             (k, i) => k.data.posts.forEach( (k2, i2 ) => pairs.push(<p key={i+'-'+i2}>{k2.title} {k2.search.unstyled}</p>))
         )
 
-        return <div><h1>Search</h1>
+        return <BaseLayout><h1>Search</h1>
 
             {this.recognition?<div>
                 <select disabled={!this.state.recording} name="language" value={this.state.language}
@@ -191,7 +192,7 @@ class SearchWhileSpeechContainer extends React.Component {
                                           onChange={this.handleInputChange}/>
 
             {pairs}
-        </div>
+        </BaseLayout>
     }
 }
 

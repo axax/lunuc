@@ -71,7 +71,6 @@ const GenericResolver = {
                 $addFields: {limit, offset}
             }
         ]).toArray())
-
         return a[0]
     },
     createEnity: async (db, context, collectionName, data) => {

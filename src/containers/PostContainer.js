@@ -8,6 +8,7 @@ import PostEditor from '../components/post/PostEditor'
 import update from 'immutability-helper'
 import Util from '../util'
 import {Link} from 'react-router-dom'
+import BaseLayout from '../components/layout/BaseLayout'
 
 
 class PostContainer extends React.Component {
@@ -64,7 +65,7 @@ class PostContainer extends React.Component {
 		var selectedPost = false
 
 		return (
-			<div>
+			<BaseLayout>
 				<h1>Posts</h1>
 				<ul>
                     {posts.map((post, i) => {
@@ -88,7 +89,7 @@ class PostContainer extends React.Component {
 
 					</div>
                     : ''}
-			</div>
+			</BaseLayout>
 		)
 	}
 }

@@ -8,7 +8,7 @@ export const cmsResolver = (db) => ({
     },
     cmsPage: async ({slug}, {context}) => {
         const cmsPages=await GenericResolver.entities(db,context,'CmsPage',['slug'],{match:{slug}})
-        return cmsPages[0]
+        return cmsPages.results[0]
     },
     createCmsPage: async ({slug}, {context}) => {
         if( !slug || slug.trim() === '' ){

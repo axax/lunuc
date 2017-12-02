@@ -5,9 +5,9 @@ import PropTypes from 'prop-types'
 import {withRouter} from 'react-router-dom'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
-import update from 'immutability-helper'
 import KeyValueContainer from './KeyValueContainer'
 import * as UserActions from '../actions/UserAction'
+import BaseLayout from '../components/layout/BaseLayout'
 
 
 class UserProfileContainer extends React.Component {
@@ -156,7 +156,7 @@ class UserProfileContainer extends React.Component {
 
 
         return (
-            <div>
+            <BaseLayout>
                 <LogoutButton />
                 <h1>Profile</h1>
                 {this.props.loading | loading ? <span>loading...</span> : ''}
@@ -182,7 +182,7 @@ class UserProfileContainer extends React.Component {
                         <h2>KeyValue</h2>
                         <KeyValueContainer />
                     </div> : ''}
-            </div>
+            </BaseLayout>
         )
     }
 }

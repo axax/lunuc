@@ -4,7 +4,7 @@ import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
-import {connect} from 'react-redux'
+import BaseLayout from '../components/layout/BaseLayout'
 
 
 class LiveSpeechTranslaterContainer extends React.Component {
@@ -184,7 +184,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
             (k, i) => pairs.push(<p key={i}>{k}</p>)
         )
 
-        return <div><h1>Translate</h1>
+        return <BaseLayout><h1>Translate</h1>
             From
             <select disabled={!this.state.recording} name="language" value={this.state.language}
                     onChange={this.handleInputChange}>
@@ -211,7 +211,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
 
             {pairs}
-        </div>
+        </BaseLayout>
     }
 }
 

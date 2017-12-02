@@ -3,6 +3,7 @@ import Pagination from '../components/generic/Pagination'
 import update from 'immutability-helper'
 import GenericForm from '../components/generic/GenericForm'
 import genericComposer from './generic/genericComposer'
+import BaseLayout from '../components/layout/BaseLayout'
 
 
 const WORDS_PER_PAGE = 10
@@ -56,7 +57,7 @@ class WordContainer extends React.Component {
             currentPage = Math.ceil(words.offset / WORDS_PER_PAGE) + 1
 
         return (
-            <div>
+            <BaseLayout>
                 <h1>Words</h1>
                 <GenericForm caption="Add Word" ref={(e) => {
                     this.addWordForm = e
@@ -84,7 +85,7 @@ class WordContainer extends React.Component {
                 <Pagination baseLink='/word/' currentPage={currentPage} totalPages={totalPages}/>
 
 
-            </div>
+            </BaseLayout>
         )
     }
 }

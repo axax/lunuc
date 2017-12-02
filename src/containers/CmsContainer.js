@@ -3,6 +3,8 @@ import GenericForm from '../components/generic/GenericForm'
 import Pagination from '../components/generic/Pagination'
 import update from 'immutability-helper'
 import genericComposer from './generic/genericComposer'
+import {Link} from 'react-router-dom'
+import BaseLayout from '../components/layout/BaseLayout'
 
 const CMS_PAGES_PER_PAGE = 10
 
@@ -23,7 +25,7 @@ class CmsContainer extends React.Component {
         const totalPages = Math.ceil(cmsPages.total / CMS_PAGES_PER_PAGE),
             currentPage = Math.ceil(cmsPages.offset / CMS_PAGES_PER_PAGE) + 1
         return (
-            <div>
+            <BaseLayout>
                 <h1>Cms Pages</h1>
                 <GenericForm fields={{slug:{value:'',placeholder:'slug name'}}} onClick={this.handleAddCmsPageClick} />
 
@@ -31,8 +33,8 @@ class CmsContainer extends React.Component {
                     {(cmsPages.results ? cmsPages.results.map((cmsPage, i) => {
                         if( cmsPage ) {
                             return <li key={i}>
-                            <span onBlur={(e) => this.handleCmsPageChange.bind(this)(e, cmsPage, 'slug')}
-                                  suppressContentEditableWarning contentEditable>{cmsPage.slug}</span>
+                                <span onBlur={(e) => this.handleCmsPageChange.bind(this)(e, cmsPage, 'slug')}
+                                                     suppressContentEditableWarning contentEditable>{cmsPage.slug}</span><Link to={'/cms/view/'+cmsPage.slug}> 🎑</Link>
                                 ({cmsPage.createdBy.username})
                                 <button disabled={(cmsPage.status == 'deleting' || cmsPage.status == 'updating')}
                                         onClick={this.handleDeleteCmsPageClick.bind(this, cmsPage)}>X
@@ -43,7 +45,7 @@ class CmsContainer extends React.Component {
                 </ul>
                 <Pagination baseLink='/cms/' currentPage={currentPage} totalPages={totalPages}/>
 
-            </div>
+            </BaseLayout>
         )
     }
 
