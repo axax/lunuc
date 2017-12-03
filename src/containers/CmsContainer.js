@@ -57,7 +57,7 @@ class CmsContainer extends React.Component {
 
     handleCmsPageChange = (event, data, key) => {
 
-        const t = event.target.innerText
+        const t = event.target.innerText.trim()
         if (t != data[key]) {
             const {updateCmsPage} = this.props
             updateCmsPage(

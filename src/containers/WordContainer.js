@@ -27,6 +27,10 @@ class WordContainer extends React.Component {
         })
     }
 
+    handleAddWordValidate = (data) => {
+        return data.en.trim()!=='' && data.de.trim()!==''
+    }
+
     handleWordChange = (event, data, lang) => {
 
         const t = event.target.innerText
@@ -62,6 +66,7 @@ class WordContainer extends React.Component {
                 <GenericForm caption="Add Word" ref={(e) => {
                     this.addWordForm = e
                 }} fields={{en: {placeholder: 'English'}, de: {placeholder: 'Deutsch'}}}
+                             onValidate={this.handleAddWordValidate}
                              onClick={this.handleAddWordClick}/>
 
                 <i>words from {words.offset + 1} to {words.offset + words.results.length} of total {words.total}</i>

@@ -1,4 +1,4 @@
-import GenericResolver from './genericResolver'
+import GenericResolver from './generic/genericResolver'
 import translate from 'google-translate-api'
 
 

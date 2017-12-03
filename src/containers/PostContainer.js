@@ -3,12 +3,12 @@ import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
-import AddNewPost from '../components/post/AddNewPost'
 import PostEditor from '../components/post/PostEditor'
 import update from 'immutability-helper'
 import Util from '../util'
 import {Link} from 'react-router-dom'
 import BaseLayout from '../components/layout/BaseLayout'
+import GenericForm from '../components/generic/GenericForm'
 
 
 class PostContainer extends React.Component {
@@ -22,7 +22,13 @@ class PostContainer extends React.Component {
 
     handleAddPostClick = (post) => {
 		const {createPost } = this.props
-        createPost(post)
+        createPost(post).then(()=>{
+            this.addPostForm.reset()
+        })
+	}
+
+    handleAddPostValidate = (post) => {
+    	return post.title.trim()!==''
 	}
 
 
@@ -78,7 +84,9 @@ class PostContainer extends React.Component {
 							<small><small>{Util.formattedDatetimeFromObjectId(post._id)}</small></small></li>
                     })}
 				</ul>
-                <AddNewPost onClick={this.handleAddPostClick}/>
+				<GenericForm ref={(e) => {
+                    this.addPostForm = e
+                }} fields={{title:{value:'',placeholder:'Titel'},body:{value:'',type:'hidden'}}}  onValidate={this.handleAddPostValidate} onClick={this.handleAddPostClick} />
 
 
                 {selectedPost ?
