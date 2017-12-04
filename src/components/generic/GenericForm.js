@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import update from 'immutability-helper'
+import {Button, Input} from '../ui'
 
 export default class GenericForm extends React.Component {
 	constructor(props) {
@@ -61,12 +62,12 @@ export default class GenericForm extends React.Component {
                     	if( type=== 'select') {
 							//TODO: implement
                         }else{
-                    		return <input key={k} type={type} placeholder={o.placeholder} value={this.state.fields[k]} name={k}
+                    		return <Input key={k} type={type} placeholder={o.placeholder} value={this.state.fields[k]} name={k}
 										  onChange={this.handleInputChange}/>
 						}
                     })
 				}
-				<button disabled={!this.state.isValid} onClick={this.onAddClick}>{this.props.caption || 'Add'}</button>
+				<Button type="primary" disabled={!this.state.isValid} onClick={this.onAddClick}>{this.props.caption || 'Add'}</Button>
 			</div>
 		)
 	}

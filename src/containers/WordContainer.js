@@ -53,7 +53,7 @@ class WordContainer extends React.Component {
         const {words, loading} = this.props
 
         if (!words)
-            return null
+            return <BaseLayout />
 
         //console.log('render word', words)
 

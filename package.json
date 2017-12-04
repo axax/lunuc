@@ -47,6 +47,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
+    "antd": "^2.13.11",
     "apollo-cache-inmemory": "^1.1.1",
     "apollo-client": "^2.0.3",
     "apollo-client-preset": "^1.0.3",
@@ -101,6 +102,8 @@
     "babel-preset-stage-0": "^6.24.1",
     "css-loader": "^0.28.7",
     "jest-cli": "^21.2.1",
+    "less": "^2.7.3",
+    "less-loader": "^4.0.5",
     "style-loader": "^0.19.0",
     "webpack-dev-server": "^2.9.5"
   }

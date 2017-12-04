@@ -167,7 +167,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
     render() {
         if (!this.props.me) {
-            return null
+            return <BaseLayout />
         }
 
         if( !this.recognition ){

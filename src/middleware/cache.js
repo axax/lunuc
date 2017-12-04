@@ -1,4 +1,5 @@
 import {InMemoryCache} from 'apollo-cache-inmemory'
+import Environment from '../environment'
 
 // cache
 const CACHE_KEY = "@APOLLO_OFFLINE_CACHE";
@@ -6,7 +7,9 @@ const CACHE_KEY = "@APOLLO_OFFLINE_CACHE";
 export class OfflineCache extends InMemoryCache {
     constructor(...args) {
         super(...args);
-        this.restore(JSON.parse(window.localStorage.getItem(CACHE_KEY)))
+        if( Environment.APOLLO_CACHE ) {
+            this.restore(JSON.parse(window.localStorage.getItem(CACHE_KEY)))
+        }
     }
 
     changeTimeout = 0
@@ -35,6 +38,8 @@ export class OfflineCache extends InMemoryCache {
 
     broadcastWatches() {
         super.broadcastWatches();
-        this.saveToLocalStorageDelayed();
+        if( Environment.APOLLO_CACHE ) {
+            this.saveToLocalStorageDelayed();
+        }
     }
 }

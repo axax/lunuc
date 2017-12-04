@@ -66,7 +66,7 @@ class PostContainer extends React.Component {
         const selectedPostId = match.params.id
 
 		if( !posts )
-			return null
+            return <BaseLayout />
 
 		var selectedPost = false
 

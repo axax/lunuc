@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
-
+import BaseLayout from '../components/layout/BaseLayout'
 
 class CmsViewContainer extends React.Component {
     constructor(props) {
@@ -16,7 +16,7 @@ class CmsViewContainer extends React.Component {
 
 		console.log('render cmsContainer', loading)
         if( !cmsPage )
-            return null
+            return <BaseLayout />
 
 		return (
 			<div>

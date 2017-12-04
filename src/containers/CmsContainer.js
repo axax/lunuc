@@ -19,7 +19,7 @@ class CmsContainer extends React.Component {
         const {cmsPages, loading} = this.props
 
         if (!cmsPages)
-            return null
+            return <BaseLayout />
 
 
         const totalPages = Math.ceil(cmsPages.total / CMS_PAGES_PER_PAGE),
