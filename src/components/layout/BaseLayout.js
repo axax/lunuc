@@ -1,29 +1,36 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
-import {NavLink} from 'react-router-dom'
+import {Layout, LayoutHeader, HeaderMenu} from '../ui/index'
 import ErrorHandlerContainer from '../../containers/ErrorHandlerContainer'
 import NotificationContainer from '../../containers/NotificationContainer'
 
+const menuEntries = [
+    {name: 'Home', to: '/'},
+    {name: 'Translate', to: '/translate', auth: true},
+    {name: 'Search', to: '/search', auth: true},
+    {name: 'My chats', to: '/chat', auth: true},
+    {name: 'Words', to: '/word', auth: true},
+    {name: 'Posts', to: '/post', auth: true},
+    {name: 'Cms', to: '/cms', auth: true},
+    {name: 'Profile', to: '/profile'}
+]
+
+
 const BaseLayout = ({children, isAuthenticated}) => (
-    <div>
+    <Layout>
+        <LayoutHeader>
+            <HeaderMenu items={menuEntries} />
+        </LayoutHeader>
+
         <ErrorHandlerContainer />
         <NotificationContainer />
-        <ul>
-            <li><NavLink activeStyle={{color: 'red'}} exact={true} to="/">Home</NavLink></li>
-            {isAuthenticated?<li><NavLink activeStyle={{color: 'red'}} to="/translate">Translate</NavLink></li>:''}
-            {isAuthenticated?<li><NavLink activeStyle={{color: 'red'}} to="/search">Search</NavLink></li>:''}
-            {isAuthenticated?<li><NavLink activeStyle={{color: 'red'}} to="/chat">My chats</NavLink></li>:''}
-            {isAuthenticated?<li><NavLink activeStyle={{color: 'red'}} to="/word">Word</NavLink></li>:''}
-            {isAuthenticated?<li><NavLink activeStyle={{color: 'red'}} to="/post">Post</NavLink></li>:''}
-            {isAuthenticated?<li><NavLink activeStyle={{color: 'red'}} to="/cms">Cms</NavLink></li>:''}
-            <li><NavLink activeStyle={{color: 'red'}} to="/profile">Profile</NavLink></li>
-        </ul>
+
 
         <hr/>
 
         {children}
-    </div>
+    </Layout>
 )
 
 BaseLayout.propTypes = {
