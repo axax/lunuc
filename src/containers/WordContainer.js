@@ -4,6 +4,7 @@ import update from 'immutability-helper'
 import GenericForm from '../components/generic/GenericForm'
 import genericComposer from './generic/genericComposer'
 import BaseLayout from '../components/layout/BaseLayout'
+import {Row, Col} from '../components/ui/index'
 
 
 const WORDS_PER_PAGE = 10
@@ -63,11 +64,17 @@ class WordContainer extends React.Component {
         return (
             <BaseLayout>
                 <h1>Words</h1>
-                <GenericForm caption="Add Word" ref={(e) => {
-                    this.addWordForm = e
-                }} fields={{en: {placeholder: 'English'}, de: {placeholder: 'Deutsch'}}}
-                             onValidate={this.handleAddWordValidate}
-                             onClick={this.handleAddWordClick}/>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <GenericForm caption="Add Word" ref={(e) => {
+                            this.addWordForm = e
+                        }} fields={{en: {placeholder: 'English'}, de: {placeholder: 'Deutsch'}}}
+                                     onValidate={this.handleAddWordValidate}
+                                     onClick={this.handleAddWordClick}/>
+                    </Col>
+                    <Col span={12}></Col>
+                </Row>
+
 
                 <i>words from {words.offset + 1} to {words.offset + words.results.length} of total {words.total}</i>
                 <ul suppressContentEditableWarning={true}>

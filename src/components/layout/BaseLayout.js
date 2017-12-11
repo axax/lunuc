@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
-import {Layout, LayoutHeader, HeaderMenu} from '../ui/index'
+import {Layout, LayoutHeader, LayoutContent, LayoutFooter, HeaderMenu} from '../ui/index'
 import ErrorHandlerContainer from '../../containers/ErrorHandlerContainer'
 import NotificationContainer from '../../containers/NotificationContainer'
 
@@ -18,18 +18,23 @@ const menuEntries = [
 
 
 const BaseLayout = ({children, isAuthenticated}) => (
-    <Layout>
+    <Layout className="layout">
         <LayoutHeader>
-            <HeaderMenu items={menuEntries} />
+            <HeaderMenu items={menuEntries}/>
         </LayoutHeader>
 
-        <ErrorHandlerContainer />
-        <NotificationContainer />
+        <LayoutContent style={{ padding: '0 50px' }}>
+
+            <ErrorHandlerContainer />
+            <NotificationContainer />
 
 
-        <hr/>
 
-        {children}
+            {children}
+        </LayoutContent>
+        <LayoutFooter style={{ textAlign: 'center' }}>
+            ©2016 Created by simon
+        </LayoutFooter>
     </Layout>
 )
 

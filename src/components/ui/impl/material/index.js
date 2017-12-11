@@ -3,17 +3,27 @@ import './style.less'
 import React from 'react'
 
 // ui provider
+import { MuiThemeProvider, createMuiTheme } from 'material-ui/styles';
+
+const theme = createMuiTheme();
+
 export const UIProvider = ({ children, ...rest }) => {
-    return <div {...rest}>{children}</div>
+    return <MuiThemeProvider theme={theme} {...rest}>{children}</MuiThemeProvider>
 }
 
+// Button
+import MaterialButton from 'material-ui/Button'
 
-export const Button = ({ ...rest }) => {
-    return <button {...rest} />
+export const Button = ({ type, ...rest }) => {
+    // map type to color
+    return <MaterialButton color={type} {...rest} />
 }
+
+// Input
+import MaterialTextField from 'material-ui/TextField'
 
 export const Input = ({ ...rest }) => {
-    return <input {...rest} />
+    return <MaterialTextField {...rest} />
 }
 
 

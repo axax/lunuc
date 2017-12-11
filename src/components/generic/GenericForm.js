@@ -67,7 +67,7 @@ export default class GenericForm extends React.Component {
 						}
                     })
 				}
-				<Button type="primary" disabled={!this.state.isValid} onClick={this.onAddClick}>{this.props.caption || 'Add'}</Button>
+				<Button type="primary" raised disabled={!this.state.isValid} onClick={this.onAddClick}>{this.props.caption || 'Add'}</Button>
 			</div>
 		)
 	}

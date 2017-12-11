@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {Link} from 'react-router-dom'
+import {Button} from '../ui'
 
 const Pagination = ({baseLink, currentPage, totalPages}) => {
 

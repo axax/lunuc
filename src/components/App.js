@@ -13,6 +13,8 @@ import {ApolloProvider} from 'react-apollo'
 import {configureMiddleware} from '../middleware/index'
 import {Provider} from 'react-redux'
 
+import {UIProvider} from './ui/index'
+
 
 class App extends React.PureComponent {
 
@@ -24,7 +26,9 @@ class App extends React.PureComponent {
         return <Provider store={this.props.store}>
                 <ApolloProvider client={client}>
                     <UserDataContainer>
-                        <Routes />
+                        <UIProvider>
+                            <Routes />
+                        </UIProvider>
                     </UserDataContainer>
                 </ApolloProvider>
             </Provider>
