@@ -50,6 +50,10 @@ class WordContainer extends React.Component {
         })
     }
 
+    handleFilter = ({value}) => {
+        this.props.refetchWords({filter:value})
+    }
+
     render() {
         const {words, loading} = this.props
 
@@ -72,7 +76,9 @@ class WordContainer extends React.Component {
                                      onValidate={this.handleAddWordValidate}
                                      onClick={this.handleAddWordClick}/>
                     </Col>
-                    <Col span={12}></Col>
+                    <Col span={12}>
+                        <GenericForm onChange={this.handleFilter} primaryButton={false} fields={{term: {placeholder: 'Filter'}}} />
+                    </Col>
                 </Row>
 
 

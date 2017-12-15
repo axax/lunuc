@@ -7,7 +7,7 @@ const GenericResolver = {
 
         Util.checkIfUserIsLoggedIn(context)
 
-        let {limit, offset, match} = options
+        let {limit, offset, match, filter} = options
 
         if (!limit) {
             limit = 10
@@ -23,9 +23,16 @@ const GenericResolver = {
 
 
         let group = {}
+        let filterMatch=[]
         data.forEach(function (value, i) {
             group[value] = {'$first': '$' + value}
+            if( filter ){
+                filterMatch.push({[value]:{'$regex': filter, '$options': 'i'}})
+            }
         })
+        if( filterMatch.length > 0){
+            match.$or = filterMatch
+        }
 
         const collection = db.collection(collectionName)
 

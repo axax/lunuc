@@ -2,6 +2,17 @@ import './style.less'
 
 import React from 'react'
 
+import { withStyles } from 'material-ui/styles'
+
+
+const styles = theme => ({
+    textField: {
+        marginLeft: theme.spacing.unit,
+        marginRight: theme.spacing.unit,
+    }
+})
+
+
 // ui provider
 import { MuiThemeProvider, createMuiTheme } from 'material-ui/styles';
 
@@ -10,6 +21,7 @@ const theme = createMuiTheme();
 export const UIProvider = ({ children, ...rest }) => {
     return <MuiThemeProvider theme={theme} {...rest}>{children}</MuiThemeProvider>
 }
+
 
 // Button
 import MaterialButton from 'material-ui/Button'
@@ -22,9 +34,9 @@ export const Button = ({ type, ...rest }) => {
 // Input
 import MaterialTextField from 'material-ui/TextField'
 
-export const Input = ({ ...rest }) => {
-    return <MaterialTextField {...rest} />
-}
+export const Input = withStyles(styles,{ withTheme: true })(({ classes, ...rest }) => {
+    return <MaterialTextField className={classes.textField} {...rest} />
+})
 
 
 // layout components

@@ -37,11 +37,11 @@ export default (container, name, options) => {
         ['create' + nameStartUpper]: PropTypes.func.isRequired,
         ['update' + nameStartUpper]: PropTypes.func.isRequired,
         ['delete' + nameStartUpper]: PropTypes.func.isRequired,
+        ['refetch' + nameStartUpper+'s']: PropTypes.func.isRequired,
         ...container.propTypes
     }
 
-
-    const gqlQuery = gql`query ${name}s($limit: Int, $offset: Int){${name}s(limit: $limit, offset:$offset){limit offset total results{${options.query}}}}`
+    const gqlQuery = gql`query ${name}s($limit: Int, $offset: Int, $filter: String){${name}s(limit: $limit, offset:$offset, filter:$filter){limit offset total results{${options.query}}}}`
     const containerWithGql = compose(
         graphql(gqlQuery, {
             options(ownProps) {
@@ -49,14 +49,15 @@ export default (container, name, options) => {
                 return {
                     variables: {
                         limit: options.limitPerPage,
-                        offset: pageNr * options.limitPerPage
+                        offset: pageNr * options.limitPerPage,
                     },
                     fetchPolicy: 'cache-and-network'
                 }
             },
             props: ({data}) => ({
                 [name + 's']: data[name + 's'],
-                loading: data.loading
+                loading: data.loading,
+                ['refetch'+nameStartUpper + 's']: data.refetch
             })
         }),
         graphql(gql`mutation create${nameStartUpper}(${insertParams}){create${nameStartUpper}(${insertQuery}){${options.query}}}`, {

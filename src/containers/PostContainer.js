@@ -114,7 +114,7 @@ PostContainer.propTypes = {
 	deletePost: PropTypes.func.isRequired
 }
 
-const POSTS_PER_PAGE=10
+const POSTS_PER_PAGE=100
 
 const gqlQuery=gql`query{posts(limit: ${POSTS_PER_PAGE}){_id title body status createdBy{_id username}}}`
 const PostContainerWithGql = compose(
