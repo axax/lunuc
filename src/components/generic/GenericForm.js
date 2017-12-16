@@ -11,13 +11,20 @@ export default class GenericForm extends React.Component {
     }
 
     componentDidMount() {
-        this.validate(this.state)
+        this.setValidateState(this.state)
+    }
+
+    setValidateState(state) {
+        if (this.props.onValidate) {
+            this.setState({isValid: this.validate(state)})
+        }
     }
 
     validate(state) {
         if (this.props.onValidate) {
-            this.setState({isValid: this.props.onValidate(state.fields)})
+            return this.props.onValidate(state.fields)
         }
+        return true
     }
 
     getInitalState = () => {
@@ -30,7 +37,7 @@ export default class GenericForm extends React.Component {
 
     reset = () => {
         this.setState(this.getInitalState())
-        this.validate(this.state)
+        this.setValidateState(this.state)
     }
 
 
@@ -41,11 +48,11 @@ export default class GenericForm extends React.Component {
 
         this.setState((prevState) => {
             const newState = update(prevState, {fields: {[name]: {$set: value}}})
-            this.validate(newState)
+
             if( this.props.onChange){
                 this.props.onChange({name,value})
             }
-            return newState
+            return update(newState,{isValid:{$set:this.validate(newState)}})
         })
     }
 

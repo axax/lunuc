@@ -29,7 +29,7 @@ class WordContainer extends React.Component {
     }
 
     handleAddWordValidate = (data) => {
-        return data.en.trim()!=='' && data.de.trim()!==''
+        return data.en.trim() !== '' && data.de.trim() !== ''
     }
 
     handleWordChange = (event, data, lang) => {
@@ -51,19 +51,17 @@ class WordContainer extends React.Component {
     }
 
     handleFilter = ({value}) => {
-        this.props.refetchWords({filter:value})
+        this.props.refetchWords({filter: value})
     }
 
     render() {
         const {words, loading} = this.props
 
-        if (!words)
-            return <BaseLayout />
 
         //console.log('render word', words)
 
-        const totalPages = Math.ceil(words.total / WORDS_PER_PAGE),
-            currentPage = Math.ceil(words.offset / WORDS_PER_PAGE) + 1
+        const totalPages = Math.ceil((words?words.total:0) / WORDS_PER_PAGE),
+            currentPage = Math.ceil((words?words.offset:0) / WORDS_PER_PAGE) + 1
 
         return (
             <BaseLayout>
@@ -77,30 +75,35 @@ class WordContainer extends React.Component {
                                      onClick={this.handleAddWordClick}/>
                     </Col>
                     <Col span={12}>
-                        <GenericForm onChange={this.handleFilter} primaryButton={false} fields={{term: {placeholder: 'Filter'}}} />
+                        <GenericForm onChange={this.handleFilter} primaryButton={false}
+                                     fields={{term: {placeholder: 'Filter'}}}/>
                     </Col>
                 </Row>
 
-
-                <i>words from {words.offset + 1} to {words.offset + words.results.length} of total {words.total}</i>
-                <ul suppressContentEditableWarning={true}>
-                    {(words.results ? words.results.map((word, i) => {
-                        return <li key={i}>
+                {words ?
+                    <div>
+                        <i>words from {words.offset + 1} to {words.offset + words.results.length} of
+                            total {words.total}</i>
+                        < ul suppressContentEditableWarning={true}>
+                            {(words.results ? words.results.map((word, i) => {
+                                return <li key={i}>
                             <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'de')}
                                   suppressContentEditableWarning contentEditable>{word.de}</span>=
-                            <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'en')}
-                                  suppressContentEditableWarning contentEditable>{word.en}</span>
-                            ({word.createdBy.username})
-                            <button disabled={(word.status == 'deleting' || word.status == 'updating')}
-                                    onClick={this.handleDeleteWordClick.bind(this, word)}>X
-                            </button>
-                        </li>
-                    }) : '')}
-                </ul>
+                                    <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'en')}
+                                          suppressContentEditableWarning contentEditable>{word.en}</span>
+                                    ({word.createdBy.username})
+                                    <button disabled={(word.status == 'deleting' || word.status == 'updating')}
+                                            onClick={this.handleDeleteWordClick.bind(this, word)}>X
+                                    </button>
+                                </li>
+                            }) : '')}
+                        </ul>
 
-                Page {currentPage} of {totalPages}
+                        Page {currentPage} of {totalPages}
 
-                <Pagination baseLink='/word/' currentPage={currentPage} totalPages={totalPages}/>
+                        <Pagination baseLink='/word/' currentPage={currentPage} totalPages={totalPages}/>
+                    </div>
+                    : ''}
 
 
             </BaseLayout>
@@ -109,4 +112,8 @@ class WordContainer extends React.Component {
 }
 
 
-export default genericComposer(WordContainer, 'word', {fields: {'en': 'String!','de': 'String'},limitPerPage:WORDS_PER_PAGE})
+export default genericComposer(WordContainer, 'word', {
+    hasFilter: true,
+    fields: {'en': 'String!', 'de': 'String'},
+    limitPerPage: WORDS_PER_PAGE
+})

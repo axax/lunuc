@@ -7,6 +7,7 @@ import {debug} from '../../logger'
 export default (container, name, options) => {
 
     options = {
+        hasFilter:false,
         limitPerPage: 10,
         query: '_id status createdBy{_id username}',
         ...options
@@ -41,7 +42,7 @@ export default (container, name, options) => {
         ...container.propTypes
     }
 
-    const gqlQuery = gql`query ${name}s($limit: Int, $offset: Int, $filter: String){${name}s(limit: $limit, offset:$offset, filter:$filter){limit offset total results{${options.query}}}}`
+    const gqlQuery = gql`query ${name}s($limit: Int, $offset: Int${(options.hasFilter?', $filter: String':'')}){${name}s(limit: $limit, offset:$offset${(options.hasFilter?', filter:$filter':'')}){limit offset total results{${options.query}}}}`
     const containerWithGql = compose(
         graphql(gqlQuery, {
             options(ownProps) {
@@ -49,7 +50,7 @@ export default (container, name, options) => {
                 return {
                     variables: {
                         limit: options.limitPerPage,
-                        offset: pageNr * options.limitPerPage,
+                        offset: pageNr * options.limitPerPage
                     },
                     fetchPolicy: 'cache-and-network'
                 }
