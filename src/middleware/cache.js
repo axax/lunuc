@@ -1,10 +1,13 @@
 import {InMemoryCache} from 'apollo-cache-inmemory'
 import Environment from '../environment'
+import logger from '../logger'
 
 // cache
 const CACHE_KEY = "@APOLLO_OFFLINE_CACHE";
 
 export class OfflineCache extends InMemoryCache {
+    logger = logger(this.constructor.name)
+
     constructor(...args) {
         super(...args);
         if( Environment.APOLLO_CACHE ) {
@@ -32,7 +35,7 @@ export class OfflineCache extends InMemoryCache {
             )
             .reduce((res, key) => (res[key] = state[key], res), {})
 
-        console.log("save to local storage");
+        this.logger.debug("save to local storage");
         window.localStorage.setItem(CACHE_KEY,JSON.stringify(newstate))
     }
 

@@ -5,12 +5,15 @@ import update from 'immutability-helper'
 import genericComposer from './generic/genericComposer'
 import {Link} from 'react-router-dom'
 import BaseLayout from '../components/layout/BaseLayout'
+import logger from '../logger'
 
 const CMS_PAGES_PER_PAGE = 10
 
 
 
 class CmsContainer extends React.Component {
+    static logger = logger(CmsContainer.name)
+
     constructor(props) {
         super(props)
     }

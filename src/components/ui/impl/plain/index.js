@@ -36,3 +36,27 @@ export const Row = ({ ...rest }) => {
 export const Col = ({ span, ...rest }) => {
     return <div style={{flex: '0 0 '+(100*span/24)+'%'}} {...rest} />
 }
+
+// table
+export const Table = ({columns,dataSource, ...rest }) => {
+    return <tale {...rest}>
+        <thead>
+            <tr>
+                {(columns ? columns.map(column => {
+                    return  <th key={column.dataIndex}>{column.title}</th>
+                }) : '')}
+            </tr>
+        </thead>
+        <tbody>
+            {dataSource.map((entry, i) => {
+                return (
+                    <tr key={i}>
+                        {Object.keys(entry).map((key) => (
+                            <td key={key}>{entry[key]}</td>
+                        ))}
+                    </tr>
+                )
+            })}
+        </tbody>
+    </tale>
+}

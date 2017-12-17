@@ -2,7 +2,7 @@ import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
-import {debug} from '../../logger'
+import logger from '../../logger'
 
 export default (container, name, options) => {
 
@@ -12,6 +12,13 @@ export default (container, name, options) => {
         query: '_id status createdBy{_id username}',
         ...options
     }
+
+    const debug = (...args)=>{
+        if( container.logger ){
+            container.logger.debug(...args)
+        }
+    }
+
 
     let insertParams='', insertQuery=''
 

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {withRouter} from 'react-router-dom'
 
-import { default as Menu } from 'antd/lib/Menu'
+import { default as Menu } from 'antd/lib/menu'
 
 
 class HeaderMenu extends React.Component {

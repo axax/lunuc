@@ -1,8 +1,6 @@
 import Util from '../util'
 import {ObjectId} from 'mongodb'
 
-import translate from 'google-translate-api'
-
 
 export const postResolver = (db) => ({
     posts: async ({limit, offset, query}, {context}) => {

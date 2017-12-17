@@ -4,23 +4,29 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
+import logger from '../logger'
 
 class CmsViewContainer extends React.Component {
+    static logger = logger(CmsViewContainer.name)
+
     constructor(props) {
         super(props)
     }
 	componentWillMount() {
 	}
 	render() {
-		const { cmsPage, loading } = this.props
+		const { cmsPage, loading, user } = this.props
 
-		console.log('render cmsContainer', loading)
         if( !cmsPage )
             return <BaseLayout />
+
+
+		console.log(user)
 
 		return (
 			<div>
 				<h1>{cmsPage.slug}</h1>
+
 			</div>
 		)
 	}
@@ -28,7 +34,8 @@ class CmsViewContainer extends React.Component {
 
 
 CmsViewContainer.propTypes = {
-	/* routing params */
+    users: PropTypes.array,
+    /* routing params */
 	match: PropTypes.object,
 	/* apollo client props */
 	loading: PropTypes.bool,

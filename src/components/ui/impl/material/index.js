@@ -52,9 +52,37 @@ export const LayoutFooter = Layout
 export {default as HeaderMenu} from './HeaderMenu'
 
 // grid
+import MaterialGrid from 'material-ui/Grid'
+
 export const Row = ({ ...rest }) => {
-    return <div style={{display:'flex'}} {...rest} />
+    return <MaterialGrid container {...rest} />
 }
-export const Col = ({ span, ...rest }) => {
-    return <div style={{flex: '0 0 '+(100*span/24)+'%'}} {...rest} />
+export const Col = ({ ...rest }) => {
+    return <MaterialGrid item {...rest} />
+}
+
+// table
+import MaterialTable, { TableBody, TableCell, TableHead, TableRow } from 'material-ui/Table'
+
+export const Table = ({columns,dataSource, ...rest }) => {
+    return <MaterialTable {...rest}>
+        <TableHead>
+            <TableRow>
+                {(columns ? columns.map(column => {
+                    return  <TableCell key={column.dataIndex}>{column.title}</TableCell>
+                }) : '')}
+            </TableRow>
+        </TableHead>
+        <TableBody>
+            {dataSource.map((entry, i) => {
+                return (
+                    <TableRow key={i}>
+                        {Object.keys(entry).map((key) => (
+                            <TableCell key={key}>{entry[key]}</TableCell>
+                        ))}
+                    </TableRow>
+                )
+            })}
+        </TableBody>
+    </MaterialTable>
 }

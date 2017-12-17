@@ -4,15 +4,19 @@ import update from 'immutability-helper'
 import GenericForm from '../components/generic/GenericForm'
 import genericComposer from './generic/genericComposer'
 import BaseLayout from '../components/layout/BaseLayout'
-import {Row, Col} from '../components/ui/index'
-
+import {Row, Col, Table} from '../components/ui/index'
+import logger from '../logger'
+import Util from '../util'
 
 const WORDS_PER_PAGE = 10
 
 
 class WordContainer extends React.Component {
+    static logger = logger(WordContainer.name)
+
     constructor(props) {
         super(props)
+        this.debug = WordContainer.logger.debug
     }
 
     componentWillMount() {
@@ -57,53 +61,77 @@ class WordContainer extends React.Component {
     render() {
         const {words, loading} = this.props
 
+        this.debug('render word')
 
-        //console.log('render word', words)
+        const totalPages = Math.ceil((words ? words.total : 0) / WORDS_PER_PAGE),
+            currentPage = Math.ceil((words ? words.offset : 0) / WORDS_PER_PAGE) + 1
 
-        const totalPages = Math.ceil((words?words.total:0) / WORDS_PER_PAGE),
-            currentPage = Math.ceil((words?words.offset:0) / WORDS_PER_PAGE) + 1
+        const columns = [{
+                title: 'Deutsch',
+                dataIndex: 'de'
+                }, {
+                    title: 'English',
+                    dataIndex: 'en'
+                },
+                {
+                    title: 'User',
+                    dataIndex: 'user'
+                },
+                {
+                    title: 'Created at',
+                    dataIndex: 'date'
+                },
+                {
+                    title: 'Actions',
+                    dataIndex: 'action'
+                }],
+            dataSource = (words ? words.results.map((word) => ({
+                de: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'de')}
+                          suppressContentEditableWarning contentEditable>{word.de}</span>,
+                en: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'en')}
+                          suppressContentEditableWarning contentEditable>{word.en}</span>,
+                user: word.createdBy.username,
+                date: Util.formattedDateFromObjectId(word._id),
+                action: <button disabled={(word.status == 'deleting' || word.status == 'updating')}
+                                onClick={this.handleDeleteWordClick.bind(this, word)}>Delete
+                </button>
+            })) : [])
 
         return (
             <BaseLayout>
                 <h1>Words</h1>
-                <Row gutter={16}>
-                    <Col span={12}>
+                <Row spacing={16}>
+                    <Col md={6}>
                         <GenericForm caption="Add Word" ref={(e) => {
                             this.addWordForm = e
                         }} fields={{en: {placeholder: 'English'}, de: {placeholder: 'Deutsch'}}}
                                      onValidate={this.handleAddWordValidate}
                                      onClick={this.handleAddWordClick}/>
                     </Col>
-                    <Col span={12}>
+                    <Col md={6}>
                         <GenericForm onChange={this.handleFilter} primaryButton={false}
                                      fields={{term: {placeholder: 'Filter'}}}/>
                     </Col>
                 </Row>
 
+                <Table dataSource={dataSource} columns={columns}/>
+
+
                 {words ?
-                    <div>
+                    <Row spacing={16}>
+                        <Col md={4}>
                         <i>words from {words.offset + 1} to {words.offset + words.results.length} of
                             total {words.total}</i>
-                        < ul suppressContentEditableWarning={true}>
-                            {(words.results ? words.results.map((word, i) => {
-                                return <li key={i}>
-                            <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'de')}
-                                  suppressContentEditableWarning contentEditable>{word.de}</span>=
-                                    <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'en')}
-                                          suppressContentEditableWarning contentEditable>{word.en}</span>
-                                    ({word.createdBy.username})
-                                    <button disabled={(word.status == 'deleting' || word.status == 'updating')}
-                                            onClick={this.handleDeleteWordClick.bind(this, word)}>X
-                                    </button>
-                                </li>
-                            }) : '')}
-                        </ul>
 
+                        </Col>
+                        <Col md={4}>
                         Page {currentPage} of {totalPages}
-
+                        </Col>
+                        <Col md={4}>
                         <Pagination baseLink='/word/' currentPage={currentPage} totalPages={totalPages}/>
-                    </div>
-                    : ''}
+                        </Col>
+                    </Row>
+                    : 'No words'}
 
 
             </BaseLayout>
