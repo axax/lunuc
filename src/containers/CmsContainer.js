@@ -1,6 +1,6 @@
 import React from 'react'
 import GenericForm from '../components/generic/GenericForm'
-import Pagination from '../components/generic/Pagination'
+import {Pagination} from '../components/ui/'
 import update from 'immutability-helper'
 import genericComposer from './generic/genericComposer'
 import {Link} from 'react-router-dom'

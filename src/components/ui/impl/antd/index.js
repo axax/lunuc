@@ -25,6 +25,9 @@ export { Layout, Header as LayoutHeader, Content as LayoutContent , Footer as La
 // menu components
 export {default as HeaderMenu} from './HeaderMenu'
 
+// pagination
+export {default as Pagination} from 'antd/lib/pagination'
+
 // Grid
 import { Row as AntRow, Col as AntCol } from 'antd/lib/grid';
 
@@ -38,7 +41,10 @@ export const Col = ({ xs, sm, md, lg, ...rest }) => {
 
 // Table
 import AntTable from 'antd/lib/table'
-
-export const Table = ({...rest }) => {
-    return <AntTable pagination={false} {...rest} />
+import AntPagination from 'antd/lib/pagination'
+export const Table = ({count,rowsPerPage,page,onChangePage,onChangeRowsPerPage,...rest }) => {
+    return <div>
+        <AntTable pagination={false} {...rest} />
+        <AntPagination onChange={(page)=>onChangePage(page)} defaultCurrent={page} total={count} />
+        </div>
 }

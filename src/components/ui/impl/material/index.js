@@ -51,6 +51,11 @@ export const LayoutFooter = Layout
 // menu components
 export {default as HeaderMenu} from './HeaderMenu'
 
+
+// pagination
+export {default as Pagination} from '../plain/Pagination'
+
+
 // grid
 import MaterialGrid from 'material-ui/Grid'
 
@@ -62,9 +67,9 @@ export const Col = ({ ...rest }) => {
 }
 
 // table
-import MaterialTable, { TableBody, TableCell, TableHead, TableRow } from 'material-ui/Table'
+import MaterialTable, { TableBody, TableCell, TableHead, TableRow, TableFooter, TablePagination } from 'material-ui/Table'
 
-export const Table = ({columns,dataSource, ...rest }) => {
+export const Table = ({count,rowsPerPage,page,onChangePage,onChangeRowsPerPage,columns,dataSource, ...rest }) => {
     return <MaterialTable {...rest}>
         <TableHead>
             <TableRow>
@@ -84,5 +89,16 @@ export const Table = ({columns,dataSource, ...rest }) => {
                 )
             })}
         </TableBody>
+        <TableFooter>
+            <TableRow>
+                <TablePagination
+                    count={count}
+                    rowsPerPage={rowsPerPage}
+                    page={(page-1)}
+                    onChangePage={(e,page)=>onChangePage(page+1)}
+                    onChangeRowsPerPage={onChangeRowsPerPage}
+                />
+            </TableRow>
+        </TableFooter>
     </MaterialTable>
 }

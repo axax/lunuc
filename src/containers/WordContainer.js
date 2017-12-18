@@ -1,5 +1,4 @@
 import React from 'react'
-import Pagination from '../components/generic/Pagination'
 import update from 'immutability-helper'
 import GenericForm from '../components/generic/GenericForm'
 import genericComposer from './generic/genericComposer'
@@ -58,13 +57,16 @@ class WordContainer extends React.Component {
         this.props.refetchWords({filter: value})
     }
 
+    handleChangePage = (page) => {
+        this.props.history.push(`/word/${(page)}`)
+    }
+
     render() {
         const {words, loading} = this.props
 
         this.debug('render word')
 
-        const totalPages = Math.ceil((words ? words.total : 0) / WORDS_PER_PAGE),
-            currentPage = Math.ceil((words ? words.offset : 0) / WORDS_PER_PAGE) + 1
+        const currentPage = Math.ceil((words ? words.offset : 0) / WORDS_PER_PAGE)+1
 
         const columns = [{
                 title: 'Deutsch',
@@ -114,25 +116,7 @@ class WordContainer extends React.Component {
                     </Col>
                 </Row>
 
-                <Table dataSource={dataSource} columns={columns}/>
-
-
-                {words ?
-                    <Row spacing={16}>
-                        <Col md={4}>
-                        <i>words from {words.offset + 1} to {words.offset + words.results.length} of
-                            total {words.total}</i>
-
-                        </Col>
-                        <Col md={4}>
-                        Page {currentPage} of {totalPages}
-                        </Col>
-                        <Col md={4}>
-                        <Pagination baseLink='/word/' currentPage={currentPage} totalPages={totalPages}/>
-                        </Col>
-                    </Row>
-                    : 'No words'}
-
+                <Table dataSource={dataSource} columns={columns} count={(words ? words.total : 0)} rowsPerPage={WORDS_PER_PAGE} page={currentPage} onChangePage={this.handleChangePage.bind(this)} />
 
             </BaseLayout>
         )

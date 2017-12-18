@@ -1,6 +1,7 @@
 import './style.less'
 
 import React from 'react'
+import Pagination from './Pagination'
 
 // ui provider
 export const UIProvider = ({ children, ...rest }) => {
@@ -8,7 +9,7 @@ export const UIProvider = ({ children, ...rest }) => {
 }
 
 
-export const Button = ({ ...rest }) => {
+export const Button = ({ raised,  ...rest }) => {
     return <button {...rest} />
 }
 
@@ -29,6 +30,9 @@ export const LayoutFooter = Layout
 // menu components
 export {default as HeaderMenu} from './HeaderMenu'
 
+// pagination
+export {default as Pagination} from './Pagination'
+
 // grid
 export const Row = ({ ...rest }) => {
     return <div style={{display:'flex'}} {...rest} />
@@ -38,8 +42,11 @@ export const Col = ({ span, ...rest }) => {
 }
 
 // table
-export const Table = ({columns,dataSource, ...rest }) => {
-    return <tale {...rest}>
+export const Table = ({count,rowsPerPage,page,onChangePage,onChangeRowsPerPage,columns,dataSource, ...rest }) => {
+
+    const totalPages = Math.ceil( (count?count:0) / (rowsPerPage?rowsPerPage:0))
+
+    return <table {...rest}>
         <thead>
             <tr>
                 {(columns ? columns.map(column => {
@@ -58,5 +65,14 @@ export const Table = ({columns,dataSource, ...rest }) => {
                 )
             })}
         </tbody>
-    </tale>
+        <tfoot>
+        <tr>
+            <td colSpan='0'>
+                Page {page} of {totalPages}
+                <Pagination onChangePage={onChangePage} currentPage={page} totalPages={totalPages}/>
+
+            </td>
+        </tr>
+        </tfoot>
+    </table>
 }
