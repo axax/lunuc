@@ -1,9 +1,9 @@
 import httpProxy from 'http-proxy'
 import http from 'http'
 import url from 'url'
-import express from 'express'
 import path from 'path'
 import fs from 'fs'
+import zlib from 'zlib'
 
 // Port to listen to
 const PORT = (process.env.PORT || 8080)
@@ -47,6 +47,11 @@ const app = http.createServer(function (req, res) {
 			const filename = path.join(build_dir, uri),
 				ext = path.extname(filename).split('.')[1]
 
+            let acceptEncoding = req.headers['accept-encoding']
+            if (!acceptEncoding) {
+                acceptEncoding = ''
+            }
+
 			if( ext ) {
 
 
@@ -58,10 +63,18 @@ const app = http.createServer(function (req, res) {
 						res.end()
 					} else {
 						const mimeType = mimeTypes[path.extname(filename).split('.')[1]]
-						res.writeHead(200, mimeType)
-
 						const fileStream = fs.createReadStream(filename)
-						fileStream.pipe(res)
+
+                        if (acceptEncoding.match(/\bdeflate\b/)) {
+                            res.writeHead(200, {mimeType, 'content-encoding': 'deflate' });
+                            fileStream.pipe(zlib.createDeflate()).pipe(res);
+                        } else if (acceptEncoding.match(/\bgzip\b/)) {
+                            res.writeHead(200, {mimeType, 'content-encoding': 'gzip' })
+                            fileStream.pipe(zlib.createGzip()).pipe(res)
+                        } else {
+                            res.writeHead(200, mimeType)
+                            fileStream.pipe(res)
+                        }
 					}
 				})
 			}else{
