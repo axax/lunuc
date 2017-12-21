@@ -8,7 +8,7 @@ var config = {
 	entry: './src/index.js',
 	output: {
 		path: path.resolve(__dirname, 'build'),
-		filename: 'bundle.js'
+		filename: '[name].bundle.js'
 	},
 	module: {
         rules: [
@@ -30,7 +30,17 @@ var config = {
             }
         ]
 	},
-	plugins: []
+	plugins: [
+
+			/*new webpack.optimize.CommonsChunkPlugin({
+			 name: 'draftjs',
+			 minChunks: (m) => /node_modules\/(draft-js|immutable)/.test(m.context)
+			 })*/
+            new webpack.optimize.CommonsChunkPlugin({
+                name: 'vendor',
+                minChunks: (m) => /node_modules/.test(m.context)
+            })
+        ]
 }
 
 /**
@@ -65,6 +75,29 @@ if (devMode) {
 
 } else {
 	console.log('Build for production')
+
+
+    config.plugins.push(
+        new webpack.optimize.UglifyJsPlugin({
+            compress: {
+                warnings: false,
+                drop_debugger: true,
+                drop_console: true
+            }
+        }),
+        new webpack.optimize.AggressiveMergingPlugin()
+	)
+
+    const CopyWebpackPlugin = require('copy-webpack-plugin')
+    config.plugins.push(
+
+        new CopyWebpackPlugin([
+            { from: 'serviceworker.js', to: 'serviceworker.js' }
+            ])
+	)
+    /*var BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
+    config.plugins.push(new BundleAnalyzerPlugin())*/
 
 	//config.devtool = 'source-map'
 }
