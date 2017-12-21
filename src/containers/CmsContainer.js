@@ -77,5 +77,5 @@ class CmsContainer extends React.Component {
     }
 }
 
-export default genericComposer(CmsContainer, 'cmsPage', {fields: {'slug': 'String!'},limitPerPage:CMS_PAGES_PER_PAGE})
+export default genericComposer(CmsContainer, 'cmsPage', {fields: {'slug': 'String!'},limit:CMS_PAGES_PER_PAGE})
 

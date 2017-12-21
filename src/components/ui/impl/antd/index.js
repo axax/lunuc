@@ -48,3 +48,29 @@ export const Table = ({count,rowsPerPage,page,onChangePage,onChangeRowsPerPage,.
         <AntPagination onChange={(page)=>onChangePage(page)} defaultCurrent={page} total={count} />
         </div>
 }
+
+
+// dialog
+import { Modal as AntModal } from 'antd'
+
+export const Dialog = ({children,onClose,actions,open,...rest}) => {
+
+    return <AntModal
+        visible={open}
+        onCancel={onClose}
+        footer={
+            actions.map((action, i) => {
+                return (
+                    <Button key={i} onClick={() => {
+                        onClose(action)
+                    }} type={action.type}>
+                        {action.label}
+                    </Button>
+                )
+            })
+        }
+        onClose={onClose}
+        {...rest}>
+        {children}
+    </AntModal>
+}

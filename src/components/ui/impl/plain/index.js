@@ -76,3 +76,33 @@ export const Table = ({count,rowsPerPage,page,onChangePage,onChangeRowsPerPage,c
         </tfoot>
     </table>
 }
+
+
+
+// dialog
+export const Dialog = ({children,onClose,actions,title,open,...rest}) => {
+    return <div style={{position:'fixed',left:0,right:0,top:0, bottom:0,background:'#fff',display:(open?'block':'none')}}
+        aria-labelledby="responsive-dialog-title"
+        onClose={onClose}
+        {...rest}>
+        <h1 id="responsive-dialog-title">{title}</h1>
+        <div>
+            <div>
+                {children}
+            </div>
+        </div>
+        {actions ?
+            <div>
+                {actions.map((action, i) => {
+                    return (
+                        <Button key={i} onClick={() => {
+                            onClose(action)
+                        }} color="primary">
+                            {action.label}
+                        </Button>
+                    )
+                })}
+            </div>
+            :''}
+    </div>
+}

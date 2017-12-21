@@ -3,12 +3,11 @@ import update from 'immutability-helper'
 import GenericForm from '../components/generic/GenericForm'
 import genericComposer from './generic/genericComposer'
 import BaseLayout from '../components/layout/BaseLayout'
-import {Row, Col, Table} from '../components/ui/index'
+import {Row, Col, Table, Dialog} from '../components/ui/index'
 import logger from '../logger'
 import Util from '../util'
 
 const WORDS_PER_PAGE = 10
-
 
 class WordContainer extends React.Component {
     static logger = logger(WordContainer.name)
@@ -16,6 +15,13 @@ class WordContainer extends React.Component {
     constructor(props) {
         super(props)
         this.debug = WordContainer.logger.debug
+
+        this.state = {
+            rowsPerPage: WORDS_PER_PAGE,
+            confirmDeletionDialog: false,
+            dataToBeDeleted: false
+        }
+
     }
 
     componentWillMount() {
@@ -47,18 +53,32 @@ class WordContainer extends React.Component {
     }
 
     handleDeleteWordClick = (data) => {
-        const {deleteWord} = this.props
-        deleteWord({
-            _id: data._id
-        })
+        this.setState({confirmDeletionDialog: true, dataToBeDeleted: data})
     }
 
     handleFilter = ({value}) => {
         this.props.refetchWords({filter: value})
     }
 
+    handleChangeRowsPerPage = (rowsPerPage) => {
+        this.setState({rowsPerPage});
+        this.props.setOptionsForWords({limit: rowsPerPage})
+        this.props.refetchWords()
+    }
+
     handleChangePage = (page) => {
         this.props.history.push(`/word/${(page)}`)
+    }
+
+    handleConfirmDeletion = (action) => {
+        if (action && action.key === 'yes') {
+            const {deleteWord} = this.props
+            deleteWord({
+                _id: this.state.dataToBeDeleted._id
+            })
+        }
+        this.setState({confirmDeletionDialog: false, dataToBeDeleted: false})
+
     }
 
     render() {
@@ -66,15 +86,15 @@ class WordContainer extends React.Component {
 
         this.debug('render word')
 
-        const currentPage = Math.ceil((words ? words.offset : 0) / WORDS_PER_PAGE)+1
+        const currentPage = Math.ceil((words ? words.offset : 0) / this.state.rowsPerPage) + 1
 
         const columns = [{
                 title: 'Deutsch',
                 dataIndex: 'de'
-                }, {
-                    title: 'English',
-                    dataIndex: 'en'
-                },
+            }, {
+                title: 'English',
+                dataIndex: 'en'
+            },
                 {
                     title: 'User',
                     dataIndex: 'user'
@@ -102,7 +122,7 @@ class WordContainer extends React.Component {
         return (
             <BaseLayout>
                 <h1>Words</h1>
-                <Row spacing={16}>
+                <Row spacing={16} style={{marginBottom: 50}}>
                     <Col md={6}>
                         <GenericForm caption="Add Word" ref={(e) => {
                             this.addWordForm = e
@@ -116,8 +136,16 @@ class WordContainer extends React.Component {
                     </Col>
                 </Row>
 
-                <Table dataSource={dataSource} columns={columns} count={(words ? words.total : 0)} rowsPerPage={WORDS_PER_PAGE} page={currentPage} onChangePage={this.handleChangePage.bind(this)} />
+                <Table dataSource={dataSource} columns={columns} count={(words ? words.total : 0)}
+                       rowsPerPage={this.state.rowsPerPage} page={currentPage}
+                       onChangePage={this.handleChangePage.bind(this)}
+                       onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
 
+                <Dialog open={this.state.confirmDeletionDialog} onClose={this.handleConfirmDeletion.bind(this)}
+                        actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type:'primary'}]} title="Confirm deletion">
+                    Are you sure you want to delete the word <strong>"
+                    {this.state.dataToBeDeleted.en} - {this.state.dataToBeDeleted.de}"</strong>?
+                </Dialog>
             </BaseLayout>
         )
     }
@@ -127,5 +155,5 @@ class WordContainer extends React.Component {
 export default genericComposer(WordContainer, 'word', {
     hasFilter: true,
     fields: {'en': 'String!', 'de': 'String'},
-    limitPerPage: WORDS_PER_PAGE
+    limit: WORDS_PER_PAGE
 })
