@@ -58,6 +58,7 @@
     "aws-sdk": "^2.167.0",
     "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",
+    "classnames": "^2.2.5",
     "draft-js": "^0.10.4",
     "draft-js-alignment-plugin": "^2.0.1",
     "draft-js-drag-n-drop-plugin": "^2.0.1",

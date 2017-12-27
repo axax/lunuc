@@ -140,3 +140,16 @@ export const Dialog = withMobileDialog()(({children,onClose,actions,title,...res
         :''}
     </MaterialDialog>
 })
+
+//drawer
+import MaterialDrawer from 'material-ui/Drawer'
+
+export const Drawer = ({children,...rest}) => {
+    return <MaterialDrawer {...rest}>
+        {children}
+    </MaterialDrawer>
+}
+
+
+// drawer layout
+export {default as DrawerLayout} from './DrawerLayout'

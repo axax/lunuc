@@ -106,3 +106,7 @@ export const Dialog = ({children,onClose,actions,title,open,...rest}) => {
             :''}
     </div>
 }
+
+
+// drawer layout
+export {default as DrawerLayout} from './DrawerLayout'

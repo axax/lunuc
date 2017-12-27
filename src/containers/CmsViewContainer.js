@@ -5,16 +5,17 @@ import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
 import logger from '../logger'
+import {DrawerLayout,Button} from '../components/ui/'
+
+
 
 class CmsViewContainer extends React.Component {
     static logger = logger(CmsViewContainer.name)
 
-    constructor(props) {
-        super(props)
-    }
 	componentWillMount() {
 	}
-	render() {
+
+    render() {
 		const { cmsPage, loading, user } = this.props
 
         if( !cmsPage )
@@ -23,9 +24,30 @@ class CmsViewContainer extends React.Component {
 
 		console.log(user)
 
+		const content = <div>
+
+			<h1>{cmsPage.slug}</h1>
+
+		</div>
+
+
+
 		return (
 			<div>
-				<h1>{cmsPage.slug}</h1>
+
+
+                {user.isAuthenticated ?
+
+					<DrawerLayout
+						title={"Edit Page \""+cmsPage.slug+"\""}>
+
+
+                        {content}
+
+					</DrawerLayout>
+                :content}
+
+
 
 			</div>
 		)
