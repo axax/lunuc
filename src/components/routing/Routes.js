@@ -23,7 +23,7 @@ class Routes extends React.Component {
 		const {isAuthenticated} = this.props
 
 		return <Router>
-			<div>
+			<div id="router">
 				<Route exact path="/" component={Home}/>
 				<Route exact path="/search" component={SearchWhileSpeechContainer}/>
 				<Route exact path="/translate" component={LiveSpeechTranslaterContainer}/>

@@ -1,12 +1,17 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import {Row, Col, Input} from '../ui'
 
 const KeyValuePair = ({keyvalue, onChange}) => {
-	return <div>
-		<input type="text" readOnly value={keyvalue.key}/>
-		<input type="text" value={keyvalue.value}
+	return <Row spacing={10} style={{marginBottom: 10}}>
+		<Col md={6}>
+			<Input size type="text" readOnly value={keyvalue.key}/>
+		</Col>
+		<Col md={6}>
+			<Input size type="text" value={keyvalue.value}
 					 onChange={onChange}/>
-	</div>
+		</Col>
+	</Row>
 }
 
 KeyValuePair.propTypes = {

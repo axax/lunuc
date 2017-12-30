@@ -37,6 +37,10 @@ import MaterialTextField from 'material-ui/TextField'
 export const Input = withStyles(styles, {withTheme: true})(({classes, ...rest}) => {
     return <MaterialTextField className={classes.textField} {...rest} />
 })
+export const Textarea = withStyles(styles, {withTheme: true})(({classes, ...rest}) => {
+    return <MaterialTextField
+        multiline className={classes.textField} {...rest} />
+})
 
 
 // layout components
@@ -153,3 +157,7 @@ export const Drawer = ({children,...rest}) => {
 
 // drawer layout
 export {default as DrawerLayout} from './DrawerLayout'
+
+
+// divider
+export Divider from 'material-ui/Divider'

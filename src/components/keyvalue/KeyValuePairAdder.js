@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import {Row, Col, Input, Button} from '../ui'
 
 /* Component with a state */
 export default class KeyValuePairAdder extends React.Component {
@@ -23,13 +24,19 @@ export default class KeyValuePairAdder extends React.Component {
 
 	render() {
 		return (
-			<div>
-				<input type="text" value={this.state.key}
+			<Row>
+				<Col md={5}>
+					<Input type="text" value={this.state.key}
 							 onChange={this.onChangeKey}/>
-				<input type="text" value={this.state.value}
+				</Col>
+				<Col md={5}>
+					<Input type="text" value={this.state.value}
 							 onChange={this.onChangeValue}/>
-				<button onClick={this.onAddClick}>Add pair</button>
-			</div>
+				</Col>
+				<Col md={2}>
+					<Button type="primary" raised onClick={this.onAddClick}>Add pair</Button>
+				</Col>
+			</Row>
 		)
 	}
 }

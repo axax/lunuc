@@ -33,9 +33,7 @@ class CmsViewContainer extends React.Component {
 
 
 		return (
-			<div>
-
-
+			<div id="container">
                 {user.isAuthenticated ?
 
 					<DrawerLayout
@@ -46,9 +44,6 @@ class CmsViewContainer extends React.Component {
 
 					</DrawerLayout>
                 :content}
-
-
-
 			</div>
 		)
 	}

@@ -8,6 +8,7 @@ import gql from 'graphql-tag'
 import KeyValueContainer from './KeyValueContainer'
 import * as UserActions from '../actions/UserAction'
 import BaseLayout from '../components/layout/BaseLayout'
+import {Button, Input, Divider, Textarea} from '../components/ui'
 
 
 class UserProfileContainer extends React.Component {
@@ -88,6 +89,7 @@ class UserProfileContainer extends React.Component {
             })
             .catch(error => {
                 this.setState({loading: false})
+                console.log(error)
                 if (error.graphQLErrors.length > 0) {
                     const e = error.graphQLErrors[0]
                     if (e.key === 'username.taken') {
@@ -132,11 +134,11 @@ class UserProfileContainer extends React.Component {
         const {me, userActions} = this.props
 
         const LogoutButton = withRouter(({history}) => (
-            <button onClick={() => {
+            <Button type="primary" onClick={() => {
                 localStorage.removeItem('token')
                 userActions.setUser(null, false)
                 history.push('/')
-            }}>Logout</button>
+            }}>Logout</Button>
         ))
 
         let noteElements = []
@@ -147,9 +149,9 @@ class UserProfileContainer extends React.Component {
         if (note) {
             note.forEach(
                 (o) => noteElements.push(<div key={o._id}>
-					<textarea name="note" id={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange}
+					<Textarea name="note" id={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange}
                               defaultValue={o.value}/>
-                    <button id={o._id} onClick={this.deleteNote}>Delete</button>
+                    <Button raised id={o._id} onClick={this.deleteNote}>Delete</Button>
                 </div>)
             )
         }
@@ -157,31 +159,30 @@ class UserProfileContainer extends React.Component {
 
         return (
             <BaseLayout>
-                <LogoutButton />
                 <h1>Profile</h1>
+                <LogoutButton />
+
                 {this.props.loading | loading ? <span>loading...</span> : ''}
-                <form onSubmit={this.updateProfile.bind(this)}>
                     <div>
-                        <input type="text" name="username" value={username} onChange={this.handleInputChange}/>
+                        <Input type="text" name="username" value={username} onChange={this.handleInputChange}/>
+                        <Button onClick={this.updateProfile.bind(this)} raised type="primary">Update profile</Button>
                         {usernameError ? <strong>{usernameError}</strong> : ''}
+
                     </div>
 
-                    <div>
-                        <button type="submit">Update profile</button>
-                    </div>
-                </form>
-
-                <hr />
+                <Divider />
                 <h2>Notes</h2>
                 {noteElements}
                 <br />
-                <button onClick={this.createNote}>Add new note</button>
+                <Button raised type="primary" onClick={this.createNote}>Add new note</Button>
                 {hasManageKeyvalue ?
                     <div>
-                        <hr />
+                        <Divider />
                         <h2>KeyValue</h2>
                         <KeyValueContainer />
                     </div> : ''}
+                <Divider />
+
             </BaseLayout>
         )
     }
@@ -253,7 +254,7 @@ const UserProfileContainerWithGql = compose(
         props: ({ownProps, mutate}) => ({
             updateMe: ({username}) => {
                 return mutate({
-                    variables: {username}
+                    variables: {_errorHandling:false,username}
                 })
             }
         })

@@ -2,11 +2,12 @@
 import React from 'react'
 
 import 'antd/dist/antd.less'
+import './style.less'
 //import './impl/antd.less'   // override variables here
 
 // ui provider
 export const UIProvider = ({ children, ...rest }) => {
-    return <div {...rest}>{children}</div>
+    return <div id="uiProvider" {...rest}>{children}</div>
 }
 
 import AntButton from  'antd/lib/button'
@@ -14,7 +15,13 @@ export const Button = ({ raised, children, ...rest }) => {
     return <AntButton {...rest}>{children}</AntButton>
 }
 
-export { default as Input } from 'antd/lib/input'
+
+// input & textarea
+import AntInput from  'antd/lib/input'
+const { TextArea } = AntInput;
+
+export { AntInput as Input }
+export { TextArea as Textarea }
 
 
 // layout components
@@ -74,3 +81,14 @@ export const Dialog = ({children,onClose,actions,open,...rest}) => {
         {children}
     </AntModal>
 }
+
+
+
+// drawer layout
+export {default as DrawerLayout} from './DrawerLayout'
+
+
+
+// divider
+export { default as Divider } from 'antd/lib/divider'
+

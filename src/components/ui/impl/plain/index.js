@@ -13,8 +13,12 @@ export const Button = ({ raised,  ...rest }) => {
     return <button {...rest} />
 }
 
+// input
 export const Input = ({ ...rest }) => {
     return <input {...rest} />
+}
+export const Textarea = ({ ...rest }) => {
+    return <textarea {...rest} />
 }
 
 
@@ -110,3 +114,8 @@ export const Dialog = ({children,onClose,actions,title,open,...rest}) => {
 
 // drawer layout
 export {default as DrawerLayout} from './DrawerLayout'
+
+// divider
+export const Divider = ({ ...rest }) => {
+    return <hr {...rest} />
+}
