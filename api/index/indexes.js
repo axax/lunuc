@@ -31,5 +31,9 @@ export const createAllIndexes = async (db) =>{
     const cmsPageCollection = db.collection('CmsPage')
     cmsPageCollection.createIndex( { 'slug': 1 }, { unique: true } )
 
+
+    db.collection('KeyValue').createIndex( { "createdBy":1,"key": 1 }, { unique: true } )
+
+
 }
 

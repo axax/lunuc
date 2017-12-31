@@ -157,6 +157,16 @@ class UserProfileContainer extends React.Component {
         }
 
 
+        const linkedInRedirectUrl=`${window.location.protocol}//${window.location.hostname}:${window.location.port}${this.props.location.pathname}`,
+            linkedInBase='https://www.linkedin.com/oauth/v2/authorization?response_type=code',
+            linkedInClientId = '772exdl15hhf0d',
+            linkedInState=Math.random().toString(36).substr(2),
+            linkedInAuthUrl = `${linkedInBase}&client_id=${linkedInClientId}&state=${linkedInState}&redirect_uri=${encodeURIComponent(linkedInRedirectUrl)}`
+
+
+console.log(linkedInAuthUrl)
+        //123456789&redirect_uri=https%3A%2F%2Fwww.example.com%2Fauth%2Flinkedin&state=987654321&scope=r_basicprofile
+
         return (
             <BaseLayout>
                 <h1>Profile</h1>
@@ -169,6 +179,11 @@ class UserProfileContainer extends React.Component {
                         {usernameError ? <strong>{usernameError}</strong> : ''}
 
                     </div>
+
+                <Divider />
+                <h2>Social platforms</h2>
+
+                <a href={linkedInAuthUrl}>Connect with LinkedIn</a>
 
                 <Divider />
                 <h2>Notes</h2>

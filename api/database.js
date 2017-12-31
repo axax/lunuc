@@ -7,7 +7,7 @@ const MONGO_URL = (process.env.MONGO_URL || process.env.LUNUC_MONGO_URL)
 
 export const dbPreparation = async (db, cb) => {
 
-    if( db ) {
+    if (db) {
 
         await createAllInitialData(db)
 
@@ -23,8 +23,8 @@ export const dbConnection = (cb) => {
     if (!MONGO_URL || MONGO_URL === '') {
         console.error('Mongo URL missing. Please set env variable (export MONGO_URL=mongodb://user:password@mongodb/)')
 
-        cb(new Error('Mongo URL missing. Please set env variable (export MONGO_URL=mongodb://user:password@mongodb/)'),null)
-    }else {
+        cb(new Error('Mongo URL missing. Please set env variable (export MONGO_URL=mongodb://user:password@mongodb/)'), null)
+    } else {
         MongoClient.connect(MONGO_URL,
             {
                 /* http://mongodb.github.io/node-mongodb-native/2.1/reference/connecting/connection-settings/ */
@@ -33,13 +33,15 @@ export const dbConnection = (cb) => {
                 poolSize: 10,
                 ssl: false
             },
-            function (err, db) {
+            function (err, client) {
+                const parts = MONGO_URL.split('/')
+                const db = client.db(parts[parts.length - 1])
                 if (err) {
                     console.error(err.message)
                 } else {
                     console.log(`Connection to db ${MONGO_URL} established.`)
                 }
-                cb(err,db)
+                cb(err, db)
             }
         )
     }

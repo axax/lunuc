@@ -1,25 +1,36 @@
+import GenericResolver from './generic/genericResolver'
 import Util from '../util'
+import {ObjectId} from 'mongodb'
+
 
 
 export const keyvalueResolver = (db) => ({
-	keyvalue: (data, {context}) => {
-		// return all keyvalue pairs
-		return db.collection('KeyValue').find().toArray().then((docs) => {
-			return docs
-		})
-	},
-	keyvalueOne: ({key}) => {
-		// return a single value
-		return db.collection('KeyValue').findOne({key: key}).then((doc) => {
-			return doc
-		})
-	},
-	setValue: async ({key, value}, {context}) => {
-		await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
+    keyValues: async ({limit, offset}, {context}) => {
+        return await GenericResolver.entities(db,context,'KeyValue',['key','value'],{limit, offset})
+    },
+    keyValue: async ({key}, {context}) => {
+        const keyValues=await GenericResolver.entities(db,context,'KeyValue',['key','value'],{match:{createdBy: ObjectId(context.id),key}})
+		if( keyValues )
+        	return keyValues.results[0]
+    },
+    setKeyValue: async ({key,value}, {context}) => {
+        Util.checkIfUserIsLoggedIn(context)
+        await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
 
-		// update or insert if not exists
-		return db.collection('KeyValue').updateOne({key: key}, {key: key, value: value}, {upsert: true}).then((doc) => {
-			return {key: key, value: value}
-		})
-	}
+        // update or insert if not exists
+        return db.collection('KeyValue').updateOne({createdBy: ObjectId(context.id),key}, {$set: {createdBy: ObjectId(context.id),key, value}}, {upsert: true}).then((doc) => {
+            return {key,
+                value,
+                _id: doc._id,
+                status: 'created',
+                createdBy: {
+                    _id: ObjectId(context.id),
+                    username: context.username
+                },
+            }
+        })
+    },
+    deleteKeyValue: async ({_id}, {context}) => {
+        return GenericResolver.deleteEnity(db,context,'KeyValue',{_id})
+    }
 })

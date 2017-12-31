@@ -3,12 +3,12 @@ import PropTypes from 'prop-types'
 import {Row, Col, Input} from '../ui'
 
 const KeyValuePair = ({keyvalue, onChange}) => {
-	return <Row spacing={10} style={{marginBottom: 10}}>
+	return <Row spacing={8} style={{marginBottom: 8}}>
 		<Col md={6}>
-			<Input size type="text" readOnly value={keyvalue.key}/>
+			<Input type="text" readOnly value={keyvalue.key}/>
 		</Col>
 		<Col md={6}>
-			<Input size type="text" value={keyvalue.value}
+			<Input type="text" value={keyvalue.value}
 					 onChange={onChange}/>
 		</Col>
 	</Row>

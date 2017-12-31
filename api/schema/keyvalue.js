@@ -1,29 +1,28 @@
-// a trailling ! = required (must not be null)
 export const keyvalueSchemaRaw = `
-  
-	type KeyValue {
+
+    type KeyValue {
 		_id: ID!
 		key: String!
 		value: String
+        createdBy: UserPublic!
+        status: String
 	}
+    
+    type KeyValueResult {
+        results: [KeyValue]
+        offset: Int
+        limit: Int
+        total: Int
+    }
+    
+    type Query {
+    	keyValues(limit: Int=10, offset: Int=0): KeyValueResult
+    	keyValue(key: String!): KeyValue
+    }
+    
 		
-  type Query {
-    keyvalue(key: String): [KeyValue]
-    keyvalueOne(key: String!): KeyValue
-  }
-		
-	# this schema allows the following mutation:
 	type Mutation {
-		setValue (
-			key: String!
-			value: String
-		): KeyValue		
-	}
-	
-	schema {
-		query: Query
-		mutation: Mutation
-		subscription: Subscription
+		setKeyValue(key: String!, value: String): KeyValue	
+		deleteKeyValue(_id: ID!): KeyValue
 	}
 `
-

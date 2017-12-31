@@ -41,7 +41,7 @@ const Util = {
         if (context && context.id) {
             // TODO: Cache implementation
             const user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
-            if (user.role) {
+            if (user && user.role) {
                 const userRole = (await db.collection('UserRole').findOne({_id: ObjectId(user.role)}))
                 return userRole.capabilities.includes(capability)
             }

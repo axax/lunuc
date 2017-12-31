@@ -78,7 +78,7 @@
     "http-proxy": "^1.16.2",
     "immutability-helper": "^2.6.2",
     "jsonwebtoken": "^8.1.0",
-    "material-ui": "^1.0.0-beta.25",
+    "material-ui": "^1.0.0-beta.26",
     "material-ui-icons": "^1.0.0-beta.17",
     "mongodb": "^3.0.1",
     "nodemon": "^1.14.3",

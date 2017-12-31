@@ -4,13 +4,13 @@ import KeyValuePair from '../components/keyvalue/KeyValuePair'
 import KeyValuePairAdder from '../components/keyvalue/KeyValuePairAdder'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
-import update from 'immutability-helper'
+import {connect} from 'react-redux'
 
 
-const KeyValueContainer = ({keyvalue, loading, setValue}) => {
+const KeyValueContainer = ({keyValues, loading, setKeyValue}) => {
 
 	const handelValueChange = (key, e) => {
-		setValue({
+        setKeyValue({
 			key: key,
 			value: e.target.value
 		}).then(({data}) => {
@@ -20,7 +20,7 @@ const KeyValueContainer = ({keyvalue, loading, setValue}) => {
 	}
 
 	const handleAddNewKeyValue = ({key, value}) => {
-		setValue({
+        setKeyValue({
 			key: key,
 			value: value
 		}).then(({data}) => {
@@ -29,8 +29,8 @@ const KeyValueContainer = ({keyvalue, loading, setValue}) => {
 
 	let pairs = []
 
-	if (keyvalue) {
-		keyvalue.forEach(
+	if (keyValues && keyValues.results) {
+        keyValues.results.forEach(
 			(o) => pairs.push(<KeyValuePair key={o.key} keyvalue={{key: o.key, value: o.value}}
 																			onChange={handelValueChange.bind(this, o.key)}/>)
 		)
@@ -46,27 +46,23 @@ const KeyValueContainer = ({keyvalue, loading, setValue}) => {
 
 KeyValueContainer.propTypes = {
 	/* apollo client props */
-	keyvalue: PropTypes.array,
+    keyValues: PropTypes.object,
 	loading: PropTypes.bool,
-	setValue: PropTypes.func.isRequired,
+    setKeyValue: PropTypes.func.isRequired,
 }
 
 /**
  * GraphQL query with apollo client
  */
 
-const gqlKeyValueQuery = gql`
-  query{keyvalue {
-			key
-			value
-			}
-  }`
+const gqlKeyValueQuery = gql`query{ 
+  	keyValues{limit offset total results{key value status _id createdBy{_id username}} }
+}`
 
 const gqlKeyValueUpdate = gql`
   mutation KeyValueUpdate($key: String!, $value: String!) {
-  	setValue(key: $key, value: $value){
-    	key
-    	value
+  	setKeyValue(key: $key, value: $value){
+    	key value status _id createdBy{_id username}
   	}
   }`
 
@@ -78,33 +74,41 @@ const KeyValueContainerWithGql = compose(
 				fetchPolicy: 'cache-and-network',
 			}
 		},
-		props: ({data: {loading, keyvalue}}) => ({
-			keyvalue,
+		props: ({data: {loading, keyValues}}) => ({
+            keyValues,
 			loading
 		})
 	}),
 	graphql(gqlKeyValueUpdate, {
 		props: ({ownProps, mutate}) => ({
-			setValue: ({key, value}) => {
+            setKeyValue: ({key, value}) => {
 				return mutate({
 					variables: {key, value},
 					optimisticResponse: {
 						__typename: 'Mutation',
-						setValue: {
-							key: key,
-							value: value,
+                        setKeyValue: {
+                            _id: '#' + new Date().getTime(),
+                            status: 'creating',
+                            createdBy: {
+                                _id: ownProps.user.userData._id,
+                                username: ownProps.user.userData.username,
+                                __typename: 'UserPublic'
+                            },
+							key,
+							value,
 							__typename: 'KeyValue'
 						}
 					},
-                    update: (proxy, {data: {setValue}}) => {
+                    update: (proxy, {data: {setKeyValue}}) => {
                         // Read the data from our cache for this query.
                         const data = proxy.readQuery({query: gqlKeyValueQuery})
                         // Add our note from the mutation to the end.
-                        const idx = data.keyvalue.findIndex(x => x.key === setValue.key)
+                        const idx = data.keyValues.results.findIndex(x => x.key === setKeyValue.key)
                         if (idx > -1) {
-                            data.keyvalue[idx].value = setValue.value
+                            data.keyValues.results[idx].value = setKeyValue.value
                         } else {
-                            data.keyvalue.push(setValue)
+                            data.keyValues.results.push(setKeyValue)
+							data.keyValues.total++;
                         }
                         // Write our data back to the cache.
                         proxy.writeQuery({query: gqlKeyValueQuery, data})
@@ -116,9 +120,23 @@ const KeyValueContainerWithGql = compose(
 )(KeyValueContainer)
 
 
+
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = (store) => {
+    const {user} = store
+    return {
+        user
+    }
+}
+
+
 /**
  * Connect the component to
  * the Redux store.
  */
-export default KeyValueContainerWithGql
+export default connect(
+    mapStateToProps
+)(KeyValueContainerWithGql)
 
