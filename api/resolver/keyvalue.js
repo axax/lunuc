@@ -21,7 +21,6 @@ export const keyvalueResolver = (db) => ({
         return db.collection('KeyValue').updateOne({createdBy: ObjectId(context.id),key}, {$set: {createdBy: ObjectId(context.id),key, value}}, {upsert: true}).then((doc) => {
             return {key,
                 value,
-                _id: doc._id,
                 status: 'created',
                 createdBy: {
                     _id: ObjectId(context.id),
@@ -30,7 +29,23 @@ export const keyvalueResolver = (db) => ({
             }
         })
     },
-    deleteKeyValue: async ({_id}, {context}) => {
-        return GenericResolver.deleteEnity(db,context,'KeyValue',{_id})
+    deleteKeyValue: async ({key}, {context}) => {
+        Util.checkIfUserIsLoggedIn(context)
+
+        const collection = db.collection('KeyValue')
+
+        const deletedResult = await collection.deleteOne({createdBy: ObjectId(context.id),key})
+
+        if (deletedResult.deletedCount) {
+            return {
+                key,
+                status: 'deleted'
+            }
+        } else {
+            return {
+                key,
+                status: 'error'
+            }
+        }
     }
 })

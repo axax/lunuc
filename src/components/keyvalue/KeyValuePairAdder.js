@@ -20,6 +20,7 @@ export default class KeyValuePairAdder extends React.Component {
 
 	onAddClick = () => {
 		this.props.onClick({key: this.state.key, value: this.state.value})
+        this.setState({key:'',value:''})
 	}
 
 	render() {

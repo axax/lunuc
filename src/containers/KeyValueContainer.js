@@ -7,13 +7,20 @@ import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 
 
-const KeyValueContainer = ({keyValues, loading, setKeyValue}) => {
+const KeyValueContainer = ({keyValues, loading, setKeyValue, deleteKeyValue}) => {
 
 	const handelValueChange = (key, e) => {
         setKeyValue({
 			key: key,
 			value: e.target.value
 		}).then(({data}) => {
+		}).catch((e) => {
+			console.log(e)
+		})
+	}
+
+	const handelDeletion = (key) => {
+        deleteKeyValue({key}).then(({data}) => {
 		}).catch((e) => {
 			console.log(e)
 		})
@@ -32,6 +39,7 @@ const KeyValueContainer = ({keyValues, loading, setKeyValue}) => {
 	if (keyValues && keyValues.results) {
         keyValues.results.forEach(
 			(o) => pairs.push(<KeyValuePair key={o.key} keyvalue={{key: o.key, value: o.value}}
+											onDelete={handelDeletion.bind(this, o.key)}
 																			onChange={handelValueChange.bind(this, o.key)}/>)
 		)
 	}
@@ -56,13 +64,20 @@ KeyValueContainer.propTypes = {
  */
 
 const gqlKeyValueQuery = gql`query{ 
-  	keyValues{limit offset total results{key value status _id createdBy{_id username}} }
+  	keyValues{limit offset total results{key value status createdBy{_id username}} }
 }`
 
 const gqlKeyValueUpdate = gql`
   mutation KeyValueUpdate($key: String!, $value: String!) {
   	setKeyValue(key: $key, value: $value){
-    	key value status _id createdBy{_id username}
+    	key value status createdBy{_id username}
+  	}
+  }`
+
+const gqlKeyValueDelete = gql`
+  mutation deleteKeyValue($key: String!) {
+  	deleteKeyValue(key: $key){
+    	key status
   	}
   }`
 
@@ -87,7 +102,6 @@ const KeyValueContainerWithGql = compose(
 					optimisticResponse: {
 						__typename: 'Mutation',
                         setKeyValue: {
-                            _id: '#' + new Date().getTime(),
                             status: 'creating',
                             createdBy: {
                                 _id: ownProps.user.userData._id,
@@ -102,7 +116,10 @@ const KeyValueContainerWithGql = compose(
                     update: (proxy, {data: {setKeyValue}}) => {
                         // Read the data from our cache for this query.
                         const data = proxy.readQuery({query: gqlKeyValueQuery})
-                        // Add our note from the mutation to the end.
+
+						if( !data.keyValues.results ){
+                            data.keyValues.results=[]
+						}
                         const idx = data.keyValues.results.findIndex(x => x.key === setKeyValue.key)
                         if (idx > -1) {
                             data.keyValues.results[idx].value = setKeyValue.value
@@ -112,6 +129,37 @@ const KeyValueContainerWithGql = compose(
                         }
                         // Write our data back to the cache.
                         proxy.writeQuery({query: gqlKeyValueQuery, data})
+                    }
+				})
+			}
+		})
+	}),
+	graphql(gqlKeyValueDelete, {
+		props: ({ownProps, mutate}) => ({
+            deleteKeyValue: ({key}) => {
+				return mutate({
+					variables: {key},
+					optimisticResponse: {
+						__typename: 'Mutation',
+                        deleteKeyValue: {
+                            status: 'deleting',
+							key,
+							__typename: 'KeyValue'
+						}
+					},
+                    update: (proxy, {data: {deleteKeyValue}}) => {
+                        // Read the data from our cache for this query.
+                        const data = proxy.readQuery({query: gqlKeyValueQuery})
+                        // Add our note from the mutation to the end.
+                        const idx = data.keyValues.results.findIndex(x => x.key === deleteKeyValue.key)
+                        if (idx >= 0) {
+                            if (deleteKeyValue.status == 'deleting') {
+                                data.keyValues.results[idx].status = 'deleting'
+                            } else {
+                                data.keyValues.results.splice(idx, 1)
+                            }
+                            proxy.writeQuery({query: gqlKeyValueQuery, data})
+                        }
                     }
 				})
 			}

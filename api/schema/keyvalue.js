@@ -23,6 +23,6 @@ export const keyvalueSchemaRaw = `
 		
 	type Mutation {
 		setKeyValue(key: String!, value: String): KeyValue	
-		deleteKeyValue(_id: ID!): KeyValue
+		deleteKeyValue(key: String!): KeyValue
 	}
 `
