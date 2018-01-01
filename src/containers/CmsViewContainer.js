@@ -22,7 +22,6 @@ class CmsViewContainer extends React.Component {
             return <BaseLayout />
 
 
-		console.log(user)
 
 		const content = <div>
 

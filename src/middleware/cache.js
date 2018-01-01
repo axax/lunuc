@@ -7,15 +7,22 @@ const CACHE_KEY = "@APOLLO_OFFLINE_CACHE";
 
 export class OfflineCache extends InMemoryCache {
     logger = logger(this.constructor.name)
+    changeTimeout = 0
 
     constructor(...args) {
         super(...args);
         if( Environment.APOLLO_CACHE ) {
             this.restore(JSON.parse(window.localStorage.getItem(CACHE_KEY)))
         }
+
+        window.onbeforeunload = (e) => {
+            clearTimeout(this.changeTimeout)
+            this.saveToLocalStorage()
+        }
+
+
     }
 
-    changeTimeout = 0
 
     saveToLocalStorageDelayed() {
         clearTimeout(this.changeTimeout)
@@ -28,7 +35,7 @@ export class OfflineCache extends InMemoryCache {
         // Filter some queries we don't want to persist
         const newstate = Object.keys(state)
             .filter(key => (
-                    key.indexOf('$ROOT_QUERY.login') < 0 &&
+                    key.indexOf('ROOT_QUERY.login') < 0 &&
                     key.indexOf('ROOT_QUERY.notification') < 0 &&
                     key.indexOf('ROOT_SUBSCRIPTION.notification') < 0
                 )

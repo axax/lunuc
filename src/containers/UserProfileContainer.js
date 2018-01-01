@@ -9,6 +9,7 @@ import KeyValueContainer from './KeyValueContainer'
 import * as UserActions from '../actions/UserAction'
 import BaseLayout from '../components/layout/BaseLayout'
 import {Button, Input, Divider, Textarea} from '../components/ui'
+import {withKeyValues} from './generic/withKeyValues'
 
 
 class UserProfileContainer extends React.Component {
@@ -124,20 +125,47 @@ class UserProfileContainer extends React.Component {
             })
     }
 
+
+    handelLinkedInConnect = () => {
+        const linkedInRedirectUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}${this.props.location.pathname}`,
+            linkedInBase = 'https://www.linkedin.com/oauth/v2/authorization?response_type=code',
+            linkedInClientId = '772exdl15hhf0d',
+            linkedInState = Math.random().toString(36).substr(2),
+            linkedInAuthUrl = `${linkedInBase}&client_id=${linkedInClientId}&state=${linkedInState}&redirect_uri=${encodeURIComponent(linkedInRedirectUrl)}`
+        this.props.setKeyValue({key:'linkedInState',value:linkedInState}).then(()=>{
+            window.location.href = linkedInAuthUrl
+        })
+    }
+
+
+    componentWillMount(){
+        const {location, history, keyValueMap} = this.props
+        const params = new URLSearchParams(location.search)
+        const code = params.get('code'),state = params.get('state')
+        if( code ) {
+            if( state == keyValueMap.linkedInState) {
+                this.props.setKeyValue({key:'linkedInToken',value:code}).then(()=>{
+                    history.push(location.pathname)
+                })
+            }
+        }
+    }
+
     componentWillReceiveProps(nextProps) {
         if (nextProps.me)
             this.setState({username: nextProps.me.username, note: nextProps.me.note})
     }
 
     render() {
+        const {me, userActions,history, keyValueMap} = this.props
         const {username, usernameError, loading, note} = this.state
-        const {me, userActions} = this.props
-
-        const LogoutButton = withRouter(({history}) => (
+        const LogoutButton = (() => (
             <Button type="primary" onClick={() => {
-                localStorage.removeItem('token')
-                userActions.setUser(null, false)
-                history.push('/')
+                this.props.setKeyValue({key:'lastLogoutClick',value:new Date()}).then(()=>{
+                    localStorage.removeItem('token')
+                    userActions.setUser(null, false)
+                    history.push('/')
+                })
             }}>Logout</Button>
         ))
 
@@ -156,34 +184,24 @@ class UserProfileContainer extends React.Component {
             )
         }
 
-
-        const linkedInRedirectUrl=`${window.location.protocol}//${window.location.hostname}:${window.location.port}${this.props.location.pathname}`,
-            linkedInBase='https://www.linkedin.com/oauth/v2/authorization?response_type=code',
-            linkedInClientId = '772exdl15hhf0d',
-            linkedInState=Math.random().toString(36).substr(2),
-            linkedInAuthUrl = `${linkedInBase}&client_id=${linkedInClientId}&state=${linkedInState}&redirect_uri=${encodeURIComponent(linkedInRedirectUrl)}`
-
-
-console.log(linkedInAuthUrl)
-        //123456789&redirect_uri=https%3A%2F%2Fwww.example.com%2Fauth%2Flinkedin&state=987654321&scope=r_basicprofile
-
         return (
             <BaseLayout>
                 <h1>Profile</h1>
                 <LogoutButton />
 
                 {this.props.loading | loading ? <span>loading...</span> : ''}
-                    <div>
-                        <Input type="text" name="username" value={username} onChange={this.handleInputChange}/>
-                        <Button onClick={this.updateProfile.bind(this)} raised type="primary">Update profile</Button>
-                        {usernameError ? <strong>{usernameError}</strong> : ''}
+                <div>
+                    <Input type="text" name="username" value={username} onChange={this.handleInputChange}/>
+                    <Button onClick={this.updateProfile.bind(this)} raised type="primary">Update profile</Button>
+                    {usernameError ? <strong>{usernameError}</strong> : ''}
 
-                    </div>
+                </div>
 
                 <Divider />
                 <h2>Social platforms</h2>
 
-                <a href={linkedInAuthUrl}>Connect with LinkedIn</a>
+                {keyValueMap.linkedInToken?'Connected to linkedin':
+                <Button raised onClick={this.handelLinkedInConnect}>Connect with LinkedIn</Button>}
 
                 <Divider />
                 <h2>Notes</h2>
@@ -215,21 +233,6 @@ UserProfileContainer.propTypes = {
     /* User Reducer */
     userActions: PropTypes.object.isRequired
 }
-
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = () => {
-    return {}
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    userActions: bindActionCreators(UserActions, dispatch)
-})
 
 
 const gqlQuery = gql`query {me{username email _id note{_id value}role{capabilities}}}`
@@ -269,7 +272,7 @@ const UserProfileContainerWithGql = compose(
         props: ({ownProps, mutate}) => ({
             updateMe: ({username}) => {
                 return mutate({
-                    variables: {_errorHandling:false,username}
+                    variables: {_errorHandling: false, username}
                 })
             }
         })
@@ -312,14 +315,14 @@ const UserProfileContainerWithGql = compose(
                         __typename: 'Note',
                         _id: args.id,
                         status: 'deleting',
-                        value:''
+                        value: ''
                     }
                 },
                 update: (proxy, {data: {deleteNote}}) => {
                     // Read the data from our cache for this query.
                     const data = proxy.readQuery({query: gqlQuery})
                     // Add our note from the mutation to the end.
-                    data.me.note=data.me.note.filter(note => note._id !== deleteNote._id)
+                    data.me.note = data.me.note.filter(note => note._id !== deleteNote._id)
                     // Write our data back to the cache.
                     proxy.writeQuery({query: gqlQuery, data})
                 },
@@ -331,10 +334,25 @@ const UserProfileContainerWithGql = compose(
 
 
 /**
+ * Map the state to props.
+ */
+const mapStateToProps = () => {
+    return {}
+}
+
+/**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => ({
+    userActions: bindActionCreators(UserActions, dispatch)
+})
+
+
+/**
  * Connect the component to
  * the Redux store.
  */
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(UserProfileContainerWithGql)
+)(withRouter(withKeyValues(UserProfileContainerWithGql,['linkedInToken','linkedInState'])))
