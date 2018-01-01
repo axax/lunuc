@@ -12,7 +12,7 @@ export const cmsResolver = (db) => ({
     },
     createCmsPage: async ({slug}, {context}) => {
         if( !slug || slug.trim() === '' ){
-            throw new Error(`Slug is empty or invalid`)
+            throw new Error('Slug is empty or invalid')
         }
         return await GenericResolver.createEnity(db,context,'CmsPage',{slug})
     },

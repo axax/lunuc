@@ -223,6 +223,8 @@ class UserProfileContainer extends React.Component {
 
 
 UserProfileContainer.propTypes = {
+    location: PropTypes.object.isRequired,
+    history: PropTypes.object.isRequired,
     /* apollo client props */
     me: PropTypes.object,
     updateMe: PropTypes.func.isRequired,
@@ -231,9 +233,13 @@ UserProfileContainer.propTypes = {
     deleteNote: PropTypes.func.isRequired,
     loading: PropTypes.bool,
     /* User Reducer */
-    userActions: PropTypes.object.isRequired
+    userActions: PropTypes.object.isRequired,
+    /* with key values */
+    keyValues: PropTypes.object,
+    keyValueMap: PropTypes.object,
+    setKeyValue: PropTypes.func.isRequired,
+    deleteKeyValue: PropTypes.func.isRequired
 }
-
 
 const gqlQuery = gql`query {me{username email _id note{_id value}role{capabilities}}}`
 

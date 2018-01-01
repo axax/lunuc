@@ -3,14 +3,14 @@ import Environment from '../environment'
 import logger from '../logger'
 
 // cache
-const CACHE_KEY = "@APOLLO_OFFLINE_CACHE";
+const CACHE_KEY = '@APOLLO_OFFLINE_CACHE'
 
 export class OfflineCache extends InMemoryCache {
     logger = logger(this.constructor.name)
     changeTimeout = 0
 
     constructor(...args) {
-        super(...args);
+        super(...args)
         if( Environment.APOLLO_CACHE ) {
             this.restore(JSON.parse(window.localStorage.getItem(CACHE_KEY)))
         }
@@ -31,7 +31,7 @@ export class OfflineCache extends InMemoryCache {
 
 
     saveToLocalStorage() {
-        const state = this.extract();
+        const state = this.extract()
         // Filter some queries we don't want to persist
         const newstate = Object.keys(state)
             .filter(key => (
@@ -42,14 +42,14 @@ export class OfflineCache extends InMemoryCache {
             )
             .reduce((res, key) => (res[key] = state[key], res), {})
 
-        this.logger.debug("save to local storage");
+        this.logger.debug('save to local storage')
         window.localStorage.setItem(CACHE_KEY,JSON.stringify(newstate))
     }
 
     broadcastWatches() {
-        super.broadcastWatches();
+        super.broadcastWatches()
         if( Environment.APOLLO_CACHE ) {
-            this.saveToLocalStorageDelayed();
+            this.saveToLocalStorageDelayed()
         }
     }
 }

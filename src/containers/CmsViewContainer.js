@@ -36,7 +36,7 @@ class CmsViewContainer extends React.Component {
                 {user.isAuthenticated ?
 
 					<DrawerLayout
-						title={"Edit Page \""+cmsPage.slug+"\""}>
+						title={'Edit Page "'+cmsPage.slug+'"'}>
 
 
                         {content}
@@ -51,11 +51,10 @@ class CmsViewContainer extends React.Component {
 
 CmsViewContainer.propTypes = {
     users: PropTypes.array,
-    /* routing params */
 	match: PropTypes.object,
-	/* apollo client props */
 	loading: PropTypes.bool,
-    cmsPage: PropTypes.object
+    cmsPage: PropTypes.object,
+    user: PropTypes.object
 }
 
 const gqlQuery=gql`query cmsPage($slug: String!){ cmsPage(slug: $slug){slug _id createdBy{_id username}}}`

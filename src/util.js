@@ -25,6 +25,21 @@ const Util = {
 			return new Intl.DateTimeFormat().format(new Date(),options)
 		}
 		return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId),options)
+	},
+    escapeHtml: (str) => {
+        const entityMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '/': '&#x2F;',
+            '`': '&#x60;',
+            '=': '&#x3D;'
+        }
+        return String(str).replace(/[&<>"'`=\/]/g, function (s) {
+            return entityMap[s];
+        })
 	}
 }
 export default Util

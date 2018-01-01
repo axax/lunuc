@@ -66,8 +66,8 @@ const app = http.createServer(function (req, res) {
 						const fileStream = fs.createReadStream(filename)
 
                         if (acceptEncoding.match(/\bdeflate\b/)) {
-                            res.writeHead(200, {mimeType, 'content-encoding': 'deflate' });
-                            fileStream.pipe(zlib.createDeflate()).pipe(res);
+                            res.writeHead(200, {mimeType, 'content-encoding': 'deflate' })
+                            fileStream.pipe(zlib.createDeflate()).pipe(res)
                         } else if (acceptEncoding.match(/\bgzip\b/)) {
                             res.writeHead(200, {mimeType, 'content-encoding': 'gzip' })
                             fileStream.pipe(zlib.createGzip()).pipe(res)

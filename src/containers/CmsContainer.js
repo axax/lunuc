@@ -6,6 +6,7 @@ import genericComposer from './generic/genericComposer'
 import {Link} from 'react-router-dom'
 import BaseLayout from '../components/layout/BaseLayout'
 import logger from '../logger'
+import PropTypes from 'prop-types'
 
 const CMS_PAGES_PER_PAGE = 10
 
@@ -76,6 +77,18 @@ class CmsContainer extends React.Component {
         })
     }
 }
+
+
+
+CmsContainer.propTypes = {
+    cmsPages: PropTypes.object,
+    createCmsPage: PropTypes.func.isRequired,
+    updateCmsPage: PropTypes.func.isRequired,
+    deleteCmsPage: PropTypes.func.isRequired,
+    loading: PropTypes.bool
+}
+
+
 
 export default genericComposer(CmsContainer, 'cmsPage', {fields: {'slug': 'String!'},limit:CMS_PAGES_PER_PAGE})
 

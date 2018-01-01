@@ -32,7 +32,7 @@ export const createAllIndexes = async (db) =>{
     cmsPageCollection.createIndex( { 'slug': 1 }, { unique: true } )
 
 
-    db.collection('KeyValue').createIndex( { "createdBy":1,"key": 1 }, { unique: true } )
+    db.collection('KeyValue').createIndex( { createdBy:1,key: 1 }, { unique: true } )
 
 
 }

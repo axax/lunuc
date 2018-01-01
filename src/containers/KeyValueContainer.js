@@ -2,6 +2,7 @@ import React from 'react'
 import KeyValuePair from '../components/keyvalue/KeyValuePair'
 import KeyValuePairAdder from '../components/keyvalue/KeyValuePairAdder'
 import {withKeyValues} from './generic/withKeyValues'
+import PropTypes from 'prop-types'
 
 
 const KeyValueContainer = ({keyValues, loading, setKeyValue, deleteKeyValue}) => {
@@ -47,6 +48,17 @@ const KeyValueContainer = ({keyValues, loading, setKeyValue, deleteKeyValue}) =>
 		<KeyValuePairAdder onClick={handleAddNewKeyValue}/>
 	</div>
 }
+
+
+
+KeyValueContainer.propTypes = {
+    loading: PropTypes.bool,
+    keyValues: PropTypes.object,
+    keyValueMap: PropTypes.object,
+    setKeyValue: PropTypes.func.isRequired,
+    deleteKeyValue: PropTypes.func.isRequired
+}
+
 
 export default withKeyValues(KeyValueContainer)
 

@@ -6,6 +6,7 @@ import BaseLayout from '../components/layout/BaseLayout'
 import {Row, Col, Table, Dialog} from '../components/ui/index'
 import logger from '../logger'
 import Util from '../util'
+import PropTypes from 'prop-types'
 
 const WORDS_PER_PAGE = 10
 
@@ -61,7 +62,7 @@ class WordContainer extends React.Component {
     }
 
     handleChangeRowsPerPage = (rowsPerPage) => {
-        this.setState({rowsPerPage});
+        this.setState({rowsPerPage})
         this.props.setOptionsForWords({limit: rowsPerPage})
         this.props.refetchWords()
     }
@@ -143,13 +144,27 @@ class WordContainer extends React.Component {
 
                 <Dialog open={this.state.confirmDeletionDialog} onClose={this.handleConfirmDeletion.bind(this)}
                         actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type:'primary'}]} title="Confirm deletion">
-                    Are you sure you want to delete the word <strong>"
-                    {this.state.dataToBeDeleted.en} - {this.state.dataToBeDeleted.de}"</strong>?
+                    Are you sure you want to delete the word <strong>{Util.escapeHtml('"'+this.state.dataToBeDeleted.en)} - {Util.escapeHtml(this.state.dataToBeDeleted.de+'"')}</strong>?
                 </Dialog>
             </BaseLayout>
         )
     }
 }
+
+
+
+
+WordContainer.propTypes = {
+    history: PropTypes.object,
+    words: PropTypes.object,
+    createWord: PropTypes.func.isRequired,
+    refetchWords: PropTypes.func.isRequired,
+    updateWord: PropTypes.func.isRequired,
+    deleteWord: PropTypes.func.isRequired,
+    setOptionsForWords: PropTypes.func.isRequired,
+    loading: PropTypes.bool
+}
+
 
 
 export default genericComposer(WordContainer, 'word', {
