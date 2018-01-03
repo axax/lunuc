@@ -6,6 +6,30 @@ const PASSWORD_MIN_LENGTH = 5
 
 
 const Util = {
+    setKeyValues: async (db, context, keyvalues) => {
+        for (var key in keyvalues) {
+            if (keyvalues.hasOwnProperty(key)) {
+
+                const res = (await Util.setKeyValue(db,context,key,keyvalues[key]))
+
+                //console.log(res)
+            }
+        }
+
+    },
+    setKeyValue: async (db, context, key, value) => {
+        return db.collection('KeyValue').updateOne({createdBy: ObjectId(context.id),key}, {$set: {createdBy: ObjectId(context.id),key, value}}, {upsert: true})
+    },
+    keyvalueMap: async (db, context, keys) => {
+
+        const keyvalues = (await db.collection('KeyValue').find({createdBy: ObjectId(context.id), key: {$in: keys}}).toArray())
+
+        return keyvalues.reduce((map, obj) => {
+            map[obj.key] = obj.value
+            return map
+        }, {})
+
+    },
     hashPassword: (pw) => {
         return bcrypt.hashSync(pw, bcrypt.genSaltSync(10))
     },

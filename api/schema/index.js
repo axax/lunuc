@@ -9,7 +9,8 @@ import {wordSchemaRaw} from './word'
 import {postSchemaRaw} from './post'
 import {cmsSchemaRaw} from './cms'
 import {systemSchemaRaw} from './system'
+import {socialSchemaRaw} from './social'
 
 
 // Construct a schema, using GraphQL schema language
-export const schema = buildSchema( mergeStrings([commonSchemaRaw,keyvalueSchemaRaw,userSchemaRaw,notificationSchemaRaw,chatSchemaRaw,wordSchemaRaw,postSchemaRaw,cmsSchemaRaw,systemSchemaRaw]) )
+export const schema = buildSchema( mergeStrings([commonSchemaRaw,keyvalueSchemaRaw,userSchemaRaw,notificationSchemaRaw,chatSchemaRaw,wordSchemaRaw,postSchemaRaw,cmsSchemaRaw,systemSchemaRaw,socialSchemaRaw]) )

@@ -144,7 +144,7 @@ class UserProfileContainer extends React.Component {
         const code = params.get('code'),state = params.get('state')
         if( code ) {
             if( state == keyValueMap.linkedInState) {
-                this.props.setKeyValue({key:'linkedInToken',value:code}).then(()=>{
+                this.props.setKeyValue({key:'linkedInCode',value:code}).then(()=>{
                     history.push(location.pathname)
                 })
             }
@@ -200,7 +200,7 @@ class UserProfileContainer extends React.Component {
                 <Divider />
                 <h2>Social platforms</h2>
 
-                {keyValueMap.linkedInToken?'Connected to linkedin':
+                {keyValueMap.linkedInCode?'Connected to linkedin':
                 <Button raised onClick={this.handelLinkedInConnect}>Connect with LinkedIn</Button>}
 
                 <Divider />
@@ -361,4 +361,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withRouter(withKeyValues(UserProfileContainerWithGql,['linkedInToken','linkedInState'])))
+)(withRouter(withKeyValues(UserProfileContainerWithGql,['linkedInCode','linkedInState'])))

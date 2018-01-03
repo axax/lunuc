@@ -7,6 +7,7 @@ import {notificationResolver} from './notification'
 import {keyvalueResolver} from './keyvalue'
 import {cmsResolver} from './cms'
 import {systemResolver} from './system'
+import {socialResolver} from './social'
 
 // The root provides a resolver function for each API endpoint
 export const resolver = (db) => {
@@ -19,6 +20,7 @@ export const resolver = (db) => {
 		...wordResolver(db),
 		...postResolver(db),
 		...cmsResolver(db),
-        ...systemResolver(db)
+        ...systemResolver(db),
+		...socialResolver(db)
 	})
 }

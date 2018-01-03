@@ -22,7 +22,7 @@ export const keyvalueResolver = (db) => ({
         await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
 
         // update or insert if not exists
-        return db.collection('KeyValue').updateOne({createdBy: ObjectId(context.id),key}, {$set: {createdBy: ObjectId(context.id),key, value}}, {upsert: true}).then((doc) => {
+        return Util.setKeyValue(db,context,key,value).then((doc) => {
             return {key,
                 value,
                 status: 'created',
