@@ -14,7 +14,7 @@ class DrawerLayout extends React.Component {
     }
     render() {
 
-        const { title, children } = this.props;
+        const { title, sidebar, children } = this.props;
 
         return (
             <Layout className="drawer-layout">
@@ -24,20 +24,7 @@ class DrawerLayout extends React.Component {
                     collapsed={this.state.collapsed}
                 >
                     <div className="logo" />
-                    <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']}>
-                        <Menu.Item key="1">
-                            <Icon type="user" />
-                            <span>nav 1</span>
-                        </Menu.Item>
-                        <Menu.Item key="2">
-                            <Icon type="video-camera" />
-                            <span>nav 2</span>
-                        </Menu.Item>
-                        <Menu.Item key="3">
-                            <Icon type="upload" />
-                            <span>nav 3</span>
-                        </Menu.Item>
-                    </Menu>
+                    {sidebar}
                 </Sider>
                 <Layout>
                     <Header style={{ background: '#fff', padding: 0 }}>

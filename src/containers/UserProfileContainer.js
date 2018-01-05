@@ -6,9 +6,10 @@ import {withRouter} from 'react-router-dom'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import KeyValueContainer from './KeyValueContainer'
+import LinkedInProfileContainer from './LinkedInProfileContainer'
 import * as UserActions from '../actions/UserAction'
 import BaseLayout from '../components/layout/BaseLayout'
-import {Button, Input, Divider, Textarea} from '../components/ui'
+import {Button, Input, Divider, Textarea, DeleteIconButton} from '../components/ui'
 import {withKeyValues} from './generic/withKeyValues'
 
 
@@ -112,11 +113,11 @@ class UserProfileContainer extends React.Component {
             })
     }
 
-    deleteNote = (e) => {
+    deleteNote = (e,note) => {
         e.preventDefault()
         this.setState({loading: true})
 
-        this.props.deleteNote({id: e.target.id})
+        this.props.deleteNote({id: note._id})
             .then(resp => {
                 this.setState({loading: false})
             })
@@ -157,7 +158,7 @@ class UserProfileContainer extends React.Component {
     }
 
     render() {
-        const {me, userActions,history, keyValueMap} = this.props
+        const {me, userActions,history, keyValueMap, keyValues} = this.props
         const {username, usernameError, loading, note} = this.state
         const LogoutButton = (() => (
             <Button type="primary" onClick={() => {
@@ -179,11 +180,12 @@ class UserProfileContainer extends React.Component {
                 (o) => noteElements.push(<div key={o._id}>
 					<Textarea name="note" id={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange}
                               defaultValue={o.value}/>
-                    <Button raised id={o._id} onClick={this.deleteNote}>Delete</Button>
+                    <DeleteIconButton id={o._id} onClick={(e) => this.deleteNote(e, o)} />
                 </div>)
             )
         }
 
+        const linkedInCode = (keyValues&&keyValues.results?keyValues.results.find(x => x.key === 'linkedInCode'):null)
         return (
             <BaseLayout>
                 <h1>Profile</h1>
@@ -200,8 +202,10 @@ class UserProfileContainer extends React.Component {
                 <Divider />
                 <h2>Social platforms</h2>
 
-                {keyValueMap.linkedInCode?'Connected to linkedin':
+                {linkedInCode&&linkedInCode.value&&linkedInCode.status!='creating'?<LinkedInProfileContainer/>:
                 <Button raised onClick={this.handelLinkedInConnect}>Connect with LinkedIn</Button>}
+
+
 
                 <Divider />
                 <h2>Notes</h2>

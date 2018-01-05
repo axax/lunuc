@@ -108,7 +108,7 @@ class DrawerLayout extends React.Component {
     };
 
     render() {
-        const { classes, theme, title, children } = this.props;
+        const { classes, theme, title, sidebar, children } = this.props;
 
         return (
             <div className={classes.root}>
@@ -142,16 +142,7 @@ class DrawerLayout extends React.Component {
                                 </IconButton>
                             </div>
                             <Divider />
-                            <List className={classes.list}>
-                                <ListItem button>
-                                    <ListItemIcon>
-                                        <SendIcon />
-                                    </ListItemIcon>
-                                    <ListItemText inset primary="Sent mail" />
-                                </ListItem>
-                            </List>
-                            <Divider />
-                            <List className={classes.list}></List>
+                            {sidebar}
                         </div>
                     </Drawer>
                     <main className={classes.content}>

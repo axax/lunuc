@@ -9,6 +9,7 @@ import ApolloClient from 'apollo-client'
 import {Link} from 'react-router-dom'
 import * as UserActions from '../actions/UserAction'
 import * as ErrorHandlerAction from '../actions/ErrorHandlerAction'
+import {Button, Input} from '../components/ui'
 
 class LoginContainer extends React.Component {
 	state = {
@@ -81,17 +82,15 @@ class LoginContainer extends React.Component {
 				{loading ? <span>loading...</span> : ''}
 				{error ? <span>{error}</span> : ''}
 
-				<form onSubmit={this.login.bind(this)}>
 					<label><b>Username</b></label>
-					<input value={username} onChange={this.handleInputChange} type="text" placeholder="Enter Username"
+					<Input value={username} onChange={this.handleInputChange} type="text" placeholder="Enter Username"
 								 name="username" required/>
 
 					<label><b>Password</b></label>
-					<input value={password} onChange={this.handleInputChange} type="password" placeholder="Enter Password"
+					<Input value={password} onChange={this.handleInputChange} type="password" placeholder="Enter Password"
 								 name="password" required/>
 
-					<button type="submit">Login</button>
-				</form>
+					<Button onClick={this.login.bind(this)}>Login</Button>
 
 				<p>Don&apos;t have an account? <Link to="/signup">Sign up</Link></p>
 			</div>

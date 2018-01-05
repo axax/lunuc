@@ -13,6 +13,15 @@ export const Button = ({ raised,  ...rest }) => {
     return <button {...rest} />
 }
 
+// IconButton
+export const DeleteIconButton = ({...rest}) => {
+    // map type to color
+    return <button{...rest} >
+        Delete
+    </button>
+}
+
+
 // input
 export const Input = ({ ...rest }) => {
     return <input {...rest} />
@@ -118,4 +127,19 @@ export {default as DrawerLayout} from './DrawerLayout'
 // divider
 export const Divider = ({ ...rest }) => {
     return <hr {...rest} />
+}
+
+
+
+// list
+export const MenuList = ({children, ...rest}) => {
+    return <ul {...rest}>
+        {children}
+    </ul>
+}
+
+export const MenuListItem = ({primary, ...rest}) => {
+    return <li {...rest}>
+        <span>{primary}</span>
+    </li>
 }

@@ -15,6 +15,13 @@ export const Button = ({ raised, children, ...rest }) => {
     return <AntButton {...rest}>{children}</AntButton>
 }
 
+export const DeleteIconButton = ({...rest}) => {
+    // map type to color
+    return <AntButton shape="circle" icon="delete" {...rest} />
+}
+
+
+
 
 // input & textarea
 import AntInput from  'antd/lib/input'
@@ -92,3 +99,19 @@ export {default as DrawerLayout} from './DrawerLayout'
 // divider
 export { default as Divider } from 'antd/lib/divider'
 
+
+// list
+import { default as AntMenu } from 'antd/lib/menu'
+
+export const MenuList = ({...rest}) => {
+    return <AntMenu theme="dark" mode="inline" {...rest} />
+}
+
+export class MenuListItem extends React.Component {
+    render() {
+        const {primary, ...rest} = this.props;
+        return <AntMenu.Item {...rest}>
+            <span>{primary}</span>
+        </AntMenu.Item>
+    }
+}

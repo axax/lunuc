@@ -31,6 +31,17 @@ export const Button = ({type, ...rest}) => {
     return <MaterialButton color={type} {...rest} />
 }
 
+// IconButton
+import MaterialIconButton from 'material-ui/IconButton'
+import MaterialDeleteIcon from 'material-ui-icons/Delete'
+
+export const DeleteIconButton = ({...rest}) => {
+    // map type to color
+    return <MaterialIconButton{...rest} >
+        <MaterialDeleteIcon />
+    </MaterialIconButton>
+}
+
 // Input
 import MaterialTextField from 'material-ui/TextField'
 
@@ -118,7 +129,7 @@ import MaterialDialog, {
 } from 'material-ui/Dialog'
 
 
-export const Dialog = withMobileDialog()(({children,onClose,actions,title,...rest}) => {
+export const Dialog = withMobileDialog()(({children, onClose, actions, title, ...rest}) => {
     return <MaterialDialog
         aria-labelledby="responsive-dialog-title"
         onClose={onClose}
@@ -141,14 +152,14 @@ export const Dialog = withMobileDialog()(({children,onClose,actions,title,...res
                     )
                 })}
             </DialogActions>
-        :''}
+            : ''}
     </MaterialDialog>
 })
 
 //drawer
 import MaterialDrawer from 'material-ui/Drawer'
 
-export const Drawer = ({children,...rest}) => {
+export const Drawer = ({children, ...rest}) => {
     return <MaterialDrawer {...rest}>
         {children}
     </MaterialDrawer>
@@ -161,3 +172,27 @@ export {default as DrawerLayout} from './DrawerLayout'
 
 // divider
 export Divider from 'material-ui/Divider'
+
+
+// list
+import MaterialList, {
+    ListItem as MaterialListItem,
+    ListItemIcon as MaterialListItemIcon,
+    ListItemText as MaterialListItemText
+} from 'material-ui/List'
+
+export const MenuList = ({children, ...rest}) => {
+    return <MaterialList {...rest}>
+        {children}
+    </MaterialList>
+}
+
+export const MenuListItem = ({primary, ...rest}) => {
+    return <MaterialListItem {...rest}>
+        <MaterialListItemText
+            primary={primary}
+            secondary={null}
+        />
+    </MaterialListItem>
+}
+

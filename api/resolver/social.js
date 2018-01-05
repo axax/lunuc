@@ -6,7 +6,7 @@ import {ObjectId} from 'mongodb'
 const client_id='772exdl15hhf0d', client_secret='7iKphLFIh8QmqnPT'
 
 
-
+//https://www.linkedin.com/psettings/member-data
 export const socialResolver = (db) => ({
     linkedin: async ({redirectUri}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
@@ -18,12 +18,13 @@ export const socialResolver = (db) => ({
         const authRequest = async () => {
             const response =  (await request({
                 method: 'GET',
-                uri: 'https://api.linkedin.com/v1/people/~?format=json',
+                uri: 'https://api.linkedin.com/v1/people/~:(id,first-name,last-name,maiden-name,formatted-name,phonetic-first-name,phonetic-last-name,formatted-phonetic-name,headline,location,industry,current-share,num-connections,num-connections-capped,summary,specialties,positions,picture-url,site-standard-profile-request,api-standard-profile-request,public-profile-url,email-address)?format=json',
                 headers: {
                         Authorization: `Bearer ${keyvalueMap.linkedInAccessToken}`
                 },
                 json: true
             }))
+            //console.log(response.positions.values[0])
             return response
         }
 

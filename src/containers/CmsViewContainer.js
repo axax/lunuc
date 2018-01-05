@@ -5,7 +5,7 @@ import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
 import logger from '../logger'
-import {DrawerLayout,Button} from '../components/ui/'
+import {DrawerLayout,Button,MenuList,MenuListItem,Divider} from '../components/ui/'
 
 
 
@@ -22,6 +22,19 @@ class CmsViewContainer extends React.Component {
             return <BaseLayout />
 
 
+		const sidebar = () => <div>
+			<MenuList>
+				<MenuListItem button primary="Text label" />
+			</MenuList>
+            <Divider />
+            <MenuList></MenuList>
+		</div>
+
+		const json = {
+			components:[
+				{type:'label'}
+			]
+		}
 
 		const content = <div>
 
@@ -35,7 +48,7 @@ class CmsViewContainer extends React.Component {
 			<div id="container">
                 {user.isAuthenticated ?
 
-					<DrawerLayout
+					<DrawerLayout sidebar={sidebar()}
 						title={'Edit Page "'+cmsPage.slug+'"'}>
 
 
