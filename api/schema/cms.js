@@ -3,6 +3,8 @@ export const cmsSchemaRaw = `
         _id: ID! 
         createdBy: UserPublic!
         slug: String 
+        htmlContent: String 
+        jsonContent: String 
         status: String
     }
     
@@ -24,7 +26,7 @@ export const cmsSchemaRaw = `
 		createCmsPage (
 			slug: String!
 		): CmsPage
-		updateCmsPage(_id: ID!, slug: String!): CmsPage	
+		updateCmsPage(_id: ID!, slug: String, jsonContent: String): CmsPage	
 		deleteCmsPage(_id: ID!): CmsPage
 	}
 `

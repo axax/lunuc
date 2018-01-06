@@ -108,7 +108,7 @@ class WordContainer extends React.Component {
                     title: 'Actions',
                     dataIndex: 'action'
                 }],
-            dataSource = (words ? words.results.map((word) => ({
+            dataSource = (words && words.results ? words.results.map((word) => ({
                 de: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'de')}
                           suppressContentEditableWarning contentEditable>{word.de}</span>,
                 en: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'en')}

@@ -163,9 +163,10 @@ class UserProfileContainer extends React.Component {
         const LogoutButton = (() => (
             <Button type="primary" onClick={() => {
                 this.props.setKeyValue({key:'lastLogoutClick',value:new Date()}).then(()=>{
+                    history.push('/')
+
                     localStorage.removeItem('token')
                     userActions.setUser(null, false)
-                    history.push('/')
                 })
             }}>Logout</Button>
         ))

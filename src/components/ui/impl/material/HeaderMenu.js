@@ -38,10 +38,14 @@ class HeaderMenu extends React.Component {
         return (
             <AppBar position='static'>
                 <Toolbar>
+                    <div style={{flex:1}}>
                     {items.map((item,i) => {
                         if( item.auth && isAuthenticated || !item.auth)
                             return <Button raised={(selectedTo===item.to)} color={(selectedTo===item.to?'default':'contrast')} onClick={this.linkTo.bind(this,item)} key={i}>{item.name}</Button>
                     })}
+                    </div>
+                    {!isAuthenticated && <Button color="contrast" onClick={this.linkTo.bind(this,{to:'/login'})}>Login</Button>}
+
                 </Toolbar>
             </AppBar>
         );

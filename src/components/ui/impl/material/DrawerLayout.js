@@ -14,7 +14,7 @@ import ChevronLeftIcon from 'material-ui-icons/ChevronLeft'
 import ChevronRightIcon from 'material-ui-icons/ChevronRight'
 import SendIcon from 'material-ui-icons/Send'
 
-const drawerWidth = 240
+const drawerWidth = '500px'
 
 const styles = theme => ({
     root: {
@@ -38,8 +38,8 @@ const styles = theme => ({
         }),
     },
     appBarShift: {
-        marginLeft: drawerWidth,
-        width: `calc(100% - ${drawerWidth}px)`,
+        /*marginLeft: drawerWidth,*/
+        width: `calc(100% - ${drawerWidth})`,
         transition: theme.transitions.create(['width', 'margin'], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
@@ -100,26 +100,27 @@ class DrawerLayout extends React.Component {
     }
 
     handleDrawerOpen = () => {
-        this.setState({ open: true });
+        this.setState({ open: true })
     };
 
     handleDrawerClose = () => {
-        this.setState({ open: false });
+        this.setState({ open: false })
     };
 
     render() {
-        const { classes, theme, title, sidebar, children } = this.props;
+        const { classes, theme, title, sidebar, children } = this.props
+        const { open } = this.state
 
         return (
             <div className={classes.root}>
                 <div className={classes.appFrame}>
-                    <AppBar className={classNames(classes.appBar, this.state.open && classes.appBarShift)}>
-                        <Toolbar disableGutters={!this.state.open}>
+                    <AppBar className={classNames(classes.appBar, open && classes.appBarShift)}>
+                        <Toolbar disableGutters={!open}>
                             <IconButton
                                 color="contrast"
                                 aria-label="open drawer"
                                 onClick={this.handleDrawerOpen}
-                                className={classNames(classes.menuButton, this.state.open && classes.hide)}
+                                className={classNames(classes.menuButton, open && classes.hide)}
                             >
                                 <MenuIcon />
                             </IconButton>
@@ -131,9 +132,9 @@ class DrawerLayout extends React.Component {
                     <Drawer
                         type="permanent"
                         classes={{
-                            paper: classNames(classes.drawerPaper, !this.state.open && classes.drawerPaperClose),
+                            paper: classNames(classes.drawerPaper, !open && classes.drawerPaperClose),
                         }}
-                        open={this.state.open}
+                        open={open}
                     >
                         <div className={classes.drawerInner}>
                             <div className={classes.drawerHeader}>
