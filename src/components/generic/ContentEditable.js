@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom'
 
 
 class ContentEditable extends React.Component {
-    lastHtml = []
+    lastText = []
 
     constructor(props) {
         super(props)
@@ -12,32 +12,32 @@ class ContentEditable extends React.Component {
     }
 
     render(){
-        const {style} = this.props
-        this.lastHtml['onChange'] = this.lastHtml['onBlur'] =this.props.children
+        const {style, children} = this.props
+        this.lastText['onChange'] = this.lastText['onBlur'] =this.props.children
+
         return <div
             style={style}
             onInput={this.emitChange.bind(this,'onChange')}
             onBlur={this.emitChange.bind(this,'onBlur')}
-            contentEditable
-            dangerouslySetInnerHTML={{__html: this.props.children}}></div>
+            contentEditable dangerouslySetInnerHTML={{__html: this.props.children}} />
     }
 
     shouldComponentUpdate(nextProps){
-        return nextProps.children !== ReactDOM.findDOMNode(this).innerHTML
+        return nextProps.children !== ReactDOM.findDOMNode(this).innerText
     }
 
     componentDidUpdate() {
-        if ( this.props.children !== ReactDOM.findDOMNode(this).innerHTML ) {
-            ReactDOM.findDOMNode(this).innerHTML = this.props.children;
+        if ( this.props.children !== ReactDOM.findDOMNode(this).innerText ) {
+            ReactDOM.findDOMNode(this).innerText = this.props.children;
         }
     }
 
     emitChange(prop){
-        var html = ReactDOM.findDOMNode(this).innerHTML
-        if (this.props[prop] && html !== this.lastHtml[prop]) {
-            this.props[prop](html)
+        var text = ReactDOM.findDOMNode(this).innerText
+        if (this.props[prop] && text !== this.lastText[prop]) {
+            this.props[prop](text)
         }
-        this.lastHtml[prop] = html
+        this.lastText[prop] = text
     }
 }
 

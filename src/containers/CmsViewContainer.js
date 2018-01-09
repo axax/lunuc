@@ -26,6 +26,8 @@ class JsonDom extends React.Component {
 
     constructor(props) {
         super(props)
+        this.state = { hasError: false }
+
     }
 
     emitChange(id,v,save){
@@ -66,10 +68,24 @@ class JsonDom extends React.Component {
 		return h
 	}
 
+
+    componentDidCatch(error, info) {
+        this.setState({ hasError: true })
+    }
+
+    componentWillReceiveProps(nextProps, nextState){
+        this.setState({ hasError: false })
+
+    }
+
     render() {
     	const {json} = this.props
-
-		return this.parseRec(json,0)
+    	const {hasError} = this.state
+        if (hasError) {
+            return <strong>There is something wrong with your json. See console.log for more detail.</strong>
+		}else{
+            return this.parseRec(json,0)
+		}
 
     }
 
@@ -89,9 +105,6 @@ class CmsViewContainer extends React.Component {
     state = {
         jsonContent: ''
     }
-
-	componentWillMount() {
-	}
 
 
     saveCmsPage = (value, data, key) => {
@@ -140,6 +153,7 @@ class CmsViewContainer extends React.Component {
             json = eval('(' + jsonContent + ')') //JSON.parse()
 
         }catch(e){
+        	console.log(jsonContent)
             jsonError=e
         }
 
