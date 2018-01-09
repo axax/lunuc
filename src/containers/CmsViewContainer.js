@@ -12,11 +12,15 @@ import update from 'immutability-helper'
 
 class JsonDom extends React.Component {
 
+
     components = {
 		'Button': Button,
 		'Divider': Divider,
 		'Col': Col,
 		'Row': Row,
+		'h1': ({ id,...rest }) => <h1><ContentEditable onChange={(v)=>this.emitChange(id,v)} onBlur={(v)=>this.emitChange(id,v,true)} {...rest} /></h1>,
+		'h2': ({ id,...rest }) => <h2><ContentEditable onChange={(v)=>this.emitChange(id,v)} onBlur={(v)=>this.emitChange(id,v,true)} {...rest} /></h2>,
+		'p': ({ id,...rest }) => <p><ContentEditable onChange={(v)=>this.emitChange(id,v)} onBlur={(v)=>this.emitChange(id,v,true)} {...rest} /></p>
 	}
 
 
@@ -24,15 +28,39 @@ class JsonDom extends React.Component {
         super(props)
     }
 
-    parseRec(a){
+    emitChange(id,v,save){
+        const {json, onJsonChange } = this.props
+
+		if( !onJsonChange )
+			return
+
+        var jsonClone = Object.assign([], json)
+    	const ids = id.split('.')
+		ids.shift()
+
+		let cur = jsonClone
+		ids.forEach((i)=>{
+        	if( cur.c ){
+        		cur = cur.c[i]
+			}else{
+        		cur = cur[i]
+			}
+		})
+		cur.c = v
+
+        onJsonChange(jsonClone,save)
+	}
+
+    parseRec(a,rootKey){
         if( !a ) return null
 		if( a.constructor === String) return a
         let h = []
-        a.forEach(({type,props,children,t,p,c},key) => {
+        a.forEach(({type,props,children,t,p,c},i) => {
+        	const key = rootKey+'.'+i
             h.push(React.createElement(
                 this.components[type || t] || type || t || 'div',
-				{key,...props,...p},
-                this.parseRec(children||c)
+				{id:key,key,...props,...p},
+                this.parseRec(children||c,key)
             ))
         })
 		return h
@@ -41,10 +69,15 @@ class JsonDom extends React.Component {
     render() {
     	const {json} = this.props
 
-		return this.parseRec(json)
+		return this.parseRec(json,0)
 
     }
 
+}
+
+JsonDom.propTypes = {
+    json: PropTypes.array,
+    onJsonChange: PropTypes.func
 }
 
 
@@ -63,6 +96,7 @@ class CmsViewContainer extends React.Component {
 
     saveCmsPage = (value, data, key) => {
         const t = value.trim()
+		console.log('save cms',key)
         if (t != data[key]) {
             const {updateCmsPage} = this.props
             updateCmsPage(
@@ -76,11 +110,17 @@ class CmsViewContainer extends React.Component {
         this.setState({jsonContent: value.trim()})
     }
 
+    handleJsonChange = (json,save) => {
+    	const jsonContent = JSON.stringify(json,null,4)
+		if( save ){
+            this.saveCmsPage(jsonContent,this.props.cmsPage,'jsonContent')
+		}else{
+            this.setState({jsonContent})
+        }
+    }
+
     componentWillReceiveProps(nextProps) {
         if (nextProps.cmsPage) {
-        	/*let prettyJson
-            prettyJson = JSON.stringify(JSON.parse(nextProps.cmsPage.jsonContent),null,4)*/
-
             this.setState({jsonContent:nextProps.cmsPage.jsonContent})
         }
     }
@@ -111,7 +151,8 @@ class CmsViewContainer extends React.Component {
             <Divider />
 
 			<ContentEditable
-				 onChange={this.handleJsonContentChange}
+				style={{backgroundColor:'#fff',minHeight:200,overflow:'auto', whiteSpace: 'pre', fontFamily: 'monospace'}}
+				onChange={this.handleJsonContentChange}
 				 onBlur={value => this.saveCmsPage.bind(this)(value, cmsPage, 'jsonContent')}>{jsonContent}</ContentEditable>
 
 			{jsonError && jsonError.message}
@@ -136,7 +177,7 @@ class CmsViewContainer extends React.Component {
 		const content = <div>
 			<h1>{cmsPage.slug}</h1>
 			{cmsPage.htmlContent}
-			<JsonDom json={json} />
+			<JsonDom json={json} onJsonChange={this.handleJsonChange} />
 		</div>
 
 

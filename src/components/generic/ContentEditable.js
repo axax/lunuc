@@ -4,13 +4,18 @@ import ReactDOM from 'react-dom'
 
 
 class ContentEditable extends React.Component {
+    lastHtml = []
+
     constructor(props) {
         super(props)
+
     }
 
     render(){
+        const {style} = this.props
+        this.lastHtml['onChange'] = this.lastHtml['onBlur'] =this.props.children
         return <div
-            style={{backgroundColor:'#fff',minHeight:200,overflow:'auto', whiteSpace: 'pre', fontFamily: 'monospace'}}
+            style={style}
             onInput={this.emitChange.bind(this,'onChange')}
             onBlur={this.emitChange.bind(this,'onBlur')}
             contentEditable
@@ -29,15 +34,15 @@ class ContentEditable extends React.Component {
 
     emitChange(prop){
         var html = ReactDOM.findDOMNode(this).innerHTML
-        if (this.props[prop] && html !== this.lastHtml) {
-
+        if (this.props[prop] && html !== this.lastHtml[prop]) {
             this.props[prop](html)
         }
-        this.lastHtml = html
+        this.lastHtml[prop] = html
     }
 }
 
 ContentEditable.propTypes = {
+    style: PropTypes.object,
     onBlur: PropTypes.func,
     onChange: PropTypes.func
 }
