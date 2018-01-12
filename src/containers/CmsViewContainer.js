@@ -8,6 +8,7 @@ import ContentEditable from '../components/generic/ContentEditable'
 import logger from '../logger'
 import {DrawerLayout,Button,MenuList,MenuListItem,Divider,Col,Row,Textarea} from '../components/ui/'
 import update from 'immutability-helper'
+import Hook from '../../util/hook'
 
 
 class JsonDom extends React.Component {
@@ -27,6 +28,9 @@ class JsonDom extends React.Component {
     constructor(props) {
         super(props)
         this.state = { hasError: false }
+
+        Hook.call('JsonDom', {components:this.components})
+
 
     }
 
@@ -160,7 +164,7 @@ class CmsViewContainer extends React.Component {
 
 		const sidebar = () => <div>
 			<MenuList>
-				<MenuListItem button primary="Text label" />
+				<MenuListItem onClick={e=>{window.location='/'}} button primary="Home" />
 			</MenuList>
             <Divider />
 
@@ -172,20 +176,6 @@ class CmsViewContainer extends React.Component {
 			{jsonError && jsonError.message}
 
 		</div>
-
-
-		/*const json = [
-				{t:'div', p: {}, c: [
-					{t:'h1',c:'T-Shirt'},
-					{t:'h2',c:'Wowi'},
-					{t:'Row',c:[
-						{t:'Col',p:{md:6},c:'ss'},
-						{t:'Col',p:{md:6},c:[{t:'img',p:{src:'http://majoumo.com/images/shirt/shirt2.jpg'}}]}
-					]},
-					{t:'Divider'},
-					{t:'Button',c:'zzz'}
-				]}
-			]*/
 
 
 		const content = <div>

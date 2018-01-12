@@ -22,7 +22,7 @@
     "client": "API_PORT=3000 nodemon ./server/index.js --watch server",
     "client:dev": "API_PORT=3000 webpack-dev-server",
     "build": "NODE_ENV=production webpack -p",
-    "api": "PORT=3000 nodemon ./api/index.js --watch api",
+    "api": "PORT=3000 nodemon ./api/index.js --watch api --watch extensions",
     "start": "echo \"Build and start api and client concurrently\" && npm run build && npm run api & npm run client",
     "start:dev": "echo \"Start api and client in dev mode concurrently\" && npm run api & npm run client:dev",
     "heroku-postbuild": "npm run build"

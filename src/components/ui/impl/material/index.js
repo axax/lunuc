@@ -196,3 +196,9 @@ export const MenuListItem = ({primary, ...rest}) => {
     </MaterialListItem>
 }
 
+
+// snackbar
+import MaterialSnackbar from 'material-ui/Snackbar'
+export const Snackbar = ({children, ...rest}) => {
+    return <MaterialSnackbar message={children} {...rest} />
+}

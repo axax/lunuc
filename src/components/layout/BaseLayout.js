@@ -4,39 +4,50 @@ import {connect} from 'react-redux'
 import {Layout, LayoutHeader, LayoutContent, LayoutFooter, HeaderMenu} from '../ui/index'
 import ErrorHandlerContainer from '../../containers/ErrorHandlerContainer'
 import NotificationContainer from '../../containers/NotificationContainer'
-
-const menuEntries = [
-    {name: 'Home', to: '/'},
-    {name: 'Translate', to: '/translate', auth: true},
-    {name: 'Search', to: '/search', auth: true},
-    {name: 'My chats', to: '/chat', auth: true},
-    {name: 'Words', to: '/word', auth: true},
-    {name: 'Posts', to: '/post', auth: true},
-    {name: 'Cms', to: '/cms', auth: true},
-    {name: 'Profile', to: '/profile'}
-]
+import Hook from '../../../util/hook'
 
 
-const BaseLayout = ({children, isAuthenticated}) => (
-    <Layout className="layout">
-        <LayoutHeader>
-            <HeaderMenu items={menuEntries}/>
-        </LayoutHeader>
+class BaseLayout extends React.Component {
 
-        <LayoutContent style={{ padding: '0 50px' }}>
+    menuEntries = [
+        {name: 'Home', to: '/'},
+        {name: 'Translate', to: '/translate', auth: true},
+        {name: 'Search', to: '/search', auth: true},
+        {name: 'Words', to: '/word', auth: true},
+        {name: 'Posts', to: '/post', auth: true},
+        {name: 'Cms', to: '/cms', auth: true},
+        {name: 'Profile', to: '/profile'}
+    ]
 
-            <ErrorHandlerContainer />
-            <NotificationContainer />
+    constructor(props) {
+        super(props)
+        Hook.call('MenuMenu', {menuEntries: this.menuEntries})
+    }
+
+    render(){
+        const {children, isAuthenticated} = this.props
+
+        return <Layout className="layout">
+            <LayoutHeader>
+                <HeaderMenu items={this.menuEntries}/>
+            </LayoutHeader>
+
+            <LayoutContent style={{ padding: '0 50px' }}>
+
+                <ErrorHandlerContainer />
+                <NotificationContainer />
 
 
 
-            {children}
-        </LayoutContent>
-        <LayoutFooter style={{ textAlign: 'center' }}>
-            ©2016 Created by simon
-        </LayoutFooter>
-    </Layout>
-)
+                {children}
+            </LayoutContent>
+            <LayoutFooter style={{ textAlign: 'center' }}>
+                ©2016 Created by simon
+            </LayoutFooter>
+        </Layout>
+    }
+}
+
 
 BaseLayout.propTypes = {
     /* UserReducer */

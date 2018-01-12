@@ -3,31 +3,60 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
 import * as Actions from '../actions/ErrorHandlerAction'
+import {Dialog} from '../components/ui/'
 
 
-const ErrorHandlerContainer = ({messages}) => {
 
-	let pairs = []
 
-	if (messages) {
-		Object.keys(messages).forEach(
-			(key) => pairs.push(<div key={key}>{messages[key].msg}</div>)
-		)
+class ErrorHandlerContainer extends React.Component {
+
+    constructor(props) {
+        super(props)
+        this.state = {
+        	openDialog:0
+        }
+    }
+
+    handleDialogClose(key){
+        this.props.actions.clearError(key)
+
+    	this.setState({openDialog: this.state.openDialog+1})
 	}
 
-	if( pairs.length>0 ){
-		return <div>
-			{pairs}
-		</div>
-	}
+    componentWillReceiveProps(nextProps){
+        this.setState({openDialog: 0})
+    }
 
-	return null
+    render(){
 
+    	const {messages} = this.props
+
+		const dialogs = []
+
+        if (messages) {
+            Object.keys(messages).forEach(
+                (key,i) => dialogs.push(<Dialog key={key} open={this.state.openDialog===i} onClose={this.handleDialogClose.bind(this,key)}
+											  actions={[{key: 'ok', label: 'Ok', type:'primary'}]} title="Error">
+                    {messages[key].msg}
+				</Dialog>)
+            )
+        }
+
+
+        if( dialogs.length>0 ){
+            return <div>
+                {dialogs}
+			</div>
+        }
+
+        return null
+    }
 }
 
 
 ErrorHandlerContainer.propTypes = {
-	messages: PropTypes.object.isRequired
+	messages: PropTypes.object.isRequired,
+    actions: PropTypes.object.isRequired
 }
 
 

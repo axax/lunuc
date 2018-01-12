@@ -7,45 +7,58 @@ import SignUpContainer from '../../containers/SignUpContainer'
 import UserProfileContainer from '../../containers/UserProfileContainer'
 import SearchWhileSpeechContainer from '../../containers/SearchWhileSpeechContainer'
 import LiveSpeechTranslaterContainer from '../../containers/LiveSpeechTranslaterContainer'
-import ChatContainer from '../../containers/ChatContainer'
 import WordContainer from '../../containers/WordContainer'
 import PostContainer from '../../containers/PostContainer'
 import CmsViewContainer from '../../containers/CmsViewContainer'
 import CmsContainer from '../../containers/CmsContainer'
 import Home from '../Home'
 import PrivateRoute from './PrivateRoute'
+import Hook from '../../../util/hook'
 
 class Routes extends React.Component {
 
+    routes = [
+        {exact: true, path: '/', component: Home},
+        {exact: true, path: '/search', component: SearchWhileSpeechContainer},
+        {exact: true, path: '/translate', component: LiveSpeechTranslaterContainer},
+        {exact: true, path: '/word/:page*', component: WordContainer},
+        {exact: true, path: '/post/:id*', component: PostContainer},
+        {exact: true, path: '/cms/view/:slug', component: CmsViewContainer},
+        {exact: true, path: '/cms', component: CmsContainer},
+        {exact: true, path: '/cms/:page', component: CmsContainer},
+        {path: '/login', component: LoginContainer},
+        {path: '/signup', component: SignUpContainer},
+        {private: true, path: '/profile', component: UserProfileContainer},
+    ]
 
-	render() {
+    constructor(props) {
+        super(props)
+        Hook.call('Routes', {routes: this.routes})
+    }
 
-		const {isAuthenticated} = this.props
+    render() {
 
-		return <Router>
-			<div id="router">
-				<Route exact path="/" component={Home}/>
-				<Route exact path="/search" component={SearchWhileSpeechContainer}/>
-				<Route exact path="/translate" component={LiveSpeechTranslaterContainer}/>
-				<Route exact path="/chat/:id*" component={ChatContainer}/>
-				<Route exact path="/word/:page*" component={WordContainer}/>
-				<Route exact path="/post/:id*" component={PostContainer}/>
-				<Route exact path="/cms/view/:slug" component={CmsViewContainer}/>
-				<Route exact path="/cms" component={CmsContainer}/>
-				<Route exact path="/cms/:page" component={CmsContainer}/>
-				<Route path="/login" component={LoginContainer}/>
-				<Route path="/signup" component={SignUpContainer}/>
+        const {isAuthenticated} = this.props
 
-				<PrivateRoute path="/profile" isAuthenticated={isAuthenticated} component={UserProfileContainer}/>
-			</div>
-		</Router>
-	}
+
+        return <Router>
+            <div id="router">
+                {this.routes.map((o, i) => {
+                    if (o.private) {
+                        return <PrivateRoute key={i} path={o.path} isAuthenticated={isAuthenticated} component={o.component}/>
+                    } else {
+                        return <Route key={i} path={o.path} exact={o.exact} component={o.component}/>
+                    }
+                })}
+            </div>
+        </Router>
+    }
 }
 
 
 Routes.propTypes = {
     /* UserReducer */
-	isAuthenticated: PropTypes.bool
+    isAuthenticated: PropTypes.bool
 }
 
 
@@ -53,10 +66,10 @@ Routes.propTypes = {
  * Map the state to props.
  */
 const mapStateToProps = (store) => {
-	const {user} = store
-	return {
-		isAuthenticated: user.isAuthenticated
-	}
+    const {user} = store
+    return {
+        isAuthenticated: user.isAuthenticated
+    }
 }
 
 
@@ -65,5 +78,5 @@ const mapStateToProps = (store) => {
  * the Redux store.
  */
 export default connect(
-	mapStateToProps
+    mapStateToProps
 )(Routes)

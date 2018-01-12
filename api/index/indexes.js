@@ -5,6 +5,7 @@ export const createAllIndexes = async (db) =>{
     // create indexes
     const postCollection = db.collection('Post')
 
+    // full text search
     await postCollection.createIndex({'search.*': 'text', 'title': 'text'}, {
         name: 'postFTS',
         weights: {

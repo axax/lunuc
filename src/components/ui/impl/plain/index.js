@@ -143,3 +143,9 @@ export const MenuListItem = ({primary, ...rest}) => {
         <span>{primary}</span>
     </li>
 }
+
+
+// snackbar
+export const Snackbar = ({ message, ...rest}) => {
+    return <div style={{padding:'20px',position:'fixed', top:0, background:'#000', color:'#fff'}} {...rest}>{message}</div>
+}

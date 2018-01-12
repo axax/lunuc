@@ -115,3 +115,13 @@ export class MenuListItem extends React.Component {
         </AntMenu.Item>
     }
 }
+
+// snackbar
+import { notification } from 'antd';
+export const Snackbar = ({ message, ...rest}) => {
+    notification.open({
+        message
+    })
+    return <div></div>
+}
+

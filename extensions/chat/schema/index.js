@@ -1,4 +1,4 @@
-export const chatSchemaRaw = `
+export default `
 
   # Same as above but with ids resolved
   type Message {
