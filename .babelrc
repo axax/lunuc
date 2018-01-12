@@ -4,5 +4,15 @@
     "react",
     "stage-0",
     "babel-polyfill"
+  ],
+  "plugins": [
+    ["module-alias", [
+      { "src": "./client", "expose": "client" },
+      { "src": "./util", "expose": "util" },
+      { "src": "./server", "expose": "server" },
+      { "src": "./api", "expose": "api" },
+      { "src": "./gensrc/ui.js", "expose": "ui" },
+      { "src": "./gensrc", "expose": "gen" }
+    ]]
   ]
 }

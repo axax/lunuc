@@ -1,0 +1,13 @@
+{
+  "extensions": [
+    "chat",
+    "stockticker",
+    "word",
+    "post",
+    "livetranslator",
+    "speechsearch"
+  ],
+  "ui":"material",
+  "apollo_cache":true,
+  "debug":true
+}

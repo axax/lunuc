@@ -9,9 +9,7 @@ const Hook = {
     call: function (name, args) {
         if ('undefined' != typeof( Hook.hooks[name] )) {
             for (var i = 0; i < Hook.hooks[name].length; ++i) {
-                if (true != Hook.hooks[name][i](args)) {
-                    break
-                }
+                Hook.hooks[name][i](args)
             }
         }
     }

@@ -1,3 +1,4 @@
+import 'gen/extensions-server'
 import express from 'express'
 import graphqlHTTP from 'express-graphql'
 import {createServer} from 'http'

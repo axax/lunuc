@@ -9,8 +9,8 @@ import AddChatUser from '../components/chat/AddChatUser'
 import AddChatMessage from '../components/chat/AddChatMessage'
 import update from 'immutability-helper'
 import {connect} from 'react-redux'
-import Util from '../../../src/util'
-import BaseLayout from '../../../src/components/layout/BaseLayout'
+import Util from 'client/util'
+import BaseLayout from 'client/components/layout/BaseLayout'
 
 
 class ChatContainer extends React.Component {

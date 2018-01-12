@@ -1,6 +1,6 @@
-import Util from '../../../api/util'
+import Util from 'api/util'
 import {ObjectId} from 'mongodb'
-import {pubsub} from '../../../api/subscription'
+import {pubsub} from 'api/subscription'
 import {withFilter} from 'graphql-subscriptions'
 
 export default (db) => ({

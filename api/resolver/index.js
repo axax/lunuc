@@ -1,7 +1,5 @@
 import {commonResolver} from './common'
 import {userResolver} from './user'
-import {wordResolver} from './word'
-import {postResolver} from './post'
 import {notificationResolver} from './notification'
 import {keyvalueResolver} from './keyvalue'
 import {cmsResolver} from './cms'
@@ -22,8 +20,6 @@ export const resolver = (db) => {
         ...userResolver(db),
         ...notificationResolver(db),
         ...keyvalueResolver(db),
-        ...wordResolver(db),
-        ...postResolver(db),
         ...cmsResolver(db),
         ...systemResolver(db),
         ...socialResolver(db)

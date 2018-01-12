@@ -1,4 +1,4 @@
-import Hook from '../../util/hook'
+import Hook from 'util/hook'
 import ChatContainer from './containers/ChatContainer'
 
 // add routes for this extension

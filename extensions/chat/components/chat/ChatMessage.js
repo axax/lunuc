@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Util from '../../../../src/util'
+import Util from 'client/util'
 
 const ChatMessage = ({message, onClick, onDeleteClick}) => {
 
