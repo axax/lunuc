@@ -1,7 +1,7 @@
 {
   "extensions": [
     "chat",
-    "stockticker",
+    "finance",
     "word",
     "post",
     "livetranslator",

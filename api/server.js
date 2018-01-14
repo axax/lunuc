@@ -79,14 +79,21 @@ export const start = (done) => {
 
 
 export const stop = (server, done) => {
-    if (server) {
-
+    if (server ) {
         console.log(`Stop server running on http://localhost:${PORT}`)
-        server._db.close(()=> {
+
+        if( server._db && server._db.close ){
+            server._db.close(()=> {
+                server.close(() => {
+                    done()
+                })
+            })
+        }else{
             server.close(() => {
                 done()
             })
-        })
+        }
+
     }else {
         done()
     }

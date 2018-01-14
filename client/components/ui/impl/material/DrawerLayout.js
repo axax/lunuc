@@ -14,7 +14,7 @@ import ChevronLeftIcon from 'material-ui-icons/ChevronLeft'
 import ChevronRightIcon from 'material-ui-icons/ChevronRight'
 import SendIcon from 'material-ui-icons/Send'
 
-const drawerWidth = '500px'
+const drawerWidth = '700px'
 
 const styles = theme => ({
     root: {

@@ -55,6 +55,9 @@ const Util = {
             throw new Error('User is not logged in (or authenticated).')
         }
     },
+    isUserLoggedIn: (context) => {
+        return (context && context.username)
+    },
     checkIfUserHasCapability: async (db, context, capability) => {
         const hasCapability = await Util.userHasCapability(db, context, capability)
         if (!hasCapability) {

@@ -9,7 +9,13 @@
     "npm": "5.3.0"
   },
   "jest": {
-    "verbose": true
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/test/fileMock.js",
+      "\\.(css|less)$": "<rootDir>/test/styleMock.js"
+    },
+    "setupFiles": [
+      "<rootDir>/test/jestsetup.js"
+    ]
   },
   "scripts": {
     "lint": "eslint src/**/*.js server/**/*.js api/**/*.js test/**/*.js",
@@ -22,7 +28,7 @@
     "client": "API_PORT=3000 nodemon ./server/index.js --watch server",
     "client:dev": "API_PORT=3000 webpack-dev-server",
     "build": "NODE_ENV=production webpack -p",
-    "api": "PORT=3000 nodemon ./api/index.js --watch api --watch extensions",
+    "api": "export BABEL_ENV=api;PORT=3000 nodemon ./api/index.js --watch api --watch extensions",
     "start": "echo \"Build and start api and client concurrently\" && npm run build && npm run api & npm run client",
     "start:dev": "echo \"Start api and client in dev mode concurrently\" && npm run api & npm run client:dev",
     "heroku-postbuild": "npm run build"
@@ -47,7 +53,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "antd": "^3.1.1",
+    "antd": "^3.1.3",
     "apollo-cache-inmemory": "^1.1.5",
     "apollo-client": "^2.2.0",
     "apollo-client-preset": "^1.0.6",
@@ -100,6 +106,7 @@
     "babel-eslint": "^8.2.1",
     "babel-jest": "^22.0.6",
     "babel-loader": "^7.1.2",
+    "babel-plugin-css-modules-transform": "^1.4.0",
     "babel-plugin-module-alias": "^1.6.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
@@ -111,7 +118,8 @@
     "less": "^2.7.3",
     "less-loader": "^4.0.5",
     "style-loader": "^0.19.1",
+    "unfetch": "^3.0.0",
     "webpack-bundle-analyzer": "^2.9.2",
-    "webpack-dev-server": "^2.10.1"
+    "webpack-dev-server": "^2.11.0"
   }
 }

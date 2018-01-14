@@ -111,7 +111,10 @@ export default (container, name, options) => {
                                 variables: {limit: options.limit, offset: pageNr * options.limit}
                             })
                             if (storeData[name + 's']) {
-                                // remove optimistic id
+                                if( !storeData[name + 's'].results ){
+                                    storeData[name + 's'].results=[]
+                                }
+
                                 const oIdx = storeData[name + 's'].results.findIndex((e) => e._id === oid)
                                 if (oIdx > -1) {
                                     storeData[name + 's'].results.splice(oIdx, 1)

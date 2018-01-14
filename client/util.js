@@ -40,6 +40,13 @@ const Util = {
         return String(str).replace(/[&<>"'`=\/]/g, function (s) {
             return entityMap[s];
         })
-	}
+	},
+    isOnServer: () => {
+        return !(
+            typeof window !== 'undefined' &&
+            window.document &&
+            window.document.createElement
+        )
+    }
 }
 export default Util

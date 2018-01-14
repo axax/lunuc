@@ -202,3 +202,14 @@ import MaterialSnackbar from 'material-ui/Snackbar'
 export const Snackbar = ({children, ...rest}) => {
     return <MaterialSnackbar message={children} {...rest} />
 }
+
+
+// cards
+import MaterialCard, { CardActions as MaterialCardActions, CardContent as MaterialCardContent } from 'material-ui/Card'
+export const Card = ({children, ...rest}) => {
+    return <MaterialCard {...rest}>
+        <MaterialCardContent>
+            {children}
+        </MaterialCardContent>
+    </MaterialCard>
+}

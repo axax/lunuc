@@ -3,8 +3,10 @@ export const cmsSchemaRaw = `
         _id: ID! 
         createdBy: UserPublic!
         slug: String 
-        htmlContent: String 
-        jsonContent: String 
+        html: String 
+        template: String 
+        script: String
+        dataResolver: String
         status: String
     }
     
@@ -18,7 +20,7 @@ export const cmsSchemaRaw = `
     
     type Query {
     	cmsPages(limit: Int=10, offset: Int=0): CmsPageResult
-    	cmsPage(slug: String!): CmsPage
+    	cmsPage(slug: String!,render: Boolean): CmsPage
     }
     
 		
@@ -26,7 +28,7 @@ export const cmsSchemaRaw = `
 		createCmsPage (
 			slug: String!
 		): CmsPage
-		updateCmsPage(_id: ID!, slug: String, jsonContent: String): CmsPage	
+		updateCmsPage(_id: ID!, slug: String, template: String, script: String, dataResolver: String): CmsPage	
 		deleteCmsPage(_id: ID!): CmsPage
 	}
 `

@@ -1,0 +1,13 @@
+@keyframes highlight {
+    0% {
+        background: red
+    }
+    100% {
+        background: none;
+    }
+}
+
+.StockTicker-highlight,
+.CurrencyTicker-highlight {
+    animation: highlight 1s;
+}
