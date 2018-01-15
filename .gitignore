@@ -75,3 +75,7 @@ typings/
 package-lock.json
 
 mongodb
+mongodb_tmp
+
+
+gensrc

@@ -40,7 +40,7 @@ class JsonDom extends React.Component {
     }
 
     componentWillReceiveProps(props) {
-        if( this.props.template!=props.template || this.props.scope!=props.scope ){
+        if (this.props.template != props.template || this.props.scope != props.scope) {
             // reset parsed json contents
             this.json = null
             this.jsonRaw = null
@@ -50,13 +50,13 @@ class JsonDom extends React.Component {
         this.setState({hasReactError: false})
     }
 
-    shouldComponentUpdate(props,state) {
-        if( state.hasReactError ) return true
+    shouldComponentUpdate(props, state) {
+        if (state.hasReactError) return true
 
         console.log('update')
-        if( !props.template || !props.scope ) return true
+        if (!props.template || !props.scope) return true
 
-        return this.props.template!=props.template || this.props.scope!=props.scope
+        return this.props.template != props.template || this.props.scope != props.scope
     }
 
     emitChange(id, v, save) {
@@ -94,7 +94,14 @@ class JsonDom extends React.Component {
         onError(e)
     }
 
-
+    scopeByPath(path){
+        try {
+            // get data from scope by path (foo.bar)
+            return path.split('.').reduce ( (res, prop) => res[prop], this.scope )
+        } catch (e) {
+            this.emitJsonError(e)
+        }
+    }
 
     parseRec(a, rootKey) {
         if (!a) return null
@@ -108,13 +115,20 @@ class JsonDom extends React.Component {
              p = props
              */
             if ($loop) {
-                const {d, c} = $loop
-                if (!d || d.constructor !== Array) return ''
+                const {$d,d, c} = $loop
+                let data
+                if( $d ){
+                    data = this.scopeByPath($d)
+                }else{
+                    data = d
+                }
+                if (!data || data.constructor !== Array) return ''
 
                 let {s} = $loop
                 if (!s) s = 'loop'
                 /*
                  d = data in loop
+                 $d = data (json as string) in loop
                  c = children in loop
                  s = scope in loop to access data
                  */
@@ -123,13 +137,13 @@ class JsonDom extends React.Component {
                     const cStr = JSON.stringify(c).replace(re, '${').replace(/\${(?!this\.)/g, '${this.' + s + '.')
 
 
-                    d.forEach((loopChild,j) => {
+                    data.forEach((loopChild, j) => {
                         const tpl = new Function('return `' + cStr + '`;')
                         // back to json
                         const json = JSON.parse(tpl.call({[s]: loopChild}))
 
-                        const key = rootKey+'.'+i+'.$loop.'+j
-                        h.push(this.parseRec(json,key))
+                        const key = rootKey + '.' + i + '.$loop.' + j
+                        h.push(this.parseRec(json, key))
 
 
                     })
@@ -149,41 +163,36 @@ class JsonDom extends React.Component {
         return h
     }
 
-    getScope(props){
-        if ( this.scope ) return this.scope
+    getScope(props) {
+        if (this.scope) return this.scope
         const {scope} = props
         this.scope = JSON.parse(scope)
         return this.scope
     }
 
-    getJson(props){
-        if ( this.json ) return this.json
+    getJson(props) {
+        if (this.json) return this.json
         const {template} = props
         const scope = this.getScope(props)
         try {
             /*
              json is the modified version for viewing (placeholder are replaced)
              */
-            const {client} = scope
-            this.json = eval('(' + this.renderString(template, scope) + ')')
+            this.json = JSON.parse(this.renderString(template, scope))
         } catch (e) {
             this.emitJsonError(e)
         }
         return this.json
     }
 
-    getJsonRaw(props){
-        if ( this.jsonRaw ) return this.jsonRaw
-
+    getJsonRaw(props) {
+        if (this.jsonRaw) return this.jsonRaw
         const {template} = props
-        const scope = this.getScope()
-
         try {
             /*
-            jsonRaw is the unmodified json for editing
+             jsonRaw is the unmodified json for editing
              */
-            const {client} = scope
-            this.jsonRaw = eval('(' + template + ')')
+            this.jsonRaw = JSON.parse(template)
         } catch (e) {
             this.emitJsonError(e)
         }
@@ -191,39 +200,40 @@ class JsonDom extends React.Component {
     }
 
 
-
     renderString(str, data) {
         try {
             const tpl = new Function('return `' + str.replace(/\${(?!this\.)/g, '${this.') + '`;')
             return tpl.call(data)
         } catch (e) {
+            //this.emitJsonError(e)
+
             return str
         }
     }
 
     componentWillUpdate(props) {
-        console.log('componentWillUpdate')
         this.parseError = null
-        this.renderdDom = props.template && this.parseRec(this.getJson(props), 0)
     }
 
     render() {
         const {template} = this.props
-        if ( !template )
+        if (!template)
             return null
 
-        console.log('render jsondoms')
+        console.log('render JsonDom')
         const {hasReactError} = this.state
+
+        if (hasReactError) {
+            return <strong>There is something wrong with one of the components defined in the json content. See
+                console.log in the browser for more detail.</strong>
+        }
+
+        const content = this.parseRec(this.getJson(this.props), 0)
+
         if (this.parseError) {
             return <div>Error in the json content: <strong>{this.parseError.message}</strong></div>
-        }else if (hasReactError) {
-            return <strong>There is something wrong with one of the components defined in the json content. See console.log in the browser for more detail.</strong>
-        } else {
-            if( Util.isOnServer() ){
-                return this.parseRec(this.getJson(this.props), 0)
-            }else {
-                return this.renderdDom
-            }
+        }else{
+            return content
         }
 
     }

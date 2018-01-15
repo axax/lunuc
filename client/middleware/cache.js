@@ -15,11 +15,10 @@ export class OfflineCache extends InMemoryCache {
             this.restore(JSON.parse(window.localStorage.getItem(CACHE_KEY)))
         }
 
-        window.onbeforeunload = (e) => {
+        window.addEventListener("beforeunload",  (e) => {
             clearTimeout(this.changeTimeout)
             this.saveToLocalStorage()
-        }
-
+        })
 
     }
 

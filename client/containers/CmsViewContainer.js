@@ -32,19 +32,32 @@ class CmsViewContainer extends React.Component {
     static logger = logger(CmsViewContainer.name)
 
     state = {
-        template: '',
+        template: null,
         templateError: null,
-        script: ''
+        script: null,
+        dataResolver: null
     }
+
+
+
+    componentDidMount() {
+        window.addEventListener('beforeunload',  (e) => {
+            // blur on unload to make sure everything gets saved
+            document.activeElement.blur()
+        })
+    }
+
+
 
 
     saveCmsPage = (value, data, key) => {
         const t = value.trim()
-        console.log('save cms', key)
         if (t != data[key]) {
+            console.log('save cms', key)
+
             const {updateCmsPage} = this.props
             updateCmsPage(
-                update(data, {[key]: {$set: t}})
+                update(data, {[key]: {$set: t}}), key
             )
         }
     }
@@ -53,8 +66,14 @@ class CmsViewContainer extends React.Component {
         this.setState({script: str})
     }
 
+    dataResolverSaveTimeout=0
     handleDataResolverChange = (str) => {
         this.setState({dataResolver: str})
+        clearTimeout(this.dataResolverSaveTimeout)
+        this.dataResolverSaveTimeout = setTimeout(()=>{
+            // auto save after some time
+            this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
+        },1000)
     }
 
     handleTemplateChange = (str) => {
@@ -80,30 +99,39 @@ class CmsViewContainer extends React.Component {
 
     componentWillReceiveProps(nextProps) {
         if (nextProps.cmsPage) {
-            this.setState({template: nextProps.cmsPage.template, script: nextProps.cmsPage.script, dataResolver: nextProps.cmsPage.dataResolver})
+            const {template, script, dataResolver } = nextProps.cmsPage
+            this.setState({template, script, dataResolver})
         }
     }
 
 
     render() {
         const {cmsPage, user, location} = this.props
+        const {template, script, dataResolver, templateError} = this.state
 
-        if (!cmsPage)
+        if (!cmsPage )
             return <BaseLayout />
 
         if( !user.isAuthenticated || isPreview(location) ){
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}} />
         }
+console.log('render cms')
 
-        const {template, script, dataResolver, templateError} = this.state
-
-        let js, jsError
+        let js, jsError, resolvedData, resolveDataError
 
         try {
             js = new Function(script)();
         } catch (e) {
-            //console.log(script)
-            jsError = e
+            jsError = e.message
+        }
+
+        try {
+            resolvedData = JSON.parse(cmsPage.resolvedData)
+            if( resolvedData.error ){
+                resolveDataError = resolvedData.error
+            }
+        }catch(e){
+            resolveDataError = e.message
         }
 
         const sidebar = () => <div>
@@ -121,14 +149,7 @@ class CmsViewContainer extends React.Component {
                     style={editorStyle}
                     onChange={this.handleDataResolverChange}
                     onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'dataResolver')}>{dataResolver}</ContentEditable>
-
-                <h3>Js client</h3>
-
-                <ContentEditable
-                    style={editorStyle}
-                    onChange={this.handleClientScriptChange}
-                    onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ContentEditable>
-                {jsError && jsError.message}
+                {resolveDataError}
 
                 <h3>Json template</h3>
 
@@ -138,13 +159,22 @@ class CmsViewContainer extends React.Component {
                     onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'template')}>{template}</ContentEditable>
 
                 {templateError}
+
+
+                <h3>Script</h3>
+
+                <ContentEditable
+                    style={editorStyle}
+                    onChange={this.handleClientScriptChange}
+                    onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ContentEditable>
+                {jsError}
+
             </div>
 
         </div>
 
 
-        const scope = {page: {slug: cmsPage.slug}, client: js}
-
+        const scope = {page: {slug: cmsPage.slug}, script: js, data: resolvedData}
 
         return <DrawerLayout sidebar={sidebar()}
                              drawerWidth="500px"
@@ -165,7 +195,7 @@ CmsViewContainer.propTypes = {
     updateCmsPage: PropTypes.func.isRequired
 }
 
-const gqlQuery = gql`query cmsPage($slug: String!, $render: Boolean){ cmsPage(slug: $slug, render: $render){slug template script dataResolver html _id createdBy{_id username}}}`
+const gqlQuery = gql`query cmsPage($slug: String!, $render: Boolean){ cmsPage(slug: $slug, render: $render){slug template script dataResolver resolvedData html _id createdBy{_id username}}}`
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
         options(ownProps) {
@@ -184,21 +214,17 @@ const CmsViewContainerWithGql = compose(
             loading
         })
     }),
-    graphql(gql`mutation updateCmsPage($_id: ID!,$template: String,$slug: String,$script: String,$dataResolver: String){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver){slug template script dataResolver html _id createdBy{_id username} status}}`, {
+    graphql(gql`mutation updateCmsPage($_id: ID!,$template: String,$slug: String,$script: String,$dataResolver: String){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver){slug template script dataResolver resolvedData html _id createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
-            updateCmsPage: ({_id, template, script, dataResolver, slug, html}) => {
+            updateCmsPage: ({_id,...rest},key) => {
                 return mutate({
-                    variables: {_id, template, script, dataResolver, slug},
+                    variables: {_id, [key]:rest[key]},
                     optimisticResponse: {
                         __typename: 'Mutation',
                         // Optimistic message
                         updateCmsPage: {
                             _id,
-                            template,
-                            dataResolver,
-                            script,
-                            slug,
-                            html,
+                            ...rest,
                             status: 'updating',
                             createdBy: {
                                 _id: ownProps.user.userData._id,
@@ -210,11 +236,20 @@ const CmsViewContainerWithGql = compose(
                     },
                     update: (store, {data: {updateCmsPage}}) => {
                         // Read the data from the cache for this query.
-                        let slug = (ownProps.match.params.slug)
-                        const data = store.readQuery({query: gqlQuery, variables: {slug}})
+                        const slug = (ownProps.match.params.slug),
+                        render = (!ownProps.user.isAuthenticated || isPreview(ownProps.location))
+
+                        const data = store.readQuery({query: gqlQuery, variables: {slug,render}})
                         if (data.cmsPage) {
-                            data.cmsPage = updateCmsPage
-                            store.writeQuery({query: gqlQuery, variables: {slug}, data})
+                            // update cmsPage
+                            data.cmsPage = {_id,[key]:updateCmsPage[key],...rest}
+
+                            // update resolvedData
+                            if( updateCmsPage.resolvedData ){
+                                data.cmsPage.resolvedData=updateCmsPage.resolvedData
+                            }
+
+                            store.writeQuery({query: gqlQuery, variables: {slug,render}, data})
                         }
                     }
                 })

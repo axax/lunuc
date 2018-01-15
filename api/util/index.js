@@ -121,4 +121,5 @@ const Util = {
         return collection
     }
 }
+
 export default Util

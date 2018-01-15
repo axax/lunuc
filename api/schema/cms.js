@@ -3,10 +3,11 @@ export const cmsSchemaRaw = `
         _id: ID! 
         createdBy: UserPublic!
         slug: String 
-        html: String 
         template: String 
         script: String
         dataResolver: String
+        resolvedData: String
+        html: String 
         status: String
     }
     

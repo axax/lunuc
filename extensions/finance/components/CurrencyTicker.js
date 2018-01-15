@@ -7,14 +7,19 @@ import './style.css'
 
 class CurrencyTicker extends React.Component {
 
+    interval = null
     constructor(props) {
         super(props)
     }
 
     componentDidMount() {
-        setInterval(() => {
+        this.interval = setInterval(() => {
             this.props.refetch()
-        }, 1000*60*2)
+        }, 1000*60)
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.interval)
     }
 
     shouldComponentUpdate(nextProps) {
