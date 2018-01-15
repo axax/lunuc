@@ -4,6 +4,7 @@ import JsonDom from 'client/components/JsonDom'
 import React from 'react'
 import Util from '../util'
 import UtilCms from '../util/cms'
+import {UIProvider} from 'ui'
 
 
 export const cmsResolver = (db) => ({
@@ -14,19 +15,19 @@ export const cmsResolver = (db) => ({
             offset
         })
     },
-    cmsPage: async ({slug, render}, {context}) => {
-        const cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver'], {match: {slug}})
+    cmsPage: async ({slug}, {context}) => {
+        const cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver','ssr'], {match: {slug}})
 
         if (cmsPages.results.length == 0) {
             throw new Error('Cms page doesn\'t exist')
         }
 
-        const {_id, createdBy, template, script, dataResolver} = cmsPages.results[0]
+        const {_id, createdBy, template, script, dataResolver,ssr} = cmsPages.results[0]
 
         const resolvedData = await UtilCms.resolveData(db, context, dataResolver)
         let html
 
-        if (render) {
+        if (ssr) {
             // Server side rendering
             // todo: ssr for apollo https://github.com/apollographql/apollo-client/blob/master/docs/source/recipes/server-side-rendering.md
 
@@ -34,7 +35,7 @@ export const cmsResolver = (db) => ({
                 const scriptResult = new Function(script)();
                 const scope = {page: {slug}, script:scriptResult, data: resolvedData}
 
-                html = ReactDOMServer.renderToString(<JsonDom template={template} scope={JSON.stringify(scope)}/>)
+                html = ReactDOMServer.renderToString(<UIProvider><JsonDom template={template} scope={JSON.stringify(scope)}/></UIProvider>)
             } catch (e) {
                 html = e.message
             }
@@ -49,13 +50,17 @@ export const cmsResolver = (db) => ({
                 template,
                 script,
                 dataResolver,
+                ssr,
                 resolvedData: JSON.stringify(resolvedData),
                 html
             }
         } else {
             // if user is not looged in return only slug and rendered html
             return {
+                ssr,
                 slug,
+                template,
+                script,
                 html,
                 resolvedData: JSON.stringify(resolvedData)
             }

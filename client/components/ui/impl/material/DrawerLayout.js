@@ -5,14 +5,13 @@ import classNames from 'classnames'
 import Drawer from 'material-ui/Drawer'
 import AppBar from 'material-ui/AppBar'
 import Toolbar from 'material-ui/Toolbar'
-import List, { ListItem, ListItemIcon, ListItemText } from 'material-ui/List'
 import Typography from 'material-ui/Typography'
 import Divider from 'material-ui/Divider'
 import IconButton from 'material-ui/IconButton'
 import MenuIcon from 'material-ui-icons/Menu'
 import ChevronLeftIcon from 'material-ui-icons/ChevronLeft'
 import ChevronRightIcon from 'material-ui-icons/ChevronRight'
-import SendIcon from 'material-ui-icons/Send'
+import {Button} from 'ui'
 
 const drawerWidth = '700px'
 
@@ -101,21 +100,21 @@ class DrawerLayout extends React.Component {
 
     handleDrawerOpen = () => {
         this.setState({ open: true })
-    };
+    }
 
     handleDrawerClose = () => {
         this.setState({ open: false })
-    };
+    }
 
     render() {
-        const { classes, theme, title, sidebar, children } = this.props
+        const { classes, theme, title, sidebar, toolbarRight, children } = this.props
         const { open } = this.state
 
         return (
             <div className={classes.root}>
                 <div className={classes.appFrame}>
                     <AppBar className={classNames(classes.appBar, open && classes.appBarShift)}>
-                        <Toolbar disableGutters={!open}>
+                        <Toolbar>
                             <IconButton
                                 color="contrast"
                                 aria-label="open drawer"
@@ -124,10 +123,12 @@ class DrawerLayout extends React.Component {
                             >
                                 <MenuIcon />
                             </IconButton>
-                            <Typography type="title" color="inherit" noWrap>
+                            <Typography type="title" color="inherit" noWrap style={{flex:1}}>
                                 {title}
                             </Typography>
+                            {toolbarRight}
                         </Toolbar>
+
                     </AppBar>
                     <Drawer
                         type="permanent"

@@ -1,5 +1,5 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
-
+import Cache from 'util/cache'
 
 const UtilCms = {
     resolveData: async (db, context, dataResolver) => {
@@ -11,8 +11,15 @@ const UtilCms = {
 
             for (let i = 0; i < json.length; i++) {
                 const {c, f, l, o} = json[i]
-                const result = await GenericResolver.entities(db, context, c, f, {limit: l, offset: o})
-                results[c] = result
+                const cacheKey = (c+f+l+o)
+                /*const cachedResult = Cache.get(cacheKey)
+                if( cachedResult ){
+                    results[c] = cachedResult
+                }else {*/
+                    const result = await GenericResolver.entities(db, context, c, f, {limit: l, offset: o})
+                    results[c] = result
+                   /* Cache.set(cacheKey,result,10000)
+                }*/
 
             }
         }catch (e){

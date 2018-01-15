@@ -1,9 +1,48 @@
+/*
+    There are different options for styling
+    1. Add styles to the style.less file
+    2. Change properties in the theme (see const theme below)
+    3. use withStyles (see const styles below)
+ */
+
 import './style.less'
 
 import React from 'react'
 
-import {withStyles} from 'material-ui/styles'
+// ui provider
+import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles'
+import indigo from 'material-ui/colors/indigo'
+import pink from 'material-ui/colors/pink'
+import red from 'material-ui/colors/red'
+const defaultTheme = createMuiTheme()
 
+// override the default theme
+const theme =  createMuiTheme({
+    palette: {
+        contrastThreshold: 3.1,
+        tonalOffset: 0.07,
+        primary: {
+            light: indigo[300],
+            main: indigo[500],
+            dark: indigo[700],
+            contrastText: defaultTheme.palette.getContrastText(indigo[500]),
+        },
+        secondary: {
+            light: pink.A200,
+            main: pink.A400,
+            dark: pink.A700,
+            contrastText: defaultTheme.palette.getContrastText(pink.A400),
+        },
+        error: red.A400,
+    },
+})
+
+export const UIProvider = ({children, ...rest}) => {
+    return <MuiThemeProvider theme={theme} {...rest}>{children}</MuiThemeProvider>
+}
+
+// define some styles so it can be used in the components
+import {withStyles} from 'material-ui/styles'
 
 const styles = theme => ({
     textField: {
@@ -12,15 +51,6 @@ const styles = theme => ({
     }
 })
 
-
-// ui provider
-import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles';
-
-const theme = createMuiTheme();
-
-export const UIProvider = ({children, ...rest}) => {
-    return <MuiThemeProvider theme={theme} {...rest}>{children}</MuiThemeProvider>
-}
 
 
 // Button
@@ -48,6 +78,28 @@ import MaterialTextField from 'material-ui/TextField'
 export const Input = withStyles(styles, {withTheme: true})(({classes, ...rest}) => {
     return <MaterialTextField className={classes.textField} {...rest} />
 })
+
+// Checkbox
+import MaterialCheckbox from 'material-ui/Checkbox'
+export const Checkbox = ({...rest}) => {
+    return <MaterialCheckbox {...rest} />
+}
+//Switch
+import { FormControlLabel } from 'material-ui/Form'
+import MaterialSwitch from 'material-ui/Switch'
+export const Switch = ({label,...rest}) => {
+    return <FormControlLabel
+        control={
+            <MaterialSwitch
+                {...rest}
+            />
+        }
+        label={label}
+    />
+}
+
+
+
 export const Textarea = withStyles(styles, {withTheme: true})(({classes, ...rest}) => {
     return <MaterialTextField
         multiline className={classes.textField} {...rest} />
