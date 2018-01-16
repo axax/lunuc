@@ -3,7 +3,7 @@ import update from 'immutability-helper'
 import GenericForm from 'client/components/generic/GenericForm'
 import genericComposer from 'client/containers/generic/genericComposer'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import {Row, Col, Table, Dialog} from 'ui'
+import {Row, Col, Table, Dialog, DeleteIconButton} from 'ui'
 import logger from 'util/logger'
 import Util from 'client/util'
 import PropTypes from 'prop-types'
@@ -22,7 +22,6 @@ class WordContainer extends React.Component {
             confirmDeletionDialog: false,
             dataToBeDeleted: false
         }
-
     }
 
     componentWillMount() {
@@ -108,17 +107,17 @@ class WordContainer extends React.Component {
                     title: 'Actions',
                     dataIndex: 'action'
                 }],
-            dataSource = (words && words.results ? words.results.map((word) => ({
+            dataSource = words && words.results && words.results.map((word) => ({
                 de: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'de')}
                           suppressContentEditableWarning contentEditable>{word.de}</span>,
                 en: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'en')}
                           suppressContentEditableWarning contentEditable>{word.en}</span>,
                 user: word.createdBy.username,
                 date: Util.formattedDateFromObjectId(word._id),
-                action: <button disabled={(word.status == 'deleting' || word.status == 'updating')}
+                action: <DeleteIconButton disabled={(word.status == 'deleting' || word.status == 'updating')}
                                 onClick={this.handleDeleteWordClick.bind(this, word)}>Delete
-                </button>
-            })) : [])
+                </DeleteIconButton>
+            }))
 
         return (
             <BaseLayout>

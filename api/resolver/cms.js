@@ -6,6 +6,56 @@ import Util from '../util'
 import UtilCms from '../util/cms'
 import {UIProvider} from 'ui'
 
+const defaultDataResolver = `[
+    {
+        "c":"Word",
+        "f":["de","en"],
+        "l":20,
+        "o":0
+    }
+]`
+
+
+const defaultTemplate = `[
+    {
+        "t": "div",
+        "p": {},
+        "c": [
+            {
+                "t": "h1$",
+                "c": "Words"
+            },
+            {
+                "t": "Row",
+                "c": [
+                    {
+                        "$loop": {
+                            "s": "x",
+                            "$d": "data.Word.results",
+                            "c": [
+                                {
+                                    "t": "Col",
+                                    "p": {
+                                        "md": 3
+                                    },
+                                    "c": [
+                                        {
+                                            "t": "p",
+                                            "c": "$.x{de} = $.x{en}"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+]`
+
+const defaultScript = ``
+
 
 export const cmsResolver = (db) => ({
     cmsPages: async ({limit, offset}, {context}) => {
@@ -72,7 +122,7 @@ export const cmsResolver = (db) => ({
         if (!slug || slug.trim() === '') {
             throw new Error('Slug is empty or invalid')
         }
-        return await GenericResolver.createEnity(db, context, 'CmsPage', {slug})
+        return await GenericResolver.createEnity(db, context, 'CmsPage', {slug,dataResolver:defaultDataResolver,template:defaultTemplate,script:defaultScript})
     },
     updateCmsPage: async ({_id, ...rest}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)

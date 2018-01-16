@@ -5,7 +5,8 @@
     "word",
     "post",
     "livetranslator",
-    "speechsearch"
+    "speechsearch",
+    "social"
   ],
   "ui":"material",
   "apollo_cache":true,

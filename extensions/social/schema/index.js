@@ -1,4 +1,4 @@
-export const socialSchemaRaw = `
+export default `
 
     type LinkedInPositions{
         _total: Int

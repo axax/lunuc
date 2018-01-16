@@ -15,7 +15,7 @@ class Routes extends React.Component {
 
     routes = [
         {exact: true, path: '/', component: Home},
-        {exact: true, path: '/cms/view/:slug', component: CmsViewContainer},
+        {exact: true, path: '/cms/view/:slug*', component: CmsViewContainer},
         {exact: true, path: '/cms', component: CmsContainer},
         {exact: true, path: '/cms/:page', component: CmsContainer},
         {path: '/login', component: LoginContainer},

@@ -6,11 +6,9 @@ import {withRouter} from 'react-router-dom'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import KeyValueContainer from './KeyValueContainer'
-import LinkedInProfileContainer from './LinkedInProfileContainer'
 import * as UserActions from '../actions/UserAction'
 import BaseLayout from '../components/layout/BaseLayout'
 import {Button, Input, Divider, Textarea, DeleteIconButton} from 'ui'
-import {withKeyValues} from './generic/withKeyValues'
 
 
 class UserProfileContainer extends React.Component {
@@ -24,7 +22,6 @@ class UserProfileContainer extends React.Component {
     }
 
     saveNoteTimeouts = {}
-
 
     saveNote = (id, value, timeout) => {
         clearTimeout(this.saveNoteTimeouts[id])
@@ -127,47 +124,19 @@ class UserProfileContainer extends React.Component {
     }
 
 
-    handelLinkedInConnect = () => {
-        const linkedInRedirectUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}${this.props.location.pathname}`,
-            linkedInBase = 'https://www.linkedin.com/oauth/v2/authorization?response_type=code',
-            linkedInClientId = '772exdl15hhf0d',
-            linkedInState = Math.random().toString(36).substr(2),
-            linkedInAuthUrl = `${linkedInBase}&client_id=${linkedInClientId}&state=${linkedInState}&redirect_uri=${encodeURIComponent(linkedInRedirectUrl)}`
-        this.props.setKeyValue({key:'linkedInState',value:linkedInState}).then(()=>{
-            window.location.href = linkedInAuthUrl
-        })
-    }
-
-
-    componentWillMount(){
-        const {location, history, keyValueMap} = this.props
-        const params = new URLSearchParams(location.search)
-        const code = params.get('code'),state = params.get('state')
-        if( code ) {
-            if( state == keyValueMap.linkedInState) {
-                this.props.setKeyValue({key:'linkedInCode',value:code}).then(()=>{
-                    history.push(location.pathname)
-                })
-            }
-        }
-    }
-
     componentWillReceiveProps(nextProps) {
         if (nextProps.me)
             this.setState({username: nextProps.me.username, note: nextProps.me.note})
     }
 
     render() {
-        const {me, userActions,history, keyValueMap, keyValues} = this.props
+        const {me, userActions,history} = this.props
         const {username, usernameError, loading, note} = this.state
         const LogoutButton = (() => (
             <Button type="primary" onClick={() => {
-                this.props.setKeyValue({key:'lastLogoutClick',value:new Date()}).then(()=>{
-                    history.push('/')
-
-                    localStorage.removeItem('token')
-                    userActions.setUser(null, false)
-                })
+                localStorage.removeItem('token')
+                userActions.setUser(null, false)
+                history.push('/')
             }}>Logout</Button>
         ))
 
@@ -186,7 +155,6 @@ class UserProfileContainer extends React.Component {
             )
         }
 
-        const linkedInCode = (keyValues&&keyValues.results?keyValues.results.find(x => x.key === 'linkedInCode'):null)
         return (
             <BaseLayout>
                 <h1>Profile</h1>
@@ -199,13 +167,6 @@ class UserProfileContainer extends React.Component {
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
                 </div>
-
-                <Divider />
-                <h2>Social platforms</h2>
-
-                {linkedInCode&&linkedInCode.value&&linkedInCode.status!='creating'?<LinkedInProfileContainer/>:
-                <Button raised onClick={this.handelLinkedInConnect}>Connect with LinkedIn</Button>}
-
 
 
                 <Divider />
@@ -238,12 +199,7 @@ UserProfileContainer.propTypes = {
     deleteNote: PropTypes.func.isRequired,
     loading: PropTypes.bool,
     /* User Reducer */
-    userActions: PropTypes.object.isRequired,
-    /* with key values */
-    keyValues: PropTypes.object,
-    keyValueMap: PropTypes.object,
-    setKeyValue: PropTypes.func.isRequired,
-    deleteKeyValue: PropTypes.func.isRequired
+    userActions: PropTypes.object.isRequired
 }
 
 const gqlQuery = gql`query {me{username email _id note{_id value}role{capabilities}}}`
@@ -366,4 +322,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withRouter(withKeyValues(UserProfileContainerWithGql,['linkedInCode','linkedInState'])))
+)(withRouter(UserProfileContainerWithGql))

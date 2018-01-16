@@ -7,23 +7,55 @@ import {Link} from 'react-router-dom'
 import BaseLayout from '../components/layout/BaseLayout'
 import logger from '../../util/logger'
 import PropTypes from 'prop-types'
+import {Table, DeleteIconButton} from 'ui'
+import Util from 'client/util'
 
 const CMS_PAGES_PER_PAGE = 10
-
 
 
 class CmsContainer extends React.Component {
     static logger = logger(CmsContainer.name)
 
-    constructor(props) {
-        super(props)
+    state = {
+        rowsPerPage: CMS_PAGES_PER_PAGE
     }
 
     render() {
-        const {cmsPages, loading} = this.props
+        const {cmsPages} = this.props
 
         if (!cmsPages)
             return <BaseLayout />
+
+        const columns = [
+                {
+                    title: 'Slug',
+                    dataIndex: 'slug'
+                },
+                {
+                    title: 'User',
+                    dataIndex: 'user'
+                },
+                {
+                    title: 'Created at',
+                    dataIndex: 'date'
+                },
+                {
+                    title: 'Actions',
+                    dataIndex: 'action'
+                }],
+            dataSource = cmsPages.results && cmsPages.results.map((cmsPage) => ({
+                    slug: <span onBlur={(e) => this.handleCmsPageChange.bind(this)(e, cmsPage, 'slug')}
+                                suppressContentEditableWarning contentEditable>{cmsPage.slug}</span>,
+                    user: cmsPage.createdBy.username,
+                    date: Util.formattedDateFromObjectId(cmsPage._id),
+                    action: <div>
+                        <Link
+                            to={'/cms/view/' + cmsPage.slug}> View</Link>
+
+                        <DeleteIconButton disabled={(cmsPage.status == 'deleting' || cmsPage.status == 'updating')}
+                                          onClick={this.handleDeleteCmsPageClick.bind(this, cmsPage)}>Delete</DeleteIconButton>
+                    </div>
+                }))
 
 
         const totalPages = Math.ceil(cmsPages.total / CMS_PAGES_PER_PAGE),
@@ -31,23 +63,15 @@ class CmsContainer extends React.Component {
         return (
             <BaseLayout>
                 <h1>Cms Pages</h1>
-                <GenericForm fields={{slug:{value:'',placeholder:'slug name'}}} onClick={this.handleAddCmsPageClick} />
+                <GenericForm fields={{slug: {value: '', placeholder: 'slug name'}}}
+                             onClick={this.handleAddCmsPageClick}/>
 
-                <ul suppressContentEditableWarning={true}>
-                    {(cmsPages.results ? cmsPages.results.map((cmsPage, i) => {
-                        if( cmsPage ) {
-                            return <li key={i}>
-                                <span onBlur={(e) => this.handleCmsPageChange.bind(this)(e, cmsPage, 'slug')}
-                                                     suppressContentEditableWarning contentEditable>{cmsPage.slug}</span><Link to={'/cms/view/'+cmsPage.slug}> 🎑</Link>
-                                ({cmsPage.createdBy.username})
-                                <button disabled={(cmsPage.status == 'deleting' || cmsPage.status == 'updating')}
-                                        onClick={this.handleDeleteCmsPageClick.bind(this, cmsPage)}>X
-                                </button>
-                            </li>
-                        }
-                    }) : '')}
-                </ul>
-                <Pagination baseLink='/cms/' currentPage={currentPage} totalPages={totalPages}/>
+
+                <Table dataSource={dataSource} columns={columns} count={totalPages}
+                       rowsPerPage={this.state.rowsPerPage} page={currentPage}
+                       onChangePage={this.handleChangePage.bind(this)}
+                       onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
+
 
             </BaseLayout>
         )
@@ -76,8 +100,19 @@ class CmsContainer extends React.Component {
             _id: data._id
         })
     }
-}
 
+
+    handleChangePage = (page) => {
+        this.props.history.push(`/cms/${(page)}`)
+    }
+
+
+    handleChangeRowsPerPage = (rowsPerPage) => {
+        this.setState({rowsPerPage})
+        this.props.setOptionsForCmsPages({limit: rowsPerPage})
+        this.props.refetchCmsPages()
+    }
+}
 
 
 CmsContainer.propTypes = {
@@ -85,10 +120,11 @@ CmsContainer.propTypes = {
     createCmsPage: PropTypes.func.isRequired,
     updateCmsPage: PropTypes.func.isRequired,
     deleteCmsPage: PropTypes.func.isRequired,
+    refetchCmsPages: PropTypes.func.isRequired,
+    setOptionsForCmsPages: PropTypes.func.isRequired,
     loading: PropTypes.bool
 }
 
 
-
-export default genericComposer(CmsContainer, 'cmsPage', {fields: {'slug': 'String!'},limit:CMS_PAGES_PER_PAGE})
+export default genericComposer(CmsContainer, 'cmsPage', {fields: {'slug': 'String!'}, limit: CMS_PAGES_PER_PAGE})
 

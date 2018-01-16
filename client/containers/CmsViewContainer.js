@@ -40,7 +40,6 @@ class CmsViewContainer extends React.Component {
     }
 
     saveCmsPage = (value, data, key) => {
-        //const t = value.trim()
         if (value != data[key]) {
             console.log('save cms', key)
 

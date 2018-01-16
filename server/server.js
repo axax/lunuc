@@ -4,6 +4,7 @@ import url from 'url'
 import path from 'path'
 import fs from 'fs'
 import zlib from 'zlib'
+import Cache from 'util/cache'
 
 // Port to listen to
 const PORT = (process.env.PORT || 8080)
@@ -64,23 +65,26 @@ const app = http.createServer(function (req, res) {
 					} else {
 						const mimeType = mimeTypes[path.extname(filename).split('.')[1]]
 						const fileStream = fs.createReadStream(filename)
+                        const headerExtra = {'Cache-Control':'public, max-age=604800','content-type':mimeType}
 
                         if (acceptEncoding.match(/\bdeflate\b/)) {
-                            res.writeHead(200, {mimeType, 'content-encoding': 'deflate' })
+                            res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate' })
                             fileStream.pipe(zlib.createDeflate()).pipe(res)
                         } else if (acceptEncoding.match(/\bgzip\b/)) {
-                            res.writeHead(200, {mimeType, 'content-encoding': 'gzip' })
+                            res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip' })
                             fileStream.pipe(zlib.createGzip()).pipe(res)
                         } else {
-                            res.writeHead(200, mimeType)
+                            res.writeHead(200, {...headerExtra})
                             fileStream.pipe(res)
                         }
 					}
 				})
 			}else{
-					// send index.html
+                const headers = {'Cache-Control':'public, max-age=604800','content-type':mimeTypes['html']}
+
+				// send index.html
 				const indexfile = path.join(build_dir, '/../index.html')
-				res.writeHead(200, mimeTypes['html'])
+				res.writeHead(200, headers)
 
 				const fileStream = fs.createReadStream(indexfile)
 				fileStream.pipe(res)

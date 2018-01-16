@@ -140,13 +140,13 @@ export const Table = ({count, rowsPerPage, page, onChangePage, onChangeRowsPerPa
     return <MaterialTable {...rest}>
         <TableHead>
             <TableRow>
-                {(columns ? columns.map(column => {
+                {columns && columns.map(column => {
                     return <TableCell key={column.dataIndex}>{column.title}</TableCell>
-                }) : '')}
+                })}
             </TableRow>
         </TableHead>
         <TableBody>
-            {dataSource.map((entry, i) => {
+            {dataSource && dataSource.map((entry, i) => {
                 return (
                     <TableRow key={i}>
                         {Object.keys(entry).map((key) => (

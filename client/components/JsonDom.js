@@ -23,7 +23,6 @@ class JsonDom extends React.Component {
     json = null
     jsonRaw = null
     scope = null
-    renderdDom = null
     parseError = null
 
 

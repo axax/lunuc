@@ -8,9 +8,8 @@ import {userSchemaRaw} from './user'
 import {notificationSchemaRaw} from './notification'
 import {cmsSchemaRaw} from './cms'
 import {systemSchemaRaw} from './system'
-import {socialSchemaRaw} from './social'
 
-const schemas = [commonSchemaRaw,keyvalueSchemaRaw,userSchemaRaw,notificationSchemaRaw,cmsSchemaRaw,systemSchemaRaw,socialSchemaRaw]
+const schemas = [commonSchemaRaw,keyvalueSchemaRaw,userSchemaRaw,notificationSchemaRaw,cmsSchemaRaw,systemSchemaRaw]
 
 Hook.call('schema', {schemas})
 
