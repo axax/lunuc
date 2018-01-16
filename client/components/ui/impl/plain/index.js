@@ -30,6 +30,16 @@ export const Textarea = ({ ...rest }) => {
     return <textarea {...rest} />
 }
 
+// Checkbox
+export const Checkbox = ({...rest}) => {
+    return <input type='checkbox' {...rest} />
+}
+//Switch
+export const Switch = ({label,...rest}) => {
+    return <label><input type='checkbox' {...rest} /> {label}</label>
+}
+
+
 
 // layout components
 export const Layout = ({ children, ...rest }) => {
@@ -148,4 +158,13 @@ export const MenuListItem = ({primary, ...rest}) => {
 // snackbar
 export const Snackbar = ({ message, ...rest}) => {
     return <div style={{padding:'20px',position:'fixed', top:0, background:'#000', color:'#fff'}} {...rest}>{message}</div>
+}
+
+// cards
+export const Card = ({children, ...rest}) => {
+    return <div {...rest}>
+        <div>
+            {children}
+        </div>
+    </div>
 }

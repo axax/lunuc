@@ -1,15 +1,18 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ContentEditable from '../components/generic/ContentEditable'
-import {DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Textarea} from 'ui'
+import {DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Textarea, Toolbar, Card} from 'ui'
 import Hook from 'util/hook'
 import Util from 'client/util'
 
 class JsonDom extends React.Component {
 
     components = {
+        'Toolbar': ({position, ...rest}) => <Toolbar
+            position={(this.props.editMode ? 'static' : position)} {...rest} />,
         'Button': Button,
         'Divider': Divider,
+        'Card': Card,
         'Col': Col,
         'Row': Row,
         'h1$': ({id, ...rest}) => <h1><ContentEditable onChange={(v) => this.emitChange(id, v)}
@@ -93,10 +96,10 @@ class JsonDom extends React.Component {
         onError(e)
     }
 
-    scopeByPath(path){
+    scopeByPath(path) {
         try {
             // get data from scope by path (foo.bar)
-            return path.split('.').reduce ( (res, prop) => res[prop], this.scope )
+            return path.split('.').reduce((res, prop) => res[prop], this.scope)
         } catch (e) {
             this.emitJsonError(e)
         }
@@ -114,11 +117,11 @@ class JsonDom extends React.Component {
              p = props
              */
             if ($loop) {
-                const {$d,d, c} = $loop
+                const {$d, d, c} = $loop
                 let data
-                if( $d ){
+                if ($d) {
                     data = this.scopeByPath($d)
-                }else{
+                } else {
                     data = d
                 }
                 if (!data || data.constructor !== Array) return ''
@@ -154,12 +157,18 @@ class JsonDom extends React.Component {
             }
             const key = rootKey + '.' + i
             let _t
-            if( !t ){
+            if (!t) {
                 _t = 'div'
-            }else if(!this.props.editMode && t.slice(-1) === '$' ){
+            } else if (!this.props.editMode && t.slice(-1) === '$') {
                 _t = t.slice(0, -1) // remove last char
-            }else{
+            } else {
                 _t = t
+            }
+            if (p && p.onClick) {
+                const clickData = p.onClick
+                p.onClick = () => {
+                    console.log(clickData)
+                }
             }
             h.push(React.createElement(
                 this.components[_t] || _t,
@@ -241,7 +250,7 @@ class JsonDom extends React.Component {
 
         if (this.parseError) {
             return <div>Error in the json content: <strong>{this.parseError.message}</strong></div>
-        }else{
+        } else {
             return content
         }
 

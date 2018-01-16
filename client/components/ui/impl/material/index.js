@@ -1,13 +1,15 @@
 /*
-    There are different options for styling
-    1. Add styles to the style.less file
-    2. Change properties in the theme (see const theme below)
-    3. use withStyles (see const styles below)
+ There are different options for styling
+ 1. Add styles to the style.less file
+ 2. Change properties in the theme (see const theme below)
+ 3. use withStyles (see const styles below)
  */
 
 import './style.less'
 
 import React from 'react'
+
+import MaterialTypography from 'material-ui/Typography';
 
 // ui provider
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles'
@@ -17,7 +19,7 @@ import red from 'material-ui/colors/red'
 const defaultTheme = createMuiTheme()
 
 // override the default theme
-const theme =  createMuiTheme({
+const theme = createMuiTheme({
     palette: {
         contrastThreshold: 3.1,
         tonalOffset: 0.07,
@@ -48,9 +50,12 @@ const styles = theme => ({
     textField: {
         marginLeft: theme.spacing.unit,
         marginRight: theme.spacing.unit,
+    },
+    heading: {
+        fontSize: theme.typography.pxToRem(15),
+        fontWeight: theme.typography.fontWeightRegular,
     }
 })
-
 
 
 // Button
@@ -76,6 +81,7 @@ export const DeleteIconButton = ({...rest}) => {
 import MaterialTextField from 'material-ui/TextField'
 
 export const Input = withStyles(styles, {withTheme: true})(({classes, ...rest}) => {
+    console.log(classes)
     return <MaterialTextField className={classes.textField} {...rest} />
 })
 
@@ -85,9 +91,9 @@ export const Checkbox = ({...rest}) => {
     return <MaterialCheckbox {...rest} />
 }
 //Switch
-import { FormControlLabel } from 'material-ui/Form'
+import {FormControlLabel} from 'material-ui/Form'
 import MaterialSwitch from 'material-ui/Switch'
-export const Switch = ({label,...rest}) => {
+export const Switch = ({label, ...rest}) => {
     return <FormControlLabel
         control={
             <MaterialSwitch
@@ -97,7 +103,6 @@ export const Switch = ({label,...rest}) => {
         label={label}
     />
 }
-
 
 
 export const Textarea = withStyles(styles, {withTheme: true})(({classes, ...rest}) => {
@@ -257,11 +262,42 @@ export const Snackbar = ({children, ...rest}) => {
 
 
 // cards
-import MaterialCard, { CardActions as MaterialCardActions, CardContent as MaterialCardContent } from 'material-ui/Card'
+import MaterialCard, {CardActions as MaterialCardActions, CardContent as MaterialCardContent} from 'material-ui/Card'
 export const Card = ({children, ...rest}) => {
     return <MaterialCard {...rest}>
         <MaterialCardContent>
             {children}
         </MaterialCardContent>
     </MaterialCard>
+}
+
+// ExpansionPanel
+import MaterialExpansionPanel, {
+    ExpansionPanelSummary,
+    ExpansionPanelDetails,
+} from 'material-ui/ExpansionPanel'
+import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
+
+
+export const ExpansionPanel = withStyles(styles, {withTheme: true})(({classes, heading, children, ...rest}) => {
+    return <MaterialExpansionPanel>
+        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+            <MaterialTypography className={classes.heading}>{heading}</MaterialTypography>
+        </ExpansionPanelSummary>
+        <ExpansionPanelDetails>
+            {children}
+        </ExpansionPanelDetails>
+    </MaterialExpansionPanel>
+})
+
+
+// toolbar
+import MaterialAppBar from 'material-ui/AppBar'
+import MaterialToolbar from 'material-ui/Toolbar'
+export const Toolbar = ({classes, title, children, ...rest}) => {
+    return <MaterialAppBar {...rest} ><MaterialToolbar>
+        <MaterialTypography type="title" color="inherit">
+            {title}
+        </MaterialTypography>
+    </MaterialToolbar></MaterialAppBar>
 }

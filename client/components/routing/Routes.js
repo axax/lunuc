@@ -7,6 +7,7 @@ import SignUpContainer from '../../containers/SignUpContainer'
 import UserProfileContainer from '../../containers/UserProfileContainer'
 import CmsViewContainer from '../../containers/CmsViewContainer'
 import CmsContainer from '../../containers/CmsContainer'
+import SystemContainer from '../../containers/SystemContainer'
 import Home from '../Home'
 import PrivateRoute from './PrivateRoute'
 import Hook from '../../../util/hook'
@@ -21,6 +22,7 @@ class Routes extends React.Component {
         {path: '/login', component: LoginContainer},
         {path: '/signup', component: SignUpContainer},
         {private: true, path: '/profile', component: UserProfileContainer},
+        {private: true, path: '/system', component: SystemContainer},
     ]
 
     constructor(props) {

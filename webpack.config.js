@@ -17,15 +17,15 @@ try {
 }
 
 fs.readdir(extensionFolder, (err, files) => {
-    if(err) {
+    if (err) {
         return console.log(err)
     }
 
     var clientContent = gensrcHeader, serverContent = gensrcHeader, manifestJson = {}
 
     files.forEach(file => {
-        if( fs.statSync(extensionFolder+file).isDirectory() ) {
-            if( appConfig.extensions && appConfig.extensions.indexOf(file)>=0 ) {
+        if (fs.statSync(extensionFolder + file).isDirectory()) {
+            if (appConfig.extensions && appConfig.extensions.indexOf(file) >= 0) {
 
                 if (fs.existsSync(extensionFolder + file + '/manifest.json')) {
                     manifestJson[file] = JSON.parse(fs.readFileSync(extensionFolder + file + '/manifest.json', 'utf8'));
@@ -43,46 +43,49 @@ fs.readdir(extensionFolder, (err, files) => {
         }
     })
 
-    const manifestStr = '\r\nconst manifests=' + JSON.stringify(manifestJson,null,4)
+    const manifestStr = `${gensrcHeader}
+    const extensions=${JSON.stringify(manifestJson, null, 4)}
+    export default extensions
+    `
 
-    clientContent += manifestStr
-
-
-
-    fs.writeFile("./gensrc/extensions-client.js", clientContent, function(err) {
-        if(err) {
+    fs.writeFile("./gensrc/extensions.js", manifestStr, function (err) {
+        if (err) {
             return console.log(err)
         }
     })
-    fs.writeFile("./gensrc/extensions-server.js", serverContent, function(err) {
-        if(err) {
+
+    fs.writeFile("./gensrc/extensions-client.js", clientContent, function (err) {
+        if (err) {
+            return console.log(err)
+        }
+    })
+    fs.writeFile("./gensrc/extensions-server.js", serverContent, function (err) {
+        if (err) {
             return console.log(err)
         }
     })
 })
 
 /* generate ui source */
-const uiContent= `${gensrcHeader}export * from 'client/components/ui/impl/${appConfig.ui || 'material'}/index'`
+const uiContent = `${gensrcHeader}export * from 'client/components/ui/impl/${appConfig.ui || 'material'}/index'`
 
-fs.writeFile("./gensrc/ui.js", uiContent, function(err) {
-    if(err) {
+fs.writeFile("./gensrc/ui.js", uiContent, function (err) {
+    if (err) {
         return console.log(err)
     }
 })
 
 /* generate config */
-const configContent= `${gensrcHeader}
+const configContent = `${gensrcHeader}
 export const APOLLO_CACHE=${appConfig.apollo_cache || true}
 export const DEBUG=${appConfig.debug || true}
 `
 
-fs.writeFile("./gensrc/config.js", configContent, function(err) {
-    if(err) {
+fs.writeFile("./gensrc/config.js", configContent, function (err) {
+    if (err) {
         return console.log(err)
     }
 })
-
-
 
 
 var config = {
