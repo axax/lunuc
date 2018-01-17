@@ -49,13 +49,14 @@ export default (container, name, options) => {
         ...container.propTypes
     }
 
-    const gqlQuery = gql`query ${name}s($limit: Int, $offset: Int${(options.hasFilter ? ', $filter: String' : '')}){${name}s(limit: $limit, offset:$offset${(options.hasFilter ? ', filter:$filter' : '')}){limit offset total results{${options.query}}}}`
+    const gqlQuery = gql`query ${name}s($sort: String,$limit: Int, $offset: Int${(options.hasFilter ? ', $filter: String' : '')}){${name}s(sort:$sort,limit: $limit, offset:$offset${(options.hasFilter ? ', filter:$filter' : '')}){limit offset total results{${options.query}}}}`
     const containerWithGql = compose(
         graphql(gqlQuery, {
                 options(ownProps) {
                     let pageNr = (ownProps.match.params.page || 1) - 1
                     return {
                         variables: {
+                            sort: options.sort,
                             limit: options.limit,
                             offset: pageNr * options.limit
                         },
@@ -68,6 +69,7 @@ export default (container, name, options) => {
                     ['refetch' + nameStartUpper + 's']: (v) => {
                         let pageNr = (ownProps.match.params.page || 1) - 1
                         v = {
+                            sort: options.sort,
                             limit: options.limit,
                             offset: pageNr * options.limit,
                             ...v}

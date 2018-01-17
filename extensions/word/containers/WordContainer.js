@@ -3,7 +3,7 @@ import update from 'immutability-helper'
 import GenericForm from 'client/components/generic/GenericForm'
 import genericComposer from 'client/containers/generic/genericComposer'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import {Row, Col, Table, Dialog, DeleteIconButton} from 'ui'
+import {Row, Col, Table, Dialog, DeleteIconButton, LinearProgress} from 'ui'
 import logger from 'util/logger'
 import Util from 'client/util'
 import PropTypes from 'prop-types'
@@ -13,11 +13,14 @@ const WORDS_PER_PAGE = 10
 class WordContainer extends React.Component {
     static logger = logger(WordContainer.name)
 
+
     constructor(props) {
         super(props)
         this.debug = WordContainer.logger.debug
 
         this.state = {
+            orderBy: '_id',
+            orderDirection: 'desc',
             rowsPerPage: WORDS_PER_PAGE,
             confirmDeletionDialog: false,
             dataToBeDeleted: false
@@ -78,7 +81,19 @@ class WordContainer extends React.Component {
             })
         }
         this.setState({confirmDeletionDialog: false, dataToBeDeleted: false})
+    }
 
+    handleSortChange = (e, orderBy) => {
+
+        let orderDirection = 'desc';
+
+        if (this.state.orderBy === orderBy && this.state.orderDirection === 'desc') {
+            orderDirection = 'asc';
+        }
+
+        this.props.setOptionsForWords({sort: `${orderBy} ${orderDirection}`})
+        this.props.refetchWords()
+        this.setState({orderBy, orderDirection})
     }
 
     render() {
@@ -89,35 +104,39 @@ class WordContainer extends React.Component {
         const currentPage = Math.ceil((words ? words.offset : 0) / this.state.rowsPerPage) + 1
 
         const columns = [{
-                title: 'Deutsch',
-                dataIndex: 'de'
-            }, {
-                title: 'English',
-                dataIndex: 'en'
+            title: 'Deutsch',
+            dataIndex: 'de',
+            sortable: true
+        }, {
+            title: 'English',
+            dataIndex: 'en',
+            sortable: true
+        },
+            {
+                title: 'User',
+                dataIndex: 'user'
             },
-                {
-                    title: 'User',
-                    dataIndex: 'user'
-                },
-                {
-                    title: 'Created at',
-                    dataIndex: 'date'
-                },
-                {
-                    title: 'Actions',
-                    dataIndex: 'action'
-                }],
-            dataSource = words && words.results && words.results.map((word) => ({
-                de: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'de')}
-                          suppressContentEditableWarning contentEditable>{word.de}</span>,
-                en: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'en')}
-                          suppressContentEditableWarning contentEditable>{word.en}</span>,
-                user: word.createdBy.username,
-                date: Util.formattedDateFromObjectId(word._id),
-                action: <DeleteIconButton disabled={(word.status == 'deleting' || word.status == 'updating')}
-                                onClick={this.handleDeleteWordClick.bind(this, word)}>Delete
-                </DeleteIconButton>
-            }))
+            {
+                title: 'Created at',
+                dataIndex: '_id',
+                sortable: true
+            },
+            {
+                title: 'Actions',
+                dataIndex: 'action'
+            }]
+
+        const dataSource = words && words.results && words.results.map((word) => ({
+                    de: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'de')}
+                              suppressContentEditableWarning contentEditable>{word.de}</span>,
+                    en: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'en')}
+                              suppressContentEditableWarning contentEditable>{word.en}</span>,
+                    user: word.createdBy.username,
+                    _id: Util.formattedDateFromObjectId(word._id),
+                    action: <DeleteIconButton disabled={(word.status == 'deleting' || word.status == 'updating')}
+                                              onClick={this.handleDeleteWordClick.bind(this, word)}>Delete
+                    </DeleteIconButton>
+                }))
 
         return (
             <BaseLayout>
@@ -136,21 +155,30 @@ class WordContainer extends React.Component {
                     </Col>
                 </Row>
 
-                <Table dataSource={dataSource} columns={columns} count={(words ? words.total : 0)}
-                       rowsPerPage={this.state.rowsPerPage} page={currentPage}
+                <Table dataSource={dataSource}
+                       columns={columns}
+                       count={(words ? words.total : 0)}
+                       rowsPerPage={this.state.rowsPerPage}
+                       page={currentPage}
+                       orderBy={this.state.orderBy}
+                       orderDirection={this.state.orderDirection}
+                       onSort={this.handleSortChange}
                        onChangePage={this.handleChangePage.bind(this)}
                        onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
 
                 <Dialog open={this.state.confirmDeletionDialog} onClose={this.handleConfirmDeletion.bind(this)}
-                        actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type:'primary'}]} title="Confirm deletion">
-                    Are you sure you want to delete the word <strong>{Util.escapeHtml('"'+this.state.dataToBeDeleted.en)} - {Util.escapeHtml(this.state.dataToBeDeleted.de+'"')}</strong>?
+                        actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
+                        title="Confirm deletion">
+                    Are you sure you want to delete the word
+                    <strong>{Util.escapeHtml('"' + this.state.dataToBeDeleted.en)}
+                        - {Util.escapeHtml(this.state.dataToBeDeleted.de + '"')}</strong>?
                 </Dialog>
+
+                {loading && <LinearProgress />}
             </BaseLayout>
         )
     }
 }
-
-
 
 
 WordContainer.propTypes = {
@@ -163,7 +191,6 @@ WordContainer.propTypes = {
     setOptionsForWords: PropTypes.func.isRequired,
     loading: PropTypes.bool
 }
-
 
 
 export default genericComposer(WordContainer, 'word', {

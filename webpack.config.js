@@ -2,6 +2,8 @@ var devMode = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p'
 
 var path = require('path')
 var webpack = require('webpack')
+var npm = require('npm')
+
 
 /* generate sources */
 const appConfig = require('./config.json')
@@ -25,19 +27,38 @@ fs.readdir(extensionFolder, (err, files) => {
 
     files.forEach(file => {
         if (fs.statSync(extensionFolder + file).isDirectory()) {
-            if (appConfig.extensions && appConfig.extensions.indexOf(file) >= 0) {
+            if( appConfig.extensions ) {
+                const ext = appConfig.extensions[file]
+                if (ext && ext.active ) {
 
-                if (fs.existsSync(extensionFolder + file + '/manifest.json')) {
-                    manifestJson[file] = JSON.parse(fs.readFileSync(extensionFolder + file + '/manifest.json', 'utf8'));
-                } else {
-                    manifestJson[file] = {name: file}
-                }
+                    if (fs.existsSync(extensionFolder + file + '/package.json')) {
+                        manifestJson[file] = JSON.parse(fs.readFileSync(extensionFolder + file + '/package.json', 'utf8'));
 
-                if (fs.existsSync(extensionFolder + file + '/client.js')) {
-                    clientContent += `import '.${extensionFolder}${file}/client.js'\r\n`
-                }
-                if (fs.existsSync(extensionFolder + file + '/server.js')) {
-                    serverContent += `import '.${extensionFolder}${file}/server.js'\r\n`
+                        /*console.debug(`Run npm install for ${file}`)
+                        npm.load(manifestJson[file], function (er) {
+                            if (er) console.log(er)
+
+                            npm.commands.install([], function (er, data) {
+                                if (er) return console.log(er)
+                                // command succeeded, and data might have some info
+                            })
+                            //npm.registry.log.on('log', function (message) { console.log(message) })
+                        })*/
+
+
+
+
+
+                    } else {
+                        manifestJson[file] = {name: file}
+                    }
+
+                    if (fs.existsSync(extensionFolder + file + '/client.js')) {
+                        clientContent += `import '.${extensionFolder}${file}/client.js'\r\n`
+                    }
+                    if (fs.existsSync(extensionFolder + file + '/server.js')) {
+                        serverContent += `import '.${extensionFolder}${file}/server.js'\r\n`
+                    }
                 }
             }
         }

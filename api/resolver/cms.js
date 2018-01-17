@@ -54,7 +54,13 @@ const defaultTemplate = `[
     }
 ]`
 
-const defaultScript = ``
+const defaultScript = `// 1. access scope data
+// scope.page.slug
+// scope.data
+// 2. handle events
+// on('click',(payload)=>{console.log})
+
+`
 
 
 export const cmsResolver = (db) => ({

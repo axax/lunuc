@@ -1,53 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import classNames from 'classnames'
 
 
-const styles ={
-    root: {},
-    appFrame: {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        position: 'relative'
-    },
-    appBar: {
-        position: 'absolute',
-        height: '50px',
-        width: '100%',
-        display: 'flex',
-        zIndex: 1100,
-        boxSizing: 'border-box',
-        flexShrink: 0,
-        flexDirection: 'column',
-        background: '#4286f4'
-    },
-    appBarShift: {
-        marginLeft: '200px'
-    },
-    menuButton: {float: 'left'},
-    menuTitle: {float: 'left', margin:0},
-    hide:{},
-    drawerPaper: {
-        flex: '0 0 auto',
-        width: '200px',
-        background: '#4286f4',
-        zIndex:10,
-    },
-    drawerPaperClose: {
-        width: '0px',
-        display: 'none'
-    },
-    drawerInner: {margin:'80px'},
-    drawerHeader: {},
-    content: {
-        height: 'calc(100% - 64px)',
-        marginTop: '64px',
-        width: '100%',
-        padding: '24px',
-        flexGrow: 1
-    }
-}
 
 class DrawerLayout extends React.Component {
     state = {
@@ -63,44 +17,42 @@ class DrawerLayout extends React.Component {
     };
 
     render() {
-        const { title, children } = this.props;
+        const { title, sidebar, children } = this.props;
         const { open } = this.state;
 
         return (
-            <div style={styles.root}>
-                <div style={styles.appFrame}>
-                    <div style={Object.assign({},styles.appBar,(open?styles.appBarShift:null))}>
+            <div className="DrawerLayout">
+                <div className="DrawerLayout__appFrame">
+                    <div className={'DrawerLayout__appBar' +(open?' DrawerLayout__appBar--open':'')}>
                         <div>
                             {open ? '' :
                                 <button
                                     color="contrast"
                                     aria-label="open drawer"
                                     onClick={this.handleDrawerOpen}
-                                    style={styles.menuButton}
+                                    className="DrawerLayout__menuButton"
                                 >
                                     open
                                 </button>
                             }
-                            <h1 style={styles.menuTitle}>
+                            <h1 className="DrawerLayout__menuTitle">
                                 {title}
                             </h1>
                         </div>
                     </div>
-                    <div
-                        style={(open?styles.drawerPaper:styles.drawerPaperClose)}
-                        open={open}
-                    >
+                    <div className={'DrawerLayout__drawerPaper' +(open?' DrawerLayout__drawerPaper--open':'')}>
 
-                        <div style={styles.drawerInner}>
-                            <div style={styles.drawerHeader}>
+                        <div className="DrawerLayout__sidebar">
+                            <div className="DrawerLayout__sidebarHeader">
                                 <button onClick={this.handleDrawerClose}>
                                     close
                                 </button>
                             </div>
                             <hr />
+                            {sidebar}
                         </div>
                     </div>
-                    <main style={styles.content}>
+                    <main className="DrawerLayout__content">
                         {children}
                     </main>
                 </div>

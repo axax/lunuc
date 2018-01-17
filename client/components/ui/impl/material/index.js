@@ -81,7 +81,6 @@ export const DeleteIconButton = ({...rest}) => {
 import MaterialTextField from 'material-ui/TextField'
 
 export const Input = withStyles(styles, {withTheme: true})(({classes, ...rest}) => {
-    console.log(classes)
     return <MaterialTextField className={classes.textField} {...rest} />
 })
 
@@ -139,28 +138,62 @@ export const Col = ({...rest}) => {
 }
 
 // table
-import MaterialTable, {TableBody, TableCell, TableHead, TableRow, TableFooter, TablePagination} from 'material-ui/Table'
+import MaterialTable, {
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    TableFooter,
+    TablePagination,
+    TableSortLabel
+} from 'material-ui/Table'
 
-export const Table = ({count, rowsPerPage, page, onChangePage, onChangeRowsPerPage, columns, dataSource, ...rest}) => {
+export const Table = ({count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onSort, columns, dataSource, ...rest}) => {
+    const createSortHandler = property => event => {
+        if( onSort )
+            onSort(event, property)
+    }
+
+
     return <MaterialTable {...rest}>
         <TableHead>
             <TableRow>
                 {columns && columns.map(column => {
-                    return <TableCell key={column.dataIndex}>{column.title}</TableCell>
+                    return <TableCell key={column.dataIndex}>
+
+                        {column.sortable ?
+                            <Tooltip
+                                title="Sort"
+                                placement={column.numeric ? 'bottom-end' : 'bottom-start'}
+                                enterDelay={300}
+                            >
+                                <TableSortLabel
+                                    active={orderBy === column.dataIndex}
+                                    direction={orderDirection}
+                                    onClick={createSortHandler(column.dataIndex)}
+                                >
+                                    {column.title}
+                                </TableSortLabel>
+                            </Tooltip> : column.title }
+
+
+                    </TableCell>
                 })}
             </TableRow>
         </TableHead>
-        <TableBody>
-            {dataSource && dataSource.map((entry, i) => {
-                return (
-                    <TableRow key={i}>
-                        {Object.keys(entry).map((key) => (
-                            <TableCell key={key}>{entry[key]}</TableCell>
-                        ))}
-                    </TableRow>
-                )
-            })}
-        </TableBody>
+        {dataSource &&
+            <TableBody>
+                {dataSource.map((entry, i) => {
+                    return (
+                        <TableRow key={i}>
+                            {Object.keys(entry).map((key) => (
+                                <TableCell key={key}>{entry[key]}</TableCell>
+                            ))}
+                        </TableRow>
+                    )
+                })}
+            </TableBody>
+        }
         <TableFooter>
             <TableRow>
                 <TablePagination
@@ -300,4 +333,18 @@ export const Toolbar = ({classes, title, children, ...rest}) => {
             {title}
         </MaterialTypography>
     </MaterialToolbar></MaterialAppBar>
+}
+
+
+// tooltip
+import MaterialTooltip from 'material-ui/Tooltip'
+export const Tooltip = ({...rest}) => {
+    return <MaterialTooltip {...rest} />
+}
+
+
+// linear progress
+import { LinearProgress as MaterialLinearProgress } from 'material-ui/Progress'
+export const LinearProgress = () =>  {
+    return <MaterialLinearProgress mode="query"/>
 }

@@ -7,7 +7,7 @@ const GenericResolver = {
 
         Util.checkIfUserIsLoggedIn(context)
 
-        let {limit, offset, match, filter} = options
+        let {limit, offset, match, filter, sort} = options
 
         if (!limit) {
             limit = 10
@@ -19,6 +19,18 @@ const GenericResolver = {
 
         if (!match) {
             match = {createdBy: ObjectId(context.id)}
+        }
+
+        if( !sort ){
+            sort = {_id: -1}
+        }else{
+            if( sort.constructor === String ){
+                // sort looks like "field1 asc, field2 desc"
+                sort = sort.split(',').reduce((acc, val) => {
+                        const a = val.split(' ')
+                        return {...acc,[a[0]]:(a.length>1&&a[1].toLowerCase()=="desc"?-1:1)}
+                }, {} )
+            }
         }
 
 
@@ -56,7 +68,7 @@ const GenericResolver = {
                     createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
                 }
             },
-            {$sort: {_id: -1}},
+            {$sort: sort},
             {
                 $group: {
                     _id: null,
@@ -78,6 +90,8 @@ const GenericResolver = {
                 $addFields: {limit, offset}
             }
         ]).toArray())
+
+
         if( a.length === 0 ){
             return {
                 limit,

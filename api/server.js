@@ -27,7 +27,7 @@ export const start = (done) => {
 
             // delay response
             /*app.use(function (req, res, next) {
-             setTimeout(next, 1000)
+             setTimeout(next, 3000)
              })*/
 
             // Authentication

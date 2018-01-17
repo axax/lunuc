@@ -29,7 +29,7 @@ export default `
     }
     
     type Query {
-    	words(limit: Int=10, offset: Int=0, filter: String): WordResult
+    	words(sort: String, limit: Int=10, offset: Int=0, filter: String): WordResult
     	translate(text: String!, toIso: String!, fromIso: String): Translation
     }
     

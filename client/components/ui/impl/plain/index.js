@@ -4,12 +4,12 @@ import React from 'react'
 import Pagination from './Pagination'
 
 // ui provider
-export const UIProvider = ({ children, ...rest }) => {
+export const UIProvider = ({children, ...rest}) => {
     return <div {...rest}>{children}</div>
 }
 
 
-export const Button = ({ raised,  ...rest }) => {
+export const Button = ({raised, ...rest}) => {
     return <button {...rest} />
 }
 
@@ -23,10 +23,10 @@ export const DeleteIconButton = ({...rest}) => {
 
 
 // input
-export const Input = ({ ...rest }) => {
+export const Input = ({...rest}) => {
     return <input {...rest} />
 }
-export const Textarea = ({ ...rest }) => {
+export const Textarea = ({...rest}) => {
     return <textarea {...rest} />
 }
 
@@ -35,14 +35,13 @@ export const Checkbox = ({...rest}) => {
     return <input type='checkbox' {...rest} />
 }
 //Switch
-export const Switch = ({label,...rest}) => {
+export const Switch = ({label, ...rest}) => {
     return <label><input type='checkbox' {...rest} /> {label}</label>
 }
 
 
-
 // layout components
-export const Layout = ({ children, ...rest }) => {
+export const Layout = ({children, ...rest}) => {
     return <div {...rest}>{children}</div>
 }
 export const LayoutHeader = Layout
@@ -57,36 +56,36 @@ export {default as HeaderMenu} from './HeaderMenu'
 export {default as Pagination} from './Pagination'
 
 // grid
-export const Row = ({ ...rest }) => {
-    return <div style={{display:'flex'}} {...rest} />
+export const Row = ({...rest}) => {
+    return <div style={{display: 'flex'}} {...rest} />
 }
-export const Col = ({ span, ...rest }) => {
-    return <div style={{flex: '0 0 '+(100*span/24)+'%'}} {...rest} />
+export const Col = ({span, ...rest}) => {
+    return <div style={{flex: '0 0 ' + (100 * span / 24) + '%'}} {...rest} />
 }
 
 // table
-export const Table = ({count,rowsPerPage,page,onChangePage,onChangeRowsPerPage,columns,dataSource, ...rest }) => {
+export const Table = ({count, rowsPerPage, page, onChangePage, onChangeRowsPerPage, columns, dataSource, ...rest}) => {
 
-    const totalPages = Math.ceil( (count?count:0) / (rowsPerPage?rowsPerPage:0))
+    const totalPages = Math.ceil((count ? count : 0) / (rowsPerPage ? rowsPerPage : 0))
 
     return <table {...rest}>
         <thead>
-            <tr>
-                {(columns ? columns.map(column => {
-                    return  <th key={column.dataIndex}>{column.title}</th>
-                }) : '')}
-            </tr>
+        <tr>
+            {(columns ? columns.map(column => {
+                return <th key={column.dataIndex}>{column.title}</th>
+            }) : '')}
+        </tr>
         </thead>
         <tbody>
-            {dataSource.map((entry, i) => {
-                return (
-                    <tr key={i}>
-                        {Object.keys(entry).map((key) => (
-                            <td key={key}>{entry[key]}</td>
-                        ))}
-                    </tr>
-                )
-            })}
+        {dataSource.map((entry, i) => {
+            return (
+                <tr key={i}>
+                    {Object.keys(entry).map((key) => (
+                        <td key={key}>{entry[key]}</td>
+                    ))}
+                </tr>
+            )
+        })}
         </tbody>
         <tfoot>
         <tr>
@@ -101,13 +100,20 @@ export const Table = ({count,rowsPerPage,page,onChangePage,onChangeRowsPerPage,c
 }
 
 
-
 // dialog
-export const Dialog = ({children,onClose,actions,title,open,...rest}) => {
-    return <div style={{position:'fixed',left:0,right:0,top:0, bottom:0,background:'#fff',display:(open?'block':'none')}}
-        aria-labelledby="responsive-dialog-title"
-        onClose={onClose}
-        {...rest}>
+export const Dialog = ({children, onClose, actions, title, open, ...rest}) => {
+    return <div style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        background: '#fff',
+        display: (open ? 'block' : 'none')
+    }}
+                aria-labelledby="responsive-dialog-title"
+                onClose={onClose}
+                {...rest}>
         <h1 id="responsive-dialog-title">{title}</h1>
         <div>
             <div>
@@ -126,7 +132,7 @@ export const Dialog = ({children,onClose,actions,title,open,...rest}) => {
                     )
                 })}
             </div>
-            :''}
+            : ''}
     </div>
 }
 
@@ -135,10 +141,9 @@ export const Dialog = ({children,onClose,actions,title,open,...rest}) => {
 export {default as DrawerLayout} from './DrawerLayout'
 
 // divider
-export const Divider = ({ ...rest }) => {
+export const Divider = ({...rest}) => {
     return <hr {...rest} />
 }
-
 
 
 // list
@@ -156,8 +161,14 @@ export const MenuListItem = ({primary, ...rest}) => {
 
 
 // snackbar
-export const Snackbar = ({ message, ...rest}) => {
-    return <div style={{padding:'20px',position:'fixed', top:0, background:'#000', color:'#fff'}} {...rest}>{message}</div>
+export const Snackbar = ({message, ...rest}) => {
+    return <div style={{
+        padding: '20px',
+        position: 'fixed',
+        top: 0,
+        background: '#000',
+        color: '#fff'
+    }} {...rest}>{message}</div>
 }
 
 // cards
@@ -165,6 +176,16 @@ export const Card = ({children, ...rest}) => {
     return <div {...rest}>
         <div>
             {children}
+        </div>
+    </div>
+}
+
+
+// toolbar
+export const Toolbar = ({title, children, ...rest}) => {
+    return <div className="Toolbar">
+        <div className="Toolbar__title">
+            {title}
         </div>
     </div>
 }

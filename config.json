@@ -1,14 +1,28 @@
 {
-  "extensions": [
-    "chat",
-    "finance",
-    "word",
-    "post",
-    "livetranslator",
-    "speechsearch",
-    "social"
-  ],
-  "ui":"material",
-  "apollo_cache":true,
-  "debug":true
+  "extensions": {
+    "chat": {
+      "active": true
+    },
+    "finance": {
+      "active": true
+    },
+    "word": {
+      "active": true
+    },
+    "post": {
+      "active": true
+    },
+    "livetranslator": {
+      "active": false
+    },
+    "speechsearch": {
+      "active": false
+    },
+    "social": {
+      "active": true
+    }
+  },
+  "ui": "material",
+  "apollo_cache": true,
+  "debug": true
 }

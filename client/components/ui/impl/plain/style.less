@@ -1,6 +1,75 @@
-body{
-  margin:0;
+@primary-background: #5B83AD;
+
+body {
+  margin: 0;
 }
-.NavLink{
+
+.NavLink {
   padding: 20px;
+}
+
+.Toolbar {
+  background-color: @primary-background;
+  padding: 10px;
+
+  &__title {
+    color: white;
+  }
+}
+
+.DrawerLayout {
+  &__appFrame {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    position: relative;
+  }
+  &__appBar {
+    position: absolute;
+    height: 50px;
+    width: 100%;
+    display: flex;
+    z-index: 1100;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    flex-direction: column;
+    background-color: @primary-background;
+    &--open {
+      margin-left: 200px;
+    }
+  }
+  &__menuButton {
+    float: left
+  }
+
+  &__menuTitle {
+    float: left;
+    margin: 0
+  }
+
+  &__drawerPaper{
+    flex: 0 0 auto;
+    width: 200px;
+    background: @primary-background;
+    z-index:10;
+    display: none;
+    &--open {
+      display: block;
+    }
+  }
+
+  &__sidebar{
+    margin:0px;
+  }
+  &__sidebarHeader{
+
+  }
+
+  &__content{
+    height: calc(100% - 64px);
+    margin-top: 64px;
+    width: 100%;
+    padding: 24px;
+    flex-grow: 1;
+  }
 }
