@@ -10,7 +10,7 @@
       "active": true
     },
     "post": {
-      "active": true
+      "active": false
     },
     "livetranslator": {
       "active": false
@@ -20,9 +20,20 @@
     },
     "social": {
       "active": true
+    },
+    "shop": {
+      "active": true
     }
   },
-  "ui": "material",
+  "ui": {
+    "impl": "material",
+    "icons": [
+      "Delete",
+      "Code",
+      "AccountCircle"
+    ]
+  },
   "apollo_cache": true,
-  "debug": true
+  "debug": true,
+  "admin_base_url": "/admin"
 }

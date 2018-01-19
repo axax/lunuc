@@ -7,7 +7,7 @@ import {Link} from 'react-router-dom'
 import BaseLayout from '../components/layout/BaseLayout'
 import logger from '../../util/logger'
 import PropTypes from 'prop-types'
-import {Table, DeleteIconButton} from 'ui'
+import {Table, Dialog, DeleteIconButton} from 'ui'
 import Util from 'client/util'
 
 const CMS_PAGES_PER_PAGE = 10
@@ -17,7 +17,9 @@ class CmsContainer extends React.Component {
     static logger = logger(CmsContainer.name)
 
     state = {
-        rowsPerPage: CMS_PAGES_PER_PAGE
+        rowsPerPage: CMS_PAGES_PER_PAGE,
+        confirmDeletionDialog: false,
+        dataToBeDeleted: null
     }
 
     render() {
@@ -50,7 +52,7 @@ class CmsContainer extends React.Component {
                     date: Util.formattedDateFromObjectId(cmsPage._id),
                     action: <div>
                         <Link
-                            to={'/cms/view/' + cmsPage.slug}> View</Link>
+                            to={'/' + cmsPage.slug}> View</Link>
 
                         <DeleteIconButton disabled={(cmsPage.status == 'deleting' || cmsPage.status == 'updating')}
                                           onClick={this.handleDeleteCmsPageClick.bind(this, cmsPage)}>Delete</DeleteIconButton>
@@ -72,7 +74,14 @@ class CmsContainer extends React.Component {
                        onChangePage={this.handleChangePage.bind(this)}
                        onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
 
-
+                {this.state.dataToBeDeleted &&
+                <Dialog open={this.state.confirmDeletionDialog} onClose={this.handleConfirmDeletion}
+                        actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
+                        title="Confirm deletion">
+                    Are you sure you want to delete the page
+                    <strong> {this.state.dataToBeDeleted.slug}</strong>?
+                </Dialog>
+                }
             </BaseLayout>
         )
     }
@@ -95,10 +104,7 @@ class CmsContainer extends React.Component {
     }
 
     handleDeleteCmsPageClick = (data) => {
-        const {deleteCmsPage} = this.props
-        deleteCmsPage({
-            _id: data._id
-        })
+        this.setState({confirmDeletionDialog: true, dataToBeDeleted: data})
     }
 
 
@@ -111,6 +117,16 @@ class CmsContainer extends React.Component {
         this.setState({rowsPerPage})
         this.props.setOptionsForCmsPages({limit: rowsPerPage})
         this.props.refetchCmsPages()
+    }
+
+    handleConfirmDeletion = (action) => {
+        if (action && action.key === 'yes') {
+            const {deleteCmsPage} = this.props
+            deleteCmsPage({
+                _id: this.state.dataToBeDeleted._id
+            })
+        }
+        this.setState({confirmDeletionDialog: false, dataToBeDeleted: false})
     }
 }
 

@@ -14,7 +14,7 @@ export const createUserRoles = async (db) =>{
         // insert some user roles
 
         await userRoleCollection.insertMany([
-            {name: 'administrator', capabilities: ['manage_keyvalues']},
+            {name: 'administrator', capabilities: ['manage_keyvalues','mangage_cms_pages']},
             {name: 'subscriber', capabilities: []}
         ])
     }

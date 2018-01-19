@@ -1,27 +1,30 @@
 import React from 'react'
-import {bindActionCreators} from 'redux'
-import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
-import {withRouter} from 'react-router-dom'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import KeyValueContainer from './KeyValueContainer'
-import * as UserActions from '../actions/UserAction'
 import BaseLayout from '../components/layout/BaseLayout'
 import {Button, Input, Divider, Textarea, DeleteIconButton} from 'ui'
 
 
 class UserProfileContainer extends React.Component {
 
-    state = {
-        username: '',
-        usernameError: '',
-        message: '',
-        loading: false,
-        note: []
-    }
-
     saveNoteTimeouts = {}
+
+
+    constructor(props) {
+        super(props);
+
+        const {username, note} = props.me || {}
+
+        this.state = {
+            username,
+            usernameError: '',
+            message: '',
+            loading: false,
+            note
+        }
+    }
 
     saveNote = (id, value, timeout) => {
         clearTimeout(this.saveNoteTimeouts[id])
@@ -130,15 +133,9 @@ class UserProfileContainer extends React.Component {
     }
 
     render() {
-        const {me, userActions,history} = this.props
+        const {me} = this.props
         const {username, usernameError, loading, note} = this.state
-        const LogoutButton = (() => (
-            <Button type="primary" onClick={() => {
-                localStorage.removeItem('token')
-                userActions.setUser(null, false)
-                history.push('/')
-            }}>Logout</Button>
-        ))
+
 
         let noteElements = []
 
@@ -158,7 +155,6 @@ class UserProfileContainer extends React.Component {
         return (
             <BaseLayout>
                 <h1>Profile</h1>
-                <LogoutButton />
 
                 {this.props.loading | loading ? <span>loading...</span> : ''}
                 <div>
@@ -189,17 +185,13 @@ class UserProfileContainer extends React.Component {
 
 
 UserProfileContainer.propTypes = {
-    location: PropTypes.object.isRequired,
-    history: PropTypes.object.isRequired,
     /* apollo client props */
     me: PropTypes.object,
     updateMe: PropTypes.func.isRequired,
     createNote: PropTypes.func.isRequired,
     updateNote: PropTypes.func.isRequired,
     deleteNote: PropTypes.func.isRequired,
-    loading: PropTypes.bool,
-    /* User Reducer */
-    userActions: PropTypes.object.isRequired
+    loading: PropTypes.bool
 }
 
 const gqlQuery = gql`query {me{username email _id note{_id value}role{capabilities}}}`
@@ -300,26 +292,10 @@ const UserProfileContainerWithGql = compose(
 (UserProfileContainer)
 
 
-/**
- * Map the state to props.
- */
-const mapStateToProps = () => {
-    return {}
-}
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    userActions: bindActionCreators(UserActions, dispatch)
-})
 
 
 /**
  * Connect the component to
  * the Redux store.
  */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(withRouter(UserProfileContainerWithGql))
+export default UserProfileContainerWithGql

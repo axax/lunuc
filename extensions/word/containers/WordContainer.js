@@ -7,6 +7,7 @@ import {Row, Col, Table, Dialog, DeleteIconButton, LinearProgress} from 'ui'
 import logger from 'util/logger'
 import Util from 'client/util'
 import PropTypes from 'prop-types'
+import {ADMIN_BASE_URL} from 'gen/config'
 
 const WORDS_PER_PAGE = 10
 
@@ -25,9 +26,6 @@ class WordContainer extends React.Component {
             confirmDeletionDialog: false,
             dataToBeDeleted: false
         }
-    }
-
-    componentWillMount() {
     }
 
     handleAddWordClick = (data) => {
@@ -70,7 +68,7 @@ class WordContainer extends React.Component {
     }
 
     handleChangePage = (page) => {
-        this.props.history.push(`/word/${(page)}`)
+        this.props.history.push(`${ADMIN_BASE_URL}/word/${(page)}`)
     }
 
     handleConfirmDeletion = (action) => {

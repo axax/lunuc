@@ -73,3 +73,69 @@ body {
     flex-grow: 1;
   }
 }
+
+.Table{
+  width: 100%;
+}
+
+
+.LinearProgress {
+  overflow: hidden;
+  width: 50%;
+  height: 4px;
+  background-color: #B3E5FC;
+  margin: 20px auto;
+
+  &__determinate {
+    position: relative;
+    max-width: 100%;
+    height: 100%;
+    -webkit-transition: width 500ms ease-out 1s;
+    -moz-transition: width 500ms ease-out 1s;
+    -o-transition: width 500ms ease-out 1s;
+    transition: width 500ms ease-out 1s;
+    background-color: #03A9F4;
+  }
+
+  &__indeterminate {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    &:before {
+      content: '';
+      position: absolute;
+      height: 100%;
+      background-color: #03A9F4;
+      animation: indeterminate_first 1.5s infinite ease-out;
+    }
+    &:after {
+      content: '';
+      position: absolute;
+      height: 100%;
+      background-color: #4FC3F7;
+      animation: indeterminate_second 1.5s infinite ease-in;
+    }
+  }
+}
+
+@keyframes indeterminate_first {
+  0% {
+    left: -100%;
+    width: 100%;
+  }
+  100% {
+    left: 100%;
+    width: 10%;
+  }
+}
+
+@keyframes indeterminate_second {
+  0% {
+    left: -150%;
+    width: 100%;
+  }
+  100% {
+    left: 100%;
+    width: 10%;
+  }
+}

@@ -11,6 +11,7 @@ import update from 'immutability-helper'
 import {connect} from 'react-redux'
 import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
+import {ADMIN_BASE_URL} from 'gen/config'
 
 
 class ChatContainer extends React.Component {
@@ -121,7 +122,7 @@ class ChatContainer extends React.Component {
 						if (chat._id === selectedChatId) {
 							selectedChat = chat
 						}
-						const url = '/chat/' + chat._id
+						const url = ADMIN_BASE_URL+'/chat/' + chat._id
 						return <li key={i}>{['creating','deleting'].indexOf(chat.status)>-1 ? <div>{chat.name}
 						</div>:<div><Link to={url}>{chat.name}</Link> <button onClick={this.handleChatDeleteClick.bind(this, chat)}>x</button></div>}
 							<small><small>{Util.formattedDatetimeFromObjectId(chat._id)}</small></small></li>

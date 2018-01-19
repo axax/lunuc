@@ -1,0 +1,33 @@
+{
+  "types": [
+    {
+      "name": "Product",
+      "fields": [
+        {
+          "name": "name"
+        },
+        {
+          "name": "description"
+        },
+        {
+          "name": "price"
+        },
+        {
+          "name": "image"
+        },
+        {
+          "name": "categories",
+          "type": "[ProductCategory]"
+        }
+      ]
+    },
+    {
+      "name": "ProductCategory",
+      "fields": [
+        {
+          "name": "name"
+        }
+      ]
+    }
+  ]
+}

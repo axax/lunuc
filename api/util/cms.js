@@ -3,8 +3,9 @@ import Cache from 'util/cache'
 
 const UtilCms = {
     resolveData: async (db, context, dataResolver) => {
-        if (!dataResolver) return ''
         const results = {}
+
+        if (!dataResolver) return results
 
         try {
             const json = JSON.parse(dataResolver)

@@ -68,7 +68,7 @@ export const Table = ({count, rowsPerPage, page, onChangePage, onChangeRowsPerPa
 
     const totalPages = Math.ceil((count ? count : 0) / (rowsPerPage ? rowsPerPage : 0))
 
-    return <table {...rest}>
+    return <table className="Table" {...rest}>
         <thead>
         <tr>
             {(columns ? columns.map(column => {
@@ -153,7 +153,7 @@ export const MenuList = ({children, ...rest}) => {
     </ul>
 }
 
-export const MenuListItem = ({primary, ...rest}) => {
+export const MenuListItem = ({primary,button, ...rest}) => {
     return <li {...rest}>
         <span>{primary}</span>
     </li>
@@ -187,5 +187,14 @@ export const Toolbar = ({title, children, ...rest}) => {
         <div className="Toolbar__title">
             {title}
         </div>
+    </div>
+}
+
+
+
+// linear progress
+export const LinearProgress = () =>  {
+    return <div className="LinearProgress">
+        <div className="LinearProgress__indeterminate"></div>
     </div>
 }

@@ -4,11 +4,13 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import JsonDom from '../components/JsonDom'
-import ContentEditable from '../components/generic/ContentEditable'
-import {DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Textarea, Switch} from 'ui'
+import {Typography,DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Textarea, Switch} from 'ui'
 import update from 'immutability-helper'
 import {withRouter} from 'react-router-dom'
-
+import {ADMIN_BASE_URL} from 'gen/config'
+import DataResolverEditor from '../components/cms/DataResolverEditor'
+import TemplateEditor from '../components/cms/TemplateEditor'
+import ScriptEditor from '../components/cms/ScriptEditor'
 
 const editorStyle = {
     backgroundColor: '#fff',
@@ -25,16 +27,28 @@ const isPreview = (location) => {
     return params.get('preview')
 }
 
+const isEditMode = (props) => {
+    const {user,location,dynamic} = props
+    return (user.isAuthenticated && !isPreview(location) && !dynamic)
+}
+
 
 class CmsViewContainer extends React.Component {
+    oriTitle = document.title
 
     dataResolverSaveTimeout = 0
 
-    state = {
-        template: null,
-        script: null,
-        dataResolver: null,
-        ssr: false
+    constructor(props) {
+        super(props);
+
+        const {template, script, dataResolver, ssr} = props.cmsPage || {}
+
+        this.state = {
+            template: template,
+            script: script,
+            dataResolver: dataResolver,
+            ssr: ssr
+        }
     }
 
     saveCmsPage = (value, data, key) => {
@@ -81,6 +95,7 @@ class CmsViewContainer extends React.Component {
     }
 
     componentWillReceiveProps(nextProps) {
+        // in case props change and differ from inital props
         if (nextProps.cmsPage) {
             const {template, script, dataResolver, ssr} = nextProps.cmsPage
             this.setState({template, script, dataResolver, ssr})
@@ -94,14 +109,24 @@ class CmsViewContainer extends React.Component {
         })
     }
 
+    componentWillUpdate(props) {
+        document.title = props.slug
+    }
+
+    componentWillUnmount() {
+        document.title = this.oriTitle
+    }
 
     render() {
-        const {cmsPage, user, location, loading, dynamic} = this.props
-        const {template, script, dataResolver} = this.state
-        if (!cmsPage)
+        const {cmsPage, location, loading} = this.props
+        let {template, script, dataResolver} = this.state
+        if (!cmsPage) {
+            console.warn('cmsPage missing')
             return null
+        }
 
-        const editMode = (user.isAuthenticated && !isPreview(location) && !dynamic)
+        const editMode = isEditMode(this.props)
+
 
         if (cmsPage.ssr && !editMode) {
             // it was already rendered on the server side
@@ -109,7 +134,7 @@ class CmsViewContainer extends React.Component {
         }
         console.log('render cms', loading)
 
-        const scope = {page: {slug: cmsPage.slug} }
+        const scope = {page: {slug: cmsPage.slug}}
 
 
         const jsonDom = <JsonDom template={template}
@@ -125,34 +150,30 @@ class CmsViewContainer extends React.Component {
             const sidebar = () => <div>
                 <MenuList>
                     <MenuListItem onClick={e => {
-                        this.props.history.push('/cms')
-                    }} button primary="Back"/>
+                        const win = window.open(location.pathname + '?preview=true', '_blank')
+                        win.focus()
+                    }} button primary="Preview"/>
                 </MenuList>
                 <Divider />
 
                 <div style={{padding: '10px'}}>
-                    <h3>Json data resolver</h3>
 
-                    <ContentEditable
+                    <DataResolverEditor
                         style={editorStyle}
                         onChange={this.handleDataResolverChange}
-                        onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'dataResolver')}>{dataResolver}</ContentEditable>
+                        onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'dataResolver')}>{dataResolver}</DataResolverEditor>
 
-                    <h3>Json template</h3>
-
-                    <ContentEditable
+                    <TemplateEditor
                         style={editorStyle}
                         onChange={this.handleTemplateChange}
-                        onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'template')}>{template}</ContentEditable>
+                        onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'template')}>{template}</TemplateEditor>
 
-                    <h3>Script</h3>
-
-                    <ContentEditable
+                    <ScriptEditor
                         style={editorStyle}
                         onChange={this.handleClientScriptChange}
-                        onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ContentEditable>
+                        onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ScriptEditor>
 
-                    <h3>Settings</h3>
+                    <Typography type="headline">Settings</Typography>
                     <Switch
                         label="SSR (Server side Rendering)"
                         checked={!!this.state.ssr}
@@ -163,11 +184,11 @@ class CmsViewContainer extends React.Component {
 
 
             return <DrawerLayout sidebar={sidebar()}
+                                 drawerSize="large"
                                  toolbarRight={
                                      <Button color="contrast" onClick={e => {
-                                         const win = window.open(location.pathname + '?preview=true', '_blank')
-                                         win.focus()
-                                     }}>Preview</Button>
+                                         this.props.history.push(ADMIN_BASE_URL + '/cms')
+                                     }}>Back</Button>
                                  }
                                  drawerWidth="500px"
                                  title={'Edit Page "' + cmsPage.slug + '"'}>
@@ -179,26 +200,24 @@ class CmsViewContainer extends React.Component {
 
 
 CmsViewContainer.propTypes = {
-    users: PropTypes.array,
-    match: PropTypes.object,
     loading: PropTypes.bool,
     cmsPage: PropTypes.object,
     user: PropTypes.object,
     updateCmsPage: PropTypes.func.isRequired,
-    slug:PropTypes.string,
-    dynamic:PropTypes.bool
+    slug: PropTypes.string,
+    dynamic: PropTypes.bool
 }
 
 const gqlQuery = gql`query cmsPage($slug: String!){ cmsPage(slug: $slug){slug template script dataResolver ssr resolvedData html _id createdBy{_id username}}}`
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
         options(ownProps) {
-            const slug = ownProps.dynamic?ownProps.slug:ownProps.match.params.slug
+            const slug = ownProps.slug
             return {
                 variables: {
                     slug
                 },
-                fetchPolicy: 'cache-and-network'
+                fetchPolicy: isEditMode(ownProps)?'network-only':'cache-and-network'
             }
         },
         props: ({data: {loading, cmsPage}}) => ({
@@ -227,7 +246,7 @@ const CmsViewContainerWithGql = compose(
                         }
                     },
                     update: (store, {data: {updateCmsPage}}) => {
-                        const slug = ownProps.dynamic?ownProps.slug:ownProps.match.params.slug
+                        const slug = ownProps.slug
 
                         const data = store.readQuery({query: gqlQuery, variables: {slug}})
                         if (data.cmsPage) {

@@ -1,33 +1,31 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
-
 import extensions from 'gen/extensions'
-
 import {ExpansionPanel} from 'ui'
+import BaseLayout from '../components/layout/BaseLayout'
+import {Typography} from 'ui'
 
 
 class SystemContainer extends React.Component {
 
 
-	render() {
-        console.log(extensions)
-
-
-        return <div>
+    render() {
+        return <BaseLayout>
+            <Typography type="display1" gutterBottom>Extensions</Typography>
             {
                 Object.keys(extensions).map(k => {
                     const value = extensions[k]
-                    console.log(k)
-                    return <ExpansionPanel heading={value.name} key={k}>
-						<p>{value.description}</p>
-						</ExpansionPanel>
+
+                    return <ExpansionPanel heading={<Typography type="headline">{value.name}</Typography>} key={k}>
+                        <div><Typography type="body1" gutterBottom>{value.description}</Typography></div>
+                        <Typography type="caption" gutterBottom>Types</Typography>
+                    </ExpansionPanel>
                 })
             }
-		</div>
+        </BaseLayout>
     }
 }
-
 
 
 SystemContainer.propTypes = {

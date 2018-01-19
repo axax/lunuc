@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {graphql} from 'react-apollo'
 import gql from 'graphql-tag'
+import {ADMIN_BASE_URL} from 'gen/config'
 
 import {Link} from 'react-router-dom'
 
@@ -58,7 +59,7 @@ class SignUpContainer extends React.Component {
 		if (signupFinished) {
 			return (
 				<div>
-					<p>Thanks for your registration! <Link to="/login">Login</Link></p>
+					<p>Thanks for your registration! <Link to={ADMIN_BASE_URL+'/login'}>Login</Link></p>
 				</div>
 			)
 		}
@@ -84,7 +85,7 @@ class SignUpContainer extends React.Component {
 					<button type="submit">Sign up</button>
 				</form>
 
-				<p>Already have an account? <Link to="/login">Login</Link></p>
+				<p>Already have an account? <Link to={ADMIN_BASE_URL+'/login'}>Login</Link></p>
 			</div>
 		)
 	}

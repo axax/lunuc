@@ -72,14 +72,13 @@ export const cmsResolver = (db) => ({
         })
     },
     cmsPage: async ({slug}, {context}) => {
-        const cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver','ssr'], {match: {slug}})
+        const cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr'], {match: {slug}})
 
         if (cmsPages.results.length == 0) {
             throw new Error('Cms page doesn\'t exist')
         }
 
-        const {_id, createdBy, template, script, dataResolver,ssr} = cmsPages.results[0]
-
+        const {_id, createdBy, template, script, dataResolver, ssr} = cmsPages.results[0]
         const resolvedData = await UtilCms.resolveData(db, context, dataResolver)
         let html
 
@@ -88,16 +87,20 @@ export const cmsResolver = (db) => ({
             // todo: ssr for apollo https://github.com/apollographql/apollo-client/blob/master/docs/source/recipes/server-side-rendering.md
 
             try {
-                const scriptResult = new Function(script)();
-                const scope = {page: {slug}, script:scriptResult, data: resolvedData}
+                const scope = {page: {slug}}
 
-                html = ReactDOMServer.renderToString(<UIProvider><JsonDom template={template} scope={JSON.stringify(scope)}/></UIProvider>)
+                html = ReactDOMServer.renderToString(<UIProvider>
+                    <JsonDom template={template}
+                             script={script}
+                             resolvedData={JSON.stringify(resolvedData)}
+                             editMode={false}
+                             scope={JSON.stringify(scope)}/>
+                </UIProvider>)
             } catch (e) {
                 html = e.message
             }
             console.log(html)
         }
-
         if (Util.isUserLoggedIn(context)) {
             return {
                 _id,
@@ -111,8 +114,11 @@ export const cmsResolver = (db) => ({
                 html
             }
         } else {
+
             // if user is not looged in return only slug and rendered html
             return {
+                _id,
+                createdBy,
                 ssr,
                 slug,
                 template,
@@ -120,22 +126,27 @@ export const cmsResolver = (db) => ({
                 html,
                 resolvedData: JSON.stringify(resolvedData)
             }
+
         }
 
     },
     createCmsPage: async ({slug}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
-        if (!slug || slug.trim() === '') {
-            throw new Error('Slug is empty or invalid')
-        }
-        return await GenericResolver.createEnity(db, context, 'CmsPage', {slug,dataResolver:defaultDataResolver,template:defaultTemplate,script:defaultScript})
+        slug = encodeURIComponent(slug.trim())
+
+        return await GenericResolver.createEnity(db, context, 'CmsPage', {
+            slug,
+            dataResolver: defaultDataResolver,
+            template: defaultTemplate,
+            script: defaultScript
+        })
     },
     updateCmsPage: async ({_id, ...rest}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
-        const result =  await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
+        const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
 
         // if dataResolver has changed resolveData and return it
-        if( rest.dataResolver ) {
+        if (rest.dataResolver) {
             result.resolvedData = JSON.stringify(await UtilCms.resolveData(db, context, rest.dataResolver))
         }
 

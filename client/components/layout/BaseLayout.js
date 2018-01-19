@@ -1,18 +1,23 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
-import {Layout, LayoutHeader, LayoutContent, LayoutFooter, HeaderMenu} from 'ui'
+import {bindActionCreators} from 'redux'
+import {Layout, LayoutHeader, LayoutContent, LayoutFooter, HeaderMenu, Button} from 'ui'
 import ErrorHandlerContainer from '../../containers/ErrorHandlerContainer'
 import NotificationContainer from '../../containers/NotificationContainer'
 import Hook from 'util/hook'
+import {withRouter} from 'react-router-dom'
+import {ADMIN_BASE_URL} from 'gen/config'
+import * as UserActions from 'client/actions/UserAction'
 
 
 class BaseLayout extends React.Component {
 
     menuEntries = [
-        {name: 'Home', to: '/'},
-        {name: 'Profile', to: '/profile'},
-        {name: 'Cms', to: '/cms', auth: true}
+        {name: 'Home', to: ADMIN_BASE_URL+'/'},
+        {name: 'System', to: ADMIN_BASE_URL+'/system', auth: true},
+        {name: 'Profile', to: ADMIN_BASE_URL+'/profile'},
+        {name: 'Cms', to: ADMIN_BASE_URL+'/cms', auth: true}
     ]
 
     constructor(props) {
@@ -20,15 +25,28 @@ class BaseLayout extends React.Component {
         Hook.call('MenuMenu', {menuEntries: this.menuEntries})
     }
 
+    linkTo(item) {
+        this.props.history.push(item.to);
+    }
+
     render(){
-        const {children, isAuthenticated} = this.props
+        const {history,children, isAuthenticated, userActions} = this.props
 
         return <Layout className="layout">
             <LayoutHeader>
-                <HeaderMenu items={this.menuEntries}/>
+                <HeaderMenu items={this.menuEntries} metaContent={
+                    isAuthenticated ?
+                        <Button type="contrast" onClick={() => {
+                            localStorage.removeItem('token')
+                            userActions.setUser(null, false)
+                            history.push('/')
+                        }}>Logout</Button>
+
+                        : <Button color="contrast" onClick={this.linkTo.bind(this,{to:ADMIN_BASE_URL+'/login'})}>Login</Button>
+                }/>
             </LayoutHeader>
 
-            <LayoutContent style={{ padding: '0 50px' }}>
+            <LayoutContent style={{ padding: '100px 50px' }}>
 
                 <ErrorHandlerContainer />
                 <NotificationContainer />
@@ -46,8 +64,9 @@ class BaseLayout extends React.Component {
 
 
 BaseLayout.propTypes = {
-    /* UserReducer */
-    isAuthenticated: PropTypes.bool
+    isAuthenticated: PropTypes.bool,
+    /* User Reducer */
+    userActions: PropTypes.object.isRequired
 }
 
 
@@ -63,9 +82,19 @@ const mapStateToProps = (store) => {
 
 
 /**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => ({
+    userActions: bindActionCreators(UserActions, dispatch)
+})
+
+
+
+/**
  * Connect the component to
  * the Redux store.
  */
 export default connect(
-    mapStateToProps
-)(BaseLayout)
+    mapStateToProps,
+    mapDispatchToProps
+)(withRouter(BaseLayout))

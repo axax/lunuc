@@ -11,18 +11,29 @@ import SystemContainer from '../../containers/SystemContainer'
 import Home from '../Home'
 import PrivateRoute from './PrivateRoute'
 import Hook from '../../../util/hook'
+import {ADMIN_BASE_URL} from 'gen/config'
 
 class Routes extends React.Component {
 
+    adminBaseUrlPlain = ADMIN_BASE_URL.slice( 1 )
+
     routes = [
-        {exact: true, path: '/', component: Home},
-        {exact: true, path: '/cms/view/:slug*', component: CmsViewContainer},
-        {exact: true, path: '/cms', component: CmsContainer},
-        {exact: true, path: '/cms/:page', component: CmsContainer},
-        {path: '/login', component: LoginContainer},
-        {path: '/signup', component: SignUpContainer},
-        {private: true, path: '/profile', component: UserProfileContainer},
-        {private: true, path: '/system', component: SystemContainer},
+        {exact: true, path: ADMIN_BASE_URL + '/', component: Home},
+        {exact: true, path: ADMIN_BASE_URL + '/cms', component: CmsContainer},
+        {exact: true, path: ADMIN_BASE_URL + '/cms/:page', component: CmsContainer},
+        {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
+        {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
+        {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
+        {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer},
+        {
+            // match everything but paths that start with ADMIN_BASE_URL
+            exact: false, path: '/:slug*', render: ({match}) => {
+            if (match.url === '/' || (match.params.slug && match.params.slug.split('/')[0]!==this.adminBaseUrlPlain) ) {
+                return <CmsViewContainer slug={match.params.slug || ''} />;
+            }
+            return null
+        }
+        }
     ]
 
     constructor(props) {
@@ -34,14 +45,14 @@ class Routes extends React.Component {
 
         const {isAuthenticated} = this.props
 
-
         return <Router>
             <div id="router">
                 {this.routes.map((o, i) => {
                     if (o.private) {
-                        return <PrivateRoute key={i} path={o.path} isAuthenticated={isAuthenticated} component={o.component}/>
+                        return <PrivateRoute key={i} path={o.path} isAuthenticated={isAuthenticated}
+                                             component={o.component}/>
                     } else {
-                        return <Route key={i} path={o.path} exact={o.exact} component={o.component}/>
+                        return <Route key={i} path={o.path} exact={o.exact} component={o.component} render={o.render} />
                     }
                 })}
             </div>

@@ -12,10 +12,11 @@ export class OfflineCache extends InMemoryCache {
     constructor(...args) {
         super(...args)
         if( APOLLO_CACHE ) {
-            this.restore(JSON.parse(window.localStorage.getItem(CACHE_KEY)))
+            this.logger.debug('restore local storage')
+            this.restore(JSON.parse(window.localStorage.getItem('@APOLLO_OFFLINE_CACHE')))
         }
 
-        window.addEventListener("beforeunload",  (e) => {
+        window.addEventListener('beforeunload',  (e) => {
             clearTimeout(this.changeTimeout)
             this.saveToLocalStorage()
         })
@@ -25,24 +26,25 @@ export class OfflineCache extends InMemoryCache {
 
     saveToLocalStorageDelayed() {
         clearTimeout(this.changeTimeout)
-        this.changeTimeout = setTimeout(this.saveToLocalStorage.bind(this),5000)
+        this.changeTimeout = setTimeout(this.saveToLocalStorage.bind(this),10000)
     }
 
 
     saveToLocalStorage() {
-        const state = this.extract()
-        // Filter some queries we don't want to persist
-        const newstate = Object.keys(state)
-            .filter(key => (
-                    key.indexOf('ROOT_QUERY.login') < 0 &&
-                    key.indexOf('ROOT_QUERY.notification') < 0 &&
-                    key.indexOf('ROOT_SUBSCRIPTION.notification') < 0
+        if( APOLLO_CACHE ) {
+            const state = this.extract()
+            // Filter some queries we don't want to persist
+            const newstate = Object.keys(state)
+                .filter(key => (
+                        key.indexOf('ROOT_QUERY.login') < 0 &&
+                        key.indexOf('ROOT_QUERY.notification') < 0 &&
+                        key.indexOf('ROOT_SUBSCRIPTION.notification') < 0
+                    )
                 )
-            )
-            .reduce((res, key) => (res[key] = state[key], res), {})
-
-        this.logger.debug('save to local storage')
-        window.localStorage.setItem(CACHE_KEY,JSON.stringify(newstate))
+                .reduce((res, key) => (res[key] = state[key], res), {})
+            this.logger.debug('save to local storage')
+            window.localStorage.setItem(CACHE_KEY, JSON.stringify(state))
+        }
     }
 
     broadcastWatches() {

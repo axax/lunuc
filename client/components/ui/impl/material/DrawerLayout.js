@@ -13,7 +13,9 @@ import ChevronLeftIcon from 'material-ui-icons/ChevronLeft'
 import ChevronRightIcon from 'material-ui-icons/ChevronRight'
 import {Button} from 'ui'
 
-const drawerWidth = '700px'
+const DRAWER_WIDTH_LARGE = '800px'
+const DRAWER_WIDTH_MEDIUM = '400px'
+const DRAWER_WIDTH_SMALL = '300px'
 
 const styles = theme => ({
     root: {
@@ -30,19 +32,21 @@ const styles = theme => ({
     },
     appBar: {
         position: 'absolute',
-        zIndex: theme.zIndex.navDrawer + 1,
+        maxWidth: '100%',
+        zIndex: theme.zIndex.drawer + 1,
         transition: theme.transitions.create(['width', 'margin'], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
         }),
     },
-    appBarShift: {
-        /*marginLeft: drawerWidth,*/
-        width: `calc(100% - ${drawerWidth})`,
-        transition: theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-        }),
+    smallAppBarShift: {
+        width: `calc(100% - ${DRAWER_WIDTH_SMALL})`
+    },
+    mediumAppBarShift: {
+        width: `calc(100% - ${DRAWER_WIDTH_MEDIUM})`
+    },
+    largeAppBarShift: {
+        width: `calc(100% - ${DRAWER_WIDTH_LARGE})`
     },
     menuButton: {
         marginLeft: 12,
@@ -51,14 +55,26 @@ const styles = theme => ({
     hide: {
         display: 'none',
     },
+    drawerDocked: {
+      maxWidth:"100%",
+    },
     drawerPaper: {
         position: 'relative',
         height: '100%',
-        width: drawerWidth,
+        maxWidth: '100%',
         transition: theme.transitions.create('width', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
         }),
+    },
+    smallDrawerPaper:{
+        width: DRAWER_WIDTH_SMALL,
+    },
+    mediumDrawerPaper:{
+        width: DRAWER_WIDTH_MEDIUM,
+    },
+    largeDrawerPaper:{
+        width: DRAWER_WIDTH_LARGE,
     },
     drawerPaperClose: {
         width: 0,
@@ -69,8 +85,16 @@ const styles = theme => ({
         }),
     },
     drawerInner: {
-        // Make the items inside not wrap when transitioning:
-        width: drawerWidth,
+        maxWidth: '100%',
+    },
+    smallDrawerInner:{
+        width: DRAWER_WIDTH_SMALL,
+    },
+    mediumDrawerInner:{
+        width: DRAWER_WIDTH_MEDIUM,
+    },
+    largeDrawerInner:{
+        width: DRAWER_WIDTH_LARGE,
     },
     drawerHeader: {
         display: 'flex',
@@ -110,10 +134,12 @@ class DrawerLayout extends React.Component {
         const { classes, theme, title, sidebar, toolbarRight, children } = this.props
         const { open } = this.state
 
+        const drawerSize = this.props.drawerSize || 'medium'
+
         return (
             <div className={classes.root}>
                 <div className={classes.appFrame}>
-                    <AppBar className={classNames(classes.appBar, open && classes.appBarShift)}>
+                    <AppBar className={classNames(classes.appBar, open && classes[drawerSize+'AppBarShift'] )}>
                         <Toolbar>
                             <IconButton
                                 color="contrast"
@@ -133,11 +159,12 @@ class DrawerLayout extends React.Component {
                     <Drawer
                         type="permanent"
                         classes={{
-                            paper: classNames(classes.drawerPaper, !open && classes.drawerPaperClose),
+                            docked: classes.drawerDocked,
+                            paper: classNames(classes.drawerPaper,classes[drawerSize+'DrawerPaper'], !open && classes.drawerPaperClose),
                         }}
                         open={open}
                     >
-                        <div className={classes.drawerInner}>
+                        <div className={ classNames(classes.drawerInner,classes[drawerSize+'DrawerInner']) }>
                             <div className={classes.drawerHeader}>
                                 <IconButton onClick={this.handleDrawerClose}>
                                     {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
@@ -152,13 +179,13 @@ class DrawerLayout extends React.Component {
                     </main>
                 </div>
             </div>
-        );
+        )
     }
 }
 
 DrawerLayout.propTypes = {
     classes: PropTypes.object.isRequired,
     theme: PropTypes.object.isRequired,
-};
+}
 
 export default withStyles(styles, { withTheme: true })(DrawerLayout);

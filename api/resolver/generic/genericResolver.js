@@ -5,7 +5,7 @@ import {ObjectId} from 'mongodb'
 const GenericResolver = {
     entities: async (db, context, collectionName, data, options) => {
 
-        Util.checkIfUserIsLoggedIn(context)
+        //Util.checkIfUserIsLoggedIn(context)
 
         let {limit, offset, match, filter, sort} = options
 
@@ -90,7 +90,6 @@ const GenericResolver = {
                 $addFields: {limit, offset}
             }
         ]).toArray())
-
 
         if( a.length === 0 ){
             return {

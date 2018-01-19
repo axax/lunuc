@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/axax/lunuc.svg?branch=master)](https://travis-ci.org/axax/lunuc)
 
-__This is a boilerplate / app template. A full-stack setup to build progressive web apps and to play around with the latest web technologies. Everything is up and running.__
+__This is a boilerplate / app template. A full-stack setup to build progressive web apps and to play around with the latest web technologies.__
 
 This demo app is also deployed on heroku 
 https://lunuc.herokuapp.com/
@@ -27,9 +27,9 @@ https://lunuc.herokuapp.com/
 * Travis yml
 * Depolymet to heroku
 * Use of Service worker
+* Template / Page builder
 
 *Todos*
-* Styling
 * Push notification
 * Docker integration
 * Use of AWS lambda
@@ -61,7 +61,11 @@ Url to access the mongo database:
 
 ```text
 ├── api
-├── src
+│   ├── resolver
+│   └── schema
+├── server
+├── extensions
+├── client
 │   ├── actions
 │   ├── components
 │   ├── constants
@@ -71,8 +75,6 @@ Url to access the mongo database:
 │   └── store
 └── test
 ```
-
-- actions contains all actions
 
 ### Redux architecure
 

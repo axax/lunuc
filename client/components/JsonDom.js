@@ -4,15 +4,16 @@ import ContentEditable from '../components/generic/ContentEditable'
 import {DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Textarea, Toolbar, Card, DeleteIconButton} from 'ui'
 import Hook from 'util/hook'
 import CmsViewContainer from '../containers/CmsViewContainer'
+import {Link} from 'react-router-dom'
 
 class JsonDom extends React.Component {
 
     components = {
+        'Link': Link,
         'Cms': ({...rest}) => <CmsViewContainer dynamic={true} {...rest}/>,
         'Toolbar': ({position, ...rest}) => <Toolbar
             position={(this.props.editMode ? 'static' : position)} {...rest} />,
         'Button': Button,
-        'DeleteIconButton': DeleteIconButton,
         'Divider': Divider,
         'Card': Card,
         'Col': Col,
@@ -33,7 +34,6 @@ class JsonDom extends React.Component {
     scriptResult = null
     jsOnStack = []
     jsOn = (key, cb) => {
-        console.log(key)
         this.jsOnStack.push({key, cb})
     }
     jsGetLocal = (key,def) => {
@@ -65,7 +65,6 @@ class JsonDom extends React.Component {
     constructor(props) {
         super(props)
         this.state = {hasReactError: false}
-
         Hook.call('JsonDom', {components: this.components})
     }
 
@@ -105,6 +104,10 @@ class JsonDom extends React.Component {
         if (!props.template || !props.scope) return true
 
         return this.props.template != props.template || this.props.scope != props.scope || this.props.script != props.script || this.props.resolvedData != props.resolvedData
+    }
+
+    componentWillUpdate(props) {
+        this.parseError = null
     }
 
     emitChange(id, v, save) {
@@ -278,14 +281,12 @@ class JsonDom extends React.Component {
         }
     }
 
-    componentWillUpdate(props) {
-        this.parseError = null
-    }
-
     render() {
         const {template, script, resolvedData} = this.props
-        if (!template)
+        if (!template) {
+            console.warn('Template is missing.')
             return null
+        }
 
         const {hasReactError} = this.state
 
@@ -301,7 +302,6 @@ class JsonDom extends React.Component {
 
         if( this.runResolvedData ) {
             this.runResolvedData = false
-            //console.log('render ResolvedData')
             try {
                 this.resolvedDataJson = JSON.parse(resolvedData)
                 if (this.resolvedDataJson.error) {

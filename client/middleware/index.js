@@ -67,10 +67,6 @@ export function configureMiddleware(store) {
             uri: wsUri,
             options: {
                 reconnect: true, //auto-reconnect
-                // // carry login state (should use secure websockets (wss) when using this)
-                // connectionParams: {
-                //   authToken: localStorage.getItem("Meteor.loginToken")
-                // }
             }
         }),
         httpLinkWithErrorAndMiddleware
@@ -95,7 +91,7 @@ export function configureMiddleware(store) {
     return new ApolloClient({
         link,
         // use restore on the cache instead of initialState
-        cache: cache.restore(window.__APOLLO_CLIENT__),
+        cache: cache,
         ssrMode: false,
         ssrForceFetchDelay: 100,
         connectToDevTools: true,

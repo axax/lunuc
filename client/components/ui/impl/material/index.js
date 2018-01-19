@@ -9,7 +9,6 @@ import './style.less'
 
 import React from 'react'
 
-import MaterialTypography from 'material-ui/Typography';
 
 // ui provider
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles'
@@ -58,23 +57,19 @@ const styles = theme => ({
 })
 
 
+//Typography
+import MaterialTypography from 'material-ui/Typography';
+export const Typography = ({...rest}) => {
+    return <MaterialTypography{...rest} />
+}
+
+
 // Button
 import MaterialButton from 'material-ui/Button'
 
 export const Button = ({type, ...rest}) => {
     // map type to color
     return <MaterialButton color={type} {...rest} />
-}
-
-// IconButton
-import MaterialIconButton from 'material-ui/IconButton'
-import MaterialDeleteIcon from 'material-ui-icons/Delete'
-
-export const DeleteIconButton = ({...rest}) => {
-    // map type to color
-    return <MaterialIconButton{...rest} >
-        <MaterialDeleteIcon />
-    </MaterialIconButton>
 }
 
 // Input
@@ -121,6 +116,7 @@ export const LayoutFooter = Layout
 
 // menu components
 export {default as HeaderMenu} from './HeaderMenu'
+export {default as SimpleMenu} from './SimpleMenu'
 
 
 // pagination
@@ -315,7 +311,7 @@ import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 export const ExpansionPanel = withStyles(styles, {withTheme: true})(({classes, heading, children, ...rest}) => {
     return <MaterialExpansionPanel>
         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-            <MaterialTypography className={classes.heading}>{heading}</MaterialTypography>
+            {heading}
         </ExpansionPanelSummary>
         <ExpansionPanelDetails>
             {children}

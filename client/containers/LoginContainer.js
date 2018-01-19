@@ -10,6 +10,7 @@ import {Link} from 'react-router-dom'
 import * as UserActions from '../actions/UserAction'
 import * as ErrorHandlerAction from '../actions/ErrorHandlerAction'
 import {Button, Input} from 'ui'
+import {ADMIN_BASE_URL} from 'gen/config'
 
 class LoginContainer extends React.Component {
 	state = {
@@ -67,7 +68,7 @@ class LoginContainer extends React.Component {
 
 	render() {
 
-		const {from} = this.props.location.state || {from: {pathname: '/'}}
+		const {from} = this.props.location.state || {from: {pathname: ADMIN_BASE_URL}}
 		const {redirectToReferrer, loading, username, password, error} = this.state
 
 		if (redirectToReferrer) {
@@ -92,7 +93,7 @@ class LoginContainer extends React.Component {
 
 					<Button onClick={this.login.bind(this)}>Login</Button>
 
-				<p>Don&apos;t have an account? <Link to="/signup">Sign up</Link></p>
+				<p>Don&apos;t have an account? <Link to={ADMIN_BASE_URL+'/signup'}>Sign up</Link></p>
 			</div>
 		)
 	}
