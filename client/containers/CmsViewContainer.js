@@ -3,14 +3,14 @@ import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
-import JsonDom from '../components/JsonDom'
-import {Typography,DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Textarea, Switch} from 'ui'
+import JsonDom from 'client/components/JsonDom'
+import {Typography,DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Switch} from 'ui/admin'
 import update from 'immutability-helper'
 import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
-import DataResolverEditor from '../components/cms/DataResolverEditor'
-import TemplateEditor from '../components/cms/TemplateEditor'
-import ScriptEditor from '../components/cms/ScriptEditor'
+import DataResolverEditor from 'client/components/cms/DataResolverEditor'
+import TemplateEditor from 'client/components/cms/TemplateEditor'
+import ScriptEditor from 'client/components/cms/ScriptEditor'
 
 const editorStyle = {
     backgroundColor: '#fff',
@@ -39,7 +39,7 @@ class CmsViewContainer extends React.Component {
     dataResolverSaveTimeout = 0
 
     constructor(props) {
-        super(props);
+        super(props)
 
         const {template, script, dataResolver, ssr} = props.cmsPage || {}
 
@@ -205,7 +205,9 @@ CmsViewContainer.propTypes = {
     user: PropTypes.object,
     updateCmsPage: PropTypes.func.isRequired,
     slug: PropTypes.string,
-    dynamic: PropTypes.bool
+    dynamic: PropTypes.bool,
+    history: PropTypes.object,
+    location: PropTypes.object
 }
 
 const gqlQuery = gql`query cmsPage($slug: String!){ cmsPage(slug: $slug){slug template script dataResolver ssr resolvedData html _id createdBy{_id username}}}`

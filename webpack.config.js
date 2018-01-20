@@ -1,8 +1,55 @@
-const devMode = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1
-
-
 const path = require('path')
 const webpack = require('webpack')
+
+const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1
+
+const EXCLUDE_FROM_BUILD = [
+    path.resolve(__dirname, 'node_modules'),
+    path.resolve(__dirname, 'test'),
+    path.resolve(__dirname, 'server'),
+    path.resolve(__dirname, 'build'),
+    path.resolve(__dirname, 'extensions'),
+    path.resolve(__dirname, 'client/components/ui'),
+    path.resolve(__dirname, './api')]
+
+const INCLUDE_IN_BUILD = []
+
+const APP_CONFIG = require('./config.json')
+
+if( APP_CONFIG.extensions ) {
+    for (const extensionName in APP_CONFIG.extensions) {
+        if (APP_CONFIG.extensions[extensionName].active) {
+            INCLUDE_IN_BUILD.push(path.resolve(__dirname, 'extensions/' + extensionName))
+        }
+    }
+}
+
+if( APP_CONFIG.ui ) {
+    APP_CONFIG.ui.forEach(ui=>{
+        INCLUDE_IN_BUILD.push(path.resolve(__dirname, 'client/components/ui/impl/' + ui.impl))
+    })
+}
+
+const excludeFunction = (path) => {
+
+    for(let i=0;i<EXCLUDE_FROM_BUILD.length;i++){
+        if(path.indexOf(EXCLUDE_FROM_BUILD[i])===0 ){
+            // it belongs to the excluded files
+
+            for(let j=0;j<INCLUDE_IN_BUILD.length;j++) {
+                if (path.indexOf(INCLUDE_IN_BUILD[j]) === 0) {
+                    // it is an exception and should be included anyway
+                    return false
+                }
+            }
+
+            return true
+        }
+    }
+    return false
+}
+
+
 
 const GenSourceCode = require('./webpack.gensrc.js')
 
@@ -17,18 +64,20 @@ const config = {
         rules: [
             {
                 test: /\.js$/,
+                exclude: excludeFunction,
                 loader: 'babel-loader',
-                exclude: /node_modules/,
                 query: {
                     presets: ['env', 'react', 'stage-0']
                 }
             },
             {
                 test: /\.css$/,
+                exclude: excludeFunction,
                 use: ['style-loader', 'css-loader']
             },
             {
                 test: /\.less$/,
+                exclude: excludeFunction,
                 use: ['style-loader', 'css-loader', 'less-loader']
             }
         ]
@@ -49,7 +98,7 @@ const config = {
 /**
  *  Developer / Debug Config
  */
-if (devMode) {
+if (DEV_MODE) {
     console.log('Build for developing')
 
 
@@ -99,7 +148,7 @@ if (devMode) {
     )
 
     /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-    config.plugins.push(new BundleAnalyzerPlugin())*/
+     config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'
 }

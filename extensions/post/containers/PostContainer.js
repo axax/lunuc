@@ -9,7 +9,7 @@ import Util from 'client/util'
 import {Link} from 'react-router-dom'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import GenericForm from 'client/components/generic/GenericForm'
-import {Row, Col} from 'ui'
+import {Row, Col} from 'ui/admin'
 
 
 class PostContainer extends React.Component {

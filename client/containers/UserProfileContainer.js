@@ -3,8 +3,8 @@ import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import KeyValueContainer from './KeyValueContainer'
-import BaseLayout from '../components/layout/BaseLayout'
-import {Button, Input, Divider, Textarea, DeleteIconButton} from 'ui'
+import BaseLayout from 'client/components/layout/BaseLayout'
+import {Button, TextField, Divider, DeleteIconButton, Chip} from 'ui/admin'
 
 
 class UserProfileContainer extends React.Component {
@@ -13,7 +13,7 @@ class UserProfileContainer extends React.Component {
 
 
     constructor(props) {
-        super(props);
+        super(props)
 
         const {username, note} = props.me || {}
 
@@ -134,18 +134,18 @@ class UserProfileContainer extends React.Component {
 
     render() {
         const {me} = this.props
-        const {username, usernameError, loading, note} = this.state
+        if( !me ) return null
 
+        const {username, usernameError, loading, note} = this.state
 
         let noteElements = []
 
         let hasManageKeyvalue = me && me.role.capabilities.includes('manage_keyvalues')
 
-
         if (note) {
             note.forEach(
                 (o) => noteElements.push(<div key={o._id}>
-					<Textarea name="note" id={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange}
+					<TextField multiline name="note" id={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange}
                               defaultValue={o.value}/>
                     <DeleteIconButton id={o._id} onClick={(e) => this.deleteNote(e, o)} />
                 </div>)
@@ -158,18 +158,27 @@ class UserProfileContainer extends React.Component {
 
                 {this.props.loading | loading ? <span>loading...</span> : ''}
                 <div>
-                    <Input type="text" name="username" value={username} onChange={this.handleInputChange}/>
-                    <Button onClick={this.updateProfile.bind(this)} raised type="primary">Update profile</Button>
+                    <TextField type="text" name="username" value={username} onChange={this.handleInputChange}/>
+                    <Button onClick={this.updateProfile.bind(this)} raised color="primary">Update profile</Button>
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
                 </div>
+
+                <h2>Role & capabilities</h2>
+                <p>Role {me.role.name}</p>
+                {
+                    me.role.capabilities.map((v,i) => {
+                        return <Chip key={i} label={v} />
+                    })
+                }
+
 
 
                 <Divider />
                 <h2>Notes</h2>
                 {noteElements}
                 <br />
-                <Button raised type="primary" onClick={this.createNote}>Add new note</Button>
+                <Button raised color="primary" onClick={this.createNote}>Add new note</Button>
                 {hasManageKeyvalue ?
                     <div>
                         <Divider />
@@ -194,7 +203,7 @@ UserProfileContainer.propTypes = {
     loading: PropTypes.bool
 }
 
-const gqlQuery = gql`query {me{username email _id note{_id value}role{capabilities}}}`
+const gqlQuery = gql`query {me{username email _id note{_id value}role{name capabilities}}}`
 
 
 const gqlUpdate = gql`

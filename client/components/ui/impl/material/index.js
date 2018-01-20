@@ -6,11 +6,9 @@
  */
 
 import './style.less'
-
 import React from 'react'
 
-
-// ui provider
+// material theme
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles'
 import indigo from 'material-ui/colors/indigo'
 import pink from 'material-ui/colors/pink'
@@ -19,6 +17,17 @@ const defaultTheme = createMuiTheme()
 
 // override the default theme
 const theme = createMuiTheme({
+    overrides: {
+        body:{
+          background:  indigo[300]
+        },
+        MuiButton: {
+            // Name of the styleSheet
+            root: {
+
+            },
+        },
+    },
     palette: {
         contrastThreshold: 3.1,
         tonalOffset: 0.07,
@@ -35,55 +44,49 @@ const theme = createMuiTheme({
             contrastText: defaultTheme.palette.getContrastText(pink.A400),
         },
         error: red.A400,
-    },
-})
-
-export const UIProvider = ({children, ...rest}) => {
-    return <MuiThemeProvider theme={theme} {...rest}>{children}</MuiThemeProvider>
-}
-
-// define some styles so it can be used in the components
-import {withStyles} from 'material-ui/styles'
-
-const styles = theme => ({
-    textField: {
-        marginLeft: theme.spacing.unit,
-        marginRight: theme.spacing.unit,
-    },
-    heading: {
-        fontSize: theme.typography.pxToRem(15),
-        fontWeight: theme.typography.fontWeightRegular,
     }
 })
 
+import JssProvider from 'react-jss/lib/JssProvider'
+import { createGenerateClassName } from 'material-ui/styles'
+
+const generateClassName = createGenerateClassName({
+    dangerouslyUseGlobalCSS: false,
+    productionPrefix: 'c',
+})
+
+// Theme provider
+export const UIProvider = ({children, ...rest}) => {
+    return <JssProvider generateClassName={generateClassName}><MuiThemeProvider disableStylesGeneration theme={theme} {...rest}>{children}</MuiThemeProvider></JssProvider>
+}
+
+// define some styles so it can be used in the components
+export {withStyles} from 'material-ui/styles'
+
 
 //Typography
-import MaterialTypography from 'material-ui/Typography';
-export const Typography = ({...rest}) => {
-    return <MaterialTypography{...rest} />
-}
+import Typography from 'material-ui/Typography'
+export {Typography}
 
 
 // Button
-import MaterialButton from 'material-ui/Button'
+export Button from 'material-ui/Button'
 
-export const Button = ({type, ...rest}) => {
-    // map type to color
-    return <MaterialButton color={type} {...rest} />
-}
+// Inputs
+export Input from 'material-ui/Input'
+export TextField from 'material-ui/TextField'
+export Select from 'material-ui/Select'
+export Checkbox from 'material-ui/Checkbox'
+export FormControl from 'material-ui/Form'
 
-// Input
-import MaterialTextField from 'material-ui/TextField'
+// Chip
+export Chip from 'material-ui/Chip'
 
-export const Input = withStyles(styles, {withTheme: true})(({classes, ...rest}) => {
-    return <MaterialTextField className={classes.textField} {...rest} />
-})
+// Divider
+export Divider from 'material-ui/Divider'
 
-// Checkbox
-import MaterialCheckbox from 'material-ui/Checkbox'
-export const Checkbox = ({...rest}) => {
-    return <MaterialCheckbox {...rest} />
-}
+
+
 //Switch
 import {FormControlLabel} from 'material-ui/Form'
 import MaterialSwitch from 'material-ui/Switch'
@@ -99,12 +102,6 @@ export const Switch = ({label, ...rest}) => {
 }
 
 
-export const Textarea = withStyles(styles, {withTheme: true})(({classes, ...rest}) => {
-    return <MaterialTextField
-        multiline className={classes.textField} {...rest} />
-})
-
-
 // layout components
 export const Layout = ({children, ...rest}) => {
     return <div {...rest}>{children}</div>
@@ -117,10 +114,11 @@ export const LayoutFooter = Layout
 // menu components
 export {default as HeaderMenu} from './HeaderMenu'
 export {default as SimpleMenu} from './SimpleMenu'
+export {MenuItem} from 'material-ui/Menu'
 
 
 // pagination
-export {default as Pagination} from '../plain/Pagination'
+export {default as Pagination} from './Pagination'
 
 
 // grid
@@ -133,131 +131,19 @@ export const Col = ({...rest}) => {
     return <MaterialGrid item {...rest} />
 }
 
-// table
-import MaterialTable, {
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
-    TableFooter,
-    TablePagination,
-    TableSortLabel
-} from 'material-ui/Table'
-
-export const Table = ({count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onSort, columns, dataSource, ...rest}) => {
-    const createSortHandler = property => event => {
-        if( onSort )
-            onSort(event, property)
-    }
-
-
-    return <MaterialTable {...rest}>
-        <TableHead>
-            <TableRow>
-                {columns && columns.map(column => {
-                    return <TableCell key={column.dataIndex}>
-
-                        {column.sortable ?
-                            <Tooltip
-                                title="Sort"
-                                placement={column.numeric ? 'bottom-end' : 'bottom-start'}
-                                enterDelay={300}
-                            >
-                                <TableSortLabel
-                                    active={orderBy === column.dataIndex}
-                                    direction={orderDirection}
-                                    onClick={createSortHandler(column.dataIndex)}
-                                >
-                                    {column.title}
-                                </TableSortLabel>
-                            </Tooltip> : column.title }
-
-
-                    </TableCell>
-                })}
-            </TableRow>
-        </TableHead>
-        {dataSource &&
-            <TableBody>
-                {dataSource.map((entry, i) => {
-                    return (
-                        <TableRow key={i}>
-                            {Object.keys(entry).map((key) => (
-                                <TableCell key={key}>{entry[key]}</TableCell>
-                            ))}
-                        </TableRow>
-                    )
-                })}
-            </TableBody>
-        }
-        <TableFooter>
-            <TableRow>
-                <TablePagination
-                    count={count}
-                    rowsPerPage={rowsPerPage}
-                    page={(page - 1)}
-                    onChangePage={(e, page) => onChangePage(page + 1)}
-                    onChangeRowsPerPage={(e) => onChangeRowsPerPage(e.target.value)}
-                />
-            </TableRow>
-        </TableFooter>
-    </MaterialTable>
-}
-
-
-// dialog
-import MaterialDialog, {
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    withMobileDialog,
-} from 'material-ui/Dialog'
-
-
-export const Dialog = withMobileDialog()(({children, onClose, actions, title, ...rest}) => {
-    return <MaterialDialog
-        aria-labelledby="responsive-dialog-title"
-        onClose={onClose}
-        {...rest}>
-        <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
-        <DialogContent>
-            <DialogContentText>
-                {children}
-            </DialogContentText>
-        </DialogContent>
-        {actions ?
-            <DialogActions>
-                {actions.map((action, i) => {
-                    return (
-                        <Button key={i} onClick={() => {
-                            onClose(action)
-                        }} color={action.type}>
-                            {action.label}
-                        </Button>
-                    )
-                })}
-            </DialogActions>
-            : ''}
-    </MaterialDialog>
-})
-
 //drawer
-import MaterialDrawer from 'material-ui/Drawer'
-
-export const Drawer = ({children, ...rest}) => {
-    return <MaterialDrawer {...rest}>
-        {children}
-    </MaterialDrawer>
-}
+export Drawer from 'material-ui/Drawer'
 
 
-// drawer layout
-export {default as DrawerLayout} from './DrawerLayout'
+// Drawer layouts
+export DrawerLayout from './DrawerLayout'
 
+// Tables
+export SimpleTable from './SimpleTable'
 
-// divider
-export Divider from 'material-ui/Divider'
+// Dialogs
+export SimpleDialog from './SimpleDialog'
+
 
 
 // list
@@ -308,7 +194,7 @@ import MaterialExpansionPanel, {
 import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 
 
-export const ExpansionPanel = withStyles(styles, {withTheme: true})(({classes, heading, children, ...rest}) => {
+export const ExpansionPanel = ({heading, children, ...rest}) => {
     return <MaterialExpansionPanel>
         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
             {heading}
@@ -317,30 +203,24 @@ export const ExpansionPanel = withStyles(styles, {withTheme: true})(({classes, h
             {children}
         </ExpansionPanelDetails>
     </MaterialExpansionPanel>
-})
+}
 
 
 // toolbar
 import MaterialAppBar from 'material-ui/AppBar'
 import MaterialToolbar from 'material-ui/Toolbar'
-export const Toolbar = ({classes, title, children, ...rest}) => {
+export const Toolbar = ({title, children, ...rest}) => {
     return <MaterialAppBar {...rest} ><MaterialToolbar>
-        <MaterialTypography type="title" color="inherit">
+        <Typography type="title" color="inherit">
             {title}
-        </MaterialTypography>
+        </Typography>
     </MaterialToolbar></MaterialAppBar>
 }
 
 
 // tooltip
-import MaterialTooltip from 'material-ui/Tooltip'
-export const Tooltip = ({...rest}) => {
-    return <MaterialTooltip {...rest} />
-}
+export Tooltip from 'material-ui/Tooltip'
 
 
 // linear progress
-import { LinearProgress as MaterialLinearProgress } from 'material-ui/Progress'
-export const LinearProgress = () =>  {
-    return <MaterialLinearProgress mode="query"/>
-}
+export {LinearProgress} from 'material-ui/Progress'

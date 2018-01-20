@@ -2,14 +2,16 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
-import {Card, Divider} from 'ui'
-import './style.css'
+import {Card, Divider} from 'ui/admin'
+import styles from './style.css'
 
 class CurrencyTicker extends React.Component {
 
     interval = null
     constructor(props) {
         super(props)
+
+        console.log(styles)
     }
 
     componentDidMount() {

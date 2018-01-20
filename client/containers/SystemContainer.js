@@ -1,10 +1,7 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import {connect} from 'react-redux'
 import extensions from 'gen/extensions'
-import {ExpansionPanel} from 'ui'
 import BaseLayout from '../components/layout/BaseLayout'
-import {Typography} from 'ui'
+import {Typography,ExpansionPanel} from 'ui/admin'
 
 
 class SystemContainer extends React.Component {
@@ -28,19 +25,4 @@ class SystemContainer extends React.Component {
 }
 
 
-SystemContainer.propTypes = {
-    user: PropTypes.object,
-}
-
-
-const mapStateToProps = (store) => {
-    const {user} = store
-    return {
-        user
-    }
-}
-
-export default connect(
-    mapStateToProps
-)(SystemContainer)
-
+export default SystemContainer

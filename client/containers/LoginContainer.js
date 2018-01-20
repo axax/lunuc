@@ -7,9 +7,9 @@ import {withApollo} from 'react-apollo'
 import gql from 'graphql-tag'
 import ApolloClient from 'apollo-client'
 import {Link} from 'react-router-dom'
-import * as UserActions from '../actions/UserAction'
-import * as ErrorHandlerAction from '../actions/ErrorHandlerAction'
-import {Button, Input} from 'ui'
+import * as UserActions from 'client/actions/UserAction'
+import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
+import {Button, TextField} from 'ui/admin'
 import {ADMIN_BASE_URL} from 'gen/config'
 
 class LoginContainer extends React.Component {
@@ -84,11 +84,11 @@ class LoginContainer extends React.Component {
 				{error ? <span>{error}</span> : ''}
 
 					<label><b>Username</b></label>
-					<Input value={username} onChange={this.handleInputChange} type="text" placeholder="Enter Username"
+					<TextField value={username} onChange={this.handleInputChange} type="text" placeholder="Enter Username"
 								 name="username" required/>
 
 					<label><b>Password</b></label>
-					<Input value={password} onChange={this.handleInputChange} type="password" placeholder="Enter Password"
+					<TextField value={password} onChange={this.handleInputChange} type="password" placeholder="Enter Password"
 								 name="password" required/>
 
 					<Button onClick={this.login.bind(this)}>Login</Button>

@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
-import {DrawerLayout, Button} from 'ui'
+import {DrawerLayout, Button} from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {withRouter} from 'react-router-dom'
 

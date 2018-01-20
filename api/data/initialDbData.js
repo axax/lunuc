@@ -1,21 +1,27 @@
-export const createAllInitialData = async (db) =>{
+export const createAllInitialData = async (db) => {
     console.log('Inserting data...')
     await createUserRoles(db)
 }
 
 
-export const createUserRoles = async (db) =>{
+export const createUserRoles = async (db) => {
     const userRoleCollection = db.collection('UserRole')
 
 
-    const nrOfUserRoles = (await userRoleCollection.count())
+    userRoleCollection.updateOne(
+        {name: 'administrator'},
+        {$addToSet: {capabilities: {$each: ['manage_keyvalues', 'mangage_cms_pages']}}},
+        {
+            upsert: true
+        }
+    )
 
-    if (nrOfUserRoles === 0) {
-        // insert some user roles
+    userRoleCollection.updateOne(
+        {name: 'subscriber'},
+        {$addToSet: {capabilities: []}},
+        {
+            upsert: true
+        }
+    )
 
-        await userRoleCollection.insertMany([
-            {name: 'administrator', capabilities: ['manage_keyvalues','mangage_cms_pages']},
-            {name: 'subscriber', capabilities: []}
-        ])
-    }
 }

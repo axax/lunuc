@@ -8,7 +8,7 @@ Hook.on('resolver', ({db, resolvers}) => {
 
     // add new resolvers
     for (const n in newResolvers) {
-        resolvers[n] = newResolvers[n];
+        resolvers[n] = newResolvers[n]
     }
 })
 

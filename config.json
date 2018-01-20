@@ -25,14 +25,25 @@
       "active": true
     }
   },
-  "ui": {
-    "impl": "material",
-    "icons": [
-      "Delete",
-      "Code",
-      "AccountCircle"
-    ]
-  },
+  "ui": [
+    {
+      "name": "admin",
+      "impl": "material",
+      "icons": [
+        "Delete",
+        "Code",
+        "AccountCircle"
+      ]
+    },
+    {
+      "impl": "plain",
+      "icons": [
+        "Delete",
+        "Code",
+        "AccountCircle"
+      ]
+    }
+  ],
   "apollo_cache": true,
   "debug": true,
   "admin_base_url": "/admin"

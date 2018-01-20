@@ -6,6 +6,7 @@ import { withStyles } from 'material-ui/styles'
 import AppBar from 'material-ui/AppBar'
 import Toolbar from 'material-ui/Toolbar'
 import Button from 'material-ui/Button'
+import {ADMIN_BASE_URL} from 'gen/config'
 
 const styles = theme => ({
     toolbarLeft: {
@@ -14,36 +15,41 @@ const styles = theme => ({
 })
 
 class HeaderMenu extends React.Component {
-    constructor() {
-        super();
-        this.state = {
-            selectedKeys: []
-        }
-    }
-    componentWillReceiveProps() {
-        this.setState({ selectedKeys: ['/'+this.props.location.pathname.split('/')[1]] });
-    }
 
-    componentDidMount() {
 
-        this.setState({ selectedKeys: [] });
+    constructor(props) {
+        super(props)
+        this.currentLinkParts = this.props.location.pathname.substring(ADMIN_BASE_URL.length+1).split('/')
+    }
+    componentWillReceiveProps(nextProps) {
+        this.currentLinkParts = nextProps.location.pathname.substring(ADMIN_BASE_URL.length+1).split('/')
     }
 
     linkTo(item) {
         this.props.history.push(item.to);
     }
+
+    isActive(link){
+        const linkCut = link.substring(ADMIN_BASE_URL.length+1).split('/')
+        return linkCut[0]===this.currentLinkParts[0]
+    }
+
     render() {
         const { classes, isAuthenticated, items, metaContent  } = this.props;
 
-        const selectedTo = '/'+this.props.location.pathname.split('/')[1]
+
 
         return (
             <AppBar>
                 <Toolbar  position='static'>
                     <div className={classes.toolbarLeft}>
                     {items.map((item,i) => {
-                        if( item.auth && isAuthenticated || !item.auth)
-                            return <Button raised={(selectedTo===item.to)} color={(selectedTo===item.to?'default':'contrast')} onClick={this.linkTo.bind(this,item)} key={i}>{item.name}</Button>
+                        if( item.auth && isAuthenticated || !item.auth) {
+                            const isActive = this.isActive(item.to)
+                            return <Button raised={isActive}
+                                           color={(isActive ? 'default' : 'contrast')}
+                                           onClick={this.linkTo.bind(this, item)} key={i}>{item.name}</Button>
+                        }
                     })}
                     </div>
                     {metaContent}

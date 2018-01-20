@@ -1,6 +1,6 @@
 import React from 'react'
-import KeyValuePair from '../components/keyvalue/KeyValuePair'
-import KeyValuePairAdder from '../components/keyvalue/KeyValuePairAdder'
+import KeyValuePair from 'client/components/keyvalue/KeyValuePair'
+import KeyValuePairAdder from 'client/components/keyvalue/KeyValuePairAdder'
 import {withKeyValues} from './generic/withKeyValues'
 import PropTypes from 'prop-types'
 

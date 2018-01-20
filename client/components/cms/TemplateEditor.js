@@ -1,6 +1,6 @@
 import React from 'react'
 import ContentEditable from '../generic/ContentEditable'
-import {Typography, SimpleMenu} from 'ui'
+import {Typography, SimpleMenu} from 'ui/admin'
 
 class TemplateEditor extends React.Component {
     render(){
@@ -20,6 +20,7 @@ class TemplateEditor extends React.Component {
 
     prettify(){
         const {onBlur, children} = this.props
+        if( children.trim()==='' ) return
 
         try {
             const j = eval('(' + children + ')');

@@ -58,6 +58,8 @@ export const userResolver = (db) => ({
 			}
 			user.role = userRole
 
+
+
             enhanceUserSettings(user)
 
 		}

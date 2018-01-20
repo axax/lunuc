@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Routes from './routing/Routes'
-import UserDataContainer from '../containers/UserDataContainer'
+import UserDataContainer from 'client/containers/UserDataContainer'
 
 /*
  * The Provider component provides

@@ -6,7 +6,7 @@ import {WebSocketLink} from 'apollo-link-ws'
 import {ApolloLink} from 'apollo-link'
 import {getOperationAST} from 'graphql'
 import {OfflineCache} from './cache'
-import * as Actions from '../actions/ErrorHandlerAction'
+import * as Actions from 'client/actions/ErrorHandlerAction'
 
 
 const httpUri = `${window.location.protocol}//${window.location.hostname}:${window.location.port}/graphql`

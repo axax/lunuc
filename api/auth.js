@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken'
 import bodyParser from 'body-parser'
 import Util from './util'
 
+//TODO but SECRET_KEY to a save place
 const AUTH_HEADER = 'authorization',
 	AUTH_SCHEME = 'JWT',
 	SECRET_KEY = 'fa-+3452sdfas!ä$$34dää$',

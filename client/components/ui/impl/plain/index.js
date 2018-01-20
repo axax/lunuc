@@ -4,8 +4,8 @@ import React from 'react'
 import Pagination from './Pagination'
 
 // ui provider
-export const UIProvider = ({children, ...rest}) => {
-    return <div {...rest}>{children}</div>
+export const UIProvider = ({children}) => {
+    return children
 }
 
 
@@ -23,17 +23,22 @@ export const DeleteIconButton = ({...rest}) => {
 
 
 // input
-export const Input = ({...rest}) => {
+export const TextField = ({multiline, ...rest}) => {
+    if( multiline ){
+        return <textarea {...rest} />
+    }
     return <input {...rest} />
-}
-export const Textarea = ({...rest}) => {
-    return <textarea {...rest} />
 }
 
 // Checkbox
 export const Checkbox = ({...rest}) => {
     return <input type='checkbox' {...rest} />
 }
+// Select
+/*export const Select = ({...rest}) => {
+    return <input type='checkbox' {...rest} />
+}*/
+
 //Switch
 export const Switch = ({label, ...rest}) => {
     return <label><input type='checkbox' {...rest} /> {label}</label>
@@ -64,7 +69,7 @@ export const Col = ({span, ...rest}) => {
 }
 
 // table
-export const Table = ({count, rowsPerPage, page, onChangePage, onChangeRowsPerPage, columns, dataSource, ...rest}) => {
+export const SimpleTable = ({count, rowsPerPage, page, onChangePage, orderDirection, orderBy, onChangeRowsPerPage, onSort, columns, dataSource, ...rest}) => {
 
     const totalPages = Math.ceil((count ? count : 0) / (rowsPerPage ? rowsPerPage : 0))
 
@@ -101,7 +106,7 @@ export const Table = ({count, rowsPerPage, page, onChangePage, onChangeRowsPerPa
 
 
 // dialog
-export const Dialog = ({children, onClose, actions, title, open, ...rest}) => {
+export const SimpleDialog = ({children, onClose, actions, title, open, ...rest}) => {
     return <div style={{
         position: 'fixed',
         left: 0,
@@ -139,6 +144,8 @@ export const Dialog = ({children, onClose, actions, title, open, ...rest}) => {
 
 // drawer layout
 export {default as DrawerLayout} from './DrawerLayout'
+// simple menu
+export {default as SimpleMenu} from './SimpleMenu'
 
 // divider
 export const Divider = ({...rest}) => {
@@ -173,8 +180,8 @@ export const Snackbar = ({message, ...rest}) => {
 
 // cards
 export const Card = ({children, ...rest}) => {
-    return <div {...rest}>
-        <div>
+    return <div className="Card" {...rest}>
+        <div className="Card__content">
             {children}
         </div>
     </div>
@@ -196,5 +203,21 @@ export const Toolbar = ({title, children, ...rest}) => {
 export const LinearProgress = () =>  {
     return <div className="LinearProgress">
         <div className="LinearProgress__indeterminate"></div>
+    </div>
+}
+
+export const Chip = ({label,...rest}) => {
+    return <div className="Chip" {...rest}>{label}</div>
+}
+
+export const Typography = ({gutterBottom,type,...rest}) => {
+    return <div className={'Typography Typography__'+{type}} {...rest} />
+}
+
+
+export const ExpansionPanel = ({heading, children,...rest}) => {
+    return <div className="ExpansionPanel" {...rest} >
+        <h1 className="ExpansionPanel__heading">{heading}</h1>
+        <div className="ExpansionPanel__content">{children}</div>
     </div>
 }

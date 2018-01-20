@@ -2,15 +2,16 @@ import React from 'react'
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
 import {BrowserRouter as Router, Route} from 'react-router-dom'
-import LoginContainer from '../../containers/LoginContainer'
-import SignUpContainer from '../../containers/SignUpContainer'
-import UserProfileContainer from '../../containers/UserProfileContainer'
-import CmsViewContainer from '../../containers/CmsViewContainer'
-import CmsContainer from '../../containers/CmsContainer'
-import SystemContainer from '../../containers/SystemContainer'
-import Home from '../Home'
+import LoginContainer from 'client/containers/LoginContainer'
+import SignUpContainer from 'client/containers/SignUpContainer'
+import UserProfileContainer from 'client/containers/UserProfileContainer'
+import CmsViewContainer from 'client/containers/CmsViewContainer'
+import CmsContainer from 'client/containers/CmsContainer'
+import SystemContainer from 'client/containers/SystemContainer'
+import TypesContainer from 'client/containers/TypesContainer'
+import HomeContainer from 'client/containers/HomeContainer'
 import PrivateRoute from './PrivateRoute'
-import Hook from '../../../util/hook'
+import Hook from 'util/hook'
 import {ADMIN_BASE_URL} from 'gen/config'
 
 class Routes extends React.Component {
@@ -18,12 +19,13 @@ class Routes extends React.Component {
     adminBaseUrlPlain = ADMIN_BASE_URL.slice( 1 )
 
     routes = [
-        {exact: true, path: ADMIN_BASE_URL + '/', component: Home},
+        {exact: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
         {exact: true, path: ADMIN_BASE_URL + '/cms', component: CmsContainer},
         {exact: true, path: ADMIN_BASE_URL + '/cms/:page', component: CmsContainer},
         {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
+        {private: true, path: ADMIN_BASE_URL + '/types', component: TypesContainer},
         {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer},
         {
             // match everything but paths that start with ADMIN_BASE_URL

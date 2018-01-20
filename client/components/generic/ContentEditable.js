@@ -13,13 +13,13 @@ class ContentEditable extends React.Component {
 
     render(){
         const {style, children} = this.props
-        this.lastText['onChange'] = this.lastText['onBlur'] =this.props.children
+        this.lastText['onChange'] = this.lastText['onBlur'] =children
 
         return <div
             style={style}
             onInput={this.emitChange.bind(this,'onChange')}
             onBlur={this.emitChange.bind(this,'onBlur')}
-            contentEditable dangerouslySetInnerHTML={{__html: this.props.children}} />
+            contentEditable dangerouslySetInnerHTML={{__html: children}} />
     }
 
     shouldComponentUpdate(nextProps){

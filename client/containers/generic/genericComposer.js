@@ -3,7 +3,7 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 
-export default (container, name, options) => {
+const genericComposer =  (container, name, options) => {
 
     options = {
         hasFilter: false,
@@ -250,3 +250,6 @@ export default (container, name, options) => {
     )(containerWithGql)
 
 }
+
+
+export default genericComposer

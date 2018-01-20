@@ -2,9 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
-import {Layout, LayoutHeader, LayoutContent, LayoutFooter, HeaderMenu, Button} from 'ui'
-import ErrorHandlerContainer from '../../containers/ErrorHandlerContainer'
-import NotificationContainer from '../../containers/NotificationContainer'
+import {Layout, LayoutHeader, LayoutContent, LayoutFooter, HeaderMenu, Button} from 'ui/admin'
+import ErrorHandlerContainer from 'client/containers/ErrorHandlerContainer'
+import NotificationContainer from 'client/containers/NotificationContainer'
 import Hook from 'util/hook'
 import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
@@ -14,10 +14,11 @@ import * as UserActions from 'client/actions/UserAction'
 class BaseLayout extends React.Component {
 
     menuEntries = [
-        {name: 'Home', to: ADMIN_BASE_URL+'/'},
-        {name: 'System', to: ADMIN_BASE_URL+'/system', auth: true},
-        {name: 'Profile', to: ADMIN_BASE_URL+'/profile'},
-        {name: 'Cms', to: ADMIN_BASE_URL+'/cms', auth: true}
+        {name: 'Home', to: ADMIN_BASE_URL + '/'},
+        {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true},
+        {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true},
+        {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true},
+        {name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true}
     ]
 
     constructor(props) {
@@ -29,33 +30,32 @@ class BaseLayout extends React.Component {
         this.props.history.push(item.to);
     }
 
-    render(){
-        const {history,children, isAuthenticated, userActions} = this.props
+    render() {
+        const {history, children, isAuthenticated, userActions} = this.props
 
-        return <Layout className="layout">
-            <LayoutHeader>
+        return <Layout className="Layout">
+            <LayoutHeader className="LayoutHeader">
                 <HeaderMenu items={this.menuEntries} metaContent={
                     isAuthenticated ?
-                        <Button type="contrast" onClick={() => {
+                        <Button color="contrast" onClick={() => {
                             localStorage.removeItem('token')
                             userActions.setUser(null, false)
                             history.push('/')
                         }}>Logout</Button>
 
-                        : <Button color="contrast" onClick={this.linkTo.bind(this,{to:ADMIN_BASE_URL+'/login'})}>Login</Button>
+                        : <Button color="contrast" onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
                 }/>
             </LayoutHeader>
 
-            <LayoutContent style={{ padding: '100px 50px' }}>
+            <LayoutContent style={{padding: '100px 50px'}}>
 
                 <ErrorHandlerContainer />
                 <NotificationContainer />
 
 
-
                 {children}
             </LayoutContent>
-            <LayoutFooter style={{ textAlign: 'center' }}>
+            <LayoutFooter style={{textAlign: 'center'}}>
                 ©2016 Created by simon
             </LayoutFooter>
         </Layout>
@@ -87,7 +87,6 @@ const mapStateToProps = (store) => {
 const mapDispatchToProps = (dispatch) => ({
     userActions: bindActionCreators(UserActions, dispatch)
 })
-
 
 
 /**

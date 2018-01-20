@@ -26,7 +26,7 @@
           "expose": "api"
         },
         {
-          "src": "./gensrc/ui.js",
+          "src": "./gensrc/ui",
           "expose": "ui"
         },
         {

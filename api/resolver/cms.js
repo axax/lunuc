@@ -99,7 +99,6 @@ export const cmsResolver = (db) => ({
             } catch (e) {
                 html = e.message
             }
-            console.log(html)
         }
         if (Util.isUserLoggedIn(context)) {
             return {

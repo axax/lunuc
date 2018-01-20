@@ -1,5 +1,5 @@
 import {InMemoryCache} from 'apollo-cache-inmemory'
-import logger from '../../util/logger'
+import logger from 'util/logger'
 import {APOLLO_CACHE} from 'gen/config'
 
 // cache

@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ContentEditable from '../components/generic/ContentEditable'
-import {DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Textarea, Toolbar, Card, DeleteIconButton} from 'ui'
+import {DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Toolbar, Card, DeleteIconButton} from 'ui'
 import Hook from 'util/hook'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
@@ -37,6 +37,7 @@ class JsonDom extends React.Component {
         this.jsOnStack.push({key, cb})
     }
     jsGetLocal = (key,def) => {
+        if( typeof localStorage === 'undefined' ) return def
         const value = localStorage.getItem(key)
         if(value) {
             try {
@@ -49,7 +50,9 @@ class JsonDom extends React.Component {
         return def
     }
     jsSetLocal = (key,value)=>{
-        localStorage.setItem(key,JSON.stringify(value))
+        if( typeof localStorage !== 'undefined' ) {
+            localStorage.setItem(key, JSON.stringify(value))
+        }
     }
     jsRefresh = ()=>{
         this.json = null
@@ -355,7 +358,8 @@ JsonDom.propTypes = {
     script: PropTypes.string,
     scope: PropTypes.string,
     onChange: PropTypes.func,
-    onError: PropTypes.func
+    onError: PropTypes.func,
+    editMode: PropTypes.boolean
 }
 
 export default JsonDom

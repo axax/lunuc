@@ -1,7 +1,7 @@
 import React from 'react'
 
-import 'antd/dist/antd.less'
-import './style.less'
+//import antStyles from 'antd/dist/antd.less'
+//import styles from './style.less'
 //import './impl/antd.less'   // override variables here
 
 // ui provider
@@ -24,7 +24,7 @@ export const DeleteIconButton = ({...rest}) => {
 import AntInput from  'antd/lib/input'
 const {TextArea} = AntInput;
 
-export {AntInput as Input}
+export {AntInput as TextField}
 export {TextArea as Textarea}
 
 

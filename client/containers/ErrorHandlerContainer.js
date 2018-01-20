@@ -2,8 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
-import * as Actions from '../actions/ErrorHandlerAction'
-import {Dialog} from 'ui'
+import * as Actions from 'client/actions/ErrorHandlerAction'
+import {SimpleDialog} from 'ui/admin'
 
 
 
@@ -35,10 +35,10 @@ class ErrorHandlerContainer extends React.Component {
 
         if (messages) {
             Object.keys(messages).forEach(
-                (key,i) => dialogs.push(<Dialog key={key} open={this.state.openDialog===i} onClose={this.handleDialogClose.bind(this,key)}
+                (key,i) => dialogs.push(<SimpleDialog key={key} open={this.state.openDialog===i} onClose={this.handleDialogClose.bind(this,key)}
 											  actions={[{key: 'ok', label: 'Ok', type:'primary'}]} title="Error">
                     {messages[key].msg}
-				</Dialog>)
+				</SimpleDialog>)
             )
         }
 
