@@ -359,7 +359,7 @@ JsonDom.propTypes = {
     scope: PropTypes.string,
     onChange: PropTypes.func,
     onError: PropTypes.func,
-    editMode: PropTypes.boolean
+    editMode: PropTypes.bool
 }
 
 export default JsonDom

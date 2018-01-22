@@ -16,6 +16,7 @@ const wsUri = (window.location.protocol === 'https:' ? 'wss' : 'ws') + `://${win
 export function configureMiddleware(store) {
 
 
+
     // the link to our graphql api
     const httpLink = createHttpLink({uri: httpUri})
 
@@ -57,18 +58,34 @@ export function configureMiddleware(store) {
     const httpLinkWithErrorAndMiddleware = middlewareLink.concat(httpLinkWithError)
 
 
+    const wsLink = new WebSocketLink({
+        uri: wsUri,
+        options: {
+            reconnect: true, //auto-reconnect
+        }
+    })
+
+    // create my middleware using the applyMiddleware method from subscriptions-transport-ws
+    const subscriptionMiddleware = {
+        applyMiddleware (options, next) {
+            // get the authentication token from local storage if it exists
+            const token = localStorage.getItem('token')
+
+            options.auth = token ? `JWT ${token}` : null
+            next()
+        }
+    }
+
+    // add the middleware to the web socket link via the Subscription Transport client
+    wsLink.subscriptionClient.use([subscriptionMiddleware])
+
     // add ws link
     const link = ApolloLink.split(
         operation => {
             const operationAST = getOperationAST(operation.query, operation.operationName)
             return !!operationAST && operationAST.operation === 'subscription'
         },
-        new WebSocketLink({
-            uri: wsUri,
-            options: {
-                reconnect: true, //auto-reconnect
-            }
-        }),
+        wsLink,
         httpLinkWithErrorAndMiddleware
     )
 
@@ -87,6 +104,9 @@ export function configureMiddleware(store) {
 
     const cache = new OfflineCache(cacheOptions)
 
+
+
+
     // create the apollo client
     return new ApolloClient({
         link,
@@ -95,6 +115,19 @@ export function configureMiddleware(store) {
         ssrMode: false,
         ssrForceFetchDelay: 100,
         connectToDevTools: true,
-        queryDeduplication: true
+        queryDeduplication: true,
+        /*defaultOptions: {
+             watchQuery: {
+             fetchPolicy: 'cache-and-network',
+             errorPolicy: 'all',
+             },
+             query: {
+             fetchPolicy: 'cache-and-network',
+             errorPolicy: 'all',
+             },
+             mutate: {
+             errorPolicy: 'all',
+             },
+        }*/
     })
 }

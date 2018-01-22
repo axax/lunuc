@@ -77,7 +77,7 @@ class CmsViewContainer extends React.Component {
         this.dataResolverSaveTimeout = setTimeout(() => {
             // auto save after some time
             this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
-        }, 250)
+        }, 2500)
     }
 
     handleTemplateChange = (str) => {
@@ -119,6 +119,7 @@ class CmsViewContainer extends React.Component {
 
     render() {
         const {cmsPage, location, loading} = this.props
+
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
             console.warn('cmsPage missing')

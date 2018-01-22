@@ -67,7 +67,12 @@ export const start = (done) => {
                     schema,
                     execute,
                     subscribe,
-                    rootValue
+                    rootValue,
+                    onOperation: ({payload})=>{
+                        // now if auth is needed we can check if the context is available
+                        const context = auth.decodeToken(payload.auth)
+                        return {context}
+                    }
                 },
                 {
                     server: appWs

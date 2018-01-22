@@ -38,12 +38,12 @@ export class OfflineCache extends InMemoryCache {
                 .filter(key => (
                         key.indexOf('ROOT_QUERY.login') < 0 &&
                         key.indexOf('ROOT_QUERY.notification') < 0 &&
-                        key.indexOf('ROOT_SUBSCRIPTION.notification') < 0
+                        key.indexOf('ROOT_SUBSCRIPTION') < 0
                     )
                 )
                 .reduce((res, key) => (res[key] = state[key], res), {})
             this.logger.debug('save to local storage')
-            window.localStorage.setItem(CACHE_KEY, JSON.stringify(state))
+            window.localStorage.setItem(CACHE_KEY, JSON.stringify(newstate))
         }
     }
 

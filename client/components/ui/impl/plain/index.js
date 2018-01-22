@@ -2,16 +2,33 @@ import './style.less'
 
 import React from 'react'
 import Pagination from './Pagination'
+import injectSheet, {ThemeProvider} from 'react-jss'
+
+
+
+const styles = theme => ({
+    button: {
+        background: theme.colorPrimary
+    },
+    label: {
+        fontWeight: 'bold'
+    }
+})
+
+const theme = {
+    colorPrimary: 'green'
+}
+
 
 // ui provider
 export const UIProvider = ({children}) => {
-    return children
+    return <ThemeProvider theme={theme}>{children}</ThemeProvider>
 }
 
 
-export const Button = ({raised, ...rest}) => {
-    return <button {...rest} />
-}
+export const Button = injectSheet(styles)(({classes,raised, ...rest}) => {
+    return <button className={classes.button} {...rest} />
+})
 
 // IconButton
 export const DeleteIconButton = ({...rest}) => {
@@ -36,8 +53,8 @@ export const Checkbox = ({...rest}) => {
 }
 // Select
 /*export const Select = ({...rest}) => {
-    return <input type='checkbox' {...rest} />
-}*/
+ return <input type='checkbox' {...rest} />
+ }*/
 
 //Switch
 export const Switch = ({label, ...rest}) => {

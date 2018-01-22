@@ -4,7 +4,7 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import KeyValueContainer from './KeyValueContainer'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import {Button, TextField, Divider, DeleteIconButton, Chip} from 'ui/admin'
+import {Button, Typography, TextField, Divider, DeleteIconButton, Chip} from 'ui/admin'
 
 
 class UserProfileContainer extends React.Component {
@@ -154,9 +154,9 @@ class UserProfileContainer extends React.Component {
 
         return (
             <BaseLayout>
-                <h1>Profile</h1>
+                <Typography type="display1" gutterBottom>Profile {this.props.loading | loading ? <span>loading...</span> : ''}</Typography>
 
-                {this.props.loading | loading ? <span>loading...</span> : ''}
+
                 <div>
                     <TextField type="text" name="username" value={username} onChange={this.handleInputChange}/>
                     <Button onClick={this.updateProfile.bind(this)} raised color="primary">Update profile</Button>

@@ -6,6 +6,7 @@ import {Typography} from 'ui/admin'
 
 class HomeContainer extends React.Component {
     render() {
+
         const {user} = this.props
         return <BaseLayout>
             <Typography type="display1" gutterBottom>Administration console</Typography>

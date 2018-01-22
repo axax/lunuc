@@ -24,9 +24,19 @@ const theme = createMuiTheme({
         MuiButton: {
             // Name of the styleSheet
             root: {
-
+                margin: defaultTheme.spacing.unit
             },
         },
+        MuiInput:{
+            root: {
+                margin: defaultTheme.spacing.unit
+            },
+        },
+        MuiChip:{
+            root: {
+                margin: defaultTheme.spacing.unit
+            },
+        }
     },
     palette: {
         contrastThreshold: 3.1,
@@ -57,7 +67,7 @@ const generateClassName = createGenerateClassName({
 
 // Theme provider
 export const UIProvider = ({children, ...rest}) => {
-    return <JssProvider generateClassName={generateClassName}><MuiThemeProvider disableStylesGeneration theme={theme} {...rest}>{children}</MuiThemeProvider></JssProvider>
+    return <JssProvider generateClassName={generateClassName}><MuiThemeProvider disableStylesGeneration={false} theme={theme} {...rest}>{children}</MuiThemeProvider></JssProvider>
 }
 
 // define some styles so it can be used in the components
@@ -170,11 +180,7 @@ export const MenuListItem = ({primary, ...rest}) => {
 
 
 // snackbar
-import MaterialSnackbar from 'material-ui/Snackbar'
-export const Snackbar = ({children, ...rest}) => {
-    return <MaterialSnackbar message={children} {...rest} />
-}
-
+export Snackbar from 'material-ui/Snackbar'
 
 // cards
 import MaterialCard, {CardActions as MaterialCardActions, CardContent as MaterialCardContent} from 'material-ui/Card'

@@ -146,7 +146,7 @@ function gensrcUi() {
 
             if (ui.icons) {
                 if (ui.impl === 'material') {
-                    uiContentIcons += "import MaterialIconButton from 'material-ui/IconButton'\n"
+                    uiContentIcons += "import IconButton from 'material-ui/IconButton'\n"
                 }
 
                 //https://github.com/mui-org/material-ui/tree/v1-beta/packages/material-ui-icons/src
@@ -156,9 +156,9 @@ function gensrcUi() {
 import ${icon}Icon from 'material-ui-icons/${icon}'
 
 export const ${icon}IconButton = ({...rest}) => {
-    return <MaterialIconButton{...rest} >
+    return <IconButton{...rest} >
         <${icon}Icon />
-    </MaterialIconButton>
+    </IconButton>
 }
 `
                         uiContentIconsHooks += `components['${icon}Icon'] = ${icon}Icon\ncomponents['${icon}IconButton'] = ${icon}IconButton\n`
@@ -222,7 +222,7 @@ function gensrcExtension(name, options) {
 
             schema += 'type ' + type.name + 'Result {\n\tresults: [' + type.name + ']\n\toffset: Int\n\tlimit: Int\n\ttotal: Int\n}\n\n'
 
-            schema += 'type Query {\n\t' + nameStartLower + 's(sort: String, limit: Int=10, offset: Int=0, filter: String): ' + type.name + 'Result\n}\n\n'
+            schema += 'type Query {\n\t' + nameStartLower + '(sort: String, limit: Int=10, offset: Int=0, filter: String): ' + type.name + 'Result\n}\n\n'
 
 
             schema += 'type Mutation {\n'

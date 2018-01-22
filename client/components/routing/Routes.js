@@ -20,12 +20,11 @@ class Routes extends React.Component {
 
     routes = [
         {exact: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
-        {exact: true, path: ADMIN_BASE_URL + '/cms', component: CmsContainer},
-        {exact: true, path: ADMIN_BASE_URL + '/cms/:page', component: CmsContainer},
+        {exact: true, path: ADMIN_BASE_URL + '/cms/:page*', component: CmsContainer},
         {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
-        {private: true, path: ADMIN_BASE_URL + '/types', component: TypesContainer},
+        {exact: true,private: true, path: ADMIN_BASE_URL + '/types/:type?/:page*', component: TypesContainer},
         {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer},
         {
             // match everything but paths that start with ADMIN_BASE_URL

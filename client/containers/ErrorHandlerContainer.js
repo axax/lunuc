@@ -28,28 +28,24 @@ class ErrorHandlerContainer extends React.Component {
     }
 
     render(){
-
     	const {messages} = this.props
+        if( !messages || !messages.length )
+            return null
 
-		const dialogs = []
-
-        if (messages) {
-            Object.keys(messages).forEach(
-                (key,i) => dialogs.push(<SimpleDialog key={key} open={this.state.openDialog===i} onClose={this.handleDialogClose.bind(this,key)}
-											  actions={[{key: 'ok', label: 'Ok', type:'primary'}]} title="Error">
-                    {messages[key].msg}
-				</SimpleDialog>)
-            )
-        }
+        const dialogs = []
 
 
-        if( dialogs.length>0 ){
-            return <div>
-                {dialogs}
-			</div>
-        }
+        Object.keys(messages).forEach(
+            (key,i) => dialogs.push(<SimpleDialog key={key} open={this.state.openDialog===i} onClose={this.handleDialogClose.bind(this,key)}
+                                          actions={[{key: 'ok', label: 'Ok', type:'primary'}]} title="Error">
+                {messages[key].msg}
+            </SimpleDialog>)
+        )
 
-        return null
+        return <div>
+            {dialogs}
+        </div>
+
     }
 }
 

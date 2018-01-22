@@ -31,14 +31,21 @@
       "impl": "material",
       "icons": [
         "Delete",
+        "Close",
         "Code",
         "AccountCircle"
-      ]
+      ],
+      "theme":{
+        "colors":{
+          "primary":"blue"
+        }
+      }
     },
     {
-      "impl": "plain",
+      "impl": "material",
       "icons": [
         "Delete",
+        "Close",
         "Code",
         "AccountCircle"
       ]

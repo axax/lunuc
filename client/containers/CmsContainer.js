@@ -8,6 +8,7 @@ import logger from 'util/logger'
 import PropTypes from 'prop-types'
 import {SimpleTable, SimpleDialog, DeleteIconButton,Typography} from 'ui/admin'
 import Util from 'client/util'
+import {ADMIN_BASE_URL} from 'gen/config'
 
 const CMS_PAGES_PER_PAGE = 10
 
@@ -23,7 +24,6 @@ class CmsContainer extends React.Component {
 
     render() {
         const {cmsPages} = this.props
-
         if (!cmsPages)
             return <BaseLayout />
 
@@ -108,7 +108,7 @@ class CmsContainer extends React.Component {
 
 
     handleChangePage = (page) => {
-        this.props.history.push(`/cms/${(page)}`)
+        this.props.history.push(`${ADMIN_BASE_URL}/cms/${(page)}`)
     }
 
 
@@ -131,7 +131,7 @@ class CmsContainer extends React.Component {
 
 
 CmsContainer.propTypes = {
-    history: PropTypes.object,
+    history: PropTypes.object.isRequired,
     cmsPages: PropTypes.object,
     createCmsPage: PropTypes.func.isRequired,
     updateCmsPage: PropTypes.func.isRequired,

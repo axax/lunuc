@@ -9,7 +9,7 @@ const pubsub = new PubSub()
 setInterval(()=>{
 	counter++
 	pubsub.publish('newNotification', {newNotification: {key: 'test.notification', message: `Notification Nr. ${counter}`}} )
-},4000)*/
+},5000)*/
 
 
-export { pubsub }
+export {pubsub}

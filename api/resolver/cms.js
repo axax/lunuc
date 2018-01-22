@@ -5,6 +5,7 @@ import React from 'react'
 import Util from '../util'
 import UtilCms from '../util/cms'
 import {UIProvider} from 'ui'
+import {pubsub} from '../subscription'
 
 const defaultDataResolver = `[
     {
@@ -148,6 +149,8 @@ export const cmsResolver = (db) => ({
         if (rest.dataResolver) {
             result.resolvedData = JSON.stringify(await UtilCms.resolveData(db, context, rest.dataResolver))
         }
+        pubsub.publish('newNotification', {userId:context.id,newNotification: {key: 'updateCmsPage', message: `CMS Page ${_id} was successfully updated on ${new Date().toLocaleTimeString()}`}} )
+
 
         return result
     },
