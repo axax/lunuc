@@ -80,7 +80,7 @@ export const cmsResolver = (db) => ({
         }
 
         const {_id, createdBy, template, script, dataResolver, ssr} = cmsPages.results[0]
-        const resolvedData = await UtilCms.resolveData(db, context, dataResolver)
+        const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver)
         let html
 
         if (ssr) {
@@ -111,7 +111,8 @@ export const cmsResolver = (db) => ({
                 dataResolver,
                 ssr,
                 resolvedData: JSON.stringify(resolvedData),
-                html
+                html,
+                subscriptions
             }
         } else {
 
@@ -124,7 +125,8 @@ export const cmsResolver = (db) => ({
                 template,
                 script,
                 html,
-                resolvedData: JSON.stringify(resolvedData)
+                resolvedData: JSON.stringify(resolvedData),
+                subscriptions
             }
 
         }
@@ -147,9 +149,18 @@ export const cmsResolver = (db) => ({
 
         // if dataResolver has changed resolveData and return it
         if (rest.dataResolver) {
-            result.resolvedData = JSON.stringify(await UtilCms.resolveData(db, context, rest.dataResolver))
+            const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, rest.dataResolver)
+
+            result.resolvedData = JSON.stringify(resolvedData)
+            result.subscriptions = subscriptions
         }
-        pubsub.publish('newNotification', {userId:context.id,newNotification: {key: 'updateCmsPage', message: `CMS Page ${_id} was successfully updated on ${new Date().toLocaleTimeString()}`}} )
+
+        pubsub.publish('newNotification', {userId: context.id,
+            newNotification: {
+                key: 'updateCmsPage',
+                message: `CMS Page ${_id} was successfully updated on ${new Date().toLocaleTimeString()}`
+            }
+        })
 
 
         return result

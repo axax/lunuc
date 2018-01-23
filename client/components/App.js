@@ -22,7 +22,6 @@ class App extends React.PureComponent {
     render() {
 
         const client = configureMiddleware(this.props.store)
-
         return <Provider store={this.props.store}>
                 <ApolloProvider client={client}>
                     <UserDataContainer>

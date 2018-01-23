@@ -12,8 +12,10 @@ export class OfflineCache extends InMemoryCache {
     constructor(...args) {
         super(...args)
         if( APOLLO_CACHE ) {
-            this.logger.debug('restore local storage')
+            const startTime = new Date()
             this.restore(JSON.parse(window.localStorage.getItem('@APOLLO_OFFLINE_CACHE')))
+            this.logger.debug(`restore local storage in ${(new Date()-startTime)}ms`)
+
         }
 
         window.addEventListener('beforeunload',  (e) => {
@@ -32,18 +34,20 @@ export class OfflineCache extends InMemoryCache {
 
     saveToLocalStorage() {
         if( APOLLO_CACHE ) {
+            const startTime = new Date()
             const state = this.extract()
             // Filter some queries we don't want to persist
             const newstate = Object.keys(state)
                 .filter(key => (
+                       /* key.indexOf('ROOT_MUTATION') < 0 &&*/
                         key.indexOf('ROOT_QUERY.login') < 0 &&
                         key.indexOf('ROOT_QUERY.notification') < 0 &&
                         key.indexOf('ROOT_SUBSCRIPTION') < 0
                     )
                 )
                 .reduce((res, key) => (res[key] = state[key], res), {})
-            this.logger.debug('save to local storage')
             window.localStorage.setItem(CACHE_KEY, JSON.stringify(newstate))
+            this.logger.debug(`save to local storage in ${(new Date()-startTime)}ms`)
         }
     }
 

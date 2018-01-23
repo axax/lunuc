@@ -108,7 +108,7 @@ export function configureMiddleware(store) {
 
 
     // create the apollo client
-    return new ApolloClient({
+    const client =  new ApolloClient({
         link,
         // use restore on the cache instead of initialState
         cache: cache,
@@ -130,4 +130,6 @@ export function configureMiddleware(store) {
              },
         }*/
     })
+
+    return client
 }

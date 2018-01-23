@@ -154,7 +154,7 @@ class UserProfileContainer extends React.Component {
 
         return (
             <BaseLayout>
-                <Typography type="display1" gutterBottom>Profile {this.props.loading | loading ? <span>loading...</span> : ''}</Typography>
+                <Typography type="display4" gutterBottom>Profile {this.props.loading | loading ? <span>loading...</span> : ''}</Typography>
 
 
                 <div>
@@ -163,8 +163,8 @@ class UserProfileContainer extends React.Component {
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
                 </div>
+                <Typography type="display3" gutterBottom>Role & capabilities</Typography>
 
-                <h2>Role & capabilities</h2>
                 <p>Role {me.role.name}</p>
                 {
                     me.role.capabilities.map((v,i) => {

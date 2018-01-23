@@ -38,6 +38,14 @@ const theme = createMuiTheme({
             },
         }
     },
+    typography: {
+        display4:{
+            fontSize: '3rem'
+        },
+        display3:{
+            fontSize: '2.5rem'
+        }
+    },
     palette: {
         contrastThreshold: 3.1,
         tonalOffset: 0.07,
@@ -100,7 +108,7 @@ export Divider from 'material-ui/Divider'
 //Switch
 import {FormControlLabel} from 'material-ui/Form'
 import MaterialSwitch from 'material-ui/Switch'
-export const Switch = ({label, ...rest}) => {
+export const SimpleSwitch = ({label, ...rest}) => {
     return <FormControlLabel
         control={
             <MaterialSwitch

@@ -3,30 +3,38 @@ import Cache from 'util/cache'
 
 const UtilCms = {
     resolveData: async (db, context, dataResolver) => {
-        const results = {}
+        const resolvedData = {}, subscriptions = []
 
-        if (!dataResolver) return results
+        if (dataResolver) {
 
-        try {
-            const json = JSON.parse(dataResolver)
+            try {
+                const json = JSON.parse(dataResolver)
 
-            for (let i = 0; i < json.length; i++) {
-                const {c, f, l, o} = json[i]
-                const cacheKey = (c+f+l+o)
-                /*const cachedResult = Cache.get(cacheKey)
-                if( cachedResult ){
-                    results[c] = cachedResult
-                }else {*/
-                    const result = await GenericResolver.entities(db, context, c, f, {limit: l, offset: o})
-                    results[c] = result
-                   /* Cache.set(cacheKey,result,10000)
-                }*/
+                for (let i = 0; i < json.length; i++) {
+                    const {t, f, l, o} = json[i]
+                    let type
+                    if (t.indexOf('$') === 0) {
+                        type = t.substring(1)
+                        subscriptions.push(type)
+                    } else {
+                        type = t
+                    }
+                    //const cacheKey = (c+f+l+o)
+                    /*const cachedResult = Cache.get(cacheKey)
+                     if( cachedResult ){
+                     results[c] = cachedResult
+                     }else {*/
+                    const result = await GenericResolver.entities(db, context, type, f, {limit: l, offset: o})
+                    resolvedData[type] = result
+                    /* Cache.set(cacheKey,result,10000)
+                     }*/
 
+                }
+            } catch (e) {
+                resolvedData.error = e.message
             }
-        }catch (e){
-            results.error = e.message
         }
-        return results
+        return {resolvedData, subscriptions}
     }
 }
 

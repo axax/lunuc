@@ -9,7 +9,8 @@ export const cmsSchemaRaw = `
         resolvedData: String
         html: String 
         status: String
-        ssr: Boolean
+        ssr: Boolean,
+        subscriptions: [String]
     }
     
     

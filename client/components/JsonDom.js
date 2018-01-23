@@ -1,4 +1,6 @@
 import React from 'react'
+
+import ReactDOM from 'react-dom'
 import PropTypes from 'prop-types'
 import ContentEditable from '../components/generic/ContentEditable'
 import {DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Toolbar, Card, DeleteIconButton} from 'ui'
@@ -10,7 +12,7 @@ class JsonDom extends React.Component {
 
     components = {
         'Link': Link,
-        'Cms': ({...rest}) => <CmsViewContainer dynamic={true} {...rest}/>,
+        'Cms': ({...rest}) => <CmsViewContainer _parentRef={this} dynamic={true} {...rest}/>,
         'Toolbar': ({position, ...rest}) => <Toolbar
             position={(this.props.editMode ? 'static' : position)} {...rest} />,
         'Button': Button,
@@ -32,33 +34,60 @@ class JsonDom extends React.Component {
     parseError = null
     runScript = true
     scriptResult = null
+    componentRefs = {} // this is the object with references to elements with identifier
     jsOnStack = []
     jsOn = (key, cb) => {
         this.jsOnStack.push({key, cb})
     }
-    jsGetLocal = (key,def) => {
-        if( typeof localStorage === 'undefined' ) return def
+    jsGetLocal = (key, def) => {
+        if (typeof localStorage === 'undefined') return def
         const value = localStorage.getItem(key)
-        if(value) {
+        if (value) {
             try {
                 const o = JSON.parse(value)
                 return o
-            }catch(e){
+            } catch (e) {
                 return value
             }
         }
         return def
     }
-    jsSetLocal = (key,value)=>{
-        if( typeof localStorage !== 'undefined' ) {
+    jsSetLocal = (key, value) => {
+        if (typeof localStorage !== 'undefined') {
             localStorage.setItem(key, JSON.stringify(value))
         }
     }
-    jsRefresh = ()=>{
-        this.json = null
-        this.runScript = true
-        this.jsOnStack = []
-        this.forceUpdate()
+    jsRefresh = (id) => {
+
+        let nodeToRefresh = this
+
+        if (id && this.componentRefs[id]) {
+
+            nodeToRefresh = this.componentRefs[id]
+
+            /*const inst = this.componentRefs[id]._reactInternalFiber
+
+             console.log(inst)
+             //console.log(ReactDOM.findDOMNode(this.componentRefs[id]), this.componentRefs[id]._reactInternalInstance._currentElement)
+             const fiber = this.componentRefs[id]._reactInternalFiber
+             if( !fiber.firstEffect.type || fiber.firstEffect.type.name!==this.constructor.name) {
+
+             //console.log('alternate',fiber)
+
+
+             }else{
+             nodeToRefresh = fiber.firstEffect.stateNode
+
+             }*/
+
+        } else {
+            nodeToRefresh = this
+        }
+        nodeToRefresh.json = null
+        nodeToRefresh.runScript = true
+        nodeToRefresh.jsOnStack = []
+        nodeToRefresh.forceUpdate()
+
     }
 
 
@@ -69,6 +98,12 @@ class JsonDom extends React.Component {
         super(props)
         this.state = {hasReactError: false}
         Hook.call('JsonDom', {components: this.components})
+
+        const {id, _parentRef} = props
+        if (_parentRef && id) {
+            props._parentRef.componentRefs[id] = this
+        }
+
     }
 
 
@@ -77,13 +112,14 @@ class JsonDom extends React.Component {
     }
 
     componentWillReceiveProps(props) {
-        if (this.props.scope != props.scope ) {
+        if (this.props.scope != props.scope) {
             this.scope = null
             //console.log('reset scope')
         }
-        if (this.props.template != props.template ) {
+        if (this.props.template != props.template) {
             this.json = null
             this.jsonRaw = null
+            this.componentRefs = {}
             //console.log('reset template')
         }
         if (this.props.script != props.script) {
@@ -103,7 +139,6 @@ class JsonDom extends React.Component {
     shouldComponentUpdate(props, state) {
         if (state.hasReactError) return true
 
-        //console.log('update')
         if (!props.template || !props.scope) return true
 
         return this.props.template != props.template || this.props.scope != props.scope || this.props.script != props.script || this.props.resolvedData != props.resolvedData
@@ -162,11 +197,11 @@ class JsonDom extends React.Component {
         if (a.constructor === String) return a
         if (a.constructor !== Array) return ''
         let h = []
-        a.forEach(({t, p, c, $loop}, i) => {
+        a.forEach(({t, p, c, $loop}, aIdx) => {
             /*
              t = type
              c = children
-             p = props
+             p = prop
              */
             if ($loop) {
                 const {$d, d, c} = $loop
@@ -188,16 +223,18 @@ class JsonDom extends React.Component {
                  */
                 try {
                     const re = new RegExp('\\$\\.' + s + '{', 'g')
-                    const cStr = JSON.stringify(c).replace(re, '${').replace(/\${(?!this\.)/g, '${this.' + s + '.')
+                    const cStr = JSON.stringify(c).replace(re, '${') /* $.loop{ --> ${ */
+                        .replace(/\${(?!this\.)/g, '${this.' + s + '.') /* ${name} --> ${this.loop.name} */
+                        .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
+                    /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
 
-
-                    data.forEach((loopChild, j) => {
+                    data.forEach((loopChild, childIdx) => {
                         const tpl = new Function('return `' + cStr + '`;')
                         // back to json
-                        loopChild._index = j
+                        loopChild._index = childIdx
                         const json = JSON.parse(tpl.call({[s]: loopChild}))
 
-                        const key = rootKey + '.' + i + '.$loop.' + j
+                        const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
                         h.push(this.parseRec(json, key))
 
 
@@ -208,7 +245,7 @@ class JsonDom extends React.Component {
 
 
             }
-            const key = rootKey + '.' + i
+            const key = rootKey + '.' + aIdx
             let _t
             if (!t) {
                 _t = 'div'
@@ -303,7 +340,7 @@ class JsonDom extends React.Component {
         const scope = this.getScope(this.props)
         let jsError, resolveDataError
 
-        if( this.runResolvedData ) {
+        if (this.runResolvedData) {
             this.runResolvedData = false
             try {
                 this.resolvedDataJson = JSON.parse(resolvedData)
@@ -328,7 +365,12 @@ class JsonDom extends React.Component {
                 this.scriptResult = new Function(`
                 const scope = arguments[0]
                 const {on, setLocal, getLocal, refresh}= arguments[1]
-                ${script}`)(scope, {on:this.jsOn, setLocal: this.jsSetLocal, getLocal:this.jsGetLocal,refresh: this.jsRefresh})
+                ${script}`)(scope, {
+                    on: this.jsOn,
+                    setLocal: this.jsSetLocal,
+                    getLocal: this.jsGetLocal,
+                    refresh: this.jsRefresh
+                })
             } catch (e) {
                 jsError = e.message
             }
@@ -340,7 +382,7 @@ class JsonDom extends React.Component {
         scope.script = this.scriptResult
 
         const content = this.parseRec(this.getJson(this.props), 0)
-        console.log(`render JsonDom in ${((new Date()).getTime() - start)}ms`)
+        console.log(`rendered JsonDom for ${scope.page.slug} in ${((new Date()).getTime() - start)}ms`)
 
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
@@ -359,7 +401,9 @@ JsonDom.propTypes = {
     scope: PropTypes.string,
     onChange: PropTypes.func,
     onError: PropTypes.func,
-    editMode: PropTypes.bool
+    editMode: PropTypes.bool,
+    _parentRef: PropTypes.object,
+    id: PropTypes.string
 }
 
 export default JsonDom

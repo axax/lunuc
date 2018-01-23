@@ -9,7 +9,7 @@ class SystemContainer extends React.Component {
 
     render() {
         return <BaseLayout>
-            <Typography type="display1" gutterBottom>Extensions</Typography>
+            <Typography type="display4" gutterBottom>Extensions</Typography>
             {
                 Object.keys(extensions).map(k => {
                     const value = extensions[k]

@@ -196,7 +196,8 @@ function gensrcExtension(name, options) {
     if (options && options.types) {
 
         let schema = GENSRC_HEADER+'export default `\n'
-        let resolver = GENSRC_HEADER+`import GenericResolver from 'api/resolver/generic/genericResolver'\n\nexport default db => ({\n`
+        let resolver = GENSRC_HEADER+`import {pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
+        resolver += `import GenericResolver from 'api/resolver/generic/genericResolver'\n\nexport default db => ({\n`
         options.types.forEach((type) => {
             const nameStartLower = type.name.charAt(0).toLowerCase() + type.name.slice(1)
             schema += 'type ' + type.name + '{\n'
@@ -231,18 +232,36 @@ function gensrcExtension(name, options) {
             schema += '\tdelete' + type.name + ' (_id: ID!):' + type.name + '\n'
             schema += '}\n\n'
 
+            schema += 'type ' + type.name + 'SubscribeResult {\n\tdata:' + type.name + '\n\taction: String\n}\n\n'
+
+
+            schema += 'type Subscription {\n'
+            schema += '    subscribe'+type.name+': '+type.name+'SubscribeResult\n'
+            schema += '}\n\n'
+
             resolver += `   ${nameStartLower}: async ({sort, limit, offset, filter}, {context}) => {
         return await GenericResolver.entities(db, context, '${type.name}', [${resolverFields}], {limit, offset, filter, sort})
     },
     create${type.name}: async ({...rest}, {context}) => {
+        pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:{...rest}}})
         return await GenericResolver.createEnity(db, context, '${type.name}', {...rest})
     },
     update${type.name}: async ({...rest}, {context}) => {
+        pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: {...rest}}})
         return GenericResolver.updateEnity(db, context, '${type.name}', {...rest})
     },
     delete${type.name}: async ({_id}, {context}) => {
+         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {...rest}}})
         return GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
-    },\n`
+    },
+    subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),
+		(payload, context) => {
+            if( payload ) {
+                //return payload.userId === context.id
+                return true
+            }
+		}
+	),\n`
 
 
         })

@@ -47,6 +47,13 @@ const Util = {
             window.document &&
             window.document.createElement
         )
+    },
+    removeNullValues: (obj) => {
+        let newObj = {}
+        Object.keys(obj).forEach((prop) => {
+            if (obj[prop] !== null ) { newObj[prop] = obj[prop] }
+        })
+        return newObj
     }
 }
 export default Util

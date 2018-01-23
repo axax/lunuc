@@ -118,7 +118,7 @@ class TypesContainer extends React.Component {
 
 
         return <BaseLayout>
-            <Typography type="display1" gutterBottom>Types</Typography>
+            <Typography type="display4" gutterBottom>Types</Typography>
             <Select
                 value={selectedType}
                 onChange={this.handleTypeChange}
@@ -264,13 +264,11 @@ class TypesContainer extends React.Component {
 
 
                     if (storeData[selectedTypeStartLower]) {
+                        const refResults = storeData[selectedTypeStartLower].results
 
-                        const idx = storeData[selectedTypeStartLower].results.findIndex(x => x._id === data['update' + selectedType]._id)
+                        const idx = refResults.findIndex(x => x._id === data['update' + selectedType]._id)
                         if (idx > -1) {
-                            console.log(storeData[selectedTypeStartLower].results[idx])
-
-
-                            storeData[selectedTypeStartLower].results[idx] = input
+                            refResults[idx] =  Object.assign({},refResults[idx], Util.removeNullValues(input))
                             store.writeQuery({
                                 query: gqlQuery,
                                 variables: {},

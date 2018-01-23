@@ -36,7 +36,7 @@ export const Checkbox = ({...rest}) => {
 
 //Switch
 import AntSwitch from  'antd/lib/Switch'
-export const Switch = ({label, ...rest}) => {
+export const SimpleSwitch = ({label, ...rest}) => {
     return <div><AntSwitch {...rest} /> {label}</div>
 }
 

@@ -4,13 +4,21 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import JsonDom from 'client/components/JsonDom'
-import {Typography,DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Switch} from 'ui/admin'
+import {Typography, DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, SimpleSwitch} from 'ui/admin'
 import update from 'immutability-helper'
 import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
 import DataResolverEditor from 'client/components/cms/DataResolverEditor'
 import TemplateEditor from 'client/components/cms/TemplateEditor'
 import ScriptEditor from 'client/components/cms/ScriptEditor'
+import {withApollo} from 'react-apollo'
+import ApolloClient from 'apollo-client'
+import Util from 'client/util'
+
+
+// the graphql query is also need to access and update the cache when data arrive from a supscription
+const gqlQuery = gql`query cmsPage($slug: String!){ cmsPage(slug: $slug){slug template script dataResolver ssr resolvedData html subscriptions _id createdBy{_id username}}}`
+
 
 const editorStyle = {
     backgroundColor: '#fff',
@@ -28,7 +36,7 @@ const isPreview = (location) => {
 }
 
 const isEditMode = (props) => {
-    const {user,location,dynamic} = props
+    const {user, location, dynamic} = props
     return (user.isAuthenticated && !isPreview(location) && !dynamic)
 }
 
@@ -37,6 +45,7 @@ class CmsViewContainer extends React.Component {
     oriTitle = document.title
 
     dataResolverSaveTimeout = 0
+    registeredSubscriptions = {}
 
     constructor(props) {
         super(props)
@@ -49,6 +58,71 @@ class CmsViewContainer extends React.Component {
             dataResolver: dataResolver,
             ssr: ssr
         }
+
+        if (!props.dynamic)
+            document.title = props.slug
+
+        this.setUpSubsciptions(props)
+    }
+
+
+    setUpSubsciptions(props) {
+        if (!props.cmsPage) return
+
+        const {cmsPage: {subscriptions}, client, slug} = props
+
+        // remove unsed subscriptions
+        Object.keys(this.registeredSubscriptions).forEach(key => {
+            if (subscriptions.indexOf(key) < 0) {
+                this.registeredSubscriptions[key].unsubscribe()
+                delete this.registeredSubscriptions[key]
+            }
+        })
+
+        // register new supscriptions
+        subscriptions.forEach(subs => {
+            if (!this.registeredSubscriptions[subs]) {
+                const qqlSubscribe = gql`subscription{
+                subscribe${subs}{ key, data{_id name, price, description} }
+              }`
+                this.registeredSubscriptions[subs] = client.subscribe({
+                    query: qqlSubscribe,
+                    variables: {},
+
+                }).subscribe({
+                    next(supscriptionData) {
+                        const {data} = supscriptionData.data['subscribe'+subs]
+                        if( data ){
+                            const storeData = client.readQuery({query: gqlQuery, variables: {slug}})
+
+                            // upadate data in resolvedData string
+                            if (storeData.cmsPage && storeData.cmsPage.resolvedData ) {
+
+                                const resolvedDataJson = JSON.parse(storeData.cmsPage.resolvedData)
+                                if( resolvedDataJson[subs] && resolvedDataJson[subs].results ) {
+                                    const refResults = resolvedDataJson[subs].results
+                                    const idx = refResults.findIndex(o => o._id === data._id)
+                                    if (idx > -1) {
+                                        refResults[idx] = Object.assign({},refResults[idx], Util.removeNullValues(data))
+                                        // back to string data
+                                        storeData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
+                                        client.writeQuery({
+                                            query: gqlQuery,
+                                            variables: {slug},
+                                            data: storeData
+                                        })
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    error(err) {
+                        console.error('err', err);
+                    },
+                })
+                console.log(this.registeredSubscriptions[subs])
+            }
+        })
     }
 
     saveCmsPage = (value, data, key) => {
@@ -94,10 +168,12 @@ class CmsViewContainer extends React.Component {
         }
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentWillReceiveProps(props) {
+        this.setUpSubsciptions(props)
+
         // in case props change and differ from inital props
-        if (nextProps.cmsPage) {
-            const {template, script, dataResolver, ssr} = nextProps.cmsPage
+        if (props.cmsPage) {
+            const {template, script, dataResolver, ssr} = props.cmsPage
             this.setState({template, script, dataResolver, ssr})
         }
     }
@@ -109,16 +185,20 @@ class CmsViewContainer extends React.Component {
         })
     }
 
-    componentWillUpdate(props) {
-        document.title = props.slug
-    }
-
     componentWillUnmount() {
-        document.title = this.oriTitle
+        if (!this.props.dynamic)
+            document.title = this.oriTitle
+
+        // remove all subscriptions
+        Object.keys(this.registeredSubscriptions).forEach(key => {
+            this.registeredSubscriptions[key].unsubscribe()
+            delete this.registeredSubscriptions[key]
+        })
     }
 
     render() {
-        const {cmsPage, location, loading} = this.props
+        console.log('render')
+        const {cmsPage, location, _parentRef, id} = this.props
 
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
@@ -133,12 +213,12 @@ class CmsViewContainer extends React.Component {
             // it was already rendered on the server side
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
-        console.log('render cms', loading)
+        //console.log('render cms', loading)
 
         const scope = {page: {slug: cmsPage.slug}}
 
 
-        const jsonDom = <JsonDom template={template}
+        const jsonDom = <JsonDom id={id} _parentRef={_parentRef} template={template}
                                  script={script}
                                  resolvedData={cmsPage.resolvedData}
                                  editMode={editMode}
@@ -175,7 +255,7 @@ class CmsViewContainer extends React.Component {
                         onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ScriptEditor>
 
                     <Typography type="headline">Settings</Typography>
-                    <Switch
+                    <SimpleSwitch
                         label="SSR (Server side Rendering)"
                         checked={!!this.state.ssr}
                         onChange={this.handleSsrChange}
@@ -201,6 +281,7 @@ class CmsViewContainer extends React.Component {
 
 
 CmsViewContainer.propTypes = {
+    client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
     cmsPage: PropTypes.object,
     user: PropTypes.object,
@@ -208,10 +289,12 @@ CmsViewContainer.propTypes = {
     slug: PropTypes.string,
     dynamic: PropTypes.bool,
     history: PropTypes.object,
-    location: PropTypes.object
+    location: PropTypes.object,
+    /* Reference to the parent JsonDom */
+    _parentRef: PropTypes.object,
+    id: PropTypes.string
 }
 
-const gqlQuery = gql`query cmsPage($slug: String!){ cmsPage(slug: $slug){slug template script dataResolver ssr resolvedData html _id createdBy{_id username}}}`
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
         options(ownProps) {
@@ -220,7 +303,7 @@ const CmsViewContainerWithGql = compose(
                 variables: {
                     slug
                 },
-                fetchPolicy: isEditMode(ownProps)?'network-only':'cache-and-network'
+                fetchPolicy: isEditMode(ownProps) ? 'network-only' : 'cache-and-network'
             }
         },
         props: ({data: {loading, cmsPage}}) => ({
@@ -228,9 +311,9 @@ const CmsViewContainerWithGql = compose(
             loading
         })
     }),
-    graphql(gql`mutation updateCmsPage($_id: ID!,$template: String,$slug: String,$script: String,$dataResolver: String,$ssr: Boolean){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr){slug template script dataResolver ssr resolvedData html _id createdBy{_id username} status}}`, {
+    graphql(gql`mutation updateCmsPage($_id: ID!,$template: String,$slug: String,$script: String,$dataResolver: String,$ssr: Boolean){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr){slug template script dataResolver ssr resolvedData html subscriptions _id createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
-            updateCmsPage: ({_id, ...rest}, key) => {
+            updateCmsPage: ({_id, subscriptions, ...rest}, key) => {
                 return mutate({
                     variables: {_id, [key]: rest[key]},
                     optimisticResponse: {
@@ -238,6 +321,7 @@ const CmsViewContainerWithGql = compose(
                         // Optimistic message
                         updateCmsPage: {
                             _id,
+                            subscriptions,
                             ...rest,
                             status: 'updating',
                             createdBy: {
@@ -259,6 +343,7 @@ const CmsViewContainerWithGql = compose(
                             // update resolvedData
                             if (updateCmsPage.resolvedData) {
                                 data.cmsPage.resolvedData = updateCmsPage.resolvedData
+                                data.cmsPage.subscriptions = updateCmsPage.subscriptions
                             }
 
                             store.writeQuery({query: gqlQuery, variables: {slug}, data})
@@ -288,5 +373,5 @@ const mapStateToProps = (store) => {
  */
 export default connect(
     mapStateToProps
-)(withRouter(CmsViewContainerWithGql))
+)(withApollo(withRouter(CmsViewContainerWithGql)))
 

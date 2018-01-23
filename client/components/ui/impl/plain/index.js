@@ -57,7 +57,7 @@ export const Checkbox = ({...rest}) => {
  }*/
 
 //Switch
-export const Switch = ({label, ...rest}) => {
+export const SimpleSwitch = ({label, ...rest}) => {
     return <label><input type='checkbox' {...rest} /> {label}</label>
 }
 

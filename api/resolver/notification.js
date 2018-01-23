@@ -1,4 +1,4 @@
-import {pubsub} from '../subscription'
+import {pubsub} from 'api/subscription'
 import {withFilter} from 'graphql-subscriptions'
 
 
