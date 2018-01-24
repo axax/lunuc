@@ -251,7 +251,7 @@ function gensrcExtension(name, options) {
         return GenericResolver.updateEnity(db, context, '${type.name}', {...rest})
     },
     delete${type.name}: async ({_id}, {context}) => {
-         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {...rest}}})
+         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {_id}}})
         return GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
     },
     subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),

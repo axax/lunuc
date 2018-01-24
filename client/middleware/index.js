@@ -33,24 +33,20 @@ export function configureMiddleware(store) {
 
     // create a link for error handling
     const errorLink = onError(({networkError, graphQLErrors, operation, response}) => {
-
-        /* if (operation.operationName === 'IgnoreErrorsQuery') {
-         }*/
-
-
+        console.log(operation)
         // check for mongodb/graphql errors
-        if (response && response.errors && response.errors.length) {
-            if (operation.variables && operation.variables._ignoreErrors) {
-                // ignore errors
-                response.errors = null
-            } else if (!operation.variables || operation.variables._errorHandling !== false) {
-                store.dispatch(Actions.addError({key: 'graphql_error', msg: response.errors[0].message}))
-                response.errors = null
-            }
-        } else if (networkError) {
-            // check for server status error like 500, 504...
-            store.dispatch(Actions.addError({key: 'api_error', msg: networkError.message}))
+        if (graphQLErrors) {
+            graphQLErrors.map(({message, locations, path}) =>
+                store.dispatch(Actions.addError({
+                    key: 'graphql_error',
+                    msg: message + ' (in operation ' + path.join('/') + ')'
+                }))
+            )
+            // hide error in console log
+            response.errors = null
         }
+        if (networkError) store.dispatch(Actions.addError({key: 'api_error', msg: networkError.message}))
+
     })
 
     // combine the links

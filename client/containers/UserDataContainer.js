@@ -22,12 +22,9 @@ class UserDataContainer extends React.PureComponent {
 
 			client.query({
 				fetchPolicy: 'cache-first',
-				query: gql`query {me{username email _id note{_id value}role{capabilities}}}`,
-				variables: {
-					_errorHandling: false
-				}
+				query: gql`query{me{username email _id note{_id value}role{capabilities}}}`
 			}).then(response => {
-				userActions.setUser(response.data.me, true)
+				userActions.setUser(response.data.me, !!response.data.me)
 				this.setState({loading: false})
 			}).catch(error => {
 				this.setState({loading: false})
@@ -47,7 +44,6 @@ class UserDataContainer extends React.PureComponent {
 
 		if (loading)
 			return <div>loading user data...</div>
-
 		return this.props.children
 	}
 }

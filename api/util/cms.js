@@ -24,7 +24,7 @@ const UtilCms = {
                      if( cachedResult ){
                      results[c] = cachedResult
                      }else {*/
-                    const result = await GenericResolver.entities(db, context, type, f, {limit: l, offset: o})
+                    const result = await GenericResolver.entities(db, context, type, f, {limit: l, offset: o, match:{}})
                     resolvedData[type] = result
                     /* Cache.set(cacheKey,result,10000)
                      }*/

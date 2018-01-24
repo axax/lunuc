@@ -206,9 +206,9 @@ export const Card = ({children, ...rest}) => {
 
 
 // toolbar
-export const Toolbar = ({title, children, ...rest}) => {
-    return <div className="Toolbar">
-        <div className="Toolbar__title">
+export const SimpleToolbar = ({title, children, ...rest}) => {
+    return <div className="SimpleToolbar">
+        <div className="SimpleToolbar__title">
             {title}
         </div>
     </div>

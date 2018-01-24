@@ -42,7 +42,6 @@ export const userResolver = (db) => ({
 	me: async (data, {context}) => {
 		Util.checkIfUserIsLoggedIn(context)
 		var user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
-
 		if (!user) {
 			throw new Error('User doesn\'t exist')
 		} else {

@@ -29,7 +29,7 @@ class ErrorHandlerContainer extends React.Component {
 
     render(){
     	const {messages} = this.props
-        if( !messages || !messages.length )
+        if( !messages || !Object.keys(messages).length )
             return null
 
         const dialogs = []

@@ -4,7 +4,6 @@ import update from 'immutability-helper'
 import genericComposer from './generic/genericComposer'
 import {Link} from 'react-router-dom'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import logger from 'util/logger'
 import PropTypes from 'prop-types'
 import {SimpleTable, SimpleDialog, DeleteIconButton,Typography} from 'ui/admin'
 import Util from 'client/util'
@@ -14,7 +13,6 @@ const CMS_PAGES_PER_PAGE = 10
 
 
 class CmsContainer extends React.Component {
-    static logger = logger(CmsContainer.name)
 
     state = {
         rowsPerPage: CMS_PAGES_PER_PAGE,
@@ -26,6 +24,8 @@ class CmsContainer extends React.Component {
         const {cmsPages} = this.props
         if (!cmsPages)
             return <BaseLayout />
+
+        const startTime = new Date()
 
         const columns = [
                 {
@@ -61,7 +61,7 @@ class CmsContainer extends React.Component {
 
         const totalPages = Math.ceil(cmsPages.total / CMS_PAGES_PER_PAGE),
             currentPage = Math.ceil(cmsPages.offset / CMS_PAGES_PER_PAGE) + 1
-        return (
+        const content =
             <BaseLayout>
                 <Typography type="display4" gutterBottom>Content management</Typography>
                 <GenericForm fields={{slug: {value: '', placeholder: 'slug name'}}}
@@ -82,7 +82,12 @@ class CmsContainer extends React.Component {
                 </SimpleDialog>
                 }
             </BaseLayout>
-        )
+
+
+        console.info(`render ${this.constructor.name} in ${new Date()-startTime}ms`)
+
+        return content
+
     }
 
 

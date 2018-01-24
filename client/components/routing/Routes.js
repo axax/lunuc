@@ -24,7 +24,7 @@ class Routes extends React.Component {
         {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
-        {exact: true,private: true, path: ADMIN_BASE_URL + '/types/:type?/:page*', component: TypesContainer},
+        {exact: true,private: true, path: ADMIN_BASE_URL + '/types/:type?/:page?/:limit*', component: TypesContainer},
         {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer},
         {
             // match everything but paths that start with ADMIN_BASE_URL

@@ -134,7 +134,7 @@ class UserProfileContainer extends React.Component {
 
     render() {
         const {me} = this.props
-        if( !me ) return null
+        if( !me ) return <BaseLayout />
 
         const {username, usernameError, loading, note} = this.state
 
@@ -240,7 +240,7 @@ const UserProfileContainerWithGql = compose(
         props: ({ownProps, mutate}) => ({
             updateMe: ({username}) => {
                 return mutate({
-                    variables: {_errorHandling: false, username}
+                    variables: {username}
                 })
             }
         })

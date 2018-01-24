@@ -1,31 +1,30 @@
-
 const Util = {
-	dateFromObjectId: (objectId) => {
+    dateFromObjectId: (objectId) => {
 
-		if( objectId.indexOf('#')===0 ){
-			// this is only a tmp id / timestemp
-			return parseInt(objectId.substring(1))
-		}
+        if (objectId.indexOf('#') === 0) {
+            // this is only a tmp id / timestemp
+            return parseInt(objectId.substring(1))
+        }
 
-		return new Date(parseInt(objectId.substring(0, 8), 16) * 1000)
-	},
-	formattedDateFromObjectId: (objectId) => {
-		if( objectId=== 0){
-			return new Intl.DateTimeFormat().format(new Date())
-		}
-		return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId))
-	},
-	formattedDatetimeFromObjectId: (objectId) => {
+        return new Date(parseInt(objectId.substring(0, 8), 16) * 1000)
+    },
+    formattedDateFromObjectId: (objectId) => {
+        if (objectId === 0) {
+            return new Intl.DateTimeFormat().format(new Date())
+        }
+        return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId))
+    },
+    formattedDatetimeFromObjectId: (objectId) => {
 
-		const options = {
-			hour: 'numeric', minute: 'numeric', second: 'numeric',
-			timeZoneName: 'short'
-		}
-		if( objectId=== 0){
-			return new Intl.DateTimeFormat().format(new Date(),options)
-		}
-		return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId),options)
-	},
+        const options = {
+            hour: 'numeric', minute: 'numeric', second: 'numeric',
+            timeZoneName: 'short'
+        }
+        if (objectId === 0) {
+            return new Intl.DateTimeFormat().format(new Date(), options)
+        }
+        return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId), options)
+    },
     escapeHtml: (str) => {
         const entityMap = {
             '&': '&amp;',
@@ -40,7 +39,7 @@ const Util = {
         return String(str).replace(/[&<>"'`=\/]/g, function (s) {
             return entityMap[s];
         })
-	},
+    },
     isOnServer: () => {
         return !(
             typeof window !== 'undefined' &&
@@ -48,12 +47,30 @@ const Util = {
             window.document.createElement
         )
     },
-    removeNullValues: (obj) => {
+    removeNullValues: obj => {
         let newObj = {}
         Object.keys(obj).forEach((prop) => {
-            if (obj[prop] !== null ) { newObj[prop] = obj[prop] }
+            if (obj[prop] !== null) {
+                newObj[prop] = obj[prop]
+            }
         })
         return newObj
+    },
+    extractQueryParams: query => {
+        if (!query) {
+            return {}
+        }
+        var a = query.split('&')
+
+        var b = {};
+        for (var i = 0; i < a.length; ++i) {
+            var p = a[i].split('=', 2)
+            if (p.length == 1)
+                b[p[0]] = ""
+            else
+                b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "))
+        }
+        return b
     }
 }
 export default Util

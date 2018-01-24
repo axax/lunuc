@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Button from 'material-ui/Button'
-import Menu, { MenuItem } from 'material-ui/Menu'
+import Menu, {MenuItem} from 'material-ui/Menu'
 import MoreVertIcon from 'material-ui-icons/MoreVert'
 
 class SimpleMenu extends React.Component {
@@ -10,28 +10,29 @@ class SimpleMenu extends React.Component {
     };
 
     handleClick = event => {
-        this.setState({ anchorEl: event.currentTarget })
+        this.setState({anchorEl: event.currentTarget})
     };
 
     handleClose = () => {
-        this.setState({ anchorEl: null })
+        this.setState({anchorEl: null})
     };
 
     render() {
-        const { anchorEl } = this.state
-        const { style,items } = this.props
+        const {anchorEl} = this.state
+        const {style, items, label} = this.props
 
         return (
             <div style={style}>
                 <Button
-                    fab
-                    mini
-                    color="accent"
+                    fab={!label}
+                    mini={!label}
+                    color={!label?'accent':'contrast'}
                     aria-owns={anchorEl ? 'simple-menu' : null}
                     aria-haspopup="true"
                     onClick={this.handleClick}
                 >
-                    <MoreVertIcon />
+                    {label ? label : <MoreVertIcon /> }
+
                 </Button>
                 <Menu
                     id="simple-menu"
@@ -39,8 +40,11 @@ class SimpleMenu extends React.Component {
                     open={Boolean(anchorEl)}
                     onClose={this.handleClose}
                 >
-                    {items.map((item,i) => {
-                            return <MenuItem onClick={()=>{this.handleClose();item.onClick()}} key={i}>{item.name}</MenuItem>
+                    {items.map((item, i) => {
+                        return <MenuItem onClick={() => {
+                            this.handleClose();
+                            item.onClick()
+                        }} key={i}>{item.name}</MenuItem>
                     })}
 
                 </Menu>

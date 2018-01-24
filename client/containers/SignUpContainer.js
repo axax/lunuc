@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import {graphql} from 'react-apollo'
 import gql from 'graphql-tag'
 import {ADMIN_BASE_URL} from 'gen/config'
-
+import BlankLayout from 'client/components/layout/BlankLayout'
 import {Link} from 'react-router-dom'
 
 class SignUpContainer extends React.Component {
@@ -37,7 +37,6 @@ class SignUpContainer extends React.Component {
 
 		mutate({
 			variables: {
-				_errorHandling: false,
 				email: this.state.email,
 				username: this.state.username,
 				password: this.state.password
@@ -58,13 +57,13 @@ class SignUpContainer extends React.Component {
 
 		if (signupFinished) {
 			return (
-				<div>
+				<BlankLayout>
 					<p>Thanks for your registration! <Link to={ADMIN_BASE_URL+'/login'}>Login</Link></p>
-				</div>
+				</BlankLayout>
 			)
 		}
 		return (
-			<div>
+			<BlankLayout>
 				<p>Sign up to use this service</p>
 				{loading ? <span>loading...</span> : ''}
 				{error ? <span>{error}</span> : ''}
@@ -86,7 +85,7 @@ class SignUpContainer extends React.Component {
 				</form>
 
 				<p>Already have an account? <Link to={ADMIN_BASE_URL+'/login'}>Login</Link></p>
-			</div>
+			</BlankLayout>
 		)
 	}
 }

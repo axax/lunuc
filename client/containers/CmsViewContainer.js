@@ -70,6 +70,7 @@ class CmsViewContainer extends React.Component {
         if (!props.cmsPage) return
 
         const {cmsPage: {subscriptions}, client, slug} = props
+        if( !subscriptions ) return
 
         // remove unsed subscriptions
         Object.keys(this.registeredSubscriptions).forEach(key => {
@@ -83,7 +84,7 @@ class CmsViewContainer extends React.Component {
         subscriptions.forEach(subs => {
             if (!this.registeredSubscriptions[subs]) {
                 const qqlSubscribe = gql`subscription{
-                subscribe${subs}{ key, data{_id name, price, description} }
+                subscribe${subs}{action, data{_id name, price, description, image} }
               }`
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,
@@ -91,6 +92,10 @@ class CmsViewContainer extends React.Component {
 
                 }).subscribe({
                     next(supscriptionData) {
+                        if( !supscriptionData.data ){
+                            console.warn('subscription data missing')
+                            return
+                        }
                         const {data} = supscriptionData.data['subscribe'+subs]
                         if( data ){
                             const storeData = client.readQuery({query: gqlQuery, variables: {slug}})
@@ -120,7 +125,6 @@ class CmsViewContainer extends React.Component {
                         console.error('err', err);
                     },
                 })
-                console.log(this.registeredSubscriptions[subs])
             }
         })
     }
@@ -197,7 +201,6 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        console.log('render')
         const {cmsPage, location, _parentRef, id} = this.props
 
         let {template, script, dataResolver} = this.state
@@ -216,7 +219,7 @@ class CmsViewContainer extends React.Component {
         //console.log('render cms', loading)
 
         const scope = {page: {slug: cmsPage.slug}}
-
+        const startTime = new Date()
 
         const jsonDom = <JsonDom id={id} _parentRef={_parentRef} template={template}
                                  script={script}
@@ -224,9 +227,9 @@ class CmsViewContainer extends React.Component {
                                  editMode={editMode}
                                  scope={JSON.stringify(scope)}
                                  onChange={this.handleTemplateSaveChange}/>
-
+        let content
         if (!editMode) {
-            return jsonDom
+            content = jsonDom
         } else {
             const sidebar = () => <div>
                 <MenuList>
@@ -264,7 +267,7 @@ class CmsViewContainer extends React.Component {
             </div>
 
 
-            return <DrawerLayout sidebar={sidebar()}
+            content = <DrawerLayout sidebar={sidebar()}
                                  drawerSize="large"
                                  toolbarRight={
                                      <Button color="contrast" onClick={e => {
@@ -276,6 +279,10 @@ class CmsViewContainer extends React.Component {
                 {jsonDom}
             </DrawerLayout>
         }
+
+        console.info(`render ${this.constructor.name} in ${new Date()-startTime}ms`)
+
+        return content
     }
 }
 
@@ -313,7 +320,7 @@ const CmsViewContainerWithGql = compose(
     }),
     graphql(gql`mutation updateCmsPage($_id: ID!,$template: String,$slug: String,$script: String,$dataResolver: String,$ssr: Boolean){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr){slug template script dataResolver ssr resolvedData html subscriptions _id createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
-            updateCmsPage: ({_id, subscriptions, ...rest}, key) => {
+            updateCmsPage: ({_id, ...rest}, key) => {
                 return mutate({
                     variables: {_id, [key]: rest[key]},
                     optimisticResponse: {
@@ -321,7 +328,6 @@ const CmsViewContainerWithGql = compose(
                         // Optimistic message
                         updateCmsPage: {
                             _id,
-                            subscriptions,
                             ...rest,
                             status: 'updating',
                             createdBy: {

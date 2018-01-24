@@ -12,13 +12,6 @@ const genericComposer =  (container, name, options) => {
         ...options
     }
 
-    const debug = (...args) => {
-        if (container.logger) {
-            container.logger.debug(...args)
-        }
-    }
-
-
     let insertParams = '', insertQuery = ''
 
     if (options.fields) {
@@ -103,7 +96,6 @@ const genericComposer =  (container, name, options) => {
                             }
                         },
                         update: (store, {data}) => {
-                            debug('create' + nameStartUpper, data['create' + nameStartUpper])
 
                             let pageNr = (ownProps.match.params.page || 1) - 1
 
@@ -157,7 +149,6 @@ const genericComposer =  (container, name, options) => {
                             }
                         },
                         update: (store, {data}) => {
-                            debug('update' + nameStartUpper, data['update' + nameStartUpper])
                             let pageNr = (ownProps.match.params.page || 1) - 1
 
                             // Read the data from the cache for this query.
@@ -195,7 +186,6 @@ const genericComposer =  (container, name, options) => {
                             }
                         },
                         update: (store, {data}) => {
-                            debug('delete' + nameStartUpper, data['delete' + nameStartUpper])
                             let pageNr = (ownProps.match.params.page || 1) - 1
 
                             // Read the data from the cache for this query.

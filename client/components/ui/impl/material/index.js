@@ -10,17 +10,11 @@ import React from 'react'
 
 // material theme
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles'
-import indigo from 'material-ui/colors/indigo'
-import pink from 'material-ui/colors/pink'
-import red from 'material-ui/colors/red'
 const defaultTheme = createMuiTheme()
 
 // override the default theme
 const theme = createMuiTheme({
     overrides: {
-        body:{
-          background:  indigo[300]
-        },
         MuiButton: {
             // Name of the styleSheet
             root: {
@@ -31,6 +25,17 @@ const theme = createMuiTheme({
             root: {
                 margin: defaultTheme.spacing.unit
             },
+            formControl:{
+                margin: 0
+            }
+        },
+        MuiFormControl:{
+            root: {
+                margin: defaultTheme.spacing.unit
+            },
+            fullWidth:{
+                margin: `${defaultTheme.spacing.unit}px 0`
+            }
         },
         MuiChip:{
             root: {
@@ -45,23 +50,6 @@ const theme = createMuiTheme({
         display3:{
             fontSize: '2.5rem'
         }
-    },
-    palette: {
-        contrastThreshold: 3.1,
-        tonalOffset: 0.07,
-        primary: {
-            light: indigo[300],
-            main: indigo[500],
-            dark: indigo[700],
-            contrastText: defaultTheme.palette.getContrastText(indigo[500]),
-        },
-        secondary: {
-            light: pink.A200,
-            main: pink.A400,
-            dark: pink.A700,
-            contrastText: defaultTheme.palette.getContrastText(pink.A400),
-        },
-        error: red.A400,
     }
 })
 
@@ -95,7 +83,7 @@ export Input from 'material-ui/Input'
 export TextField from 'material-ui/TextField'
 export Select from 'material-ui/Select'
 export Checkbox from 'material-ui/Checkbox'
-export FormControl from 'material-ui/Form'
+export { FormLabel, FormControl, FormControlLabel, FormHelperText } from 'material-ui/Form'
 
 // Chip
 export Chip from 'material-ui/Chip'
@@ -223,11 +211,12 @@ export const ExpansionPanel = ({heading, children, ...rest}) => {
 // toolbar
 import MaterialAppBar from 'material-ui/AppBar'
 import MaterialToolbar from 'material-ui/Toolbar'
-export const Toolbar = ({title, children, ...rest}) => {
+export const SimpleToolbar = ({title, children, ...rest}) => {
     return <MaterialAppBar {...rest} ><MaterialToolbar>
         <Typography type="title" color="inherit">
             {title}
         </Typography>
+        {children}
     </MaterialToolbar></MaterialAppBar>
 }
 

@@ -1,19 +1,19 @@
 import React from 'react'
-
-import ReactDOM from 'react-dom'
 import PropTypes from 'prop-types'
 import ContentEditable from '../components/generic/ContentEditable'
-import {DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, Toolbar, Card, DeleteIconButton} from 'ui'
+import {SimpleMenu, DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, SimpleToolbar, Card, DeleteIconButton} from 'ui'
 import Hook from 'util/hook'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
+import Util from 'client/util'
 
 class JsonDom extends React.Component {
 
     components = {
+        'SimpleMenu': SimpleMenu,
         'Link': Link,
         'Cms': ({...rest}) => <CmsViewContainer _parentRef={this} dynamic={true} {...rest}/>,
-        'Toolbar': ({position, ...rest}) => <Toolbar
+        'SimpleToolbar': ({position, ...rest}) => <SimpleToolbar
             position={(this.props.editMode ? 'static' : position)} {...rest} />,
         'Button': Button,
         'Divider': Divider,
@@ -277,6 +277,10 @@ class JsonDom extends React.Component {
         if (this.scope) return this.scope
         const {scope} = props
         this.scope = JSON.parse(scope)
+
+
+        this.scope.params = Util.extractQueryParams(window.location.search.substring(1))
+
         return this.scope
     }
 
@@ -335,7 +339,7 @@ class JsonDom extends React.Component {
                 console.log in the browser for more detail.</strong>
         }
 
-        const start = (new Date()).getTime()
+        const startTime = (new Date()).getTime()
 
         const scope = this.getScope(this.props)
         let jsError, resolveDataError
@@ -382,7 +386,7 @@ class JsonDom extends React.Component {
         scope.script = this.scriptResult
 
         const content = this.parseRec(this.getJson(this.props), 0)
-        console.log(`rendered JsonDom for ${scope.page.slug} in ${((new Date()).getTime() - start)}ms`)
+        console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
 
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>

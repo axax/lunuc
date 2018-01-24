@@ -12,7 +12,7 @@ class HomeContainer extends React.Component {
             <Typography type="display4" gutterBottom>Administration console</Typography>
             <Typography gutterBottom>
             {
-                user.isAuthenticated ? <span>Hi {user.userData.username}!</span> : <span>Please login!</span>
+                user.isAuthenticated ? <span>Hi {user.userData && user.userData.username}!</span> : <span>Please login!</span>
             }
             </Typography>
         </BaseLayout>
