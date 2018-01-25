@@ -3,6 +3,7 @@ import ReactDOMServer from 'react-dom/server'
 import JsonDom from 'client/components/JsonDom'
 import React from 'react'
 import Util from '../util'
+import ClientUtil from 'client/util'
 import UtilCms from '../util/cms'
 import {UIProvider} from 'ui'
 import {pubsub} from '../subscription'
@@ -72,13 +73,13 @@ export const cmsResolver = (db) => ({
             offset
         })
     },
-    cmsPage: async ({slug}, {context}) => {
+    cmsPage: async ({slug, query}, {context}) => {
         const cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr'], {match: {slug}})
 
         if (cmsPages.results.length == 0) {
             throw new Error('Cms page doesn\'t exist')
         }
-
+console.log(query)
         const {_id, createdBy, template, script, dataResolver, ssr} = cmsPages.results[0]
         const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver)
         let html
@@ -88,7 +89,7 @@ export const cmsResolver = (db) => ({
             // todo: ssr for apollo https://github.com/apollographql/apollo-client/blob/master/docs/source/recipes/server-side-rendering.md
 
             try {
-                const scope = {page: {slug}}
+                const scope = {page: {slug},params: ClientUtil.extractQueryParams(query)}
 
                 html = ReactDOMServer.renderToString(<UIProvider>
                     <JsonDom template={template}

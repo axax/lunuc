@@ -5,7 +5,6 @@ import {SimpleMenu, DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, 
 import Hook from 'util/hook'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
-import Util from 'client/util'
 
 class JsonDom extends React.Component {
 
@@ -112,23 +111,23 @@ class JsonDom extends React.Component {
     }
 
     componentWillReceiveProps(props) {
-        if (this.props.scope != props.scope) {
+        if (this.props.scope !== props.scope) {
             this.scope = null
             //console.log('reset scope')
         }
-        if (this.props.template != props.template) {
+        if (this.props.template !== props.template) {
             this.json = null
             this.jsonRaw = null
             this.componentRefs = {}
             //console.log('reset template')
         }
-        if (this.props.script != props.script) {
+        if (this.props.script !== props.script) {
             this.scriptResult = null
             this.jsOnStack = []
             this.runScript = true
             //console.log('reset script')
         }
-        if (this.props.resolvedData != props.resolvedData) {
+        if (this.props.resolvedData !== props.resolvedData) {
             this.resolvedDataJson = null
             this.runResolvedData = true
             //console.log('reset resolvedData')
@@ -141,7 +140,7 @@ class JsonDom extends React.Component {
 
         if (!props.template || !props.scope) return true
 
-        return this.props.template != props.template || this.props.scope != props.scope || this.props.script != props.script || this.props.resolvedData != props.resolvedData
+        return this.props.template !== props.template || this.props.scope !== props.scope || this.props.script !== props.script || this.props.resolvedData !== props.resolvedData
     }
 
     componentWillUpdate(props) {
@@ -278,9 +277,6 @@ class JsonDom extends React.Component {
         const {scope} = props
         this.scope = JSON.parse(scope)
 
-
-        this.scope.params = Util.extractQueryParams(window.location.search.substring(1))
-
         return this.scope
     }
 
@@ -349,7 +345,7 @@ class JsonDom extends React.Component {
             try {
                 this.resolvedDataJson = JSON.parse(resolvedData)
                 if (this.resolvedDataJson.error) {
-                    resolveDataError = this.resolvedDataJson
+                    resolveDataError = this.resolvedDataJson.error
                 }
             } catch (e) {
                 resolveDataError = e.message
@@ -384,7 +380,6 @@ class JsonDom extends React.Component {
         }
 
         scope.script = this.scriptResult
-
         const content = this.parseRec(this.getJson(this.props), 0)
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
 

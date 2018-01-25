@@ -17,7 +17,7 @@ import Util from 'client/util'
 
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug: String!){ cmsPage(slug: $slug){slug template script dataResolver ssr resolvedData html subscriptions _id createdBy{_id username}}}`
+const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){slug template script dataResolver ssr resolvedData html subscriptions _id createdBy{_id username}}}`
 
 
 const editorStyle = {
@@ -46,6 +46,7 @@ class CmsViewContainer extends React.Component {
 
     dataResolverSaveTimeout = 0
     registeredSubscriptions = {}
+
 
     constructor(props) {
         super(props)
@@ -218,7 +219,8 @@ class CmsViewContainer extends React.Component {
         }
         //console.log('render cms', loading)
 
-        const scope = {page: {slug: cmsPage.slug}}
+        const scope = {page: {slug: cmsPage.slug},params: Util.extractQueryParams(window.location.search.substring(1))}
+
         const startTime = new Date()
 
         const jsonDom = <JsonDom id={id} _parentRef={_parentRef} template={template}
@@ -270,7 +272,7 @@ class CmsViewContainer extends React.Component {
             content = <DrawerLayout sidebar={sidebar()}
                                  drawerSize="large"
                                  toolbarRight={
-                                     <Button color="contrast" onClick={e => {
+                                     <Button dense color="inherit" onClick={e => {
                                          this.props.history.push(ADMIN_BASE_URL + '/cms')
                                      }}>Back</Button>
                                  }
@@ -308,7 +310,8 @@ const CmsViewContainerWithGql = compose(
             const slug = ownProps.slug
             return {
                 variables: {
-                    slug
+                    slug,
+                    query: window.location.search.substring(1)
                 },
                 fetchPolicy: isEditMode(ownProps) ? 'network-only' : 'cache-and-network'
             }
@@ -341,7 +344,7 @@ const CmsViewContainerWithGql = compose(
                     update: (store, {data: {updateCmsPage}}) => {
                         const slug = ownProps.slug
 
-                        const data = store.readQuery({query: gqlQuery, variables: {slug}})
+                        const data = store.readQuery({query: gqlQuery, variables: {slug,query: window.location.search.substring(1)}})
                         if (data.cmsPage) {
                             // update cmsPage
                             data.cmsPage = {_id, [key]: updateCmsPage[key], ...rest}

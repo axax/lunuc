@@ -14,7 +14,7 @@ render(
 )
 
 /* Register serviceworker */
-/*if ('serviceWorker' in navigator ) {
+if ('serviceWorker' in navigator ) {
 	console.log('Service Worker is supported')
 
 	if( 'PushManager' in window ){
@@ -34,4 +34,4 @@ render(
 
 } else {
 	console.warn('Service Worker is not supported')
-}*/
+}

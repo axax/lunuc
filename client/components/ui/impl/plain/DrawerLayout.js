@@ -27,7 +27,7 @@ class DrawerLayout extends React.Component {
                         <div>
                             {open ? '' :
                                 <button
-                                    color="contrast"
+                                    color="inherit"
                                     aria-label="open drawer"
                                     onClick={this.handleDrawerOpen}
                                     className="DrawerLayout__menuButton"

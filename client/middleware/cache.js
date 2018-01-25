@@ -2,7 +2,7 @@ import {InMemoryCache} from 'apollo-cache-inmemory'
 import {APOLLO_CACHE} from 'gen/config'
 
 // cache
-const CACHE_KEY = '@APOLLO_OFFLINE_CACHE'
+export const CACHE_KEY = '@APOLLO_OFFLINE_CACHE'
 
 export class OfflineCache extends InMemoryCache {
     changeTimeout = 0

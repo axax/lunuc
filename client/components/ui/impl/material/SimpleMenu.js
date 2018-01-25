@@ -26,7 +26,7 @@ class SimpleMenu extends React.Component {
                 <Button
                     fab={!label}
                     mini={!label}
-                    color={!label?'accent':'contrast'}
+                    color={!label?'secondary':'inherit'}
                     aria-owns={anchorEl ? 'simple-menu' : null}
                     aria-haspopup="true"
                     onClick={this.handleClick}

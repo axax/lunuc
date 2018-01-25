@@ -47,7 +47,7 @@ class HeaderMenu extends React.Component {
                         if( item.auth && isAuthenticated || !item.auth) {
                             const isActive = this.isActive(item.to)
                             return <Button raised={isActive}
-                                           color={(isActive ? 'default' : 'contrast')}
+                                           color={(isActive ? 'default' : 'inherit')}
                                            onClick={this.linkTo.bind(this, item)} key={i}>{item.name}</Button>
                         }
                     })}

@@ -142,7 +142,7 @@ class DrawerLayout extends React.Component {
                     <AppBar className={classNames(classes.appBar, open && classes[drawerSize+'AppBarShift'] )}>
                         <Toolbar>
                             <IconButton
-                                color="contrast"
+                                color="inherit"
                                 aria-label="open drawer"
                                 onClick={this.handleDrawerOpen}
                                 className={classNames(classes.menuButton, open && classes.hide)}

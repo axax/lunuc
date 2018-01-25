@@ -49,6 +49,9 @@ const theme = createMuiTheme({
         },
         display3:{
             fontSize: '2.5rem'
+        },
+        display1:{
+            margin: '1em 0 0.7em'
         }
     }
 })

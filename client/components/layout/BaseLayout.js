@@ -37,13 +37,13 @@ class BaseLayout extends React.Component {
             <LayoutHeader className="LayoutHeader">
                 <HeaderMenu items={this.menuEntries} metaContent={
                     isAuthenticated ?
-                        <Button color="contrast" onClick={() => {
+                        <Button color="inherit" dense onClick={() => {
                             localStorage.removeItem('token')
                             userActions.setUser(null, false)
                             history.push('/')
                         }}>Logout</Button>
 
-                        : <Button color="contrast" onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
+                        : <Button color="inherit" dense onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
                 }/>
             </LayoutHeader>
 
