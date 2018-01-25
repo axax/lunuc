@@ -4,7 +4,6 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import PostEditor from '../components/post/PostEditor'
-import update from 'immutability-helper'
 import Util from 'client/util'
 import {Link} from 'react-router-dom'
 import BaseLayout from 'client/components/layout/BaseLayout'
@@ -41,7 +40,7 @@ class PostContainer extends React.Component {
 
             const {updatePost} = this.props
             updatePost(
-                update(post, {body: {$set: data}})
+                Object.assign({},post,{body:data})
             )
 
         }, 2000)
@@ -58,7 +57,7 @@ class PostContainer extends React.Component {
         const t = event.target.innerText
         const {updatePost} = this.props
         updatePost(
-            update(post, {title: {$set: t}})
+            Object.assign({},post,{title:t})
         )
     }
 

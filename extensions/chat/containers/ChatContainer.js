@@ -7,7 +7,6 @@ import ChatMessage from '../components/chat/ChatMessage'
 import CreateChat from '../components/chat/CreateChat'
 import AddChatUser from '../components/chat/AddChatUser'
 import AddChatMessage from '../components/chat/AddChatMessage'
-import update from 'immutability-helper'
 import {connect} from 'react-redux'
 import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
@@ -232,7 +231,12 @@ const ChatContainerWithGql = compose(
                             if (chatIdx >= 0) {
                                 const msgIdx = prev.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === message._id)
                                 if (msgIdx < 0) {
-                                    return update(prev, {chatsWithMessages: {[chatIdx]: {messages: {$splice: [[0, 0, message]]}}}})
+                                	// deep copy prev
+                                	const newPrev = JSON.parse(JSON.stringify(prev))
+
+									// prepend message
+                                    newPrev.chatsWithMessages[chatIdx].messages.unshift(message)
+                                    return newPrev
                                 }
                             }
                             return prev
@@ -261,7 +265,11 @@ const ChatContainerWithGql = compose(
 							if (fetchMoreResult) {
 								const chatIdx = previousResult.chatsWithMessages.findIndex((e) => e._id === chatId)
 								if (chatIdx >= 0) {
-									return update(previousResult, {chatsWithMessages: {[chatIdx]: {messages: {$push: fetchMoreResult.chatMessages}}}})
+                                    const newPrev = JSON.parse(JSON.stringify(prev))
+                                    // prpend message
+                                    newPrev.chatsWithMessages[chatIdx].messages.push(fetchMoreResult.chatMessages)
+
+									return newPrev
 								}
 							}
 							return previousResult

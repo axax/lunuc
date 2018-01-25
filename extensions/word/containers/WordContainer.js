@@ -1,5 +1,4 @@
 import React from 'react'
-import update from 'immutability-helper'
 import GenericForm from 'client/components/generic/GenericForm'
 import genericComposer from 'client/containers/generic/genericComposer'
 import BaseLayout from 'client/components/layout/BaseLayout'
@@ -45,7 +44,7 @@ class WordContainer extends React.Component {
         if (t != data[lang]) {
             const {updateWord} = this.props
             updateWord(
-                update(data, {[lang]: {$set: t}})
+                Object.assign({},data,{[lang]:t})
             )
         }
     }
