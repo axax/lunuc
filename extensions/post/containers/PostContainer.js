@@ -16,10 +16,6 @@ class PostContainer extends React.Component {
         super(props)
     }
 
-    componentWillMount() {
-    }
-
-
     handleAddPostClick = (post) => {
         const {createPost} = this.props
         createPost(post).then(() => {
