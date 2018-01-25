@@ -7,6 +7,7 @@ import ClientUtil from 'client/util'
 import UtilCms from '../util/cms'
 import {UIProvider} from 'ui'
 import {pubsub} from '../subscription'
+import Cache from 'util/cache'
 
 const defaultDataResolver = `[
     {
@@ -74,14 +75,30 @@ export const cmsResolver = (db) => ({
         })
     },
     cmsPage: async ({slug, query}, {context}) => {
-        const cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr'], {match: {slug}})
+        const userIsLoggedIn = Util.isUserLoggedIn(context)
+        const startTime = (new Date()).getTime()
+
+        let cmsPages
+        const cacheKey = 'cmsPage'+slug
+        if( !userIsLoggedIn ){
+            // get page from cache
+            cmsPages = Cache.get(cacheKey)
+        }
+
+        if( !cmsPages ){
+            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr'], {match: {slug}})
+            Cache.set(cacheKey,cmsPages)
+        }
+
 
         if (cmsPages.results.length == 0) {
             throw new Error('Cms page doesn\'t exist')
         }
-console.log(query)
+        const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
+        const scope = {page: {slug},params: queryParams}
+
         const {_id, createdBy, template, script, dataResolver, ssr} = cmsPages.results[0]
-        const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver)
+        const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver, scope)
         let html
 
         if (ssr) {
@@ -89,7 +106,6 @@ console.log(query)
             // todo: ssr for apollo https://github.com/apollographql/apollo-client/blob/master/docs/source/recipes/server-side-rendering.md
 
             try {
-                const scope = {page: {slug},params: ClientUtil.extractQueryParams(query)}
 
                 html = ReactDOMServer.renderToString(<UIProvider>
                     <JsonDom template={template}
@@ -102,7 +118,10 @@ console.log(query)
                 html = e.message
             }
         }
-        if (Util.isUserLoggedIn(context)) {
+        console.log(`cms resolver got data in ${(new Date()).getTime()-startTime}ms`)
+
+        if (userIsLoggedIn) {
+            // return all data
             return {
                 _id,
                 createdBy,
@@ -118,7 +137,8 @@ console.log(query)
         } else {
 
             // if user is not looged in return only slug and rendered html
-            return {
+            // never return sensitiv data here
+            return  {
                 _id,
                 createdBy,
                 ssr,

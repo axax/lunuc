@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import update from 'immutability-helper'
 import {Button, TextField} from 'ui/admin'
 
 export default class GenericForm extends React.Component {
@@ -47,12 +46,14 @@ export default class GenericForm extends React.Component {
         const name = target.name
 
         this.setState((prevState) => {
-            const newState = update(prevState, {fields: {[name]: {$set: value}}})
+            const newState = Object.assign({},{fields:{}},prevState)
+            newState.fields[name] = value
 
             if( this.props.onChange){
                 this.props.onChange({name,value})
             }
-            return update(newState,{isValid:{$set:this.validate(newState)}})
+            newState.isValid = this.validate(newState)
+            return newState
         })
     }
 
@@ -72,7 +73,7 @@ export default class GenericForm extends React.Component {
                         if (type === 'select') {
                             //TODO: implement
                         } else {
-                            return <TextField key={k} type={type} placeholder={o.placeholder} value={this.state.fields[k]}
+                            return <TextField key={k} fullWidth={o.fullWidth} type={type} placeholder={o.placeholder} value={this.state.fields[k]}
                                           name={k}
                                           onChange={this.handleInputChange}/>
                         }

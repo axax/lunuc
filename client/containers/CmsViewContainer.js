@@ -5,7 +5,6 @@ import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import JsonDom from 'client/components/JsonDom'
 import {Typography, DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, SimpleSwitch} from 'ui/admin'
-import update from 'immutability-helper'
 import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
 import DataResolverEditor from 'client/components/cms/DataResolverEditor'
@@ -135,8 +134,9 @@ class CmsViewContainer extends React.Component {
             console.log('save cms', key)
 
             const {updateCmsPage} = this.props
+
             updateCmsPage(
-                update(data, {[key]: {$set: value}}), key
+                Object.assign({},data,{[key]: value}), key
             )
         }
     }
@@ -217,9 +217,8 @@ class CmsViewContainer extends React.Component {
             // it was already rendered on the server side
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
-        //console.log('render cms', loading)
 
-        const scope = {page: {slug: cmsPage.slug},params: Util.extractQueryParams(window.location.search.substring(1))}
+        const scope = {page: {slug: cmsPage.slug},params: Util.extractQueryParams()}
 
         const startTime = new Date()
 

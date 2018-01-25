@@ -58,8 +58,9 @@ const Util = {
     },
     extractQueryParams: query => {
         if (!query) {
-            return {}
+            query = window && window.location.search.substring(1)
         }
+
         var a = query.split('&')
 
         var b = {};

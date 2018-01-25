@@ -7,14 +7,19 @@ const GenericResolver = {
 
         //Util.checkIfUserIsLoggedIn(context)
 
-        let {limit, offset, match, filter, sort} = options
+        let {limit, offset, page, match, filter, sort} = options
 
         if (!limit) {
             limit = 10
         }
 
         if (!offset) {
-            offset = 0
+
+            if( page ){
+                offset = (page - 1) * limit
+            }else{
+                offset = 0
+            }
         }
 
         if (!match) {

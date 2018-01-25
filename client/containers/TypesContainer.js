@@ -11,7 +11,9 @@ import {
     TextField,
     Input,
     SimpleDialog,
-    SimpleTable
+    SimpleTable,
+    Row,
+    Col
 } from 'ui/admin'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
@@ -27,28 +29,31 @@ class TypesContainer extends React.Component {
 
     types = null
     queries = {}
+    pageParams = null
 
     constructor(props) {
         super(props)
         this.types = prepareTypes()
 
-        const {type,page,limit} = this.determinPageParams(props)
+        this.pageParams = this.determinPageParams(props)
+        const {type, page, limit, sort} = this.pageParams
         this.state = {
             loading: false,
             confirmDeletionDialog: true,
             dataToBeDeleted: null
         }
 
-        this.state.data = this.getData(type, page, limit)
+        this.state.data = this.getData(this.pageParams)
 
     }
 
 
     componentWillReceiveProps(props) {
-        const {type,page,limit} = this.determinPageParams(props)
-        const matchBefore = this.props.match
-        if (type !== matchBefore.type || page !== matchBefore.page || limit !== matchBefore.limit) {
-            this.getData(type, page, limit)
+        const pageParams = this.determinPageParams(props)
+
+        if (this.pageParams.type !== pageParams.type || this.pageParams.page !== pageParams.page || this.pageParams.limit !== pageParams.limit || this.pageParams.sort !== pageParams.sort || this.pageParams.filter !== pageParams.filter) {
+            this.pageParams = pageParams
+            this.getData(pageParams)
         }
     }
 
@@ -56,7 +61,7 @@ class TypesContainer extends React.Component {
     render() {
         const startTime = new Date()
         const {loading, data} = this.state
-        const {type,page,limit} = this.determinPageParams(this.props)
+        const {type, page, limit, sort, filter} = this.pageParams
 
         let tableWithResults
         if (data) {
@@ -65,7 +70,7 @@ class TypesContainer extends React.Component {
 
             this.types[type].fields.forEach(field => {
                 if (!field.type || field.type.indexOf('[') < 0) {
-                    columns.push({title: field.name, dataIndex: field.name})
+                    columns.push({title: field.name, dataIndex: field.name, sortable: true})
                 }
             })
             columns.push({
@@ -109,8 +114,12 @@ class TypesContainer extends React.Component {
 
                 })
             }
+            const asort = sort.split(' ')
             tableWithResults = <SimpleTable dataSource={dataSource} columns={columns} count={data.total}
                                             rowsPerPage={parseInt(limit)} page={page}
+                                            orderBy={asort[0]}
+                                            orderDirection={asort.length > 1 && asort[1] || null}
+                                            onSort={this.handleSortChange}
                                             onChangePage={this.handleChangePage.bind(this)}
                                             onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
         }
@@ -128,7 +137,7 @@ class TypesContainer extends React.Component {
             <Select
                 value={type}
                 onChange={this.handleTypeChange}
-                input={<Input name="selectedType"/>}
+                input={<Input name="type"/>}
             >
                 {
                     Object.keys(this.types).map((k) => {
@@ -140,8 +149,23 @@ class TypesContainer extends React.Component {
             </Select>
             {loading && 'loading'}
 
-            <GenericForm fields={formFields}
-                         onClick={this.handleAddDataClick}/>
+            <Row spacing={16}>
+                <Col md={9}>
+                    <GenericForm caption="Add" fields={formFields}
+                                 onClick={this.handleAddDataClick}/>
+                </Col>
+                <Col md={3}>
+                    <GenericForm onChange={this.handleFilter} primaryButton={false}
+                                 fields={{
+                                     term: {
+                                         value: filter,
+                                         fullWidth: true,
+                                         placeholder: 'Filter expression (for specifc fields use field=term)'
+                                     }
+                                 }}/>
+                </Col>
+            </Row>
+
 
             {tableWithResults}
 
@@ -166,14 +190,13 @@ class TypesContainer extends React.Component {
         return content
     }
 
-
     determinPageParams(props) {
         const {params} = props.match
-
-        const result = {limit: params.limit || DEFAULT_RESULT_LIMIT, page: params.page || 1}
-        if (params.type){
+        const {p, l, s, f} = Util.extractQueryParams(window.location.search.substring(1))
+        const result = {limit: l || DEFAULT_RESULT_LIMIT, page: p || 1, sort: s || '', filter: f || ''}
+        if (params.type) {
             result.type = params.type
-        }else{
+        } else {
             for (const prop in this.types) {
                 result.type = prop
                 break
@@ -183,29 +206,26 @@ class TypesContainer extends React.Component {
         return result
     }
 
-    getQueries(selectedType) {
-        if (!this.queries[selectedType])
-            this.queries[selectedType] = buildQueries(selectedType, this.types)
-        return this.queries[selectedType]
+    getQueries(type) {
+        if (!this.queries[type])
+            this.queries[type] = buildQueries(type, this.types)
+        return this.queries[type]
     }
 
-    getData(selectedType, page, limit) {
+    getData({type, page, limit, sort, filter}) {
         const {client} = this.props
-        console.log(limit, selectedType)
-        console.log(page, selectedType)
 
-
-        if (selectedType) {
-            const queries = this.getQueries(selectedType)
-            const selectedTypeStartLower = selectedType.charAt(0).toLowerCase() + selectedType.slice(1)
+        if (type) {
+            const queries = this.getQueries(type)
+            const typeStartLower = type.charAt(0).toLowerCase() + type.slice(1)
 
             client.query({
                 fetchPolicy: 'network-only',
                 forceFetch: true,
                 query: gql(queries.query),
-                variables: {limit, offset: (page-1) * limit}
+                variables: {limit, page, sort, filter}
             }).then(response => {
-                this.setState({loading: false, data: response.data[selectedTypeStartLower]})
+                this.setState({loading: false, data: response.data[typeStartLower]})
             }).catch(error => {
                 console.log(error.message)
 
@@ -214,13 +234,14 @@ class TypesContainer extends React.Component {
         }
     }
 
-    createData(selectedType, input) {
+    createData({type, page, limit, sort, filter}, input) {
         const {client} = this.props
 
-        if (selectedType) {
 
-            const queries = this.getQueries(selectedType)
-            const selectedTypeStartLower = selectedType.charAt(0).toLowerCase() + selectedType.slice(1)
+        if (type) {
+
+            const queries = this.getQueries(type)
+            const typeStartLower = type.charAt(0).toLowerCase() + type.slice(1)
 
             client.mutate({
                 mutation: gql(queries.create),
@@ -228,30 +249,29 @@ class TypesContainer extends React.Component {
                     ...input
                 },
                 update: (store, {data}) => {
-                    console.log('create', data['create' + selectedType])
+                    console.log('create', data['create' + type])
                     const gqlQuery = gql(queries.query)
 
-                    const {page,limit} = this.determinPageParams(this.props)
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
-                        variables: {limit, offset: (page-1) * limit}
+                        variables: {page, limit, sort, filter}
                     })
-                    if (storeData[selectedTypeStartLower]) {
-                        if (!storeData[selectedTypeStartLower].results) {
-                            storeData[selectedTypeStartLower].results = []
+                    if (storeData[typeStartLower]) {
+                        if (!storeData[typeStartLower].results) {
+                            storeData[typeStartLower].results = []
                         }
 
-                        if (data['create' + selectedType]) {
-                            storeData[selectedTypeStartLower].results.unshift(data['create' + selectedType])
-                            storeData[selectedTypeStartLower].total += 1
+                        if (data['create' + type]) {
+                            storeData[typeStartLower].results.unshift(data['create' + type])
+                            storeData[typeStartLower].total += 1
                         }
                         store.writeQuery({
                             query: gqlQuery,
-                            variables: {limit, offset: (page-1) * limit},
+                            variables: {page, limit, sort, filter},
                             data: storeData
                         })
-                        this.setState({loading: false, data: storeData[selectedTypeStartLower]})
+                        this.setState({loading: false, data: storeData[typeStartLower]})
                     }
 
                 },
@@ -259,13 +279,13 @@ class TypesContainer extends React.Component {
         }
     }
 
-    updateData(selectedType, input, key) {
+    updateData({type, page, limit, sort, filter}, input, key) {
         const {client} = this.props
 
-        if (selectedType) {
+        if (type) {
 
-            const queries = this.getQueries(selectedType)
-            const selectedTypeStartLower = selectedType.charAt(0).toLowerCase() + selectedType.slice(1)
+            const queries = this.getQueries(type)
+            const typeStartLower = type.charAt(0).toLowerCase() + type.slice(1)
 
             client.mutate({
                 mutation: gql(queries.update),
@@ -276,24 +296,22 @@ class TypesContainer extends React.Component {
                 },
                 update: (store, {data}) => {
                     const gqlQuery = gql(queries.query)
-                    const {page,limit} = this.determinPageParams(this.props)
-
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
-                        variables: {limit, offset: (page-1) * limit}
+                        variables: {page, limit, sort, filter}
                     })
 
 
-                    if (storeData[selectedTypeStartLower]) {
-                        const refResults = storeData[selectedTypeStartLower].results
+                    if (storeData[typeStartLower]) {
+                        const refResults = storeData[typeStartLower].results
 
-                        const idx = refResults.findIndex(x => x._id === data['update' + selectedType]._id)
+                        const idx = refResults.findIndex(x => x._id === data['update' + type]._id)
                         if (idx > -1) {
                             refResults[idx] = Object.assign({}, refResults[idx], Util.removeNullValues(input))
                             store.writeQuery({
                                 query: gqlQuery,
-                                variables: {limit, offset: (page-1) * limit},
+                                variables: {page, limit, sort, filter},
                                 data: storeData
                             })
                         }
@@ -305,13 +323,13 @@ class TypesContainer extends React.Component {
     }
 
 
-    deleteData(selectedType, id) {
+    deleteData({type, page, limit, sort, filter}, id) {
         const {client} = this.props
 
-        if (selectedType) {
+        if (type) {
 
-            const queries = this.getQueries(selectedType)
-            const selectedTypeStartLower = selectedType.charAt(0).toLowerCase() + selectedType.slice(1)
+            const queries = this.getQueries(type)
+            const typeStartLower = type.charAt(0).toLowerCase() + type.slice(1)
 
             client.mutate({
                 mutation: gql(queries.delete),
@@ -320,31 +338,30 @@ class TypesContainer extends React.Component {
                 },
                 update: (store, {data}) => {
                     const gqlQuery = gql(queries.query)
-                    const {page,limit} = this.determinPageParams(this.props)
 
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
-                        variables: {limit, offset: (page-1) * limit}
+                        variables: {page, limit, sort, filter}
                     })
 
-                    if (storeData[selectedTypeStartLower]) {
-                        const refResults = storeData[selectedTypeStartLower].results
+                    if (storeData[typeStartLower]) {
+                        const refResults = storeData[typeStartLower].results
 
-                        const idx = refResults.findIndex(x => x._id === data['delete' + selectedType]._id)
+                        const idx = refResults.findIndex(x => x._id === data['delete' + type]._id)
                         if (idx > -1) {
-                            if (data['delete' + selectedType].status === 'deleting') {
+                            if (data['delete' + type].status === 'deleting') {
                                 refResults[idx].status = 'deleting'
                             } else {
                                 refResults.splice(idx, 1)
-                                storeData[selectedTypeStartLower].total -= 1
+                                storeData[typeStartLower].total -= 1
                             }
                             store.writeQuery({
                                 query: gqlQuery,
-                                variables: {limit, offset: (page-1) * limit},
+                                variables: {page, limit, sort, filter},
                                 data: storeData
                             })
-                            this.setState({loading: false, data: storeData[selectedTypeStartLower]})
+                            this.setState({loading: false, data: storeData[typeStartLower]})
                         }
                     }
 
@@ -354,34 +371,53 @@ class TypesContainer extends React.Component {
     }
 
 
+    handleFilterTimeout = null
+    handleFilter = ({value}) => {
+        clearTimeout(this.handleFilterTimeout)
+        this.handleFilterTimeout = setTimeout(()=>{
+            const {type, limit, sort} = this.pageParams
+            this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${sort}&f=${value}`)
+        },1000)
+    }
+
+    handleSortChange = (e, orderBy) => {
+        const {type, limit, sort, filter} = this.pageParams
+
+        const aSort = sort.split(' ')
+        let orderDirection = 'desc';
+        if (aSort.length > 1 && orderBy === aSort[0] && orderDirection === aSort[1]) {
+            orderDirection = 'asc';
+        }
+        const newSort = `${orderBy} ${orderDirection}`
+
+        this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${newSort}&f=${filter}`)
+    }
+
+
     handleTypeChange = event => {
         this.props.history.push(`${ADMIN_BASE_URL}/types/${event.target.value}`)
-        /*this.setState({[event.target.name]: event.target.value})
-         this.getData(event.target.value)*/
     }
 
     handleChangePage = (page) => {
-        const {type,limit} = this.determinPageParams(this.props)
-        this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/${page}/${limit}`)
+        const {type, limit, sort, filter} = this.pageParams
+        this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=${page}&l=${limit}&s=${sort}&f=${filter}`)
     }
 
 
     handleChangeRowsPerPage = (limit) => {
-        const {type} = this.determinPageParams(this.props)
-        this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/1/${limit}`)
+        const {type, sort, filter} = this.pageParams
+        this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${sort}&f=${filter}`)
     }
 
 
     handleAddDataClick = (input) => {
-        const {type} = this.determinPageParams(this.props)
-        this.createData(type, input)
+        this.createData(this.pageParams, input)
     }
 
     handleDataChange = (event, data, key) => {
         const t = event.target.innerText.trim()
         if (t != data[key]) {
-            const {type} = this.determinPageParams(this.props)
-            this.updateData(type, {...data, [key]: t}, key)
+            this.updateData(this.pageParams, {...data, [key]: t}, key)
         }
     }
 
@@ -391,8 +427,7 @@ class TypesContainer extends React.Component {
 
     handleConfirmDeletion = (action) => {
         if (action && action.key === 'yes') {
-            const {type} = this.determinPageParams(this.props)
-            this.deleteData(type, this.state.dataToBeDeleted._id)
+            this.deleteData(this.pageParams, this.state.dataToBeDeleted._id)
         }
         this.setState({confirmDeletionDialog: false, dataToBeDeleted: false})
     }
@@ -409,7 +444,7 @@ export default withRouter(withApollo(TypesContainer))
 
 
 const buildQueries = (typeName, types) => {
-    if (!typeName) return null
+    if (!typeName || !types[typeName]) return null
 
     const result = {}
 
@@ -433,8 +468,8 @@ const buildQueries = (typeName, types) => {
             }
         })
     }
-    result.query = `query ${nameStartLower}($sort: String,$limit: Int,$offset: Int,$filter: String){
-                ${nameStartLower}(sort:$sort, limit: $limit, offset:$offset, filter:$filter){limit offset total results{${query}}}}`
+    result.query = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){
+                ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit page total results{${query}}}}`
 
     result.create = `mutation create${name}(${insertParams}){create${name}(${insertQuery}){${query}}}`
     result.update = `mutation update${name}($_id: ID!,${insertParams}){update${name}(_id:$_id,${insertQuery}){${query}}}`

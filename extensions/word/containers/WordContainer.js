@@ -4,7 +4,6 @@ import GenericForm from 'client/components/generic/GenericForm'
 import genericComposer from 'client/containers/generic/genericComposer'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {Row, Col, SimpleTable, SimpleDialog, DeleteIconButton, LinearProgress} from 'ui/admin'
-import logger from 'util/logger'
 import Util from 'client/util'
 import PropTypes from 'prop-types'
 import {ADMIN_BASE_URL} from 'gen/config'
@@ -12,12 +11,10 @@ import {ADMIN_BASE_URL} from 'gen/config'
 const WORDS_PER_PAGE = 10
 
 class WordContainer extends React.Component {
-    static logger = logger(WordContainer.name)
 
 
     constructor(props) {
         super(props)
-        this.debug = WordContainer.logger.debug
 
         this.state = {
             orderBy: '_id',
@@ -95,9 +92,9 @@ class WordContainer extends React.Component {
     }
 
     render() {
+        const startTime = (new Date()).getTime()
         const {words, loading} = this.props
 
-        this.debug('render word')
 
         const currentPage = Math.ceil((words ? words.offset : 0) / this.state.rowsPerPage) + 1
 
@@ -136,7 +133,7 @@ class WordContainer extends React.Component {
                     </DeleteIconButton>
                 }))
 
-        return (
+        const content = (
             <BaseLayout>
                 <h1>Words</h1>
                 <Row spacing={16} style={{marginBottom: 50}}>
@@ -175,6 +172,11 @@ class WordContainer extends React.Component {
                 {loading && <LinearProgress mode="query" />}
             </BaseLayout>
         )
+
+
+        console.info(`render ${this.constructor.name} in ${(new Date()).getTime() - startTime}ms`)
+
+        return content
     }
 }
 

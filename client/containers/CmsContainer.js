@@ -1,6 +1,5 @@
 import React from 'react'
 import GenericForm from 'client/components/generic/GenericForm'
-import update from 'immutability-helper'
 import genericComposer from './generic/genericComposer'
 import {Link} from 'react-router-dom'
 import BaseLayout from 'client/components/layout/BaseLayout'
@@ -102,7 +101,7 @@ class CmsContainer extends React.Component {
         if (t != data[key]) {
             const {updateCmsPage} = this.props
             updateCmsPage(
-                update(data, {[key]: {$set: t}})
+                Object.assign({},data,{[key]: t})
             )
         }
     }

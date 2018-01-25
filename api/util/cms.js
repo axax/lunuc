@@ -1,17 +1,26 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
-import Cache from 'util/cache'
 
 const UtilCms = {
-    resolveData: async (db, context, dataResolver) => {
+    resolveData: async (db, context, dataResolver, scope) => {
         const resolvedData = {}, subscriptions = []
 
         if (dataResolver) {
 
             try {
-                const json = JSON.parse(dataResolver)
+
+                const tpl = new Function('return `' + dataResolver.replace(/\${(?!this\.)/g, '${this.') + '`;')
+                const dataResolverReplaced =  tpl.call(scope)
+                const json = JSON.parse(dataResolverReplaced)
 
                 for (let i = 0; i < json.length; i++) {
-                    const {t, f, l, o} = json[i]
+                    const {t, f, l, o,p} = json[i]
+                    /*
+                    t = type
+                    f = fields
+                    l = limit of results
+                    o = offset
+                    p = page (if no offset is defined, offset is limit * (page -1) )
+                     */
                     if( t ) {
                         let type
                         if (t.indexOf('$') === 0) {
@@ -20,19 +29,13 @@ const UtilCms = {
                         } else {
                             type = t
                         }
-                        //const cacheKey = (c+f+l+o)
-                        /*const cachedResult = Cache.get(cacheKey)
-                         if( cachedResult ){
-                         results[c] = cachedResult
-                         }else {*/
                         const result = await GenericResolver.entities(db, context, type, f, {
                             limit: l,
+                            page: p,
                             offset: o,
                             match: {}
                         })
                         resolvedData[type] = result
-                        /* Cache.set(cacheKey,result,10000)
-                         }*/
                     }
 
                 }
