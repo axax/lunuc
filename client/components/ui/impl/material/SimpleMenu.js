@@ -19,13 +19,13 @@ class SimpleMenu extends React.Component {
 
     render() {
         const {anchorEl} = this.state
-        const {style, items, label} = this.props
+        const {style, items, label, mini} = this.props
 
         return (
             <div style={style}>
                 <Button
                     fab={!label}
-                    mini={!label}
+                    mini={mini}
                     color={!label?'secondary':'inherit'}
                     aria-owns={anchorEl ? 'simple-menu' : null}
                     aria-haspopup="true"

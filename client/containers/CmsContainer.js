@@ -62,7 +62,7 @@ class CmsContainer extends React.Component {
             currentPage = Math.ceil(cmsPages.offset / CMS_PAGES_PER_PAGE) + 1
         const content =
             <BaseLayout>
-                <Typography type="display4" gutterBottom>Content management</Typography>
+                <Typography type="display2" gutterBottom>Content management</Typography>
                 <GenericForm fields={{slug: {value: '', placeholder: 'slug name'}}}
                              onClick={this.handleAddCmsPageClick}/>
 

@@ -16,21 +16,21 @@ import {ADMIN_BASE_URL} from 'gen/config'
 
 class Routes extends React.Component {
 
-    adminBaseUrlPlain = ADMIN_BASE_URL.slice( 1 )
+    adminBaseUrlPlain = ADMIN_BASE_URL.slice(1)
 
     routes = [
         {exact: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
-        {exact: true, path: ADMIN_BASE_URL + '/cms/:page*', component: CmsContainer},
+        {private: true, exact: true, path: ADMIN_BASE_URL + '/cms/:page*', component: CmsContainer},
         {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
-        {exact: true,private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer},
+        {exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer},
         {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer},
         {
             // match everything but paths that start with ADMIN_BASE_URL
             exact: false, path: '/:slug*', render: ({match}) => {
-            if (match.url === '/' || (match.params.slug && match.params.slug.split('/')[0]!==this.adminBaseUrlPlain) ) {
-                return <CmsViewContainer slug={match.params.slug || ''} />;
+            if (match.url === '/' || (match.params.slug && match.params.slug.split('/')[0] !== this.adminBaseUrlPlain)) {
+                return <CmsViewContainer slug={match.params.slug || ''}/>;
             }
             return null
         }
@@ -53,7 +53,7 @@ class Routes extends React.Component {
                         return <PrivateRoute key={i} path={o.path} isAuthenticated={isAuthenticated}
                                              component={o.component}/>
                     } else {
-                        return <Route key={i} path={o.path} exact={o.exact} component={o.component} render={o.render} />
+                        return <Route key={i} path={o.path} exact={o.exact} component={o.component} render={o.render}/>
                     }
                 })}
             </div>

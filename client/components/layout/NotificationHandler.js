@@ -4,7 +4,7 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {Snackbar, Button, CloseIconButton} from 'ui/admin'
 
-class NotificationContainer extends React.Component {
+class NotificationHandler extends React.Component {
 
     notificationStack = []
 
@@ -74,7 +74,7 @@ class NotificationContainer extends React.Component {
 }
 
 
-NotificationContainer.propTypes = {
+NotificationHandler.propTypes = {
     newNotification: PropTypes.object,
 }
 
@@ -86,7 +86,7 @@ const gqlSubscriptionNotification = gql`
 		}
   }`
 
-const NotificationContainerWithGql = compose(graphql(gqlSubscriptionNotification, {
+const NotificationHandlerWithGql = compose(graphql(gqlSubscriptionNotification, {
     options(props) {
         return {
             fetchPolicy: 'network-only'
@@ -96,7 +96,7 @@ const NotificationContainerWithGql = compose(graphql(gqlSubscriptionNotification
         newNotification
     })
 }))
-(NotificationContainer)
+(NotificationHandler)
 
 
-export default NotificationContainerWithGql
+export default NotificationHandlerWithGql

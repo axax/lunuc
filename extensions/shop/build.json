@@ -4,16 +4,19 @@
       "name": "Product",
       "fields": [
         {
-          "name": "name"
+          "name": "name",
+          "required": true
         },
         {
           "name": "description"
         },
         {
-          "name": "price"
+          "name": "price",
+          "uitype": "numeric"
         },
         {
-          "name": "image"
+          "name": "image",
+          "uitype": "image"
         },
         {
           "name": "categories",
@@ -25,7 +28,8 @@
       "name": "ProductCategory",
       "fields": [
         {
-          "name": "name"
+          "name": "name",
+          "required": true
         }
       ]
     }

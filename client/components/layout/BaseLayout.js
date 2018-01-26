@@ -3,8 +3,9 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
 import {Layout, LayoutHeader, LayoutContent, LayoutFooter, HeaderMenu, Button} from 'ui/admin'
-import ErrorHandlerContainer from 'client/containers/ErrorHandlerContainer'
-import NotificationContainer from 'client/containers/NotificationContainer'
+import ErrorHandler from './ErrorHandler'
+import NotificationHandler from './NotificationHandler'
+import NetworkStatusHandler from './NetworkStatusHandler'
 import Hook from 'util/hook'
 import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
@@ -34,7 +35,9 @@ class BaseLayout extends React.Component {
         const {history, children, isAuthenticated, userActions} = this.props
 
         return <Layout className="Layout">
-            <LayoutHeader className="LayoutHeader">
+
+            <LayoutHeader style={{marginTop:'64px'}} className="LayoutHeader">
+
                 <HeaderMenu items={this.menuEntries} metaContent={
                     isAuthenticated ?
                         <Button color="inherit" dense onClick={() => {
@@ -47,10 +50,11 @@ class BaseLayout extends React.Component {
                 }/>
             </LayoutHeader>
 
-            <LayoutContent style={{padding: '100px 50px'}}>
 
-                <ErrorHandlerContainer />
-                <NotificationContainer />
+            <LayoutContent style={{padding: '50px'}}>
+
+                <ErrorHandler />
+                <NotificationHandler />
 
 
                 {children}
@@ -58,6 +62,9 @@ class BaseLayout extends React.Component {
             <LayoutFooter style={{textAlign: 'center'}}>
                 ©2016 Created by simon
             </LayoutFooter>
+
+            <NetworkStatusHandler />
+
         </Layout>
     }
 }

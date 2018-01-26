@@ -13,7 +13,7 @@ import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles'
 const defaultTheme = createMuiTheme()
 
 // override the default theme
-const theme = createMuiTheme({
+export const theme = createMuiTheme({
     overrides: {
         MuiButton: {
             // Name of the styleSheet
@@ -66,7 +66,9 @@ const generateClassName = createGenerateClassName({
 
 // Theme provider
 export const UIProvider = ({children, ...rest}) => {
-    return <JssProvider generateClassName={generateClassName}><MuiThemeProvider disableStylesGeneration={false} theme={theme} {...rest}>{children}</MuiThemeProvider></JssProvider>
+    return <JssProvider generateClassName={generateClassName}>
+        <MuiThemeProvider disableStylesGeneration={false} theme={theme} {...rest}>{children}</MuiThemeProvider>
+    </JssProvider>
 }
 
 // define some styles so it can be used in the components
@@ -153,7 +155,8 @@ export SimpleTable from './SimpleTable'
 // Dialogs
 export SimpleDialog from './SimpleDialog'
 
-
+// SimpleSelect
+export SimpleSelect from './SimpleSelect'
 
 // list
 import MaterialList, {
@@ -228,5 +231,5 @@ export const SimpleToolbar = ({title, children, ...rest}) => {
 export Tooltip from 'material-ui/Tooltip'
 
 
-// linear progress
-export {LinearProgress} from 'material-ui/Progress'
+// progress
+export {LinearProgress, CircularProgress} from 'material-ui/Progress'

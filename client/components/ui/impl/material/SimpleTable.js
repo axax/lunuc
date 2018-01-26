@@ -49,7 +49,7 @@ const SimpleTable = ({count, rowsPerPage, page, orderDirection, orderBy, onChang
         <TableBody>
             {dataSource.map((entry, i) => {
                 return (
-                    <TableRow key={i}>
+                    <TableRow hover key={i}>
                         {Object.keys(entry).map((key) => (
                             <TableCell key={key}>{entry[key]}</TableCell>
                         ))}

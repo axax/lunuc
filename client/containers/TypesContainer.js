@@ -7,11 +7,12 @@ import {
     Chip,
     Typography,
     MenuItem,
-    Select,
+    SimpleSelect,
     TextField,
     Input,
     SimpleDialog,
     SimpleTable,
+    SimpleMenu,
     Row,
     Col
 } from 'ui/admin'
@@ -22,6 +23,7 @@ import Util from 'client/util'
 import GenericForm from 'client/components/generic/GenericForm'
 import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
+import FileDrop from '../components/FileDrop'
 
 const DEFAULT_RESULT_LIMIT = 10
 
@@ -38,13 +40,15 @@ class TypesContainer extends React.Component {
         this.pageParams = this.determinPageParams(props)
         const {type, page, limit, sort} = this.pageParams
         this.state = {
-            loading: false,
             confirmDeletionDialog: true,
             dataToBeDeleted: null
         }
 
-        this.state.data = this.getData(this.pageParams)
 
+    }
+
+    componentDidMount(){
+        this.getData(this.pageParams)
     }
 
 
@@ -60,15 +64,20 @@ class TypesContainer extends React.Component {
 
     render() {
         const startTime = new Date()
-        const {loading, data} = this.state
+        const {data} = this.state
         const {type, page, limit, sort, filter} = this.pageParams
+
+        if (!this.types[type]) return <BaseLayout><Typography type="subheading" color="error">Type {type} doesn't exist.
+            Types can be specified in an extension.</Typography></BaseLayout>
 
         let tableWithResults
         if (data) {
 
             const columns = []
 
-            this.types[type].fields.forEach(field => {
+            const fields = this.types[type].fields
+
+            fields.forEach(field => {
                 if (!field.type || field.type.indexOf('[') < 0) {
                     columns.push({title: field.name, dataIndex: field.name, sortable: true})
                 }
@@ -92,12 +101,17 @@ class TypesContainer extends React.Component {
                 data.results.forEach(item => {
                     const dynamic = {}
 
-                    this.types[type].fields.forEach(field => {
+                    fields.forEach(field => {
                         if (!field.type || field.type.indexOf('[') < 0) {
+                            if (field.uitype === 'image') {
+                                dynamic[field.name] =
+                                    <img style={{height: '40px'}} src={item[field.name]}/>
+                            } else {
 
-                            dynamic[field.name] =
-                                <span onBlur={(e) => this.handleDataChange.bind(this)(e, item, field.name)}
-                                      suppressContentEditableWarning contentEditable>{item[field.name]}</span>
+                                dynamic[field.name] =
+                                    <span onBlur={(e) => this.handleDataChange.bind(this)(e, item, field.name)}
+                                          suppressContentEditableWarning contentEditable>{item[field.name]}</span>
+                            }
 
                         }
                     })
@@ -131,23 +145,33 @@ class TypesContainer extends React.Component {
             }
         })
 
+        const selectTypes = []
+        Object.keys(this.types).map((k) => {
+            const type = this.types[k]
+            selectTypes.push({value: k, name: k, hint: 'used by ' + type.usedBy.join(',')})
+        })
 
         const content = <BaseLayout>
-            <Typography type="display4" gutterBottom>Types</Typography>
-            <Select
-                value={type}
-                onChange={this.handleTypeChange}
-                input={<Input name="type"/>}
-            >
-                {
-                    Object.keys(this.types).map((k) => {
-                        const type = this.types[k]
-                        return <MenuItem key={k} value={k}>{k}&nbsp;<em>(used
-                            in {type.usedBy.join(',')})</em></MenuItem>
-                    })
-                }
-            </Select>
-            {loading && 'loading'}
+            <Typography type="display2" gutterBottom>Types</Typography>
+
+            <Row spacing={16}>
+                <Col md={9}>
+                    <SimpleSelect
+                        value={type}
+                        onChange={this.handleTypeChange}
+                        items={selectTypes}
+                    />
+
+
+                </Col>
+                <Col md={3} align="right">
+                    <SimpleMenu items={[{
+                        name: 'Prettify', onClick: () => {
+                        }
+                    }]}/>
+                </Col>
+            </Row>
+
 
             <Row spacing={16}>
                 <Col md={9}>
@@ -166,9 +190,9 @@ class TypesContainer extends React.Component {
                 </Col>
             </Row>
 
-
             {tableWithResults}
 
+            <Typography type="display1" component="h2" gutterBottom>Available fields</Typography>
 
             {type &&
             this.types[type].fields.map(field => {
@@ -183,6 +207,8 @@ class TypesContainer extends React.Component {
                 Are you sure you want to delete this item?
             </SimpleDialog>
             }
+
+            <FileDrop />
         </BaseLayout>
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
@@ -217,20 +243,21 @@ class TypesContainer extends React.Component {
 
         if (type) {
             const queries = this.getQueries(type)
-            const typeStartLower = type.charAt(0).toLowerCase() + type.slice(1)
+            if (queries) {
+                const typeStartLower = type.charAt(0).toLowerCase() + type.slice(1)
+                client.query({
+                    fetchPolicy: 'network-only',
+                    forceFetch: true,
+                    query: gql(queries.query),
+                    variables: {limit, page, sort, filter}
+                }).then(response => {
+                    this.setState({data: response.data[typeStartLower]})
+                }).catch(error => {
+                    console.log(error.message)
 
-            client.query({
-                fetchPolicy: 'network-only',
-                forceFetch: true,
-                query: gql(queries.query),
-                variables: {limit, page, sort, filter}
-            }).then(response => {
-                this.setState({loading: false, data: response.data[typeStartLower]})
-            }).catch(error => {
-                console.log(error.message)
-
-                this.setState({loading: false, data: null})
-            })
+                    this.setState({data: null})
+                })
+            }
         }
     }
 
@@ -271,7 +298,7 @@ class TypesContainer extends React.Component {
                             variables: {page, limit, sort, filter},
                             data: storeData
                         })
-                        this.setState({loading: false, data: storeData[typeStartLower]})
+                        this.setState({data: storeData[typeStartLower]})
                     }
 
                 },
@@ -361,7 +388,7 @@ class TypesContainer extends React.Component {
                                 variables: {page, limit, sort, filter},
                                 data: storeData
                             })
-                            this.setState({loading: false, data: storeData[typeStartLower]})
+                            this.setState({data: storeData[typeStartLower]})
                         }
                     }
 
@@ -374,10 +401,10 @@ class TypesContainer extends React.Component {
     handleFilterTimeout = null
     handleFilter = ({value}) => {
         clearTimeout(this.handleFilterTimeout)
-        this.handleFilterTimeout = setTimeout(()=>{
+        this.handleFilterTimeout = setTimeout(() => {
             const {type, limit, sort} = this.pageParams
             this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${sort}&f=${value}`)
-        },1000)
+        }, 1000)
     }
 
     handleSortChange = (e, orderBy) => {
@@ -395,6 +422,7 @@ class TypesContainer extends React.Component {
 
 
     handleTypeChange = event => {
+        this.setState({data: null})
         this.props.history.push(`${ADMIN_BASE_URL}/types/${event.target.value}`)
     }
 

@@ -1,6 +1,7 @@
 import React from 'react'
-import ErrorHandlerContainer from 'client/containers/ErrorHandlerContainer'
-import NotificationContainer from 'client/containers/NotificationContainer'
+import ErrorHandler from './ErrorHandler'
+import NotificationHandler from './NotificationHandler'
+import NetworkStatusHandler from './NetworkStatusHandler'
 import {ADMIN_BASE_URL} from 'gen/config'
 
 
@@ -8,8 +9,9 @@ class BlankLayout extends React.Component {
 
     render() {
         return <div style={this.props.style}>
-                <ErrorHandlerContainer />
-                <NotificationContainer />
+            <NetworkStatusHandler />
+            <ErrorHandler />
+            <NotificationHandler />
             {this.props.children}
         </div>
     }

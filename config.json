@@ -42,7 +42,7 @@
       }
     },
     {
-      "impl": "material",
+      "impl": "plain",
       "icons": [
         "Delete",
         "Close",

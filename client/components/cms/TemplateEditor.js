@@ -10,7 +10,7 @@ class TemplateEditor extends React.Component {
             <Typography type="headline">Template</Typography>
 
 
-            <SimpleMenu style={{position:'absolute',bottom:'8px',right:'8px'}}
+            <SimpleMenu mini style={{position:'absolute',bottom:'8px',right:'8px'}}
                         items={[{name:'Prettify', onClick:this.prettify.bind(this)}]}/>
 
 

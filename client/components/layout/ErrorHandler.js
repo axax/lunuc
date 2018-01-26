@@ -8,7 +8,7 @@ import {SimpleDialog} from 'ui/admin'
 
 
 
-class ErrorHandlerContainer extends React.Component {
+class ErrorHandler extends React.Component {
 
     constructor(props) {
         super(props)
@@ -33,8 +33,6 @@ class ErrorHandlerContainer extends React.Component {
             return null
 
         const dialogs = []
-
-
         Object.keys(messages).forEach(
             (key,i) => dialogs.push(<SimpleDialog key={key} open={this.state.openDialog===i} onClose={this.handleDialogClose.bind(this,key)}
                                           actions={[{key: 'ok', label: 'Ok', type:'primary'}]} title="Error">
@@ -50,7 +48,7 @@ class ErrorHandlerContainer extends React.Component {
 }
 
 
-ErrorHandlerContainer.propTypes = {
+ErrorHandler.propTypes = {
 	messages: PropTypes.object.isRequired,
     actions: PropTypes.object.isRequired
 }
@@ -81,5 +79,5 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
 	mapStateToProps,
 	mapDispatchToProps
-)(ErrorHandlerContainer)
+)(ErrorHandler)
 

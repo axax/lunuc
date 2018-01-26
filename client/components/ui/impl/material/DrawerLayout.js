@@ -11,7 +11,6 @@ import IconButton from 'material-ui/IconButton'
 import MenuIcon from 'material-ui-icons/Menu'
 import ChevronLeftIcon from 'material-ui-icons/ChevronLeft'
 import ChevronRightIcon from 'material-ui-icons/ChevronRight'
-import {Button} from 'ui'
 
 const DRAWER_WIDTH_LARGE = '800px'
 const DRAWER_WIDTH_MEDIUM = '400px'

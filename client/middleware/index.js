@@ -6,7 +6,8 @@ import {WebSocketLink} from 'apollo-link-ws'
 import {ApolloLink} from 'apollo-link'
 import {getOperationAST} from 'graphql'
 import {OfflineCache} from './cache'
-import * as Actions from 'client/actions/ErrorHandlerAction'
+import {addError} from 'client/actions/ErrorHandlerAction'
+import {setNetworkStatus} from 'client/actions/NetworkStatusAction'
 
 
 const httpUri = `${window.location.protocol}//${window.location.hostname}:${window.location.port}/graphql`
@@ -15,13 +16,11 @@ const wsUri = (window.location.protocol === 'https:' ? 'wss' : 'ws') + `://${win
 
 export function configureMiddleware(store) {
 
-
-
     // the link to our graphql api
     const httpLink = createHttpLink({uri: httpUri})
 
-    // create a middleware link with the authentication
-    const middlewareLink = setContext((req) => {
+    // create a middleware with the authentication
+    const authLink = setContext((req) => {
         // get the authentication token from local storage if it exists
         const token = localStorage.getItem('token')
         return {
@@ -31,13 +30,12 @@ export function configureMiddleware(store) {
         }
     })
 
-    // create a link for error handling
+    // create a middleware for error handling
     const errorLink = onError(({networkError, graphQLErrors, operation, response}) => {
-        console.log(operation)
         // check for mongodb/graphql errors
         if (graphQLErrors) {
             graphQLErrors.map(({message, locations, path}) =>
-                store.dispatch(Actions.addError({
+                store.dispatch(addError({
                     key: 'graphql_error',
                     msg: message + ' (in operation ' + path.join('/') + ')'
                 }))
@@ -45,13 +43,39 @@ export function configureMiddleware(store) {
             // hide error in console log
             response.errors = null
         }
-        if (networkError) store.dispatch(Actions.addError({key: 'api_error', msg: networkError.message}))
-
+        console.log(networkError)
+        if (networkError) store.dispatch(addError({key: 'api_error', msg: networkError.message}))
     })
 
-    // combine the links
-    const httpLinkWithError = errorLink.concat(httpLink)
-    const httpLinkWithErrorAndMiddleware = middlewareLink.concat(httpLinkWithError)
+    // create a middleware for state handling
+    let loadingCounter = 0
+    const statusLink = new ApolloLink((operation, forward) => {
+        loadingCounter++
+        if( loadingCounter === 1){
+            store.dispatch(setNetworkStatus({
+                networkStatus: {loading:true}
+            }))
+        }
+        return forward(operation).map((data) => {
+            loadingCounter--
+            if( loadingCounter === 0){
+                // send loading false when all request are done
+                store.dispatch(setNetworkStatus({
+                    networkStatus: {loading:false}
+                }))
+            }
+            return data;
+        })
+    })
+
+
+    // combine the links (the order is important)
+    const combinedLink = ApolloLink.from([
+        errorLink,
+        statusLink,
+        authLink,
+        httpLink
+    ])
 
 
     const wsLink = new WebSocketLink({
@@ -82,7 +106,7 @@ export function configureMiddleware(store) {
             return !!operationAST && operationAST.operation === 'subscription'
         },
         wsLink,
-        httpLinkWithErrorAndMiddleware
+        combinedLink
     )
 
     const cacheOptions = {

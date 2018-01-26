@@ -4,7 +4,7 @@ import React from 'react'
 import Pagination from './Pagination'
 import injectSheet, {ThemeProvider} from 'react-jss'
 
-
+export const withStyles = injectSheet
 
 const styles = theme => ({
     button: {
@@ -40,6 +40,10 @@ export const DeleteIconButton = ({...rest}) => {
 
 
 // input
+export const Input = ({...rest}) => {
+    return <input {...rest} />
+}
+
 export const TextField = ({multiline, ...rest}) => {
     if( multiline ){
         return <textarea {...rest} />
@@ -52,9 +56,9 @@ export const Checkbox = ({...rest}) => {
     return <input type='checkbox' {...rest} />
 }
 // Select
-/*export const Select = ({...rest}) => {
- return <input type='checkbox' {...rest} />
- }*/
+export const Select = ({...rest}) => {
+    return <input type='checkbox' {...rest} />
+}
 
 //Switch
 export const SimpleSwitch = ({label, ...rest}) => {
@@ -227,8 +231,9 @@ export const Chip = ({label,...rest}) => {
     return <div className="Chip" {...rest}>{label}</div>
 }
 
-export const Typography = ({gutterBottom,type,...rest}) => {
-    return <div className={'Typography Typography__'+{type}} {...rest} />
+export const Typography = ({gutterBottom,component,type,...rest}) => {
+    const TagName = component || (type && type.indexOf('display')>-1?'h1':'p')
+    return <TagName className={'Typography Typography__'+type} {...rest} />
 }
 
 

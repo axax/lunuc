@@ -41,7 +41,7 @@ class HeaderMenu extends React.Component {
 
         return (
             <AppBar>
-                <Toolbar  position='static'>
+                <Toolbar position='static'>
                     <div className={classes.toolbarLeft}>
                     {items.map((item,i) => {
                         if( item.auth && isAuthenticated || !item.auth) {

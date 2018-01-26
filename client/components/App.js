@@ -13,7 +13,7 @@ import {ApolloProvider} from 'react-apollo'
 import {configureMiddleware} from '../middleware/index'
 import {Provider} from 'react-redux'
 
-import {UIProvider} from 'ui'
+import {UIProvider} from 'ui/admin'
 
 
 class App extends React.PureComponent {

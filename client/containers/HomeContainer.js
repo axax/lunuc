@@ -9,7 +9,7 @@ class HomeContainer extends React.Component {
 
         const {user} = this.props
         return <BaseLayout>
-            <Typography type="display4" gutterBottom>Administration console</Typography>
+            <Typography type="display2" gutterBottom>Administration console</Typography>
             <Typography gutterBottom>
             {
                 user.isAuthenticated ? <span>Hi {user.userData && user.userData.username}!</span> : <span>Please login!</span>

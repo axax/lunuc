@@ -2,7 +2,7 @@ import React from 'react'
 import GenericForm from 'client/components/generic/GenericForm'
 import genericComposer from 'client/containers/generic/genericComposer'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import {Row, Col, SimpleTable, SimpleDialog, DeleteIconButton, LinearProgress} from 'ui/admin'
+import {Row, Col, SimpleTable, SimpleDialog, DeleteIconButton} from 'ui/admin'
 import Util from 'client/util'
 import PropTypes from 'prop-types'
 import {ADMIN_BASE_URL} from 'gen/config'
@@ -168,7 +168,6 @@ class WordContainer extends React.Component {
                         - {Util.escapeHtml(this.state.dataToBeDeleted.de + '"')}</strong>?
                 </SimpleDialog>
 
-                {loading && <LinearProgress mode="query" />}
             </BaseLayout>
         )
 
