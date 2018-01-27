@@ -9,6 +9,6 @@ Hook.on('Routes', ({routes}) => {
 
 
 // add entry to main menu
-Hook.on('MenuMenu', ({menuEntries}) => {
-    menuEntries.push({name: 'My chats', to: ADMIN_BASE_URL+'/chat', auth: true})
+Hook.on('MenuMenu', ({menuItems}) => {
+    menuItems.push({name: 'My chats', to: ADMIN_BASE_URL+'/chat', auth: true})
 })

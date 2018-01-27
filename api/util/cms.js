@@ -7,8 +7,7 @@ const UtilCms = {
         if (dataResolver) {
 
             try {
-
-                const tpl = new Function('return `' + dataResolver.replace(/\${(?!this\.)/g, '${this.') + '`;')
+                const tpl = new Function('const {'+Object.keys(scope).join(',')+'} = this; return `' + dataResolver + '`;')
                 const dataResolverReplaced =  tpl.call(scope)
                 const json = JSON.parse(dataResolverReplaced)
 
@@ -40,7 +39,7 @@ const UtilCms = {
 
                 }
             } catch (e) {
-                resolvedData.error = e.message
+                resolvedData.error = e.message + ' -> scope='+JSON.stringify(scope)
             }
         }
         return {resolvedData, subscriptions}

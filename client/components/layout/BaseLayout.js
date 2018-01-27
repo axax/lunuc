@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
-import {Layout, LayoutHeader, LayoutContent, LayoutFooter, HeaderMenu, Button} from 'ui/admin'
+import {Button, ResponsiveDrawerLayout} from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
@@ -14,17 +14,17 @@ import * as UserActions from 'client/actions/UserAction'
 
 class BaseLayout extends React.Component {
 
-    menuEntries = [
+    menuItems = [
         {name: 'Home', to: ADMIN_BASE_URL + '/'},
         {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true},
         {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true},
-        {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true},
-        {name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true}
+        {name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true},
+        {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true}
     ]
 
     constructor(props) {
         super(props)
-        Hook.call('MenuMenu', {menuEntries: this.menuEntries})
+        Hook.call('MenuMenu', {menuItems: this.menuItems})
     }
 
     linkTo(item) {
@@ -34,38 +34,61 @@ class BaseLayout extends React.Component {
     render() {
         const {history, children, isAuthenticated, userActions} = this.props
 
-        return <Layout className="Layout">
 
-            <LayoutHeader style={{marginTop:'64px'}} className="LayoutHeader">
+        return <ResponsiveDrawerLayout title="lunuc"
+                                       menuItems={this.menuItems}
+                                       headerRight={
+                                           isAuthenticated ?
+                                               <Button color="inherit" dense onClick={() => {
+                                                   localStorage.removeItem('token')
+                                                   userActions.setUser(null, false)
+                                                   history.push('/')
+                                               }}>Logout</Button>
 
-                <HeaderMenu items={this.menuEntries} metaContent={
-                    isAuthenticated ?
-                        <Button color="inherit" dense onClick={() => {
-                            localStorage.removeItem('token')
-                            userActions.setUser(null, false)
-                            history.push('/')
-                        }}>Logout</Button>
+                                               : <Button color="inherit" dense
+                                                         onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
+                                       }>
 
-                        : <Button color="inherit" dense onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
-                }/>
-            </LayoutHeader>
-
-
-            <LayoutContent style={{padding: '50px'}}>
-
-                <ErrorHandler />
-                <NotificationHandler />
-
-
-                {children}
-            </LayoutContent>
-            <LayoutFooter style={{textAlign: 'center'}}>
-                ©2016 Created by simon
-            </LayoutFooter>
-
+            <ErrorHandler />
+            <NotificationHandler />
             <NetworkStatusHandler />
 
-        </Layout>
+
+            {children}
+        </ResponsiveDrawerLayout>
+
+
+        /*return <Layout className="Layout">
+
+         <LayoutHeader style={{marginTop:'64px'}} className="LayoutHeader">
+
+
+
+         <HeaderMenu items={this.menuItems} metaContent={
+         isAuthenticated ?
+         <Button color="inherit" dense onClick={() => {
+         localStorage.removeItem('token')
+         userActions.setUser(null, false)
+         history.push('/')
+         }}>Logout</Button>
+
+         : <Button color="inherit" dense onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
+         }/>
+
+
+         </LayoutHeader>
+
+
+         <LayoutContent style={{padding: '50px'}}>
+
+         </LayoutContent>
+         <LayoutFooter style={{textAlign: 'center'}}>
+         ©2016 Created by simon
+         </LayoutFooter>
+
+         <NetworkStatusHandler />
+
+         </Layout>*/
     }
 }
 

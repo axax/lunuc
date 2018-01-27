@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ContentEditable from '../components/generic/ContentEditable'
-import {SimpleMenu, DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, SimpleToolbar, Card, DeleteIconButton} from 'ui'
+import {SimpleMenu, DrawerLayout, Button, Divider, Col, Row, SimpleToolbar, Card, DeleteIconButton} from 'ui'
 import Hook from 'util/hook'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
@@ -61,24 +61,7 @@ class JsonDom extends React.Component {
         let nodeToRefresh = this
 
         if (id && this.componentRefs[id]) {
-
             nodeToRefresh = this.componentRefs[id]
-
-            /*const inst = this.componentRefs[id]._reactInternalFiber
-
-             console.log(inst)
-             //console.log(ReactDOM.findDOMNode(this.componentRefs[id]), this.componentRefs[id]._reactInternalInstance._currentElement)
-             const fiber = this.componentRefs[id]._reactInternalFiber
-             if( !fiber.firstEffect.type || fiber.firstEffect.type.name!==this.constructor.name) {
-
-             //console.log('alternate',fiber)
-
-
-             }else{
-             nodeToRefresh = fiber.firstEffect.stateNode
-
-             }*/
-
         } else {
             nodeToRefresh = this
         }
@@ -223,12 +206,10 @@ class JsonDom extends React.Component {
                 try {
                     const re = new RegExp('\\$\\.' + s + '{', 'g')
                     const cStr = JSON.stringify(c).replace(re, '${') /* $.loop{ --> ${ */
-                        .replace(/\${(?!this\.)/g, '${this.' + s + '.') /* ${name} --> ${this.loop.name} */
-                        .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
-                    /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
+                        .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}') /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
 
                     data.forEach((loopChild, childIdx) => {
-                        const tpl = new Function('return `' + cStr + '`;')
+                        const tpl = new Function('const {'+Object.keys(loopChild).join(',')+'} = this.'+s+';return `' + cStr + '`;')
                         // back to json
                         loopChild._index = childIdx
                         const json = JSON.parse(tpl.call({[s]: loopChild}))
@@ -312,7 +293,7 @@ class JsonDom extends React.Component {
 
     renderString(str, data) {
         try {
-            const tpl = new Function('return `' + str.replace(/\${(?!this\.)/g, '${this.') + '`;')
+            const tpl = new Function('const {'+Object.keys(data).join(',')+'} = this;return `' + str + '`;')
             return tpl.call(data)
         } catch (e) {
             //this.emitJsonError(e)
@@ -386,7 +367,7 @@ class JsonDom extends React.Component {
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
-            return content
+            return <div className={'Cms-'+scope.page.slug.replace(/[\W_-]+/g,'-')}>{content}</div>
         }
 
     }

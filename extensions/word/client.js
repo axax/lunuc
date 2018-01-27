@@ -9,6 +9,6 @@ Hook.on('Routes', ({routes}) => {
 
 
 // add entry to main menu
-Hook.on('MenuMenu', ({menuEntries}) => {
-    menuEntries.push({name: 'Words', to: ADMIN_BASE_URL+'/word', auth: true})
+Hook.on('MenuMenu', ({menuItems}) => {
+    menuItems.push({name: 'Words', to: ADMIN_BASE_URL+'/word', auth: true})
 })

@@ -32,6 +32,7 @@ class TypesContainer extends React.Component {
     types = null
     queries = {}
     pageParams = null
+    createEditForm = null
 
     constructor(props) {
         super(props)
@@ -41,13 +42,14 @@ class TypesContainer extends React.Component {
         const {type, page, limit, sort} = this.pageParams
         this.state = {
             confirmDeletionDialog: true,
-            dataToBeDeleted: null
+            dataToBeDeleted: null,
+            createDataDialog: false
         }
 
 
     }
 
-    componentDidMount(){
+    componentDidMount() {
         this.getData(this.pageParams)
     }
 
@@ -129,13 +131,14 @@ class TypesContainer extends React.Component {
                 })
             }
             const asort = sort.split(' ')
-            tableWithResults = <SimpleTable dataSource={dataSource} columns={columns} count={data.total}
-                                            rowsPerPage={parseInt(limit)} page={page}
-                                            orderBy={asort[0]}
-                                            orderDirection={asort.length > 1 && asort[1] || null}
-                                            onSort={this.handleSortChange}
-                                            onChangePage={this.handleChangePage.bind(this)}
-                                            onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
+            tableWithResults =
+                <SimpleTable className="demooo" dataSource={dataSource} columns={columns} count={data.total}
+                             rowsPerPage={parseInt(limit)} page={page}
+                             orderBy={asort[0]}
+                             orderDirection={asort.length > 1 && asort[1] || null}
+                             onSort={this.handleSortChange}
+                             onChangePage={this.handleChangePage.bind(this)}
+                             onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
         }
 
         const formFields = {}
@@ -166,7 +169,8 @@ class TypesContainer extends React.Component {
                 </Col>
                 <Col md={3} align="right">
                     <SimpleMenu items={[{
-                        name: 'Prettify', onClick: () => {
+                        name: 'Add new ' + type, onClick: () => {
+                            this.setState({createDataDialog:true})
                         }
                     }]}/>
                 </Col>
@@ -208,7 +212,21 @@ class TypesContainer extends React.Component {
             </SimpleDialog>
             }
 
-            <FileDrop />
+            { <SimpleDialog open={this.state.createDataDialog} onClose={this.handleCreateEditData}
+                              actions={[{key: 'cancel', label: 'Cancel'}, {
+                                  key: 'save',
+                                  label: 'Save',
+                                  type: 'primary'
+                              }]}
+                              title={type}>
+
+
+                    <GenericForm ref={ref => { this.createEditForm = ref }} primaryButton={false} fields={formFields}/>
+
+                </SimpleDialog>
+            }
+
+           /* <FileDrop /> */
         </BaseLayout>
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
@@ -458,6 +476,13 @@ class TypesContainer extends React.Component {
             this.deleteData(this.pageParams, this.state.dataToBeDeleted._id)
         }
         this.setState({confirmDeletionDialog: false, dataToBeDeleted: false})
+    }
+
+
+    handleCreateEditData = (action) => {
+        if (action && action.key === 'yes') {
+        }
+        this.setState({createDataDialog: false})
     }
 }
 

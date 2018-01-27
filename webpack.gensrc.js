@@ -143,7 +143,7 @@ function gensrcUi() {
 
             let uiContentIconsHooks = ''
             let uiContentIcons = `import React from 'react'\nimport Hook from 'util/hook'\n`
-            let uiContent = `${GENSRC_HEADER}export * from 'client/components/ui/impl/${ui.impl || 'material'}/index'\n${GENSRC_HEADER}export * from './icons'\n`
+            let uiContent = `${GENSRC_HEADER}export * from 'client/components/ui/impl/${ui.impl || 'material'}/index'\nexport * from './icons'\n`
 
             if (ui.icons) {
                 if (ui.impl === 'material') {

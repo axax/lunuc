@@ -16,9 +16,11 @@ export const SimpleDialog = withMobileDialog()(({children, onClose, actions, tit
         {...rest}>
         <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
         <DialogContent>
-            <DialogContentText>
-                {children}
-            </DialogContentText>
+            { children.constructor === String ?
+                <DialogContentText>
+                    {children}
+                </DialogContentText>
+                : children}
         </DialogContent>
         {actions ?
             <DialogActions>

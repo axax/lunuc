@@ -1,4 +1,5 @@
 import './style.less'
+import './style/grid.css'
 
 import React from 'react'
 import Pagination from './Pagination'
@@ -83,10 +84,10 @@ export {default as Pagination} from './Pagination'
 
 // grid
 export const Row = ({...rest}) => {
-    return <div style={{display: 'flex'}} {...rest} />
+    return <div className="row" {...rest} />
 }
-export const Col = ({span, ...rest}) => {
-    return <div style={{flex: '0 0 ' + (100 * span / 24) + '%'}} {...rest} />
+export const Col = ({span,lg,md,sm, ...rest}) => {
+    return <div className={'col '+(md && 'col-md-'+md+' ')} {...rest} />
 }
 
 // table

@@ -65,7 +65,7 @@ export default class GenericForm extends React.Component {
     render() {
 
         return (
-            <div>
+            <form>
                 {
                     Object.keys(this.props.fields).map((k) => {
                         const o = this.props.fields[k]
@@ -83,7 +83,7 @@ export default class GenericForm extends React.Component {
                     <Button color="primary" raised disabled={!this.state.isValid}
                             onClick={this.onAddClick}>{this.props.caption || 'Add'}</Button>
                     : ''}
-            </div>
+            </form>
         )
     }
 }

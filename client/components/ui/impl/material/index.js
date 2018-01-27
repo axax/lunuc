@@ -7,6 +7,7 @@
 
 import './style.less'
 import React from 'react'
+import Hook from 'util/hook'
 
 // material theme
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles'
@@ -56,6 +57,8 @@ export const theme = createMuiTheme({
     }
 })
 
+
+
 import JssProvider from 'react-jss/lib/JssProvider'
 import { createGenerateClassName } from 'material-ui/styles'
 
@@ -74,89 +77,48 @@ export const UIProvider = ({children, ...rest}) => {
 // define some styles so it can be used in the components
 export {withStyles} from 'material-ui/styles'
 
-
 //Typography
 import Typography from 'material-ui/Typography'
+
+// Export material-ui coponents directly
 export {Typography}
-
-
-// Button
 export Button from 'material-ui/Button'
-
-// Inputs
 export Input from 'material-ui/Input'
 export TextField from 'material-ui/TextField'
 export Select from 'material-ui/Select'
 export Checkbox from 'material-ui/Checkbox'
 export { FormLabel, FormControl, FormControlLabel, FormHelperText } from 'material-ui/Form'
-
-// Chip
 export Chip from 'material-ui/Chip'
-
-// Divider
 export Divider from 'material-ui/Divider'
-
-
-
-//Switch
-import {FormControlLabel} from 'material-ui/Form'
-import MaterialSwitch from 'material-ui/Switch'
-export const SimpleSwitch = ({label, ...rest}) => {
-    return <FormControlLabel
-        control={
-            <MaterialSwitch
-                {...rest}
-            />
-        }
-        label={label}
-    />
-}
-
-
-// layout components
-export const Layout = ({children, ...rest}) => {
-    return <div {...rest}>{children}</div>
-}
-export const LayoutHeader = Layout
-export const LayoutContent = Layout
-export const LayoutFooter = Layout
-
-
-// menu components
-export {default as HeaderMenu} from './HeaderMenu'
-export {default as SimpleMenu} from './SimpleMenu'
+export Drawer from 'material-ui/Drawer'
+export Snackbar from 'material-ui/Snackbar'
+export Tooltip from 'material-ui/Tooltip'
+export {LinearProgress, CircularProgress} from 'material-ui/Progress'
 export {MenuItem} from 'material-ui/Menu'
 
 
-// pagination
-export {default as Pagination} from './Pagination'
-
+// simple to use components
+export SimpleHeaderMenu from './SimpleHeaderMenu'
+export SimpleMenu from './SimpleMenu'
+export SimpleTable from './SimpleTable'
+export SimpleDialog from './SimpleDialog'
+export SimpleSelect from './SimpleSelect'
+export SimpleSwitch from './SimpleSwitch'
 
 // grid
-import MaterialGrid from 'material-ui/Grid'
+import Grid from 'material-ui/Grid'
 
 export const Row = ({...rest}) => {
-    return <MaterialGrid container {...rest} />
+    return <Grid container {...rest} />
 }
 export const Col = ({...rest}) => {
-    return <MaterialGrid item {...rest} />
+    return <Grid item {...rest} />
 }
 
-//drawer
-export Drawer from 'material-ui/Drawer'
-
-
 // Drawer layouts
-export DrawerLayout from './DrawerLayout'
+export DrawerLayout from './layouts/DrawerLayout'
+export ResponsiveDrawerLayout from './layouts/ResponsiveDrawerLayout'
 
-// Tables
-export SimpleTable from './SimpleTable'
-
-// Dialogs
-export SimpleDialog from './SimpleDialog'
-
-// SimpleSelect
-export SimpleSelect from './SimpleSelect'
 
 // list
 import MaterialList, {
@@ -181,8 +143,6 @@ export const MenuListItem = ({primary, ...rest}) => {
 }
 
 
-// snackbar
-export Snackbar from 'material-ui/Snackbar'
 
 // cards
 import MaterialCard, {CardActions as MaterialCardActions, CardContent as MaterialCardContent} from 'material-ui/Card'
@@ -226,10 +186,3 @@ export const SimpleToolbar = ({title, children, ...rest}) => {
     </MaterialToolbar></MaterialAppBar>
 }
 
-
-// tooltip
-export Tooltip from 'material-ui/Tooltip'
-
-
-// progress
-export {LinearProgress, CircularProgress} from 'material-ui/Progress'

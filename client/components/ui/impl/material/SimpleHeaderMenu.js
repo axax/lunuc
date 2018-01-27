@@ -14,7 +14,7 @@ const styles = theme => ({
     }
 })
 
-class HeaderMenu extends React.Component {
+class SimpleHeaderMenu extends React.Component {
 
 
     constructor(props) {
@@ -60,7 +60,7 @@ class HeaderMenu extends React.Component {
 }
 
 
-HeaderMenu.propTypes = {
+SimpleHeaderMenu.propTypes = {
     items: PropTypes.array.isRequired,
     isAuthenticated: PropTypes.bool,
     classes: PropTypes.object.isRequired
@@ -84,4 +84,4 @@ const mapStateToProps = (store) => {
  */
 export default connect(
     mapStateToProps
-)(withRouter(withStyles(styles,{ withTheme: true })(HeaderMenu)))
+)(withRouter(withStyles(styles,{ withTheme: true })(SimpleHeaderMenu)))

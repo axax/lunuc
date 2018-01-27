@@ -1,5 +1,6 @@
 const path = require('path')
 const webpack = require('webpack')
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1
 
@@ -16,7 +17,7 @@ const INCLUDE_IN_BUILD = []
 
 const APP_CONFIG = require('./config.json')
 
-if( APP_CONFIG.extensions ) {
+if (APP_CONFIG.extensions) {
     for (const extensionName in APP_CONFIG.extensions) {
         if (APP_CONFIG.extensions[extensionName].active) {
             INCLUDE_IN_BUILD.push(path.resolve(__dirname, 'extensions/' + extensionName))
@@ -24,19 +25,19 @@ if( APP_CONFIG.extensions ) {
     }
 }
 
-if( APP_CONFIG.ui ) {
-    APP_CONFIG.ui.forEach(ui=>{
+if (APP_CONFIG.ui) {
+    APP_CONFIG.ui.forEach(ui => {
         INCLUDE_IN_BUILD.push(path.resolve(__dirname, 'client/components/ui/impl/' + ui.impl))
     })
 }
 
 const excludeFunction = (path) => {
 
-    for(let i=0;i<EXCLUDE_FROM_BUILD.length;i++){
-        if(path.indexOf(EXCLUDE_FROM_BUILD[i])===0 ){
+    for (let i = 0; i < EXCLUDE_FROM_BUILD.length; i++) {
+        if (path.indexOf(EXCLUDE_FROM_BUILD[i]) === 0) {
             // it belongs to the excluded files
 
-            for(let j=0;j<INCLUDE_IN_BUILD.length;j++) {
+            for (let j = 0; j < INCLUDE_IN_BUILD.length; j++) {
                 if (path.indexOf(INCLUDE_IN_BUILD[j]) === 0) {
                     // it is an exception and should be included anyway
                     return false
@@ -48,7 +49,6 @@ const excludeFunction = (path) => {
     }
     return false
 }
-
 
 
 const GenSourceCode = require('./webpack.gensrc.js')
@@ -73,30 +73,42 @@ const config = {
             {
                 test: /\.css$/,
                 exclude: excludeFunction,
-                use: ['style-loader', 'css-loader']
+                use: ExtractTextPlugin.extract({
+                    fallback: 'style-loader',
+                    use: ['css-loader']
+                })
             },
             {
                 test: /\.less$/,
                 exclude: excludeFunction,
-                use: ['style-loader', 'css-loader', 'less-loader']
+                use: ExtractTextPlugin.extract({
+                    fallback: 'style-loader',
+                    use: ['css-loader', 'less-loader']
+                })
             }
         ]
     },
     plugins: [
-        new GenSourceCode(),
+        new GenSourceCode(), /* Generate some source code based on the config.json file */
+        new ExtractTextPlugin('style.css'), /* Extract css from bundle */
+
         /*new webpack.optimize.CommonsChunkPlugin({
+         name: 'react',
+         minChunks: (m) => /node_modules\/(react)/.test(m.context)
+         }),
+         new webpack.optimize.CommonsChunkPlugin({
          name: 'draftjs',
          minChunks: (m) => /node_modules\/(draft-js|immutable)/.test(m.context)
-         })*/
-        /*
-        new webpack.optimize.CommonsChunkPlugin({
-            name: 'material-ui',
+         }),*/
+
+        /*new webpack.optimize.CommonsChunkPlugin({
+            name: 'vendor',
             minChunks: (m) => /node_modules\/(material-ui)/.test(m.context)
         }),*/
-        new webpack.optimize.CommonsChunkPlugin({
-            name: 'vendor',
-            minChunks: (m) => /node_modules/.test(m.context)
-        })
+        /*new webpack.optimize.CommonsChunkPlugin({
+         name: 'vendor',
+         minChunks: (m) => /node_modules/.test(m.context)
+         })*/
     ]
 }
 
@@ -135,6 +147,7 @@ if (DEV_MODE) {
 
 
     config.plugins.push(
+        new webpack.optimize.ModuleConcatenationPlugin(),
         new webpack.optimize.UglifyJsPlugin({
             compress: {
                 warnings: false,
@@ -142,7 +155,7 @@ if (DEV_MODE) {
                 drop_console: true
             }
         }),
-        new webpack.optimize.AggressiveMergingPlugin()
+        new webpack.optimize.AggressiveMergingPlugin(),
     )
 
     const CopyWebpackPlugin = require('copy-webpack-plugin')
@@ -152,8 +165,8 @@ if (DEV_MODE) {
         ])
     )
 
-/*    const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-     config.plugins.push(new BundleAnalyzerPlugin())*/
+    const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+    config.plugins.push(new BundleAnalyzerPlugin())
 
     //config.devtool = 'source-map'
 }

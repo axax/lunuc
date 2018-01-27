@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {LinearProgress} from 'ui/admin'
 
-// loading indicator is shown if request takes more than 500 ms
+// loading indicator is shown if api requests take more than 500 ms
 const LOADER_DELAY = 500
 
 class NetworkStatusHandler extends React.Component {
