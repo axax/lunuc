@@ -155,7 +155,7 @@ if (DEV_MODE) {
                 drop_console: true
             }
         }),
-        new webpack.optimize.AggressiveMergingPlugin(),
+        new webpack.optimize.AggressiveMergingPlugin()
     )
 
     const CopyWebpackPlugin = require('copy-webpack-plugin')

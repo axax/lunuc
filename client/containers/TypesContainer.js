@@ -480,6 +480,7 @@ class TypesContainer extends React.Component {
 
 
     handleCreateEditData = (action) => {
+        console.log(this.createEditForm)
         if (action && action.key === 'yes') {
         }
         this.setState({createDataDialog: false})
