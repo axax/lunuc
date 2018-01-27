@@ -64,7 +64,7 @@ export function configureMiddleware(store) {
                     networkStatus: {loading:false}
                 }))
             }
-            return data;
+            return data
         })
     })
 

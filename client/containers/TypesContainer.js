@@ -69,7 +69,7 @@ class TypesContainer extends React.Component {
         const {data} = this.state
         const {type, page, limit, sort, filter} = this.pageParams
 
-        if (!this.types[type]) return <BaseLayout><Typography type="subheading" color="error">Type {type} doesn't exist.
+        if (!this.types[type]) return <BaseLayout><Typography type="subheading" color="error">Type {type} does not exist.
             Types can be specified in an extension.</Typography></BaseLayout>
 
         let tableWithResults
@@ -226,7 +226,7 @@ class TypesContainer extends React.Component {
                 </SimpleDialog>
             }
 
-           /* <FileDrop /> */
+            {/* <FileDrop /> */}
         </BaseLayout>
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
@@ -429,9 +429,9 @@ class TypesContainer extends React.Component {
         const {type, limit, sort, filter} = this.pageParams
 
         const aSort = sort.split(' ')
-        let orderDirection = 'desc';
+        let orderDirection = 'desc'
         if (aSort.length > 1 && orderBy === aSort[0] && orderDirection === aSort[1]) {
-            orderDirection = 'asc';
+            orderDirection = 'asc'
         }
         const newSort = `${orderBy} ${orderDirection}`
 

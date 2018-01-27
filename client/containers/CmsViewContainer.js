@@ -122,7 +122,7 @@ class CmsViewContainer extends React.Component {
                         }
                     },
                     error(err) {
-                        console.error('err', err);
+                        console.error('err', err)
                     },
                 })
             }

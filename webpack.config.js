@@ -102,9 +102,9 @@ const config = {
          }),*/
 
         /*new webpack.optimize.CommonsChunkPlugin({
-            name: 'vendor',
-            minChunks: (m) => /node_modules\/(material-ui)/.test(m.context)
-        }),*/
+         name: 'vendor',
+         minChunks: (m) => /node_modules\/(material-ui)/.test(m.context)
+         }),*/
         /*new webpack.optimize.CommonsChunkPlugin({
          name: 'vendor',
          minChunks: (m) => /node_modules/.test(m.context)
@@ -165,8 +165,8 @@ if (DEV_MODE) {
         ])
     )
 
-   /* const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-    config.plugins.push(new BundleAnalyzerPlugin())*/
+    /* const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+     config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'
 }
