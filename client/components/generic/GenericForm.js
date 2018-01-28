@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {Button, TextField} from 'ui/admin'
+import FileDrop from '../FileDrop'
 
 export default class GenericForm extends React.Component {
     constructor(props) {
@@ -70,7 +71,11 @@ export default class GenericForm extends React.Component {
                     Object.keys(this.props.fields).map((k) => {
                         const o = this.props.fields[k]
                         const type = o.type || 'text'
-                        if (type === 'select') {
+
+                        if( type === 'image'){
+                           // return <FileDrop key={k}  />
+                        }else if (type === 'select') {
+
                             //TODO: implement
                         } else {
                             return <TextField key={k} fullWidth={o.fullWidth} type={type} placeholder={o.placeholder} value={this.state.fields[k]}

@@ -95,7 +95,6 @@ const GenericResolver = {
                 $addFields: {limit, offset}
             }
         ]).toArray())
-
         if( a.length === 0 ){
             return {
                 limit,

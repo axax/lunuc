@@ -98,7 +98,7 @@ class CmsViewContainer extends React.Component {
                         }
                         const {data} = supscriptionData.data['subscribe'+subs]
                         if( data ){
-                            const storeData = client.readQuery({query: gqlQuery, variables: {slug}})
+                            const storeData = client.readQuery({query: gqlQuery, variables: {slug,query: window.location.search.substring(1)}})
 
                             // upadate data in resolvedData string
                             if (storeData.cmsPage && storeData.cmsPage.resolvedData ) {

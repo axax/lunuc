@@ -34,6 +34,7 @@ export function withKeyValues(WrappedComponent, keys) {
 
     WithKeyValues.propTypes = {
         keyValues: PropTypes.object,
+        user: PropTypes.object.isRequired,
         loading: PropTypes.bool,
         setKeyValue: PropTypes.func.isRequired,
         deleteKeyValue: PropTypes.func.isRequired
@@ -148,12 +149,7 @@ export function withKeyValues(WrappedComponent, keys) {
     /**
      * Map the state to props.
      */
-    const mapStateToProps = (store) => {
-        const {user} = store
-        return {
-            user
-        }
-    }
+    const mapStateToProps = (store) => ({user:store.user})
 
 
     /**

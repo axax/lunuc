@@ -69,7 +69,7 @@ const defaultScript = `// 1. access scope data
 export const cmsResolver = (db) => ({
     cmsPages: async ({limit, offset}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
-        return await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver'], {
+        return await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug'], {
             limit,
             offset
         })
@@ -79,23 +79,30 @@ export const cmsResolver = (db) => ({
         const startTime = (new Date()).getTime()
 
         let cmsPages
-        const cacheKey = 'cmsPage'+slug
-        if( !userIsLoggedIn ){
+        const cacheKey = 'cmsPage' + slug
+        if (!userIsLoggedIn) {
             // get page from cache
             cmsPages = Cache.get(cacheKey)
         }
 
-        if( !cmsPages ){
-            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr'], {match: {slug}})
-            Cache.set(cacheKey,cmsPages)
+        if (!cmsPages) {
+            let match
+            if (!userIsLoggedIn) {
+                // if no user only match public entries
+                match = {$and: [{slug}, {public: true}]}
+            } else {
+                match = {slug}
+            }
+            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public'], {match})
+            Cache.set(cacheKey, cmsPages)
         }
 
 
-        if (cmsPages.results.length == 0) {
+        if (!cmsPages.results) {
             throw new Error('Cms page doesn\'t exist')
         }
         const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
-        const scope = {page: {slug},params: queryParams}
+        const scope = {page: {slug}, params: queryParams}
 
         const {_id, createdBy, template, script, dataResolver, ssr} = cmsPages.results[0]
         const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver, scope)
@@ -118,7 +125,7 @@ export const cmsResolver = (db) => ({
                 html = e.message
             }
         }
-        console.log(`cms resolver got data in ${(new Date()).getTime()-startTime}ms`)
+        console.log(`cms resolver got data in ${(new Date()).getTime() - startTime}ms`)
 
         if (userIsLoggedIn) {
             // return all data
@@ -138,7 +145,7 @@ export const cmsResolver = (db) => ({
 
             // if user is not looged in return only slug and rendered html
             // never return sensitiv data here
-            return  {
+            return {
                 _id,
                 createdBy,
                 ssr,
@@ -176,7 +183,8 @@ export const cmsResolver = (db) => ({
             result.subscriptions = subscriptions
         }
 
-        pubsub.publish('newNotification', {userId: context.id,
+        pubsub.publish('newNotification', {
+            userId: context.id,
             newNotification: {
                 key: 'updateCmsPage',
                 message: `CMS Page ${_id} was successfully updated on ${new Date().toLocaleTimeString()}`

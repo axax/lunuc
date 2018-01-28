@@ -17,6 +17,7 @@ export default `
         lastName: String
         summary: String
         pictureUrl: String
+        publicProfileUrl: String
         positions: LinkedInPositions
     }
       

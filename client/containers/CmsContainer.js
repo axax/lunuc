@@ -4,7 +4,7 @@ import genericComposer from './generic/genericComposer'
 import {Link} from 'react-router-dom'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import PropTypes from 'prop-types'
-import {SimpleTable, SimpleDialog, DeleteIconButton,Typography} from 'ui/admin'
+import {SimpleTable, SimpleDialog, DeleteIconButton, Typography, Switch} from 'ui/admin'
 import Util from 'client/util'
 import {ADMIN_BASE_URL} from 'gen/config'
 
@@ -32,6 +32,10 @@ class CmsContainer extends React.Component {
                     dataIndex: 'slug'
                 },
                 {
+                    title: 'Public',
+                    dataIndex: 'public'
+                },
+                {
                     title: 'User',
                     dataIndex: 'user'
                 },
@@ -46,6 +50,9 @@ class CmsContainer extends React.Component {
             dataSource = cmsPages.results && cmsPages.results.map((cmsPage) => ({
                     slug: <span onBlur={(e) => this.handleCmsPageChange.bind(this)(e, cmsPage, 'slug')}
                                 suppressContentEditableWarning contentEditable>{cmsPage.slug}</span>,
+                    public: <Switch name="public" value="on"
+                                    onChange={(e) => this.handleCmsPageChange.bind(this)(e, cmsPage, 'public')}
+                                    checked={cmsPage.public || false}/>,
                     user: cmsPage.createdBy.username,
                     date: Util.formattedDateFromObjectId(cmsPage._id),
                     action: <div>
@@ -68,14 +75,14 @@ class CmsContainer extends React.Component {
 
 
                 <SimpleTable dataSource={dataSource} columns={columns} count={totalPages}
-                       rowsPerPage={this.state.rowsPerPage} page={currentPage}
-                       onChangePage={this.handleChangePage.bind(this)}
-                       onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
+                             rowsPerPage={this.state.rowsPerPage} page={currentPage}
+                             onChangePage={this.handleChangePage.bind(this)}
+                             onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
 
                 {this.state.dataToBeDeleted &&
                 <SimpleDialog open={this.state.confirmDeletionDialog} onClose={this.handleConfirmDeletion}
-                        actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
-                        title="Confirm deletion">
+                              actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
+                              title="Confirm deletion">
                     Are you sure you want to delete the page
                     <strong> {this.state.dataToBeDeleted.slug}</strong>?
                 </SimpleDialog>
@@ -83,7 +90,7 @@ class CmsContainer extends React.Component {
             </BaseLayout>
 
 
-        console.info(`render ${this.constructor.name} in ${new Date()-startTime}ms`)
+        console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
         return content
 
@@ -96,12 +103,21 @@ class CmsContainer extends React.Component {
     }
 
     handleCmsPageChange = (event, data, key) => {
+        let value
 
-        const t = event.target.innerText.trim()
-        if (t != data[key]) {
+        if (event.target.type === 'checkbox') {
+            value = event.target.checked
+        } else {
+            value = event.target.innerText.trim()
+        }
+
+        console.log(value)
+
+
+        if (value !== data[key]) {
             const {updateCmsPage} = this.props
             updateCmsPage(
-                Object.assign({},data,{[key]: t})
+                Object.assign({}, data, {[key]: value})
             )
         }
     }
@@ -146,5 +162,8 @@ CmsContainer.propTypes = {
 }
 
 
-export default genericComposer(CmsContainer, 'cmsPage', {fields: {'slug': 'String!'}, limit: CMS_PAGES_PER_PAGE})
+export default genericComposer(CmsContainer, 'cmsPage', {
+    fields: {'slug': 'String!', 'public': 'Boolean'},
+    limit: CMS_PAGES_PER_PAGE
+})
 

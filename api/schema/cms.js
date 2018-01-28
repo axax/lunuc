@@ -10,7 +10,8 @@ export const cmsSchemaRaw = `
         html: String 
         status: String
         ssr: Boolean,
-        subscriptions: [String]
+        subscriptions: [String],
+        public: Boolean
     }
     
     
@@ -31,7 +32,7 @@ export const cmsSchemaRaw = `
 		createCmsPage (
 			slug: String!
 		): CmsPage
-		updateCmsPage(_id: ID!, slug: String, template: String, script: String, dataResolver: String, ssr: Boolean): CmsPage	
+		updateCmsPage(_id: ID!, slug: String, template: String, script: String, dataResolver: String, ssr: Boolean, public: Boolean): CmsPage	
 		deleteCmsPage(_id: ID!): CmsPage
 	}
 `

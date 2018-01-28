@@ -23,7 +23,6 @@ import Util from 'client/util'
 import GenericForm from 'client/components/generic/GenericForm'
 import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
-import FileDrop from '../components/FileDrop'
 
 const DEFAULT_RESULT_LIMIT = 10
 
@@ -69,35 +68,14 @@ class TypesContainer extends React.Component {
         const {data} = this.state
         const {type, page, limit, sort, filter} = this.pageParams
 
-        if (!this.types[type]) return <BaseLayout><Typography type="subheading" color="error">Type {type} does not exist.
+        if (!this.types[type]) return <BaseLayout><Typography type="subheading" color="error">Type {type} does not
+            exist.
             Types can be specified in an extension.</Typography></BaseLayout>
 
         let tableWithResults
         if (data) {
 
-            const columns = []
-
-            const fields = this.types[type].fields
-
-            fields.forEach(field => {
-                if (!field.type || field.type.indexOf('[') < 0) {
-                    columns.push({title: field.name, dataIndex: field.name, sortable: true})
-                }
-            })
-            columns.push({
-                    title: 'User',
-                    dataIndex: 'user'
-                },
-                {
-                    title: 'Created at',
-                    dataIndex: 'date'
-                },
-                {
-                    title: 'Actions',
-                    dataIndex: 'action'
-                })
-
-            const dataSource = []
+            const fields = this.types[type].fields, columns = this.createTableColumns(fields), dataSource = []
 
             if (data.results) {
                 data.results.forEach(item => {
@@ -109,7 +87,6 @@ class TypesContainer extends React.Component {
                                 dynamic[field.name] =
                                     <img style={{height: '40px'}} src={item[field.name]}/>
                             } else {
-
                                 dynamic[field.name] =
                                     <span onBlur={(e) => this.handleDataChange.bind(this)(e, item, field.name)}
                                           suppressContentEditableWarning contentEditable>{item[field.name]}</span>
@@ -127,7 +104,6 @@ class TypesContainer extends React.Component {
                                               onClick={this.handleDeleteDataClick.bind(this, item)}>Delete</DeleteIconButton>
                         </div>
                     })
-
                 })
             }
             const asort = sort.split(' ')
@@ -143,9 +119,7 @@ class TypesContainer extends React.Component {
 
         const formFields = {}
         this.types[type].fields.map(field => {
-            if (!field.type || field.type.indexOf('[') < 0) {
-                formFields[field.name] = {placeholder: `Enter ${field.name}`}
-            }
+            formFields[field.name] = {placeholder: `Enter ${field.name}`, type: field.uitype}
         })
 
         const selectTypes = []
@@ -170,7 +144,7 @@ class TypesContainer extends React.Component {
                 <Col md={3} align="right">
                     <SimpleMenu items={[{
                         name: 'Add new ' + type, onClick: () => {
-                            this.setState({createDataDialog:true})
+                            this.setState({createDataDialog: true})
                         }
                     }]}/>
                 </Col>
@@ -213,25 +187,47 @@ class TypesContainer extends React.Component {
             }
 
             { <SimpleDialog open={this.state.createDataDialog} onClose={this.handleCreateEditData}
-                              actions={[{key: 'cancel', label: 'Cancel'}, {
-                                  key: 'save',
-                                  label: 'Save',
-                                  type: 'primary'
-                              }]}
-                              title={type}>
+                            actions={[{key: 'cancel', label: 'Cancel'}, {
+                                key: 'save',
+                                label: 'Save',
+                                type: 'primary'
+                            }]}
+                            title={type}>
 
 
-                    <GenericForm ref={ref => { this.createEditForm = ref }} primaryButton={false} fields={formFields}/>
+                <GenericForm ref={ref => {
+                    this.createEditForm = ref
+                }} primaryButton={false} fields={formFields}/>
 
-                </SimpleDialog>
+            </SimpleDialog>
             }
-
-            {/* <FileDrop /> */}
         </BaseLayout>
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
         return content
+    }
+
+    createTableColumns(fields) {
+        const columns = []
+        fields.forEach(field => {
+            if (!field.type || field.type.indexOf('[') < 0) {
+                columns.push({title: field.name, dataIndex: field.name, sortable: true})
+            }
+        })
+        columns.push({
+                title: 'User',
+                dataIndex: 'user'
+            },
+            {
+                title: 'Created at',
+                dataIndex: 'date'
+            },
+            {
+                title: 'Actions',
+                dataIndex: 'action'
+            })
+        return columns
     }
 
     determinPageParams(props) {
@@ -359,6 +355,8 @@ class TypesContainer extends React.Component {
                                 variables: {page, limit, sort, filter},
                                 data: storeData
                             })
+                            this.setState({data: storeData[typeStartLower]})
+
                         }
                     }
 
@@ -462,7 +460,9 @@ class TypesContainer extends React.Component {
 
     handleDataChange = (event, data, key) => {
         const t = event.target.innerText.trim()
-        if (t != data[key]) {
+        console.log(key, t)
+        console.log(key, data[key])
+        if (t !== data[key]) {
             this.updateData(this.pageParams, {...data, [key]: t}, key)
         }
     }
@@ -480,8 +480,8 @@ class TypesContainer extends React.Component {
 
 
     handleCreateEditData = (action) => {
-        console.log(this.createEditForm)
-        if (action && action.key === 'yes') {
+        if (action && action.key === 'save') {
+            this.handleAddDataClick(this.createEditForm.state.fields)
         }
         this.setState({createDataDialog: false})
     }
