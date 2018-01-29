@@ -69,28 +69,11 @@ const config = {
                 query: {
                     presets: ['env', 'react', 'stage-0']
                 }
-            },
-            {
-                test: /\.css$/,
-                exclude: excludeFunction,
-                use: ExtractTextPlugin.extract({
-                    fallback: 'style-loader',
-                    use: ['css-loader']
-                })
-            },
-            {
-                test: /\.less$/,
-                exclude: excludeFunction,
-                use: ExtractTextPlugin.extract({
-                    fallback: 'style-loader',
-                    use: ['css-loader', 'less-loader']
-                })
             }
         ]
     },
     plugins: [
         new GenSourceCode(), /* Generate some source code based on the config.json file */
-        new ExtractTextPlugin('style.css'), /* Extract css from bundle */
 
         /*new webpack.optimize.CommonsChunkPlugin({
          name: 'react',
@@ -118,9 +101,22 @@ const config = {
 if (DEV_MODE) {
     console.log('Build for developing')
 
-
     const PORT = (process.env.PORT || 8080)
     const API_PORT = (process.env.API_PORT || 3000)
+
+
+    config.module.rules.push(
+        {
+            test: /\.css$/,
+            exclude: excludeFunction,
+            use: ['style-loader', 'css-loader']
+        },
+        {
+            test: /\.less$/,
+            exclude: excludeFunction,
+            use: ['style-loader', 'css-loader', 'less-loader']
+        }
+    )
 
     config.devServer = {
         historyApiFallback: true,
@@ -146,7 +142,27 @@ if (DEV_MODE) {
     console.log('Build for production')
 
 
+    config.module.rules.push(
+        {
+            test: /\.css$/,
+            exclude: excludeFunction,
+            use: ExtractTextPlugin.extract({
+                fallback: 'style-loader',
+                use: ['css-loader']
+            })
+        },
+        {
+            test: /\.less$/,
+            exclude: excludeFunction,
+            use: ExtractTextPlugin.extract({
+                fallback: 'style-loader',
+                use: ['css-loader', 'less-loader']
+            })
+        }
+    )
+
     config.plugins.push(
+        new ExtractTextPlugin('style.css'), /* Extract css from bundle */
         new webpack.optimize.ModuleConcatenationPlugin(),
         new webpack.optimize.UglifyJsPlugin({
             compress: {

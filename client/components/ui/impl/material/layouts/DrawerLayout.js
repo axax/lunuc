@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { withStyles } from 'material-ui/styles'
+import {withStyles} from 'material-ui/styles'
 import classNames from 'classnames'
 import Drawer from 'material-ui/Drawer'
 import AppBar from 'material-ui/AppBar'
@@ -55,9 +55,10 @@ const styles = theme => ({
         display: 'none',
     },
     drawerDocked: {
-      maxWidth:"100%",
+        maxWidth: "100%",
     },
     drawerPaper: {
+        display: 'block',
         position: 'relative',
         height: '100%',
         maxWidth: '100%',
@@ -66,18 +67,20 @@ const styles = theme => ({
             duration: theme.transitions.duration.enteringScreen,
         }),
     },
-    smallDrawerPaper:{
+    smallDrawerPaper: {
         width: DRAWER_WIDTH_SMALL,
     },
-    mediumDrawerPaper:{
+    mediumDrawerPaper: {
         width: DRAWER_WIDTH_MEDIUM,
     },
-    largeDrawerPaper:{
+    largeDrawerPaper: {
         width: DRAWER_WIDTH_LARGE,
+        flex: '1 auto'
     },
     drawerPaperClose: {
         width: 0,
-        overflowX: 'hidden',
+        overflowY: 'hidden',
+        height: window.innerHeight, /* otherwise with width=0, in some brower, the height get enormuous */
         transition: theme.transitions.create('width', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
@@ -86,13 +89,13 @@ const styles = theme => ({
     drawerInner: {
         maxWidth: '100%',
     },
-    smallDrawerInner:{
+    smallDrawerInner: {
         width: DRAWER_WIDTH_SMALL,
     },
-    mediumDrawerInner:{
+    mediumDrawerInner: {
         width: DRAWER_WIDTH_MEDIUM,
     },
-    largeDrawerInner:{
+    largeDrawerInner: {
         width: DRAWER_WIDTH_LARGE,
     },
     drawerHeader: {
@@ -103,6 +106,7 @@ const styles = theme => ({
         ...theme.mixins.toolbar,
     },
     content: {
+        boxSizing: 'border-box',
         width: '100%',
         flexGrow: 1,
         backgroundColor: theme.palette.background.default,
@@ -122,23 +126,23 @@ class DrawerLayout extends React.Component {
     }
 
     handleDrawerOpen = () => {
-        this.setState({ open: true })
+        this.setState({open: true})
     }
 
     handleDrawerClose = () => {
-        this.setState({ open: false })
+        this.setState({open: false})
     }
 
     render() {
-        const { classes, theme, title, sidebar, toolbarRight, children } = this.props
-        const { open } = this.state
+        const {classes, theme, title, sidebar, toolbarRight, children} = this.props
+        const {open} = this.state
 
         const drawerSize = this.props.drawerSize || 'medium'
 
         return (
             <div className={classes.root}>
                 <div className={classes.appFrame}>
-                    <AppBar className={classNames(classes.appBar, open && classes[drawerSize+'AppBarShift'] )}>
+                    <AppBar className={classNames(classes.appBar, open && classes[drawerSize + 'AppBarShift'])}>
                         <Toolbar>
                             <IconButton
                                 color="inherit"
@@ -148,7 +152,7 @@ class DrawerLayout extends React.Component {
                             >
                                 <MenuIcon />
                             </IconButton>
-                            <Typography type="title" color="inherit" noWrap style={{flex:1}}>
+                            <Typography type="title" color="inherit" noWrap style={{flex: 1}}>
                                 {title}
                             </Typography>
                             {toolbarRight}
@@ -159,11 +163,11 @@ class DrawerLayout extends React.Component {
                         type="permanent"
                         classes={{
                             docked: classes.drawerDocked,
-                            paper: classNames(classes.drawerPaper,classes[drawerSize+'DrawerPaper'], !open && classes.drawerPaperClose),
+                            paper: classNames(classes.drawerPaper, classes[drawerSize + 'DrawerPaper'], !open && classes.drawerPaperClose),
                         }}
                         open={open}
                     >
-                        <div className={ classNames(classes.drawerInner,classes[drawerSize+'DrawerInner']) }>
+                        <div className={ classNames(classes.drawerInner, classes[drawerSize + 'DrawerInner']) }>
                             <div className={classes.drawerHeader}>
                                 <IconButton onClick={this.handleDrawerClose}>
                                     {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
@@ -187,4 +191,4 @@ DrawerLayout.propTypes = {
     theme: PropTypes.object.isRequired,
 }
 
-export default withStyles(styles, { withTheme: true })(DrawerLayout);
+export default withStyles(styles, {withTheme: true})(DrawerLayout);

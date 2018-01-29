@@ -53,7 +53,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "antd": "^3.1.5",
+    "antd": "^3.1.6",
     "apollo-cache-inmemory": "^1.1.5",
     "apollo-client": "^2.2.0",
     "apollo-client-preset": "^1.0.6",
@@ -76,6 +76,7 @@
     "eslint-plugin-react": "^7.6.0",
     "express": "^4.16.2",
     "express-graphql": "^0.6.11",
+    "formidable": "^1.1.1",
     "google-translate-api": "^2.3.0",
     "gql-merge": "0.0.6",
     "graphql": "git://github.com/graphql/graphql-js.git#npm",

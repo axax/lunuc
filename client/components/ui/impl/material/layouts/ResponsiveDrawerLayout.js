@@ -21,7 +21,7 @@ const styles = theme => ({
         width: '100%',
         height: '100%',
         zIndex: 1,
-        overflow: 'hidden',
+        overflow: 'hidden'
     },
     appFrame: {
         position: 'relative',
@@ -54,6 +54,7 @@ const styles = theme => ({
         },
     },
     content: {
+        boxSizing: 'border-box',
         backgroundColor: theme.palette.background.default,
         width: '100%',
         padding: theme.spacing.unit * 3,

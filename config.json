@@ -33,7 +33,8 @@
         "Delete",
         "Close",
         "Code",
-        "AccountCircle"
+        "AccountCircle",
+        "FileUpload"
       ],
       "theme":{
         "colors":{

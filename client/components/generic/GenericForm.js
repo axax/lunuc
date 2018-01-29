@@ -73,7 +73,7 @@ export default class GenericForm extends React.Component {
                         const type = o.type || 'text'
 
                         if( type === 'image'){
-                           // return <FileDrop key={k}  />
+                            return <FileDrop key={k}  />
                         }else if (type === 'select') {
 
                             //TODO: implement

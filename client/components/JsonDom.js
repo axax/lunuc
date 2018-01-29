@@ -220,7 +220,7 @@ class JsonDom extends React.Component {
 
                     })
                 } catch (ex) {
-                    return ex.message
+                    return 'Error in parseRec: '+ex.message
                 }
 
 

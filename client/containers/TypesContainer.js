@@ -152,11 +152,11 @@ class TypesContainer extends React.Component {
 
 
             <Row spacing={16}>
-                <Col md={9}>
+                <Col md={9} sm={12} xs={12}>
                     <GenericForm caption="Add" fields={formFields}
                                  onClick={this.handleAddDataClick}/>
                 </Col>
-                <Col md={3}>
+                <Col md={3} sm={12} xs={12}>
                     <GenericForm onChange={this.handleFilter} primaryButton={false}
                                  fields={{
                                      term: {

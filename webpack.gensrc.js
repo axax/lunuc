@@ -155,6 +155,7 @@ function gensrcUi() {
                     if (ui.impl === 'material') {
                         uiContentIcons += `
 import ${icon}Icon from 'material-ui-icons/${icon}'
+export {${icon}Icon}
 
 export const ${icon}IconButton = ({...rest}) => {
     return <IconButton{...rest} >

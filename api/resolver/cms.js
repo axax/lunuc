@@ -111,7 +111,6 @@ export const cmsResolver = (db) => ({
         if (ssr) {
             // Server side rendering
             // todo: ssr for apollo https://github.com/apollographql/apollo-client/blob/master/docs/source/recipes/server-side-rendering.md
-
             try {
 
                 html = ReactDOMServer.renderToString(<UIProvider>
