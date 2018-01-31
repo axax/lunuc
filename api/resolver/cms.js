@@ -106,7 +106,7 @@ export const cmsResolver = (db) => ({
         if (!cmsPages.results) {
             throw new Error('Cms page doesn\'t exist')
         }
-        const scope = createScopeForDataResolver(query)
+        const scope = {...createScopeForDataResolver(query), page: {slug}}
 
         const {_id, createdBy, template, script, dataResolver, ssr} = cmsPages.results[0]
         const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver, scope)

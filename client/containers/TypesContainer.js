@@ -543,7 +543,7 @@ const buildQueries = (typeName, types) => {
 
     let query = '_id status createdBy{_id username}'
 
-    let insertParams = '', insertQuery = ''
+    let insertParams = '', insertUpdateQuery = '', updateParams = ''
 
 
     if (fields) {
@@ -551,10 +551,12 @@ const buildQueries = (typeName, types) => {
             if (!e.type || COMMON_TYPE.indexOf(e.type) >= 0) {
                 if (insertParams !== '') {
                     insertParams += ', '
-                    insertQuery += ', '
+                    updateParams += ', '
+                    insertUpdateQuery += ', '
                 }
                 insertParams += '$' + e.name + ': ' + (e.type || 'String') + (e.required ? '!' : '')
-                insertQuery += e.name + ': ' + '$' + e.name
+                updateParams += '$' + e.name + ': ' + (e.type || 'String')
+                insertUpdateQuery += e.name + ': ' + '$' + e.name
                 query += ' ' + e.name
             }
         })
@@ -562,8 +564,8 @@ const buildQueries = (typeName, types) => {
     result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String){
                 ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{${query}}}}`
 
-    result.create = `mutation create${name}(${insertParams}){create${name}(${insertQuery}){${query}}}`
-    result.update = `mutation update${name}($_id: ID!,${insertParams}){update${name}(_id:$_id,${insertQuery}){${query}}}`
+    result.create = `mutation create${name}(${insertParams}){create${name}(${insertUpdateQuery}){${query}}}`
+    result.update = `mutation update${name}($_id: ID!,${updateParams}){update${name}(_id:$_id,${insertUpdateQuery}){${query}}}`
     result.delete = `mutation delete${name}($_id: ID!){delete${name}(_id: $_id){_id status}}`
     return result
 }
