@@ -353,7 +353,6 @@ const CmsViewContainerWithGql = compose(
                                 data.cmsPage.resolvedData = updateCmsPage.resolvedData
                                 data.cmsPage.subscriptions = updateCmsPage.subscriptions
                             }
-
                             store.writeQuery({query: gqlQuery, variables: {slug}, data})
                         }
                     }

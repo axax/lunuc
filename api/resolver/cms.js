@@ -66,6 +66,12 @@ const defaultScript = `// 1. access scope data
 `
 
 
+let createScopeForDataResolver = function (query) {
+    const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
+    const scope = {params: queryParams}
+    return scope
+}
+
 export const cmsResolver = (db) => ({
     cmsPages: async ({limit, offset}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
@@ -77,7 +83,6 @@ export const cmsResolver = (db) => ({
     cmsPage: async ({slug, query}, {context}) => {
         const userIsLoggedIn = Util.isUserLoggedIn(context)
         const startTime = (new Date()).getTime()
-
         let cmsPages
         const cacheKey = 'cmsPage' + slug
         if (!userIsLoggedIn) {
@@ -101,8 +106,7 @@ export const cmsResolver = (db) => ({
         if (!cmsPages.results) {
             throw new Error('Cms page doesn\'t exist')
         }
-        const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
-        const scope = {page: {slug}, params: queryParams}
+        const scope = createScopeForDataResolver(query)
 
         const {_id, createdBy, template, script, dataResolver, ssr} = cmsPages.results[0]
         const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver, scope)
@@ -170,13 +174,14 @@ export const cmsResolver = (db) => ({
             script: defaultScript
         })
     },
-    updateCmsPage: async ({_id, ...rest}, {context}) => {
+    updateCmsPage: async ({_id, query, ...rest}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
         const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
 
         // if dataResolver has changed resolveData and return it
         if (rest.dataResolver) {
-            const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, rest.dataResolver)
+            const scope = createScopeForDataResolver(query)
+            const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, rest.dataResolver, scope)
 
             result.resolvedData = JSON.stringify(resolvedData)
             result.subscriptions = subscriptions
