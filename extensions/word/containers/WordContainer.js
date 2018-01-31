@@ -54,7 +54,8 @@ class WordContainer extends React.Component {
     }
 
     handleFilter = ({value}) => {
-        this.props.refetchWords({filter: value})
+        this.props.setOptionsForWords({filter: value})
+        this.props.refetchWords()
     }
 
     handleChangeRowsPerPage = (rowsPerPage) => {

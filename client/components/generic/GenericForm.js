@@ -2,12 +2,22 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {Button, TextField} from 'ui/admin'
 import FileDrop from '../FileDrop'
+import TypePicker from '../TypePicker'
 
-export default class GenericForm extends React.Component {
+class GenericForm extends React.Component {
     constructor(props) {
         super(props)
+        this.state = this.getInitalState(props)
+    }
 
-        this.state = this.getInitalState()
+    shouldComponentUpdate(props, state) {
+        return props.fields !== this.props.fields || state !== this.state
+    }
+
+    componentWillReceiveProps(props) {
+        if (props.fields !== this.props.fields) {
+            this.setState(this.getInitalState(props))
+        }
     }
 
     componentDidMount() {
@@ -27,10 +37,10 @@ export default class GenericForm extends React.Component {
         return true
     }
 
-    getInitalState = () => {
+    getInitalState = (props) => {
         const initalState = {fields: {}, isValid: true}
-        Object.keys(this.props.fields).map((k) => {
-            initalState.fields[k] = this.props.fields[k].value || ''
+        Object.keys(props.fields).map((k) => {
+            initalState.fields[k] = props.fields[k].value || ''
         })
         return initalState
     }
@@ -47,11 +57,11 @@ export default class GenericForm extends React.Component {
         const name = target.name
 
         this.setState((prevState) => {
-            const newState = Object.assign({},{fields:{}},prevState)
+            const newState = Object.assign({}, {fields: {}}, prevState)
             newState.fields[name] = value
 
-            if( this.props.onChange){
-                this.props.onChange({name,value})
+            if (this.props.onChange) {
+                this.props.onChange({name, value})
             }
             newState.isValid = this.validate(newState)
             return newState
@@ -60,27 +70,31 @@ export default class GenericForm extends React.Component {
 
 
     onAddClick = () => {
-        this.props.onClick(this.state.fields)
+        if (this.props.onClick)
+            this.props.onClick(this.state.fields)
+        this.setState(this.getInitalState(this.props))
     }
 
     render() {
-
         return (
             <form>
                 {
                     Object.keys(this.props.fields).map((k) => {
                         const o = this.props.fields[k]
-                        const type = o.type || 'text'
+                        const uitype = o.uitype || 'text'
 
-                        if( type === 'image'){
-                            return <FileDrop key={k}  />
-                        }else if (type === 'select') {
+                        if (uitype === 'image') {
+                            return <FileDrop key={k}/>
+                        } else if (uitype === 'type_picker') {
+                            return <TypePicker key={k} type={o.data.type} placeholder={o.placeholder}/>
+                        } else if (uitype === 'select') {
 
                             //TODO: implement
                         } else {
-                            return <TextField key={k} fullWidth={o.fullWidth} type={type} placeholder={o.placeholder} value={this.state.fields[k]}
-                                          name={k}
-                                          onChange={this.handleInputChange}/>
+                            return <TextField key={k} fullWidth={o.fullWidth} type={uitype} placeholder={o.placeholder}
+                                              value={this.state.fields[k]}
+                                              name={k}
+                                              onChange={this.handleInputChange}/>
                         }
                     })
                 }
@@ -94,9 +108,11 @@ export default class GenericForm extends React.Component {
 }
 
 GenericForm.propTypes = {
-    fields: PropTypes.object,
+    fields: PropTypes.object.isRequired,
     onClick: PropTypes.func,
     onValidate: PropTypes.func,
     caption: PropTypes.string,
     primaryButton: PropTypes.bool
 }
+
+export default GenericForm

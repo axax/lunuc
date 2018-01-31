@@ -96,6 +96,7 @@ export Snackbar from 'material-ui/Snackbar'
 export Tooltip from 'material-ui/Tooltip'
 export {LinearProgress, CircularProgress} from 'material-ui/Progress'
 export {MenuItem} from 'material-ui/Menu'
+export Paper from 'material-ui/Paper'
 
 
 // simple to use components

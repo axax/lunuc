@@ -3,7 +3,7 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 
-const genericComposer =  (container, name, options) => {
+const genericComposer = (container, name, options) => {
 
     options = {
         hasFilter: false,
@@ -42,31 +42,30 @@ const genericComposer =  (container, name, options) => {
         ...container.propTypes
     }
 
+    const getVariables = (props) => (
+        {
+            sort: options.sort,
+            limit: options.limit,
+            filter: options.filter,
+            offset: ((props.match.params.page || 1) - 1) * options.limit
+        })
+
+
     const gqlQuery = gql`query ${name}s($sort: String,$limit: Int, $offset: Int${(options.hasFilter ? ', $filter: String' : '')}){${name}s(sort:$sort,limit: $limit, offset:$offset${(options.hasFilter ? ', filter:$filter' : '')}){limit offset total results{${options.query}}}}`
     const containerWithGql = compose(
         graphql(gqlQuery, {
-                options(ownProps) {
-                    let pageNr = (ownProps.match.params.page || 1) - 1
+                options(props) {
                     return {
-                        variables: {
-                            sort: options.sort,
-                            limit: options.limit,
-                            offset: pageNr * options.limit
-                        },
+                        variables: getVariables(props),
                         fetchPolicy: 'cache-and-network'
                     }
                 },
-                props: ({ownProps,data}) => ({
+                props: ({ownProps, data}) => ({
                     [name + 's']: data[name + 's'],
                     loading: data.loading,
                     ['refetch' + nameStartUpper + 's']: (v) => {
-                        let pageNr = (ownProps.match.params.page || 1) - 1
-                        v = {
-                            sort: options.sort,
-                            limit: options.limit,
-                            offset: pageNr * options.limit,
-                            ...v}
-                        data.refetch(v)
+                        console.log('todo',v)
+                        data.refetch(getVariables(ownProps))
                     },
                     ['setOptionsFor' + nameStartUpper + 's']: (o) => {
                         options = {options, ...o}
@@ -97,16 +96,16 @@ const genericComposer =  (container, name, options) => {
                         },
                         update: (store, {data}) => {
 
-                            let pageNr = (ownProps.match.params.page || 1) - 1
+                            const variables = getVariables(ownProps)
 
                             // Read the data from the cache for this query.
                             const storeData = store.readQuery({
                                 query: gqlQuery,
-                                variables: {limit: options.limit, offset: pageNr * options.limit}
+                                variables
                             })
                             if (storeData[name + 's']) {
-                                if( !storeData[name + 's'].results ){
-                                    storeData[name + 's'].results=[]
+                                if (!storeData[name + 's'].results) {
+                                    storeData[name + 's'].results = []
                                 }
 
                                 const oIdx = storeData[name + 's'].results.findIndex((e) => e._id === oid)
@@ -120,7 +119,7 @@ const genericComposer =  (container, name, options) => {
                                 }
                                 store.writeQuery({
                                     query: gqlQuery,
-                                    variables: {limit: options.limit, offset: pageNr * options.limit},
+                                    variables,
                                     data: storeData
                                 })
                             }
@@ -149,12 +148,12 @@ const genericComposer =  (container, name, options) => {
                             }
                         },
                         update: (store, {data}) => {
-                            let pageNr = (ownProps.match.params.page || 1) - 1
+                            const variables = getVariables(ownProps)
 
                             // Read the data from the cache for this query.
                             const storeData = store.readQuery({
                                 query: gqlQuery,
-                                variables: {limit: options.limit, offset: pageNr * options.limit}
+                                variables
                             })
                             if (storeData[name + 's']) {
                                 const idx = storeData[name + 's'].results.findIndex(x => x._id === data['update' + nameStartUpper]._id)
@@ -162,7 +161,7 @@ const genericComposer =  (container, name, options) => {
                                     storeData[name + 's'].results[idx] = data['update' + nameStartUpper]
                                     store.writeQuery({
                                         query: gqlQuery,
-                                        variables: {limit: options.limit, offset: pageNr * options.limit},
+                                        variables,
                                         data: storeData
                                     })
                                 }
@@ -186,12 +185,12 @@ const genericComposer =  (container, name, options) => {
                             }
                         },
                         update: (store, {data}) => {
-                            let pageNr = (ownProps.match.params.page || 1) - 1
+                            const variables = getVariables(ownProps)
 
                             // Read the data from the cache for this query.
                             const storeData = store.readQuery({
                                 query: gqlQuery,
-                                variables: {limit: options.limit, offset: pageNr * options.limit}
+                                variables
                             })
 
                             if (storeData[name + 's']) {
@@ -205,7 +204,7 @@ const genericComposer =  (container, name, options) => {
                                     storeData[name + 's'].total -= 1
                                     store.writeQuery({
                                         query: gqlQuery,
-                                        variables: {limit: options.limit, offset: pageNr * options.limit},
+                                        variables,
                                         data: storeData
                                     })
                                 }

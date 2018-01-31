@@ -1,4 +1,9 @@
 const Util = {
+    getAuthToken: () => {
+        // get the authentication token from local storage if it exists
+        const token = localStorage.getItem('token')
+        return token ? `JWT ${token}` : null
+    },
     dateFromObjectId: (objectId) => {
 
         if (objectId.indexOf('#') === 0) {

@@ -10,7 +10,6 @@ const GENSRC_PATH = './gensrc';
 const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1
 
 
-
 function GenSourceCode(options) {
     this.compiled = false
 }
@@ -24,7 +23,7 @@ GenSourceCode.prototype.apply = function (compiler) {
         console.log('Generating source code')
 
         try {
-            deleteFolderRecursive( path.resolve(__dirname, GENSRC_PATH) )
+            deleteFolderRecursive(path.resolve(__dirname, GENSRC_PATH))
             fs.mkdirSync(GENSRC_PATH)
         } catch (err) {
             if (err.code !== 'EEXIST') throw err
@@ -58,7 +57,6 @@ GenSourceCode.prototype.apply = function (compiler) {
                          const buildOptions = extensionBuild()
                          gensrcExtension(file,buildOptions)
                          }*/
-
 
 
                         if (fs.existsSync(EXTENSION_PATH + file + '/client.js')) {
@@ -113,8 +111,6 @@ GenSourceCode.prototype.apply = function (compiler) {
 }
 
 
-
-
 function gensrcUi() {
 
 
@@ -131,8 +127,8 @@ function gensrcUi() {
 
         APP_CONFIG.ui.forEach((ui) => {
             let gendirUiName = gendirUi
-            if( ui.name ){
-                gendirUiName +='/'+ui.name
+            if (ui.name) {
+                gendirUiName += '/' + ui.name
                 try {
                     fs.mkdirSync(gendirUiName)
                 } catch (err) {
@@ -189,7 +185,7 @@ function gensrcExtension(name, options) {
 
     const gendir = EXTENSION_PATH + name + '/' + GENSRC_PATH
     try {
-        deleteFolderRecursive( path.resolve(__dirname, gendir) )
+        deleteFolderRecursive(path.resolve(__dirname, gendir))
         fs.mkdirSync(gendir)
     } catch (err) {
         if (err.code !== 'EEXIST') throw err
@@ -197,8 +193,10 @@ function gensrcExtension(name, options) {
 
     if (options && options.types) {
 
-        let schema = GENSRC_HEADER+'export default `\n'
-        let resolver = GENSRC_HEADER+`import {pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
+        const coreTypes = ['String', 'Int', 'ID']
+
+        let schema = GENSRC_HEADER + 'export default `\n'
+        let resolver = GENSRC_HEADER + `import {pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
         resolver += `import GenericResolver from 'api/resolver/generic/genericResolver'\n\nexport default db => ({\n`
         options.types.forEach((type) => {
             const nameStartLower = type.name.charAt(0).toLowerCase() + type.name.slice(1)
@@ -209,23 +207,34 @@ function gensrcExtension(name, options) {
 
             type.fields.forEach((field) => {
                 const type = (field.type || 'String')
-                const fieldPair = field.name + ':' + type
-                if (type.indexOf('[') < 0) {
-                    if (mutationFields !== '') mutationFields += ','
-                    if (resolverFields !== '') resolverFields += ','
+                let refType = type
 
-                    mutationFields += fieldPair
-                    resolverFields += `'${field.name}'`
+                let multi = false
+                if (type.indexOf('[') >= 0) {
+                    multi = true
+                    refType = refType.replace('[','').replace(']','')
                 }
-                schema += '\t'+fieldPair + '\n'
+
+                if (coreTypes.indexOf(type) < 0) {
+                    // it might be a reference so we only need to store the ID
+                    refType = 'ID'
+                }
+
+                if (mutationFields !== '') mutationFields += ','
+                if (resolverFields !== '') resolverFields += ','
+
+                mutationFields += field.name + ':' + (multi?'[':'') + refType +(multi?']':'')
+                resolverFields += `'${field.name}'`
+
+                schema += '\t' + field.name + ':' + type + '\n'
             })
 
             schema += '}\n\n'
 
 
-            schema += 'type ' + type.name + 'Result {\n\tresults: [' + type.name + ']\n\tpage: Int\n\tlimit: Int\n\ttotal: Int\n}\n\n'
+            schema += 'type ' + type.name + 'Result {\n\tresults: [' + type.name + ']\n\toffset: Int\n\tlimit: Int\n\ttotal: Int\n}\n\n'
 
-            schema += 'type Query {\n\t' + nameStartLower + '(sort: String, limit: Int=10, page: Int=0, filter: String): ' + type.name + 'Result\n}\n\n'
+            schema += 'type Query {\n\t' + nameStartLower + 's(sort: String, limit: Int=10, offset: Int=0, page: Int=0, filter: String): ' + type.name + 'Result\n}\n\n'
 
 
             schema += 'type Mutation {\n'
@@ -238,11 +247,11 @@ function gensrcExtension(name, options) {
 
 
             schema += 'type Subscription {\n'
-            schema += '    subscribe'+type.name+': '+type.name+'SubscribeResult\n'
+            schema += '    subscribe' + type.name + ': ' + type.name + 'SubscribeResult\n'
             schema += '}\n\n'
 
-            resolver += `   ${nameStartLower}: async ({sort, limit, page, filter}, {context}) => {
-        return await GenericResolver.entities(db, context, '${type.name}', [${resolverFields}], {limit, page, filter, sort})
+            resolver += `   ${nameStartLower}s: async ({sort, limit, offset, page, filter}, {context}) => {
+        return await GenericResolver.entities(db, context, '${type.name}', [${resolverFields}], {limit, offset, page, filter, sort})
     },
     create${type.name}: async ({...rest}, {context}) => {
         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:{...rest}}})
@@ -286,23 +295,20 @@ function gensrcExtension(name, options) {
 
 }
 
-const deleteFolderRecursive = function(path) {
+const deleteFolderRecursive = function (path) {
     if (fs.existsSync(path)) {
-        fs.readdirSync(path).forEach(function(file, index){
+        fs.readdirSync(path).forEach(function (file, index) {
             var curPath = path + "/" + file
             if (fs.lstatSync(curPath).isDirectory()) { // recurse
                 deleteFolderRecursive(curPath)
             } else { // delete file
-                console.log('delete file '+curPath)
+                console.log('delete file ' + curPath)
                 fs.unlinkSync(curPath)
             }
         });
         fs.rmdirSync(path)
     }
 }
-
-
-
 
 
 module.exports = GenSourceCode

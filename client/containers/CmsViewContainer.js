@@ -271,7 +271,7 @@ class CmsViewContainer extends React.Component {
             content = <DrawerLayout sidebar={sidebar()}
                                  drawerSize="large"
                                  toolbarRight={
-                                     <Button dense color="inherit" onClick={e => {
+                                     <Button size="small" color="inherit" onClick={e => {
                                          this.props.history.push(ADMIN_BASE_URL + '/cms')
                                      }}>Back</Button>
                                  }

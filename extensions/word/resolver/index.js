@@ -9,8 +9,8 @@ export default db => ({
         const res = (await translate(text, {to: toIso, from: fromIso}))
         return {text: res.text, fromIso: res.from.language.iso, toIso}
     },
-    words: async ({sort, limit, offset, filter}, {context}) => {
-        return await GenericResolver.entities(db, context, 'Word', ['en', 'de'], {limit, offset, filter, sort})
+    words: async ({sort, limit, offset, page, filter}, {context}) => {
+        return await GenericResolver.entities(db, context, 'Word', ['en', 'de'], {limit, offset, page, filter, sort})
     },
     createWord: async ({en, de}, {context}) => {
         return await GenericResolver.createEnity(db, context, 'Word', {en, de})

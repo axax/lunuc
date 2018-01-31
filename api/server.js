@@ -11,20 +11,9 @@ import {auth} from './auth'
 import {formatError} from './error'
 import {subscriptionManager} from './subscription'
 import path from 'path'
-import fs from 'fs'
-import formidable from 'formidable'
-import {ObjectId} from 'mongodb'
-
+import handleUpload from './upload'
 
 const PORT = (process.env.PORT || 3000)
-
-
-// Build dir
-const BUILD_DIR = path.join(__dirname, '../build')
-
-// location to save uploaded files
-const UPLOAD_DIR = BUILD_DIR + '/uploads'
-
 
 export const start = (done) => {
 
@@ -50,63 +39,7 @@ export const start = (done) => {
 
             // upload
             // maybe move file upload to another server
-            app.use('/graphql/upload', (req, res) => {
-
-                /* Process the uploads */
-                if (req.method.toLowerCase() == 'post') {
-                    const form = new formidable.IncomingForm()
-
-                    const fileIds = []
-
-                    // specify that we want to allow the user to upload multiple files in a single request
-                    //form.multiples = true
-
-
-                    res.writeHead(200, {'content-type': 'application/json'})
-
-
-                    // every time a file has been uploaded successfully,
-                    // rename it to it's orignal name
-                    form.on('file', function (field, file) {
-                        //console.log(file.path, path.join(UPLOAD_DIR, file.name))
-                        const uid = ObjectId()
-                        fileIds.push(uid.toString())
-                        fs.rename(file.path, path.join(UPLOAD_DIR, uid.toString()))
-                    })
-
-                    // log any errors that occur
-                    form.on('error', function (err) {
-                        res.end('{"status":"error","message":"'+err.message+'"}')
-                    })
-                    form.on('aborted', function () {
-                        res.end('{"status":"aborted","message":"Upload was aborted"}')
-                    })
-
-                    form.on('progress', function (bytesReceived, bytesExpected) {
-                        //self.emit('progess', bytesReceived, bytesExpected)
-
-                        var percent = (bytesReceived / bytesExpected * 100) | 0;
-                        process.stdout.write('Uploading: %' + percent + '\r');
-                    })
-
-
-                    // once all the files have been uploaded, send a response to the client
-                    form.on('end', function () {
-                        res.end('{"status":"success","ids":'+JSON.stringify(fileIds)+'}')
-                    })
-
-                    // parse the incoming request containing the form data
-                    form.parse(req)
-
-                    /*res.writeHead(200, {'content-type': 'text/plain'});
-                     res.write('received upload:\n\n');
-                     res.end();*/
-
-
-                }
-
-
-            })
+            app.use('/graphql/upload', handleUpload(db))
 
             app.use('/graphql', graphqlHTTP((req) => ({
                     schema,

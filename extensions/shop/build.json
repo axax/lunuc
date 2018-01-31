@@ -16,7 +16,7 @@
         },
         {
           "name": "image",
-          "uitype": "image"
+          "type": "Media"
         },
         {
           "name": "categories",

@@ -4,6 +4,7 @@ import {notificationResolver} from './notification'
 import {keyvalueResolver} from './keyvalue'
 import {cmsResolver} from './cms'
 import {systemResolver} from './system'
+import {mediaResolver} from './media'
 
 import Hook from '../../util/hook'
 
@@ -20,7 +21,8 @@ export const resolver = (db) => {
         ...notificationResolver(db),
         ...keyvalueResolver(db),
         ...cmsResolver(db),
-        ...systemResolver(db)
+        ...systemResolver(db),
+        ...mediaResolver(db)
     }
 
     Hook.call('resolver', {db, resolvers})

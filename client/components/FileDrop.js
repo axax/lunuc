@@ -2,10 +2,13 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {Button, TextField, withStyles, FileUploadIcon, Typography, LinearProgress} from 'ui/admin'
 import classNames from 'classnames'
+import Util from 'client/util'
 
-
-const UPLOAD_URL = '/graphql/upload'
-const MAX_FILE_SIZE_MB = 10
+const UPLOAD_URL = '/graphql/upload',
+ MAX_FILE_SIZE_MB = 10,
+IMAGE_QUALITY = 0.6,
+IMAGE_MAX_WIDTH = 1000,
+IMAGE_MAX_HEIGHT = 1000
 
 const styles = theme => ({
     uploader: {
@@ -132,10 +135,10 @@ class FileDrop extends React.Component {
             { !uploading &&
             <Typography type="caption">Drop files here, or click to select files to upload.</Typography> }
 
-            { errorMessage && <Typography type="caption" color="error">{errorMessage}</Typography> }
-            { successMessage && <Typography type="caption" color="secondary">{successMessage}</Typography> }
+            { errorMessage && <Typography type="body2" color="error">{errorMessage}</Typography> }
+            { successMessage && <Typography type="body2" color="primary">{successMessage}</Typography> }
 
-            { uploading && <Typography type="caption">uploading data...</Typography> }
+            { uploading && <Typography type="body2">uploading data...</Typography> }
             { uploading && <LinearProgress className={classes.progress} mode="determinate" value={uploadCompleted}/> }
 
         </div>
@@ -186,19 +189,17 @@ class FileDrop extends React.Component {
         oriImg.onload = () => {
 
 
-            const MAX_WIDTH = 2800
-            const MAX_HEIGHT = 2600
             let width = oriImg.width, height = oriImg.height
 
             if (width > height) {
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width
-                    width = MAX_WIDTH
+                if (width > IMAGE_MAX_WIDTH) {
+                    height *= IMAGE_MAX_WIDTH / width
+                    width = IMAGE_MAX_WIDTH
                 }
             } else {
-                if (height > MAX_HEIGHT) {
-                    width *= MAX_HEIGHT / height
-                    height = MAX_HEIGHT
+                if (height > IMAGE_MAX_HEIGHT) {
+                    width *= IMAGE_MAX_HEIGHT / height
+                    height = IMAGE_MAX_HEIGHT
                 }
             }
 
@@ -216,7 +217,7 @@ class FileDrop extends React.Component {
             ctx.fillText(file.name, 5, height - 8)
 
 
-            const dataUrl = canvas.toDataURL(file.type)
+            const dataUrl = canvas.toDataURL('image/jpeg' /*file.type*/,IMAGE_QUALITY)
 
 
             //const blobData = this.dataURLToBlob(dataUrl) // as png?
@@ -245,6 +246,7 @@ class FileDrop extends React.Component {
 
 
                     xhr.open('POST', UPLOAD_URL, true)
+                    xhr.setRequestHeader('Authorization', Util.getAuthToken())
 
                     const fd = new FormData();
 

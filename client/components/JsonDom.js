@@ -99,12 +99,11 @@ class JsonDom extends React.Component {
             //console.log('reset scope')
         }
         if (this.props.template !== props.template) {
-            this.json = null
-            this.jsonRaw = null
-            this.componentRefs = {}
+            this.resetTemplate()
             //console.log('reset template')
         }
         if (this.props.script !== props.script) {
+            this.resetTemplate()
             this.scriptResult = null
             this.jsOnStack = []
             this.runScript = true
@@ -128,6 +127,12 @@ class JsonDom extends React.Component {
 
     componentWillUpdate(props) {
         this.parseError = null
+    }
+
+    resetTemplate(){
+        this.json = null
+        this.jsonRaw = null
+        this.componentRefs = {}
     }
 
     emitChange(id, v, save) {

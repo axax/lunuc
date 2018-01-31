@@ -8,7 +8,7 @@ import {getOperationAST} from 'graphql'
 import {OfflineCache} from './cache'
 import {addError} from 'client/actions/ErrorHandlerAction'
 import {setNetworkStatus} from 'client/actions/NetworkStatusAction'
-
+import Util from '../util'
 
 const httpUri = `${window.location.protocol}//${window.location.hostname}:${window.location.port}/graphql`
 const wsUri = (window.location.protocol === 'https:' ? 'wss' : 'ws') + `://${window.location.hostname}:${window.location.port}/ws`
@@ -21,11 +21,9 @@ export function configureMiddleware(store) {
 
     // create a middleware with the authentication
     const authLink = setContext((req) => {
-        // get the authentication token from local storage if it exists
-        const token = localStorage.getItem('token')
         return {
             headers: {
-                authorization: token ? `JWT ${token}` : null,
+                authorization: Util.getAuthToken()
             }
         }
     })
@@ -88,10 +86,7 @@ export function configureMiddleware(store) {
     // create my middleware using the applyMiddleware method from subscriptions-transport-ws
     const subscriptionMiddleware = {
         applyMiddleware (options, next) {
-            // get the authentication token from local storage if it exists
-            const token = localStorage.getItem('token')
-
-            options.auth = token ? `JWT ${token}` : null
+            options.auth = Util.getAuthToken()
             next()
         }
     }

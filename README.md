@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/axax/lunuc.svg?branch=master)](https://travis-ci.org/axax/lunuc)
 
-__This is a boilerplate / app template. A full-stack setup to build progressive web apps and to play around with the latest web technologies.__
+__This is a boilerplate / app template / framework. A full-stack setup to build progressive web apps and to play around with the latest web technologies.__
 
 This demo app is also deployed on heroku 
 https://lunuc.herokuapp.com/
@@ -15,7 +15,7 @@ https://lunuc.herokuapp.com/
 * Webpack bundler
 * Jest for testing
 * Eslint for code quality
-* mongodb
+* Mongodb
 * Database-as-a-Service by mlap.com
 * GraphQL API
 * Express Server

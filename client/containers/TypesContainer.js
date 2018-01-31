@@ -23,8 +23,10 @@ import Util from 'client/util'
 import GenericForm from 'client/components/generic/GenericForm'
 import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
+import Hook from 'util/hook'
 
 const DEFAULT_RESULT_LIMIT = 10
+const COMMON_TYPE = ['String', 'Int', 'ID']
 
 class TypesContainer extends React.Component {
 
@@ -32,6 +34,9 @@ class TypesContainer extends React.Component {
     queries = {}
     pageParams = null
     createEditForm = null
+    typeFormFields = {}
+    typeColumns = {}
+    typesToSelect = []
 
     constructor(props) {
         super(props)
@@ -45,6 +50,11 @@ class TypesContainer extends React.Component {
             createDataDialog: false
         }
 
+        // prepare list with types for select box
+        Object.keys(this.types).map((k) => {
+            const t = this.types[k]
+            this.typesToSelect.push({value: k, name: k, hint: t.usedBy && 'used by ' + t.usedBy.join(',')})
+        })
 
     }
 
@@ -67,6 +77,7 @@ class TypesContainer extends React.Component {
         const startTime = new Date()
         const {data} = this.state
         const {type, page, limit, sort, filter} = this.pageParams
+        const formFields = this.getFormFields(type)
 
         if (!this.types[type]) return <BaseLayout><Typography type="subheading" color="error">Type {type} does not
             exist.
@@ -75,7 +86,7 @@ class TypesContainer extends React.Component {
         let tableWithResults
         if (data) {
 
-            const fields = this.types[type].fields, columns = this.createTableColumns(fields), dataSource = []
+            const fields = this.types[type].fields, columns = this.getTableColumns(type), dataSource = []
 
             if (data.results) {
                 data.results.forEach(item => {
@@ -85,7 +96,8 @@ class TypesContainer extends React.Component {
                         if (!field.type || field.type.indexOf('[') < 0) {
                             if (field.uitype === 'image') {
                                 dynamic[field.name] =
-                                    <img style={{height: '40px'}} src={item[field.name]}/>
+                                    <img style={{height: '40px'}}
+                                         src={'http://localhost:8080/build/uploads/' + item[field.name]}/>
                             } else {
                                 dynamic[field.name] =
                                     <span onBlur={(e) => this.handleDataChange.bind(this)(e, item, field.name)}
@@ -117,16 +129,6 @@ class TypesContainer extends React.Component {
                              onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
         }
 
-        const formFields = {}
-        this.types[type].fields.map(field => {
-            formFields[field.name] = {placeholder: `Enter ${field.name}`, type: field.uitype}
-        })
-
-        const selectTypes = []
-        Object.keys(this.types).map((k) => {
-            const type = this.types[k]
-            selectTypes.push({value: k, name: k, hint: 'used by ' + type.usedBy.join(',')})
-        })
 
         const content = <BaseLayout>
             <Typography type="display2" gutterBottom>Types</Typography>
@@ -136,10 +138,8 @@ class TypesContainer extends React.Component {
                     <SimpleSelect
                         value={type}
                         onChange={this.handleTypeChange}
-                        items={selectTypes}
+                        items={this.typesToSelect}
                     />
-
-
                 </Col>
                 <Col md={3} align="right">
                     <SimpleMenu items={[{
@@ -208,14 +208,33 @@ class TypesContainer extends React.Component {
         return content
     }
 
-    createTableColumns(fields) {
-        const columns = []
-        fields.forEach(field => {
+
+    getFormFields(type) {
+        if (this.typeFormFields[type]) return this.typeFormFields[type]
+
+        this.typeFormFields[type] = {}
+        this.types[type].fields.map(field => {
+            let uitype = field.uitype
+            // if uitype is not defined and it is not a COMMON_TYPE it might be a reference so set uitype to type_picker
+            if (!uitype && field.type && COMMON_TYPE.indexOf(field.type) < 0) {
+                uitype = 'type_picker'
+            }
+            this.typeFormFields[type][field.name] = {placeholder: `Enter ${field.name}`, uitype, data: {type:field.type}}
+        })
+
+        return this.typeFormFields[type]
+    }
+
+    getTableColumns(type) {
+        if (this.typeColumns[type]) return this.typeColumns[type]
+
+        this.typeColumns[type] = []
+        this.types[type].fields.forEach(field => {
             if (!field.type || field.type.indexOf('[') < 0) {
-                columns.push({title: field.name, dataIndex: field.name, sortable: true})
+                this.typeColumns[type].push({title: field.name, dataIndex: field.name, sortable: true})
             }
         })
-        columns.push({
+        this.typeColumns[type].push({
                 title: 'User',
                 dataIndex: 'user'
             },
@@ -227,7 +246,7 @@ class TypesContainer extends React.Component {
                 title: 'Actions',
                 dataIndex: 'action'
             })
-        return columns
+        return this.typeColumns[type]
     }
 
     determinPageParams(props) {
@@ -252,20 +271,38 @@ class TypesContainer extends React.Component {
         return this.queries[type]
     }
 
+    getStoreKey(type) {
+        return type.charAt(0).toLowerCase() + type.slice(1) + 's'
+    }
+
     getData({type, page, limit, sort, filter}) {
         const {client} = this.props
-
         if (type) {
             const queries = this.getQueries(type)
+
             if (queries) {
-                const typeStartLower = type.charAt(0).toLowerCase() + type.slice(1)
+                const storeKey = this.getStoreKey(type),
+                    variables= {limit, page, sort, filter},
+                    gqlQuery = gql(queries.query)
+                try {
+                    const storeData = client.readQuery({
+                        query: gqlQuery,
+                        variables: variables
+                    })
+                    if (storeData && storeData[storeKey]) {
+                        // oh data are available in cache. show them first
+                        this.setState({data: storeData[storeKey]})
+                    }
+                }catch(e){}
+
+
                 client.query({
                     fetchPolicy: 'network-only',
                     forceFetch: true,
-                    query: gql(queries.query),
-                    variables: {limit, page, sort, filter}
+                    query: gqlQuery,
+                    variables: variables
                 }).then(response => {
-                    this.setState({data: response.data[typeStartLower]})
+                    this.setState({data: response.data[storeKey]})
                 }).catch(error => {
                     console.log(error.message)
 
@@ -280,9 +317,7 @@ class TypesContainer extends React.Component {
 
 
         if (type) {
-
             const queries = this.getQueries(type)
-            const typeStartLower = type.charAt(0).toLowerCase() + type.slice(1)
 
             client.mutate({
                 mutation: gql(queries.create),
@@ -291,28 +326,29 @@ class TypesContainer extends React.Component {
                 },
                 update: (store, {data}) => {
                     console.log('create', data['create' + type])
-                    const gqlQuery = gql(queries.query)
+                    const gqlQuery = gql(queries.query),
+                        storeKey = this.getStoreKey(type)
 
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
                         variables: {page, limit, sort, filter}
                     })
-                    if (storeData[typeStartLower]) {
-                        if (!storeData[typeStartLower].results) {
-                            storeData[typeStartLower].results = []
+                    if (storeData[storeKey]) {
+                        if (!storeData[storeKey].results) {
+                            storeData[storeKey].results = []
                         }
 
                         if (data['create' + type]) {
-                            storeData[typeStartLower].results.unshift(data['create' + type])
-                            storeData[typeStartLower].total += 1
+                            storeData[storeKey].results.unshift(data['create' + type])
+                            storeData[storeKey].total += 1
                         }
                         store.writeQuery({
                             query: gqlQuery,
                             variables: {page, limit, sort, filter},
                             data: storeData
                         })
-                        this.setState({data: storeData[typeStartLower]})
+                        this.setState({data: storeData[storeKey]})
                     }
 
                 },
@@ -326,7 +362,6 @@ class TypesContainer extends React.Component {
         if (type) {
 
             const queries = this.getQueries(type)
-            const typeStartLower = type.charAt(0).toLowerCase() + type.slice(1)
 
             client.mutate({
                 mutation: gql(queries.update),
@@ -336,7 +371,9 @@ class TypesContainer extends React.Component {
                     [key]: input[key]
                 },
                 update: (store, {data}) => {
-                    const gqlQuery = gql(queries.query)
+                    const gqlQuery = gql(queries.query),
+                        storeKey = this.getStoreKey(type)
+
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
@@ -344,8 +381,8 @@ class TypesContainer extends React.Component {
                     })
 
 
-                    if (storeData[typeStartLower]) {
-                        const refResults = storeData[typeStartLower].results
+                    if (storeData[storeKey]) {
+                        const refResults = storeData[storeKey].results
 
                         const idx = refResults.findIndex(x => x._id === data['update' + type]._id)
                         if (idx > -1) {
@@ -355,7 +392,7 @@ class TypesContainer extends React.Component {
                                 variables: {page, limit, sort, filter},
                                 data: storeData
                             })
-                            this.setState({data: storeData[typeStartLower]})
+                            this.setState({data: storeData[storeKey]})
 
                         }
                     }
@@ -371,8 +408,8 @@ class TypesContainer extends React.Component {
 
         if (type) {
 
-            const queries = this.getQueries(type)
-            const typeStartLower = type.charAt(0).toLowerCase() + type.slice(1)
+            const queries = this.getQueries(type),
+                storeKey = this.getStoreKey(type)
 
             client.mutate({
                 mutation: gql(queries.delete),
@@ -388,8 +425,8 @@ class TypesContainer extends React.Component {
                         variables: {page, limit, sort, filter}
                     })
 
-                    if (storeData[typeStartLower]) {
-                        const refResults = storeData[typeStartLower].results
+                    if (storeData[storeKey]) {
+                        const refResults = storeData[storeKey].results
 
                         const idx = refResults.findIndex(x => x._id === data['delete' + type]._id)
                         if (idx > -1) {
@@ -397,14 +434,14 @@ class TypesContainer extends React.Component {
                                 refResults[idx].status = 'deleting'
                             } else {
                                 refResults.splice(idx, 1)
-                                storeData[typeStartLower].total -= 1
+                                storeData[storeKey].total -= 1
                             }
                             store.writeQuery({
                                 query: gqlQuery,
                                 variables: {page, limit, sort, filter},
                                 data: storeData
                             })
-                            this.setState({data: storeData[typeStartLower]})
+                            this.setState({data: storeData[storeKey]})
                         }
                     }
 
@@ -438,8 +475,9 @@ class TypesContainer extends React.Component {
 
 
     handleTypeChange = event => {
-        this.setState({data: null})
-        this.props.history.push(`${ADMIN_BASE_URL}/types/${event.target.value}`)
+        if (event.target.value !== this.pageParams.type) {
+            this.props.history.push(`${ADMIN_BASE_URL}/types/${event.target.value}`)
+        }
     }
 
     handleChangePage = (page) => {
@@ -460,8 +498,6 @@ class TypesContainer extends React.Component {
 
     handleDataChange = (event, data, key) => {
         const t = event.target.innerText.trim()
-        console.log(key, t)
-        console.log(key, data[key])
         if (t !== data[key]) {
             this.updateData(this.pageParams, {...data, [key]: t}, key)
         }
@@ -509,47 +545,66 @@ const buildQueries = (typeName, types) => {
 
     let insertParams = '', insertQuery = ''
 
+
     if (fields) {
         fields.map(e => {
-            if (!e.type || e.type.indexOf('[') < 0) {
+            if (!e.type || COMMON_TYPE.indexOf(e.type) >= 0) {
                 if (insertParams !== '') {
                     insertParams += ', '
                     insertQuery += ', '
                 }
-                insertParams += '$' + e.name + ': ' + (e.type || 'String')
+                insertParams += '$' + e.name + ': ' + (e.type || 'String') + (e.required ? '!' : '')
                 insertQuery += e.name + ': ' + '$' + e.name
                 query += ' ' + e.name
             }
         })
     }
-    result.query = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){
-                ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit page total results{${query}}}}`
+    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String){
+                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{${query}}}}`
 
     result.create = `mutation create${name}(${insertParams}){create${name}(${insertQuery}){${query}}}`
     result.update = `mutation update${name}($_id: ID!,${insertParams}){update${name}(_id:$_id,${insertQuery}){${query}}}`
     result.delete = `mutation delete${name}($_id: ID!){delete${name}(_id: $_id){_id status}}`
-
     return result
 }
 
 const prepareTypes = () => {
-    const results = {}
+    const types = {}
     for (const extensionName in extensions) {
         const extension = extensions[extensionName]
         if (extension.options && extension.options.types) {
 
             extension.options.types.forEach(type => {
 
-                results[type.name] = Object.assign({}, type)
+                types[type.name] = Object.assign({}, type)
 
                 // add extension name so we know by which extension the type is used
-                if (!results[type.name].usedBy) {
-                    results[type.name].usedBy = []
+                if (!types[type.name].usedBy) {
+                    types[type.name].usedBy = []
                 }
-                results[type.name].usedBy.push(extensionName)
+                types[type.name].usedBy.push(extensionName)
             })
 
         }
     }
-    return results
+    Hook.call('Types', {types})
+
+    return types
 }
+
+
+Hook.on('Types', ({types}) => {
+    types.Media = {
+        "name": "Media",
+        "usedBy": ["Media extension"],
+        "fields": [
+            {
+                "name": "name"
+            },
+            {
+                "name": "src",
+                "uitype": "image"
+            }
+        ]
+    }
+})

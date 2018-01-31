@@ -54,5 +54,6 @@
   ],
   "apollo_cache": true,
   "debug": true,
-  "admin_base_url": "/admin"
+  "admin_base_url": "/admin",
+  "image_base_url": "/build/uploads"
 }

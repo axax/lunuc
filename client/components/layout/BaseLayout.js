@@ -39,13 +39,13 @@ class BaseLayout extends React.Component {
                                        menuItems={this.menuItems}
                                        headerRight={
                                            isAuthenticated ?
-                                               <Button color="inherit" dense onClick={() => {
+                                               <Button color="inherit" size="small" onClick={() => {
                                                    localStorage.removeItem('token')
                                                    userActions.setUser(null, false)
                                                    history.push('/')
                                                }}>Logout</Button>
 
-                                               : <Button color="inherit" dense
+                                               : <Button color="inherit" size="small"
                                                          onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
                                        }>
 
