@@ -20,7 +20,8 @@
         },
         {
           "name": "categories",
-          "type": "[ProductCategory]"
+          "type": "ProductCategory",
+          "multi": true
         }
       ]
     },

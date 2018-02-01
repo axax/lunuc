@@ -80,19 +80,20 @@ class GenericForm extends React.Component {
             <form>
                 {
                     Object.keys(this.props.fields).map((k) => {
-                        const o = this.props.fields[k]
+                        const o = this.props.fields[k],
+                        value = this.state.fields[k]
                         const uitype = o.uitype || 'text'
-
                         if (uitype === 'image') {
                             return <FileDrop key={k}/>
                         } else if (uitype === 'type_picker') {
-                            return <TypePicker key={k} type={o.data.type} placeholder={o.placeholder}/>
+                            return <TypePicker value={value} onChange={this.handleInputChange} key={k}
+                                               type={o.data.type} placeholder={o.placeholder}/>
                         } else if (uitype === 'select') {
 
                             //TODO: implement
                         } else {
                             return <TextField key={k} fullWidth={o.fullWidth} type={uitype} placeholder={o.placeholder}
-                                              value={this.state.fields[k]}
+                                              value={value}
                                               name={k}
                                               onChange={this.handleInputChange}/>
                         }

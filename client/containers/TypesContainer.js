@@ -26,7 +26,7 @@ import {ADMIN_BASE_URL} from 'gen/config'
 import Hook from 'util/hook'
 
 const DEFAULT_RESULT_LIMIT = 10
-const COMMON_TYPE = ['String', 'Int', 'ID']
+const COMMON_MONGO_TYPE = ['String', 'Int', 'ID']
 
 class TypesContainer extends React.Component {
 
@@ -93,17 +93,18 @@ class TypesContainer extends React.Component {
                     const dynamic = {}
 
                     fields.forEach(field => {
-                        if (!field.type || field.type.indexOf('[') < 0) {
-                            if (field.uitype === 'image') {
-                                dynamic[field.name] =
-                                    <img style={{height: '40px'}}
-                                         src={'http://localhost:8080/build/uploads/' + item[field.name]}/>
-                            } else {
-                                dynamic[field.name] =
-                                    <span onBlur={(e) => this.handleDataChange.bind(this)(e, item, field.name)}
-                                          suppressContentEditableWarning contentEditable>{item[field.name]}</span>
-                            }
-
+                        let v = item[field.name]
+                        if( !v || v.constructor === Object){
+                            v = '"'+field.name+'" - '+v
+                        }
+                        if (field.uitype === 'image') {
+                            dynamic[field.name] =
+                                <img style={{height: '40px'}}
+                                     src={'http://localhost:8080/build/uploads/' + v}/>
+                        } else {
+                            dynamic[field.name] =
+                                <span onBlur={(e) => this.handleDataChange.bind(this)(e, item, field.name)}
+                                      suppressContentEditableWarning contentEditable>{v}</span>
                         }
                     })
                     dataSource.push({
@@ -216,7 +217,7 @@ class TypesContainer extends React.Component {
         this.types[type].fields.map(field => {
             let uitype = field.uitype
             // if uitype is not defined and it is not a COMMON_TYPE it might be a reference so set uitype to type_picker
-            if (!uitype && field.type && COMMON_TYPE.indexOf(field.type) < 0) {
+            if (!uitype && field.type && COMMON_MONGO_TYPE.indexOf(field.type) < 0) {
                 uitype = 'type_picker'
             }
             this.typeFormFields[type][field.name] = {placeholder: `Enter ${field.name}`, uitype, data: {type:field.type}}
@@ -230,9 +231,7 @@ class TypesContainer extends React.Component {
 
         this.typeColumns[type] = []
         this.types[type].fields.forEach(field => {
-            if (!field.type || field.type.indexOf('[') < 0) {
-                this.typeColumns[type].push({title: field.name, dataIndex: field.name, sortable: true})
-            }
+            this.typeColumns[type].push({title: field.name, dataIndex: field.name, sortable: true})
         })
         this.typeColumns[type].push({
                 title: 'User',
@@ -493,7 +492,8 @@ class TypesContainer extends React.Component {
 
 
     handleAddDataClick = (input) => {
-        this.createData(this.pageParams, input)
+        console.log(input)
+       // this.createData(this.pageParams, input)
     }
 
     handleDataChange = (event, data, key) => {
@@ -547,18 +547,25 @@ const buildQueries = (typeName, types) => {
 
 
     if (fields) {
-        fields.map(e => {
-            if (!e.type || COMMON_TYPE.indexOf(e.type) >= 0) {
-                if (insertParams !== '') {
-                    insertParams += ', '
-                    updateParams += ', '
-                    insertUpdateQuery += ', '
-                }
-                insertParams += '$' + e.name + ': ' + (e.type || 'String') + (e.required ? '!' : '')
-                updateParams += '$' + e.name + ': ' + (e.type || 'String')
-                insertUpdateQuery += e.name + ': ' + '$' + e.name
-                query += ' ' + e.name
+        fields.map(({name,type,required,multi})=> {
+            if (insertParams !== '') {
+                insertParams += ', '
+                updateParams += ', '
+                insertUpdateQuery += ', '
             }
+
+            let t = type || 'String'
+
+            if( COMMON_MONGO_TYPE.indexOf(t)<0 ){
+                t += (multi?'[':'')+'ID'+(multi?']':'')
+                query += ' ' + name+'{name}'
+            }else{
+                query += ' ' + name
+            }
+
+            insertParams += '$' + name + ': ' + t + (required ? '!' : '')
+            updateParams += '$' + name + ': ' + t
+            insertUpdateQuery += name + ': ' + '$' + name
         })
     }
     result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String){
@@ -598,7 +605,7 @@ const prepareTypes = () => {
 Hook.on('Types', ({types}) => {
     types.Media = {
         "name": "Media",
-        "usedBy": ["Media extension"],
+        "usedBy": ["core"],
         "fields": [
             {
                 "name": "name"

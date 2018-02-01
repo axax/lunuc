@@ -84,7 +84,7 @@ class CmsViewContainer extends React.Component {
         subscriptions.forEach(subs => {
             if (!this.registeredSubscriptions[subs]) {
                 const qqlSubscribe = gql`subscription{
-                subscribe${subs}{action, data{_id name, price, description, image} }
+                subscribe${subs}{action, data{_id name price description image} }
               }`
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,
