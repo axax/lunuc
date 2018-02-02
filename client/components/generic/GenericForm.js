@@ -40,7 +40,7 @@ class GenericForm extends React.Component {
     getInitalState = (props) => {
         const initalState = {fields: {}, isValid: true}
         Object.keys(props.fields).map((k) => {
-            initalState.fields[k] = props.fields[k].value || ''
+            initalState.fields[k] = props.fields[k].value===undefined?null:props.fields[k].value
         })
         return initalState
     }
@@ -59,7 +59,6 @@ class GenericForm extends React.Component {
         this.setState((prevState) => {
             const newState = Object.assign({}, {fields: {}}, prevState)
             newState.fields[name] = value
-
             if (this.props.onChange) {
                 this.props.onChange({name, value})
             }
@@ -87,13 +86,15 @@ class GenericForm extends React.Component {
                             return <FileDrop key={k}/>
                         } else if (uitype === 'type_picker') {
                             return <TypePicker value={value} onChange={this.handleInputChange} key={k}
-                                               type={o.data.type} placeholder={o.placeholder}/>
+                                               name={k}
+                                               multi={o.multi}
+                                               type={o.type} placeholder={o.placeholder}/>
                         } else if (uitype === 'select') {
 
                             //TODO: implement
                         } else {
                             return <TextField key={k} fullWidth={o.fullWidth} type={uitype} placeholder={o.placeholder}
-                                              value={value}
+                                              value={value || ''}
                                               name={k}
                                               onChange={this.handleInputChange}/>
                         }

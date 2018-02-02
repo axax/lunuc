@@ -26,7 +26,6 @@ import {ADMIN_BASE_URL} from 'gen/config'
 import Hook from 'util/hook'
 
 const DEFAULT_RESULT_LIMIT = 10
-const COMMON_MONGO_TYPE = ['String', 'Int', 'ID']
 
 class TypesContainer extends React.Component {
 
@@ -91,13 +90,17 @@ class TypesContainer extends React.Component {
             if (data.results) {
                 data.results.forEach(item => {
                     const dynamic = {}
-
                     fields.forEach(field => {
                         let v = item[field.name]
-                        if( !v || v.constructor === Object){
-                            v = '"'+field.name+'" - '+v
-                        }
-                        if (field.uitype === 'image') {
+                        if( v === null || v=== undefined){
+                            dynamic[field.name] = ''
+                        }else if (field.reference) {
+                            if( v.constructor === Array ){
+                                dynamic[field.name] = v.reduce((s,i)=>s+(s!==''?', ':'')+i.name,'')
+                            }else{
+                                dynamic[field.name] = v.name
+                            }
+                        } else if (field.uitype === 'image') {
                             dynamic[field.name] =
                                 <img style={{height: '40px'}}
                                      src={'http://localhost:8080/build/uploads/' + v}/>
@@ -216,11 +219,16 @@ class TypesContainer extends React.Component {
         this.typeFormFields[type] = {}
         this.types[type].fields.map(field => {
             let uitype = field.uitype
-            // if uitype is not defined and it is not a COMMON_TYPE it might be a reference so set uitype to type_picker
-            if (!uitype && field.type && COMMON_MONGO_TYPE.indexOf(field.type) < 0) {
+            // if uitype is not defined and if it is a reference to another type use type_picker
+            if (!uitype && field.reference) {
                 uitype = 'type_picker'
             }
-            this.typeFormFields[type][field.name] = {placeholder: `Enter ${field.name}`, uitype, data: {type:field.type}}
+            this.typeFormFields[type][field.name] = {
+                placeholder: `Enter ${field.name}`,
+                uitype,
+                multi: !!field.multi,
+                type: field.type
+            }
         })
 
         return this.typeFormFields[type]
@@ -281,7 +289,7 @@ class TypesContainer extends React.Component {
 
             if (queries) {
                 const storeKey = this.getStoreKey(type),
-                    variables= {limit, page, sort, filter},
+                    variables = {limit, page, sort, filter},
                     gqlQuery = gql(queries.query)
                 try {
                     const storeData = client.readQuery({
@@ -292,7 +300,8 @@ class TypesContainer extends React.Component {
                         // oh data are available in cache. show them first
                         this.setState({data: storeData[storeKey]})
                     }
-                }catch(e){}
+                } catch (e) {
+                }
 
 
                 client.query({
@@ -311,10 +320,8 @@ class TypesContainer extends React.Component {
         }
     }
 
-    createData({type, page, limit, sort, filter}, input) {
+    createData({type, page, limit, sort, filter}, input, optimisticInput) {
         const {client} = this.props
-
-
         if (type) {
             const queries = this.getQueries(type)
 
@@ -325,6 +332,9 @@ class TypesContainer extends React.Component {
                 },
                 update: (store, {data}) => {
                     console.log('create', data['create' + type])
+
+                    const freshData = {...data['create' + type],...optimisticInput}
+
                     const gqlQuery = gql(queries.query),
                         storeKey = this.getStoreKey(type)
 
@@ -338,8 +348,8 @@ class TypesContainer extends React.Component {
                             storeData[storeKey].results = []
                         }
 
-                        if (data['create' + type]) {
-                            storeData[storeKey].results.unshift(data['create' + type])
+                        if (freshData) {
+                            storeData[storeKey].results.unshift(freshData)
                             storeData[storeKey].total += 1
                         }
                         store.writeQuery({
@@ -492,8 +502,27 @@ class TypesContainer extends React.Component {
 
 
     handleAddDataClick = (input) => {
-        console.log(input)
-       // this.createData(this.pageParams, input)
+
+        // make sure if it is a reference only id gets passed as imput to craeteData
+        const ipt2 = {}
+        Object.keys(input).map(k => {
+            const item = input[k]
+            const {multi} = this.typeFormFields[this.pageParams.type][k]
+            if (item && item.constructor === Array) {
+                if (item.length > 0) {
+                    if (multi) {
+                        ipt2[k] = item.map(i => i._id)
+                    } else {
+                        ipt2[k] = item[0]._id
+                    }
+                } else {
+                    ipt2[k] = null
+                }
+            } else {
+                ipt2[k] = item
+            }
+        })
+        this.createData(this.pageParams, ipt2, input)
     }
 
     handleDataChange = (event, data, key) => {
@@ -542,12 +571,13 @@ const buildQueries = (typeName, types) => {
     const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
 
     let query = '_id status createdBy{_id username}'
+    let queryMutation = '_id status createdBy{_id username}'
 
     let insertParams = '', insertUpdateQuery = '', updateParams = ''
 
 
     if (fields) {
-        fields.map(({name,type,required,multi})=> {
+        fields.map(({name, type, required, multi, reference}) => {
             if (insertParams !== '') {
                 insertParams += ', '
                 updateParams += ', '
@@ -556,11 +586,14 @@ const buildQueries = (typeName, types) => {
 
             let t = type || 'String'
 
-            if( COMMON_MONGO_TYPE.indexOf(t)<0 ){
-                t += (multi?'[':'')+'ID'+(multi?']':'')
-                query += ' ' + name+'{name}'
-            }else{
+            if (reference) {
+                t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
+
+                // todo: field name might be different than name
+                query += ' ' + name + '{_id name}'
+            } else {
                 query += ' ' + name
+                queryMutation += ' ' + name
             }
 
             insertParams += '$' + name + ': ' + t + (required ? '!' : '')
@@ -571,8 +604,8 @@ const buildQueries = (typeName, types) => {
     result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String){
                 ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{${query}}}}`
 
-    result.create = `mutation create${name}(${insertParams}){create${name}(${insertUpdateQuery}){${query}}}`
-    result.update = `mutation update${name}($_id: ID!,${updateParams}){update${name}(_id:$_id,${insertUpdateQuery}){${query}}}`
+    result.create = `mutation create${name}(${insertParams}){create${name}(${insertUpdateQuery}){${queryMutation}}}`
+    result.update = `mutation update${name}($_id: ID!,${updateParams}){update${name}(_id:$_id,${insertUpdateQuery}){${queryMutation}}}`
     result.delete = `mutation delete${name}($_id: ID!){delete${name}(_id: $_id){_id status}}`
     return result
 }

@@ -7,6 +7,7 @@ const GenericResolver = {
 
         //Util.checkIfUserIsLoggedIn(context)
 
+
         let {limit, offset, page, match, filter, sort} = options
 
         if (!limit) {
@@ -15,42 +16,72 @@ const GenericResolver = {
 
         if (!offset) {
 
-            if( page ){
+            if (page) {
                 offset = (page - 1) * limit
-            }else{
+            } else {
                 offset = 0
             }
         }
 
         if (!match) {
+            // if not specific match is defined, only select items that belong to the current user
             match = {createdBy: ObjectId(context.id)}
         }
 
-        if( !sort ){
+        if (!sort) {
             sort = {_id: -1}
-        }else{
-            if( sort.constructor === String ){
+        } else {
+            if (sort.constructor === String) {
                 // sort looks like "field1 asc, field2 desc"
                 sort = sort.split(',').reduce((acc, val) => {
-                        const a = val.split(' ')
-                        return {...acc,[a[0]]:(a.length>1&&a[1].toLowerCase()=="desc"?-1:1)}
-                }, {} )
+                    const a = val.split(' ')
+                    return {...acc, [a[0]]: (a.length > 1 && a[1].toLowerCase() == "desc" ? -1 : 1)}
+                }, {})
             }
         }
 
+        const group = {}
+        const filterMatch = []
+        const lookups = []
+        data.forEach((value, i) => {
 
-        let group = {}
-        let filterMatch=[]
-        data.forEach(function (value, i) {
-            group[value] = {'$first': '$' + value}
-            if( filter ){
-                filterMatch.push({[value]:{'$regex': filter, '$options': 'i'}})
+            if (value.indexOf('$') > 0) {
+                // this is a reference
+                // for instance image$Media --> field image is a reference to the type Media
+
+                const part = value.split('$')
+                const fieldName = part[0]
+                let type = part[1], multi = false
+                if( type.startsWith('[') ){
+                    multi=true
+                    type = type.substring(1,type.length-1)
+                }
+                lookups.push({
+                    $lookup: {
+                        from: type,
+                        localField: fieldName,
+                        foreignField: '_id',
+                        as: fieldName
+                    }
+                })
+
+                if( multi ) {
+                    group[fieldName] = {'$first': '$' + fieldName}
+                }else{
+                    group[fieldName] = {'$first': {$arrayElemAt: ['$' + fieldName, 0]}}
+                }
+
+            } else {
+                group[value] = {'$first': '$' + value}
+                if (filter) {
+                    filterMatch.push({[value]: {'$regex': filter, '$options': 'i'}})
+                }
             }
+
         })
-        if( filterMatch.length > 0){
+        if (filterMatch.length > 0) {
             match.$or = filterMatch
         }
-
         const collection = db.collection(collectionName)
 
         let a = (await collection.aggregate([
@@ -65,6 +96,7 @@ const GenericResolver = {
                     as: 'createdBy'
                 }
             },
+            ...lookups,
             // Group back to arrays
             {
                 $group: {
@@ -95,12 +127,13 @@ const GenericResolver = {
                 $addFields: {limit, offset}
             }
         ]).toArray())
-        if( a.length === 0 ){
+
+        if (a.length === 0) {
             return {
                 limit,
                 offset,
-                total:0,
-                results:null
+                total: 0,
+                results: null
             }
         }
         return a[0]
@@ -109,7 +142,6 @@ const GenericResolver = {
         Util.checkIfUserIsLoggedIn(context)
 
         const collection = db.collection(collectionName)
-
         const insertResult = await collection.insertOne({
             ...data,
             createdBy: ObjectId(context.id)
@@ -118,6 +150,23 @@ const GenericResolver = {
         if (insertResult.insertedCount) {
             const doc = insertResult.ops[0]
 
+            const newData = Object.keys(data).reduce((o, k) => {
+                const item = data[k]
+                if (item === null || item === undefined) {
+
+                } else if (item.constructor === Array) {
+                    o[k] = item.reduce((a, _id) => {
+                        a.push({_id});
+                        return a
+                    }, [])
+                } else if (item.constructor === ObjectId) {
+                    o[k] = {_id: item}
+                } else {
+                    o[k] = item
+                }
+                return o
+            }, {})
+
             return {
                 _id: doc._id,
                 status: 'created',
@@ -125,7 +174,7 @@ const GenericResolver = {
                     _id: ObjectId(context.id),
                     username: context.username
                 },
-                ...data
+                ...newData
             }
         }
     },

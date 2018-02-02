@@ -21,7 +21,7 @@ class TypePicker extends React.Component {
         super(props)
 
         this.state = {
-            value: props.value,
+            value: props.value || [],
             data: null,
             hasFocus: true,
             selIdx: 0
@@ -29,21 +29,22 @@ class TypePicker extends React.Component {
     }
 
     componentWillReceiveProps(props) {
-        console.log(props.value)
-        this.setState({value: props.value})
+        this.setState({value: props.value || [], hasFocus: false})
     }
 
     render() {
-        const {type, classes, placeholder} = this.props
+        const {type, classes, placeholder, multi} = this.props
         const {data, hasFocus, selIdx, value} = this.state
         return <div className={classes.container}>
 
-            { !value && <TextField onChange={this.handleChange.bind(this)}
+            { (!value.length || multi) && <TextField onChange={this.handleChange.bind(this)}
                                    onKeyDown={this.handleKeyDown.bind(this)}
                                    onFocus={() => this.setState({hasFocus: true})}
                                    onBlur={this.handleBlur.bind(this)} placeholder={placeholder}/> }
 
-            { value && <Chip label={value.name} onDelete={this.handleRemovePick.bind(this)}/> }
+            { value.map((v,i) =>
+                <Chip key={i} label={v.name} onDelete={this.handleRemovePick.bind(this,i)}/>)
+            }
 
 
             <Paper className={classes.suggestions} square>
@@ -66,15 +67,17 @@ class TypePicker extends React.Component {
         </div>
     }
 
-    handleRemovePick() {
-        this.setState({value: null})
+    handleRemovePick(idx) {
+        const value = this.state.value.slice(0)
+        value.splice(idx,1)
+        this.props.onChange({target: {value,name: this.props.name}})
     }
 
     handlePick(idx) {
-        const item = this.state.data.results[idx],
-            target = {value: item._id, name: item.name}
-        this.props.onChange({target})
-        this.setState({value: target, hasFocus: false})
+        const value = (this.state.value?this.state.value.slice(0):[]), item = this.state.data.results[idx]
+        value.push({_id: item._id, name: item.name, __typename:this.props.type})
+
+        this.props.onChange({target:{value, name: this.props.name}})
     }
 
     handleChange(e) {
@@ -137,7 +140,7 @@ class TypePicker extends React.Component {
                 query: gqlQuery,
                 variables
             }).then(response => {
-                this.setState({selIdx: 0, data: response.data[nameStartLower]})
+                this.setState({hasFocus: true, selIdx: 0, data: response.data[nameStartLower]})
             }).catch(error => {
                 console.log(error.message)
                 this.setState({selIdx: 0, data: null})
@@ -147,8 +150,10 @@ class TypePicker extends React.Component {
 }
 
 TypePicker.propTypes = {
-    value: PropTypes.object,
+    value: PropTypes.array,
     placeholder: PropTypes.string,
+    multi: PropTypes.bool,
+    name: PropTypes.string.isRequired,
     type: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,
     client: PropTypes.instanceOf(ApolloClient).isRequired,
