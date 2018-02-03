@@ -100,25 +100,25 @@ class WordContainer extends React.Component {
 
         const columns = [{
             title: 'Deutsch',
-            dataIndex: 'de',
+            id: 'de',
             sortable: true
         }, {
             title: 'English',
-            dataIndex: 'en',
+            id: 'en',
             sortable: true
         },
             {
                 title: 'User',
-                dataIndex: 'user'
+                id: 'user'
             },
             {
                 title: 'Created at',
-                dataIndex: '_id',
+                id: '_id',
                 sortable: true
             },
             {
                 title: 'Actions',
-                dataIndex: 'action'
+                id: 'action'
             }]
 
         const dataSource = words && words.results && words.results.map((word) => ({

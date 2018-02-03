@@ -30,6 +30,7 @@
       "name": "admin",
       "impl": "material",
       "icons": [
+        "Edit",
         "Delete",
         "Close",
         "Code",

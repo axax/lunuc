@@ -70,12 +70,16 @@ Hook.on('Routes', ({routes}) => {
 })
 ```
 
-**Available hooks**
+**Client hooks**
  
-| Hook        | Description           |
-| ------------- |:-------------:|
-| ApiResponse      |  Exposes the response after an api request. Here you can modify or populate values  |
-| Routes      |  Where custom routes can be added  |
+| Hook        | Params           |  Description           | 
+| ------------- |-------------| -------------|
+| ApiResponse      |  data  | Exposes the response after an api request. Here you can modify or populate values  |   
+| Routes      |  routes  |Where custom routes can be added  |   
+| TypeTable      |  type, dataSource, data, fields  | Before the types table is rendered  |   
+| TypeTableColumns      |  type, columns  | After the creation of the columns for the type table  |   
+| Types      |  types  | Add or remove a type from the type list  |   
+| TypeCreateEditDialog      |  type, props  | Here you can change the behavior of the dialog which is shown when you create or edit data of type  |   
 
 
 ## Content Management

@@ -28,23 +28,23 @@ class CmsContainer extends React.Component {
         const columns = [
                 {
                     title: 'Slug',
-                    dataIndex: 'slug'
+                    id: 'slug'
                 },
                 {
                     title: 'Public',
-                    dataIndex: 'public'
+                    id: 'public'
                 },
                 {
                     title: 'User',
-                    dataIndex: 'user'
+                    id: 'user'
                 },
                 {
                     title: 'Created at',
-                    dataIndex: 'date'
+                    id: 'date'
                 },
                 {
                     title: 'Actions',
-                    dataIndex: 'action'
+                    id: 'action'
                 }],
             dataSource = cmsPages.results && cmsPages.results.map((cmsPage) => ({
                     slug: <span onBlur={(e) => this.handleCmsPageChange.bind(this)(e, cmsPage, 'slug')}

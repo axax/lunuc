@@ -4,6 +4,7 @@ import extensions from 'gen/extensions'
 import BaseLayout from '../components/layout/BaseLayout'
 import {
     DeleteIconButton,
+    EditIconButton,
     Chip,
     Typography,
     MenuItem,
@@ -15,6 +16,7 @@ import {
     Row,
     Col
 } from 'ui/admin'
+import FileDrop from 'client/components/FileDrop'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
@@ -58,7 +60,7 @@ class TypesContainer extends React.Component {
     }
 
     componentDidMount() {
-        this.getData(this.pageParams)
+        this.getData(this.pageParams, true)
     }
 
 
@@ -67,7 +69,7 @@ class TypesContainer extends React.Component {
 
         if (this.pageParams.type !== pageParams.type || this.pageParams.page !== pageParams.page || this.pageParams.limit !== pageParams.limit || this.pageParams.sort !== pageParams.sort || this.pageParams.filter !== pageParams.filter) {
             this.pageParams = pageParams
-            this.getData(pageParams)
+            this.getData(pageParams, true)
         }
     }
 
@@ -98,11 +100,11 @@ class TypesContainer extends React.Component {
                             if (v.constructor === Array) {
                                 dynamic[field.name] = v.reduce((s, i) => s + (s !== '' ? ', ' : '') + i.name, '')
                             } else {
-                                if ( field.type === 'Media') {
+                                if (field.type === 'Media') {
                                     dynamic[field.name] =
                                         <img style={{height: '40px'}}
-                                             src={UPLOAD_URL+'/'+v._id}/>
-                                }else{
+                                             src={UPLOAD_URL + '/' + v._id}/>
+                                } else {
                                     dynamic[field.name] = v.name
                                 }
                             }
@@ -123,12 +125,21 @@ class TypesContainer extends React.Component {
                         action: <div>
 
                             <DeleteIconButton disabled={(item.status == 'deleting' || item.status == 'updating')}
-                                              onClick={this.handleDeleteDataClick.bind(this, item)}>Delete</DeleteIconButton>
+                                              onClick={this.handleDeleteDataClick.bind(this, item)}/>
+                            <EditIconButton disabled={(item.status == 'deleting' || item.status == 'updating')}
+                                            onClick={this.handleEditDataClick.bind(this, item)}/>
                         </div>
                     })
+
+
                 })
+
             }
             const asort = sort.split(' ')
+
+            /* HOOK */
+            Hook.call('TypeTable', {type, dataSource, data, fields})
+
             tableWithResults =
                 <SimpleTable title={type} dataSource={dataSource} columns={columns} count={data.total}
                              rowsPerPage={limit} page={page}
@@ -143,6 +154,23 @@ class TypesContainer extends React.Component {
                              onChangePage={this.handleChangePage.bind(this)}
                              onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
         }
+
+        const editDialogProps = {
+            title: type,
+            open: this.state.createDataDialog,
+            onClose: this.handleCreateEditData,
+            actions: [{key: 'cancel', label: 'Cancel'}, {
+                key: 'save',
+                label: 'Save',
+                type: 'primary'
+            }],
+            children: <GenericForm ref={ref => {
+                this.createEditForm = ref
+            }} primaryButton={false} fields={formFields}/>
+        }
+
+        /* HOOK */
+        Hook.call('TypeCreateEditDialog', {type, props: editDialogProps}, this)
 
 
         const content = <BaseLayout>
@@ -170,11 +198,12 @@ class TypesContainer extends React.Component {
 
             {tableWithResults}
 
+
             <Typography type="display1" component="h2" gutterBottom>Available fields</Typography>
 
             {type &&
             this.types[type].fields.map(field => {
-                return <Chip key={field.name} label={field.name + (field.reference?' -> '+field.type:'')}/>
+                return <Chip key={field.name} label={field.name + (field.reference ? ' -> ' + field.type : '')}/>
             })
             }
 
@@ -186,21 +215,7 @@ class TypesContainer extends React.Component {
             </SimpleDialog>
             }
 
-            { <SimpleDialog open={this.state.createDataDialog} onClose={this.handleCreateEditData}
-                            actions={[{key: 'cancel', label: 'Cancel'}, {
-                                key: 'save',
-                                label: 'Save',
-                                type: 'primary'
-                            }]}
-                            title={type}>
-
-
-                <GenericForm ref={ref => {
-                    this.createEditForm = ref
-                }} primaryButton={false} fields={formFields}/>
-
-            </SimpleDialog>
-            }
+            <SimpleDialog {...editDialogProps}/>
         </BaseLayout>
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
@@ -219,7 +234,7 @@ class TypesContainer extends React.Component {
             if (!uitype && field.reference) {
                 uitype = 'type_picker'
                 placeholder = `${field.name} -> ${field.type}`
-            }else{
+            } else {
                 placeholder = `Enter ${field.name}`
             }
             this.typeFormFields[type][field.name] = {
@@ -238,20 +253,24 @@ class TypesContainer extends React.Component {
 
         this.typeColumns[type] = []
         this.types[type].fields.forEach(field => {
-            this.typeColumns[type].push({title: field.name, dataIndex: field.name, sortable: true})
+            this.typeColumns[type].push({title: field.name, id: field.name, sortable: true})
         })
         this.typeColumns[type].push({
                 title: 'User',
-                dataIndex: 'user'
+                id: 'user'
             },
             {
                 title: 'Created at',
-                dataIndex: 'date'
+                id: 'date'
             },
             {
                 title: 'Actions',
-                dataIndex: 'action'
+                id: 'action'
             })
+
+        /* HOOK */
+        Hook.call('TypeTableColumns', {type, columns: this.typeColumns[type]})
+
         return this.typeColumns[type]
     }
 
@@ -282,27 +301,30 @@ class TypesContainer extends React.Component {
         return type.charAt(0).toLowerCase() + type.slice(1) + 's'
     }
 
-    getData({type, page, limit, sort, filter}) {
+    getData({type, page, limit, sort, filter}, cacheFirst) {
         const {client} = this.props
         if (type) {
             const queries = this.getQueries(type)
 
             if (queries) {
+
                 const storeKey = this.getStoreKey(type),
                     variables = {limit, page, sort, filter},
                     gqlQuery = gql(queries.query)
-                try {
-                    const storeData = client.readQuery({
-                        query: gqlQuery,
-                        variables: variables
-                    })
-                    if (storeData && storeData[storeKey]) {
-                        // oh data are available in cache. show them first
-                        this.setState({data: storeData[storeKey]})
-                    }
-                } catch (e) {
-                }
 
+                if( cacheFirst ) {
+                    try {
+                        const storeData = client.readQuery({
+                            query: gqlQuery,
+                            variables: variables
+                        })
+                        if (storeData && storeData[storeKey]) {
+                            // oh data are available in cache. show them first
+                            this.setState({data: storeData[storeKey]})
+                        }
+                    } catch (e) {
+                    }
+                }
 
                 client.query({
                     fetchPolicy: 'network-only',
@@ -535,6 +557,10 @@ class TypesContainer extends React.Component {
         this.setState({confirmDeletionDialog: true, dataToBeDeleted: data})
     }
 
+    handleEditDataClick = (data) => {
+        //this.setState({confirmDeletionDialog: true, dataToBeDeleted: data})
+    }
+
     handleConfirmDeletion = (action) => {
         if (action && action.key === 'yes') {
             this.deleteData(this.pageParams, this.state.dataToBeDeleted._id)
@@ -634,6 +660,8 @@ const prepareTypes = () => {
 }
 
 
+/* Type Media */
+
 Hook.on('Types', ({types}) => {
     types.Media = {
         "name": "Media",
@@ -641,11 +669,43 @@ Hook.on('Types', ({types}) => {
         "fields": [
             {
                 "name": "name"
-            },
-            {
-                "name": "src",
-                "uitype": "image"
             }
         ]
     }
 })
+
+// add an extra column for Media at the beginning
+Hook.on('TypeTableColumns', ({type, columns}) => {
+    if (type === 'Media') {
+        columns.unshift({title: "Data", id: "data"})
+    }
+})
+
+// add some extra data to the table
+Hook.on('TypeTable', ({type, dataSource, data}) => {
+    if (type === 'Media') {
+        dataSource.forEach((d, i) => {
+            d.data = <img height="40" src={UPLOAD_URL + '/' + data.results[i]._id}/>
+        })
+    }
+})
+
+// add some extra data to the table
+Hook.on('TypeCreateEditDialog', function ({type, props}) {
+    if (type === 'Media') {
+        // remove save button
+        props.actions.splice(1, 1)
+        props.children = <FileDrop multi={false} onSuccess={r=>{
+            this.setState({createDataDialog: false})
+
+            this.getData(this.pageParams, false)
+            // todo: but it directly into the store instead of reload
+            //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
+
+
+
+
+        }}/>
+    }
+})
+

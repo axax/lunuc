@@ -62,6 +62,7 @@ export function configureMiddleware(store) {
                     networkStatus: {loading:false}
                 }))
             }
+            /* HOOK */
             Hook.call('ApiResponse', data)
             return data
         })

@@ -4,7 +4,7 @@ import {Button, TextField, withStyles, FileUploadIcon, Typography, LinearProgres
 import classNames from 'classnames'
 import Util from 'client/util'
 
-const UPLOAD_URL = '/graphql/upload',
+const UPLOAD_API_URL = '/graphql/upload',
  MAX_FILE_SIZE_MB = 10,
 IMAGE_QUALITY = 0.6,
 IMAGE_MAX_WIDTH = 1000,
@@ -21,10 +21,10 @@ const styles = theme => ({
         borderRadius: '7px',
         border: '3px solid #eee',
         transition: 'all .2s ease',
-        userSelect: 'none',
         '&:hover': {
             borderColor: theme.palette.secondary.light
         }
+
     },
     uploaderOver: {
         border: '3px solid ' + theme.palette.primary.light,
@@ -42,7 +42,8 @@ const styles = theme => ({
     image: {
         maxWidth: '100%',
         display: 'block',
-        margin: '0 auto 0.5rem auto'
+        margin: '0 auto 0.5rem auto',
+        pointerEvents : 'none'
     },
     progress: {
         position: 'absolute',
@@ -59,7 +60,8 @@ const styles = theme => ({
         bottom: 0,
         right: 0,
         left: 0,
-        opacity: 0
+        opacity: 0,
+        zIndex:2
     }
 
 })
@@ -110,11 +112,12 @@ class FileDrop extends React.Component {
     }
 
     render() {
-        const {classes} = this.props
+        const {classes, multi} = this.props
         const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage} = this.state
 
         return <div className={classNames(classes.uploader, isHover && classes.uploaderOver)}>
             <input className={classes.inputFile}
+                   multiple={!!multi}
                    type="file"
                    name="fileUpload"
                    accept="image/*"
@@ -235,6 +238,12 @@ class FileDrop extends React.Component {
                         const {status, message} = xhr.response
                         if (status === 'success') {
                             this.setState({successMessage: 'upload was successfull', uploading: false})
+
+                            const {onSuccess} = this.props
+                            if( onSuccess ){
+                                onSuccess(xhr.response)
+                            }
+
                         } else {
                             this.setState({errorMessage: message, uploading: false})
                         }
@@ -245,7 +254,7 @@ class FileDrop extends React.Component {
                     }
 
 
-                    xhr.open('POST', UPLOAD_URL, true)
+                    xhr.open('POST', UPLOAD_API_URL, true)
                     xhr.setRequestHeader('Authorization', Util.getAuthToken())
 
                     const fd = new FormData();
@@ -280,7 +289,8 @@ class FileDrop extends React.Component {
 }
 
 FileDrop.propTypes = {
-    classes: PropTypes.object.isRequired
+    classes: PropTypes.object.isRequired,
+    onSuccess: PropTypes.func
 }
 
 export default withStyles(styles)(FileDrop)

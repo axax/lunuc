@@ -6,10 +6,14 @@ const Hook = {
         }
         Hook.hooks[name].push(callback)
     },
-    call: function (name, args) {
+    call: function (name, args, thisRef) {
         if ('undefined' != typeof( Hook.hooks[name] )) {
             for (var i = 0; i < Hook.hooks[name].length; ++i) {
-                Hook.hooks[name][i](args)
+                if( thisRef){
+                    Hook.hooks[name][i].bind(thisRef)(args)
+                }else {
+                    Hook.hooks[name][i](args)
+                }
             }
         }
     }

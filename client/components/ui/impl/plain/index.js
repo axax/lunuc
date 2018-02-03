@@ -99,7 +99,7 @@ export const SimpleTable = ({count, rowsPerPage, page, onChangePage, orderDirect
         <thead>
         <tr>
             {(columns ? columns.map(column => {
-                return <th key={column.dataIndex}>{column.title}</th>
+                return <th key={column.id}>{column.title}</th>
             }) : '')}
         </tr>
         </thead>

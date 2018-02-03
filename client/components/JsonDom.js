@@ -195,6 +195,7 @@ class JsonDom extends React.Component {
                 let data
                 if ($d) {
                     data = this.scopeByPath($d)
+
                 } else {
                     data = d
                 }

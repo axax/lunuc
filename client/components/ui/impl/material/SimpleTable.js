@@ -16,7 +16,6 @@ import Paper from 'material-ui/Paper';
 import Typography from 'material-ui/Typography';
 import IconButton from 'material-ui/IconButton'
 import DeleteIcon from 'material-ui-icons/Delete'
-import MoreVertIcon from 'material-ui-icons/MoreVert'
 import classNames from 'classnames'
 import {lighten} from 'material-ui/styles/colorManipulator'
 import SimpleMenu from './SimpleMenu'
@@ -99,7 +98,7 @@ class SimpleTable extends React.Component {
                 <TableHead>
                     <TableRow>
                         {columns && columns.map(column => {
-                            return <TableCell key={column.dataIndex}>
+                            return <TableCell key={column.id}>
 
                                 {column.sortable ?
                                     <Tooltip
@@ -108,9 +107,9 @@ class SimpleTable extends React.Component {
                                         enterDelay={300}
                                     >
                                         <TableSortLabel
-                                            active={orderBy === column.dataIndex}
+                                            active={orderBy === column.id}
                                             direction={orderDirection}
-                                            onClick={this.createSortHandler.bind(this, column.dataIndex)}
+                                            onClick={this.createSortHandler.bind(this, column.id)}
                                         >
                                             {column.title}
                                         </TableSortLabel>
@@ -126,9 +125,17 @@ class SimpleTable extends React.Component {
                     {dataSource.map((entry, i) => {
                         return (
                             <TableRow hover key={i}>
-                                {Object.keys(entry).map((key) => (
-                                    <TableCell key={key}>{entry[key]}</TableCell>
-                                ))}
+                                { columns ?
+                                        // use columns if available to have the same order
+                                    columns.map(col => (
+                                        <TableCell key={col.id}>{entry[col.id]}</TableCell>
+                                    ))
+                                    :
+                                    // in case there are no columns defined
+                                    Object.keys(entry).map((key) => (
+                                        <TableCell key={key}>{entry[key]}</TableCell>
+                                    ))
+                                }
                             </TableRow>
                         )
                     })}
