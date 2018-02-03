@@ -10,7 +10,7 @@ class DataResolverEditor extends React.Component {
             <Typography type="headline">Data resolver</Typography>
 
 
-            <SimpleMenu mini style={{position:'absolute',bottom:'8px',right:'8px'}}
+            <SimpleMenu mini fab color="secondary" style={{position:'absolute',bottom:'8px',right:'8px'}}
                         items={[{name:'Prettify', onClick:this.prettify.bind(this)}]}/>
 
 

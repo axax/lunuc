@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt'
 import {ObjectId} from 'mongodb'
+import path from 'path'
+import fs from 'fs'
 
 
 const PASSWORD_MIN_LENGTH = 5
@@ -10,7 +12,7 @@ const Util = {
         for (var key in keyvalues) {
             if (keyvalues.hasOwnProperty(key)) {
 
-                const res = (await Util.setKeyValue(db,context,key,keyvalues[key]))
+                const res = (await Util.setKeyValue(db, context, key, keyvalues[key]))
 
                 //console.log(res)
             }
@@ -18,11 +20,17 @@ const Util = {
 
     },
     setKeyValue: async (db, context, key, value) => {
-        return db.collection('KeyValue').updateOne({createdBy: ObjectId(context.id),key}, {$set: {createdBy: ObjectId(context.id),key, value}}, {upsert: true})
+        return db.collection('KeyValue').updateOne({
+            createdBy: ObjectId(context.id),
+            key
+        }, {$set: {createdBy: ObjectId(context.id), key, value}}, {upsert: true})
     },
     keyvalueMap: async (db, context, keys) => {
 
-        const keyvalues = (await db.collection('KeyValue').find({createdBy: ObjectId(context.id), key: {$in: keys}}).toArray())
+        const keyvalues = (await db.collection('KeyValue').find({
+            createdBy: ObjectId(context.id),
+            key: {$in: keys}
+        }).toArray())
 
         return keyvalues.reduce((map, obj) => {
             map[obj.key] = obj.value
@@ -119,6 +127,14 @@ const Util = {
 
 
         return collection
+    },
+    ensureDirectoryExistence: (dir) => {
+        if (fs.existsSync(dir)) {
+            return true
+        }
+        Util.ensureDirectoryExistence(path.dirname(dir))
+        fs.mkdirSync(dir)
+        return fs.existsSync(dir)
     }
 }
 

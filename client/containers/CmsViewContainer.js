@@ -70,7 +70,7 @@ class CmsViewContainer extends React.Component {
         if (!props.cmsPage) return
 
         const {cmsPage: {subscriptions}, client, slug} = props
-        if( !subscriptions ) return
+        if (!subscriptions) return
 
         // remove unsed subscriptions
         Object.keys(this.registeredSubscriptions).forEach(key => {
@@ -92,23 +92,26 @@ class CmsViewContainer extends React.Component {
 
                 }).subscribe({
                     next(supscriptionData) {
-                        if( !supscriptionData.data ){
-                            console.warn('subscription data missing')
+                        if (!supscriptionData.data) {
+                            //console.warn('subscription data missing')
                             return
                         }
-                        const {data} = supscriptionData.data['subscribe'+subs]
-                        if( data ){
-                            const storeData = client.readQuery({query: gqlQuery, variables: {slug,query: window.location.search.substring(1)}})
+                        const {data} = supscriptionData.data['subscribe' + subs]
+                        if (data) {
+                            const storeData = client.readQuery({
+                                query: gqlQuery,
+                                variables: {slug, query: window.location.search.substring(1)}
+                            })
 
                             // upadate data in resolvedData string
-                            if (storeData.cmsPage && storeData.cmsPage.resolvedData ) {
+                            if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
 
                                 const resolvedDataJson = JSON.parse(storeData.cmsPage.resolvedData)
-                                if( resolvedDataJson[subs] && resolvedDataJson[subs].results ) {
+                                if (resolvedDataJson[subs] && resolvedDataJson[subs].results) {
                                     const refResults = resolvedDataJson[subs].results
                                     const idx = refResults.findIndex(o => o._id === data._id)
                                     if (idx > -1) {
-                                        refResults[idx] = Object.assign({},refResults[idx], Util.removeNullValues(data))
+                                        refResults[idx] = Object.assign({}, refResults[idx], Util.removeNullValues(data))
                                         // back to string data
                                         storeData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
                                         client.writeQuery({
@@ -136,7 +139,7 @@ class CmsViewContainer extends React.Component {
             const {updateCmsPage} = this.props
 
             updateCmsPage(
-                Object.assign({},data,{[key]: value}), key
+                Object.assign({}, data, {[key]: value}), key
             )
         }
     }
@@ -202,11 +205,12 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, location, _parentRef, id} = this.props
+        const {cmsPage, location, _parentRef, id, loading} = this.props
 
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
-            console.warn('cmsPage missing')
+            if (!loading)
+                console.warn('cmsPage missing')
             return null
         }
 
@@ -218,7 +222,7 @@ class CmsViewContainer extends React.Component {
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
 
-        const scope = {page: {slug: cmsPage.slug},params: Util.extractQueryParams()}
+        const scope = {page: {slug: cmsPage.slug}, params: Util.extractQueryParams()}
 
         const startTime = new Date()
 
@@ -269,19 +273,19 @@ class CmsViewContainer extends React.Component {
 
 
             content = <DrawerLayout sidebar={sidebar()}
-                                 drawerSize="large"
-                                 toolbarRight={
-                                     <Button size="small" color="inherit" onClick={e => {
-                                         this.props.history.push(ADMIN_BASE_URL + '/cms')
-                                     }}>Back</Button>
-                                 }
-                                 drawerWidth="500px"
-                                 title={'Edit Page "' + cmsPage.slug + '"'}>
+                                    drawerSize="large"
+                                    toolbarRight={
+                                        <Button size="small" color="inherit" onClick={e => {
+                                            this.props.history.push(ADMIN_BASE_URL + '/cms')
+                                        }}>Back</Button>
+                                    }
+                                    drawerWidth="500px"
+                                    title={'Edit Page "' + cmsPage.slug + '"'}>
                 {jsonDom}
             </DrawerLayout>
         }
 
-        console.info(`render ${this.constructor.name} in ${new Date()-startTime}ms`)
+        console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
         return content
     }
@@ -343,7 +347,10 @@ const CmsViewContainerWithGql = compose(
                     update: (store, {data: {updateCmsPage}}) => {
                         const slug = ownProps.slug
 
-                        const data = store.readQuery({query: gqlQuery, variables: {slug,query: window.location.search.substring(1)}})
+                        const data = store.readQuery({
+                            query: gqlQuery,
+                            variables: {slug, query: window.location.search.substring(1)}
+                        })
                         if (data.cmsPage) {
                             // update cmsPage
                             data.cmsPage = {_id, [key]: updateCmsPage[key], ...rest}

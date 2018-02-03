@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import Dialog, {
     DialogActions,
     DialogContent,
@@ -7,12 +8,21 @@ import Dialog, {
     withMobileDialog,
 } from 'material-ui/Dialog'
 import Button from 'material-ui/Button'
+import {withStyles} from 'material-ui/styles'
 
+const styles = theme => ({
+    paper: {
+        overflow: 'visible'
+    }
+})
 
-export const SimpleDialog = withMobileDialog()(({children, onClose, actions, title, ...rest}) => {
+export const SimpleDialog = withMobileDialog()(({classes,children, onClose, actions, title, ...rest}) => {
     return <Dialog
         aria-labelledby="responsive-dialog-title"
         onClose={onClose}
+        classes={{
+            paper: classes.paper,
+        }}
         {...rest}>
         <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
         <DialogContent>
@@ -38,4 +48,8 @@ export const SimpleDialog = withMobileDialog()(({children, onClose, actions, tit
     </Dialog>
 })
 
-export default SimpleDialog
+SimpleDialog.propTypes = {
+    classes: PropTypes.object.isRequired
+}
+
+export default withStyles(styles)(SimpleDialog)

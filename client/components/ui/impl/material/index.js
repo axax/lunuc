@@ -22,45 +22,44 @@ export const theme = createMuiTheme({
                 margin: defaultTheme.spacing.unit
             },
         },
-        MuiInput:{
+        MuiInput: {
             root: {
                 margin: defaultTheme.spacing.unit
             },
-            formControl:{
+            formControl: {
                 margin: 0
             }
         },
-        MuiFormControl:{
+        MuiFormControl: {
             root: {
                 margin: defaultTheme.spacing.unit
             },
-            fullWidth:{
+            fullWidth: {
                 margin: `${defaultTheme.spacing.unit}px 0`
             }
         },
-        MuiChip:{
+        MuiChip: {
             root: {
                 margin: defaultTheme.spacing.unit
             },
         }
     },
     typography: {
-        display4:{
+        display4: {
             fontSize: '3rem'
         },
-        display3:{
+        display3: {
             fontSize: '2.5rem'
         },
-        display1:{
+        display1: {
             margin: '1em 0 0.7em'
         }
     }
 })
 
 
-
 import JssProvider from 'react-jss/lib/JssProvider'
-import { createGenerateClassName } from 'material-ui/styles'
+import {createGenerateClassName} from 'material-ui/styles'
 
 const generateClassName = createGenerateClassName({
     dangerouslyUseGlobalCSS: false,
@@ -88,7 +87,7 @@ export TextField from 'material-ui/TextField'
 export Select from 'material-ui/Select'
 export Checkbox from 'material-ui/Checkbox'
 export Switch from 'material-ui/Switch'
-export { FormLabel, FormControl, FormControlLabel, FormHelperText } from 'material-ui/Form'
+export {FormLabel, FormControl, FormControlLabel, FormHelperText} from 'material-ui/Form'
 export Chip from 'material-ui/Chip'
 export Divider from 'material-ui/Divider'
 export Drawer from 'material-ui/Drawer'
@@ -143,7 +142,6 @@ export const MenuListItem = ({primary, ...rest}) => {
         />
     </MaterialListItem>
 }
-
 
 
 // cards

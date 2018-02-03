@@ -35,7 +35,7 @@ class WordContainer extends React.Component {
     }
 
     handleAddWordValidate = (data) => {
-        return data.en.trim() !== '' && data.de.trim() !== ''
+        return data.en && data.en.trim() !== '' && data.de && data.de.trim() !== ''
     }
 
     handleWordChange = (event, data, lang) => {
@@ -78,7 +78,7 @@ class WordContainer extends React.Component {
         this.setState({confirmDeletionDialog: false, dataToBeDeleted: false})
     }
 
-    handleSortChange = (e, orderBy) => {
+    handleSortChange = (orderBy) => {
 
         let orderDirection = 'desc';
 

@@ -3,15 +3,18 @@ import formidable from 'formidable'
 import {ObjectId} from 'mongodb'
 import {auth} from './auth'
 import path from 'path'
+import Util from './util'
+import {UPLOAD_DIR} from 'gen/config'
 
-// Build dir
-const BUILD_DIR = path.join(__dirname, '../build')
-
-// location to save uploaded files
-const UPLOAD_DIR = BUILD_DIR + '/uploads'
 
 
 const handleUpload = db => (req, res) => {
+
+    // make sure upload dir exists
+    const upload_dir = path.join(__dirname, '../'+ UPLOAD_DIR)
+    if( !Util.ensureDirectoryExistence(upload_dir) ){
+        console.warn(`Upload folder coud not be created -> ${upload_dir}`)
+    }
 
     /* Process the uploads */
     if (req.method.toLowerCase() === 'post') {
@@ -36,13 +39,14 @@ const handleUpload = db => (req, res) => {
             // rename it to it's orignal name
             form.on('file', function (field, file) {
                 //console.log(file.path, path.join(UPLOAD_DIR, file.name))
-                const uid = ObjectId().toString()
-               // fileIds.push(uid.toString())
-                fs.rename(file.path, path.join(UPLOAD_DIR, uid), async () => {
+                const _id = ObjectId()
+
+                // store file under the name of the _id
+                fs.rename(file.path, path.join(upload_dir, _id.toString()), async () => {
                     // save to db
                     const insertResult = await db.collection('Media').insertOne({
+                        _id,
                         name:file.name,
-                        src:uid,
                         createdBy: ObjectId(authContext.id)
                     })
 

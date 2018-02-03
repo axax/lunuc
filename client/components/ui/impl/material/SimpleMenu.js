@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import Button from 'material-ui/Button'
 import Menu, {MenuItem} from 'material-ui/Menu'
 import MoreVertIcon from 'material-ui-icons/MoreVert'
+import IconButton from 'material-ui/IconButton'
 
 class SimpleMenu extends React.Component {
     state = {
@@ -19,21 +20,35 @@ class SimpleMenu extends React.Component {
 
     render() {
         const {anchorEl} = this.state
-        const {style, items, label, mini} = this.props
-
+        const {style, items, label, mini, color, fab} = this.props
         return (
             <div style={style}>
-                <Button
-                    fab={!label}
-                    mini={mini}
-                    color={!label?'secondary':'inherit'}
-                    aria-owns={anchorEl ? 'simple-menu' : null}
-                    aria-haspopup="true"
-                    onClick={this.handleClick}
-                >
-                    {label ? label : <MoreVertIcon /> }
+                {
+                    label !== undefined || fab !== undefined ?
+                        <Button
+                            aria-label="Simple menu"
+                            fab={fab}
+                            mini={mini}
+                            color={color}
+                            aria-owns={anchorEl ? 'simple-menu' : null}
+                            aria-haspopup="true"
+                            onClick={this.handleClick}
+                        >
+                            {label ? label : <MoreVertIcon /> }
 
-                </Button>
+                        </Button>
+                        :
+                        <IconButton
+                            aria-label="Simple menu"
+                            color={color}
+                            aria-owns={anchorEl ? 'simple-menu' : null}
+                            aria-haspopup="true"
+                            onClick={this.handleClick}
+                        >
+                            <MoreVertIcon />
+
+                        </IconButton>
+                }
                 <Menu
                     id="simple-menu"
                     anchorEl={anchorEl}
@@ -55,7 +70,12 @@ class SimpleMenu extends React.Component {
 
 
 SimpleMenu.propTypes = {
-    items: PropTypes.array.isRequired
+    items: PropTypes.array.isRequired,
+    style: PropTypes.object,
+    label: PropTypes.string,
+    mini: PropTypes.bool,
+    fab: PropTypes.bool,
+    color: PropTypes.string
 }
 
 export default SimpleMenu

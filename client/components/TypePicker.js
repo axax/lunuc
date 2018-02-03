@@ -6,8 +6,8 @@ import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
 
 const styles = {
-    container: {
-        posistion: 'relative'
+    root: {
+        height: 50
     },
     suggestions: {
         position: 'absolute',
@@ -24,7 +24,8 @@ class TypePicker extends React.Component {
             value: props.value || [],
             data: null,
             hasFocus: true,
-            selIdx: 0
+            selIdx: 0,
+            textValue:''
         }
     }
 
@@ -33,11 +34,12 @@ class TypePicker extends React.Component {
     }
 
     render() {
+        console.log('render')
         const {type, classes, placeholder, multi} = this.props
-        const {data, hasFocus, selIdx, value} = this.state
-        return <div className={classes.container}>
+        const {data, hasFocus, selIdx, value, textValue} = this.state
+        return <div className={classes.root}>
 
-            { (!value.length || multi) && <TextField onChange={this.handleChange.bind(this)}
+            { (!value.length || multi) && <TextField value={textValue} onChange={this.handleChange.bind(this)}
                                    onKeyDown={this.handleKeyDown.bind(this)}
                                    onFocus={() => this.setState({hasFocus: true})}
                                    onBlur={this.handleBlur.bind(this)} placeholder={placeholder}/> }
@@ -78,20 +80,24 @@ class TypePicker extends React.Component {
         value.push({_id: item._id, name: item.name, __typename:this.props.type})
 
         this.props.onChange({target:{value, name: this.props.name}})
+        this.setState({textValue:'',hastFocus:false,data: null})
+
     }
 
     handleChange(e) {
         const v = e.target.value.trim()
         if (v === '') {
-            this.setState({data: null})
+            this.setState({data: null,textValue:v})
         } else {
+            this.setState({textValue:v})
             this.getData(e.target.value)
         }
     }
 
     handleBlur(e) {
         setTimeout(() => {
-            this.setState({hasFocus: false})
+            if( this.state.hasFocus)
+                this.setState({hasFocus: false})
         }, 500)
     }
 

@@ -46,7 +46,7 @@ class GenericForm extends React.Component {
     }
 
     reset = () => {
-        this.setState(this.getInitalState())
+        this.setState(this.getInitalState(this.props))
         this.setValidateState(this.state)
     }
 
@@ -55,7 +55,6 @@ class GenericForm extends React.Component {
         const target = e.target
         const value = target.type === 'checkbox' ? target.checked : target.value
         const name = target.name
-
         this.setState((prevState) => {
             const newState = Object.assign({}, {fields: {}}, prevState)
             newState.fields[name] = value

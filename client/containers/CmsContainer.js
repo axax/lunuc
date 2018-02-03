@@ -25,7 +25,6 @@ class CmsContainer extends React.Component {
             return <BaseLayout />
 
         const startTime = new Date()
-
         const columns = [
                 {
                     title: 'Slug',

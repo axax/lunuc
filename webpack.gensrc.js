@@ -10,7 +10,7 @@ const GENSRC_PATH = './gensrc';
 const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1
 
 
-const COMMON_MONGO_TYPES = ['String', 'Int', 'ID','Float', 'Boolean']
+const COMMON_MONGO_TYPES = ['String', 'Int', 'ID', 'Float', 'Boolean']
 
 
 function GenSourceCode(options) {
@@ -55,12 +55,12 @@ GenSourceCode.prototype.apply = function (compiler) {
                             gensrcExtension(file, buildOptions)
                         }
 
-                        if( manifestJson[file].options && manifestJson[file].options.types ){
+                        if (manifestJson[file].options && manifestJson[file].options.types) {
 
-                            manifestJson[file].options.types.forEach(type =>{
+                            manifestJson[file].options.types.forEach(type => {
 
                                 type.fields = type.fields.map(field => {
-                                    if( field.type && COMMON_MONGO_TYPES.indexOf(field.type) < 0) {
+                                    if (field.type && COMMON_MONGO_TYPES.indexOf(field.type) < 0) {
                                         // this is a type reference
                                         field.reference = true
                                     }
@@ -111,8 +111,15 @@ GenSourceCode.prototype.apply = function (compiler) {
         })
 
         /* generate config */
-        let configContent = `${GENSRC_HEADER}export const APOLLO_CACHE=${APP_CONFIG.apollo_cache || true}\n`
-        configContent += `export const DEV_MODE=${DEV_MODE}\nexport const DEBUG=${APP_CONFIG.debug || true}\nexport const ADMIN_BASE_URL='${APP_CONFIG.admin_base_url || ''}'`
+
+        let configContent = `${GENSRC_HEADER}export const DEV_MODE=${DEV_MODE}\n`
+
+        Object.keys(APP_CONFIG.options).forEach(k => {
+
+            const item = APP_CONFIG.options[k]
+            configContent += `export const ${k}=${JSON.stringify(item)}\n`
+
+        })
 
         fs.writeFile(GENSRC_PATH + "/config.js", configContent, function (err) {
             if (err) {
@@ -233,23 +240,23 @@ function gensrcExtension(name, options) {
                     isRef = true
                     if (refResolvers !== '') refResolvers += ','
                     if (refResolversObjectId !== '') refResolversObjectId += ','
-                    refResolvers+=field.name
-                    if( field.multi ){
-                        refResolversObjectId += field.name + ':'+'('+field.name+'?'+ field.name+'.reduce((o,id) => {o.push(ObjectId(id)); return o},[]):null)'
+                    refResolvers += field.name
+                    if (field.multi) {
+                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id) => {o.push(ObjectId(id)); return o},[]):null)'
 
-                    }else {
-                        refResolversObjectId += field.name + ':'+'('+field.name+'?'+'ObjectId(' + field.name + '):null)'
+                    } else {
+                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + 'ObjectId(' + field.name + '):null)'
                     }
                 }
 
                 if (mutationFields !== '') mutationFields += ','
                 if (resolverFields !== '') resolverFields += ','
 
-                mutationFields += field.name + ':' + (field.multi?'[':'') + (isRef?'ID':type) +(field.multi?']':'')
-                resolverFields += '\''+field.name+(isRef?'$'+(field.multi?'[':'')+type+(field.multi?']':''):'')+'\''
+                mutationFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
+                resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
 
 
-                schema += '\t' + field.name + ':' + (field.multi?'[':'')+type + (field.multi?']':'')+'\n'
+                schema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
             })
 
             schema += '}\n\n'

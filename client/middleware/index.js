@@ -9,6 +9,7 @@ import {OfflineCache} from './cache'
 import {addError} from 'client/actions/ErrorHandlerAction'
 import {setNetworkStatus} from 'client/actions/NetworkStatusAction'
 import Util from '../util'
+import Hook from 'util/hook'
 
 const httpUri = `${window.location.protocol}//${window.location.hostname}:${window.location.port}/graphql`
 const wsUri = (window.location.protocol === 'https:' ? 'wss' : 'ws') + `://${window.location.hostname}:${window.location.port}/ws`
@@ -41,11 +42,10 @@ export function configureMiddleware(store) {
             // hide error in console log
             response.errors = null
         }
-        console.log(networkError)
         if (networkError) store.dispatch(addError({key: 'api_error', msg: networkError.message}))
     })
 
-    // create a middleware for state handling
+    // create a middleware for state handling and to attach the hook
     let loadingCounter = 0
     const statusLink = new ApolloLink((operation, forward) => {
         loadingCounter++
@@ -62,6 +62,7 @@ export function configureMiddleware(store) {
                     networkStatus: {loading:false}
                 }))
             }
+            Hook.call('ApiResponse', data)
             return data
         })
     })

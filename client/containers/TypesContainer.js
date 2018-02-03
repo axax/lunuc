@@ -12,7 +12,6 @@ import {
     Input,
     SimpleDialog,
     SimpleTable,
-    SimpleMenu,
     Row,
     Col
 } from 'ui/admin'
@@ -24,6 +23,7 @@ import GenericForm from 'client/components/generic/GenericForm'
 import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
 import Hook from 'util/hook'
+import {UPLOAD_URL} from 'gen/config'
 
 const DEFAULT_RESULT_LIMIT = 10
 
@@ -92,18 +92,24 @@ class TypesContainer extends React.Component {
                     const dynamic = {}
                     fields.forEach(field => {
                         let v = item[field.name]
-                        if( v === null || v=== undefined){
+                        if (v === null || v === undefined) {
                             dynamic[field.name] = ''
-                        }else if (field.reference) {
-                            if( v.constructor === Array ){
-                                dynamic[field.name] = v.reduce((s,i)=>s+(s!==''?', ':'')+i.name,'')
-                            }else{
-                                dynamic[field.name] = v.name
+                        } else if (field.reference) {
+                            if (v.constructor === Array) {
+                                dynamic[field.name] = v.reduce((s, i) => s + (s !== '' ? ', ' : '') + i.name, '')
+                            } else {
+                                if ( field.type === 'Media') {
+                                    dynamic[field.name] =
+                                        <img style={{height: '40px'}}
+                                             src={UPLOAD_URL+'/'+v._id}/>
+                                }else{
+                                    dynamic[field.name] = v.name
+                                }
                             }
                         } else if (field.uitype === 'image') {
                             dynamic[field.name] =
                                 <img style={{height: '40px'}}
-                                     src={'http://localhost:8080/build/uploads/' + v}/>
+                                     src={v}/>
                         } else {
                             dynamic[field.name] =
                                 <span onBlur={(e) => this.handleDataChange.bind(this)(e, item, field.name)}
@@ -124,9 +130,14 @@ class TypesContainer extends React.Component {
             }
             const asort = sort.split(' ')
             tableWithResults =
-                <SimpleTable className="demooo" dataSource={dataSource} columns={columns} count={data.total}
-                             rowsPerPage={parseInt(limit)} page={page}
+                <SimpleTable title={type} dataSource={dataSource} columns={columns} count={data.total}
+                             rowsPerPage={limit} page={page}
                              orderBy={asort[0]}
+                             actions={[{
+                                 name: 'Add new ' + type, onClick: () => {
+                                     this.setState({createDataDialog: true})
+                                 }
+                             }]}
                              orderDirection={asort.length > 1 && asort[1] || null}
                              onSort={this.handleSortChange}
                              onChangePage={this.handleChangePage.bind(this)}
@@ -146,21 +157,6 @@ class TypesContainer extends React.Component {
                     />
                 </Col>
                 <Col md={3} align="right">
-                    <SimpleMenu items={[{
-                        name: 'Add new ' + type, onClick: () => {
-                            this.setState({createDataDialog: true})
-                        }
-                    }]}/>
-                </Col>
-            </Row>
-
-
-            <Row spacing={16}>
-                <Col md={9} sm={12} xs={12}>
-                    <GenericForm caption="Add" fields={formFields}
-                                 onClick={this.handleAddDataClick}/>
-                </Col>
-                <Col md={3} sm={12} xs={12}>
                     <GenericForm onChange={this.handleFilter} primaryButton={false}
                                  fields={{
                                      term: {
@@ -178,7 +174,7 @@ class TypesContainer extends React.Component {
 
             {type &&
             this.types[type].fields.map(field => {
-                return <Chip key={field.name} label={field.name}/>
+                return <Chip key={field.name} label={field.name + (field.reference?' -> '+field.type:'')}/>
             })
             }
 
@@ -218,13 +214,16 @@ class TypesContainer extends React.Component {
 
         this.typeFormFields[type] = {}
         this.types[type].fields.map(field => {
-            let uitype = field.uitype
+            let uitype = field.uitype, placeholder = ''
             // if uitype is not defined and if it is a reference to another type use type_picker
             if (!uitype && field.reference) {
                 uitype = 'type_picker'
+                placeholder = `${field.name} -> ${field.type}`
+            }else{
+                placeholder = `Enter ${field.name}`
             }
             this.typeFormFields[type][field.name] = {
-                placeholder: `Enter ${field.name}`,
+                placeholder,
                 uitype,
                 multi: !!field.multi,
                 type: field.type
@@ -259,7 +258,8 @@ class TypesContainer extends React.Component {
     determinPageParams(props) {
         const {params} = props.match
         const {p, l, s, f} = Util.extractQueryParams(window.location.search.substring(1))
-        const result = {limit: l || DEFAULT_RESULT_LIMIT, page: p || 1, sort: s || '', filter: f || ''}
+        const pInt = parseInt(p), lInt = parseInt(l)
+        const result = {limit: lInt || DEFAULT_RESULT_LIMIT, page: pInt || 1, sort: s || '', filter: f || ''}
         if (params.type) {
             result.type = params.type
         } else {
@@ -331,9 +331,8 @@ class TypesContainer extends React.Component {
                     ...input
                 },
                 update: (store, {data}) => {
-                    console.log('create', data['create' + type])
 
-                    const freshData = {...data['create' + type],...optimisticInput}
+                    const freshData = {...data['create' + type], ...optimisticInput}
 
                     const gqlQuery = gql(queries.query),
                         storeKey = this.getStoreKey(type)
@@ -469,7 +468,7 @@ class TypesContainer extends React.Component {
         }, 1000)
     }
 
-    handleSortChange = (e, orderBy) => {
+    handleSortChange = (orderBy) => {
         const {type, limit, sort, filter} = this.pageParams
 
         const aSort = sort.split(' ')
