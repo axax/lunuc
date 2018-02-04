@@ -78,12 +78,12 @@ class CmsContainer extends React.Component {
                              onChangePage={this.handleChangePage.bind(this)}
                              onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
 
-                {this.state.dataToBeDeleted &&
+                {this.state.dataToDelete &&
                 <SimpleDialog open={this.state.confirmDeletionDialog} onClose={this.handleConfirmDeletion}
                               actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
                               title="Confirm deletion">
                     Are you sure you want to delete the page
-                    <strong> {this.state.dataToBeDeleted.slug}</strong>?
+                    <strong> {this.state.dataToDelete.slug}</strong>?
                 </SimpleDialog>
                 }
             </BaseLayout>
@@ -110,7 +110,6 @@ class CmsContainer extends React.Component {
             value = event.target.innerText.trim()
         }
 
-        console.log(value)
 
 
         if (value !== data[key]) {
@@ -122,7 +121,7 @@ class CmsContainer extends React.Component {
     }
 
     handleDeleteCmsPageClick = (data) => {
-        this.setState({confirmDeletionDialog: true, dataToBeDeleted: data})
+        this.setState({confirmDeletionDialog: true, dataToDelete: data})
     }
 
 
@@ -141,10 +140,10 @@ class CmsContainer extends React.Component {
         if (action && action.key === 'yes') {
             const {deleteCmsPage} = this.props
             deleteCmsPage({
-                _id: this.state.dataToBeDeleted._id
+                _id: this.state.dataToDelete._id
             })
         }
-        this.setState({confirmDeletionDialog: false, dataToBeDeleted: false})
+        this.setState({confirmDeletionDialog: false, dataToDelete: false})
     }
 }
 

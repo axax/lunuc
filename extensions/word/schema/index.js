@@ -2,7 +2,7 @@ export default `
     type Word {
         _id: ID! # unique id for words
         createdBy: UserPublic! # id of user
-        en: String!
+        en: String
         de: String
         categories: [WordCategory]    
         status: String
@@ -17,7 +17,7 @@ export default `
     type WordCategory {
         _id: ID! # unique id for category
         createdBy: UserPublic! # id of user
-        en: String!
+        en: String
         de: String
     }
     
@@ -36,7 +36,7 @@ export default `
 		
 	type Mutation {
 		createWord (
-			en: String!
+			en: String
 			de: String
 		): Word
 		updateWord(_id: ID!, en: String, de: String): Word	

@@ -47,49 +47,60 @@ const app = http.createServer(function (req, res) {
         if (uri === '/graphql') {
             proxy.web(req, res, {target: `http://localhost:${API_PORT}/graphql`})
         } else {
-            const filename = path.join(BUILD_DIR, uri),
-                ext = path.extname(filename).split('.')[1]
 
-            let acceptEncoding = req.headers['accept-encoding']
-            if (!acceptEncoding) {
-                acceptEncoding = ''
-            }
-
-            if (ext) {
-
-
-                fs.stat(filename, function (err, stats) {
-                    if (err) {
-                        console.log('not exists: ' + filename)
-                        res.writeHead(404, {'Content-Type': 'text/plain'})
-                        res.write('404 Not Found\n')
-                        res.end()
-                    } else {
-                        const mimeType = MIME_TYPES[path.extname(filename).split('.')[1]]
-                        const fileStream = fs.createReadStream(filename)
-                        const headerExtra = {'Cache-Control': 'public, max-age=604800', 'content-type': mimeType}
-
-                        if (acceptEncoding.match(/\bdeflate\b/)) {
-                            res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate'})
-                            fileStream.pipe(zlib.createDeflate()).pipe(res)
-                        } else if (acceptEncoding.match(/\bgzip\b/)) {
-                            res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
-                            fileStream.pipe(zlib.createGzip()).pipe(res)
-                        } else {
-                            res.writeHead(200, {...headerExtra})
-                            fileStream.pipe(res)
-                        }
-                    }
-                })
-            } else {
-                const headers = {'Cache-Control': 'public, max-age=604800', 'content-type': MIME_TYPES['html']}
-
-                // send index.html
-                const indexfile = path.join(BUILD_DIR, '/../index.html')
-                res.writeHead(200, headers)
-
-                const fileStream = fs.createReadStream(indexfile)
+            if( uri.startsWith(UPLOAD_URL+'/')){
+                const upload_dir = path.join(__dirname, '../'+ UPLOAD_DIR)
+                // uploads
+                const fileStream = fs.createReadStream(path.join(upload_dir, path.basename(uri)))
+                const headerExtra = {'Cache-Control': 'public, max-age=604800'}
+                res.writeHead(200, {...headerExtra})
                 fileStream.pipe(res)
+
+            }else {
+                const filename = path.join(BUILD_DIR, uri),
+                    ext = path.extname(filename).split('.')[1]
+
+                let acceptEncoding = req.headers['accept-encoding']
+                if (!acceptEncoding) {
+                    acceptEncoding = ''
+                }
+
+                if (ext) {
+
+
+                    fs.stat(filename, function (err, stats) {
+                        if (err) {
+                            console.log('not exists: ' + filename)
+                            res.writeHead(404, {'Content-Type': 'text/plain'})
+                            res.write('404 Not Found\n')
+                            res.end()
+                        } else {
+                            const mimeType = MIME_TYPES[path.extname(filename).split('.')[1]]
+                            const fileStream = fs.createReadStream(filename)
+                            const headerExtra = {'Cache-Control': 'public, max-age=604800', 'content-type': mimeType}
+
+                            if (acceptEncoding.match(/\bdeflate\b/)) {
+                                res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate'})
+                                fileStream.pipe(zlib.createDeflate()).pipe(res)
+                            } else if (acceptEncoding.match(/\bgzip\b/)) {
+                                res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
+                                fileStream.pipe(zlib.createGzip()).pipe(res)
+                            } else {
+                                res.writeHead(200, {...headerExtra})
+                                fileStream.pipe(res)
+                            }
+                        }
+                    })
+                } else {
+                    const headers = {'Cache-Control': 'public, max-age=604800', 'content-type': MIME_TYPES['html']}
+
+                    // send index.html
+                    const indexfile = path.join(BUILD_DIR, '/../index.html')
+                    res.writeHead(200, headers)
+
+                    const fileStream = fs.createReadStream(indexfile)
+                    fileStream.pipe(res)
+                }
             }
         }
     }

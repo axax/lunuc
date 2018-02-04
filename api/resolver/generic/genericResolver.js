@@ -52,9 +52,9 @@ const GenericResolver = {
                 const part = value.split('$')
                 const fieldName = part[0]
                 let type = part[1], multi = false
-                if( type.startsWith('[') ){
-                    multi=true
-                    type = type.substring(1,type.length-1)
+                if (type.startsWith('[')) {
+                    multi = true
+                    type = type.substring(1, type.length - 1)
                 }
                 lookups.push({
                     $lookup: {
@@ -65,9 +65,9 @@ const GenericResolver = {
                     }
                 })
 
-                if( multi ) {
+                if (multi) {
                     group[fieldName] = {'$first': '$' + fieldName}
-                }else{
+                } else {
                     group[fieldName] = {'$first': {$arrayElemAt: ['$' + fieldName, 0]}}
                 }
 
@@ -210,8 +210,16 @@ const GenericResolver = {
 
         const collection = db.collection(collectionName)
 
-        const dataSet = Object.assign({}, data)
-        delete dataSet._id
+
+        // clone object but without _id and undefined property
+        // keep null values to remove references
+        const dataSet = Object.keys(data).reduce((o, k) => {
+            if (k !== '_id' && data[k]!==undefined ) {
+                o[k] = data[k]
+            }
+            return o
+        }, {})
+
 
         const result = (await collection.findOneAndUpdate({_id: ObjectId(data._id)}, {
             $set: dataSet

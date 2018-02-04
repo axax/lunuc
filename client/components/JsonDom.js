@@ -79,6 +79,8 @@ class JsonDom extends React.Component {
     constructor(props) {
         super(props)
         this.state = {hasReactError: false}
+
+        /* HOOK */
         Hook.call('JsonDom', {components: this.components})
 
         const {id, _parentRef} = props
@@ -184,7 +186,11 @@ class JsonDom extends React.Component {
         if (a.constructor === String) return a
         if (a.constructor !== Array) return ''
         let h = []
-        a.forEach(({t, p, c, $loop}, aIdx) => {
+        a.forEach((item, aIdx) => {
+
+            if( !item ) return
+
+            const {t, p, c, $loop} = item
             /*
              t = type
              c = children

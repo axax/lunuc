@@ -15,6 +15,10 @@
           "uitype": "numeric"
         },
         {
+          "name": "visible",
+          "type": "Boolean"
+        },
+        {
           "name": "image",
           "type": "Media"
         },

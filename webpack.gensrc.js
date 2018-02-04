@@ -242,10 +242,10 @@ function gensrcExtension(name, options) {
                     if (refResolversObjectId !== '') refResolversObjectId += ','
                     refResolvers += field.name
                     if (field.multi) {
-                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id) => {o.push(ObjectId(id)); return o},[]):null)'
+                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id) => {o.push(ObjectId(id)); return o},[]):' + field.name + ')'
 
                     } else {
-                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + 'ObjectId(' + field.name + '):null)'
+                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + 'ObjectId(' + field.name + '):' + field.name + ')'
                     }
                 }
 
@@ -264,13 +264,16 @@ function gensrcExtension(name, options) {
 
             schema += 'type ' + type.name + 'Result {\n\tresults: [' + type.name + ']\n\toffset: Int\n\tlimit: Int\n\ttotal: Int\n}\n\n'
 
+            // Maybe it is better to return only a Status instead of the whole type when create, update or delete is performed
+            schema += 'type ' + type.name + 'Status {\n\t_id: ID!\n\tstatus: String\n}\n\n'
+
             schema += 'type Query {\n\t' + nameStartLower + 's(sort: String, limit: Int=10, offset: Int=0, page: Int=0, filter: String): ' + type.name + 'Result\n}\n\n'
 
 
             schema += 'type Mutation {\n'
-            schema += '\tcreate' + type.name + ' (' + mutationFields + '):' + type.name + '\n'
-            schema += '\tupdate' + type.name + ' (_id: ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + '\n'
-            schema += '\tdelete' + type.name + ' (_id: ID!):' + type.name + '\n'
+            schema += '\tcreate' + type.name + ' (' + mutationFields + '):' + type.name + 'Status\n'
+            schema += '\tupdate' + type.name + ' (_id: ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + 'Status\n'
+            schema += '\tdelete' + type.name + ' (_id: ID!):' + type.name + 'Status\n'
             schema += '}\n\n'
 
             schema += 'type ' + type.name + 'SubscribeResult {\n\tdata:' + type.name + '\n\taction: String\n}\n\n'
@@ -287,9 +290,9 @@ function gensrcExtension(name, options) {
         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:{...rest}}})
         return await GenericResolver.createEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
     },
-    update${type.name}: async ({...rest}, {context}) => {
+    update${type.name}: async ({...rest,${refResolvers}}, {context}) => {
         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: {...rest}}})
-        return GenericResolver.updateEnity(db, context, '${type.name}', {...rest})
+        return GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
     },
     delete${type.name}: async ({_id}, {context}) => {
          pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {_id}}})

@@ -12,8 +12,9 @@ const UtilCms = {
                 const json = JSON.parse(dataResolverReplaced)
 
                 for (let i = 0; i < json.length; i++) {
-                    const {t, f, l, o,p} = json[i]
+                    const {t, f, l, o,p, filter} = json[i]
                     /*
+                    filter = filter for the query
                     t = type
                     f = fields
                     l = limit of results
@@ -29,6 +30,7 @@ const UtilCms = {
                             type = t
                         }
                         const result = await GenericResolver.entities(db, context, type, f, {
+                            filter,
                             limit: l,
                             page: p,
                             offset: o,

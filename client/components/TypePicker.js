@@ -35,8 +35,9 @@ class TypePicker extends React.Component {
 
     render() {
         console.log('render')
-        const {type, classes, placeholder, multi} = this.props
+        const {classes, placeholder, multi} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
+
         return <div className={classes.root}>
 
             { (!value.length || multi) && <TextField value={textValue} onChange={this.handleChange.bind(this)}
@@ -60,7 +61,7 @@ class TypePicker extends React.Component {
                         style={{
                             fontWeight: selIdx === idx ? 500 : 400,
                         }}
-                    >{item.name} ({item._id})</MenuItem>
+                    >{item.__typename==='Media'?'jj':'nn'} {item.name} ({item._id})</MenuItem>
                 )}
 
 

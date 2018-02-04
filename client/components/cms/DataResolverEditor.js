@@ -25,7 +25,7 @@ class DataResolverEditor extends React.Component {
         try {
             const j = eval('(' + children + ')');
             if( j.constructor === Array ) {
-                onChange(JSON.stringify(j,null,4))
+                onChange(JSON.stringify(j,null,2))
             }
         }catch(e){
             console.error(e)

@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {Button, TextField} from 'ui/admin'
+import {Button, TextField, SimpleSwitch} from 'ui/admin'
 import FileDrop from '../FileDrop'
 import TypePicker from '../TypePicker'
 
@@ -39,8 +39,16 @@ class GenericForm extends React.Component {
 
     getInitalState = (props) => {
         const initalState = {fields: {}, isValid: true}
-        Object.keys(props.fields).map((k) => {
-            initalState.fields[k] = props.fields[k].value===undefined?null:props.fields[k].value
+        Object.keys(props.fields).map(k => {
+            const item = props.fields[k]
+            let v
+            if( props.values ){
+                v = props.values[k]
+            }else{
+                // value must be null instead of undefined
+                v = item.value===undefined?null:item.value
+            }
+            initalState.fields[k] = v
         })
         return initalState
     }
@@ -80,17 +88,24 @@ class GenericForm extends React.Component {
                     Object.keys(this.props.fields).map((k) => {
                         const o = this.props.fields[k],
                         value = this.state.fields[k]
+
                         const uitype = o.uitype || 'text'
+
+
                         if (uitype === 'image') {
                             return <FileDrop key={k}/>
                         } else if (uitype === 'type_picker') {
-                            return <TypePicker value={value} onChange={this.handleInputChange} key={k}
+                            return <TypePicker value={(value?(value.constructor===Array?value:[value]):null)} onChange={this.handleInputChange} key={k}
                                                name={k}
                                                multi={o.multi}
                                                type={o.type} placeholder={o.placeholder}/>
                         } else if (uitype === 'select') {
 
                             //TODO: implement
+                        } else if (o.type === 'Boolean') {
+
+                            return <SimpleSwitch key={k} label={o.placeholder} name={k} onChange={this.handleInputChange} checked={value}/>
+
                         } else {
                             return <TextField key={k} fullWidth={o.fullWidth} type={uitype} placeholder={o.placeholder}
                                               value={value || ''}
@@ -110,6 +125,7 @@ class GenericForm extends React.Component {
 
 GenericForm.propTypes = {
     fields: PropTypes.object.isRequired,
+    values: PropTypes.object,
     onClick: PropTypes.func,
     onValidate: PropTypes.func,
     caption: PropTypes.string,

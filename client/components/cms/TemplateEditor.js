@@ -25,7 +25,7 @@ class TemplateEditor extends React.Component {
         try {
             const j = eval('(' + children + ')');
             if( j.constructor === Array ) {
-                onBlur(JSON.stringify(j,null,4))
+                onBlur(JSON.stringify(j,null,2))
             }
         }catch(e){
             console.error(e)

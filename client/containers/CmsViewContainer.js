@@ -13,7 +13,7 @@ import ScriptEditor from 'client/components/cms/ScriptEditor'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
-
+import {getType} from 'client/util/types'
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
 const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){slug template script dataResolver ssr resolvedData html subscriptions _id createdBy{_id username}}}`
@@ -83,8 +83,22 @@ class CmsViewContainer extends React.Component {
         // register new supscriptions
         subscriptions.forEach(subs => {
             if (!this.registeredSubscriptions[subs]) {
+
+                const type = getType(subs)
+                let query = '_id'
+
+                type.fields.map(({name, required, multi, reference}) => {
+
+                    if (reference) {
+                        // todo: field name might be different than name
+                        //query += ' ' + name + '{_id name}'
+                    } else {
+                        query += ' ' + name
+                    }
+                })
+
                 const qqlSubscribe = gql`subscription{
-                subscribe${subs}{action, data{_id name price description image} }
+                subscribe${subs}{action data{${query}}}
               }`
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,

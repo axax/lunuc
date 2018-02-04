@@ -1,12 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import extensions from 'gen/extensions'
+import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
 import {
     DeleteIconButton,
     EditIconButton,
     Chip,
     Typography,
+    Switch,
     MenuItem,
     SimpleSelect,
     TextField,
@@ -26,13 +27,13 @@ import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
 import Hook from 'util/hook'
 import {UPLOAD_URL} from 'gen/config'
+import {getTypes, getTypeQueries} from 'client/util/types'
 
 const DEFAULT_RESULT_LIMIT = 10
 
 class TypesContainer extends React.Component {
 
     types = null
-    queries = {}
     pageParams = null
     createEditForm = null
     typeFormFields = {}
@@ -41,14 +42,16 @@ class TypesContainer extends React.Component {
 
     constructor(props) {
         super(props)
-        this.types = prepareTypes()
+        this.types = getTypes()
 
         this.pageParams = this.determinPageParams(props)
         const {type, page, limit, sort} = this.pageParams
         this.state = {
             confirmDeletionDialog: true,
-            dataToBeDeleted: null,
-            createDataDialog: false
+            dataToDelete: null,
+            createEditDialog: false,
+            dataToEdit: null,
+            data: null
         }
 
         // prepare list with types for select box
@@ -74,18 +77,20 @@ class TypesContainer extends React.Component {
     }
 
 
-    render() {
-        const startTime = new Date()
+    renderTable() {
+
         const {data} = this.state
-        const {type, page, limit, sort, filter} = this.pageParams
-        const formFields = this.getFormFields(type)
 
-        if (!this.types[type]) return <BaseLayout><Typography type="subheading" color="error">Type {type} does not
-            exist.
-            Types can be specified in an extension.</Typography></BaseLayout>
-
-        let tableWithResults
         if (data) {
+
+            // small optimization. only render table if data changed
+            if (data === this._lastData) {
+                return this._renderedTable
+            }
+
+            this._lastData = data
+
+            const {type, page, limit, sort} = this.pageParams
 
             const fields = this.types[type].fields, columns = this.getTableColumns(type), dataSource = []
 
@@ -94,27 +99,41 @@ class TypesContainer extends React.Component {
                     const dynamic = {}
                     fields.forEach(field => {
                         let v = item[field.name]
-                        if (v === null || v === undefined) {
-                            dynamic[field.name] = ''
-                        } else if (field.reference) {
-                            if (v.constructor === Array) {
-                                dynamic[field.name] = v.reduce((s, i) => s + (s !== '' ? ', ' : '') + i.name, '')
-                            } else {
-                                if (field.type === 'Media') {
-                                    dynamic[field.name] =
-                                        <img style={{height: '40px'}}
-                                             src={UPLOAD_URL + '/' + v._id}/>
+                        if (field.reference) {
+                            if (v) {
+                                if (v.constructor === Array) {
+                                    if (field.type === 'Media') {
+                                        dynamic[field.name] = v.reduce((s, i) => {
+                                            s.push(<img key={i._id} style={{height: '40px'}}
+                                                        src={UPLOAD_URL + '/' + i._id}/>)
+                                            return s
+                                        }, [])
+                                    } else {
+                                        dynamic[field.name] = v.reduce((s, i) => s + (s !== '' ? ', ' : '') + i.name, '')
+                                    }
+
+
                                 } else {
-                                    dynamic[field.name] = v.name
+                                    if (field.type === 'Media') {
+                                        dynamic[field.name] =
+                                            <img style={{height: '40px'}}
+                                                 src={UPLOAD_URL + '/' + v._id}/>
+                                    } else {
+                                        dynamic[field.name] = v.name
+                                    }
                                 }
                             }
+                        } else if ( field.type === 'Boolean' ){
+                            dynamic[field.name] = <Switch name={field.name}
+                                    onChange={e => this.handleDataChange.bind(this)(e, item, field.name)}
+                                    checked={v}/>
                         } else if (field.uitype === 'image') {
                             dynamic[field.name] =
                                 <img style={{height: '40px'}}
                                      src={v}/>
                         } else {
                             dynamic[field.name] =
-                                <span onBlur={(e) => this.handleDataChange.bind(this)(e, item, field.name)}
+                                <span onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
                                       suppressContentEditableWarning contentEditable>{v}</span>
                         }
                     })
@@ -140,24 +159,44 @@ class TypesContainer extends React.Component {
             /* HOOK */
             Hook.call('TypeTable', {type, dataSource, data, fields})
 
-            tableWithResults =
-                <SimpleTable title={type} dataSource={dataSource} columns={columns} count={data.total}
-                             rowsPerPage={limit} page={page}
-                             orderBy={asort[0]}
-                             actions={[{
-                                 name: 'Add new ' + type, onClick: () => {
-                                     this.setState({createDataDialog: true})
-                                 }
-                             }]}
-                             orderDirection={asort.length > 1 && asort[1] || null}
-                             onSort={this.handleSortChange}
-                             onChangePage={this.handleChangePage.bind(this)}
-                             onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
+            this._renderedTable = <SimpleTable title={type} dataSource={dataSource} columns={columns} count={data.total}
+                                               rowsPerPage={limit} page={page}
+                                               orderBy={asort[0]}
+                                               actions={[{
+                                                   name: 'Add new ' + type, onClick: () => {
+                                                       this.setState({createEditDialog: true})
+                                                   }
+                                               },{
+                                                   name: 'Refresh', onClick: () => {
+                                                       this.getData(this.pageParams,false)
+                                                   }
+                                               }]}
+                                               orderDirection={asort.length > 1 && asort[1] || null}
+                                               onSort={this.handleSortChange}
+                                               onChangePage={this.handleChangePage.bind(this)}
+                                               onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
+
+            return this._renderedTable
         }
+
+        return null
+    }
+
+
+    render() {
+        const startTime = new Date()
+        const {dataToEdit} = this.state
+        const {type, filter} = this.pageParams
+        const formFields = this.getFormFields(type)
+
+        if (!this.types[type]) return <BaseLayout><Typography type="subheading" color="error">Type {type} does not
+            exist.
+            Types can be specified in an extension.</Typography></BaseLayout>
+
 
         const editDialogProps = {
             title: type,
-            open: this.state.createDataDialog,
+            open: this.state.createEditDialog,
             onClose: this.handleCreateEditData,
             actions: [{key: 'cancel', label: 'Cancel'}, {
                 key: 'save',
@@ -166,11 +205,11 @@ class TypesContainer extends React.Component {
             }],
             children: <GenericForm ref={ref => {
                 this.createEditForm = ref
-            }} primaryButton={false} fields={formFields}/>
+            }} primaryButton={false} fields={formFields} values={dataToEdit}/>
         }
 
         /* HOOK */
-        Hook.call('TypeCreateEditDialog', {type, props: editDialogProps}, this)
+        Hook.call('TypeCreateEditDialog', {type, props: editDialogProps, dataToEdit}, this)
 
 
         const content = <BaseLayout>
@@ -196,8 +235,7 @@ class TypesContainer extends React.Component {
                 </Col>
             </Row>
 
-            {tableWithResults}
-
+            {this.renderTable()}
 
             <Typography type="display1" component="h2" gutterBottom>Available fields</Typography>
 
@@ -207,7 +245,7 @@ class TypesContainer extends React.Component {
             })
             }
 
-            {this.state.dataToBeDeleted &&
+            {this.state.dataToDelete &&
             <SimpleDialog open={this.state.confirmDeletionDialog} onClose={this.handleConfirmDeletion}
                           actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
                           title="Confirm deletion">
@@ -291,12 +329,6 @@ class TypesContainer extends React.Component {
         return result
     }
 
-    getQueries(type) {
-        if (!this.queries[type])
-            this.queries[type] = buildQueries(type, this.types)
-        return this.queries[type]
-    }
-
     getStoreKey(type) {
         return type.charAt(0).toLowerCase() + type.slice(1) + 's'
     }
@@ -304,7 +336,7 @@ class TypesContainer extends React.Component {
     getData({type, page, limit, sort, filter}, cacheFirst) {
         const {client} = this.props
         if (type) {
-            const queries = this.getQueries(type)
+            const queries = getTypeQueries(type)
 
             if (queries) {
 
@@ -312,7 +344,7 @@ class TypesContainer extends React.Component {
                     variables = {limit, page, sort, filter},
                     gqlQuery = gql(queries.query)
 
-                if( cacheFirst ) {
+                if (cacheFirst) {
                     try {
                         const storeData = client.readQuery({
                             query: gqlQuery,
@@ -335,7 +367,6 @@ class TypesContainer extends React.Component {
                     this.setState({data: response.data[storeKey]})
                 }).catch(error => {
                     console.log(error.message)
-
                     this.setState({data: null})
                 })
             }
@@ -343,9 +374,9 @@ class TypesContainer extends React.Component {
     }
 
     createData({type, page, limit, sort, filter}, input, optimisticInput) {
-        const {client} = this.props
+        const {client, user} = this.props
         if (type) {
-            const queries = this.getQueries(type)
+            const queries = getTypeQueries(type)
 
             client.mutate({
                 mutation: gql(queries.create),
@@ -354,7 +385,14 @@ class TypesContainer extends React.Component {
                 },
                 update: (store, {data}) => {
 
-                    const freshData = {...data['create' + type], ...optimisticInput}
+                    const freshData = {
+                        ...data['create' + type],
+                        createdBy: {
+                            _id: user.userData._id,
+                            username: user.userData.username,
+                            __typename: 'UserPublic'
+                        }, ...optimisticInput
+                    }
 
                     const gqlQuery = gql(queries.query),
                         storeKey = this.getStoreKey(type)
@@ -386,23 +424,20 @@ class TypesContainer extends React.Component {
         }
     }
 
-    updateData({type, page, limit, sort, filter}, input, key) {
+    updateData({type, page, limit, sort, filter}, changedData, optimisticData) {
         const {client} = this.props
 
         if (type) {
-
-            const queries = this.getQueries(type)
+            const queries = getTypeQueries(type)
 
             client.mutate({
                 mutation: gql(queries.update),
                 /* only send what has changed*/
-                variables: {
-                    _id: input._id,
-                    [key]: input[key]
-                },
+                variables: changedData,
                 update: (store, {data}) => {
                     const gqlQuery = gql(queries.query),
-                        storeKey = this.getStoreKey(type)
+                        storeKey = this.getStoreKey(type),
+                        responseItem = data['update' + type]
 
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
@@ -412,18 +447,21 @@ class TypesContainer extends React.Component {
 
 
                     if (storeData[storeKey]) {
+                        // find entry in result list
                         const refResults = storeData[storeKey].results
+                        const idx = refResults.findIndex(x => x._id === responseItem._id)
 
-                        const idx = refResults.findIndex(x => x._id === data['update' + type]._id)
                         if (idx > -1) {
-                            refResults[idx] = Object.assign({}, refResults[idx], Util.removeNullValues(input))
+                            // update entry with new data
+                            refResults[idx] = Object.assign({}, refResults[idx], changedData, optimisticData)
+                            //console.log(refResults[idx],changedData)
+                            // wirte it back to the cache
                             store.writeQuery({
                                 query: gqlQuery,
                                 variables: {page, limit, sort, filter},
                                 data: storeData
                             })
                             this.setState({data: storeData[storeKey]})
-
                         }
                     }
 
@@ -438,7 +476,7 @@ class TypesContainer extends React.Component {
 
         if (type) {
 
-            const queries = this.getQueries(type),
+            const queries = getTypeQueries(type),
                 storeKey = this.getStoreKey(type)
 
             client.mutate({
@@ -522,58 +560,79 @@ class TypesContainer extends React.Component {
     }
 
 
-    handleAddDataClick = (input) => {
+    referencesToIds = (input) => {
 
         // make sure if it is a reference only id gets passed as imput to craeteData
         const ipt2 = {}
         Object.keys(input).map(k => {
             const item = input[k]
             const {multi} = this.typeFormFields[this.pageParams.type][k]
-            if (item && item.constructor === Array) {
-                if (item.length > 0) {
-                    if (multi) {
-                        ipt2[k] = item.map(i => i._id)
+            if (item !== undefined) {
+                if (item.constructor === Array) {
+                    if (item.length > 0) {
+                        if (multi) {
+                            ipt2[k] = item.map(i => i._id)
+                        } else {
+                            ipt2[k] = item[0]._id
+                        }
                     } else {
-                        ipt2[k] = item[0]._id
+                        ipt2[k] = null
                     }
+                } else if (item.constructor === Object) {
+                    ipt2[k] = item._id
                 } else {
-                    ipt2[k] = null
+                    ipt2[k] = item
                 }
-            } else {
-                ipt2[k] = item
             }
         })
-        this.createData(this.pageParams, ipt2, input)
+        return ipt2
     }
 
     handleDataChange = (event, data, key) => {
-        const t = event.target.innerText.trim()
-        if (t !== data[key]) {
-            this.updateData(this.pageParams, {...data, [key]: t}, key)
+        let value
+
+        if (event.target.type === 'checkbox') {
+            value = event.target.checked
+        } else {
+            value = event.target.innerText.trim()
+        }
+
+        if (value !== data[key]) {
+            this.updateData(this.pageParams, {_id: data._id, [key]: value})
         }
     }
 
     handleDeleteDataClick = (data) => {
-        this.setState({confirmDeletionDialog: true, dataToBeDeleted: data})
+        this.setState({confirmDeletionDialog: true, dataToDelete: data})
     }
 
     handleEditDataClick = (data) => {
-        //this.setState({confirmDeletionDialog: true, dataToBeDeleted: data})
+        this.setState({createEditDialog: true, dataToEdit: data})
     }
 
     handleConfirmDeletion = (action) => {
         if (action && action.key === 'yes') {
-            this.deleteData(this.pageParams, this.state.dataToBeDeleted._id)
+            this.deleteData(this.pageParams, this.state.dataToDelete._id)
         }
-        this.setState({confirmDeletionDialog: false, dataToBeDeleted: false})
+        this.setState({confirmDeletionDialog: false, dataToDelete: false})
     }
 
 
     handleCreateEditData = (action) => {
         if (action && action.key === 'save') {
-            this.handleAddDataClick(this.createEditForm.state.fields)
+
+            const fieldData = this.createEditForm.state.fields
+            const submitData = this.referencesToIds(fieldData)
+            if (this.state.dataToEdit) {
+                // if dataToEdit is set we are in edit mode
+                this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...submitData}, fieldData)
+            } else {
+                // create a new entry
+                this.createData(this.pageParams, submitData, fieldData)
+            }
+
         }
-        this.setState({createDataDialog: false})
+        this.setState({createEditDialog: false, dataToEdit: null})
     }
 }
 
@@ -581,83 +640,17 @@ TypesContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
-    match: PropTypes.object.isRequired
+    match: PropTypes.object.isRequired,
+    user: PropTypes.object.isRequired
 }
 
-export default withRouter(withApollo(TypesContainer))
+
+const mapStateToProps = (store) => ({user: store.user})
 
 
-const buildQueries = (typeName, types) => {
-    if (!typeName || !types[typeName]) return null
-
-    const result = {}
-
-    const {name, fields} = types[typeName]
-    const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
-
-    let query = '_id status createdBy{_id username}'
-    let queryMutation = '_id status createdBy{_id username}'
-
-    let insertParams = '', insertUpdateQuery = '', updateParams = ''
-
-
-    if (fields) {
-        fields.map(({name, type, required, multi, reference}) => {
-            if (insertParams !== '') {
-                insertParams += ', '
-                updateParams += ', '
-                insertUpdateQuery += ', '
-            }
-
-            let t = type || 'String'
-
-            if (reference) {
-                t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
-
-                // todo: field name might be different than name
-                query += ' ' + name + '{_id name}'
-            } else {
-                query += ' ' + name
-                queryMutation += ' ' + name
-            }
-
-            insertParams += '$' + name + ': ' + t + (required ? '!' : '')
-            updateParams += '$' + name + ': ' + t
-            insertUpdateQuery += name + ': ' + '$' + name
-        })
-    }
-    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String){
-                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{${query}}}}`
-
-    result.create = `mutation create${name}(${insertParams}){create${name}(${insertUpdateQuery}){${queryMutation}}}`
-    result.update = `mutation update${name}($_id: ID!,${updateParams}){update${name}(_id:$_id,${insertUpdateQuery}){${queryMutation}}}`
-    result.delete = `mutation delete${name}($_id: ID!){delete${name}(_id: $_id){_id status}}`
-    return result
-}
-
-const prepareTypes = () => {
-    const types = {}
-    for (const extensionName in extensions) {
-        const extension = extensions[extensionName]
-        if (extension.options && extension.options.types) {
-
-            extension.options.types.forEach(type => {
-
-                types[type.name] = Object.assign({}, type)
-
-                // add extension name so we know by which extension the type is used
-                if (!types[type.name].usedBy) {
-                    types[type.name].usedBy = []
-                }
-                types[type.name].usedBy.push(extensionName)
-            })
-
-        }
-    }
-    Hook.call('Types', {types})
-
-    return types
-}
+export default connect(
+    mapStateToProps
+)(withRouter(withApollo(TypesContainer)))
 
 
 /* Type Media */
@@ -691,18 +684,16 @@ Hook.on('TypeTable', ({type, dataSource, data}) => {
 })
 
 // add some extra data to the table
-Hook.on('TypeCreateEditDialog', function ({type, props}) {
-    if (type === 'Media') {
+Hook.on('TypeCreateEditDialog', function ({type, props, dataToEdit}) {
+    if (type === 'Media' && !dataToEdit) {
         // remove save button
         props.actions.splice(1, 1)
-        props.children = <FileDrop multi={false} onSuccess={r=>{
-            this.setState({createDataDialog: false})
+        props.children = <FileDrop multi={false} onSuccess={r => {
+            this.setState({createEditDialog: false})
 
             this.getData(this.pageParams, false)
             // todo: but it directly into the store instead of reload
             //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
-
-
 
 
         }}/>

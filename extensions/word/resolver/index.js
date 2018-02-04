@@ -12,11 +12,11 @@ export default db => ({
     words: async ({sort, limit, offset, page, filter}, {context}) => {
         return await GenericResolver.entities(db, context, 'Word', ['en', 'de'], {limit, offset, page, filter, sort})
     },
-    createWord: async ({en, de}, {context}) => {
-        return await GenericResolver.createEnity(db, context, 'Word', {en, de})
+    createWord: async (data, {context}) => {
+        return await GenericResolver.createEnity(db, context, 'Word', data)
     },
-    updateWord: async ({_id, en, de}, {context}) => {
-        return GenericResolver.updateEnity(db, context, 'Word', {_id, en, de})
+    updateWord: async ({_id, ...rest}, {context}) => {
+        return GenericResolver.updateEnity(db, context, 'Word', {_id, ...rest})
     },
     deleteWord: async ({_id}, {context}) => {
         return GenericResolver.deleteEnity(db, context, 'Word', {_id})

@@ -20,7 +20,7 @@ class WordContainer extends React.Component {
             orderDirection: 'desc',
             rowsPerPage: WORDS_PER_PAGE,
             confirmDeletionDialog: false,
-            dataToBeDeleted: false
+            dataToDelete: false
         }
     }
 
@@ -50,7 +50,7 @@ class WordContainer extends React.Component {
     }
 
     handleDeleteWordClick = (data) => {
-        this.setState({confirmDeletionDialog: true, dataToBeDeleted: data})
+        this.setState({confirmDeletionDialog: true, dataToDelete: data})
     }
 
     handleFilter = ({value}) => {
@@ -72,10 +72,10 @@ class WordContainer extends React.Component {
         if (action && action.key === 'yes') {
             const {deleteWord} = this.props
             deleteWord({
-                _id: this.state.dataToBeDeleted._id
+                _id: this.state.dataToDelete._id
             })
         }
-        this.setState({confirmDeletionDialog: false, dataToBeDeleted: false})
+        this.setState({confirmDeletionDialog: false, dataToDelete: false})
     }
 
     handleSortChange = (orderBy) => {
@@ -93,7 +93,7 @@ class WordContainer extends React.Component {
 
     render() {
         const startTime = (new Date()).getTime()
-        const {words, loading} = this.props
+        const {words} = this.props
 
 
         const currentPage = Math.ceil((words ? words.offset : 0) / this.state.rowsPerPage) + 1
@@ -165,8 +165,8 @@ class WordContainer extends React.Component {
                         actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
                         title="Confirm deletion">
                     Are you sure you want to delete the word
-                    <strong>{Util.escapeHtml('"' + this.state.dataToBeDeleted.en)}
-                        - {Util.escapeHtml(this.state.dataToBeDeleted.de + '"')}</strong>?
+                    <strong>{Util.escapeHtml('"' + this.state.dataToDelete.en)}
+                        - {Util.escapeHtml(this.state.dataToDelete.de + '"')}</strong>?
                 </SimpleDialog>
 
             </BaseLayout>
