@@ -51,10 +51,22 @@ const app = http.createServer(function (req, res) {
             if( uri.startsWith(UPLOAD_URL+'/')){
                 const upload_dir = path.join(__dirname, '../'+ UPLOAD_DIR)
                 // uploads
-                const fileStream = fs.createReadStream(path.join(upload_dir, path.basename(uri)))
-                const headerExtra = {'Cache-Control': 'public, max-age=604800'}
-                res.writeHead(200, {...headerExtra})
-                fileStream.pipe(res)
+                const filename = path.join(upload_dir, path.basename(uri))
+
+                fs.exists(filename, (exists) => {
+                    if (exists) {
+                        const fileStream = fs.createReadStream(filename)
+                        const headerExtra = {'Cache-Control': 'public, max-age=604800'}
+                        res.writeHead(200, {...headerExtra})
+                        fileStream.pipe(res)
+                    }else{
+                        console.log('not exists: ' + filename)
+                        res.writeHead(404, {'Content-Type': 'text/plain'})
+                        res.write('404 Not Found\n')
+                        res.end()
+                    }
+                })
+
 
             }else {
                 const filename = path.join(BUILD_DIR, uri),
