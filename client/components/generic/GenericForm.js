@@ -74,7 +74,6 @@ class GenericForm extends React.Component {
         })
     }
 
-
     onAddClick = () => {
         if (this.props.onClick)
             this.props.onClick(this.state.fields)
@@ -82,11 +81,12 @@ class GenericForm extends React.Component {
     }
 
     render() {
+        const {fields, onKeyDown, primaryButton, caption} = this.props
         return (
             <form>
                 {
-                    Object.keys(this.props.fields).map((k) => {
-                        const o = this.props.fields[k],
+                    Object.keys(fields).map((k) => {
+                        const o = fields[k],
                         value = this.state.fields[k]
 
                         const uitype = o.uitype || 'text'
@@ -107,16 +107,20 @@ class GenericForm extends React.Component {
                             return <SimpleSwitch key={k} label={o.placeholder} name={k} onChange={this.handleInputChange} checked={value}/>
 
                         } else {
-                            return <TextField key={k} fullWidth={o.fullWidth} type={uitype} placeholder={o.placeholder}
+                            return <TextField key={k}
+                                              fullWidth={o.fullWidth}
+                                              type={uitype}
+                                              placeholder={o.placeholder}
                                               value={value || ''}
                                               name={k}
+                                              onKeyDown={(e)=>{ onKeyDown && onKeyDown(e,value)}}
                                               onChange={this.handleInputChange}/>
                         }
                     })
                 }
-                {this.props.primaryButton != false ?
+                {primaryButton != false ?
                     <Button color="primary" raised disabled={!this.state.isValid}
-                            onClick={this.onAddClick}>{this.props.caption || 'Add'}</Button>
+                            onClick={this.onAddClick}>{caption || 'Add'}</Button>
                     : ''}
             </form>
         )
@@ -127,6 +131,7 @@ GenericForm.propTypes = {
     fields: PropTypes.object.isRequired,
     values: PropTypes.object,
     onClick: PropTypes.func,
+    onKeyDown: PropTypes.func,
     onValidate: PropTypes.func,
     caption: PropTypes.string,
     primaryButton: PropTypes.bool

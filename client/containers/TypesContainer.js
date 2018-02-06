@@ -123,10 +123,10 @@ class TypesContainer extends React.Component {
                                     }
                                 }
                             }
-                        } else if ( field.type === 'Boolean' ){
+                        } else if (field.type === 'Boolean') {
                             dynamic[field.name] = <Switch name={field.name}
-                                    onChange={e => this.handleDataChange.bind(this)(e, item, field.name)}
-                                    checked={v}/>
+                                                          onChange={e => this.handleDataChange.bind(this)(e, item, field.name)}
+                                                          checked={!!v}/>
                         } else if (field.uitype === 'image') {
                             dynamic[field.name] =
                                 <img style={{height: '40px'}}
@@ -166,9 +166,9 @@ class TypesContainer extends React.Component {
                                                    name: 'Add new ' + type, onClick: () => {
                                                        this.setState({createEditDialog: true})
                                                    }
-                                               },{
+                                               }, {
                                                    name: 'Refresh', onClick: () => {
-                                                       this.getData(this.pageParams,false)
+                                                       this.getData(this.pageParams, false)
                                                    }
                                                }]}
                                                orderDirection={asort.length > 1 && asort[1] || null}
@@ -224,7 +224,9 @@ class TypesContainer extends React.Component {
                     />
                 </Col>
                 <Col md={3} align="right">
-                    <GenericForm onChange={this.handleFilter} primaryButton={false}
+                    <GenericForm onChange={this.handleFilter}
+                                 onKeyDown={this.handelFilterKeyDown}
+                                 primaryButton={false}
                                  fields={{
                                      term: {
                                          value: filter,
@@ -519,13 +521,28 @@ class TypesContainer extends React.Component {
     }
 
 
+    runFilter(f) {
+        const {type, limit, sort} = this.pageParams
+        this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${sort}&f=${encodeURIComponent(f)}`)
+    }
+
     handleFilterTimeout = null
-    handleFilter = ({value}) => {
+    handleFilter = ({value}, immediate) => {
         clearTimeout(this.handleFilterTimeout)
-        this.handleFilterTimeout = setTimeout(() => {
-            const {type, limit, sort} = this.pageParams
-            this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${sort}&f=${value}`)
-        }, 1000)
+
+        if (immediate) {
+            this.runFilter(value)
+        } else {
+            this.handleFilterTimeout = setTimeout(()=> {this.runFilter(value)}, 1000)
+        }
+
+    }
+
+    handelFilterKeyDown = (e, value) => {
+        if (e.keyCode === 13) {
+            e.preventDefault()
+            this.handleFilter({value},true)
+        }
     }
 
     handleSortChange = (orderBy) => {
@@ -568,7 +585,7 @@ class TypesContainer extends React.Component {
             const item = input[k]
             const {multi} = this.typeFormFields[this.pageParams.type][k]
             if (item !== undefined) {
-                if (item.constructor === Array) {
+                if (item && item.constructor === Array) {
                     if (item.length > 0) {
                         if (multi) {
                             ipt2[k] = item.map(i => i._id)
@@ -578,7 +595,7 @@ class TypesContainer extends React.Component {
                     } else {
                         ipt2[k] = null
                     }
-                } else if (item.constructor === Object) {
+                } else if (item && item.constructor === Object) {
                     ipt2[k] = item._id
                 } else {
                     ipt2[k] = item

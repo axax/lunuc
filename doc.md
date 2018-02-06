@@ -84,5 +84,28 @@ Hook.on('Routes', ({routes}) => {
 
 ## Content Management
 ### Data Resolver
+It is a simple json structure to select data on the server. The json is never exposed to the client. Only the resolved data are sent to the client.
+
++ f = filter for the query
++ t = type
++ d = the data / fields you want to access
++ l = limit of results
++ o = offset
++ p = page (if no offset is defined, offset is limit * (page -1) )
+
+you can subcribe to data changes with $ character placed in front of the type.
+                    
+```json
+[
+  {
+    "t": "$ProductCategory",
+    "f": [
+      "name"
+    ],
+    "l": 100
+  }
+]                    
+```                    
+                    
 ### Template
 ### Script

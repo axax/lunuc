@@ -40,9 +40,31 @@ const GenericResolver = {
             }
         }
 
+        const filterParts = {
+            $:[]
+        }
+        /* price=99 name=a
+           -->
+
+
+         */
+        if( filter ){
+            const a = filter.split(' ')
+            a.forEach(i => {
+                const p = i.split('=')
+                if( p.length>1 ){
+                    filterParts[ p[0] ] = p[1]
+                }else{
+                    filterParts.$.push(p[0])
+                }
+            })
+        }
+
+
         const group = {}
         const filterMatch = []
         const lookups = []
+
         data.forEach((value, i) => {
 
             if (value.indexOf('$') > 0) {
@@ -73,8 +95,13 @@ const GenericResolver = {
 
             } else {
                 group[value] = {'$first': '$' + value}
-                if (filter) {
-                    filterMatch.push({[value]: {'$regex': filter, '$options': 'i'}})
+                if( filter ) {
+                    if (filterParts[value]) {
+                        filterMatch.push({[value]: {'$regex': filterParts[value], '$options': 'i'}})
+                    }
+                    filterParts.$.forEach(i => {
+                        filterMatch.push({[value]: {'$regex': i, '$options': 'i'}})
+                    })
                 }
             }
 
@@ -82,6 +109,7 @@ const GenericResolver = {
         if (filterMatch.length > 0) {
             match.$or = filterMatch
         }
+
         const collection = db.collection(collectionName)
 
         let a = (await collection.aggregate([

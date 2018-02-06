@@ -12,11 +12,11 @@ const UtilCms = {
                 const json = JSON.parse(dataResolverReplaced)
 
                 for (let i = 0; i < json.length; i++) {
-                    const {t, f, l, o,p, filter} = json[i]
+                    const {t, f, l, o,p, d} = json[i]
                     /*
-                    filter = filter for the query
+                    f = filter for the query
                     t = type
-                    f = fields
+                    d = the data / fields you want to access
                     l = limit of results
                     o = offset
                     p = page (if no offset is defined, offset is limit * (page -1) )
@@ -29,8 +29,8 @@ const UtilCms = {
                         } else {
                             type = t
                         }
-                        const result = await GenericResolver.entities(db, context, type, f, {
-                            filter,
+                        const result = await GenericResolver.entities(db, context, type, d, {
+                            filter: f,
                             limit: l,
                             page: p,
                             offset: o,

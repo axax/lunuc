@@ -2,10 +2,13 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
-import {DrawerLayout, Button, Typography} from 'ui/admin'
+import {DrawerLayout, Button, Typography, Divider} from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {withRouter} from 'react-router-dom'
 import PrettyResume from '../components/PrettyResume'
+import FileDrop from 'client/components/FileDrop'
+
+
 class LinkedInProfileContainer extends React.Component {
 
     state = {
@@ -63,6 +66,9 @@ class LinkedInProfileContainer extends React.Component {
                     {linkedin.summary}
                 </p>
                 <Button raised onClick={this.handleLinkedInDisconnect}>Disconnect with LinkedIn</Button>
+
+                <FileDrop accept="text/csv" label="Drop linked in cvs files here"/>
+
 
                 <PrettyResume resumeData={linkedin} />
             </div>
