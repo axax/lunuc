@@ -109,3 +109,11 @@ you can subcribe to data changes with $ character placed in front of the type.
                     
 ### Template
 ### Script
+**Reserved keywords**
+
+* scope => Object with properties related to the scope
+* on => Add an event listener function
+* setLocal => put data to the localstorage
+* getLocal => get data from the localstorage
+* refresh => refresh a component
+* history => history object to change current location

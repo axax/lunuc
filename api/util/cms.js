@@ -29,6 +29,7 @@ const UtilCms = {
                         } else {
                             type = t
                         }
+
                         const result = await GenericResolver.entities(db, context, type, d, {
                             filter: f,
                             limit: l,
@@ -36,6 +37,7 @@ const UtilCms = {
                             offset: o,
                             match: {}
                         })
+                        //TODO: only return fields that are request
                         resolvedData[type] = result
                     }
 

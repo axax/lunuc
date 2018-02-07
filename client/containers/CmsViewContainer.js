@@ -13,7 +13,7 @@ import ScriptEditor from 'client/components/cms/ScriptEditor'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
-import {getType} from 'client/util/types'
+import {getType} from 'util/types'
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
 const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){slug template script dataResolver ssr resolvedData html subscriptions _id createdBy{_id username}}}`
@@ -192,7 +192,6 @@ class CmsViewContainer extends React.Component {
 
     componentWillReceiveProps(props) {
         this.setUpSubsciptions(props)
-
         // in case props change and differ from inital props
         if (props.cmsPage) {
             const {template, script, dataResolver, ssr} = props.cmsPage
@@ -219,7 +218,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, location, _parentRef, id, loading} = this.props
+        const {cmsPage, location,history, _parentRef, id, loading} = this.props
 
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
@@ -236,7 +235,7 @@ class CmsViewContainer extends React.Component {
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
 
-        const scope = {page: {slug: cmsPage.slug}, params: Util.extractQueryParams()}
+        const scope = {page: {slug: cmsPage.slug},pathname: location.pathname, params: Util.extractQueryParams()}
 
         const startTime = new Date()
 
@@ -245,6 +244,7 @@ class CmsViewContainer extends React.Component {
                                  resolvedData={cmsPage.resolvedData}
                                  editMode={editMode}
                                  scope={JSON.stringify(scope)}
+                                 history={history}
                                  onChange={this.handleTemplateSaveChange}/>
         let content
         if (!editMode) {
@@ -316,6 +316,7 @@ CmsViewContainer.propTypes = {
     dynamic: PropTypes.bool,
     history: PropTypes.object,
     location: PropTypes.object,
+    match: PropTypes.object,
     /* Reference to the parent JsonDom */
     _parentRef: PropTypes.object,
     id: PropTypes.string

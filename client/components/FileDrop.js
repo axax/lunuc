@@ -163,9 +163,10 @@ class FileDrop extends React.Component {
     }
 
     handelDrop(e) {
+        const {onFileContent, accept } = this.props
         this.setDragState(e, false)
 
-        const accepts= (this.props.accept || DEFAULT_ACCEPT).split('|'), acceptsType = [], acceptsExt = []
+        const accepts= (accept || DEFAULT_ACCEPT).split('|'), acceptsType = [], acceptsExt = []
 
         accepts.forEach(i => {
             const a = i.split('/')
@@ -203,7 +204,6 @@ class FileDrop extends React.Component {
 
             if( isValid) {
 
-                console.log(f.type)
                 if ((/\.(?=gif|jpg|png|jpeg)/gi).test(f.name)) {
                     // is image
 
@@ -211,12 +211,13 @@ class FileDrop extends React.Component {
                     //preview(f);
                     this.resizeImageAndUpload(f)
                 } else if ((/\.(?=csv|text)/gi).test(f.name)) {
-                    console.log(f.name)
 
                     const reader = new FileReader()
                     reader.readAsText(f, "UTF-8")
                     reader.onload = function (e) {
-                        console.log(e.target.result)
+                        if( onFileContent ){
+                            onFileContent(f,e.target.result)
+                        }
                     }
                    /* reader.onerror = function (evt) {
                         document.getElementById("fileContents").innerHTML = "error reading file";
@@ -344,7 +345,8 @@ FileDrop.propTypes = {
     classes: PropTypes.object.isRequired,
     onSuccess: PropTypes.func,
     label: PropTypes.string,
-    accept: PropTypes.string
+    accept: PropTypes.string,
+    onFileContent: PropTypes.func
 }
 
 export default withStyles(styles)(FileDrop)

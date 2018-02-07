@@ -27,7 +27,7 @@ import {withRouter} from 'react-router-dom'
 import {ADMIN_BASE_URL} from 'gen/config'
 import Hook from 'util/hook'
 import {UPLOAD_URL} from 'gen/config'
-import {getTypes, getTypeQueries} from 'client/util/types'
+import {getTypes, getTypeQueries, getFormFields} from 'util/types'
 
 const DEFAULT_RESULT_LIMIT = 10
 
@@ -36,7 +36,6 @@ class TypesContainer extends React.Component {
     types = null
     pageParams = null
     createEditForm = null
-    typeFormFields = {}
     typeColumns = {}
     typesToSelect = []
 
@@ -187,7 +186,7 @@ class TypesContainer extends React.Component {
         const startTime = new Date()
         const {dataToEdit} = this.state
         const {type, filter} = this.pageParams
-        const formFields = this.getFormFields(type)
+        const formFields = getFormFields(type)
 
         if (!this.types[type]) return <BaseLayout><Typography type="subheading" color="error">Type {type} does not
             exist.
@@ -263,30 +262,6 @@ class TypesContainer extends React.Component {
         return content
     }
 
-
-    getFormFields(type) {
-        if (this.typeFormFields[type]) return this.typeFormFields[type]
-
-        this.typeFormFields[type] = {}
-        this.types[type].fields.map(field => {
-            let uitype = field.uitype, placeholder = ''
-            // if uitype is not defined and if it is a reference to another type use type_picker
-            if (!uitype && field.reference) {
-                uitype = 'type_picker'
-                placeholder = `${field.name} -> ${field.type}`
-            } else {
-                placeholder = `Enter ${field.name}`
-            }
-            this.typeFormFields[type][field.name] = {
-                placeholder,
-                uitype,
-                multi: !!field.multi,
-                type: field.type
-            }
-        })
-
-        return this.typeFormFields[type]
-    }
 
     getTableColumns(type) {
         if (this.typeColumns[type]) return this.typeColumns[type]
@@ -579,11 +554,12 @@ class TypesContainer extends React.Component {
 
     referencesToIds = (input) => {
 
+        const formFields = getFormFields(this.pageParams.type)
         // make sure if it is a reference only id gets passed as imput to craeteData
         const ipt2 = {}
         Object.keys(input).map(k => {
             const item = input[k]
-            const {multi} = this.typeFormFields[this.pageParams.type][k]
+            const {multi} = formFields[k]
             if (item !== undefined) {
                 if (item && item.constructor === Array) {
                     if (item.length > 0) {

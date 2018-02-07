@@ -6,6 +6,9 @@ import Hook from 'util/hook'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
 
+
+const TEMPLATE_EVENTS = ['Click','KeyDown']
+
 class JsonDom extends React.Component {
 
     components = {
@@ -73,8 +76,7 @@ class JsonDom extends React.Component {
     }
 
 
-    runResolvedData = true
-    resolvedDataJson = null
+    resolvedDataJson = undefined
 
     constructor(props) {
         super(props)
@@ -96,9 +98,17 @@ class JsonDom extends React.Component {
     }
 
     componentWillReceiveProps(props) {
+
         if (this.props.scope !== props.scope) {
             this.scope = null
-            //console.log('reset scope')
+
+
+           /* if( this.props.scope.params !== props.scope.params ){
+                // set it to undefined. null wouldn't be enough because null can also be a resolved value
+                this.resolvedDataJson = undefined
+
+                console.log('reset scope data res')
+            }*/
         }
         if (this.props.template !== props.template) {
             this.resetTemplate()
@@ -112,8 +122,7 @@ class JsonDom extends React.Component {
             //console.log('reset script')
         }
         if (this.props.resolvedData !== props.resolvedData) {
-            this.resolvedDataJson = null
-            this.runResolvedData = true
+            this.resolvedDataJson = undefined
             //console.log('reset resolvedData')
         }
         this.setState({hasReactError: false})
@@ -172,16 +181,16 @@ class JsonDom extends React.Component {
         onError(e)
     }
 
-    scopeByPath(path) {
+    scopeByPath(path, scope) {
         try {
             // get data from scope by path (foo.bar)
-            return path.split('.').reduce((res, prop) => res[prop], this.scope)
+            return path.split('.').reduce((res, prop) => res[prop], scope)
         } catch (e) {
             this.emitJsonError(e)
         }
     }
 
-    parseRec(a, rootKey) {
+    parseRec(a, rootKey, childScope) {
         if (!a) return null
         if (a.constructor === String) return a
         if (a.constructor !== Array) return ''
@@ -199,8 +208,16 @@ class JsonDom extends React.Component {
             if ($loop) {
                 const {$d, d, c} = $loop
                 let data
+                console.log(childScope)
+
+
                 if ($d) {
-                    data = this.scopeByPath($d)
+                    if( childScope ){
+                        data = this.scopeByPath($d, childScope)
+                    }else{
+                        data = this.scopeByPath($d, this.scope)
+                    }
+
 
                 } else {
                     data = d
@@ -219,7 +236,6 @@ class JsonDom extends React.Component {
                     const re = new RegExp('\\$\\.' + s + '{', 'g')
                     const cStr = JSON.stringify(c).replace(re, '${') /* $.loop{ --> ${ */
                         .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}') /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
-
                     data.forEach((loopChild, childIdx) => {
                         const tpl = new Function('const {'+Object.keys(loopChild).join(',')+'} = this.'+s+';return `' + cStr + '`;')
                         // back to json
@@ -227,7 +243,7 @@ class JsonDom extends React.Component {
                         const json = JSON.parse(tpl.call({[s]: loopChild}))
 
                         const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
-                        h.push(this.parseRec(json, key))
+                        h.push(this.parseRec(json, key, {...childScope,[s]:loopChild}))
 
 
                     })
@@ -246,20 +262,26 @@ class JsonDom extends React.Component {
             } else {
                 _t = t
             }
-            if (p && p.onClick) {
-                const payload = p.onClick
-                p.onClick = () => {
-                    this.jsOnStack.forEach((o) => {
-                        if (o.key == 'click' && o.cb) {
-                            o.cb(payload)
+            if( p ) {
+                // replace events with real functions and pass payload
+                TEMPLATE_EVENTS.forEach((e) => {
+                    if (p['on'+e] && p['on'+e].constructor === Object) {
+                        const payload = p['on'+e]
+                        p['on'+e] = (eo) => {
+                            this.jsOnStack.forEach((o) => {
+                                if (o.cb && o.key.toUpperCase() === e.toUpperCase()) {
+                                    o.cb(payload,eo)
+                                }
+                            })
                         }
-                    })
-                }
+                    }
+                })
             }
+
             h.push(React.createElement(
                 this.components[_t] || _t,
                 {id: key, key, ...p},
-                this.parseRec(c, key)
+                this.parseRec(c, key,childScope)
             ))
         })
         return h
@@ -315,7 +337,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {template, script, resolvedData} = this.props
+        const {template, script, resolvedData, history} = this.props
         if (!template) {
             console.warn('Template is missing.')
             return null
@@ -333,8 +355,7 @@ class JsonDom extends React.Component {
         const scope = this.getScope(this.props)
         let jsError, resolveDataError
 
-        if (this.runResolvedData) {
-            this.runResolvedData = false
+        if (this.resolvedDataJson === undefined) {
             try {
                 this.resolvedDataJson = JSON.parse(resolvedData)
                 if (this.resolvedDataJson.error) {
@@ -358,12 +379,13 @@ class JsonDom extends React.Component {
                 this.scriptResult = new Function(`
                 const scope = arguments[0]
                 const {on, setLocal, getLocal, refresh}= arguments[1]
+                const history= arguments[2]
                 ${script}`)(scope, {
                     on: this.jsOn,
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh
-                })
+                },history)
             } catch (e) {
                 jsError = e.message
             }
@@ -395,6 +417,7 @@ JsonDom.propTypes = {
     onError: PropTypes.func,
     editMode: PropTypes.bool,
     _parentRef: PropTypes.object,
+    history: PropTypes.object,
     id: PropTypes.string
 }
 

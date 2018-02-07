@@ -29,8 +29,9 @@ class Routes extends React.Component {
         {
             // match everything but paths that start with ADMIN_BASE_URL
             exact: false, path: '/:slug*', render: ({match}) => {
+
             if (match.url === '/' || (match.params.slug && match.params.slug.split('/')[0] !== this.adminBaseUrlPlain)) {
-                return <CmsViewContainer slug={match.params.slug || ''}/>;
+                return <CmsViewContainer match={match} slug={match.params.slug || ''}/>;
             }
             return null
         }

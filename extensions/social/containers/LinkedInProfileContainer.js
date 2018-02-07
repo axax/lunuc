@@ -44,6 +44,12 @@ class LinkedInProfileContainer extends React.Component {
         this.props.deleteKeyValue({key: 'linkedInCode'})
     }
 
+    handleCsv = (file,data) => {
+
+        console.log(data)
+
+    }
+
 
     componentWillReceiveProps(nextProps) {
         const {keyValues} = nextProps
@@ -67,7 +73,7 @@ class LinkedInProfileContainer extends React.Component {
                 </p>
                 <Button raised onClick={this.handleLinkedInDisconnect}>Disconnect with LinkedIn</Button>
 
-                <FileDrop accept="text/csv" label="Drop linked in cvs files here"/>
+                <FileDrop onFileContent={this.handleCsv} accept="text/csv" label="Drop linked in cvs files here"/>
 
 
                 <PrettyResume resumeData={linkedin} />

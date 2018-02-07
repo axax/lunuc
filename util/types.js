@@ -1,7 +1,7 @@
 import extensions from 'gen/extensions'
 import Hook from 'util/hook'
 
-const types = {}, typeQueries = {}
+const types = {}, typeQueries = {}, typeFormFields = {}
 
 
 export const getTypes = () => {
@@ -92,4 +92,31 @@ export const getTypeQueries = (typeName) => {
 
     typeQueries[typeName] = result
     return result
+}
+
+
+
+export const getFormFields = (type)=> {
+    if (typeFormFields[type]) return typeFormFields[type]
+    const types = getTypes()
+
+    typeFormFields[type] = {}
+    types[type].fields.map(field => {
+        let uitype = field.uitype, placeholder = ''
+        // if uitype is not defined and if it is a reference to another type use type_picker
+        if (!uitype && field.reference) {
+            uitype = 'type_picker'
+            placeholder = `${field.name} -> ${field.type}`
+        } else {
+            placeholder = `Enter ${field.name}`
+        }
+        typeFormFields[type][field.name] = {
+            placeholder,
+            uitype,
+            multi: !!field.multi,
+            type: field.type
+        }
+    })
+
+    return typeFormFields[type]
 }

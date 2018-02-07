@@ -1,5 +1,7 @@
 import Util from '../../util'
+//import Types form
 import {ObjectId} from 'mongodb'
+import {getFormFields} from 'util/types'
 
 
 const GenericResolver = {
@@ -65,9 +67,36 @@ const GenericResolver = {
         const filterMatch = []
         const lookups = []
 
+        const addLookup = (type,fieldName,multi)=>{
+            lookups.push({
+                $lookup: {
+                    from: type,
+                    localField: fieldName,
+                    foreignField: '_id',
+                    as: fieldName
+                }
+            })
+
+            if (multi) {
+                group[fieldName] = {'$first': '$' + fieldName}
+            } else {
+                group[fieldName] = {'$first': {$arrayElemAt: ['$' + fieldName, 0]}}
+            }
+        }
+
         data.forEach((value, i) => {
 
-            if (value.indexOf('$') > 0) {
+            if( value.constructor === Object ){
+                // if a value is in this format {'categories':['name']}
+                // we expect that the field categories is a reference to another type
+                // so we create a lookup for this type
+                const keys = Object.keys(value)
+                //check if this field is a reference
+                const fields = getFormFields(collectionName)
+                if( fields && fields[keys[0]] ){
+                    addLookup(fields[keys[0]].type,keys[0],fields[keys[0]].multi)
+                }
+            }else if (value.indexOf('$') > 0) {
                 // this is a reference
                 // for instance image$Media --> field image is a reference to the type Media
 
@@ -78,23 +107,12 @@ const GenericResolver = {
                     multi = true
                     type = type.substring(1, type.length - 1)
                 }
-                lookups.push({
-                    $lookup: {
-                        from: type,
-                        localField: fieldName,
-                        foreignField: '_id',
-                        as: fieldName
-                    }
-                })
-
-                if (multi) {
-                    group[fieldName] = {'$first': '$' + fieldName}
-                } else {
-                    group[fieldName] = {'$first': {$arrayElemAt: ['$' + fieldName, 0]}}
-                }
+                addLookup(type,fieldName,multi)
 
             } else {
                 group[value] = {'$first': '$' + value}
+
+
                 if( filter ) {
                     if (filterParts[value]) {
                         filterMatch.push({[value]: {'$regex': filterParts[value], '$options': 'i'}})
@@ -105,10 +123,12 @@ const GenericResolver = {
                 }
             }
 
+
         })
         if (filterMatch.length > 0) {
             match.$or = filterMatch
         }
+        console.log(match)
 
         const collection = db.collection(collectionName)
 
