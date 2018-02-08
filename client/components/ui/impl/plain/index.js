@@ -27,7 +27,7 @@ export const UIProvider = ({children}) => {
 }
 
 
-export const Button = injectSheet(styles)(({classes,raised, ...rest}) => {
+export const Button = injectSheet(styles)(({classes, raised, ...rest}) => {
     return <button className={classes.button} {...rest} />
 })
 
@@ -46,7 +46,7 @@ export const Input = ({...rest}) => {
 }
 
 export const TextField = ({multiline, ...rest}) => {
-    if( multiline ){
+    if (multiline) {
         return <textarea {...rest} />
     }
     return <input {...rest} />
@@ -86,8 +86,8 @@ export {default as Pagination} from './Pagination'
 export const Row = ({...rest}) => {
     return <div className="row" {...rest} />
 }
-export const Col = ({span,lg,md,sm, ...rest}) => {
-    return <div className={'col '+(md && 'col-md-'+md+' ')} {...rest} />
+export const Col = ({span, lg, md, sm, ...rest}) => {
+    return <div className={'col ' + (md && 'col-md-' + md + ' ')} {...rest} />
 }
 
 // table
@@ -182,7 +182,7 @@ export const MenuList = ({children, ...rest}) => {
     </ul>
 }
 
-export const MenuListItem = ({primary,button, ...rest}) => {
+export const MenuListItem = ({primary, button, ...rest}) => {
     return <li {...rest}>
         <span>{primary}</span>
     </li>
@@ -215,30 +215,33 @@ export const SimpleToolbar = ({title, children, ...rest}) => {
     return <div className="SimpleToolbar">
         <div className="SimpleToolbar__title">
             {title}
+
+        </div>
+        <div className="SimpleToolbar__children">
+            {children}
         </div>
     </div>
 }
 
 
-
 // linear progress
-export const LinearProgress = () =>  {
+export const LinearProgress = () => {
     return <div className="LinearProgress">
         <div className="LinearProgress__indeterminate"></div>
     </div>
 }
 
-export const Chip = ({label,...rest}) => {
+export const Chip = ({label, ...rest}) => {
     return <div className="Chip" {...rest}>{label}</div>
 }
 
-export const Typography = ({gutterBottom,component,type,...rest}) => {
-    const TagName = component || (type && type.indexOf('display')>-1?'h1':'p')
-    return <TagName className={'Typography Typography__'+type} {...rest} />
+export const Typography = ({gutterBottom, component, type, ...rest}) => {
+    const TagName = component || (type && type.indexOf('display') > -1 ? 'h1' : 'p')
+    return <TagName className={'Typography Typography__' + type} {...rest} />
 }
 
 
-export const ExpansionPanel = ({heading, children,...rest}) => {
+export const ExpansionPanel = ({heading, children, ...rest}) => {
     return <div className="ExpansionPanel" {...rest} >
         <h1 className="ExpansionPanel__heading">{heading}</h1>
         <div className="ExpansionPanel__content">{children}</div>

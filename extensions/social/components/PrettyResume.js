@@ -56,7 +56,72 @@ class PrettyResume extends React.Component {
                 </div>
 
             </div>
+
+
+            <div className="cv-section timeline">
+                <div className="timeline-starter"></div>
+
+                <div>
+                    <h2 className="section-title">
+                        <span>linkedinData.extracted.experience.title</span>
+                    </h2>
+
+
+                    <div className="timeline-section">
+
+                        <div className="timeline-left">
+                            <span>position.date_from</span> -
+                            <span>position.date_to</span><br />
+                            <small>position.period</small>
+
+                        </div>
+
+
+                        <div className="timeline-right">
+                            <h3><span>position.title</span></h3>
+                            <h4><span>position.subtitle</span></h4>
+                            <p>
+                                <span>position.description</span>
+                            </p>
+
+
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <div>
+                    <h2 class="section-title timeline-seperator">
+                        <span>linkedinData.extracted.education.title</span>
+                    </h2>
+
+                    <div class="timeline-section">
+
+                        <div class="timeline-left">
+                            <span>school.date_range</span>
+                        </div>
+
+
+                        <div class="timeline-right">
+                            <h3><span>school.title</span></h3>
+                        <h4><span>school.subtitle</span></h4>
+                    <div class="timeline-location">
+                        <i class="ion-ios-location"></i> <span>school.location</span>
+                    </div>
+                    <p>
+                        <span>school.description</span>
+                    </p>
+                </div>
+
+            </div>
         </div>
+
+    </div>
+
+
+    </div>
+
     }
 }
 

@@ -53,7 +53,7 @@ const GenericResolver = {
         if( filter ){
             const a = filter.split(' ')
             a.forEach(i => {
-                const p = i.split('=')
+                const p = i.split(/=|:/)
                 if( p.length>1 ){
                     filterParts[ p[0] ] = p[1]
                 }else{
@@ -61,7 +61,6 @@ const GenericResolver = {
                 }
             })
         }
-
 
         const group = {}
         const filterMatch = []
@@ -84,6 +83,21 @@ const GenericResolver = {
             }
         }
 
+        const addFilter = (value, isRef) => {
+            if( filter ) {
+                if (filterParts[value]) {
+                    if( isRef ){
+                        filterMatch.push({[value]: ObjectId(filterParts[value])})
+                    }else{
+                        filterMatch.push({[value]: {'$regex': filterParts[value], '$options': 'i'}})
+                    }
+                }
+                filterParts.$.forEach(i => {
+                    filterMatch.push({[value]: {'$regex': i, '$options': 'i'}})
+                })
+            }
+        }
+
         data.forEach((value, i) => {
 
             if( value.constructor === Object ){
@@ -96,6 +110,11 @@ const GenericResolver = {
                 if( fields && fields[keys[0]] ){
                     addLookup(fields[keys[0]].type,keys[0],fields[keys[0]].multi)
                 }
+
+
+                addFilter(keys[0],true)
+
+
             }else if (value.indexOf('$') > 0) {
                 // this is a reference
                 // for instance image$Media --> field image is a reference to the type Media
@@ -108,19 +127,11 @@ const GenericResolver = {
                     type = type.substring(1, type.length - 1)
                 }
                 addLookup(type,fieldName,multi)
-
+                addFilter(fieldName)
             } else {
                 group[value] = {'$first': '$' + value}
+                addFilter(value)
 
-
-                if( filter ) {
-                    if (filterParts[value]) {
-                        filterMatch.push({[value]: {'$regex': filterParts[value], '$options': 'i'}})
-                    }
-                    filterParts.$.forEach(i => {
-                        filterMatch.push({[value]: {'$regex': i, '$options': 'i'}})
-                    })
-                }
             }
 
 

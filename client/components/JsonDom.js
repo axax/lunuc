@@ -208,8 +208,6 @@ class JsonDom extends React.Component {
             if ($loop) {
                 const {$d, d, c} = $loop
                 let data
-                console.log(childScope)
-
 
                 if ($d) {
                     if( childScope ){
