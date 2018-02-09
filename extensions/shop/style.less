@@ -1,0 +1,32 @@
+@primary-background: #6394F8;
+
+.Cms-shop{
+  position: relative;
+}
+
+.shopping-cart {
+  margin: 20px 0;
+  float: right;
+  background: white;
+  width: 320px;
+  position: absolute;
+  right:10px;
+  top:30px;
+  border-radius: 3px;
+  padding: 20px;
+  z-index:2;
+
+  &:after {
+    bottom: 100%;
+    left: 89%;
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+    border-bottom-color: white;
+    border-width: 8px;
+    margin-left: -8px;
+  }
+}

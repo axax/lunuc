@@ -64,7 +64,6 @@ const genericComposer = (container, name, options) => {
                     [name + 's']: data[name + 's'],
                     loading: data.loading,
                     ['refetch' + nameStartUpper + 's']: (v) => {
-                        console.log('todo',v)
                         data.refetch(getVariables(ownProps))
                     },
                     ['setOptionsFor' + nameStartUpper + 's']: (o) => {

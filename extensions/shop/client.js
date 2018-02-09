@@ -1,5 +1,5 @@
 import Hook from 'util/hook'
-
+import './style.less'
 
 Hook.on('ApiResponse', ({data}) => {
     if( data.products ){

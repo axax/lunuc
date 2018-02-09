@@ -9,7 +9,7 @@ const UPLOAD_API_URL = '/graphql/upload',
 IMAGE_QUALITY = 0.6,
 IMAGE_MAX_WIDTH = 1000,
 IMAGE_MAX_HEIGHT = 1000,
-DEFAULT_ACCEPT =''
+DEFAULT_ACCEPT ='image/*'
 
 const styles = theme => ({
     uploader: {

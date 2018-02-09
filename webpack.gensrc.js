@@ -151,6 +151,13 @@ function gensrcUi() {
             if (err.code !== 'EEXIST') throw err
         }
 
+
+        fs.writeFile(gendirUi + "/variables.less", '', function (err) {
+            if (err) {
+                return console.log(err)
+            }
+        })
+
         APP_CONFIG.ui.forEach((ui) => {
             let gendirUiName = gendirUi
             if (ui.name) {

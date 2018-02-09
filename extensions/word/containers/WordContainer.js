@@ -20,7 +20,8 @@ class WordContainer extends React.Component {
             orderDirection: 'desc',
             rowsPerPage: WORDS_PER_PAGE,
             confirmDeletionDialog: false,
-            dataToDelete: false
+            dataToDelete: false,
+            filter: ''
         }
     }
 
@@ -54,6 +55,8 @@ class WordContainer extends React.Component {
     }
 
     handleFilter = ({value}) => {
+        this.setState({filter: value})
+
         this.props.setOptionsForWords({filter: value})
         this.props.refetchWords()
     }
@@ -146,7 +149,7 @@ class WordContainer extends React.Component {
                     </Col>
                     <Col md={6}>
                         <GenericForm onChange={this.handleFilter} primaryButton={false}
-                                     fields={{term: {placeholder: 'Filter'}}}/>
+                                     fields={{term: {placeholder: 'Filter', value:this.state.filter}}}/>
                     </Col>
                 </Row>
 

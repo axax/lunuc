@@ -1,5 +1,4 @@
-import './style.less'
-import './style/grid.css'
+import './style/index.less'
 
 import React from 'react'
 import Pagination from './Pagination'

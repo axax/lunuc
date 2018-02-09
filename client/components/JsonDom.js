@@ -335,7 +335,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {template, script, resolvedData, history} = this.props
+        const {template, script, resolvedData, history, className} = this.props
         if (!template) {
             console.warn('Template is missing.')
             return null
@@ -399,7 +399,7 @@ class JsonDom extends React.Component {
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
-            return <div className={'Cms-'+scope.page.slug.replace(/[\W_-]+/g,'-')}>{content}</div>
+            return <div className={'JsonDom Cms-'+scope.page.slug.replace(/[\W_-]+/g,'-')+(className?' '+className:'')}>{content}</div>
         }
 
     }

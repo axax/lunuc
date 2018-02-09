@@ -1,4 +1,13 @@
-@primary-background: #5B83AD;
+@import './variables.less';
+// override with custom variables
+@import '../../../../../../gensrc/ui/variables.less';
+@import './grid.css';
+
+
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
 
 body {
   margin: 0;
@@ -18,10 +27,14 @@ body {
 .SimpleToolbar {
   background-color: @primary-background;
   padding: 10px;
-
+  display: flex;
+  flex-flow: row wrap;
   &__title {
     color: white;
+    flex: 1 auto;
   }
+
+
 }
 
 .DrawerLayout {

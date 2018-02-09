@@ -218,8 +218,9 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, location,history, _parentRef, id, loading} = this.props
+        const {cmsPage, location,history, _parentRef, id, loading, className} = this.props
 
+        console.log(className)
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
             if (!loading)
@@ -239,7 +240,10 @@ class CmsViewContainer extends React.Component {
 
         const startTime = new Date()
 
-        const jsonDom = <JsonDom id={id} _parentRef={_parentRef} template={template}
+        const jsonDom = <JsonDom id={id}
+                                 className={className}
+                                 _parentRef={_parentRef}
+                                 template={template}
                                  script={script}
                                  resolvedData={cmsPage.resolvedData}
                                  editMode={editMode}
