@@ -7,7 +7,7 @@ import CmsViewContainer from '../containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
 
 
-const TEMPLATE_EVENTS = ['Click','KeyDown']
+const TEMPLATE_EVENTS = ['Click', 'KeyDown']
 
 class JsonDom extends React.Component {
 
@@ -61,13 +61,20 @@ class JsonDom extends React.Component {
     }
     jsRefresh = (id) => {
 
+        // if no id is defined or not found refresh the current dom
         let nodeToRefresh = this
 
-        if (id && this.componentRefs[id]) {
-            nodeToRefresh = this.componentRefs[id]
-        } else {
-            nodeToRefresh = this
+        if (id) {
+            // Only refresh the JsonDom with the specific id
+            if (this.componentRefs[id]) {
+                // it is a child of this dom
+                nodeToRefresh = this.componentRefs[id]
+            } else if (this.props._parentRef && this.props._parentRef.componentRefs[id]) {
+                // it is a child of the parent dom
+                nodeToRefresh = this.props._parentRef.componentRefs[id]
+            }
         }
+
         nodeToRefresh.json = null
         nodeToRefresh.runScript = true
         nodeToRefresh.jsOnStack = []
@@ -75,6 +82,19 @@ class JsonDom extends React.Component {
 
     }
 
+    jsAddStyle(url) {
+        const link = document.createElement("link")
+        link.type = "text/css"
+        link.rel = "stylesheet"
+        link.href = url
+        document.head.appendChild(link)
+    }
+
+    jsAddScript(url) {
+        const script = document.createElement("script")
+        script.src = url
+        document.head.appendChild(script)
+    }
 
     resolvedDataJson = undefined
 
@@ -103,12 +123,12 @@ class JsonDom extends React.Component {
             this.scope = null
 
 
-           /* if( this.props.scope.params !== props.scope.params ){
-                // set it to undefined. null wouldn't be enough because null can also be a resolved value
-                this.resolvedDataJson = undefined
+            /* if( this.props.scope.params !== props.scope.params ){
+             // set it to undefined. null wouldn't be enough because null can also be a resolved value
+             this.resolvedDataJson = undefined
 
-                console.log('reset scope data res')
-            }*/
+             console.log('reset scope data res')
+             }*/
         }
         if (this.props.template !== props.template) {
             this.resetTemplate()
@@ -140,7 +160,7 @@ class JsonDom extends React.Component {
         this.parseError = null
     }
 
-    resetTemplate(){
+    resetTemplate() {
         this.json = null
         this.jsonRaw = null
         this.componentRefs = {}
@@ -193,16 +213,18 @@ class JsonDom extends React.Component {
     parseRec(a, rootKey, childScope) {
         if (!a) return null
         if (a.constructor === String) return a
+        if (a.constructor === Object) return this.parseRec([a], rootKey, childScope)
         if (a.constructor !== Array) return ''
         let h = []
         a.forEach((item, aIdx) => {
 
-            if( !item ) return
+            if (!item) return
 
-            const {t, p, c, $loop} = item
+            const {t, p, c, $c, $loop} = item
             /*
              t = type
              c = children
+             $c = children as html
              p = prop
              */
             if ($loop) {
@@ -210,9 +232,9 @@ class JsonDom extends React.Component {
                 let data
 
                 if ($d) {
-                    if( childScope ){
+                    if (childScope) {
                         data = this.scopeByPath($d, childScope)
-                    }else{
+                    } else {
                         data = this.scopeByPath($d, this.scope)
                     }
 
@@ -233,20 +255,21 @@ class JsonDom extends React.Component {
                 try {
                     const re = new RegExp('\\$\\.' + s + '{', 'g')
                     const cStr = JSON.stringify(c).replace(re, '${') /* $.loop{ --> ${ */
-                        .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}') /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
+                        .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
+                    /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
                     data.forEach((loopChild, childIdx) => {
-                        const tpl = new Function('const {'+Object.keys(loopChild).join(',')+'} = this.'+s+';return `' + cStr + '`;')
+                        const tpl = new Function('const {' + Object.keys(loopChild).join(',') + '} = this.' + s + ';return `' + cStr + '`;')
                         // back to json
                         loopChild._index = childIdx
                         const json = JSON.parse(tpl.call({[s]: loopChild}))
 
                         const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
-                        h.push(this.parseRec(json, key, {...childScope,[s]:loopChild}))
+                        h.push(this.parseRec(json, key, {...childScope, [s]: loopChild}))
 
 
                     })
                 } catch (ex) {
-                    return 'Error in parseRec: '+ex.message
+                    return 'Error in parseRec: ' + ex.message
                 }
 
 
@@ -260,15 +283,15 @@ class JsonDom extends React.Component {
             } else {
                 _t = t
             }
-            if( p ) {
+            if (p) {
                 // replace events with real functions and pass payload
                 TEMPLATE_EVENTS.forEach((e) => {
-                    if (p['on'+e] && p['on'+e].constructor === Object) {
-                        const payload = p['on'+e]
-                        p['on'+e] = (eo) => {
+                    if (p['on' + e] && p['on' + e].constructor === Object) {
+                        const payload = p['on' + e]
+                        p['on' + e] = (eo) => {
                             this.jsOnStack.forEach((o) => {
                                 if (o.cb && o.key.toUpperCase() === e.toUpperCase()) {
-                                    o.cb(payload,eo)
+                                    o.cb(payload, eo)
                                 }
                             })
                         }
@@ -279,7 +302,8 @@ class JsonDom extends React.Component {
             h.push(React.createElement(
                 this.components[_t] || _t,
                 {id: key, key, ...p},
-                this.parseRec(c, key,childScope)
+                ($c ? <span dangerouslySetInnerHTML={{__html: $c}}/> :
+                    this.parseRec(c, key, childScope))
             ))
         })
         return h
@@ -325,8 +349,8 @@ class JsonDom extends React.Component {
 
     renderString(str, data) {
         try {
-            const tpl = new Function('const {'+Object.keys(data).join(',')+'} = this;return `' + str + '`;')
-            return tpl.call(data)
+            const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this; const parent=arguments[0];return `' + str + '`;')
+            return tpl.call(data, this.props._parentRef)
         } catch (e) {
             //this.emitJsonError(e)
 
@@ -376,14 +400,17 @@ class JsonDom extends React.Component {
             try {
                 this.scriptResult = new Function(`
                 const scope = arguments[0]
-                const {on, setLocal, getLocal, refresh}= arguments[1]
+                const {on, setLocal, getLocal, refresh, addStyle, addScript}= arguments[1]
                 const history= arguments[2]
-                ${script}`)(scope, {
+                const parent= arguments[3]
+                ${script}`).call(this, scope, {
                     on: this.jsOn,
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
-                    refresh: this.jsRefresh
-                },history)
+                    refresh: this.jsRefresh,
+                    addStyle: this.jsAddStyle,
+                    addScript: this.jsAddScript
+                }, history, this.props._parentRef)
             } catch (e) {
                 jsError = e.message
             }
@@ -399,7 +426,8 @@ class JsonDom extends React.Component {
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
-            return <div className={'JsonDom Cms-'+scope.page.slug.replace(/[\W_-]+/g,'-')+(className?' '+className:'')}>{content}</div>
+            return <div
+                className={'JsonDom Cms-' + scope.page.slug.replace(/[\W_-]+/g, '-') + (className ? ' ' + className : '')}>{content}</div>
         }
 
     }

@@ -24,7 +24,7 @@ export default (db) => ({
                 },
                 json: true
             }))
-            //console.log(response.positions.values[0])
+            console.log(response.positions.values[0])
             return response
         }
 

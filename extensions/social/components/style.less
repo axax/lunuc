@@ -1,6 +1,20 @@
+
+
 .LinkedInResume{
 
+
   font-family: 'Roboto', sans-serif;
+
+
+  [contenteditable=true]:empty {
+    border: 1px dashed #AAA;
+  }
+
+  [contenteditable=true]:empty:before{
+    content: 'enter something';
+    font-size: 0.8rem;
+  }
+
 
   div{
     box-sizing: border-box;
@@ -58,7 +72,7 @@
           i{
             color:#bbb;
             font-size:1.1em;
-            margin-right:0.1rem;
+            margin-right:0.5rem;
           }
         }
 

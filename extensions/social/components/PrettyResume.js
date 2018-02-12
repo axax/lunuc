@@ -8,8 +8,23 @@ import {withKeyValues} from 'client/containers/generic/withKeyValues'
 class PrettyResume extends React.Component {
 
 
+    timeago(start, end) {
+        const sDate =(start ? new Date(start) : new Date()), eDate = (end ? new Date(end) : new Date())
+
+        const years = eDate.getFullYear()-sDate.getFullYear(),
+        months = sDate.getMonth() + 1 + eDate.getMonth()
+
+        if( years > 0 ){
+            return `${years>0?years+ ' year'+(years>1?'s':''):''}  ${months} month${months>1?'s':''}`
+        }
+
+    }
+
     render() {
         const {resumeData} = this.props
+
+
+        console.log(resumeData)
 
         return <div className="LinkedInResume">
             <div className="cv-section profile">
@@ -19,30 +34,34 @@ class PrettyResume extends React.Component {
                 </a>
 
                 <div className="cv-profile-body">
-                    <h1 className="cv-profile-title"><span>editable</span></h1>
+                    <h1 className="cv-profile-title"><span suppressContentEditableWarning={true}
+                                                           contentEditable>{resumeData.firstName} {resumeData.lastName}</span>
+                    </h1>
 
-                    <h2 className="cv-profile-subtitle"><span>editable</span></h2>
+                    <h2 className="cv-profile-subtitle"><span suppressContentEditableWarning={true}
+                                                              contentEditable>{resumeData.headline}</span></h2>
 
                     <ul className="cv-profile-meta">
                         <li>
                             <i className="ion-ios-location"></i>
-                            <span>location</span>
+                            <span suppressContentEditableWarning={true} contentEditable>{resumeData.country}</span>
                         </li>
                         <li>
                             <i className="ion-email"></i>
-                            <span>email</span>
+                            <span suppressContentEditableWarning={true} contentEditable>email</span>
                         </li>
                         <li>
                             <i className="ion-ios-telephone"></i>
-                            <span>phone</span>
+                            <span suppressContentEditableWarning={true} contentEditable>phone</span>
                         </li>
                         <li>
                             <i className="ion-earth"></i>
-                            <span></span>
+                            <span suppressContentEditableWarning={true}
+                                  contentEditable>{resumeData.websites && resumeData.websites.split(':')[1]}</span>
                         </li>
                         <li>
                             <i className="ion-ios-chatbubble"></i>
-                            <span></span>
+                            <span suppressContentEditableWarning={true} contentEditable>info</span>
                         </li>
 
                     </ul>
@@ -61,66 +80,95 @@ class PrettyResume extends React.Component {
             <div className="cv-section timeline">
                 <div className="timeline-starter"></div>
 
-                <div>
+                {resumeData.positions &&
+                <div className="section-position">
                     <h2 className="section-title">
-                        <span>linkedinData.extracted.experience.title</span>
+                        <span suppressContentEditableWarning={true} contentEditable>Experience</span>
+                    </h2>
+
+                    { resumeData.positions.values.map((p, i) =>
+                        <div key={i} className="timeline-section">
+
+                            <div className="timeline-left">
+                                <span suppressContentEditableWarning={true} contentEditable>{p.startedOn}</span> -&nbsp;
+                                <span suppressContentEditableWarning={true}
+                                      contentEditable>{p.finishedOn || 'Present'}</span><br />
+                                <small suppressContentEditableWarning={true}
+                                       contentEditable>{this.timeago(p.startedOn, p.finishedOn)}</small>
+
+                            </div>
+
+                            <div className="timeline-right">
+                                <h3><span suppressContentEditableWarning={true} contentEditable>{p.title}</span></h3>
+                                <h4><span suppressContentEditableWarning={true} contentEditable>{p.companyName}</span>
+                                </h4>
+                                <p>
+                                    <span suppressContentEditableWarning={true}
+                                          contentEditable>{p.summary || p.description}</span>
+                                </p>
+
+
+                            </div>
+
+                        </div>
+                    )}
+                </div> }
+
+
+                <div>
+                    <h2 className="section-title timeline-seperator">
+                        <span>linkedinData.extracted.education.title</span>
+                    </h2>
+
+                    <div className="timeline-section">
+
+                        <div className="timeline-left">
+                            <span>school.date_range</span>
+                        </div>
+
+
+                        <div className="timeline-right">
+                            <h3><span>school.title</span></h3>
+                            <h4><span>school.subtitle</span></h4>
+                            <div className="timeline-location">
+                                <i className="ion-ios-location"></i> <span>school.location</span>
+                            </div>
+                            <p>
+                                <span>school.description</span>
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <div>
+                    <h2 className="section-title timeline-seperator">
+                        <span>linkedinData.extracted.projects.title</span>
                     </h2>
 
 
                     <div className="timeline-section">
 
                         <div className="timeline-left">
-                            <span>position.date_from</span> -
-                            <span>position.date_to</span><br />
-                            <small>position.period</small>
-
+                            <span>project.date_range</span>
                         </div>
 
 
                         <div className="timeline-right">
-                            <h3><span>position.title</span></h3>
-                            <h4><span>position.subtitle</span></h4>
+                            <h3><span>project.title</span></h3>
+
                             <p>
-                                <span>position.description</span>
+                                <span>project.description</span>
                             </p>
-
-
                         </div>
-
                     </div>
-                </div>
-
-
-                <div>
-                    <h2 class="section-title timeline-seperator">
-                        <span>linkedinData.extracted.education.title</span>
-                    </h2>
-
-                    <div class="timeline-section">
-
-                        <div class="timeline-left">
-                            <span>school.date_range</span>
-                        </div>
-
-
-                        <div class="timeline-right">
-                            <h3><span>school.title</span></h3>
-                        <h4><span>school.subtitle</span></h4>
-                    <div class="timeline-location">
-                        <i class="ion-ios-location"></i> <span>school.location</span>
-                    </div>
-                    <p>
-                        <span>school.description</span>
-                    </p>
                 </div>
 
             </div>
+
+
         </div>
-
-    </div>
-
-
-    </div>
 
     }
 }

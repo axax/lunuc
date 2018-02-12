@@ -139,8 +139,6 @@ const GenericResolver = {
         if (filterMatch.length > 0) {
             match.$or = filterMatch
         }
-        console.log(match)
-
         const collection = db.collection(collectionName)
 
         let a = (await collection.aggregate([

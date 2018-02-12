@@ -23,7 +23,7 @@ export const cmsSchemaRaw = `
     }
     
     type Query {
-    	cmsPages(limit: Int=10, offset: Int=0, sort: String): CmsPageResult
+    	cmsPages(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): CmsPageResult
     	cmsPage(slug: String!, query: String): CmsPage
     }
     
@@ -31,6 +31,7 @@ export const cmsSchemaRaw = `
 	type Mutation {
 		createCmsPage (
 			slug: String!
+			public: Boolean
 		): CmsPage
 		updateCmsPage(_id: ID!, query: String, slug: String, template: String, script: String, dataResolver: String, ssr: Boolean, public: Boolean): CmsPage	
 		deleteCmsPage(_id: ID!): CmsPage

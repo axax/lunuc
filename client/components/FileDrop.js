@@ -181,7 +181,6 @@ class FileDrop extends React.Component {
 
         // Fetch FileList object
         const files = e.target.files || e.dataTransfer.files;
-
         // Process all File objects
         const images = []
         for (let i = 0, f; f = files[i]; i++) {
@@ -190,7 +189,6 @@ class FileDrop extends React.Component {
             const aType = f.type.split('/')
 
             const ext = aType.length>1?aType[1]:aType[0]
-
 
             let isValid = false
             acceptsExt.forEach(e =>{
@@ -203,14 +201,14 @@ class FileDrop extends React.Component {
             //TODO: also check for acceptsType images/*
 
             if( isValid) {
-
                 if ((/\.(?=gif|jpg|png|jpeg)/gi).test(f.name)) {
                     // is image
 
                     images.push(URL.createObjectURL(f))
                     //preview(f);
                     this.resizeImageAndUpload(f)
-                } else if ((/\.(?=csv|text)/gi).test(f.name)) {
+                } else if (ext === 'csv') {
+
 
                     const reader = new FileReader()
                     reader.readAsText(f, "UTF-8")

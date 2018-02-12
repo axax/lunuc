@@ -35,6 +35,10 @@
         {
           "name": "name",
           "required": true
+        },
+        {
+          "name": "parentCategory",
+          "type": "ProductCategory"
         }
       ]
     }

@@ -28,6 +28,7 @@ import {ADMIN_BASE_URL} from 'gen/config'
 import Hook from 'util/hook'
 import {UPLOAD_URL} from 'gen/config'
 import {getTypes, getTypeQueries, getFormFields} from 'util/types'
+import {Link} from 'react-router-dom'
 
 const DEFAULT_RESULT_LIMIT = 10
 
@@ -140,13 +141,12 @@ class TypesContainer extends React.Component {
                         ...dynamic,
                         user: item.createdBy.username,
                         date: Util.formattedDateFromObjectId(item._id),
-                        action: <div>
-
-                            <DeleteIconButton disabled={(item.status == 'deleting' || item.status == 'updating')}
-                                              onClick={this.handleDeleteDataClick.bind(this, item)}/>
-                            <EditIconButton disabled={(item.status == 'deleting' || item.status == 'updating')}
+                        action: [
+                            <DeleteIconButton key="deleteBtn" disabled={(item.status == 'deleting' || item.status == 'updating')}
+                                              onClick={this.handleDeleteDataClick.bind(this, item)}/>,
+                            <EditIconButton key="editBtn" disabled={(item.status == 'deleting' || item.status == 'updating')}
                                             onClick={this.handleEditDataClick.bind(this, item)}/>
-                        </div>
+                        ]
                     })
 
 
@@ -185,6 +185,7 @@ class TypesContainer extends React.Component {
     render() {
         const startTime = new Date()
         const {dataToEdit} = this.state
+        const {fixType} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type)
 
@@ -212,9 +213,10 @@ class TypesContainer extends React.Component {
 
 
         const content = <BaseLayout>
-            <Typography type="display2" gutterBottom>Types</Typography>
+            <Typography type="display2" gutterBottom>{fixType?fixType:'Types'}</Typography>
 
             <Row spacing={16}>
+                {!fixType &&
                 <Col md={9}>
                     <SimpleSelect
                         value={type}
@@ -222,7 +224,8 @@ class TypesContainer extends React.Component {
                         items={this.typesToSelect}
                     />
                 </Col>
-                <Col md={3} align="right">
+                }
+                <Col md={(fixType?12:3)} align="right">
                     <GenericForm onChange={this.handleFilter}
                                  onKeyDown={this.handelFilterKeyDown}
                                  primaryButton={false}
@@ -294,7 +297,9 @@ class TypesContainer extends React.Component {
         const {p, l, s, f} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
         const result = {limit: lInt || DEFAULT_RESULT_LIMIT, page: pInt || 1, sort: s || '', filter: f || ''}
-        if (params.type) {
+        if( props.fixType ){
+            result.type = props.fixType
+        }else if (params.type) {
             result.type = params.type
         } else {
             for (const prop in this.types) {
@@ -634,7 +639,8 @@ TypesContainer.propTypes = {
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
     match: PropTypes.object.isRequired,
-    user: PropTypes.object.isRequired
+    user: PropTypes.object.isRequired,
+    fixType: PropTypes.string
 }
 
 
@@ -658,6 +664,21 @@ Hook.on('Types', ({types}) => {
             }
         ]
     }
+
+    types.CmsPage = {
+        "name": "CmsPage",
+        "usedBy": ["core"],
+        "fields": [
+            {
+                "name": "slug",
+                "required": true
+            },
+            {
+                "name": "public",
+                "type":"Boolean"
+            }
+        ]
+    }
 })
 
 // add an extra column for Media at the beginning
@@ -672,6 +693,11 @@ Hook.on('TypeTable', ({type, dataSource, data}) => {
     if (type === 'Media') {
         dataSource.forEach((d, i) => {
             d.data = <img height="40" src={UPLOAD_URL + '/' + data.results[i]._id}/>
+        })
+    }else if (type === 'CmsPage') {
+        dataSource.forEach((d,i) => {
+            d.action.push(<Link key="viewBtn"
+                to={'/' + data.results[i].slug}> View</Link>)
         })
     }
 })

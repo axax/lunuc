@@ -111,6 +111,8 @@ you can subcribe to data changes with $ character placed in front of the type.
 ### Script
 **Reserved keywords**
 
+* this => is the current JsonDom
+* parent => reference to the parent JsonDom
 * scope => Object with properties related to the scope
 * on => Add an event listener function
 * setLocal => put data to the localstorage

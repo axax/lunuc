@@ -14,7 +14,7 @@ class TemplateEditor extends React.Component {
                         items={[{name:'Prettify', onClick:this.prettify.bind(this)}]}/>
 
 
-            <ContentEditable {...rest}/>
+            <ContentEditable setHtml={false} {...rest}/>
         </div>
     }
 
@@ -24,7 +24,7 @@ class TemplateEditor extends React.Component {
 
         try {
             const j = eval('(' + children + ')');
-            if( j.constructor === Array ) {
+            if( j.constructor === Array ||  j.constructor === Object ) {
                 onBlur(JSON.stringify(j,null,2))
             }
         }catch(e){

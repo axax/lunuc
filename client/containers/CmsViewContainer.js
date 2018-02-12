@@ -220,7 +220,6 @@ class CmsViewContainer extends React.Component {
     render() {
         const {cmsPage, location,history, _parentRef, id, loading, className} = this.props
 
-        console.log(className)
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
             if (!loading)

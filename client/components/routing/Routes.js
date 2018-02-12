@@ -6,7 +6,6 @@ import LoginContainer from 'client/containers/LoginContainer'
 import SignUpContainer from 'client/containers/SignUpContainer'
 import UserProfileContainer from 'client/containers/UserProfileContainer'
 import CmsViewContainer from 'client/containers/CmsViewContainer'
-import CmsContainer from 'client/containers/CmsContainer'
 import SystemContainer from 'client/containers/SystemContainer'
 import TypesContainer from 'client/containers/TypesContainer'
 import HomeContainer from 'client/containers/HomeContainer'
@@ -20,7 +19,7 @@ class Routes extends React.Component {
 
     routes = [
         {exact: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
-        {private: true, exact: true, path: ADMIN_BASE_URL + '/cms/:page*', component: CmsContainer},
+        {private: true, exact: true, path: ADMIN_BASE_URL + '/cms/:page*', component: (p)=> <TypesContainer fixType="CmsPage" {...p} />},
         {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},

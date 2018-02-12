@@ -11,28 +11,37 @@ class ContentEditable extends React.Component {
 
     }
 
-    render(){
-        const {style, children} = this.props
-        this.lastText['onChange'] = this.lastText['onBlur'] =children
+    render() {
+        const {style, children, setHtml} = this.props
+        this.lastText['onChange'] = this.lastText['onBlur'] = children
 
-        return <div
-            style={style}
-            onInput={this.emitChange.bind(this,'onChange')}
-            onBlur={this.emitChange.bind(this,'onBlur')}
-            contentEditable dangerouslySetInnerHTML={{__html: children}} />
+        if (setHtml) {
+            return <div
+                style={style}
+                onInput={this.emitChange.bind(this, 'onChange')}
+                onBlur={this.emitChange.bind(this, 'onBlur')}
+                contentEditable dangerouslySetInnerHTML={{__html: children}}/>
+        } else {
+            return <div
+                style={style}
+                onInput={this.emitChange.bind(this, 'onChange')}
+                onBlur={this.emitChange.bind(this, 'onBlur')}
+                suppressContentEditableWarning={true}
+                contentEditable>{children}</div>
+        }
     }
 
-    shouldComponentUpdate(nextProps){
+    shouldComponentUpdate(nextProps) {
         return nextProps.children !== ReactDOM.findDOMNode(this).innerText
     }
 
     componentDidUpdate() {
-        if ( this.props.children !== ReactDOM.findDOMNode(this).innerText ) {
+        if (this.props.children !== ReactDOM.findDOMNode(this).innerText) {
             ReactDOM.findDOMNode(this).innerText = this.props.children;
         }
     }
 
-    emitChange(prop){
+    emitChange(prop) {
         var text = ReactDOM.findDOMNode(this).innerText
         if (this.props[prop] && text !== this.lastText[prop]) {
             this.props[prop](text)
@@ -44,7 +53,8 @@ class ContentEditable extends React.Component {
 ContentEditable.propTypes = {
     style: PropTypes.object,
     onBlur: PropTypes.func,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
+    setHtml: PropTypes.bool
 }
 
 export default ContentEditable
