@@ -33,14 +33,16 @@ export function configureMiddleware(store) {
     const errorLink = onError(({networkError, graphQLErrors, operation, response}) => {
         // check for mongodb/graphql errors
         if (graphQLErrors) {
-            graphQLErrors.map(({message, locations, path}) =>
-                store.dispatch(addError({
-                    key: 'graphql_error',
-                    msg: message + ' (in operation ' + path.join('/') + ')'
-                }))
+            graphQLErrors.map(({message, locations, path, state}) => {
+                    // don't handle errors with a state.
+                    if (!state) {
+                        store.dispatch(addError({
+                            key: 'graphql_error',
+                            msg: message + ' (in operation ' + path.join('/') + ')'
+                        }))
+                    }
+                }
             )
-            // hide error in console log
-            response.errors = null
         }
         if (networkError) store.dispatch(addError({key: 'api_error', msg: networkError.message}))
     })

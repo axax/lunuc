@@ -98,13 +98,14 @@ export {MenuItem} from 'material-ui/Menu'
 export Paper from 'material-ui/Paper'
 
 
-// simple to use components
+// simple components are extended componente with features easy to use
 export SimpleHeaderMenu from './SimpleHeaderMenu'
 export SimpleMenu from './SimpleMenu'
 export SimpleTable from './SimpleTable'
 export SimpleDialog from './SimpleDialog'
 export SimpleSelect from './SimpleSelect'
 export SimpleSwitch from './SimpleSwitch'
+export SimpleButton from './SimpleButton'
 
 // grid
 import Grid from 'material-ui/Grid'

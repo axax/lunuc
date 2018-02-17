@@ -14,7 +14,6 @@ class LinkedInProfileContainer extends React.Component {
 
     constructor(props) {
         super(props)
-
         this.state = {
             linkedInCode: null,
             data: {...props.linkedin}
@@ -74,6 +73,7 @@ class LinkedInProfileContainer extends React.Component {
     render() {
         const {linkedin} = this.props
         const {linkedInCode, data} = this.state
+
 
         if (!linkedInCode || !linkedin)
             return <Button raised onClick={this.handelLinkedInConnect}>Connect with LinkedIn</Button>

@@ -5,93 +5,154 @@ import gql from 'graphql-tag'
 import {ADMIN_BASE_URL} from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
 import {Link} from 'react-router-dom'
+import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 
 class SignUpContainer extends React.Component {
-	state = {
-		loading: false,
-		error: null,
-		username: '',
-		password: '',
-		email: '',
-		signupFinished:false
-	}
+    state = {
+        loading: false,
+        usernameError: null,
+        passwordError: null,
+        emailError: null,
+        username: '',
+        password: '',
+        email: '',
+        signupFinished: false
+    }
 
 
-	handleInputChange = (e) => {
-		const target = e.target
-		const value = target.type === 'checkbox' ? target.checked : target.value
-		const name = target.name
+    handleInputChange = (e) => {
+        const target = e.target
+        const value = target.type === 'checkbox' ? target.checked : target.value
+        const name = target.name
 
-		this.setState({
-			[target.name]: value
-		})
-	}
-
-
-	signup = (e) => {
-		e.preventDefault()
-
-		this.setState({loading: true, error: null})
-		const {mutate} = this.props
+        this.setState({
+            [target.name]: value
+        })
+    }
 
 
-		mutate({
-			variables: {
-				email: this.state.email,
-				username: this.state.username,
-				password: this.state.password
-			}
-		}).then(({data}) => {
-			this.setState({loading: false,signupFinished:true})
+    signup = (e) => {
+        e.preventDefault()
+        this.setState({usernameError: null, passwordError: null, emailError: null})
 
-			console.log('got data', data)
-		}).catch((error) => {
-			this.setState({loading: false, error: error.message})
-		})
+        let hasError = false
+        const {email, username, password} = this.state
+        if (email.trim() === '') {
+            this.setState({emailError: 'Please enter a valid email address'})
+            hasError = true
+        }
+        if (username.trim() === '') {
+            this.setState({usernameError: 'Please enter a username'})
+            hasError = true
+        }
+        if (password.trim() === '') {
+            this.setState({passwordError: 'Please enter a password'})
+            hasError = true
+        }
 
-	}
+        if (hasError) {
+            return
+        }
 
-	render() {
+        this.setState({loading: true})
+        const {mutate} = this.props
 
-		const {signupFinished, loading, email, username, password, error} = this.state
 
-		if (signupFinished) {
-			return (
-				<BlankLayout>
-					<p>Thanks for your registration! <Link to={ADMIN_BASE_URL+'/login'}>Login</Link></p>
-				</BlankLayout>
-			)
-		}
-		return (
-			<BlankLayout>
-				<p>Sign up to use this service</p>
-				{loading ? <span>loading...</span> : ''}
-				{error ? <span>{error}</span> : ''}
+        mutate({
+            variables: {
+                email,
+                username,
+                password
+            }
+        }).then(({data,errors}) => {
+            if( errors && errors.length){
+                errors.forEach(e=>{
+                    if( e.state ){
+                        this.setState(e.state)
+                    }
+                })
+                this.setState({loading: false})
+            }else{
+                this.setState({loading: false, signupFinished: true})
+            }
+        })
 
-				<form onSubmit={this.signup.bind(this)}>
-					<label><b>Username</b></label>
-					<input value={username} onChange={this.handleInputChange} type="text" placeholder="Enter Username"
-								 name="username" required/>
+    }
 
-					<label><b>Email</b></label>
-					<input value={email} onChange={this.handleInputChange} type="text" placeholder="Enter Email"
-								 name="email" required/>
-					<label><b>Password</b></label>
-					<input value={password} onChange={this.handleInputChange} autoComplete="new-password" type="password"
-								 placeholder="Enter Password"
-								 name="password" required/>
+    render() {
 
-					<button type="submit">Sign up</button>
-				</form>
+        const {signupFinished, email, username, password, loading, usernameError, passwordError, emailError} = this.state
 
-				<p>Already have an account? <Link to={ADMIN_BASE_URL+'/login'}>Login</Link></p>
-			</BlankLayout>
-		)
-	}
+        return (
+            <BlankLayout style={{marginTop: '5rem'}}>
+                <Row>
+                    <Col sm={1} md={4}></Col>
+                    <Col sm={10} md={4}>
+                        <Card>
+                            <Typography type="display4" gutterBottom>Sign up</Typography>
+
+                            {signupFinished ?
+                                <Typography gutterBottom>Thanks for your registration! <Link to={ADMIN_BASE_URL + '/login'}>Login</Link></Typography> :
+                                <form>
+
+                                    <TextField label="Username"
+                                               error={!!usernameError}
+                                               helperText={usernameError}
+                                               disabled={!!loading}
+                                               autoComplete="username"
+                                               fullWidth
+                                               autoFocus
+                                               value={username}
+                                               onChange={this.handleInputChange}
+                                               type="text"
+                                               placeholder="Enter username"
+                                               name="username" required/>
+
+                                    <TextField label="Email"
+                                               error={!!emailError}
+                                               helperText={emailError}
+                                               disabled={!!loading}
+                                               autoComplete="email"
+                                               fullWidth
+                                               value={email}
+                                               onChange={this.handleInputChange}
+                                               type="text"
+                                               placeholder="Enter email"
+                                               name="email" required/>
+
+
+                                    <TextField label="Password"
+                                               error={!!passwordError}
+                                               helperText={passwordError}
+                                               disabled={!!loading}
+                                               fullWidth
+                                               autoComplete="new-password"
+                                               value={password}
+                                               onChange={this.handleInputChange}
+                                               type="password"
+                                               placeholder="Enter Password"
+                                               name="password" required/>
+
+                                    <div style={{textAlign: 'right'}}>
+                                        <SimpleButton raised color="primary"
+                                                      showProgress={loading} onClick={this.signup.bind(this)}>Sign
+                                            up</SimpleButton>
+                                    </div>
+                                    <Typography gutterBottom> Already have an account? <Link to={ADMIN_BASE_URL + '/login'}>Login</Link></Typography>
+
+                                </form>
+                            }
+                        </Card>
+                    </Col>
+                    <Col sm={1} md={4}></Col>
+                </Row>
+            </BlankLayout>
+        )
+    }
 }
 
 SignUpContainer.propTypes = {
-	mutate: PropTypes.func,
+    mutate: PropTypes.func,
 }
 
 const gqlCreateUser = gql`
@@ -102,7 +163,13 @@ const gqlCreateUser = gql`
   }
 `
 
-const SignUpContainerWithGql = graphql(gqlCreateUser)(SignUpContainer)
-
+const SignUpContainerWithGql = graphql(gqlCreateUser, {
+    options(ownProps) {
+        return {
+            fetchPolicy:'network-only',
+            errorPolicy: 'all'
+        }
+    }
+})(SignUpContainer)
 
 export default SignUpContainerWithGql

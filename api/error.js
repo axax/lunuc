@@ -1,3 +1,4 @@
+import { GraphQLError } from 'graphql'
 
 
 export class ApiError extends Error {
@@ -6,6 +7,22 @@ export class ApiError extends Error {
 		this.data = data
 		this.key = key
 	}
+}
+
+
+// Use this error for form validation. Add a list with errors to match the proper form field
+export class ValidationError extends GraphQLError {
+    constructor(errors) {
+        super('The request is invalid.')
+        this.state = errors.reduce((result, error) => {
+            if (Object.prototype.hasOwnProperty.call(result, error.key)) {
+                result[error.key].push(error.message)
+            } else {
+                result[error.key] = [error.message]
+            }
+            return result
+        }, {})
+    }
 }
 
 
@@ -26,6 +43,9 @@ export function formatError(error) {
 	}
 	if( error.originalError.data ){
 		o.data = error.originalError.data
+	}
+	if( error.originalError.state ){
+		o.state = error.originalError.state
 	}
 
 	return o

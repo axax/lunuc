@@ -4,6 +4,12 @@ import gql from 'graphql-tag'
 import {graphql, compose} from 'react-apollo'
 import {connect} from 'react-redux'
 
+/*
+
+this is a warpper component for accessing user key values
+
+ */
+
 // This function takes a component...
 export function withKeyValues(WrappedComponent, keys) {
     // ...and returns another component...
@@ -14,15 +20,15 @@ export function withKeyValues(WrappedComponent, keys) {
 
         render() {
             const {keyValues} = this.props
-            if( !keyValues )
-                return null
-
-            const {results} = keyValues
             const keyValueMap = {}
-            if (results) {
-                for (const i in results) {
-                    const o = results[i]
-                    keyValueMap[o.key] = o.value
+            if( keyValues ) {
+                // create a keyvalue map
+                const {results} = keyValues
+                if (results) {
+                    for (const i in results) {
+                        const o = results[i]
+                        keyValueMap[o.key] = o.value
+                    }
                 }
             }
 
@@ -60,6 +66,7 @@ export function withKeyValues(WrappedComponent, keys) {
 
     const WithKeyValuesWithGql = compose(
         graphql(gqlKeyValueQuery, {
+            skip: props => !props.user.isAuthenticated, // skip request if user is not logged in
             options() {
                 return {
                     fetchPolicy: 'cache-and-network',
@@ -74,6 +81,9 @@ export function withKeyValues(WrappedComponent, keys) {
             props: ({ownProps, mutate}) => ({
                 setKeyValue: ({key, value}) => {
                     console.log(key,value)
+                    if( !ownProps.user.isAuthenticated ){
+                        return
+                    }
                     return mutate({
                         variables: {key, value},
                         optimisticResponse: {

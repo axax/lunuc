@@ -9,7 +9,7 @@ import ApolloClient from 'apollo-client'
 import {Link} from 'react-router-dom'
 import * as UserActions from 'client/actions/UserAction'
 import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
-import {Card, Button, TextField, Row, Col, Typography} from 'ui/admin'
+import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import {ADMIN_BASE_URL} from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
 
@@ -87,12 +87,14 @@ class LoginContainer extends React.Component {
                             <form noValidate autoComplete="off">
                                 <Typography type="display4" gutterBottom>Login</Typography>
 
-                                <Typography gutterBottom>You must log in to view the page at {from.pathname}</Typography>
-                                {loading ? <span>loading...</span> : ''}
+                                <Typography gutterBottom>You must log in to view the page
+                                    at {from.pathname}</Typography>
 
 
                                 <TextField label="Username"
                                            error={!!error}
+                                           disabled={!!loading}
+                                           autoComplete="username"
                                            fullWidth
                                            autoFocus
                                            value={username}
@@ -105,7 +107,9 @@ class LoginContainer extends React.Component {
                                 <TextField label="Password"
                                            error={!!error}
                                            helperText={error}
+                                           disabled={!!loading}
                                            fullWidth
+                                           autoComplete="current-password"
                                            value={password}
                                            onChange={this.handleInputChange}
                                            type="password"
@@ -113,10 +117,12 @@ class LoginContainer extends React.Component {
                                            name="password" required/>
 
 
-                                <div style={{textAlign:'right'}}>
-                                <Button raised color="primary" onClick={this.login.bind(this)}>Login</Button>
+                                <div style={{textAlign: 'right'}}>
+                                    <SimpleButton raised color="primary"
+                                            showProgress={loading} onClick={this.login.bind(this)}>Login</SimpleButton>
                                 </div>
-                                <Typography>Don&apos;t have an account? <Link to={ADMIN_BASE_URL + '/signup'}>Sign up</Link></Typography>
+                                <Typography>Don&apos;t have an account? <Link to={ADMIN_BASE_URL + '/signup'}>Sign
+                                    up</Link></Typography>
                             </form>
                         </Card>
                     </Col>

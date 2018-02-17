@@ -298,7 +298,6 @@ class JsonDom extends React.Component {
                     }
                 })
             }
-
             h.push(React.createElement(
                 this.components[_t] || _t,
                 {id: key, key, ...p},
