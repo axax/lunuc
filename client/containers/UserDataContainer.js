@@ -6,6 +6,7 @@ import * as UserActions from 'client/actions/UserAction'
 import {withApollo} from 'react-apollo'
 import gql from 'graphql-tag'
 import ApolloClient from 'apollo-client'
+import {USER_DATA_QUERY} from '../constants'
 
 class UserDataContainer extends React.PureComponent {
 	state = {
@@ -22,7 +23,7 @@ class UserDataContainer extends React.PureComponent {
 
 			client.query({
 				fetchPolicy: 'cache-first',
-				query: gql`query{me{username email _id note{_id value}role{capabilities}}}`
+				query: gql(USER_DATA_QUERY)
 			}).then(response => {
 				userActions.setUser(response.data.me, !!response.data.me)
 				this.setState({loading: false})
@@ -41,7 +42,6 @@ class UserDataContainer extends React.PureComponent {
 
 	render() {
 		const {loading} = this.state
-
 		if (loading)
 			return <div>loading user data...</div>
 		return this.props.children

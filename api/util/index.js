@@ -84,6 +84,16 @@ const Util = {
         }
         return false
     },
+    getUserRoles: async (db, id) => {
+        // TODO: Add Cache for roles
+        let userRole = (await db.collection('UserRole').findOne({_id: ObjectId(id)}))
+
+        // fallback to default user role
+        if (userRole === null) {
+            userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
+        }
+        return userRole
+    },
     draftjsRawToFields: (body) => {
         if (!body || body === '')
             return {}

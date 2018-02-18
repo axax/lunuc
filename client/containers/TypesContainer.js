@@ -330,7 +330,7 @@ class TypesContainer extends React.Component {
                     try {
                         const storeData = client.readQuery({
                             query: gqlQuery,
-                            variables: variables
+                            variables
                         })
                         if (storeData && storeData[storeKey]) {
                             // oh data are available in cache. show them first
@@ -344,7 +344,7 @@ class TypesContainer extends React.Component {
                     fetchPolicy: 'network-only',
                     forceFetch: true,
                     query: gqlQuery,
-                    variables: variables
+                    variables
                 }).then(response => {
                     this.setState({data: response.data[storeKey]})
                 }).catch(error => {

@@ -19,7 +19,12 @@ class Routes extends React.Component {
 
     routes = [
         {exact: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
-        {private: true, exact: true, path: ADMIN_BASE_URL + '/cms/:page*', component: (p)=> <TypesContainer fixType="CmsPage" {...p} />},
+        {
+            private: true,
+            exact: true,
+            path: ADMIN_BASE_URL + '/cms/:page*',
+            component: (p) => <TypesContainer fixType="CmsPage" {...p} />
+        },
         {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
@@ -43,17 +48,19 @@ class Routes extends React.Component {
     }
 
     render() {
-
-        const {isAuthenticated} = this.props
+        const {isAuthenticated, capabilities} = this.props
 
         return <Router>
             <div id="router">
                 {this.routes.map((o, i) => {
-                    if (o.private) {
-                        return <PrivateRoute key={i} path={o.path} isAuthenticated={isAuthenticated}
-                                             component={o.component}/>
-                    } else {
-                        return <Route key={i} path={o.path} exact={o.exact} component={o.component} render={o.render}/>
+                    if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || capabilities.indexOf('access_admin_page') >= 0) {
+                        if (o.private) {
+                            return <PrivateRoute key={i} path={o.path} isAuthenticated={isAuthenticated}
+                                                 component={o.component}/>
+                        } else {
+                            return <Route key={i} path={o.path} exact={o.exact} component={o.component}
+                                          render={o.render}/>
+                        }
                     }
                 })}
             </div>
@@ -64,7 +71,8 @@ class Routes extends React.Component {
 
 Routes.propTypes = {
     /* UserReducer */
-    isAuthenticated: PropTypes.bool
+    isAuthenticated: PropTypes.bool,
+    capabilities: PropTypes.array.isRequired
 }
 
 
@@ -74,7 +82,8 @@ Routes.propTypes = {
 const mapStateToProps = (store) => {
     const {user} = store
     return {
-        isAuthenticated: user.isAuthenticated
+        isAuthenticated: user.isAuthenticated,
+        capabilities: (user.userData && user.userData.role ? user.userData.role.capabilities : [])
     }
 }
 

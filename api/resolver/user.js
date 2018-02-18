@@ -45,18 +45,7 @@ export const userResolver = (db) => ({
         if (!user) {
             throw new Error('User doesn\'t exist')
         } else {
-            var userRole = null
-            // query user role
-            if (user.role) {
-                userRole = (await db.collection('UserRole').findOne({_id: ObjectId(user.role)}))
-            }
-
-            // set default user role
-            if (userRole === null) {
-                userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
-            }
-            user.role = userRole
-
+            user.role = Util.getUserRoles(db,user.role)
 
             enhanceUserSettings(user)
 
@@ -94,6 +83,7 @@ export const userResolver = (db) => ({
     },
     login: async ({username, password}) => {
         const result = await auth.createToken(username, password, db)
+
 
         return result
     },

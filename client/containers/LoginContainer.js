@@ -12,6 +12,7 @@ import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import {ADMIN_BASE_URL} from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
+import {USER_DATA_QUERY} from '../constants'
 
 class LoginContainer extends React.Component {
     state = {
@@ -43,7 +44,7 @@ class LoginContainer extends React.Component {
 
         client.query({
             fetchPolicy: 'network-only',
-            query: gql`query startLogin($username: String!, $password: String!) { login(username: $username, password: $password) { token error _id username }}`,
+            query: gql`query login($username:String!,$password:String!){login(username:$username,password:$password){token error user{username email _id role{capabilities}}}}`,
             variables: {
                 username: this.state.username,
                 password: this.state.password
@@ -55,15 +56,20 @@ class LoginContainer extends React.Component {
                 this.setState({error: response.data.login.error})
 
                 if (!response.data.login.error) {
-                    localStorage.setItem('token', response.data.login.token)
-                    userActions.setUser(response.data.login, true)
-                    errorHandlerAction.clearErrors()
 
                     this.setState({redirectToReferrer: true})
+                    localStorage.setItem('token', response.data.login.token)
+                    userActions.setUser(response.data.login.user, true)
+                    errorHandlerAction.clearErrors()
+                    // clear apollo cache entry with userdata
+                    /*try {
+                        client.writeQuery({
+                            query: gql(USER_DATA_QUERY),
+                            data: null
+                        })
+                    }catch (e){}*/
                 }
             }
-        }).catch(error => {
-            this.setState({loading: false})
         })
     }
 
@@ -94,7 +100,7 @@ class LoginContainer extends React.Component {
                                 <TextField label="Username"
                                            error={!!error}
                                            disabled={!!loading}
-                                           autoComplete="username"
+                                           autoComplete="current-password"
                                            fullWidth
                                            autoFocus
                                            value={username}

@@ -17,15 +17,16 @@ export const auth = {
 		const user = await userCollection.findOne({$or: [{'email': username}, {'username': username}]})
 
 		if (!user) {
-			return {error: 'no such user found', token: null}
+			return {error: 'no such user found', token: null, user:null}
 		} else if (Util.compareWithHashedPassword(password, user.password)) {
 			// from now on we'll identify the user by the id and the id is the only personalized value that goes into our token
 			const payload = {'username': user.username, 'id': user._id}
 			const token = jwt.sign(payload, SECRET_KEY, {expiresIn: AUTH_EXPIRES_IN})
 			//console.log( jwt.verify(token, SECRET_KEY))
-			return {token: token, username: user.username, _id: user._id}
+            user.role = Util.getUserRoles(db,user.role)
+			return {token: token, user}
 		} else {
-			return {error: 'password did not match', token: null, username: username,id: null}
+			return {error: 'password did not match', token: null, user: null}
 		}
 	},
 	decodeToken: (token) => {
