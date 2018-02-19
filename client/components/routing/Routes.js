@@ -48,8 +48,9 @@ class Routes extends React.Component {
     }
 
     render() {
-        const {isAuthenticated, capabilities} = this.props
+        const {user: {isAuthenticated, userData}} = this.props
 
+        const capabilities = (userData && userData.role && userData.role.capabilities) || []
         return <Router>
             <div id="router">
                 {this.routes.map((o, i) => {
@@ -70,9 +71,7 @@ class Routes extends React.Component {
 
 
 Routes.propTypes = {
-    /* UserReducer */
-    isAuthenticated: PropTypes.bool,
-    capabilities: PropTypes.array.isRequired
+    user: PropTypes.object.isRequired
 }
 
 
@@ -80,10 +79,8 @@ Routes.propTypes = {
  * Map the state to props.
  */
 const mapStateToProps = (store) => {
-    const {user} = store
     return {
-        isAuthenticated: user.isAuthenticated,
-        capabilities: (user.userData && user.userData.role ? user.userData.role.capabilities : [])
+        user: store.user
     }
 }
 

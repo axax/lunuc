@@ -190,6 +190,10 @@ class CmsViewContainer extends React.Component {
         }
     }
 
+    shouldComponentUpdate(props,state){
+        return props.cmsPage!==this.props.cmsPage || props.location!==this.props.location || props.history!==this.props.history || props.user!==this.props.user
+    }
+
     componentWillReceiveProps(props) {
         this.setUpSubsciptions(props)
         // in case props change and differ from inital props
@@ -302,7 +306,7 @@ class CmsViewContainer extends React.Component {
             </DrawerLayout>
         }
 
-        console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
+        console.info(`render ${this.constructor.name} for ${cmsPage.slug} in ${new Date() - startTime}ms`)
 
         return content
     }
@@ -313,7 +317,7 @@ CmsViewContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
     cmsPage: PropTypes.object,
-    user: PropTypes.object,
+    user: PropTypes.object.isRequired,
     updateCmsPage: PropTypes.func.isRequired,
     slug: PropTypes.string,
     dynamic: PropTypes.bool,
@@ -392,9 +396,8 @@ const CmsViewContainerWithGql = compose(
  * Map the state to props.
  */
 const mapStateToProps = (store) => {
-    const {user} = store
     return {
-        user
+        user: store.user
     }
 }
 

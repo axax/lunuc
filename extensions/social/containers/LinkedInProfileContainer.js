@@ -26,7 +26,7 @@ class LinkedInProfileContainer extends React.Component {
         const params = new URLSearchParams(location.search)
         const code = params.get('code'), state = params.get('state')
         if (code) {
-            if (state == keyValueMap.linkedInState) {
+            if (state === keyValueMap.linkedInState) {
                 this.props.setKeyValue({key: 'linkedInCode', value: code}).then(() => {
                     history.push(location.pathname)
                 })
@@ -66,15 +66,15 @@ class LinkedInProfileContainer extends React.Component {
 
 
     componentWillReceiveProps(nextProps) {
-        const {keyValues} = nextProps
-        this.setState({linkedInCode: (keyValues && keyValues.results ? keyValues.results.find(x => x.key === 'linkedInCode') : null)})
+        const {linkedInCode} = nextProps.keyValueMap
+        this.setState({linkedInCode})
     }
 
     render() {
         const {linkedin} = this.props
         const {linkedInCode, data} = this.state
 
-
+console.log('render linkedin')
         if (!linkedInCode || !linkedin)
             return <Button raised onClick={this.handelLinkedInConnect}>Connect with LinkedIn</Button>
 
@@ -102,20 +102,21 @@ LinkedInProfileContainer.propTypes = {
     loading: PropTypes.bool,
     linkedin: PropTypes.object,
     /* with key values */
-    keyValues: PropTypes.object,
     keyValueMap: PropTypes.object,
     setKeyValue: PropTypes.func.isRequired,
     deleteKeyValue: PropTypes.func.isRequired
 }
 
 
-const gqlQuery = gql`query linkedin($redirectUri: String!){linkedin(redirectUri:$redirectUri){headline firstName lastName pictureUrl publicProfileUrl summary positions{_total values{title summary}}}}`
+const gqlQuery = gql`query linkedin($redirectUri: String!, $linkedInCode: String){linkedin(redirectUri:$redirectUri,linkedInCode:$linkedInCode){headline firstName lastName pictureUrl publicProfileUrl summary positions{_total values{title summary}}}}`
 const LinkedInProfileContainerWithGql = compose(
     graphql(gqlQuery, {
-        options(ownProps) {
+        skip: props => !props.keyValueMap.linkedInCode,
+        options(props) {
             const redirectUri = `${window.location.href}`
             return {
                 variables: {
+                    linkedInCode: props.keyValueMap.linkedInCode,
                     redirectUri
                 },
                 fetchPolicy: 'cache-and-network'

@@ -20,12 +20,18 @@ const Util = {
 
     },
     setKeyValue: async (db, context, key, value) => {
-        return db.collection('KeyValue').updateOne({
-            createdBy: ObjectId(context.id),
-            key
-        }, {$set: {createdBy: ObjectId(context.id), key, value}}, {upsert: true})
+        if (Util.isUserLoggedIn(context)) {
+            return db.collection('KeyValue').updateOne({
+                createdBy: ObjectId(context.id),
+                key
+            }, {$set: {createdBy: ObjectId(context.id), key, value}}, {upsert: true})
+        }
     },
     keyvalueMap: async (db, context, keys) => {
+        if (!Util.isUserLoggedIn(context)) {
+            // return empty map if no user is logged in
+            return {}
+        }
 
         const keyvalues = (await db.collection('KeyValue').find({
             createdBy: ObjectId(context.id),

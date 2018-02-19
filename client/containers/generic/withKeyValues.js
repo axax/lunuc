@@ -4,14 +4,30 @@ import gql from 'graphql-tag'
 import {graphql, compose} from 'react-apollo'
 import {connect} from 'react-redux'
 
+const LOCAL_STORAGE_KEY = 'noUserKeyValues'
 /*
-
-this is a warpper component for accessing user key values
-
+ this is a warpper component for accessing user key values
  */
+
+let keyValuesFromLS = null
 
 // This function takes a component...
 export function withKeyValues(WrappedComponent, keys) {
+
+    const getKeyValuesFromLS = () => {
+        if (!keyValuesFromLS) {
+            keyValuesFromLS = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY))
+            if (!keyValuesFromLS) keyValuesFromLS = {}
+        }
+        return keyValuesFromLS
+    }
+
+    const setKeyValueToLS = (key, value) => {
+        const kv = getKeyValuesFromLS()
+        kv[key] = value
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(kv))
+    }
+
     // ...and returns another component...
     class WithKeyValues extends React.Component {
         constructor(props) {
@@ -19,9 +35,15 @@ export function withKeyValues(WrappedComponent, keys) {
         }
 
         render() {
-            const {keyValues} = this.props
-            const keyValueMap = {}
-            if( keyValues ) {
+            const {keyValues, user, ...rest} = this.props
+
+            let keyValueMap
+
+            if (!user.isAuthenticated) {
+                // fallback: load keyValues from localstore
+                keyValueMap = getKeyValuesFromLS()
+            } else if (keyValues) {
+                keyValueMap = {}
                 // create a keyvalue map
                 const {results} = keyValues
                 if (results) {
@@ -34,7 +56,7 @@ export function withKeyValues(WrappedComponent, keys) {
 
             // ... and renders the wrapped component with the fresh data!
             // Notice that we pass through any additional props
-            return <WrappedComponent keyValueMap={keyValueMap} {...this.props} />;
+            return <WrappedComponent keyValueMap={keyValueMap} {...rest} />;
         }
     }
 
@@ -43,11 +65,11 @@ export function withKeyValues(WrappedComponent, keys) {
         user: PropTypes.object.isRequired,
         loading: PropTypes.bool,
         setKeyValue: PropTypes.func.isRequired,
-        deleteKeyValue: PropTypes.func.isRequired
+        deleteKeyValue: PropTypes.func.isRequired,
     }
 
     const gqlKeyValueQuery = gql`query{ 
-        keyValues${keys?'(keys:'+JSON.stringify(keys)+')':''}{limit offset total results{key value status createdBy{_id username}} }
+        keyValues${keys ? '(keys:' + JSON.stringify(keys) + ')' : ''}{limit offset total results{key value status createdBy{_id username}} }
     }`
 
     const gqlKeyValueUpdate = gql`
@@ -80,9 +102,11 @@ export function withKeyValues(WrappedComponent, keys) {
         graphql(gqlKeyValueUpdate, {
             props: ({ownProps, mutate}) => ({
                 setKeyValue: ({key, value}) => {
-                    console.log(key,value)
-                    if( !ownProps.user.isAuthenticated ){
-                        return
+                    if (!ownProps.user.isAuthenticated) {
+                        return new Promise((res) => {
+                            setKeyValueToLS(key, value)
+                            res()
+                        })
                     }
                     return mutate({
                         variables: {key, value},
@@ -124,6 +148,12 @@ export function withKeyValues(WrappedComponent, keys) {
         graphql(gqlKeyValueDelete, {
             props: ({ownProps, mutate}) => ({
                 deleteKeyValue: ({key}) => {
+                    if (!ownProps.user.isAuthenticated) {
+                        return new Promise((res) => {
+                            setKeyValueToLS(key, null)
+                            res()
+                        })
+                    }
                     return mutate({
                         variables: {key},
                         optimisticResponse: {
@@ -155,11 +185,10 @@ export function withKeyValues(WrappedComponent, keys) {
     )(WithKeyValues)
 
 
-
     /**
      * Map the state to props.
      */
-    const mapStateToProps = (store) => ({user:store.user})
+    const mapStateToProps = (store) => ({user: store.user})
 
 
     /**

@@ -3,13 +3,17 @@ import request from 'request-promise'
 import {ObjectId} from 'mongodb'
 
 
-const client_id='772exdl15hhf0d', client_secret='7iKphLFIh8QmqnPT'
+const LINKEDIN_CLIENT_ID='772exdl15hhf0d'
+
+// this is sensitive - never expose the secret publicly
+const LINKEDIN_SECRET='7iKphLFIh8QmqnPT'
 
 
 //https://www.linkedin.com/psettings/member-data
 export default (db) => ({
-    linkedin: async ({redirectUri}, {context}) => {
-        Util.checkIfUserIsLoggedIn(context)
+    linkedin: async ({redirectUri, linkedInCode}, {context}) => {
+
+        const userIsLoggedIn = Util.isUserLoggedIn(context)
 
         const keys = ['linkedInCode','linkedInAccessToken','linkedInAccessTokenExpiresAt']
 
@@ -41,9 +45,11 @@ export default (db) => ({
 
         }
 
-        if ( !keyvalueMap.linkedInCode){
+        // the linkedInCode must be either passed as a parameter or be stored as key-value for the user
+        if ( !linkedInCode && !keyvalueMap.linkedInCode ){
             throw new Error('Please create a linkedin token first.')
         }
+
 
         if( !redirectUri ){
             throw new Error('Please specify a redirect uri.')
@@ -55,16 +61,17 @@ export default (db) => ({
             uri: 'https://www.linkedin.com/oauth/v2/accessToken',
             form: {
                 grant_type:'authorization_code',
-                code:keyvalueMap.linkedInCode,
+                code:linkedInCode || keyvalueMap.linkedInCode,
                 redirect_uri:redirectUri,
-                client_id,
-                client_secret
+                client_id: LINKEDIN_CLIENT_ID,
+                client_secret: LINKEDIN_SECRET
             },
             json: true
         }))
 
         if( response && response.access_token ){
             keyvalueMap.linkedInAccessToken = response.access_token
+            console.log(response)
             Util.setKeyValues(db,context,{'linkedInAccessToken':response.access_token,'linkedInAccessTokenExpiresAt':(Math.floor(Date.now() / 1000)+response.expires_in)})
         }else{
             throw new Error('No access token received')

@@ -22,7 +22,7 @@ export default `
     }
       
     type Query {
-        linkedin(redirectUri: String): LinkedInData
+        linkedin(redirectUri: String, linkedInCode: String): LinkedInData
     }
     
 `

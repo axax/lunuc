@@ -12,7 +12,6 @@ import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import {ADMIN_BASE_URL} from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
-import {USER_DATA_QUERY} from '../constants'
 
 class LoginContainer extends React.Component {
     state = {
@@ -61,13 +60,6 @@ class LoginContainer extends React.Component {
                     localStorage.setItem('token', response.data.login.token)
                     userActions.setUser(response.data.login.user, true)
                     errorHandlerAction.clearErrors()
-                    // clear apollo cache entry with userdata
-                    /*try {
-                        client.writeQuery({
-                            query: gql(USER_DATA_QUERY),
-                            data: null
-                        })
-                    }catch (e){}*/
                 }
             }
         })
