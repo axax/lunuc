@@ -81,13 +81,9 @@ console.log('render linkedin')
 
         return (
             <div>
-                <img src={linkedin.pictureUrl}/>
-                <p>
-                    <strong>{linkedin.firstName} {linkedin.lastName} ({linkedin.headline})</strong><br />
-                    {linkedin.summary}
-                </p>
                 <Button raised onClick={this.handleLinkedInDisconnect}>Disconnect with LinkedIn</Button>
 
+                <Typography>Login into your LinkedIn account -> My Account -> Settings & Privacy -> Download your Data</Typography>
                 <FileDrop multi onFileContent={this.handleCsv} accept="text/csv" label="Drop linked in cvs files here"/>
 
 

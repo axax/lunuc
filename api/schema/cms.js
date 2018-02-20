@@ -11,7 +11,8 @@ export const cmsSchemaRaw = `
         status: String
         ssr: Boolean,
         subscriptions: [String],
-        public: Boolean
+        public: Boolean,
+        modifiedAt: Float
     }
     
     

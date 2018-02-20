@@ -16,7 +16,7 @@ import Util from 'client/util'
 import {getType} from 'util/types'
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){slug template script dataResolver ssr resolvedData html subscriptions _id createdBy{_id username}}}`
+const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){slug template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
 
 
 const editorStyle = {
@@ -191,7 +191,13 @@ class CmsViewContainer extends React.Component {
     }
 
     shouldComponentUpdate(props,state){
-        return props.cmsPage!==this.props.cmsPage || props.location!==this.props.location || props.history!==this.props.history || props.user!==this.props.user
+        // only update if cms page was modified
+        return !this.props.cmsPage ||
+            props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
+            props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
+            props.location.search!==this.props.location.search ||
+            props.user!==this.props.user ||
+            (isEditMode(props) && (state.template!==this.state.template || state.script!==this.state.script))
     }
 
     componentWillReceiveProps(props) {
@@ -321,9 +327,9 @@ CmsViewContainer.propTypes = {
     updateCmsPage: PropTypes.func.isRequired,
     slug: PropTypes.string,
     dynamic: PropTypes.bool,
-    history: PropTypes.object,
-    location: PropTypes.object,
-    match: PropTypes.object,
+    history: PropTypes.object.isRequired,
+    location: PropTypes.object.isRequired,
+    match: PropTypes.object.isRequired,
     /* Reference to the parent JsonDom */
     _parentRef: PropTypes.object,
     id: PropTypes.string
@@ -346,7 +352,7 @@ const CmsViewContainerWithGql = compose(
             loading
         })
     }),
-    graphql(gql`mutation updateCmsPage($_id: ID!,$template: String,$slug: String,$script: String,$dataResolver: String,$ssr: Boolean){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr){slug template script dataResolver ssr resolvedData html subscriptions _id createdBy{_id username} status}}`, {
+    graphql(gql`mutation updateCmsPage($_id: ID!,$template: String,$slug: String,$script: String,$dataResolver: String,$ssr: Boolean){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr){slug template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key) => {
                 return mutate({
@@ -358,6 +364,7 @@ const CmsViewContainerWithGql = compose(
                             _id,
                             ...rest,
                             status: 'updating',
+                            modifiedAt: new Date().getTime(),
                             createdBy: {
                                 _id: ownProps.user.userData._id,
                                 username: ownProps.user.userData.username,
@@ -375,7 +382,7 @@ const CmsViewContainerWithGql = compose(
                         })
                         if (data.cmsPage) {
                             // update cmsPage
-                            data.cmsPage = {_id, [key]: updateCmsPage[key], ...rest}
+                            data.cmsPage = {_id, [key]: updateCmsPage[key], ...rest, modifiedAt: updateCmsPage.modifiedAt}
 
                             // update resolvedData
                             if (updateCmsPage.resolvedData) {

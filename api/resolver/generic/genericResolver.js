@@ -158,6 +158,7 @@ const GenericResolver = {
             {
                 $group: {
                     _id: '$_id',
+                    modifiedAt: {'$first':'$modifiedAt'},
                     ...group,
                     createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
                 }
@@ -184,7 +185,6 @@ const GenericResolver = {
                 $addFields: {limit, offset}
             }
         ]).toArray())
-
         if (a.length === 0) {
             return {
                 limit,
@@ -277,6 +277,8 @@ const GenericResolver = {
             return o
         }, {})
 
+        // set timestamp
+        dataSet.modifiedAt = new Date().getTime()
 
         const result = (await collection.findOneAndUpdate({_id: ObjectId(data._id)}, {
             $set: dataSet
@@ -286,6 +288,7 @@ const GenericResolver = {
         }
         return {
             ...data,
+            modifiedAt: dataSet.modifiedAt,
             createdBy: {
                 _id: ObjectId(context.id),
                 username: context.username

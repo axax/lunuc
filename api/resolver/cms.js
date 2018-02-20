@@ -110,7 +110,7 @@ export const cmsResolver = (db) => ({
         }
         const scope = {...createScopeForDataResolver(query), page: {slug}}
 
-        const {_id, createdBy, template, script, dataResolver, ssr} = cmsPages.results[0]
+        const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt} = cmsPages.results[0]
         const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver, scope)
         let html
 
@@ -136,6 +136,7 @@ export const cmsResolver = (db) => ({
             // return all data
             return {
                 _id,
+                modifiedAt,
                 createdBy,
                 slug,
                 template,
@@ -152,6 +153,7 @@ export const cmsResolver = (db) => ({
             // never return sensitiv data here
             return {
                 _id,
+                modifiedAt,
                 createdBy,
                 ssr,
                 slug,
@@ -165,7 +167,7 @@ export const cmsResolver = (db) => ({
         }
 
     },
-    createCmsPage: async ({slug,...rest}, {context}) => {
+    createCmsPage: async ({slug, ...rest}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
         slug = encodeURIComponent(slug.trim())
 
