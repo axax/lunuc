@@ -15,7 +15,7 @@ export default (db) => ({
 
         const userIsLoggedIn = Util.isUserLoggedIn(context)
 
-        const keys = ['linkedInCode','linkedInAccessToken','linkedInAccessTokenExpiresAt']
+        const keys = ['linkedInAccessToken','linkedInAccessTokenExpiresAt']
 
         const keyvalueMap=(await Util.keyvalueMap(db, context,keys))
 
@@ -28,7 +28,7 @@ export default (db) => ({
                 },
                 json: true
             }))
-            console.log(response.positions.values[0])
+            console.log(response)
             return response
         }
 
@@ -46,7 +46,7 @@ export default (db) => ({
         }
 
         // the linkedInCode must be either passed as a parameter or be stored as key-value for the user
-        if ( !linkedInCode && !keyvalueMap.linkedInCode ){
+        if ( !linkedInCode ){
             throw new Error('Please create a linkedin token first.')
         }
 
@@ -55,13 +55,12 @@ export default (db) => ({
             throw new Error('Please specify a redirect uri.')
         }
 
-
         const response =  (await request({
             method: 'POST',
             uri: 'https://www.linkedin.com/oauth/v2/accessToken',
             form: {
                 grant_type:'authorization_code',
-                code:linkedInCode || keyvalueMap.linkedInCode,
+                code:linkedInCode ,
                 redirect_uri:redirectUri,
                 client_id: LINKEDIN_CLIENT_ID,
                 client_secret: LINKEDIN_SECRET

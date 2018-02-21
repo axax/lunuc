@@ -53,7 +53,6 @@ export function withKeyValues(WrappedComponent, keys) {
                     }
                 }
             }
-
             // ... and renders the wrapped component with the fresh data!
             // Notice that we pass through any additional props
             return <WrappedComponent keyValueMap={keyValueMap} {...rest} />;

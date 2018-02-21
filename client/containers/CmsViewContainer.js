@@ -97,9 +97,8 @@ class CmsViewContainer extends React.Component {
                     }
                 })
 
-                const qqlSubscribe = gql`subscription{
-                subscribe${subs}{action data{${query}}}
-              }`
+                const qqlSubscribe = gql`subscription{subscribe${subs}{action data{${query}}}}`
+
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,
                     variables: {},

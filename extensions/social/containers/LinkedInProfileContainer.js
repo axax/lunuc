@@ -15,21 +15,20 @@ class LinkedInProfileContainer extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            linkedInCode: null,
-            data: {...props.linkedin}
+            disconnected: false
         }
     }
-
 
     componentWillMount() {
         const {location, history, keyValueMap} = this.props
         const params = new URLSearchParams(location.search)
         const code = params.get('code'), state = params.get('state')
         if (code) {
-            if (state === keyValueMap.linkedInState) {
-                this.props.setKeyValue({key: 'linkedInCode', value: code}).then(() => {
-                    history.push(location.pathname)
-                })
+            if (state === sessionStorage.getItem('linkedInState')) {
+                this.setState({disconnected: false})
+                sessionStorage.removeItem('linkedInState')
+                sessionStorage.setItem('linkedInCode', code)
+                history.push(location.pathname)
             }
         }
     }
@@ -40,42 +39,38 @@ class LinkedInProfileContainer extends React.Component {
             linkedInClientId = '772exdl15hhf0d',
             linkedInState = Math.random().toString(36).substr(2),
             linkedInAuthUrl = `${linkedInBase}&client_id=${linkedInClientId}&state=${linkedInState}&redirect_uri=${encodeURIComponent(linkedInRedirectUrl)}`
-        this.props.setKeyValue({key: 'linkedInState', value: linkedInState}).then(() => {
-            window.location.href = linkedInAuthUrl
-        })
+
+        // store temporarily
+        sessionStorage.setItem('linkedInState', linkedInState)
+        window.location.href = linkedInAuthUrl
     }
 
     handleLinkedInDisconnect = () => {
-        this.setState({linkedInCode: null})
-        this.props.deleteKeyValue({key: 'linkedInCode'})
+        sessionStorage.removeItem('linkedInCode')
+        this.setState({disconnected: true})
     }
 
-    handleCsv = (file,data) => {
+    handleCsv = (file, data) => {
 
         const j = csvToJson(data)
-        if( j.length > 0 ){
-            if( j[0].firstName && j[0].headline ) {
+        if (j.length > 0) {
+            if (j[0].firstName && j[0].headline) {
                 // this might be the profile data
                 this.setState({data: {...this.state.data, ...j[0]}})
-            }else if( j[0].companyName && j[0].startedOn){
-                this.setState({data: {...this.state.data, positions:{values:j}}})
+            } else if (j[0].companyName && j[0].startedOn) {
+                this.setState({data: {...this.state.data, positions: {values: j}}})
             }
         }
 
     }
 
 
-    componentWillReceiveProps(nextProps) {
-        const {linkedInCode} = nextProps.keyValueMap
-        this.setState({linkedInCode})
-    }
-
     render() {
         const {linkedin} = this.props
-        const {linkedInCode, data} = this.state
+        const {disconnected} = this.state
 
-console.log('render linkedin')
-        if (!linkedInCode || !linkedin)
+        console.log('render linkedin')
+        if (!linkedin || disconnected)
             return <Button raised onClick={this.handelLinkedInConnect}>Connect with LinkedIn</Button>
 
 
@@ -83,11 +78,12 @@ console.log('render linkedin')
             <div>
                 <Button raised onClick={this.handleLinkedInDisconnect}>Disconnect with LinkedIn</Button>
 
-                <Typography>Login into your LinkedIn account -> My Account -> Settings & Privacy -> Download your Data</Typography>
+                <Typography>Login into your LinkedIn account -> My Account -> Settings & Privacy -> Download your
+                    Data</Typography>
                 <FileDrop multi onFileContent={this.handleCsv} accept="text/csv" label="Drop linked in cvs files here"/>
 
 
-                <PrettyResume resumeData={data} />
+                <PrettyResume resumeData={linkedin}/>
             </div>
         )
     }
@@ -96,23 +92,19 @@ console.log('render linkedin')
 
 LinkedInProfileContainer.propTypes = {
     loading: PropTypes.bool,
-    linkedin: PropTypes.object,
-    /* with key values */
-    keyValueMap: PropTypes.object,
-    setKeyValue: PropTypes.func.isRequired,
-    deleteKeyValue: PropTypes.func.isRequired
+    linkedin: PropTypes.object
 }
 
 
 const gqlQuery = gql`query linkedin($redirectUri: String!, $linkedInCode: String){linkedin(redirectUri:$redirectUri,linkedInCode:$linkedInCode){headline firstName lastName pictureUrl publicProfileUrl summary positions{_total values{title summary}}}}`
 const LinkedInProfileContainerWithGql = compose(
     graphql(gqlQuery, {
-        skip: props => !props.keyValueMap.linkedInCode,
+        skip: props => !localStorage.getItem('token') && !sessionStorage.getItem('linkedInCode'),
         options(props) {
             const redirectUri = `${window.location.href}`
             return {
                 variables: {
-                    linkedInCode: props.keyValueMap.linkedInCode,
+                    linkedInCode: sessionStorage.getItem('linkedInCode'),
                     redirectUri
                 },
                 fetchPolicy: 'cache-and-network'
@@ -125,8 +117,7 @@ const LinkedInProfileContainerWithGql = compose(
     })
 )(LinkedInProfileContainer)
 
-export default withRouter(withKeyValues(LinkedInProfileContainerWithGql, ['linkedInCode', 'linkedInState']))
-
+export default withRouter(LinkedInProfileContainerWithGql)
 
 
 function CSVToArray(strData, strDelimiter) {
@@ -186,11 +177,11 @@ function csvToJson(csv) {
     var objArray = []
 
 
-    if( array.length > 0) {
+    if (array.length > 0) {
         // change header line
         for (let k = 0; k < array[0].length; k++) {
-            const name = array[0][k].replace(/\s/g,'')
-            array[0][k] = name.substring(0,1).toLowerCase()+name.substring(1)
+            const name = array[0][k].replace(/\s/g, '')
+            array[0][k] = name.substring(0, 1).toLowerCase() + name.substring(1)
         }
 
         for (var i = 1; i < array.length; i++) {
