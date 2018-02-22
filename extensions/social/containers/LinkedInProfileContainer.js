@@ -9,27 +9,46 @@ import PrettyResume from '../components/PrettyResume'
 import FileDrop from 'client/components/FileDrop'
 
 
-class LinkedInProfileContainer extends React.Component {
+const withLinkedInCallback = (Container) => {
 
 
-    constructor(props) {
-        super(props)
-        this.state = {
-            disconnected: false
-        }
-    }
+    return (props) =>{
 
-    componentWillMount() {
-        const {location, history, keyValueMap} = this.props
+        const {location, history} = props
         const params = new URLSearchParams(location.search)
         const code = params.get('code'), state = params.get('state')
         if (code) {
             if (state === sessionStorage.getItem('linkedInState')) {
-                this.setState({disconnected: false})
                 sessionStorage.removeItem('linkedInState')
                 sessionStorage.setItem('linkedInCode', code)
                 history.push(location.pathname)
+
+                return null
             }
+        }
+
+        return <Container linkedInCode={sessionStorage.getItem('linkedInCode')} {...props} />
+    }
+
+}
+
+class LinkedInCallback extends React.Component {
+
+    render(){
+
+    }
+
+}
+
+
+
+class LinkedInProfileContainer extends React.Component {
+
+    constructor(props) {
+        super(props)
+        this.state = {
+            data: null,
+            disconnected: false
         }
     }
 
@@ -57,8 +76,12 @@ class LinkedInProfileContainer extends React.Component {
             if (j[0].firstName && j[0].headline) {
                 // this might be the profile data
                 this.setState({data: {...this.state.data, ...j[0]}})
-            } else if (j[0].companyName && j[0].startedOn) {
+            } else if (j[0].companyName ) {
                 this.setState({data: {...this.state.data, positions: {values: j}}})
+            } else if (j[0].schoolName ) {
+                this.setState({data: {...this.state.data, education: {values: j}}})
+            }else{
+                console.log(j)
             }
         }
 
@@ -67,7 +90,7 @@ class LinkedInProfileContainer extends React.Component {
 
     render() {
         const {linkedin} = this.props
-        const {disconnected} = this.state
+        const {disconnected, data} = this.state
 
         console.log('render linkedin')
         if (!linkedin || disconnected)
@@ -83,7 +106,7 @@ class LinkedInProfileContainer extends React.Component {
                 <FileDrop multi onFileContent={this.handleCsv} accept="text/csv" label="Drop linked in cvs files here"/>
 
 
-                <PrettyResume resumeData={linkedin}/>
+                <PrettyResume resumeData={{...linkedin,...data}}/>
             </div>
         )
     }
@@ -99,12 +122,12 @@ LinkedInProfileContainer.propTypes = {
 const gqlQuery = gql`query linkedin($redirectUri: String!, $linkedInCode: String){linkedin(redirectUri:$redirectUri,linkedInCode:$linkedInCode){headline firstName lastName pictureUrl publicProfileUrl summary positions{_total values{title summary}}}}`
 const LinkedInProfileContainerWithGql = compose(
     graphql(gqlQuery, {
-        skip: props => !localStorage.getItem('token') && !sessionStorage.getItem('linkedInCode'),
+        skip: props => !props.linkedInCode && !localStorage.getItem('token'),
         options(props) {
             const redirectUri = `${window.location.href}`
             return {
                 variables: {
-                    linkedInCode: sessionStorage.getItem('linkedInCode'),
+                    linkedInCode: props.linkedInCode,
                     redirectUri
                 },
                 fetchPolicy: 'cache-and-network'
@@ -117,7 +140,13 @@ const LinkedInProfileContainerWithGql = compose(
     })
 )(LinkedInProfileContainer)
 
-export default withRouter(LinkedInProfileContainerWithGql)
+
+
+
+export default withRouter(withLinkedInCallback(LinkedInProfileContainerWithGql))
+
+
+
 
 
 function CSVToArray(strData, strDelimiter) {
@@ -185,6 +214,8 @@ function csvToJson(csv) {
         }
 
         for (var i = 1; i < array.length; i++) {
+            if( array[i].length ===1 && array[i][0]=== '') continue
+
             objArray[i - 1] = {}
             for (var k = 0; k < array[0].length && k < array[i].length; k++) {
                 var key = array[0][k]

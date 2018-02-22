@@ -70,6 +70,9 @@ export default (db) => ({
 
         if( response && response.access_token ){
             keyvalueMap.linkedInAccessToken = response.access_token
+            if( response.id ){
+
+            }
             console.log(response)
             Util.setKeyValues(db,context,{'linkedInAccessToken':response.access_token,'linkedInAccessTokenExpiresAt':(Math.floor(Date.now() / 1000)+response.expires_in)})
         }else{

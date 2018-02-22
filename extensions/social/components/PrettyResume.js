@@ -9,16 +9,27 @@ class PrettyResume extends React.Component {
 
 
     timeago(start, end) {
-        const sDate =(start ? new Date(start) : new Date()), eDate = (end ? new Date(end) : new Date())
+        const sDate = (start ? new Date(start) : new Date()), eDate = (end ? new Date(end) : new Date())
 
-        const years = eDate.getFullYear()-sDate.getFullYear(),
-        months = sDate.getMonth() + 1 + eDate.getMonth()
+        const years = eDate.getFullYear() - sDate.getFullYear(),
+            months = sDate.getMonth() + 1 + eDate.getMonth()
 
-        if( years > 0 ){
-            return `${years>0?years+ ' year'+(years>1?'s':''):''}  ${months} month${months>1?'s':''}`
+        if (years > 0) {
+            return `${years > 0 ? years + ' year' + (years > 1 ? 's' : '') : ''}  ${months} month${months > 1 ? 's' : ''}`
         }
 
     }
+
+    renderTimeline(p){
+        return <div className="timeline-left">
+            <span suppressContentEditableWarning={true} contentEditable>{p.startedOn}</span> -&nbsp;
+            <span suppressContentEditableWarning={true}
+                  contentEditable>{p.finishedOn || 'Present'}</span><br />
+            <small suppressContentEditableWarning={true}
+                   contentEditable>{this.timeago(p.startedOn, p.finishedOn)}</small>
+        </div>
+    }
+
 
     render() {
         const {resumeData} = this.props
@@ -89,19 +100,17 @@ class PrettyResume extends React.Component {
                     { resumeData.positions.values.map((p, i) =>
                         <div key={i} className="timeline-section">
 
-                            <div className="timeline-left">
-                                <span suppressContentEditableWarning={true} contentEditable>{p.startedOn}</span> -&nbsp;
-                                <span suppressContentEditableWarning={true}
-                                      contentEditable>{p.finishedOn || 'Present'}</span><br />
-                                <small suppressContentEditableWarning={true}
-                                       contentEditable>{this.timeago(p.startedOn, p.finishedOn)}</small>
-
-                            </div>
+                            {this.renderTimeline(p)}
 
                             <div className="timeline-right">
                                 <h3><span suppressContentEditableWarning={true} contentEditable>{p.title}</span></h3>
                                 <h4><span suppressContentEditableWarning={true} contentEditable>{p.companyName}</span>
                                 </h4>
+                                {p.location &&
+                                <div className="timeline-location">
+                                    <i className="ion-ios-location"></i> <span>{p.location}</span>
+                                </div>
+                                }
                                 <p>
                                     <span suppressContentEditableWarning={true}
                                           contentEditable>{p.summary || p.description}</span>
@@ -114,32 +123,31 @@ class PrettyResume extends React.Component {
                     )}
                 </div> }
 
-
-                <div>
+                {resumeData.education &&
+                <div  className="section-education">
                     <h2 className="section-title timeline-seperator">
-                        <span>linkedinData.extracted.education.title</span>
+                        <span suppressContentEditableWarning={true} contentEditable>Education</span>
                     </h2>
 
-                    <div className="timeline-section">
+                    { resumeData.education.values.map((p, i) =>
+                        <div key={i} className="timeline-section">
 
-                        <div className="timeline-left">
-                            <span>school.date_range</span>
-                        </div>
-
-
-                        <div className="timeline-right">
-                            <h3><span>school.title</span></h3>
-                            <h4><span>school.subtitle</span></h4>
-                            <div className="timeline-location">
-                                <i className="ion-ios-location"></i> <span>school.location</span>
+                            <div className="timeline-left">
+                                <span suppressContentEditableWarning={true} contentEditable>{p.startDate} - {p.endDate}</span>
                             </div>
-                            <p>
-                                <span>school.description</span>
-                            </p>
-                        </div>
 
-                    </div>
+
+                            <div className="timeline-right">
+                                <h3><span suppressContentEditableWarning={true} contentEditable>{p.schoolName}</span></h3>
+                                <h4><span suppressContentEditableWarning={true} contentEditable>{p.degreeName}</span></h4>
+                                <p>
+                                    <span suppressContentEditableWarning={true} contentEditable>{p.notes}</span>
+                                </p>
+                            </div>
+
+                        </div>)}
                 </div>
+                }
 
 
                 <div>
@@ -165,6 +173,71 @@ class PrettyResume extends React.Component {
                     </div>
                 </div>
 
+            </div>
+
+
+            <div className="cv-section blocks">
+                <div className="row">
+                    <div className="col-md-12">
+                        <h2 className="section-title">
+                            <span>linkedinData.extracted.skills.title</span>
+                        </h2>
+
+
+                        <ul className="pills">
+                            <li>
+                                <span className="label label-pill">skill.title</span>
+
+                            </li>
+                        </ul>
+
+                    </div>
+
+                    <div className="col-md-4">
+                        <h2 className="section-title">
+                            <span>linkedinData.extracted.courses.title</span>
+                        </h2>
+
+                        <ul>
+                            <li>
+                                <span>course.title</span>
+
+                            </li>
+                        </ul>
+
+
+                    </div>
+
+                    <div className="col-md-4">
+                        <h2 className="section-title">
+                            <span>linkedinData.extracted.interests.title</span>
+                        </h2>
+
+                        <ul>
+                            <li>
+                                <span>interest.title</span><br />
+                            </li>
+                        </ul>
+
+                    </div>
+
+                    <div className="col-md-4">
+                        <h2 className="section-title">
+                            <span>Languages</span>
+                        </h2>
+
+
+                        <ul>
+                            <li>
+                                <span></span><br />
+                                <small></small>
+                            </li>
+                        </ul>
+
+                    </div>
+
+
+                </div>
             </div>
 
 
