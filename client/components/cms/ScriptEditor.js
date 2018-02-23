@@ -7,7 +7,7 @@ class ScriptEditor extends React.Component {
         const {...rest} = this.props
 
         return <div>
-            <Typography type="headline">Script</Typography>
+            <Typography variant="headline">Script</Typography>
 
             <ContentEditable {...rest}/>
         </div>

@@ -118,4 +118,11 @@ you can subcribe to data changes with $ character placed in front of the type.
 * setLocal => put data to the localstorage
 * getLocal => get data from the localstorage
 * refresh => refresh a component
-* history => history object to change current location
+* history => history obj  
+                  
+                  
+### Internalization
+
+[local].tr.json
+
+_tr()

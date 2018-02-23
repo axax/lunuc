@@ -94,12 +94,12 @@ class LinkedInProfileContainer extends React.Component {
 
         console.log('render linkedin')
         if (!linkedin || disconnected)
-            return <Button raised onClick={this.handelLinkedInConnect}>Connect with LinkedIn</Button>
+            return <Button variant="raised" onClick={this.handelLinkedInConnect}>Connect with LinkedIn</Button>
 
 
         return (
             <div>
-                <Button raised onClick={this.handleLinkedInDisconnect}>Disconnect with LinkedIn</Button>
+                <Button variant="raised" onClick={this.handleLinkedInDisconnect}>Disconnect with LinkedIn</Button>
 
                 <Typography>Login into your LinkedIn account -> My Account -> Settings & Privacy -> Download your
                     Data</Typography>

@@ -12,25 +12,25 @@ class SystemContainer extends React.Component {
 
     render() {
         return <BaseLayout>
-            <Typography type="display2" gutterBottom>System</Typography>
-            <Typography type="display1" component="h2" gutterBottom>Extensions</Typography>
+            <Typography variant="display2" gutterBottom>System</Typography>
+            <Typography variant="display1" component="h2" gutterBottom>Extensions</Typography>
             {
                 Object.keys(extensions).map(k => {
                     const value = extensions[k]
 
-                    return <ExpansionPanel heading={<Typography type="headline">{value.name}</Typography>} key={k}>
-                        <div><Typography type="body1" gutterBottom>{value.description}</Typography></div>
-                        <Typography type="caption" gutterBottom>Types</Typography>
+                    return <ExpansionPanel heading={<Typography variant="title">{value.name}</Typography>} key={k}>
+                        <Typography variant="body1" gutterBottom>{value.description}</Typography>
+                        <Typography variant="caption" gutterBottom>Types</Typography>
                     </ExpansionPanel>
                 })
             }
-            <Typography type="display1" component="h2" gutterBottom>Cache</Typography>
+            <Typography variant="display1" component="h2" gutterBottom>Cache</Typography>
 
             <Button color="secondary" onClick={e => {
                 this.props.client.resetStore().then(() => {
                     console.log('cache cleared')
                 })
-            } } raised>Clear API cache</Button>
+            } } variant="raised">Clear API cache</Button>
 
         </BaseLayout>
     }

@@ -9,6 +9,19 @@
 </head>
 <body>
 <div id="app"></div>
+
+<script>
+    window._app_ = {tr:{}};
+    var l = window.location.pathname.split('/')[1];
+    if (!l || l.length !== 2) {
+        l = navigator.language || navigator.userLanguage;
+    } else {
+        l = l.toLowerCase();
+    }
+    window._app_.lang = l;
+    document.write('<scr' + 'ipt src="/' + l + '.tr.json.js"></sc' + 'ript>');
+
+</script>
 <script src="/main.bundle.js"></script>
 <!--
 <script src="/vendor.bundle.js"></script>

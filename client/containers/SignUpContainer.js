@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {graphql} from 'react-apollo'
 import gql from 'graphql-tag'
-import {ADMIN_BASE_URL} from 'gen/config'
+import config from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
 import {Link} from 'react-router-dom'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
@@ -89,10 +89,10 @@ class SignUpContainer extends React.Component {
                     <Col sm={1} md={4}></Col>
                     <Col sm={10} md={4}>
                         <Card>
-                            <Typography type="display4" gutterBottom>Sign up</Typography>
+                            <Typography variant="display4" gutterBottom>Sign up</Typography>
 
                             {signupFinished ?
-                                <Typography gutterBottom>Thanks for your registration! <Link to={ADMIN_BASE_URL + '/login'}>Login</Link></Typography> :
+                                <Typography gutterBottom>Thanks for your registration! <Link to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography> :
                                 <form>
 
                                     <TextField label="Username"
@@ -134,11 +134,11 @@ class SignUpContainer extends React.Component {
                                                name="password" required/>
 
                                     <div style={{textAlign: 'right'}}>
-                                        <SimpleButton raised color="primary"
+                                        <SimpleButton variant="raised" color="primary"
                                                       showProgress={loading} onClick={this.signup.bind(this)}>Sign
                                             up</SimpleButton>
                                     </div>
-                                    <Typography gutterBottom> Already have an account? <Link to={ADMIN_BASE_URL + '/login'}>Login</Link></Typography>
+                                    <Typography gutterBottom> Already have an account? <Link to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography>
 
                                 </form>
                             }

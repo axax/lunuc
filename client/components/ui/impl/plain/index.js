@@ -26,7 +26,7 @@ export const UIProvider = ({children}) => {
 }
 
 
-export const Button = injectSheet(styles)(({classes, raised, ...rest}) => {
+export const Button = injectSheet(styles)(({classes, ...rest}) => {
     return <button className={classes.button} {...rest} />
 })
 

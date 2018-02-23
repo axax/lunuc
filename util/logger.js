@@ -1,4 +1,4 @@
-import {DEBUG} from 'gen/config'
+import config from 'gen/config'
 
 
 const debugStyle = 'color: #006400; font-weight:bold'
@@ -14,7 +14,7 @@ export default function (name) {
     const START_TIME = new Date().getTime()
     return {
         debug: (msg, data) => {
-            if (DEBUG) {
+            if (config.DEBUG) {
                 const end = new Date().getTime(), time = end - START_TIME
                 let link
                 var matches = getStackTrace()[1].match(/\(([^)]+)\)/);

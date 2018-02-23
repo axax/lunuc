@@ -5,7 +5,7 @@ import BaseLayout from 'client/components/layout/BaseLayout'
 import {Row, Col, SimpleTable, SimpleDialog, DeleteIconButton} from 'ui/admin'
 import Util from 'client/util'
 import PropTypes from 'prop-types'
-import {ADMIN_BASE_URL} from 'gen/config'
+import config from 'gen/config'
 
 const WORDS_PER_PAGE = 10
 
@@ -68,7 +68,7 @@ class WordContainer extends React.Component {
     }
 
     handleChangePage = (page) => {
-        this.props.history.push(`${ADMIN_BASE_URL}/word/${(page)}`)
+        this.props.history.push(`${config.ADMIN_BASE_URL}/word/${(page)}`)
     }
 
     handleConfirmDeletion = (action) => {

@@ -35,7 +35,7 @@ export default class KeyValuePairAdder extends React.Component {
 							 onChange={this.onChangeValue}/>
 				</Col>
 				<Col md={2}>
-					<Button color="primary" raised onClick={this.onAddClick}>Add pair</Button>
+					<Button color="primary" variant="raised" onClick={this.onAddClick}>Add pair</Button>
 				</Col>
 			</Row>
 		)

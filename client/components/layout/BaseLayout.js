@@ -8,8 +8,10 @@ import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
 import Hook from 'util/hook'
 import {withRouter} from 'react-router-dom'
-import {ADMIN_BASE_URL} from 'gen/config'
+import config from 'gen/config'
 import * as UserActions from 'client/actions/UserAction'
+
+const {ADMIN_BASE_URL} = config
 
 
 class BaseLayout extends React.Component {

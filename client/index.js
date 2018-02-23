@@ -3,17 +3,18 @@ import React from 'react'
 import {render} from 'react-dom'
 import App from './components/App'
 import configureStore from './store/index'
-import {DEV_MODE} from 'gen/config'
-
-
+import config from 'gen/config'
 const {store} = configureStore()
+
+// add config to the global app object
+_app_.config = config
 
 render(
 	<App store={store} />,
 	document.getElementById('app')
 )
 
-if( !DEV_MODE ) {
+if( !config.DEV_MODE ) {
 	/* Register serviceworker only on production */
     if ('serviceWorker' in navigator) {
         console.log('Service Worker is supported')

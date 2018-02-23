@@ -6,7 +6,7 @@ import {connect} from 'react-redux'
 import JsonDom from 'client/components/JsonDom'
 import {Typography, DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, SimpleSwitch} from 'ui/admin'
 import {withRouter} from 'react-router-dom'
-import {ADMIN_BASE_URL} from 'gen/config'
+import config from 'gen/config'
 import DataResolverEditor from 'client/components/cms/DataResolverEditor'
 import TemplateEditor from 'client/components/cms/TemplateEditor'
 import ScriptEditor from 'client/components/cms/ScriptEditor'
@@ -288,7 +288,7 @@ class CmsViewContainer extends React.Component {
                         onChange={this.handleClientScriptChange}
                         onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ScriptEditor>
 
-                    <Typography type="headline">Settings</Typography>
+                    <Typography variant="headline">Settings</Typography>
                     <SimpleSwitch
                         label="SSR (Server side Rendering)"
                         checked={!!this.state.ssr}
@@ -302,7 +302,7 @@ class CmsViewContainer extends React.Component {
                                     drawerSize="large"
                                     toolbarRight={
                                         <Button size="small" color="inherit" onClick={e => {
-                                            this.props.history.push(ADMIN_BASE_URL + '/cms')
+                                            this.props.history.push(config.ADMIN_BASE_URL + '/cms')
                                         }}>Back</Button>
                                     }
                                     drawerWidth="500px"

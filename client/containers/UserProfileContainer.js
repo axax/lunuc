@@ -154,16 +154,16 @@ class UserProfileContainer extends React.Component {
 
         return (
             <BaseLayout>
-                <Typography type="display2" gutterBottom>Profile</Typography>
+                <Typography variant="display2" gutterBottom>Profile</Typography>
 
 
                 <div>
                     <TextField type="text" name="username" value={username} onChange={this.handleInputChange}/>
-                    <Button onClick={this.updateProfile.bind(this)} raised color="primary">Update profile</Button>
+                    <Button onClick={this.updateProfile.bind(this)} variant="raised" color="primary">Update profile</Button>
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
                 </div>
-                <Typography type="display1" component="h2" gutterBottom>Role & capabilities</Typography>
+                <Typography variant="display1" component="h2" gutterBottom>Role & capabilities</Typography>
 
                 <p>Role {me.role.name}</p>
                 {
@@ -175,14 +175,14 @@ class UserProfileContainer extends React.Component {
 
 
                 <Divider />
-                <Typography type="display1" component="h2" gutterBottom>Notes</Typography>
+                <Typography variant="display1" component="h2" gutterBottom>Notes</Typography>
                 {noteElements}
                 <br />
-                <Button raised color="primary" onClick={this.createNote}>Add new note</Button>
+                <Button variant="raised" color="primary" onClick={this.createNote}>Add new note</Button>
                 {hasManageKeyvalue ?
                     <div>
                         <Divider />
-                        <Typography type="display1" component="h2" gutterBottom>KeyValue Store</Typography>
+                        <Typography variant="display1" component="h2" gutterBottom>KeyValue Store</Typography>
 
                         <KeyValueContainer />
                     </div> : ''}

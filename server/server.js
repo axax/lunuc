@@ -4,8 +4,8 @@ import url from 'url'
 import path from 'path'
 import fs from 'fs'
 import zlib from 'zlib'
-import {UPLOAD_DIR, UPLOAD_URL} from 'gen/config'
-
+import config from 'gen/config'
+const {UPLOAD_DIR, UPLOAD_URL} = config
 
 // Port to listen to
 const PORT = (process.env.PORT || 8080)

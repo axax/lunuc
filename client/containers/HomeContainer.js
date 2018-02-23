@@ -3,16 +3,17 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {Typography} from 'ui/admin'
+import _t from 'util/i18n'
 
 class HomeContainer extends React.Component {
     render() {
 
         const {user} = this.props
         return <BaseLayout>
-            <Typography type="display2" gutterBottom>Administration console</Typography>
+            <Typography variant="display2" gutterBottom>{_t('admin.home.title')}</Typography>
             <Typography gutterBottom>
             {
-                user.isAuthenticated ? <span>Hi {user.userData && user.userData.username}!</span> : <span>Please login!</span>
+                user.isAuthenticated ? <span>{_t('admin.home.hi',user.userData)}</span> : <span>Please login!</span>
             }
             </Typography>
         </BaseLayout>

@@ -11,7 +11,7 @@ import Divider from 'material-ui/Divider';
 import MenuIcon from 'material-ui-icons/Menu';
 import List, {ListItem, ListItemText} from 'material-ui/List';
 import {withRouter} from 'react-router-dom'
-import {ADMIN_BASE_URL} from 'gen/config'
+import config from 'gen/config'
 import {connect} from 'react-redux'
 
 const drawerWidth = 300;
@@ -79,11 +79,11 @@ class ResponsiveDrawer extends React.Component {
 
     constructor(props) {
         super(props)
-        this.currentLinkParts = this.props.location.pathname.substring(ADMIN_BASE_URL.length + 1).split('/')
+        this.currentLinkParts = this.props.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
     }
 
     componentWillReceiveProps(nextProps) {
-        this.currentLinkParts = nextProps.location.pathname.substring(ADMIN_BASE_URL.length + 1).split('/')
+        this.currentLinkParts = nextProps.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
     }
 
     linkTo(item) {
@@ -91,7 +91,7 @@ class ResponsiveDrawer extends React.Component {
     }
 
     isActive(link) {
-        const linkCut = link.substring(ADMIN_BASE_URL.length + 1).split('/')
+        const linkCut = link.substring(config.ADMIN_BASE_URL.length + 1).split('/')
         return linkCut[0] === this.currentLinkParts[0]
     }
 
@@ -101,7 +101,6 @@ class ResponsiveDrawer extends React.Component {
 
     render() {
         const {classes, theme, menuItems, isAuthenticated, children, headerRight, title} = this.props
-
         const drawer = (
             <div>
 
@@ -116,7 +115,7 @@ class ResponsiveDrawer extends React.Component {
                                              key={i}
                                              button>
                                 <ListItemText disableTypography
-                                              primary={<Typography type="subheading"
+                                              primary={<Typography variant="subheading"
                                                                    component="h3"
                                                                    className={(isActive ? classes.listItemActive: '')}>{item.name}</Typography>}/>
                             </ListItem>
@@ -142,7 +141,7 @@ class ResponsiveDrawer extends React.Component {
                             >
                                 <MenuIcon />
                             </IconButton>
-                            <Typography className={classes.flex} type="title" color="inherit" noWrap>
+                            <Typography className={classes.flex} variant="title" color="inherit" noWrap>
                                 {title}
                             </Typography>
 
@@ -153,7 +152,7 @@ class ResponsiveDrawer extends React.Component {
                     </AppBar>
                     <Hidden lgUp>
                         <Drawer
-                            type="temporary"
+                            variant="temporary"
                             anchor={theme.direction === 'rtl' ? 'right' : 'left'}
                             open={this.state.mobileOpen}
                             classes={{
@@ -169,7 +168,7 @@ class ResponsiveDrawer extends React.Component {
                     </Hidden>
                     <Hidden mdDown implementation="css">
                         <Drawer
-                            type="permanent"
+                            variant="permanent"
                             open
                             classes={{
                                 paper: classes.drawerPaper,

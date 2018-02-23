@@ -10,7 +10,7 @@ export const UIProvider = ({children, ...rest}) => {
 }
 
 import AntButton from  'antd/lib/button'
-export const Button = ({raised, children, ...rest}) => {
+export const Button = ({children, ...rest}) => {
     return <AntButton {...rest}>{children}</AntButton>
 }
 

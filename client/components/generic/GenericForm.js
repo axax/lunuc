@@ -104,7 +104,7 @@ class GenericForm extends React.Component {
                             //TODO: implement
                         } else if (o.type === 'Boolean') {
 
-                            return <SimpleSwitch key={k} label={o.placeholder} name={k} onChange={this.handleInputChange} checked={value}/>
+                            return <SimpleSwitch key={k} label={o.placeholder} name={k} onChange={this.handleInputChange} checked={value?true:false}/>
 
                         } else {
                             return <TextField key={k}
@@ -119,7 +119,7 @@ class GenericForm extends React.Component {
                     })
                 }
                 {primaryButton != false ?
-                    <Button color="primary" raised disabled={!this.state.isValid}
+                    <Button color="primary" variant="raised" disabled={!this.state.isValid}
                             onClick={this.onAddClick}>{caption || 'Add'}</Button>
                     : ''}
             </form>

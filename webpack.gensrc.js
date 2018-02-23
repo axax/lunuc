@@ -111,15 +111,15 @@ GenSourceCode.prototype.apply = function (compiler) {
         })
 
         /* generate config */
+        const o ={DEV_MODE}
+        let configContent = `${GENSRC_HEADER}export default ${JSON.stringify({...APP_CONFIG.options,...o})}\n`
 
-        let configContent = `${GENSRC_HEADER}export const DEV_MODE=${DEV_MODE}\n`
-
-        Object.keys(APP_CONFIG.options).forEach(k => {
+       /* Object.keys(APP_CONFIG.options).forEach(k => {
 
             const item = APP_CONFIG.options[k]
             configContent += `export const ${k}=${JSON.stringify(item)}\n`
 
-        })
+        })*/
 
         fs.writeFile(GENSRC_PATH + "/config.js", configContent, function (err) {
             if (err) {

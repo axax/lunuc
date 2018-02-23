@@ -1,6 +1,7 @@
 import {InMemoryCache} from 'apollo-cache-inmemory'
-import {APOLLO_CACHE} from 'gen/config'
+import config from 'gen/config'
 
+const {APOLLO_CACHE} = config
 // cache
 export const CACHE_KEY = '@APOLLO_OFFLINE_CACHE'
 

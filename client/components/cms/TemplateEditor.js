@@ -7,7 +7,7 @@ class TemplateEditor extends React.Component {
         const {...rest} = this.props
 
         return <div style={{position:'relative'}}>
-            <Typography type="headline">Template</Typography>
+            <Typography variant="headline">Template</Typography>
 
 
             <SimpleMenu mini fab color="secondary" style={{position:'absolute',bottom:'8px',right:'8px'}}

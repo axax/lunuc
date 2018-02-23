@@ -258,6 +258,11 @@ class JsonDom extends React.Component {
                         .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
                     /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
                     data.forEach((loopChild, childIdx) => {
+
+                        if( loopChild.constructor !== Object){
+                            loopChild = {data:loopChild}
+                        }
+
                         const tpl = new Function('const {' + Object.keys(loopChild).join(',') + '} = this.' + s + ';return `' + cStr + '`;')
                         // back to json
                         loopChild._index = childIdx
@@ -391,6 +396,7 @@ class JsonDom extends React.Component {
             }
         }
         scope.data = this.resolvedDataJson
+        scope.app = _app_
 
 
         if (this.runScript) {

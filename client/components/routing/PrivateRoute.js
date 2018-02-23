@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {Route, Redirect} from 'react-router-dom'
-import {ADMIN_BASE_URL} from 'gen/config'
+import config from 'gen/config'
 
 
 const PrivateRoute = ({component: Component, isAuthenticated, ...rest}) => (
@@ -9,7 +9,7 @@ const PrivateRoute = ({component: Component, isAuthenticated, ...rest}) => (
         isAuthenticated ? (<Component {...props}/>
         ) : (
             <Redirect to={{
-                pathname: ADMIN_BASE_URL + '/login',
+                pathname: config.ADMIN_BASE_URL + '/login',
                 state: {from: props.location}
             }}/>
         )

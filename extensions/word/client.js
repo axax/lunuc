@@ -1,6 +1,7 @@
 import Hook from 'util/hook'
 import WordContainer from './containers/WordContainer'
-import {ADMIN_BASE_URL} from 'gen/config'
+import config from 'gen/config'
+const {ADMIN_BASE_URL} = config
 
 // add routes for this extension
 Hook.on('Routes', ({routes}) => {

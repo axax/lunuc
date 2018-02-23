@@ -10,7 +10,7 @@ import {Link} from 'react-router-dom'
 import * as UserActions from 'client/actions/UserAction'
 import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
-import {ADMIN_BASE_URL} from 'gen/config'
+import config from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
 
 class LoginContainer extends React.Component {
@@ -67,7 +67,7 @@ class LoginContainer extends React.Component {
 
     render() {
 
-        const {from} = this.props.location.state || {from: {pathname: ADMIN_BASE_URL}}
+        const {from} = this.props.location.state || {from: {pathname: config.ADMIN_BASE_URL}}
         const {redirectToReferrer, loading, username, password, error} = this.state
 
         if (redirectToReferrer) {
@@ -83,7 +83,7 @@ class LoginContainer extends React.Component {
                     <Col sm={10} md={4}>
                         <Card>
                             <form noValidate autoComplete="off">
-                                <Typography type="display4" gutterBottom>Login</Typography>
+                                <Typography variant="display4" gutterBottom>Login</Typography>
 
                                 <Typography gutterBottom>You must log in to view the page
                                     at {from.pathname}</Typography>
@@ -116,10 +116,10 @@ class LoginContainer extends React.Component {
 
 
                                 <div style={{textAlign: 'right'}}>
-                                    <SimpleButton raised color="primary"
+                                    <SimpleButton variant="raised" color="primary"
                                             showProgress={loading} onClick={this.login.bind(this)}>Login</SimpleButton>
                                 </div>
-                                <Typography>Don&apos;t have an account? <Link to={ADMIN_BASE_URL + '/signup'}>Sign
+                                <Typography>Don&apos;t have an account? <Link to={config.ADMIN_BASE_URL + '/signup'}>Sign
                                     up</Link></Typography>
                             </form>
                         </Card>

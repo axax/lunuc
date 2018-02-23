@@ -10,8 +10,8 @@ import AddChatMessage from '../components/chat/AddChatMessage'
 import {connect} from 'react-redux'
 import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import {ADMIN_BASE_URL} from 'gen/config'
-
+import config from 'gen/config'
+const {ADMIN_BASE_URL} = config
 
 class ChatContainer extends React.Component {
 

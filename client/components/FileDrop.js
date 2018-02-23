@@ -137,12 +137,12 @@ class FileDrop extends React.Component {
                             color="disabled"/> }
 
             { !uploading &&
-            <Typography type="caption">{label || 'Drop files here, or click to select files to upload.'}</Typography> }
+            <Typography variant="caption">{label || 'Drop files here, or click to select files to upload.'}</Typography> }
 
-            { errorMessage && <Typography type="body2" color="error">{errorMessage}</Typography> }
-            { successMessage && <Typography type="body2" color="primary">{successMessage}</Typography> }
+            { errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography> }
+            { successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography> }
 
-            { uploading && <Typography type="body2">uploading data...</Typography> }
+            { uploading && <Typography variant="body2">uploading data...</Typography> }
             { uploading && <LinearProgress className={classes.progress} mode="determinate" value={uploadCompleted}/> }
 
         </div>

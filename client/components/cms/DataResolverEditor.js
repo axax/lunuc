@@ -7,7 +7,7 @@ class DataResolverEditor extends React.Component {
         const {...rest} = this.props
 
         return <div style={{position:'relative'}}>
-            <Typography type="headline">Data resolver</Typography>
+            <Typography variant="headline">Data resolver</Typography>
 
 
             <SimpleMenu mini fab color="secondary" style={{position:'absolute',bottom:'8px',right:'8px'}}

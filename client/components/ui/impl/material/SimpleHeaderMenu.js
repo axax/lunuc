@@ -6,7 +6,7 @@ import { withStyles } from 'material-ui/styles'
 import AppBar from 'material-ui/AppBar'
 import Toolbar from 'material-ui/Toolbar'
 import Button from 'material-ui/Button'
-import {ADMIN_BASE_URL} from 'gen/config'
+import config from 'gen/config'
 
 const styles = theme => ({
     toolbarLeft: {
@@ -19,10 +19,10 @@ class SimpleHeaderMenu extends React.Component {
 
     constructor(props) {
         super(props)
-        this.currentLinkParts = this.props.location.pathname.substring(ADMIN_BASE_URL.length+1).split('/')
+        this.currentLinkParts = this.props.location.pathname.substring(config.ADMIN_BASE_URL.length+1).split('/')
     }
     componentWillReceiveProps(nextProps) {
-        this.currentLinkParts = nextProps.location.pathname.substring(ADMIN_BASE_URL.length+1).split('/')
+        this.currentLinkParts = nextProps.location.pathname.substring(config.ADMIN_BASE_URL.length+1).split('/')
     }
 
     linkTo(item) {
@@ -30,7 +30,7 @@ class SimpleHeaderMenu extends React.Component {
     }
 
     isActive(link){
-        const linkCut = link.substring(ADMIN_BASE_URL.length+1).split('/')
+        const linkCut = link.substring(config.ADMIN_BASE_URL.length+1).split('/')
         return linkCut[0]===this.currentLinkParts[0]
     }
 
@@ -46,7 +46,7 @@ class SimpleHeaderMenu extends React.Component {
                     {items.map((item,i) => {
                         if( item.auth && isAuthenticated || !item.auth) {
                             const isActive = this.isActive(item.to)
-                            return <Button raised={isActive}
+                            return <Button variant={isActive?'raised':'flat'}
                                            color={(isActive ? 'default' : 'inherit')}
                                            onClick={this.linkTo.bind(this, item)} key={i}>{item.name}</Button>
                         }

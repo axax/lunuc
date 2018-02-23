@@ -1,6 +1,8 @@
 const path = require('path')
 const webpack = require('webpack')
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const JoinPlugin = require("join-webpack-plugin")
+const merge = require("merge")
 
 const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1
 
@@ -69,10 +71,28 @@ const config = {
                 query: {
                     presets: ['env', 'react', 'stage-0']
                 }
+            },
+            {
+                test: /\.tr\.json$/i,
+                exclude: excludeFunction,
+                use: [JoinPlugin.loader()],
             }
         ]
     },
     plugins: [
+        new JoinPlugin({
+            search: './**/*.tr.json',
+            join: function(common, addition) {
+                return merge.recursive(
+                    common ? common : {}, JSON.parse(addition)
+                );
+            },
+            save: function(common) {
+                return 'window._app_.tr='+JSON.stringify(common);
+            },
+            group: '[name]',
+            name: '[name].json.js',
+        }),
         new GenSourceCode(), /* Generate some source code based on the config.json file */
 
         /*new webpack.optimize.CommonsChunkPlugin({
@@ -181,7 +201,7 @@ if (DEV_MODE) {
         ])
     )
 
-     /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+    /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
      config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'

@@ -58,6 +58,7 @@
     "DEBUG": true,
     "ADMIN_BASE_URL": "/admin",
     "UPLOAD_DIR": "/uploads",
-    "UPLOAD_URL": "/uploads"
+    "UPLOAD_URL": "/uploads",
+    "LANGUAGES": ["de","en"]
   }
 }

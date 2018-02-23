@@ -4,8 +4,8 @@ import {ObjectId} from 'mongodb'
 import {auth} from './auth'
 import path from 'path'
 import Util from './util'
-import {UPLOAD_DIR} from 'gen/config'
-
+import config from 'gen/config'
+const {UPLOAD_DIR} = config
 
 
 const handleUpload = db => (req, res) => {

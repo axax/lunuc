@@ -180,7 +180,7 @@ import MaterialAppBar from 'material-ui/AppBar'
 import MaterialToolbar from 'material-ui/Toolbar'
 export const SimpleToolbar = ({title, children, ...rest}) => {
     return <MaterialAppBar {...rest} ><MaterialToolbar>
-        <Typography type="title" color="inherit">
+        <Typography variant="title" color="inherit">
             {title}
         </Typography>
         {children}

@@ -152,7 +152,7 @@ class DrawerLayout extends React.Component {
                             >
                                 <MenuIcon />
                             </IconButton>
-                            <Typography type="title" color="inherit" noWrap style={{flex: 1}}>
+                            <Typography variant="title" color="inherit" noWrap style={{flex: 1}}>
                                 {title}
                             </Typography>
                             {toolbarRight}
@@ -160,7 +160,7 @@ class DrawerLayout extends React.Component {
 
                     </AppBar>
                     <Drawer
-                        type="permanent"
+                        variant="permanent"
                         classes={{
                             docked: classes.drawerDocked,
                             paper: classNames(classes.drawerPaper, classes[drawerSize + 'DrawerPaper'], !open && classes.drawerPaperClose),

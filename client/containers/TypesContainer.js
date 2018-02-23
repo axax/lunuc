@@ -24,13 +24,14 @@ import gql from 'graphql-tag'
 import Util from 'client/util'
 import GenericForm from 'client/components/generic/GenericForm'
 import {withRouter} from 'react-router-dom'
-import {ADMIN_BASE_URL} from 'gen/config'
+import config from 'gen/config'
 import Hook from 'util/hook'
-import {UPLOAD_URL} from 'gen/config'
 import {getTypes, getTypeQueries, getFormFields} from 'util/types'
 import {Link} from 'react-router-dom'
 
 const DEFAULT_RESULT_LIMIT = 10
+const {ADMIN_BASE_URL,UPLOAD_URL} = config
+
 
 class TypesContainer extends React.Component {
 
@@ -189,7 +190,7 @@ class TypesContainer extends React.Component {
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type)
 
-        if (!this.types[type]) return <BaseLayout><Typography type="subheading" color="error">Type {type} does not
+        if (!this.types[type]) return <BaseLayout><Typography variant="subheading" color="error">Type {type} does not
             exist.
             Types can be specified in an extension.</Typography></BaseLayout>
 
@@ -213,7 +214,7 @@ class TypesContainer extends React.Component {
 
 
         const content = <BaseLayout>
-            <Typography type="display2" gutterBottom>{fixType?fixType:'Types'}</Typography>
+            <Typography variant="display2" gutterBottom>{fixType?fixType:'Types'}</Typography>
 
             <Row spacing={16}>
                 {!fixType &&
@@ -241,7 +242,7 @@ class TypesContainer extends React.Component {
 
             {this.renderTable()}
 
-            <Typography type="display1" component="h2" gutterBottom>Available fields</Typography>
+            <Typography variant="display1" component="h2" gutterBottom>Available fields</Typography>
 
             {type &&
             this.types[type].fields.map(field => {
@@ -541,6 +542,7 @@ class TypesContainer extends React.Component {
 
     handleTypeChange = event => {
         if (event.target.value !== this.pageParams.type) {
+            console.log(this.props.history)
             this.props.history.push(`${ADMIN_BASE_URL}/types/${event.target.value}`)
         }
     }

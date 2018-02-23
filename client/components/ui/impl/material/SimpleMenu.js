@@ -27,7 +27,7 @@ class SimpleMenu extends React.Component {
                     label !== undefined || fab !== undefined ?
                         <Button
                             aria-label="Simple menu"
-                            fab={fab}
+                            variant={fab?'fab':'flat'}
                             mini={mini}
                             color={color}
                             aria-owns={anchorEl ? 'simple-menu' : null}
