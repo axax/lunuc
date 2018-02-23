@@ -112,7 +112,7 @@ GenSourceCode.prototype.apply = function (compiler) {
 
         /* generate config */
         const o ={DEV_MODE}
-        let configContent = `${GENSRC_HEADER}export default ${JSON.stringify({...APP_CONFIG.options,...o})}\n`
+        let configContent = `${GENSRC_HEADER}export default ${JSON.stringify(Object.assign({},APP_CONFIG.options,o))}\n`
 
        /* Object.keys(APP_CONFIG.options).forEach(k => {
 
