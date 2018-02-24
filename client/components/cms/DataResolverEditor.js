@@ -14,7 +14,7 @@ class DataResolverEditor extends React.Component {
                         items={[{name:'Prettify', onClick:this.prettify.bind(this)}]}/>
 
 
-            <ContentEditable {...rest}/>
+            <ContentEditable highlight="json" {...rest}/>
         </div>
     }
 

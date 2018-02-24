@@ -66,36 +66,6 @@ const styles = theme => ({
     }
 
 })
-/*.uploader {
-
-
- label {
- float: left;
- clear: both;
- width: 100%;
- padding: 2rem 1.5rem;
- text-align: center;
- background: #fff;
- border-radius: 7px;
- border: 3px solid #eee;
- transition: all .2s ease;
- user-select: none;
-
- &:hover {
- border-color: $theme;
- }
- &.hover {
- border: 3px solid $theme;
- box-shadow: inset 0 0 0 6px #eee;
-
- #start {
- i.fa {
- transform: scale(0.8);
- opacity: 0.3;
- }
- }
- }
- }*/
 
 
 class FileDrop extends React.Component {

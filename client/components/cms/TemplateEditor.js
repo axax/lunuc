@@ -14,7 +14,7 @@ class TemplateEditor extends React.Component {
                         items={[{name:'Prettify', onClick:this.prettify.bind(this)}]}/>
 
 
-            <ContentEditable setHtml={false} {...rest}/>
+            <ContentEditable highlight="json" setHtml={false} {...rest}/>
         </div>
     }
 

@@ -50,19 +50,25 @@ class CmsViewContainer extends React.Component {
     constructor(props) {
         super(props)
 
-        const {template, script, dataResolver, ssr} = props.cmsPage || {}
 
-        this.state = {
-            template: template,
-            script: script,
-            dataResolver: dataResolver,
-            ssr: ssr
-        }
+        this.state = this.propsToState(props)
 
         if (!props.dynamic)
             document.title = props.slug
 
         this.setUpSubsciptions(props)
+    }
+
+
+    propsToState(props){
+        const {template, script, dataResolver, ssr} = props.cmsPage || {}
+
+        return {
+            template,
+            script,
+            dataResolver,
+            ssr
+        }
     }
 
 
@@ -203,8 +209,7 @@ class CmsViewContainer extends React.Component {
         this.setUpSubsciptions(props)
         // in case props change and differ from inital props
         if (props.cmsPage) {
-            const {template, script, dataResolver, ssr} = props.cmsPage
-            this.setState({template, script, dataResolver, ssr})
+            this.setState(this.propsToState(props))
         }
     }
 

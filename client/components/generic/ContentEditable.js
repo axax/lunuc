@@ -1,7 +1,26 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
+import {withStyles} from 'ui/admin'
 
+
+const styles = theme => ({
+    editor: {
+        tabSize: 2
+    },
+    highlight1: {
+        color: '#1e0a91',
+        fontWeight: 'bold'
+    },
+    highlight2: {
+        fontStyle: 'italic',
+        fontWeight: 'bold'
+    },
+    highlight3: {
+        color: '#268e00',
+
+    }
+})
 
 class ContentEditable extends React.Component {
     lastText = []
@@ -12,22 +31,24 @@ class ContentEditable extends React.Component {
     }
 
     render() {
-        const {style, children, setHtml} = this.props
+        const {classes, style, children, setHtml, highlight} = this.props
         this.lastText['onChange'] = this.lastText['onBlur'] = children
 
-        if (setHtml) {
-            return <div
-                style={style}
-                onInput={this.emitChange.bind(this, 'onChange')}
-                onBlur={this.emitChange.bind(this, 'onBlur')}
-                contentEditable dangerouslySetInnerHTML={{__html: children}}/>
+        const props = {
+            className: classes.editor,
+            style,
+            onKeyDown: this.handleKeyDown.bind(this),
+            onKeyUp: this.handleKeyUp.bind(this),
+            onInput: this.emitChange.bind(this, 'onChange'),
+            onBlur: this.emitChange.bind(this, 'onBlur'),
+            contentEditable: true,
+            suppressContentEditableWarning: true
+        }
+
+        if (setHtml || highlight) {
+            return <div {...props} dangerouslySetInnerHTML={{__html: this.highlight(children)}}/>
         } else {
-            return <div
-                style={style}
-                onInput={this.emitChange.bind(this, 'onChange')}
-                onBlur={this.emitChange.bind(this, 'onBlur')}
-                suppressContentEditableWarning={true}
-                contentEditable>{children}</div>
+            return <div {...props}>{children}</div>
         }
     }
 
@@ -36,8 +57,102 @@ class ContentEditable extends React.Component {
     }
 
     componentDidUpdate() {
+        const {children, highlight} = this.props
         if (this.props.children !== ReactDOM.findDOMNode(this).innerText) {
-            ReactDOM.findDOMNode(this).innerText = this.props.children;
+            if (highlight) {
+                ReactDOM.findDOMNode(this).innerHtml = this.highlight(this.props.children)
+            } else {
+                ReactDOM.findDOMNode(this).innerText = this.props.children
+            }
+        }
+    }
+
+    handleKeyDown(e) {
+        // handle tab
+        if (e.keyCode === 9) {
+            e.preventDefault();
+            document.execCommand('insertHTML', false, '&#009')
+        }
+    }
+
+    handleKeyUp(e) {
+        const {highlight} = this.props
+        const ignoreKeys = [37,38,39,40]
+        if (highlight && ignoreKeys.indexOf(e.keyCode)<0) {
+
+            const t = e.target
+            var restore = this.saveCaretPosition(t, (e.keyCode === 13 ? 1 : 0)) // add an offset of one if it is a cariage return
+
+            t.innerHTML = this.highlight(t.innerText)
+
+            restore()
+        }
+    }
+
+    highlight(str) {
+        if( str ) {
+            const {highlight} = this.props
+            if (highlight === 'json') {
+                return this.highlightJson(str)
+            }
+        }
+        return str
+    }
+
+    highlightJson(str) {
+        const {classes} = this.props
+
+        let inDQuote = false, res = ''
+
+        for (let i = 0; i < str.length; i++) {
+            const c = str[i]
+            if (c === '"') {
+                inDQuote = !inDQuote
+                if (inDQuote) {
+                    res += '<span class="' + classes.highlight3 + '">'
+                }
+                res += c
+                if (!inDQuote) {
+                    res += '</span>'
+                }
+            } else if ((c === '}' || c === '{' || c === '[' || c === ']') && !inDQuote) {
+                res += '<span class="' + classes.highlight1 + '">' + c + '</span>'
+            } else if (c === '$') {
+                res += '<span class="' + classes.highlight2 + '">' + c + '</span>'
+            } else {
+                res += c
+            }
+        }
+        return res
+    }
+
+    saveCaretPosition(ctx, offset) {
+        const sel = window.getSelection(), range = sel.getRangeAt(0)
+        range.setStart(ctx, 0)
+        const len = range.toString().length + offset
+        return () => {
+            const pos = this.getTextNodeAtPosition(ctx, len), range = new Range()
+            sel.removeAllRanges()
+            range.setStart(pos.node, pos.position)
+            sel.addRange(range)
+        }
+    }
+
+
+    getTextNodeAtPosition(root, index) {
+        let lastNode = null
+        const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, function next(elem) {
+            if (index > elem.textContent.length) {
+                index -= elem.textContent.length
+                lastNode = elem
+                return NodeFilter.FILTER_REJECT
+            }
+            return NodeFilter.FILTER_ACCEPT
+        })
+        var c = treeWalker.nextNode()
+        return {
+            node: c ? c : root,
+            position: c ? index : 0
         }
     }
 
@@ -54,7 +169,9 @@ ContentEditable.propTypes = {
     style: PropTypes.object,
     onBlur: PropTypes.func,
     onChange: PropTypes.func,
-    setHtml: PropTypes.bool
+    setHtml: PropTypes.bool,
+    classes: PropTypes.object.isRequired,
+    highlight: PropTypes.string
 }
 
-export default ContentEditable
+export default withStyles(styles)(ContentEditable)

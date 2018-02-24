@@ -184,12 +184,16 @@ export const cmsResolver = (db) => ({
         const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
 
         // if dataResolver has changed resolveData and return it
+
         if (rest.dataResolver) {
             const scope = createScopeForDataResolver(query)
             const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, rest.dataResolver, scope)
 
             result.resolvedData = JSON.stringify(resolvedData)
             result.subscriptions = subscriptions
+        }else if( rest.dataResolver === ''){
+            // if resolver explicitly is set to ''
+            result.resolvedData = '{}'
         }
 
         pubsub.publish('newNotification', {
