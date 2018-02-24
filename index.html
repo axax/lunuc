@@ -19,8 +19,9 @@
         l = l.toLowerCase();
     }
     window._app_.lang = l;
-    document.write('<scr' + 'ipt src="/' + l + '.tr.json.js"></sc' + 'ript>');
-
+    var s = document.createElement('script');
+    s.setAttribute('src','/' + l + '.tr.json.js');
+    document.head.appendChild(s);
 </script>
 <script src="/main.bundle.js"></script>
 <!--
