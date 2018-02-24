@@ -119,6 +119,7 @@ you can subcribe to data changes with $ character placed in front of the type.
 * getLocal => get data from the localstorage
 * refresh => refresh a component
 * history => history obj  
+* _t => i18n
                   
                   
 ### Internalization

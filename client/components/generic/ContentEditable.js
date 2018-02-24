@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import {withStyles} from 'ui/admin'
 
-
 const styles = theme => ({
     editor: {
         tabSize: 2
@@ -69,28 +68,38 @@ class ContentEditable extends React.Component {
 
     handleKeyDown(e) {
         // handle tab
-        if (e.keyCode === 9) {
+        if (e.key === "Tab") {
             e.preventDefault();
             document.execCommand('insertHTML', false, '&#009')
         }
     }
 
     handleKeyUp(e) {
+
+        if (e.getModifierState("Control")) {
+            // ignore if Control is pressed
+            return
+        }
+
         const {highlight} = this.props
-        const ignoreKeys = [37,38,39,40]
-        if (highlight && ignoreKeys.indexOf(e.keyCode)<0) {
+        if (highlight) {
 
-            const t = e.target
-            var restore = this.saveCaretPosition(t, (e.keyCode === 13 ? 1 : 0)) // add an offset of one if it is a cariage return
 
-            t.innerHTML = this.highlight(t.innerText)
+            const ignoreKeys = ["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Meta"] // arrows
+            if (ignoreKeys.indexOf(e.key) < 0) {
 
-            restore()
+                const t = e.target
+                var restore = this.saveCaretPosition(t, (e.key === "Enter" ? 1 : 0))
+
+                t.innerHTML = this.highlight(t.innerText)
+
+                restore()
+            }
         }
     }
 
     highlight(str) {
-        if( str ) {
+        if (str) {
             const {highlight} = this.props
             if (highlight === 'json') {
                 return this.highlightJson(str)
@@ -106,7 +115,14 @@ class ContentEditable extends React.Component {
 
         for (let i = 0; i < str.length; i++) {
             const c = str[i]
-            if (c === '"') {
+
+            if (c === '<') {
+                // escape html tag in json
+                res += '&lt;'
+            } else if (c === '>') {
+                // escape html tag in json
+                res += '&gt;'
+            } else if (c === '"') {
                 inDQuote = !inDQuote
                 if (inDQuote) {
                     res += '<span class="' + classes.highlight3 + '">'

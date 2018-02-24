@@ -1,5 +1,14 @@
 @main-color: #6394F8;
+@secondary-color: #efad3b;
 @light-text: #ABB0BE;
+@border-radius: 0.2rem;
+@input-height:  2.225rem;
+
+
+@mobile: ~"only screen and (max-width:690px)";
+@tablet: ~"only screen and (min-width:690px) and (max-width: 995px)";
+@desktop: ~"only screen and (min-width:995px)";
+
 
 @import url(https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css);
 
@@ -11,8 +20,36 @@
   input{
     border: 1px solid #e5e5e5;
     padding: 0 1em;
-    height: 2.125rem;
-    border-radius: 4px;
+    height: @input-height;
+    border-radius: @border-radius;
+  }
+
+  .badge {
+    background-color: #6394F8;
+    border-radius: 10px;
+    color: white;
+    display: inline-block;
+    font-size: 12px;
+    line-height: 1;
+    padding: 3px 7px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .lighter-text {
+    color: @light-text;
+  }
+
+  .main-color-text {
+    color: @main-color;
+  }
+
+
+  .clearfix:after {
+    content: "";
+    display: table;
+    clear: both;
   }
 
   .SimpleToolbar{
@@ -44,29 +81,17 @@
           }
         }
       }
+
+      .languages{
+        font-size: 0.7rem;
+        color:#666;
+        display: inline-block;
+        margin-right: 1rem;
+        a{
+          padding: 0 0.3rem;
+        }
+      }
     }
-  }
-
-
-  .badge {
-    background-color: #6394F8;
-    border-radius: 10px;
-    color: white;
-    display: inline-block;
-    font-size: 12px;
-    line-height: 1;
-    padding: 3px 7px;
-    text-align: center;
-    vertical-align: middle;
-    white-space: nowrap;
-  }
-
-  .lighter-text {
-    color: @light-text;
-  }
-
-  .main-color-text {
-    color: @main-color;
   }
 
   .MiniBasket {
@@ -153,9 +178,40 @@
 
   }
 
-  .clearfix:after {
-    content: "";
-    display: table;
-    clear: both;
+
+  .main {
+    padding: 2rem 1rem;
+    .search {
+      width: 100%;
+      padding-left: 50%;
+      position: relative;
+      @media @mobile, @tablet {
+        padding-left: 0;
+      }
+
+
+      input {
+        width: calc(100% - @input-height);
+        border: 3px solid @secondary-color;
+      }
+
+      button {
+        position: absolute;
+        right:4px;
+        width: @input-height;
+        height: @input-height;
+        border: 1px solid @secondary-color;
+        background: @secondary-color;
+        text-align: center;
+        color: #fff;
+        border-radius: @border-radius;
+        cursor: pointer;
+        font-size: 1.3rem;
+      }
+
+    }
   }
+
+
+
 }

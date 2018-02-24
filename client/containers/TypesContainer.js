@@ -520,7 +520,7 @@ class TypesContainer extends React.Component {
     }
 
     handelFilterKeyDown = (e, value) => {
-        if (e.keyCode === 13) {
+        if (e.key === "Enter") {
             e.preventDefault()
             this.handleFilter({value},true)
         }

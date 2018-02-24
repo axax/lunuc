@@ -5,6 +5,7 @@ import {SimpleMenu, DrawerLayout, Button, Divider, Col, Row, SimpleToolbar, Card
 import Hook from 'util/hook'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
+import _t from 'util/i18n'
 
 
 const TEMPLATE_EVENTS = ['Click', 'KeyDown']
@@ -237,8 +238,6 @@ class JsonDom extends React.Component {
                     } else {
                         data = this.scopeByPath($d, this.scope)
                     }
-
-
                 } else {
                     data = d
                 }
@@ -278,37 +277,38 @@ class JsonDom extends React.Component {
                 }
 
 
-            }
-            const key = rootKey + '.' + aIdx
-            let _t
-            if (!t) {
-                _t = 'div'
-            } else if (!this.props.editMode && t.slice(-1) === '$') {
-                _t = t.slice(0, -1) // remove last char
-            } else {
-                _t = t
-            }
-            if (p) {
-                // replace events with real functions and pass payload
-                TEMPLATE_EVENTS.forEach((e) => {
-                    if (p['on' + e] && p['on' + e].constructor === Object) {
-                        const payload = p['on' + e]
-                        p['on' + e] = (eo) => {
-                            this.jsOnStack.forEach((o) => {
-                                if (o.cb && o.key.toUpperCase() === e.toUpperCase()) {
-                                    o.cb(payload, eo)
-                                }
-                            })
+            }else {
+                const key = rootKey + '.' + aIdx
+                let _t
+                if (!t) {
+                    _t = 'div'
+                } else if (!this.props.editMode && t.slice(-1) === '$') {
+                    _t = t.slice(0, -1) // remove last char
+                } else {
+                    _t = t
+                }
+                if (p) {
+                    // replace events with real functions and pass payload
+                    TEMPLATE_EVENTS.forEach((e) => {
+                        if (p['on' + e] && p['on' + e].constructor === Object) {
+                            const payload = p['on' + e]
+                            p['on' + e] = (eo) => {
+                                this.jsOnStack.forEach((o) => {
+                                    if (o.cb && o.key.toUpperCase() === e.toUpperCase()) {
+                                        o.cb(payload, eo)
+                                    }
+                                })
+                            }
                         }
-                    }
-                })
+                    })
+                }
+                h.push(React.createElement(
+                    this.components[_t] || _t,
+                    {id: key, key, ...p},
+                    ($c ? <span dangerouslySetInnerHTML={{__html: $c}}/> :
+                        this.parseRec(c, key, childScope))
+                ))
             }
-            h.push(React.createElement(
-                this.components[_t] || _t,
-                {id: key, key, ...p},
-                ($c ? <span dangerouslySetInnerHTML={{__html: $c}}/> :
-                    this.parseRec(c, key, childScope))
-            ))
         })
         return h
     }
@@ -396,8 +396,8 @@ class JsonDom extends React.Component {
             }
         }
         scope.data = this.resolvedDataJson
-        scope.app = _app_
-
+        scope._app_ = _app_
+        scope._t = _t
 
         if (this.runScript) {
             this.runScript = false
@@ -405,7 +405,7 @@ class JsonDom extends React.Component {
             try {
                 this.scriptResult = new Function(`
                 const scope = arguments[0]
-                const {on, setLocal, getLocal, refresh, addStyle, addScript}= arguments[1]
+                const {on, setLocal, getLocal, refresh, addStyle, addScript, _t}= arguments[1]
                 const history= arguments[2]
                 const parent= arguments[3]
                 ${script}`).call(this, scope, {
@@ -414,7 +414,8 @@ class JsonDom extends React.Component {
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,
                     addStyle: this.jsAddStyle,
-                    addScript: this.jsAddScript
+                    addScript: this.jsAddScript,
+                    _t
                 }, history, this.props._parentRef)
             } catch (e) {
                 jsError = e.message

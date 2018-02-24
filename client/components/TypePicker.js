@@ -103,17 +103,14 @@ class TypePicker extends React.Component {
     }
 
     handleKeyDown(e) {
-        const {data, selIdx} = this.state, keyCode = e.keyCode
+        const {data, selIdx} = this.state
         if (data && data.results) {
             const l = data.results.length
-            if (keyCode === 40) {
-                //KeyDown
+            if (e.key === "ArrowDown") {
                 this.setState({selIdx: selIdx >= l - 1 ? 0 : selIdx + 1})
-            } else if (keyCode === 38) {
-                //KeyUp
+            } else if (e.key === "ArrowUp") {
                 this.setState({selIdx: selIdx <= 0 ? l - 1 : selIdx - 1})
-            } else if (keyCode === 13) {
-                //Enter
+            } else if (e.key === "Enter") {
                 this.handlePick(selIdx)
             }
         }
