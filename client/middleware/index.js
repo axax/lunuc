@@ -110,7 +110,10 @@ export function configureMiddleware(store) {
 
     const cacheOptions = {
         dataIdFromObject: (o) => {
-            if (o.__typename === 'KeyValue') {
+            if (o.__typename === 'Token') {
+                // this is the login methode
+                return o.__typename + o.username
+            }else  if (o.__typename === 'KeyValue') {
                 return o.__typename + o.key
             } else if (o._id) {
                 return o.__typename + o._id
