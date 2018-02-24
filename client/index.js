@@ -9,10 +9,20 @@ const {store} = configureStore()
 // add config to the global app object
 _app_.config = config
 
-render(
-	<App store={store} />,
-	document.getElementById('app')
-)
+const start = ()=> {
+    render(
+        <App store={store}/>,
+        document.getElementById('app')
+    )
+}
+
+// make sure translations are loaded before start rendering
+if( _app_.trLoaded ){
+    start()
+}else{
+    // trCallback gets called as soon as translations are loaded
+    _app_.trCallback = start
+}
 
 if( !config.DEV_MODE ) {
 	/* Register serviceworker only on production */
