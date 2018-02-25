@@ -94,24 +94,6 @@ const config = {
             name: '[name].json.js',
         }),
         new GenSourceCode(), /* Generate some source code based on the config.json file */
-
-        /*new webpack.optimize.CommonsChunkPlugin({
-         name: 'react',
-         minChunks: (m) => /node_modules\/(react)/.test(m.context)
-         }),
-         new webpack.optimize.CommonsChunkPlugin({
-         name: 'draftjs',
-         minChunks: (m) => /node_modules\/(draft-js|immutable)/.test(m.context)
-         }),*/
-
-        /*new webpack.optimize.CommonsChunkPlugin({
-         name: 'vendor',
-         minChunks: (m) => /node_modules\/(material-ui)/.test(m.context)
-         }),*/
-        /*new webpack.optimize.CommonsChunkPlugin({
-         name: 'vendor',
-         minChunks: (m) => /node_modules/.test(m.context)
-         })*/
     ]
 }
 
@@ -120,6 +102,7 @@ const config = {
  */
 if (DEV_MODE) {
     console.log('Build for developing')
+    //config.mode = 'development'
 
     const PORT = (process.env.PORT || 8080)
     const API_PORT = (process.env.API_PORT || 3000)
@@ -160,6 +143,7 @@ if (DEV_MODE) {
 
 } else {
     console.log('Build for production')
+    //config.mode = 'production'
 
 
     config.module.rules.push(
@@ -183,14 +167,6 @@ if (DEV_MODE) {
 
     config.plugins.push(
         new ExtractTextPlugin('style.css'), /* Extract css from bundle */
-        new webpack.optimize.ModuleConcatenationPlugin(),
-        new webpack.optimize.UglifyJsPlugin({
-            compress: {
-                warnings: false,
-                drop_debugger: true,
-                drop_console: true
-            }
-        }),
         new webpack.optimize.AggressiveMergingPlugin()
     )
 
