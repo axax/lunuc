@@ -23,7 +23,6 @@ import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
 import Util from 'client/util'
 import GenericForm from 'client/components/generic/GenericForm'
-import {withRouter} from 'react-router-dom'
 import config from 'gen/config'
 import Hook from 'util/hook'
 import {getTypes, getTypeQueries, getFormFields} from 'util/types'
@@ -46,7 +45,6 @@ class TypesContainer extends React.Component {
         this.types = getTypes()
 
         this.pageParams = this.determinPageParams(props)
-        const {type, page, limit, sort} = this.pageParams
         this.state = {
             confirmDeletionDialog: true,
             dataToDelete: null,
@@ -651,7 +649,7 @@ const mapStateToProps = (store) => ({user: store.user})
 
 export default connect(
     mapStateToProps
-)(withRouter(withApollo(TypesContainer)))
+)(withApollo(TypesContainer))
 
 
 /* Type Media */

@@ -2,15 +2,16 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {withRouter} from 'react-router-dom'
-import { withStyles } from 'material-ui/styles'
+import {withStyles} from 'material-ui/styles'
 import AppBar from 'material-ui/AppBar'
 import Toolbar from 'material-ui/Toolbar'
 import Button from 'material-ui/Button'
 import config from 'gen/config'
+import Typography from 'material-ui/Typography'
 
 const styles = theme => ({
     toolbarLeft: {
-        flex:1
+        flex: 1
     }
 })
 
@@ -19,40 +20,43 @@ class SimpleHeaderMenu extends React.Component {
 
     constructor(props) {
         super(props)
-        this.currentLinkParts = this.props.location.pathname.substring(config.ADMIN_BASE_URL.length+1).split('/')
+        this.currentLinkParts = this.props.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
     }
+
     componentWillReceiveProps(nextProps) {
-        this.currentLinkParts = nextProps.location.pathname.substring(config.ADMIN_BASE_URL.length+1).split('/')
+        this.currentLinkParts = nextProps.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
     }
 
     linkTo(item) {
         this.props.history.push(item.to);
     }
 
-    isActive(link){
-        const linkCut = link.substring(config.ADMIN_BASE_URL.length+1).split('/')
-        return linkCut[0]===this.currentLinkParts[0]
+    isActive(link) {
+        const linkCut = link.substring(config.ADMIN_BASE_URL.length + 1).split('/')
+        return linkCut[0] === this.currentLinkParts[0]
     }
 
     render() {
-        const { classes, isAuthenticated, items, metaContent  } = this.props;
-
-
-
+        const {classes, isAuthenticated, items, title, children, position} = this.props;
         return (
-            <AppBar>
-                <Toolbar position='static'>
+            <AppBar position={position}>
+                <Toolbar>
                     <div className={classes.toolbarLeft}>
-                    {items.map((item,i) => {
-                        if( item.auth && isAuthenticated || !item.auth) {
-                            const isActive = this.isActive(item.to)
-                            return <Button variant={isActive?'raised':'flat'}
-                                           color={(isActive ? 'default' : 'inherit')}
-                                           onClick={this.linkTo.bind(this, item)} key={i}>{item.name}</Button>
+                        {title &&
+                        <Typography variant="title" color="inherit">
+                            {title}
+                        </Typography>
                         }
-                    })}
+                        {items && items.map((item, i) => {
+                            if (item.auth && isAuthenticated || !item.auth) {
+                                const isActive = this.isActive(item.to)
+                                return <Button variant={isActive ? 'raised' : 'flat'}
+                                               color={(isActive ? 'default' : 'inherit')}
+                                               onClick={this.linkTo.bind(this, item)} key={i}>{item.name}</Button>
+                            }
+                        })}
                     </div>
-                    {metaContent}
+                    {children}
                 </Toolbar>
             </AppBar>
         )
@@ -61,7 +65,9 @@ class SimpleHeaderMenu extends React.Component {
 
 
 SimpleHeaderMenu.propTypes = {
-    items: PropTypes.array.isRequired,
+    title: PropTypes.string,
+    position: PropTypes.string,
+    items: PropTypes.array,
     isAuthenticated: PropTypes.bool,
     classes: PropTypes.object.isRequired
 }
@@ -84,4 +90,4 @@ const mapStateToProps = (store) => {
  */
 export default connect(
     mapStateToProps
-)(withRouter(withStyles(styles,{ withTheme: true })(SimpleHeaderMenu)))
+)(withRouter(withStyles(styles, {withTheme: true})(SimpleHeaderMenu)))

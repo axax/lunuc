@@ -6,6 +6,7 @@ import Hook from 'util/hook'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
 import _t from 'util/i18n'
+import Util from 'client/util'
 
 
 const TEMPLATE_EVENTS = ['Click', 'KeyDown']
@@ -83,20 +84,6 @@ class JsonDom extends React.Component {
 
     }
 
-    jsAddStyle(url) {
-        const link = document.createElement("link")
-        link.type = "text/css"
-        link.rel = "stylesheet"
-        link.href = url
-        document.head.appendChild(link)
-    }
-
-    jsAddScript(url) {
-        const script = document.createElement("script")
-        script.src = url
-        document.head.appendChild(script)
-    }
-
     resolvedDataJson = undefined
 
     constructor(props) {
@@ -104,7 +91,7 @@ class JsonDom extends React.Component {
         this.state = {hasReactError: false}
 
         /* HOOK */
-        Hook.call('JsonDom', {components: this.components})
+        Hook.call('JsonDom', this)
 
         const {id, _parentRef} = props
         if (_parentRef && id) {
@@ -413,8 +400,8 @@ class JsonDom extends React.Component {
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,
-                    addStyle: this.jsAddStyle,
-                    addScript: this.jsAddScript,
+                    addStyle: Util.addStyle,
+                    addScript: Util.addScript,
                     _t
                 }, history, this.props._parentRef)
             } catch (e) {

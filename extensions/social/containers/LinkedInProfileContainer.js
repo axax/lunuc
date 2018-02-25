@@ -2,17 +2,18 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
-import {DrawerLayout, Button, Typography, Divider} from 'ui/admin'
+import {DrawerLayout, Button, Typography, Divider, Col, Row} from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {withRouter} from 'react-router-dom'
 import PrettyResume from '../components/PrettyResume'
 import FileDrop from 'client/components/FileDrop'
+import _t from 'util/i18n'
 
 
 const withLinkedInCallback = (Container) => {
 
 
-    return (props) =>{
+    return (props) => {
 
         const {location, history} = props
         const params = new URLSearchParams(location.search)
@@ -29,18 +30,7 @@ const withLinkedInCallback = (Container) => {
 
         return <Container linkedInCode={sessionStorage.getItem('linkedInCode')} {...props} />
     }
-
 }
-
-class LinkedInCallback extends React.Component {
-
-    render(){
-
-    }
-
-}
-
-
 
 class LinkedInProfileContainer extends React.Component {
 
@@ -69,18 +59,19 @@ class LinkedInProfileContainer extends React.Component {
         this.setState({disconnected: true})
     }
 
-    handleCsv = (file, data) => {
+    handleCsv = (f, data) => {
 
         const j = csvToJson(data)
         if (j.length > 0) {
-            if (j[0].firstName && j[0].headline) {
-                // this might be the profile data
+            if (f.name === 'Profile.csv') {
                 this.setState({data: {...this.state.data, ...j[0]}})
-            } else if (j[0].companyName ) {
+            } else if (f.name === 'Positions.csv') {
                 this.setState({data: {...this.state.data, positions: {values: j}}})
-            } else if (j[0].schoolName ) {
+            } else if (f.name === 'Education.csv') {
                 this.setState({data: {...this.state.data, education: {values: j}}})
-            }else{
+            } else if (f.name === 'Projects.csv') {
+                this.setState({data: {...this.state.data, projects: {values: j}}})
+            } else {
                 console.log(j)
             }
         }
@@ -93,22 +84,29 @@ class LinkedInProfileContainer extends React.Component {
         const {disconnected, data} = this.state
 
         console.log('render linkedin')
-        if (!linkedin || disconnected)
-            return <Button variant="raised" onClick={this.handelLinkedInConnect}>Connect with LinkedIn</Button>
+
+        return <div className="linkedin-container">
+            {!linkedin || disconnected ? <Button variant="raised" color="primary"
+                                                 onClick={this.handelLinkedInConnect}>{_t('social.linkedin.connect')}</Button> :
+                <Row>
+                    <Col md={3}>
+
+                        <Typography>Login into your LinkedIn account -> My Account -> Settings & Privacy -> Download
+                            your
+                            Data</Typography>
+                        <FileDrop multi onFileContent={this.handleCsv} accept="text/csv"
+                                  label="Drop linked in cvs files here"/>
 
 
-        return (
-            <div>
-                <Button variant="raised" onClick={this.handleLinkedInDisconnect}>Disconnect with LinkedIn</Button>
+                        <Button variant="raised" onClick={this.handleLinkedInDisconnect}>{_t('social.linkedin.disconnect')}</Button>
+                    </Col>
+                    <Col md={9}>
 
-                <Typography>Login into your LinkedIn account -> My Account -> Settings & Privacy -> Download your
-                    Data</Typography>
-                <FileDrop multi onFileContent={this.handleCsv} accept="text/csv" label="Drop linked in cvs files here"/>
-
-
-                <PrettyResume resumeData={{...linkedin,...data}}/>
-            </div>
-        )
+                        <PrettyResume resumeData={{...linkedin, ...data}}/>
+                    </Col>
+                </Row>
+            }
+        </div>
     }
 }
 
@@ -141,12 +139,7 @@ const LinkedInProfileContainerWithGql = compose(
 )(LinkedInProfileContainer)
 
 
-
-
 export default withRouter(withLinkedInCallback(LinkedInProfileContainerWithGql))
-
-
-
 
 
 function CSVToArray(strData, strDelimiter) {
@@ -214,7 +207,7 @@ function csvToJson(csv) {
         }
 
         for (var i = 1; i < array.length; i++) {
-            if( array[i].length ===1 && array[i][0]=== '') continue
+            if (array[i].length === 1 && array[i][0] === '') continue
 
             objArray[i - 1] = {}
             for (var k = 0; k < array[0].length && k < array[i].length; k++) {

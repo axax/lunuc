@@ -37,7 +37,7 @@ class PrettyResume extends React.Component {
 
         console.log(resumeData)
 
-        return <div className="LinkedInResume">
+        return <div className="linkedin-resume">
             <div className="cv-section profile">
 
                 <a className="cv-profile-picture" target="_blank" href={resumeData.publicProfileUrl}>

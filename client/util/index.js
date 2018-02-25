@@ -77,6 +77,18 @@ const Util = {
                 b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "))
         }
         return b
+    },
+    addStyle(url) {
+        const link = document.createElement("link")
+        link.type = "text/css"
+        link.rel = "stylesheet"
+        link.href = url
+        document.head.appendChild(link)
+    },
+    addScript(url) {
+        const script = document.createElement("script")
+        script.src = url
+        document.head.appendChild(script)
     }
 }
 export default Util

@@ -8,12 +8,18 @@ import Util from 'client/util'
 import {Link} from 'react-router-dom'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import GenericForm from 'client/components/generic/GenericForm'
-import {Row, Col} from 'ui/admin'
-
+import {Row, Col, Typography, SimpleList, DeleteIconButton, SimpleDialog} from 'ui/admin'
+import config from 'gen/config'
+const {ADMIN_BASE_URL} = config
 
 class PostContainer extends React.Component {
     constructor(props) {
         super(props)
+
+        this.state = {
+            confirmDeletionDialog: true,
+            dataToDelete: null
+        }
     }
 
     handleAddPostClick = (post) => {
@@ -36,58 +42,69 @@ class PostContainer extends React.Component {
 
             const {updatePost} = this.props
             updatePost(
-                Object.assign({},post,{body:data})
+                Object.assign({}, post, {body: data})
             )
 
         }, 2000)
     }
 
     handlePostDeleteClick = (post) => {
-        const {deletePost} = this.props
-        deletePost({
-            _id: post._id
-        })
+        this.setState({confirmDeletionDialog: true, dataToDelete: post})
+    }
+
+
+    handleConfirmDeletion = (action) => {
+        if (action && action.key === 'yes') {
+            const {deletePost} = this.props
+            deletePost({
+                _id: this.state.dataToDelete._id
+            })
+        }
+        this.setState({confirmDeletionDialog: false, dataToDelete: false})
     }
 
     handleTitleChange = (event, post, lang) => {
         const t = event.target.innerText
         const {updatePost} = this.props
         updatePost(
-            Object.assign({},post,{title:t})
+            Object.assign({}, post, {title: t})
         )
     }
 
     render() {
-        const {posts, loading, match} = this.props
+        const {posts, loading, match,history} = this.props
         const selectedPostId = match.params.id
 
         if (!posts)
             return <BaseLayout />
 
-        var selectedPost = false
+        let selectedPost = false
+
+        const listItems = posts.reduce((a, post) => {
+            if (post._id === selectedPostId) {
+                selectedPost = post
+            }
+            a.push({
+                selected: post._id === selectedPostId,
+                primary: post.title,
+                onClick: () => {
+                    history.push(ADMIN_BASE_URL + '/post/' + post._id)
+                },
+                secondary: Util.formattedDatetimeFromObjectId(post._id),
+                actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
+                disabled: ['creating', 'deleting'].indexOf(post.status) > -1
+            })
+            return a
+        }, [])
+
 
         return (
             <BaseLayout>
-                <h1>Posts</h1>
+                <Typography variant="display2" gutterBottom>Posts</Typography>
                 <Row spacing={24}>
                     <Col md={4}>
-                        <ul>
-                            {posts.map((post, i) => {
-                                if (post._id === selectedPostId) {
-                                    selectedPost = post
-                                }
-                                const url = '/post/' + post._id
-                                return <li key={i}>{['creating', 'deleting'].indexOf(post.status) > -1 ?
-                                    <div>{post.title}
-                                    </div> : <div><Link to={url}>{post.title}</Link>
-                                        <button onClick={this.handlePostDeleteClick.bind(this, post)}>x</button>
-                                    </div>}
-                                    <small>
-                                        <small>{Util.formattedDatetimeFromObjectId(post._id)}</small>
-                                    </small>
-                                </li>
-                            })}
-                        </ul>
+                        <SimpleList items={listItems}/>
+
                         <GenericForm ref={(e) => {
                             this.addPostForm = e
                         }} fields={{title: {value: '', placeholder: 'Titel'}, body: {value: '', type: 'hidden'}}}
@@ -107,6 +124,13 @@ class PostContainer extends React.Component {
                             : ''}
                     </Col>
                 </Row>
+                {this.state.dataToDelete &&
+                <SimpleDialog open={this.state.confirmDeletionDialog} onClose={this.handleConfirmDeletion}
+                              actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
+                              title="Confirm deletion">
+                    Are you sure you want to delete the post &ldquo;{this.state.dataToDelete.title}&rdquo;?
+                </SimpleDialog>
+                }
             </BaseLayout>
         )
     }
@@ -116,6 +140,7 @@ class PostContainer extends React.Component {
 PostContainer.propTypes = {
     /* routing params */
     match: PropTypes.object,
+    history: PropTypes.object.isRequired,
     /* apollo client props */
     loading: PropTypes.bool,
     posts: PropTypes.array,

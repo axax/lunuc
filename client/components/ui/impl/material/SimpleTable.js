@@ -12,8 +12,8 @@ import Table, {
 import Tooltip from 'material-ui/Tooltip'
 import Toolbar from 'material-ui/Toolbar'
 import {withStyles} from 'material-ui/styles'
-import Paper from 'material-ui/Paper';
-import Typography from 'material-ui/Typography';
+import Paper from 'material-ui/Paper'
+import Typography from 'material-ui/Typography'
 import IconButton from 'material-ui/IconButton'
 import DeleteIcon from 'material-ui-icons/Delete'
 import classNames from 'classnames'

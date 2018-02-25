@@ -106,6 +106,7 @@ export SimpleDialog from './SimpleDialog'
 export SimpleSelect from './SimpleSelect'
 export SimpleSwitch from './SimpleSwitch'
 export SimpleButton from './SimpleButton'
+export SimpleList from './SimpleList'
 
 // grid
 import Grid from 'material-ui/Grid'
