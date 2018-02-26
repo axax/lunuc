@@ -120,6 +120,11 @@ you can subcribe to data changes with $ character placed in front of the type.
 * refresh => refresh a component
 * history => history obj  
 * _t => i18n
+* Util => Utilities
+
+### Events
+
+* beforeRender => is called before template is rendered
                   
                   
 ### Internalization

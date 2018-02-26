@@ -150,28 +150,30 @@ class PrettyResume extends React.Component {
                 }
 
 
-                <div>
+                {resumeData.projects &&
+                <div  className="section-projects">
                     <h2 className="section-title timeline-seperator">
-                        <span>linkedinData.extracted.projects.title</span>
+                        <span suppressContentEditableWarning={true} contentEditable>Projects</span>
                     </h2>
 
+                    { resumeData.projects.values.map((p, i) =>
+                        <div key={i} className="timeline-section">
 
-                    <div className="timeline-section">
-
-                        <div className="timeline-left">
-                            <span>project.date_range</span>
-                        </div>
+                            <div className="timeline-left">
+                                <span suppressContentEditableWarning={true} contentEditable>{p.startDate} - {p.endDate || 'Today'}</span>
+                            </div>
 
 
-                        <div className="timeline-right">
-                            <h3><span>project.title</span></h3>
+                            <div className="timeline-right">
+                                <h3><span suppressContentEditableWarning={true} contentEditable>{p.title}</span></h3>
+                                <p>
+                                    <span suppressContentEditableWarning={true} contentEditable>{p.description}</span>
+                                </p>
+                            </div>
 
-                            <p>
-                                <span>project.description</span>
-                            </p>
-                        </div>
-                    </div>
+                        </div>)}
                 </div>
+                }
 
             </div>
 

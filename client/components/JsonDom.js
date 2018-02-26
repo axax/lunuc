@@ -39,9 +39,11 @@ class JsonDom extends React.Component {
     runScript = true
     scriptResult = null
     componentRefs = {} // this is the object with references to elements with identifier
-    jsOnStack = []
+    jsOnStack = {}
     jsOn = (key, cb) => {
-        this.jsOnStack.push({key, cb})
+        const keyLower = key.toLowerCase()
+        if (!this.jsOnStack[keyLower]) this.jsOnStack[keyLower] = []
+        this.jsOnStack[keyLower].push(cb)
     }
     jsGetLocal = (key, def) => {
         if (typeof localStorage === 'undefined') return def
@@ -79,7 +81,7 @@ class JsonDom extends React.Component {
 
         nodeToRefresh.json = null
         nodeToRefresh.runScript = true
-        nodeToRefresh.jsOnStack = []
+        nodeToRefresh.jsOnStack = {}
         nodeToRefresh.forceUpdate()
 
     }
@@ -109,7 +111,8 @@ class JsonDom extends React.Component {
 
         if (this.props.scope !== props.scope) {
             this.scope = null
-
+            this.json = null
+            //this.resetTemplate()
 
             /* if( this.props.scope.params !== props.scope.params ){
              // set it to undefined. null wouldn't be enough because null can also be a resolved value
@@ -125,7 +128,7 @@ class JsonDom extends React.Component {
         if (this.props.script !== props.script) {
             this.resetTemplate()
             this.scriptResult = null
-            this.jsOnStack = []
+            this.jsOnStack = {}
             this.runScript = true
             //console.log('reset script')
         }
@@ -245,8 +248,8 @@ class JsonDom extends React.Component {
                     /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
                     data.forEach((loopChild, childIdx) => {
 
-                        if( loopChild.constructor !== Object){
-                            loopChild = {data:loopChild}
+                        if (loopChild.constructor !== Object) {
+                            loopChild = {data: loopChild}
                         }
 
                         const tpl = new Function('const {' + Object.keys(loopChild).join(',') + '} = this.' + s + ';return `' + cStr + '`;')
@@ -264,7 +267,7 @@ class JsonDom extends React.Component {
                 }
 
 
-            }else {
+            } else {
                 const key = rootKey + '.' + aIdx
                 let _t
                 if (!t) {
@@ -280,11 +283,14 @@ class JsonDom extends React.Component {
                         if (p['on' + e] && p['on' + e].constructor === Object) {
                             const payload = p['on' + e]
                             p['on' + e] = (eo) => {
-                                this.jsOnStack.forEach((o) => {
-                                    if (o.cb && o.key.toUpperCase() === e.toUpperCase()) {
-                                        o.cb(payload, eo)
-                                    }
-                                })
+                                const eLower = e.toLowerCase()
+                                if (this.jsOnStack[eLower]) {
+                                    this.jsOnStack[eLower].forEach(cb => {
+                                        if (cb) {
+                                            cb(payload, eo)
+                                        }
+                                    })
+                                }
                             }
                         }
                     })
@@ -392,7 +398,7 @@ class JsonDom extends React.Component {
             try {
                 this.scriptResult = new Function(`
                 const scope = arguments[0]
-                const {on, setLocal, getLocal, refresh, addStyle, addScript, _t}= arguments[1]
+                const {on, setLocal, getLocal, refresh, Util, _t}= arguments[1]
                 const history= arguments[2]
                 const parent= arguments[3]
                 ${script}`).call(this, scope, {
@@ -400,8 +406,7 @@ class JsonDom extends React.Component {
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,
-                    addStyle: Util.addStyle,
-                    addScript: Util.addScript,
+                    Util,
                     _t
                 }, history, this.props._parentRef)
             } catch (e) {
@@ -413,6 +418,19 @@ class JsonDom extends React.Component {
         }
 
         scope.script = this.scriptResult
+        if( this.jsOnStack['beforerender'] ){
+            for( let i = 0; i< this.jsOnStack['beforerender'].length; i++){
+                const cb = this.jsOnStack['beforerender'][i]
+                if (cb) {
+                    try {
+                        cb(scope)
+                    }catch(e){
+                        console.log(e)
+                        return <div>Error in script in beforeRender event: <strong>{e.message}</strong></div>
+                    }
+                }
+            }
+        }
         const content = this.parseRec(this.getJson(this.props), 0)
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
 

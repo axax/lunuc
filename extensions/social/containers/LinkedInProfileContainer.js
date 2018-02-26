@@ -91,14 +91,17 @@ class LinkedInProfileContainer extends React.Component {
                 <Row>
                     <Col md={3}>
 
-                        <Typography>Login into your LinkedIn account -> My Account -> Settings & Privacy -> Download
+                        <Typography variant="headline" gutterBottom={true}>Enhance your CV</Typography>
+
+                        <Typography variant="caption">Login into your LinkedIn account -> My Account -> Settings & Privacy -> Download
                             your
                             Data</Typography>
-                        <FileDrop multi onFileContent={this.handleCsv} accept="text/csv"
+                        <FileDrop style={{marginBottom:"2rem"}} multi onFileContent={this.handleCsv} accept="text/csv"
                                   label="Drop linked in cvs files here"/>
 
 
-                        <Button variant="raised" onClick={this.handleLinkedInDisconnect}>{_t('social.linkedin.disconnect')}</Button>
+                        <Button variant="raised"
+                                onClick={this.handleLinkedInDisconnect}>{_t('social.linkedin.disconnect')}</Button>
                     </Col>
                     <Col md={9}>
 

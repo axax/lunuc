@@ -76,11 +76,8 @@ export const UIProvider = ({children, ...rest}) => {
 // define some styles so it can be used in the components
 export {withStyles} from 'material-ui/styles'
 
-//Typography
-import Typography from 'material-ui/Typography'
-
 // Export material-ui coponents directly
-export {Typography}
+export Typography from 'material-ui/Typography'
 export Button from 'material-ui/Button'
 export Input from 'material-ui/Input'
 export TextField from 'material-ui/TextField'
@@ -96,6 +93,7 @@ export Tooltip from 'material-ui/Tooltip'
 export {LinearProgress, CircularProgress} from 'material-ui/Progress'
 export {MenuItem} from 'material-ui/Menu'
 export Paper from 'material-ui/Paper'
+export Stepper, { Step, StepLabel, StepContent } from 'material-ui/Stepper'
 
 
 // simple components are extended componente with features easy to use
@@ -107,6 +105,7 @@ export SimpleSelect from './SimpleSelect'
 export SimpleSwitch from './SimpleSwitch'
 export SimpleButton from './SimpleButton'
 export SimpleList from './SimpleList'
+export SimpleToolbar from './SimpleToolbar'
 
 // grid
 import Grid from 'material-ui/Grid'
@@ -173,18 +172,5 @@ export const ExpansionPanel = ({heading, children, ...rest}) => {
             {children}
         </ExpansionPanelDetails>
     </MaterialExpansionPanel>
-}
-
-
-// toolbar
-import MaterialAppBar from 'material-ui/AppBar'
-import MaterialToolbar from 'material-ui/Toolbar'
-export const SimpleToolbar = ({title, children, ...rest}) => {
-    return <MaterialAppBar {...rest} ><MaterialToolbar>
-        <Typography variant="title" color="inherit">
-            {title}
-        </Typography>
-        {children}
-    </MaterialToolbar></MaterialAppBar>
 }
 

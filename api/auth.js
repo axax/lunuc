@@ -4,6 +4,7 @@ import Util from './util'
 
 //TODO but SECRET_KEY to a save place
 const AUTH_HEADER = 'authorization',
+	CONTENT_LANGUAGE_HEADER = 'content-language',
 	AUTH_SCHEME = 'JWT',
 	SECRET_KEY = 'fa-+3452sdfas!ä$$34dää$',
 	AUTH_EXPIRES_IN = '999y'
@@ -30,7 +31,7 @@ export const auth = {
 		}
 	},
 	decodeToken: (token) => {
-		let result = null
+		let result = {}
         if (token) {
 
             const matches = token.match(/(\S+)\s+(\S+)/)
@@ -58,10 +59,13 @@ export const auth = {
 
 		app.use((req, res, next) => {
 
-			const token = req.headers[AUTH_HEADER]
+			const token = req.headers[AUTH_HEADER], lang = req.headers[CONTENT_LANGUAGE_HEADER]
 
             // now if auth is needed we can check if the context is available
             req.context = auth.decodeToken(token)
+
+			// add the requested language to the context
+			req.context.lang = lang
 
 			next()
 		})

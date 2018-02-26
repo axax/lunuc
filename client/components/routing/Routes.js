@@ -38,7 +38,6 @@ class Routes extends React.Component {
         {
             // match everything but paths that start with ADMIN_BASE_URL
             exact: false, path: '/:slug*', render: ({match}) => {
-                console.log(match.params.slug)
             if (match.params.slug === undefined || (match.params.slug && match.params.slug.split('/')[0] !== this.adminBaseUrlPlain)) {
                 return <CmsViewContainer match={match} slug={match.params.slug || ''}/>;
             }
@@ -71,7 +70,6 @@ class Routes extends React.Component {
         return <Router history={this.history}>
             <div id="router">
                 {this.routes.map((o, i) => {
-
 
                     if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || capabilities.indexOf('access_admin_page') >= 0) {
                         if (o.private) {

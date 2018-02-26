@@ -5,8 +5,9 @@ import Util from 'client/util'
 import {SimpleToolbar, Button} from 'ui/admin'
 
 
-Util.addStyle("http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css")
-Util.addScript("https://unpkg.com/jspdf@latest/dist/jspdf.min.js")
+// Styles and scripts can be added like this, but it is recommended to add them on the cms page where they are needed
+//Util.addStyle("http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css")
+//Util.addScript("https://unpkg.com/jspdf@latest/dist/jspdf.min.js")
 
 
 Hook.on('JsonDom', ({components,props}) => {

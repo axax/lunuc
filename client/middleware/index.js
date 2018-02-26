@@ -24,7 +24,8 @@ export function configureMiddleware(store) {
     const authLink = setContext((req) => {
         return {
             headers: {
-                authorization: Util.getAuthToken()
+                Authorization: Util.getAuthToken(),
+                ["Content-Language"]: _app_.lang
             }
         }
     })
@@ -51,17 +52,17 @@ export function configureMiddleware(store) {
     let loadingCounter = 0
     const statusLink = new ApolloLink((operation, forward) => {
         loadingCounter++
-        if( loadingCounter === 1){
+        if (loadingCounter === 1) {
             store.dispatch(setNetworkStatus({
-                networkStatus: {loading:true}
+                networkStatus: {loading: true}
             }))
         }
         return forward(operation).map((data) => {
             loadingCounter--
-            if( loadingCounter === 0){
+            if (loadingCounter === 0) {
                 // send loading false when all request are done
                 store.dispatch(setNetworkStatus({
-                    networkStatus: {loading:false}
+                    networkStatus: {loading: false}
                 }))
             }
             /* HOOK */
@@ -113,7 +114,7 @@ export function configureMiddleware(store) {
             if (o.__typename === 'Token') {
                 // this is the login methode
                 return o.__typename + o.username
-            }else  if (o.__typename === 'KeyValue') {
+            } else if (o.__typename === 'KeyValue') {
                 return o.__typename + o.key
             } else if (o._id) {
                 return o.__typename + o._id
@@ -127,10 +128,8 @@ export function configureMiddleware(store) {
     const cache = new OfflineCache(cacheOptions)
 
 
-
-
     // create the apollo client
-    const client =  new ApolloClient({
+    const client = new ApolloClient({
         link,
         // use restore on the cache instead of initialState
         cache: cache,
@@ -139,18 +138,18 @@ export function configureMiddleware(store) {
         connectToDevTools: true,
         queryDeduplication: true,
         /*defaultOptions: {
-             watchQuery: {
-             fetchPolicy: 'cache-and-network',
-             errorPolicy: 'all',
-             },
-             query: {
-             fetchPolicy: 'cache-and-network',
-             errorPolicy: 'all',
-             },
-             mutate: {
-             errorPolicy: 'all',
-             },
-        }*/
+         watchQuery: {
+         fetchPolicy: 'cache-and-network',
+         errorPolicy: 'all',
+         },
+         query: {
+         fetchPolicy: 'cache-and-network',
+         errorPolicy: 'all',
+         },
+         mutate: {
+         errorPolicy: 'all',
+         },
+         }*/
     })
 
     return client

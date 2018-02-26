@@ -27,6 +27,7 @@ import config from 'gen/config'
 import Hook from 'util/hook'
 import {getTypes, getTypeQueries, getFormFields} from 'util/types'
 import {Link} from 'react-router-dom'
+import {FILTER_PARAM} from '../constants'
 
 const DEFAULT_RESULT_LIMIT = 10
 const {ADMIN_BASE_URL,UPLOAD_URL} = config

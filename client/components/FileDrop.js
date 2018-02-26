@@ -83,10 +83,10 @@ class FileDrop extends React.Component {
     }
 
     render() {
-        const {classes, multi,label, accept} = this.props
+        const {style, classes, multi,label, accept} = this.props
         const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage} = this.state
 
-        return <div className={classNames(classes.uploader, isHover && classes.uploaderOver)}>
+        return <div style={style} className={classNames(classes.uploader, isHover && classes.uploaderOver)}>
             <input className={classes.inputFile}
                    multiple={!!multi}
                    type="file"

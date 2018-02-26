@@ -2,14 +2,13 @@ import Util from '../../util'
 //import Types form
 import {ObjectId} from 'mongodb'
 import {getFormFields} from 'util/types'
+import ClientUtil from 'client/util'
 
 
 const GenericResolver = {
     entities: async (db, context, collectionName, data, options) => {
 
         //Util.checkIfUserIsLoggedIn(context)
-
-
         let {limit, offset, page, match, filter, sort} = options
 
         if (!limit) {
@@ -42,25 +41,7 @@ const GenericResolver = {
             }
         }
 
-        const filterParts = {
-            $:[]
-        }
-        /* price=99 name=a
-           -->
-
-
-         */
-        if( filter ){
-            const a = filter.split(' ')
-            a.forEach(i => {
-                const p = i.split(/=|:/)
-                if( p.length>1 ){
-                    filterParts[ p[0] ] = p[1]
-                }else{
-                    filterParts.$.push(p[0])
-                }
-            })
-        }
+        const parsedFilter = ClientUtil.parseFilter(filter)
 
         const group = {}
         const filterMatch = []
@@ -85,14 +66,14 @@ const GenericResolver = {
 
         const addFilter = (value, isRef) => {
             if( filter ) {
-                if (filterParts[value]) {
+                if (parsedFilter.parts[value]) {
                     if( isRef ){
-                        filterMatch.push({[value]: ObjectId(filterParts[value])})
+                        filterMatch.push({[value]: ObjectId(parsedFilter.parts[value])})
                     }else{
-                        filterMatch.push({[value]: {'$regex': filterParts[value], '$options': 'i'}})
+                        filterMatch.push({[value]: {'$regex': parsedFilter.parts[value], '$options': 'i'}})
                     }
                 }
-                filterParts.$.forEach(i => {
+                parsedFilter.rest.forEach(i => {
                     filterMatch.push({[value]: {'$regex': i, '$options': 'i'}})
                 })
             }

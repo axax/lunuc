@@ -2,8 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import List, {ListItem, ListItemIcon, ListItemText, ListItemSecondaryAction} from 'material-ui/List'
 import Paper from 'material-ui/Paper'
-import DeleteIcon from 'material-ui-icons/Delete'
-import IconButton from 'material-ui/IconButton'
 
 
 class SimpleList extends React.Component {

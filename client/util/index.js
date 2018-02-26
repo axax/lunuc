@@ -71,12 +71,29 @@ const Util = {
         var b = {};
         for (var i = 0; i < a.length; ++i) {
             var p = a[i].split('=', 2)
-            if (p.length == 1)
-                b[p[0]] = ""
-            else
-                b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "))
+            if( p[0] ) {
+                if (p.length === 1)
+                    b[p[0]] = ""
+                else
+                    b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "))
+            }
         }
         return b
+    },
+    parseFilter: filter => {
+        const parts = {}, rest = []
+
+        if( filter ) {
+            filter.split(' ').forEach(i => {
+                const q = i.split(/=|:/)
+                if (q.length > 1) {
+                    parts[q[0]] = q[1]
+                } else {
+                    rest.push(q[0])
+                }
+            })
+        }
+        return {parts, rest}
     },
     addStyle(url) {
         const link = document.createElement("link")

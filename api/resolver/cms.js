@@ -130,7 +130,7 @@ export const cmsResolver = (db) => ({
                 html = e.message
             }
         }
-        console.log(`cms resolver got data in ${(new Date()).getTime() - startTime}ms`)
+        console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
         if (userIsLoggedIn) {
             // return all data
