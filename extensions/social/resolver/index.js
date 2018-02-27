@@ -28,7 +28,6 @@ export default (db) => ({
                 },
                 json: true
             }))
-            console.log(response)
             return response
         }
 
@@ -73,7 +72,6 @@ export default (db) => ({
             if( response.id ){
 
             }
-            console.log(response)
             Util.setKeyValues(db,context,{'linkedInAccessToken':response.access_token,'linkedInAccessTokenExpiresAt':(Math.floor(Date.now() / 1000)+response.expires_in)})
         }else{
             throw new Error('No access token received')

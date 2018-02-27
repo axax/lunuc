@@ -61,23 +61,87 @@ class LinkedInProfileContainer extends React.Component {
 
     handleCsv = (f, data) => {
 
-        const j = csvToJson(data)
-        if (j.length > 0) {
-            if (f.name === 'Profile.csv') {
-                this.setState({data: {...this.state.data, ...j[0]}})
-            } else if (f.name === 'Positions.csv') {
-                this.setState({data: {...this.state.data, positions: {values: j}}})
-            } else if (f.name === 'Education.csv') {
-                this.setState({data: {...this.state.data, education: {values: j}}})
-            } else if (f.name === 'Projects.csv') {
-                this.setState({data: {...this.state.data, projects: {values: j}}})
-            } else {
-                console.log(j)
-            }
+        const relevant = {
+            'Profile.csv': '',
+            'Positions.csv': 'positions',
+            'Education.csv': 'education',
+            'Projects.csv': 'projects',
+            'Skills.csv': 'skills',
+            'Courses.csv': 'courses',
+            'Causes You Care About.csv': 'interests',
+            'Languages.csv': 'languages'
         }
 
+        if (relevant[f.name] !== undefined) {
+            const j = csvToJson(data)
+
+            if (j.length > 0) {
+                if (relevant[f.name]) {
+                    this.setState({data: {...this.state.data, [relevant[f.name]]: {values: j}}})
+                } else {
+                    this.setState({data: {...this.state.data, ...j[0]}})
+                }
+            }
+        }
     }
 
+    createPdf() {
+        if( !html2canvas ) return
+
+        const $ = (expr, p) => (p || document).querySelectorAll(expr),
+            enlargeFac = 1,
+            pageHeight = 1430 * enlargeFac,
+            pageWidth = 1020 * enlargeFac,
+            ol = $('.cv-overlay')[0],
+            pa = $('.cv-printarea:not(.cv-scaled)')[0].cloneNode(true),
+            pai = $('.cv-printarea-inner', pa)[0],
+            breaks = $('.cv-pagebreak', pai),
+            numOfBreaks = breaks.length,
+            offsetTop = pai.offsetTop,
+            pdfContent = []
+
+        ol.style.display = 'block'
+
+        Object.assign(pa.style, {
+            transform: 'scale(' + enlargeFac + ',' + enlargeFac + ')',
+            overflow: 'hidden',
+            height: pageHeight
+        })
+        pa.className += ' cv-scaled'
+
+        const nextPage = page => {
+            ol.innerText = `Please be patient... It might take some time... Page ${page + 1} of ${numOfBreaks + 1} is being produced`
+
+            const fi = $('.full-invisible', pa)
+            if (fi && fi.length > 0) {
+                fi[0].classList.remove('full-invisible')
+            }
+
+            let marginTop = 0
+            if (page > 0) {
+                pai.style.marginTop = 0
+                let br = breaks[page - 1]
+                marginTop = br.offsetTop - offsetTop
+            }
+
+            if (page < numOfBreaks) {
+                for (let i = page; i < breaks.length; i++) {
+                    breaks[i].classList.push('full-invisible')
+                }
+            }
+            pai.style.marginTop = -marginTop / enlargeFac
+
+
+        }
+        nextPage(0)
+        console.log(pai)
+
+        /* const doc = new jsPDF()
+
+         doc.text('Hello world!', 10, 10)
+         doc.save('a4.pdf')*/
+
+    }
 
     render() {
         const {linkedin} = this.props
@@ -93,11 +157,15 @@ class LinkedInProfileContainer extends React.Component {
 
                         <Typography variant="headline" gutterBottom={true}>Enhance your CV</Typography>
 
-                        <Typography variant="caption">Login into your LinkedIn account -> My Account -> Settings & Privacy -> Download
+                        <Typography variant="caption">Login into your LinkedIn account -> My Account -> Settings &
+                            Privacy -> Download
                             your
                             Data</Typography>
-                        <FileDrop style={{marginBottom:"2rem"}} multi onFileContent={this.handleCsv} accept="text/csv"
+                        <FileDrop style={{marginBottom: "2rem"}} multi onFileContent={this.handleCsv} accept="text/csv"
                                   label="Drop linked in cvs files here"/>
+
+                        <Button variant="raised" color="primary"
+                                onClick={this.createPdf}>{_t('social.linkedin.createpdf')}</Button>
 
 
                         <Button variant="raised"
