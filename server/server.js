@@ -87,18 +87,32 @@ const app = http.createServer(function (req, res) {
                             res.write('404 Not Found\n')
                             res.end()
                         } else {
-                            const mimeType = MIME_TYPES[path.extname(filename).split('.')[1]]
-                            const fileStream = fs.createReadStream(filename)
-                            const headerExtra = {'Cache-Control': 'public, max-age=604800', 'content-type': mimeType}
+                            const mimeType = MIME_TYPES[path.extname(filename).split('.')[1]],
+                                headerExtra = {'Cache-Control': 'public, max-age=604800', 'content-type': mimeType}
 
-                            if (acceptEncoding.match(/\bdeflate\b/)) {
-                                res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate'})
-                                fileStream.pipe(zlib.createDeflate()).pipe(res)
-                            } else if (acceptEncoding.match(/\bgzip\b/)) {
+
+
+                            if (acceptEncoding.match(/\bgzip\b/)) {
                                 res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
-                                fileStream.pipe(zlib.createGzip()).pipe(res)
+
+                                if (fs.existsSync(filename+'.gz')) {
+                                    // if gz version is available send this instead
+                                    const fileStream = fs.createReadStream(filename+'.gz')
+                                    fileStream.pipe(res)
+                                }else{
+                                    const fileStream = fs.createReadStream(filename)
+                                    fileStream.pipe(zlib.createGzip()).pipe(res)
+                                }
+
+                            }else if (acceptEncoding.match(/\bdeflate\b/)) {
+                                res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate'})
+
+                                const fileStream = fs.createReadStream(filename)
+                                fileStream.pipe(zlib.createDeflate()).pipe(res)
                             } else {
                                 res.writeHead(200, {...headerExtra})
+
+                                const fileStream = fs.createReadStream(filename)
                                 fileStream.pipe(res)
                             }
                         }

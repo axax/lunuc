@@ -1,10 +1,23 @@
 const path = require('path')
-const webpack = require('webpack')
-const ExtractTextPlugin = require('extract-text-webpack-plugin')
-const JoinPlugin = require("join-webpack-plugin")
+const fs = require('fs');
+const glob = require('glob')
 const merge = require("merge")
+const webpack = require('webpack')
+
+// webpack plugins
+const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const CompressionPlugin = require("compression-webpack-plugin")
+const GenSourceCode = require('./webpack.gensrc')
+const WebpackI18nPlugin = require("./webpack.i18n");
+
 
 const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1
+
+
+/*---------------------------------------------------
+ Define which directories are included from the build based on the config file
+  ---------------------------------------------------*/
+
 
 const EXCLUDE_FROM_BUILD = [
     path.resolve(__dirname, 'node_modules'),
@@ -53,11 +66,9 @@ const excludeFunction = (path) => {
 }
 
 
-const GenSourceCode = require('./webpack.gensrc.js')
-
-
 const config = {
     entry: './client/index.js',
+    target: 'web',
     output: {
         path: path.resolve(__dirname, 'build'),
         filename: '[name].bundle.js'
@@ -73,27 +84,30 @@ const config = {
                 }
             },
             {
-                test: /\.tr\.json$/i,
+                test: /\.css$/,
                 exclude: excludeFunction,
-                use: [JoinPlugin.loader()],
+                use: ExtractTextPlugin.extract({
+                    fallback: 'style-loader',
+                    use: ['css-loader']
+                })
+            },
+            {
+                test: /\.less$/,
+                exclude: excludeFunction,
+                use: ExtractTextPlugin.extract({
+                    fallback: 'style-loader',
+                    use: ['css-loader', 'less-loader']
+                })
             }
         ]
     },
     plugins: [
-        new JoinPlugin({
-            search: './**/*.tr.json',
-            join: function(common, addition) {
-                return merge.recursive(
-                    common ? common : {}, JSON.parse(addition)
-                );
-            },
-            save: function(common) {
-                return 'window._app_.tr='+JSON.stringify(common);
-            },
-            group: '[name]',
-            name: '[name].json.js',
-        }),
         new GenSourceCode(), /* Generate some source code based on the config.json file */
+        new ExtractTextPlugin('style.css'), /* Extract css from bundle */
+        new WebpackI18nPlugin({
+            src: './**/*.tr.json',
+            dest: '[name].js'
+        })
     ]
 }
 
@@ -102,24 +116,11 @@ const config = {
  */
 if (DEV_MODE) {
     console.log('Build for developing')
-    //config.mode = 'development'
+    config.mode = 'development'
 
     const PORT = (process.env.PORT || 8080)
     const API_PORT = (process.env.API_PORT || 3000)
 
-
-    config.module.rules.push(
-        {
-            test: /\.css$/,
-            exclude: excludeFunction,
-            use: ['style-loader', 'css-loader']
-        },
-        {
-            test: /\.less$/,
-            exclude: excludeFunction,
-            use: ['style-loader', 'css-loader', 'less-loader']
-        }
-    )
 
     config.devServer = {
         historyApiFallback: true,
@@ -143,31 +144,13 @@ if (DEV_MODE) {
 
 } else {
     console.log('Build for production')
-    //config.mode = 'production'
+    config.mode = 'production'
 
-
-    config.module.rules.push(
-        {
-            test: /\.css$/,
-            exclude: excludeFunction,
-            use: ExtractTextPlugin.extract({
-                fallback: 'style-loader',
-                use: ['css-loader']
-            })
-        },
-        {
-            test: /\.less$/,
-            exclude: excludeFunction,
-            use: ExtractTextPlugin.extract({
-                fallback: 'style-loader',
-                use: ['css-loader', 'less-loader']
-            })
-        }
-    )
 
     config.plugins.push(
-        new ExtractTextPlugin('style.css'), /* Extract css from bundle */
-        new webpack.optimize.AggressiveMergingPlugin()
+        new CompressionPlugin({
+            minRatio: 0.8
+        })
     )
 
     const CopyWebpackPlugin = require('copy-webpack-plugin')
