@@ -97,7 +97,9 @@ class LinkedInProfileContainer extends React.Component {
         })
     }
 
-    offsetTop(e){
+    offsetTop(e) {
+        const r = e.getBoundingClientRect()
+        return r.top + document.documentElement.scrollTop
     }
 
     createPdf() {
@@ -111,7 +113,6 @@ class LinkedInProfileContainer extends React.Component {
             ol = $('.cv-overlay')[0],
             pa = $('.cv-printarea:not(.cv-scaled)')[0].cloneNode(true),
             pai = $('.cv-printarea-inner', pa)[0],
-            offsetTop = pai.offsetTop,
             pdfContent = [],
             cpc = $('.cv-print-clone')[0]
 
@@ -127,7 +128,8 @@ class LinkedInProfileContainer extends React.Component {
 
         this.calculatePageBreaks($, pa, pageHeight)
 
-        const breaks = $('.cv-pagebreak', pai)
+        const breaks = $('.cv-pagebreak', pai),
+            offsetTop = this.offsetTop(pai)
 
 
         const nextPage = page => {
@@ -135,14 +137,15 @@ class LinkedInProfileContainer extends React.Component {
 
             const fi = $('.full-invisible', pa)
             if (fi && fi.length > 0) {
-                fi[0].classList.remove('full-invisible')
+                for (let i = 0; i < fi.length; i++)
+                    fi[i].classList.remove('full-invisible')
             }
 
             let marginTop = 0
             if (page > 0) {
                 pai.style.marginTop = 0
                 let br = breaks[page - 1]
-                marginTop = br.offsetTop - offsetTop
+                marginTop = this.offsetTop(br) - offsetTop
             }
             console.log('marginTop', marginTop)
 
@@ -150,7 +153,6 @@ class LinkedInProfileContainer extends React.Component {
                 let elem = breaks[page]
                 while (elem = elem.nextSibling) {
                     if (elem.nodeType === 3) continue; // text node
-                    console.log(elem)
                     elem.classList.add('full-invisible')
                 }
             }
@@ -235,7 +237,7 @@ class LinkedInProfileContainer extends React.Component {
         console.log('calculatePageBreaks')
 
         const pai = $('.cv-printarea-inner', pa)[0],
-            offsetTop = pai.offsetTop
+            offsetTop = this.offsetTop(pai)
 
         $('.cv-pagebreak', pa).forEach(n => {
             n.parentNode.removeChild(n)
@@ -243,8 +245,7 @@ class LinkedInProfileContainer extends React.Component {
         let marginTop = 0
 
         pai.childNodes.forEach(section => {
-            let pos = section.offsetTop - offsetTop + section.offsetHeight
-
+            let pos = this.offsetTop(section) - offsetTop + section.offsetHeight
             if (pos > marginTop + pageHeight) {
 
                 let breakWasSet = false
@@ -252,7 +253,7 @@ class LinkedInProfileContainer extends React.Component {
                 for (let i = 0; i < kids.length; i++) {
 
                     const subsection = kids[i]
-                    pos = section.offsetTop+subsection.offsetTop+subsection.parentNode.offsetTop - offsetTop + subsection.clientHeight
+                    pos = this.offsetTop(subsection) - offsetTop + subsection.clientHeight
 
                     if (pos > marginTop + pageHeight) {
                         breakWasSet = true
@@ -268,7 +269,7 @@ class LinkedInProfileContainer extends React.Component {
                             subsection.parentNode.insertBefore(br, subsection)
                         }
 
-                        marginTop = section.offsetTop + br.offsetTop + br.parentNode.offsetTop - offsetTop
+                        marginTop = this.offsetTop(br) - offsetTop
 
                     }
 
@@ -280,7 +281,7 @@ class LinkedInProfileContainer extends React.Component {
                     br.className += 'cv-pagebreak'
 
                     section.parentNode.insertBefore(br, section)
-                    marginTop = br.offsetTop - offsetTop
+                    marginTop = this.offsetTop(br) - offsetTop
                     breakWasSet = true
                 }
 
