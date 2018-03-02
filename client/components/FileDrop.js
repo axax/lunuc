@@ -5,11 +5,11 @@ import classNames from 'classnames'
 import Util from 'client/util'
 
 const UPLOAD_API_URL = '/graphql/upload',
- MAX_FILE_SIZE_MB = 10,
-IMAGE_QUALITY = 0.6,
-IMAGE_MAX_WIDTH = 1000,
-IMAGE_MAX_HEIGHT = 1000,
-DEFAULT_ACCEPT ='image/*'
+    MAX_FILE_SIZE_MB = 10,
+    IMAGE_QUALITY = 0.6,
+    IMAGE_MAX_WIDTH = 1000,
+    IMAGE_MAX_HEIGHT = 1000,
+    DEFAULT_ACCEPT = 'image/*'
 
 const styles = theme => ({
     uploader: {
@@ -44,7 +44,7 @@ const styles = theme => ({
         maxWidth: '100%',
         display: 'block',
         margin: '0 auto 0.5rem auto',
-        pointerEvents : 'none'
+        pointerEvents: 'none'
     },
     progress: {
         position: 'absolute',
@@ -62,7 +62,7 @@ const styles = theme => ({
         right: 0,
         left: 0,
         opacity: 0,
-        zIndex:2
+        zIndex: 2
     }
 
 })
@@ -83,7 +83,7 @@ class FileDrop extends React.Component {
     }
 
     render() {
-        const {style, classes, multi,label, accept} = this.props
+        const {style, classes, multi, label, accept} = this.props
         const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage} = this.state
 
         return <div style={style} className={classNames(classes.uploader, isHover && classes.uploaderOver)}>
@@ -107,7 +107,8 @@ class FileDrop extends React.Component {
                             color="disabled"/> }
 
             { !uploading &&
-            <Typography variant="caption">{label || 'Drop files here, or click to select files to upload.'}</Typography> }
+            <Typography
+                variant="caption">{label || 'Drop files here, or click to select files to upload.'}</Typography> }
 
             { errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography> }
             { successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography> }
@@ -133,17 +134,17 @@ class FileDrop extends React.Component {
     }
 
     handelDrop(e) {
-        const {onFileContent, accept } = this.props
+        const {onFileContent, onFiles, accept} = this.props
         this.setDragState(e, false)
 
-        const accepts= (accept || DEFAULT_ACCEPT).split('|'), acceptsType = [], acceptsExt = []
+        const accepts = (accept || DEFAULT_ACCEPT).split('|'), acceptsType = [], acceptsExt = []
 
         accepts.forEach(i => {
             const a = i.split('/')
-            if( a.length > 1 ){
+            if (a.length > 1) {
                 acceptsType.push(a[0])
                 acceptsExt.push(a[1])
-            }else{
+            } else {
                 acceptsExt.push(a[0])
             }
 
@@ -152,25 +153,26 @@ class FileDrop extends React.Component {
         // Fetch FileList object
         const files = e.target.files || e.dataTransfer.files;
         // Process all File objects
-        const images = []
+        const images = [], filteredFiles = []
         for (let i = 0, f; f = files[i]; i++) {
 
             // validate
             const aType = f.type.split('/')
 
-            const ext = aType.length>1?aType[1]:aType[0]
+            const ext = aType.length > 1 ? aType[1] : aType[0]
 
             let isValid = false
-            acceptsExt.forEach(e =>{
-                if( e==='*' || ext===e ){
-                    isValid =true
+            acceptsExt.forEach(e => {
+                if (e === '*' || ext === e) {
+                    isValid = true
                     return
                 }
             })
 
             //TODO: also check for acceptsType images/*
 
-            if( isValid) {
+            if (isValid) {
+                filteredFiles.push(f)
                 if ((/\.(?=gif|jpg|png|jpeg)/gi).test(f.name)) {
                     // is image
 
@@ -179,25 +181,25 @@ class FileDrop extends React.Component {
                     this.resizeImageAndUpload(f)
                 } else if (ext === 'csv') {
 
-
-                    const reader = new FileReader()
-                    reader.readAsText(f, "UTF-8")
-                    reader.onload = function (e) {
-                        if( onFileContent ){
-                            onFileContent(f,e.target.result)
+                    if (onFileContent) {
+                        const reader = new FileReader()
+                        reader.readAsText(f, "UTF-8")
+                        reader.onload = function (e) {
+                            onFileContent(f, e.target.result)
                         }
                     }
-                   /* reader.onerror = function (evt) {
-                        document.getElementById("fileContents").innerHTML = "error reading file";
-                    }*/
-
-
+                    /* reader.onerror = function (evt) {
+                     document.getElementById("fileContents").innerHTML = "error reading file";
+                     }*/
 
 
                 }
-            }else{
+            } else {
                 this.setState({errorMessage: `File format ${f.type} is not accepted`})
             }
+        }
+        if (filteredFiles.length > 0 && onFiles) {
+            onFiles(filteredFiles)
         }
         this.setState({images})
     }
@@ -241,7 +243,7 @@ class FileDrop extends React.Component {
             ctx.fillText(file.name, 5, height - 8)
 
 
-            const dataUrl = canvas.toDataURL('image/jpeg' /*file.type*/,IMAGE_QUALITY)
+            const dataUrl = canvas.toDataURL('image/jpeg' /*file.type*/, IMAGE_QUALITY)
 
 
             //const blobData = this.dataURLToBlob(dataUrl) // as png?
@@ -261,7 +263,7 @@ class FileDrop extends React.Component {
                             this.setState({successMessage: 'upload was successfull', uploading: false})
 
                             const {onSuccess} = this.props
-                            if( onSuccess ){
+                            if (onSuccess) {
                                 onSuccess(xhr.response)
                             }
 
@@ -314,7 +316,8 @@ FileDrop.propTypes = {
     onSuccess: PropTypes.func,
     label: PropTypes.string,
     accept: PropTypes.string,
-    onFileContent: PropTypes.func
+    onFileContent: PropTypes.func,
+    onFiles: PropTypes.func
 }
 
 export default withStyles(styles)(FileDrop)

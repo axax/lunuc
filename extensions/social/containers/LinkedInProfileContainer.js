@@ -59,7 +59,7 @@ class LinkedInProfileContainer extends React.Component {
         this.setState({disconnected: true})
     }
 
-    handleCsv = (f, data) => {
+    handleFiles = (files) => {
 
         const relevant = {
             'Profile.csv': '',
@@ -71,22 +71,38 @@ class LinkedInProfileContainer extends React.Component {
             'Causes You Care About.csv': 'interests',
             'Languages.csv': 'languages'
         }
+        let c = 0, data = this.state.data
+        files.forEach(f => {
+            if (relevant[f.name] !== undefined) {
+                c++
+                const reader = new FileReader()
+                reader.readAsText(f, "UTF-8")
+                reader.onload = e => {
 
-        if (relevant[f.name] !== undefined) {
-            const j = csvToJson(data)
+                    const j = csvToJson(e.target.result)
 
-            if (j.length > 0) {
-                if (relevant[f.name]) {
-                    this.setState({data: {...this.state.data, [relevant[f.name]]: {values: j}}})
-                } else {
-                    this.setState({data: {...this.state.data, ...j[0]}})
+                    if (j.length > 0) {
+                        if (relevant[f.name]) {
+                            data = {...data, [relevant[f.name]]: {values: j}}
+                        } else {
+                            data = {...data, ...j[0]}
+                        }
+                    }
+
+                    c--
+                    if (c === 0)
+                        this.setState({data})
                 }
             }
-        }
+        })
+    }
+
+    offsetTop(e){
     }
 
     createPdf() {
-        if( !html2canvas ) return
+        if (!html2canvas) return
+        if (!pdfMake) return
 
         const $ = (expr, p) => (p || document).querySelectorAll(expr),
             enlargeFac = 1,
@@ -95,22 +111,27 @@ class LinkedInProfileContainer extends React.Component {
             ol = $('.cv-overlay')[0],
             pa = $('.cv-printarea:not(.cv-scaled)')[0].cloneNode(true),
             pai = $('.cv-printarea-inner', pa)[0],
-            breaks = $('.cv-pagebreak', pai),
-            numOfBreaks = breaks.length,
             offsetTop = pai.offsetTop,
-            pdfContent = []
+            pdfContent = [],
+            cpc = $('.cv-print-clone')[0]
 
-        ol.style.display = 'block'
+        ol.style.display = 'flex'
 
         Object.assign(pa.style, {
             transform: 'scale(' + enlargeFac + ',' + enlargeFac + ')',
-            overflow: 'hidden',
-            height: pageHeight
+            overflow: 'hidden'
         })
         pa.className += ' cv-scaled'
 
+        cpc.appendChild(pa)
+
+        this.calculatePageBreaks($, pa, pageHeight)
+
+        const breaks = $('.cv-pagebreak', pai)
+
+
         const nextPage = page => {
-            ol.innerText = `Please be patient... It might take some time... Page ${page + 1} of ${numOfBreaks + 1} is being produced`
+            ol.innerText = `Please be patient... It might take some time... Page ${page + 1} of ${breaks.length + 1} is being produced`
 
             const fi = $('.full-invisible', pa)
             if (fi && fi.length > 0) {
@@ -123,13 +144,75 @@ class LinkedInProfileContainer extends React.Component {
                 let br = breaks[page - 1]
                 marginTop = br.offsetTop - offsetTop
             }
+            console.log('marginTop', marginTop)
 
-            if (page < numOfBreaks) {
-                for (let i = page; i < breaks.length; i++) {
-                    breaks[i].classList.push('full-invisible')
+            if (page < breaks.length) {
+                let elem = breaks[page]
+                while (elem = elem.nextSibling) {
+                    if (elem.nodeType === 3) continue; // text node
+                    console.log(elem)
+                    elem.classList.add('full-invisible')
                 }
             }
-            pai.style.marginTop = -marginTop / enlargeFac
+            pai.style.marginTop = (-marginTop / enlargeFac) + 'px'
+            html2canvas(pa, {
+                imageTimeout: 20000,
+                width: pageWidth,
+                height: pageHeight,
+                /*logging: true,*/
+                /*proxy: ( (ENV=="development" )?"linkedin/src/php/html2canvasproxy.php":"php/html2canvasproxy.php"),*/
+            }).then(canvas => {
+
+                var data = canvas.toDataURL();
+                pdfContent.push({
+                    image: data,
+                    width: 600
+                })
+
+                if (page < breaks.length) {
+                    nextPage(page + 1);
+                } else {
+                    // $pai.css({marginTop:0})
+                    //$pa.css({overflow:"visible",height:"auto"})
+                    cpc.innerHTML = ''
+
+                    //  window.open(data);
+
+                    var docDefinition = {
+                        pageMargins: [0, 0, 0, 0],
+                        pageSize: 'A4',
+
+                        content: pdfContent
+                    }
+                    ol.innerText = 'Please be patient... We are almost there... Enjoy!'
+
+                    /* if( toprint ){
+                     window.pdfMake.createPdf(docDefinition).getDataUrl((dataUrl) => {
+
+                     var iFrame = document.createElement('iframe');
+                     iFrame.style.position = 'absolute';
+                     iFrame.style.left = '-99999px';
+                     iFrame.src = dataUrl;
+                     iFrame.onload = function() {
+                     function removeIFrame(){
+                     document.body.removeChild(iFrame);
+                     document.removeEventListener('click', removeIFrame);
+                     }
+                     document.addEventListener('click', removeIFrame, false);
+                     };
+
+                     document.body.appendChild(iFrame);
+
+                     $(".cv-overlay").hide()
+
+                     },{ autoPrint: true } )
+                     }else{*/
+                    pdfMake.createPdf(docDefinition).download("cv.pdf", () => {
+                        ol.style.display = 'none'
+                    })
+                    /*}*/
+                }
+            })
 
 
         }
@@ -140,7 +223,69 @@ class LinkedInProfileContainer extends React.Component {
 
          doc.text('Hello world!', 10, 10)
          doc.save('a4.pdf')*/
+    }
 
+    calculatePageBreaks($, pa, pageHeight) {
+        if (pa.clientHeight < pageHeight || pa.clientHeight === this.lastprintheight) {
+            return
+        }
+        this.lastprintheight = pa.clientHeight
+
+
+        console.log('calculatePageBreaks')
+
+        const pai = $('.cv-printarea-inner', pa)[0],
+            offsetTop = pai.offsetTop
+
+        $('.cv-pagebreak', pa).forEach(n => {
+            n.parentNode.removeChild(n)
+        })
+        let marginTop = 0
+
+        pai.childNodes.forEach(section => {
+            let pos = section.offsetTop - offsetTop + section.offsetHeight
+
+            if (pos > marginTop + pageHeight) {
+
+                let breakWasSet = false
+                const kids = $('.timeline-section', section)
+                for (let i = 0; i < kids.length; i++) {
+
+                    const subsection = kids[i]
+                    pos = section.offsetTop+subsection.offsetTop+subsection.parentNode.offsetTop - offsetTop + subsection.clientHeight
+
+                    if (pos > marginTop + pageHeight) {
+                        breakWasSet = true
+                        const prevSubsction = subsection.previousSibling
+
+                        const br = document.createElement('div')
+                        br.className += 'cv-pagebreak'
+
+                        if (prevSubsction.classList.contains('timeline-seperator')) {
+                            prevSubsction.parentNode.insertBefore(br, prevSubsction)
+                        } else {
+
+                            subsection.parentNode.insertBefore(br, subsection)
+                        }
+
+                        marginTop = section.offsetTop + br.offsetTop + br.parentNode.offsetTop - offsetTop
+
+                    }
+
+
+                }
+
+                if (!breakWasSet) {
+                    const br = document.createElement('div')
+                    br.className += 'cv-pagebreak'
+
+                    section.parentNode.insertBefore(br, section)
+                    marginTop = br.offsetTop - offsetTop
+                    breakWasSet = true
+                }
+
+            }
+        })
     }
 
     render() {
@@ -161,18 +306,17 @@ class LinkedInProfileContainer extends React.Component {
                             Privacy -> Download
                             your
                             Data</Typography>
-                        <FileDrop style={{marginBottom: "2rem"}} multi onFileContent={this.handleCsv} accept="text/csv"
+                        <FileDrop style={{marginBottom: "2rem"}} multi onFiles={this.handleFiles} accept="text/csv"
                                   label="Drop linked in cvs files here"/>
 
                         <Button variant="raised" color="primary"
-                                onClick={this.createPdf}>{_t('social.linkedin.createpdf')}</Button>
+                                onClick={this.createPdf.bind(this)}>{_t('social.linkedin.createpdf')}</Button>
 
 
                         <Button variant="raised"
                                 onClick={this.handleLinkedInDisconnect}>{_t('social.linkedin.disconnect')}</Button>
                     </Col>
                     <Col md={9}>
-
                         <PrettyResume resumeData={{...linkedin, ...data}}/>
                     </Col>
                 </Row>

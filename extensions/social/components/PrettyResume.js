@@ -35,7 +35,7 @@ class PrettyResume extends React.Component {
         const {resumeData} = this.props
 
 
-        console.log(resumeData)
+        console.log('render PrettyResume')
 
         return <div className="linkedin-resume">
 

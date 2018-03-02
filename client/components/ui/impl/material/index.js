@@ -93,6 +93,7 @@ export Tooltip from 'material-ui/Tooltip'
 export {LinearProgress, CircularProgress} from 'material-ui/Progress'
 export {MenuItem} from 'material-ui/Menu'
 export Paper from 'material-ui/Paper'
+export Avatar from 'material-ui/Avatar'
 export Stepper, { Step, StepLabel, StepContent } from 'material-ui/Stepper'
 
 

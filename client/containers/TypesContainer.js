@@ -27,10 +27,10 @@ import config from 'gen/config'
 import Hook from 'util/hook'
 import {getTypes, getTypeQueries, getFormFields} from 'util/types'
 import {Link} from 'react-router-dom'
-import {FILTER_PARAM} from '../constants'
+import {getImageTag} from 'client/util/media'
 
 const DEFAULT_RESULT_LIMIT = 10
-const {ADMIN_BASE_URL,UPLOAD_URL} = config
+const {ADMIN_BASE_URL} = config
 
 
 class TypesContainer extends React.Component {
@@ -104,8 +104,7 @@ class TypesContainer extends React.Component {
                                 if (v.constructor === Array) {
                                     if (field.type === 'Media') {
                                         dynamic[field.name] = v.reduce((s, i) => {
-                                            s.push(<img key={i._id} style={{height: '40px'}}
-                                                        src={UPLOAD_URL + '/' + i._id}/>)
+                                            s.push(getImageTag(i._id,{key:i._id,height:40}))
                                             return s
                                         }, [])
                                     } else {
@@ -115,9 +114,7 @@ class TypesContainer extends React.Component {
 
                                 } else {
                                     if (field.type === 'Media') {
-                                        dynamic[field.name] =
-                                            <img style={{height: '40px'}}
-                                                 src={UPLOAD_URL + '/' + v._id}/>
+                                        dynamic[field.name] = getImageTag(v._id,{height:40})
                                     } else {
                                         dynamic[field.name] = v.name
                                     }

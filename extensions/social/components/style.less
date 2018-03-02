@@ -1,6 +1,14 @@
 
 .Cms-linkedin {
 
+
+  .full-invisible {
+    visibility: hidden !important;
+    * {
+      visibility: hidden !important;
+    }
+  }
+
   .linkedin-container{
     margin-top: 3.5rem;
     padding: 2rem;
@@ -345,7 +353,7 @@
   }
 
   .cv-print-clone {
-    max-width: 1020px;
+    width: 1020px;
   }
 
   .cv-pagebreak {
@@ -378,16 +386,17 @@
   }
 
   .cv-overlay {
-    position: absolute;
-    text-align: center;
-    padding: 100px 50px;
+    position: fixed;
+    padding: 50px 50px;
     top: 0;
     left: 0;
     bottom: 0;
     right: 0;
+    justify-content: center;
+    align-items: center;
     background-color: rgba(0, 0, 0, 0.85);
-    z-index: 99;
-    font-size: 2rem;
+    z-index: 99999999;
+    font-size: 2.5rem;
     color: #fff;
     display: none;
     line-height: 1.6;

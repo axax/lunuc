@@ -5,10 +5,12 @@
       "fields": [
         {
           "name": "name",
-          "required": true
+          "required": true,
+          "localized": true
         },
         {
-          "name": "description"
+          "name": "description",
+          "localized": true
         },
         {
           "name": "price",

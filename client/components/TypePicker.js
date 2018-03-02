@@ -1,9 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {TextField, Paper, MenuItem, withStyles, Chip} from 'ui/admin'
+import {TextField, Paper, MenuItem, withStyles, Chip, Avatar} from 'ui/admin'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
+import {getImageTag,getImageSrc} from 'client/util/media'
 
 const styles = {
     root: {
@@ -25,7 +26,7 @@ class TypePicker extends React.Component {
             data: null,
             hasFocus: true,
             selIdx: 0,
-            textValue:''
+            textValue: ''
         }
     }
 
@@ -34,21 +35,21 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        console.log('render')
+        console.log('render TypePicker')
         const {classes, placeholder, multi} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
         return <div className={classes.root}>
 
             { (!value.length || multi) && <TextField value={textValue} onChange={this.handleChange.bind(this)}
-                                   onKeyDown={this.handleKeyDown.bind(this)}
-                                   onFocus={() => this.setState({hasFocus: true})}
-                                   onBlur={this.handleBlur.bind(this)} placeholder={placeholder}/> }
+                                                     onKeyDown={this.handleKeyDown.bind(this)}
+                                                     onFocus={() => this.setState({hasFocus: true})}
+                                                     onBlur={this.handleBlur.bind(this)} placeholder={placeholder}/> }
 
-            { value.map((v,i) =>
-                <Chip key={i} label={v.name} onDelete={this.handleRemovePick.bind(this,i)}/>)
+            { value.map((v, i) =>
+                <Chip key={i} label={v.name} onDelete={this.handleRemovePick.bind(this, i)}
+                      avatar={v.__typename === 'Media' ?<Avatar src={getImageSrc(v._id, {height: 30})} /> : null}/>)
             }
-
 
             <Paper className={classes.suggestions} square>
 
@@ -61,7 +62,8 @@ class TypePicker extends React.Component {
                         style={{
                             fontWeight: selIdx === idx ? 500 : 400,
                         }}
-                    >{item.__typename==='Media'?'jj':'nn'} {item.name} ({item._id})</MenuItem>
+                    >{item.__typename === 'Media' ? getImageTag(item._id, {height: 30}) : ''} {item.name}
+                        ({item._id})</MenuItem>
                 )}
 
 
@@ -72,32 +74,32 @@ class TypePicker extends React.Component {
 
     handleRemovePick(idx) {
         const value = this.state.value.slice(0)
-        value.splice(idx,1)
-        this.props.onChange({target: {value,name: this.props.name}})
+        value.splice(idx, 1)
+        this.props.onChange({target: {value, name: this.props.name}})
     }
 
     handlePick(idx) {
-        const value = (this.state.value?this.state.value.slice(0):[]), item = this.state.data.results[idx]
-        value.push({_id: item._id, name: item.name, __typename:this.props.type})
+        const value = (this.state.value ? this.state.value.slice(0) : []), item = this.state.data.results[idx]
+        value.push({_id: item._id, name: item.name, __typename: this.props.type})
 
-        this.props.onChange({target:{value, name: this.props.name}})
-        this.setState({textValue:'',hastFocus:false,data: null})
+        this.props.onChange({target: {value, name: this.props.name}})
+        this.setState({textValue: '', hastFocus: false, data: null})
 
     }
 
     handleChange(e) {
         const v = e.target.value.trim()
         if (v === '') {
-            this.setState({data: null,textValue:v})
+            this.setState({data: null, textValue: v})
         } else {
-            this.setState({textValue:v})
+            this.setState({textValue: v})
             this.getData(e.target.value)
         }
     }
 
     handleBlur(e) {
         setTimeout(() => {
-            if( this.state.hasFocus)
+            if (this.state.hasFocus)
                 this.setState({hasFocus: false})
         }, 500)
     }
