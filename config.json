@@ -57,6 +57,8 @@
     "APOLLO_CACHE": true,
     "DEBUG": true,
     "ADMIN_BASE_URL": "/admin",
+    "BACKUP_DIR": "/backups",
+    "BACKUP_URL": "/backups",
     "UPLOAD_DIR": "/uploads",
     "UPLOAD_URL": "/uploads",
     "LANGUAGES": ["de","en"]

@@ -19,6 +19,7 @@ class BaseLayout extends React.Component {
     menuItems = [
         {name: 'Home', to: ADMIN_BASE_URL + '/'},
         {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true},
+        {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true},
         {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true},
         {name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true},
         {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true}

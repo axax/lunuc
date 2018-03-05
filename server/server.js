@@ -5,7 +5,7 @@ import path from 'path'
 import fs from 'fs'
 import zlib from 'zlib'
 import config from 'gen/config'
-const {UPLOAD_DIR, UPLOAD_URL} = config
+const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL} = config
 
 // Port to listen to
 const PORT = (process.env.PORT || 8080)
@@ -48,7 +48,26 @@ const app = http.createServer(function (req, res) {
             proxy.web(req, res, {target: `http://localhost:${API_PORT}/graphql`})
         } else {
 
-            if( uri.startsWith(UPLOAD_URL+'/')){
+            if( uri.startsWith(BACKUP_URL+'/')){
+                const backup_dir = path.join(__dirname, '../'+ BACKUP_DIR)
+                const filename = path.join(backup_dir, path.basename(uri))
+
+                fs.exists(filename, (exists) => {
+                    if (exists) {
+                        const fileStream = fs.createReadStream(filename)
+                        const headerExtra = {}
+                        res.writeHead(200, {...headerExtra})
+                        fileStream.pipe(res)
+                    }else{
+                        console.log('not exists: ' + filename)
+                        res.writeHead(404, {'Content-Type': 'text/plain'})
+                        res.write('404 Not Found\n')
+                        res.end()
+                    }
+                })
+
+
+            }else if( uri.startsWith(UPLOAD_URL+'/')){
                 const upload_dir = path.join(__dirname, '../'+ UPLOAD_DIR)
                 // uploads
                 const filename = path.join(upload_dir, path.basename(uri))

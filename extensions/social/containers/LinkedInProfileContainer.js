@@ -178,7 +178,7 @@ class LinkedInProfileContainer extends React.Component {
                     //$pa.css({overflow:"visible",height:"auto"})
                     cpc.innerHTML = ''
 
-                    //  window.open(data);
+                    //window.open(data);
 
                     var docDefinition = {
                         pageMargins: [0, 0, 0, 0],
@@ -301,12 +301,9 @@ class LinkedInProfileContainer extends React.Component {
                 <Row>
                     <Col md={3}>
 
-                        <Typography variant="headline" gutterBottom={true}>Enhance your CV</Typography>
+                        <Typography variant="headline" gutterBottom={true}>{_t('social.linkedin.enhanceCv')}</Typography>
 
-                        <Typography variant="caption">Login into your LinkedIn account -> My Account -> Settings &
-                            Privacy -> Download
-                            your
-                            Data</Typography>
+                        <Typography variant="caption">{_t('social.linkedin.downloadAccount')}</Typography>
                         <FileDrop style={{marginBottom: "2rem"}} multi onFiles={this.handleFiles} accept="text/csv"
                                   label="Drop linked in cvs files here"/>
 

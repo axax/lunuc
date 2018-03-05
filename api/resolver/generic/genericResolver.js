@@ -110,6 +110,7 @@ const GenericResolver = {
                 addLookup(type,fieldName,multi)
                 addFilter(fieldName)
             } else {
+                // regular field
                 group[value] = {'$first': '$' + value}
                 addFilter(value)
 
@@ -248,12 +249,21 @@ const GenericResolver = {
 
         const collection = db.collection(collectionName)
 
+        //check if this field is a reference
+        const fields = getFormFields(collectionName)
 
         // clone object but without _id and undefined property
         // keep null values to remove references
         const dataSet = Object.keys(data).reduce((o, k) => {
             if (k !== '_id' && data[k]!==undefined ) {
-                o[k] = data[k]
+                if( fields && fields[k].localized ){
+                    // is field localized
+                    console.log(k,'is localized')
+                    o[k] = data[k]
+
+                }else {
+                    o[k] = data[k]
+                }
             }
             return o
         }, {})

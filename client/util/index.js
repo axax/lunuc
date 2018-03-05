@@ -5,7 +5,6 @@ const Util = {
         return token ? `JWT ${token}` : null
     },
     dateFromObjectId: (objectId) => {
-
         if (objectId.indexOf('#') === 0) {
             // this is only a tmp id / timestemp
             return parseInt(objectId.substring(1))
@@ -29,6 +28,9 @@ const Util = {
             return new Intl.DateTimeFormat().format(new Date(), options)
         }
         return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId), options)
+    },
+    formattedDatetime(stamp){
+       return new Date(stamp).toLocaleString()
     },
     escapeHtml: (str) => {
         const entityMap = {

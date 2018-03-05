@@ -7,6 +7,27 @@ import {withKeyValues} from 'client/containers/generic/withKeyValues'
 
 class PrettyResume extends React.Component {
 
+    constructor(props) {
+        super(props)
+
+        this.state = {
+            profileImageData: null
+        }
+        if (props.resumeData) {
+            this.toDataUrl(props.resumeData.pictureUrl, d => {
+                this.setState({profileImageData: d})
+            })
+        }
+    }
+
+    componentWillReceiveProps(props) {
+        if (this.props.resumeData && props.resumeData && this.props.resumeData.pictureUrl !== props.resumeData.pictureUrl) {
+            this.toDataUrl(props.resumeData.pictureUrl, d => {
+                this.setState({profileImageData: d})
+            })
+        }
+    }
+
 
     timeago(start, end) {
         const sDate = (start ? new Date(start) : new Date()), eDate = (end ? new Date(end) : new Date())
@@ -33,6 +54,7 @@ class PrettyResume extends React.Component {
 
     render() {
         const {resumeData} = this.props
+        const {profileImageData} = this.state
 
 
         console.log('render PrettyResume')
@@ -48,7 +70,7 @@ class PrettyResume extends React.Component {
                     <div className="cv-section profile">
 
                         <a className="cv-profile-picture" target="_blank" href={resumeData.publicProfileUrl}>
-                            <img src={resumeData.pictureUrl} alt="Linkedin profile picture"/>
+                            <img src={profileImageData || resumeData.pictureUrl} alt="Linkedin profile picture"/>
                         </a>
 
                         <div className="cv-profile-body">
@@ -122,8 +144,9 @@ class PrettyResume extends React.Component {
                                         </div>
                                         }
                                         <p>
-                                    <span suppressContentEditableWarning={true}
-                                          contentEditable>{p.summary || p.description}</span>
+                                            <span suppressContentEditableWarning={true}
+                                                  contentEditable dangerouslySetInnerHTML={{__html: this.toHtml(p.summary || p.description)}}></span>
+
                                         </p>
 
 
@@ -185,7 +208,7 @@ class PrettyResume extends React.Component {
                                         </h3>
                                         <p>
                                             <span suppressContentEditableWarning={true}
-                                                  contentEditable>{p.description}</span>
+                                                  contentEditable dangerouslySetInnerHTML={{__html: this.toHtml(p.description)}}></span>
                                         </p>
                                     </div>
 
@@ -282,6 +305,27 @@ class PrettyResume extends React.Component {
             <div className="cv-print-clone"></div>
         </div>
 
+    }
+
+    toHtml(str){
+        return str.replace(/(\r\n|\n|\r)/g,'<br />')
+    }
+
+
+    toDataUrl(url, callback) {
+        if( url ) {
+            var xhr = new XMLHttpRequest()
+            xhr.onload = function () {
+                var reader = new FileReader()
+                reader.onloadend = function () {
+                    callback(reader.result)
+                }
+                reader.readAsDataURL(xhr.response)
+            }
+            xhr.open('GET', url)
+            xhr.responseType = 'blob'
+            xhr.send()
+        }
     }
 }
 

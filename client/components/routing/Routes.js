@@ -7,6 +7,7 @@ import SignUpContainer from 'client/containers/SignUpContainer'
 import UserProfileContainer from 'client/containers/UserProfileContainer'
 import CmsViewContainer from 'client/containers/CmsViewContainer'
 import SystemContainer from 'client/containers/SystemContainer'
+import DbDumpContainer from 'client/containers/DbDumpContainer'
 import TypesContainer from 'client/containers/TypesContainer'
 import HomeContainer from 'client/containers/HomeContainer'
 import PrivateRoute from './PrivateRoute'
@@ -35,6 +36,7 @@ class Routes extends React.Component {
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
         {exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer},
         {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer},
+        {private: true, path: ADMIN_BASE_URL + '/backup', component: DbDumpContainer},
         {
             // match everything but paths that start with ADMIN_BASE_URL
             exact: false, path: '/:slug*', render: ({match}) => {
