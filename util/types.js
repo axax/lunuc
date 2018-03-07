@@ -114,7 +114,8 @@ export const getFormFields = (type)=> {
             placeholder,
             uitype,
             multi: !!field.multi,
-            type: field.type
+            type: field.type,
+            localized: !!field.localized
         }
     })
 

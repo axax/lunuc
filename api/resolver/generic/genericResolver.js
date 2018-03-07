@@ -3,11 +3,15 @@ import Util from '../../util'
 import {ObjectId} from 'mongodb'
 import {getFormFields} from 'util/types'
 import ClientUtil from 'client/util'
+import config from 'gen/config'
 
+const {DEFAULT_LANGUAGE} = config
 
 const GenericResolver = {
     entities: async (db, context, collectionName, data, options) => {
-
+        if (!context.lang) {
+            throw new Error('lang on context is missing')
+        }
         //Util.checkIfUserIsLoggedIn(context)
         let {limit, offset, page, match, filter, sort} = options
 
@@ -47,7 +51,7 @@ const GenericResolver = {
         const filterMatch = []
         const lookups = []
 
-        const addLookup = (type,fieldName,multi)=>{
+        const addLookup = (type, fieldName, multi) => {
             lookups.push({
                 $lookup: {
                     from: type,
@@ -65,11 +69,11 @@ const GenericResolver = {
         }
 
         const addFilter = (value, isRef) => {
-            if( filter ) {
+            if (filter) {
                 if (parsedFilter.parts[value]) {
-                    if( isRef ){
+                    if (isRef) {
                         filterMatch.push({[value]: ObjectId(parsedFilter.parts[value])})
-                    }else{
+                    } else {
                         filterMatch.push({[value]: {'$regex': parsedFilter.parts[value], '$options': 'i'}})
                     }
                 }
@@ -79,24 +83,24 @@ const GenericResolver = {
             }
         }
 
+        const fields = getFormFields(collectionName)
         data.forEach((value, i) => {
 
-            if( value.constructor === Object ){
+            if (value.constructor === Object) {
                 // if a value is in this format {'categories':['name']}
                 // we expect that the field categories is a reference to another type
                 // so we create a lookup for this type
                 const keys = Object.keys(value)
                 //check if this field is a reference
-                const fields = getFormFields(collectionName)
-                if( fields && fields[keys[0]] ){
-                    addLookup(fields[keys[0]].type,keys[0],fields[keys[0]].multi)
+                if (fields && fields[keys[0]]) {
+                    addLookup(fields[keys[0]].type, keys[0], fields[keys[0]].multi)
                 }
 
 
-                addFilter(keys[0],true)
+                addFilter(keys[0], true)
 
 
-            }else if (value.indexOf('$') > 0) {
+            } else if (value.indexOf('$') > 0) {
                 // this is a reference
                 // for instance image$Media --> field image is a reference to the type Media
 
@@ -107,11 +111,15 @@ const GenericResolver = {
                     multi = true
                     type = type.substring(1, type.length - 1)
                 }
-                addLookup(type,fieldName,multi)
+                addLookup(type, fieldName, multi)
                 addFilter(fieldName)
             } else {
                 // regular field
-                group[value] = {'$first': '$' + value}
+                if (fields && fields[value] && fields[value].localized) {
+                    group[value] = {'$first': '$' + value + '_localized.' + context.lang}
+                } else {
+                    group[value] = {'$first': '$' + value}
+                }
                 addFilter(value)
 
             }
@@ -140,7 +148,7 @@ const GenericResolver = {
             {
                 $group: {
                     _id: '$_id',
-                    modifiedAt: {'$first':'$modifiedAt'},
+                    modifiedAt: {'$first': '$modifiedAt'},
                     ...group,
                     createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
                 }
@@ -179,6 +187,10 @@ const GenericResolver = {
     },
     createEnity: async (db, context, collectionName, data) => {
         Util.checkIfUserIsLoggedIn(context)
+
+        if (!context.lang) {
+            throw new Error('lang on context is missing')
+        }
 
         const collection = db.collection(collectionName)
         const insertResult = await collection.insertOne({
@@ -221,6 +233,7 @@ const GenericResolver = {
 
         Util.checkIfUserIsLoggedIn(context)
 
+
         const collection = db.collection(collectionName)
 
         if (!data._id) {
@@ -255,13 +268,14 @@ const GenericResolver = {
         // clone object but without _id and undefined property
         // keep null values to remove references
         const dataSet = Object.keys(data).reduce((o, k) => {
-            if (k !== '_id' && data[k]!==undefined ) {
-                if( fields && fields[k].localized ){
-                    // is field localized
-                    console.log(k,'is localized')
-                    o[k] = data[k]
+            if (k !== '_id' && data[k] !== undefined) {
 
-                }else {
+                if (fields && fields[k] && fields[k].localized) {
+                    // is field localized
+                    console.log(k, 'is localized')
+                    o[k + '_localized.' + [context.lang]] = data[k]
+
+                } else {
                     o[k] = data[k]
                 }
             }
@@ -274,6 +288,7 @@ const GenericResolver = {
         const result = (await collection.findOneAndUpdate({_id: ObjectId(data._id)}, {
             $set: dataSet
         }, {returnOriginal: false}))
+
         if (result.ok !== 1) {
             throw new ApiError(collectionName + ' could not be changed')
         }

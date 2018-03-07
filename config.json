@@ -61,6 +61,7 @@
     "BACKUP_URL": "/backups",
     "UPLOAD_DIR": "/uploads",
     "UPLOAD_URL": "/uploads",
-    "LANGUAGES": ["de","en"]
+    "LANGUAGES": ["de","en"],
+    "DEFAULT_LANGUAGE": "de"
   }
 }
