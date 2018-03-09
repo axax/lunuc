@@ -156,7 +156,8 @@ if (DEV_MODE) {
     const CopyWebpackPlugin = require('copy-webpack-plugin')
     config.plugins.push(
         new CopyWebpackPlugin([
-            {from: 'serviceworker.js', to: 'serviceworker.js'}
+            {from: 'serviceworker.js', to: 'serviceworker.js'},
+            {from: 'favicon.ico', to: 'favicon.ico'}
         ])
     )
 

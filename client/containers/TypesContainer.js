@@ -28,9 +28,23 @@ import Hook from 'util/hook'
 import {getTypes, getTypeQueries, getFormFields} from 'util/types'
 import {Link} from 'react-router-dom'
 import {getImageTag} from 'client/util/media'
+import {withStyles} from 'material-ui/styles'
 
 const DEFAULT_RESULT_LIMIT = 10
-const {ADMIN_BASE_URL} = config
+const {ADMIN_BASE_URL, UPLOAD_URL, LANGUAGES} = config
+
+
+const styles = theme => ({
+    textLight: {
+        color: 'rgba(0,0,0,0.4)'
+    },
+    tableContent: {
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        maxWidth: 150
+    }
+})
 
 
 class TypesContainer extends React.Component {
@@ -79,6 +93,7 @@ class TypesContainer extends React.Component {
 
     renderTable() {
 
+        const {classes} = this.props
         const {data} = this.state
 
         if (data) {
@@ -104,7 +119,7 @@ class TypesContainer extends React.Component {
                                 if (v.constructor === Array) {
                                     if (field.type === 'Media') {
                                         dynamic[field.name] = v.reduce((s, i) => {
-                                            s.push(getImageTag(i._id,{key:i._id,height:40}))
+                                            s.push(getImageTag(i._id, {key: i._id, height: 40}))
                                             return s
                                         }, [])
                                     } else {
@@ -114,7 +129,7 @@ class TypesContainer extends React.Component {
 
                                 } else {
                                     if (field.type === 'Media') {
-                                        dynamic[field.name] = getImageTag(v._id,{height:40})
+                                        dynamic[field.name] = getImageTag(v._id, {height: 40})
                                     } else {
                                         dynamic[field.name] = v.name
                                     }
@@ -129,9 +144,26 @@ class TypesContainer extends React.Component {
                                 <img style={{height: '40px'}}
                                      src={v}/>
                         } else {
-                            dynamic[field.name] =
-                                <span onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
-                                      suppressContentEditableWarning contentEditable>{v}</span>
+                            if (field.localized) {
+                                const localizedNames = item[field.name + '_localized'],
+                                    langVar = []
+
+                                LANGUAGES.map(lang => {
+
+                                    langVar.push(<div key={lang} className={classes.tableContent}>
+                                        <span
+                                            className={classes.textLight}>{lang}:</span> {localizedNames && localizedNames[lang]}
+                                        <br />
+                                    </div>)
+                                })
+                                dynamic[field.name] = langVar
+                            } else {
+                                dynamic[field.name] =
+                                    <span onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
+                                          suppressContentEditableWarning contentEditable>{v}</span>
+                            }
+
+
                         }
                     })
                     dataSource.push({
@@ -139,9 +171,11 @@ class TypesContainer extends React.Component {
                         user: item.createdBy.username,
                         date: Util.formattedDateFromObjectId(item._id),
                         action: [
-                            <DeleteIconButton key="deleteBtn" disabled={(item.status == 'deleting' || item.status == 'updating')}
+                            <DeleteIconButton key="deleteBtn"
+                                              disabled={(item.status == 'deleting' || item.status == 'updating')}
                                               onClick={this.handleDeleteDataClick.bind(this, item)}/>,
-                            <EditIconButton key="editBtn" disabled={(item.status == 'deleting' || item.status == 'updating')}
+                            <EditIconButton key="editBtn"
+                                            disabled={(item.status == 'deleting' || item.status == 'updating')}
                                             onClick={this.handleEditDataClick.bind(this, item)}/>
                         ]
                     })
@@ -210,7 +244,7 @@ class TypesContainer extends React.Component {
 
 
         const content = <BaseLayout>
-            <Typography variant="display2" gutterBottom>{fixType?fixType:'Types'}</Typography>
+            <Typography variant="display2" gutterBottom>{fixType ? fixType : 'Types'}</Typography>
 
             <Row spacing={16}>
                 {!fixType &&
@@ -222,7 +256,7 @@ class TypesContainer extends React.Component {
                     />
                 </Col>
                 }
-                <Col md={(fixType?12:3)} align="right">
+                <Col md={(fixType ? 12 : 3)} align="right">
                     <GenericForm onChange={this.handleFilter}
                                  onKeyDown={this.handelFilterKeyDown}
                                  primaryButton={false}
@@ -268,7 +302,11 @@ class TypesContainer extends React.Component {
 
         this.typeColumns[type] = []
         this.types[type].fields.forEach(field => {
-            this.typeColumns[type].push({title: field.name, id: field.name, sortable: true})
+            this.typeColumns[type].push({
+                title: field.name + (field.localized ? ' [' + _app_.lang + ']' : ''),
+                id: field.name,
+                sortable: true
+            })
         })
         this.typeColumns[type].push({
                 title: 'User',
@@ -294,9 +332,9 @@ class TypesContainer extends React.Component {
         const {p, l, s, f} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
         const result = {limit: lInt || DEFAULT_RESULT_LIMIT, page: pInt || 1, sort: s || '', filter: f || ''}
-        if( props.fixType ){
+        if (props.fixType) {
             result.type = props.fixType
-        }else if (params.type) {
+        } else if (params.type) {
             result.type = params.type
         } else {
             for (const prop in this.types) {
@@ -510,7 +548,9 @@ class TypesContainer extends React.Component {
         if (immediate) {
             this.runFilter(value)
         } else {
-            this.handleFilterTimeout = setTimeout(()=> {this.runFilter(value)}, 1000)
+            this.handleFilterTimeout = setTimeout(() => {
+                this.runFilter(value)
+            }, 1000)
         }
 
     }
@@ -518,7 +558,7 @@ class TypesContainer extends React.Component {
     handelFilterKeyDown = (e, value) => {
         if (e.key === "Enter") {
             e.preventDefault()
-            this.handleFilter({value},true)
+            this.handleFilter({value}, true)
         }
     }
 
@@ -638,7 +678,8 @@ TypesContainer.propTypes = {
     location: PropTypes.object.isRequired,
     match: PropTypes.object.isRequired,
     user: PropTypes.object.isRequired,
-    fixType: PropTypes.string
+    fixType: PropTypes.string,
+    classes: PropTypes.object.isRequired
 }
 
 
@@ -647,37 +688,8 @@ const mapStateToProps = (store) => ({user: store.user})
 
 export default connect(
     mapStateToProps
-)(withApollo(TypesContainer))
+)(withApollo(withStyles(styles)(TypesContainer)))
 
-
-/* Type Media */
-
-Hook.on('Types', ({types}) => {
-    types.Media = {
-        "name": "Media",
-        "usedBy": ["core"],
-        "fields": [
-            {
-                "name": "name"
-            }
-        ]
-    }
-
-    types.CmsPage = {
-        "name": "CmsPage",
-        "usedBy": ["core"],
-        "fields": [
-            {
-                "name": "slug",
-                "required": true
-            },
-            {
-                "name": "public",
-                "type":"Boolean"
-            }
-        ]
-    }
-})
 
 // add an extra column for Media at the beginning
 Hook.on('TypeTableColumns', ({type, columns}) => {
@@ -692,10 +704,10 @@ Hook.on('TypeTable', ({type, dataSource, data}) => {
         dataSource.forEach((d, i) => {
             d.data = <img height="40" src={UPLOAD_URL + '/' + data.results[i]._id}/>
         })
-    }else if (type === 'CmsPage') {
-        dataSource.forEach((d,i) => {
+    } else if (type === 'CmsPage') {
+        dataSource.forEach((d, i) => {
             d.action.push(<Link key="viewBtn"
-                to={'/' + data.results[i].slug}> View</Link>)
+                                to={'/' + data.results[i].slug}> View</Link>)
         })
     }
 })

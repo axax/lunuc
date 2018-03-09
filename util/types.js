@@ -1,5 +1,8 @@
 import extensions from 'gen/extensions'
 import Hook from 'util/hook'
+import config from 'gen/config'
+
+const {LANGUAGES} = config
 
 const types = {}, typeQueries = {}, typeFormFields = {}
 
@@ -7,7 +10,6 @@ const types = {}, typeQueries = {}, typeFormFields = {}
 export const getTypes = () => {
 
     if( Object.keys(types).length === 0 ) {
-
         //  create types object only once
         for (const extensionName in extensions) {
             const extension = extensions[extensionName]
@@ -58,7 +60,7 @@ export const getTypeQueries = (typeName) => {
 
 
     if (fields) {
-        fields.map(({name, type, required, multi, reference}) => {
+        fields.map(({name, type, required, multi, reference, localized}) => {
             if (insertParams !== '') {
                 insertParams += ', '
                 updateParams += ', '
@@ -74,6 +76,9 @@ export const getTypeQueries = (typeName) => {
                 query += ' ' + name + '{_id name}'
             } else {
                 query += ' ' + name
+                if ( localized){
+                    query += ' '+name+'_localized{'+LANGUAGES.join(' ')+'}'
+                }
             }
 
             insertParams += '$' + name + ': ' + t + (required ? '!' : '')
@@ -99,6 +104,9 @@ export const getTypeQueries = (typeName) => {
 export const getFormFields = (type)=> {
     if (typeFormFields[type]) return typeFormFields[type]
     const types = getTypes()
+    if( !types[type] ){
+        throw new Error('Cannot find type "'+type+'" in getFormFields')
+    }
 
     typeFormFields[type] = {}
     types[type].fields.map(field => {
@@ -121,3 +129,35 @@ export const getFormFields = (type)=> {
 
     return typeFormFields[type]
 }
+
+
+
+
+/* Add some types */
+
+Hook.on('Types', ({types}) => {
+    types.Media = {
+        "name": "Media",
+        "usedBy": ["core"],
+        "fields": [
+            {
+                "name": "name"
+            }
+        ]
+    }
+
+    types.CmsPage = {
+        "name": "CmsPage",
+        "usedBy": ["core"],
+        "fields": [
+            {
+                "name": "slug",
+                "required": true
+            },
+            {
+                "name": "public",
+                "type":"Boolean"
+            }
+        ]
+    }
+})

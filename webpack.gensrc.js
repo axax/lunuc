@@ -113,15 +113,15 @@ GenSourceCode.prototype.apply = function (compiler) {
         /* generate config */
         const o ={DEV_MODE}
         let configContent = `${GENSRC_HEADER}export default ${JSON.stringify(Object.assign({},APP_CONFIG.options,o))}\n`
-
-       /* Object.keys(APP_CONFIG.options).forEach(k => {
-
-            const item = APP_CONFIG.options[k]
-            configContent += `export const ${k}=${JSON.stringify(item)}\n`
-
-        })*/
-
         fs.writeFile(GENSRC_PATH + "/config.js", configContent, function (err) {
+            if (err) {
+                return console.log(err)
+            }
+        })
+
+        /* create schema */
+        let schemaContent = `${GENSRC_HEADER}export default \`type LocalizedString {\n\t${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String\n}\``
+        fs.writeFile(GENSRC_PATH + "/schema.js", schemaContent, function (err) {
             if (err) {
                 return console.log(err)
             }
@@ -262,8 +262,13 @@ function gensrcExtension(name, options) {
                 mutationFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
                 resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
 
-
                 schema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
+
+
+                if( field.localized ){
+                    schema += '\t' + field.name + '_localized: LocalizedString\n'
+                    resolverFields += ',\''+field.name+'_localized\''
+                }
             })
 
             schema += '}\n\n'

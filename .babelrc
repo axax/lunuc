@@ -32,6 +32,10 @@
         {
           "src": "./gensrc",
           "expose": "gen"
+        },
+        {
+          "src": "./gensrc",
+          "expose": "gensrc"
         }
       ]
     ]

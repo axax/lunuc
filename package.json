@@ -61,7 +61,7 @@
     "apollo-link-error": "^1.0.7",
     "apollo-link-http": "^1.5.3",
     "apollo-link-ws": "^1.0.7",
-    "aws-sdk": "^2.205.0",
+    "aws-sdk": "^2.206.0",
     "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",
     "classnames": "^2.2.5",

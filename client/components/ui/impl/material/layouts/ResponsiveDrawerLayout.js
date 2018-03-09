@@ -64,7 +64,8 @@ const styles = theme => ({
         [theme.breakpoints.up('lg')]: {
             height: 'calc(100% - 64px)',
             marginTop: 64,
-            marginLeft: drawerWidth
+            marginLeft: drawerWidth,
+            width: `calc(100% - ${drawerWidth}px)`
         },
     },
     listItemActive:{
