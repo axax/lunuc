@@ -105,7 +105,8 @@ export const getFormFields = (type)=> {
     if (typeFormFields[type]) return typeFormFields[type]
     const types = getTypes()
     if( !types[type] ){
-        throw new Error('Cannot find type "'+type+'" in getFormFields')
+        return null
+        //throw new Error('Cannot find type "'+type+'" in getFormFields')
     }
 
     typeFormFields[type] = {}

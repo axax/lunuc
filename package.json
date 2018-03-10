@@ -61,7 +61,7 @@
     "apollo-link-error": "^1.0.7",
     "apollo-link-http": "^1.5.3",
     "apollo-link-ws": "^1.0.7",
-    "aws-sdk": "^2.206.0",
+    "aws-sdk": "^2.207.0",
     "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",
     "classnames": "^2.2.5",
@@ -112,18 +112,18 @@
     "babel-preset-env": "^1.6.1",
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
-    "compression-webpack-plugin": "^1.1.10",
-    "copy-webpack-plugin": "^4.5.0",
+    "compression-webpack-plugin": "^1.1.11",
+    "copy-webpack-plugin": "^4.5.1",
     "css-loader": "^0.28.10",
     "extract-text-webpack-plugin": "^4.0.0-alpha.0",
     "jest-cli": "^22.4.2",
     "less": "^3.0.1",
-    "less-loader": "^4.0.6",
-    "style-loader": "^0.20.2",
+    "less-loader": "^4.1.0",
+    "style-loader": "^0.20.3",
     "unfetch": "^3.0.0",
     "webpack": "^4.1.1",
     "webpack-bundle-analyzer": "^2.11.1",
-    "webpack-cli": "^2.0.10",
-    "webpack-dev-server": "^3.1.0"
+    "webpack-cli": "^2.0.11",
+    "webpack-dev-server": "^3.1.1"
   }
 }

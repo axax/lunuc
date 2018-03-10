@@ -221,7 +221,6 @@ class JsonDom extends React.Component {
             if ($loop) {
                 const {$d, d, c} = $loop
                 let data
-
                 if ($d) {
                     if (childScope) {
                         data = this.scopeByPath($d, childScope)
@@ -391,7 +390,6 @@ class JsonDom extends React.Component {
         scope.data = this.resolvedDataJson
         scope._app_ = _app_
         scope._t = _t
-
         if (this.runScript) {
             this.runScript = false
             //console.log('render script')
@@ -433,7 +431,6 @@ class JsonDom extends React.Component {
         }
         const content = this.parseRec(this.getJson(this.props), 0)
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
-
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {

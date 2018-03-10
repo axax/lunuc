@@ -120,7 +120,7 @@ GenSourceCode.prototype.apply = function (compiler) {
         })
 
         /* create schema */
-        let schemaContent = `${GENSRC_HEADER}export default \`type LocalizedString {\n\t${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String\n}\``
+        let schemaContent = `${GENSRC_HEADER}export default \`type LocalizedString {\n\t${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String\n}\n\ninput LocalizedStringInput {\n\t${APP_CONFIG.options.LANGUAGES.join(': String\n\t')}: String\n}\``
         fs.writeFile(GENSRC_PATH + "/schema.js", schemaContent, function (err) {
             if (err) {
                 return console.log(err)
@@ -265,9 +265,10 @@ function gensrcExtension(name, options) {
                 schema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
 
 
-                if( field.localized ){
+                if( field.localized && !field.multi){ // no support for multi yet
                     schema += '\t' + field.name + '_localized: LocalizedString\n'
                     resolverFields += ',\''+field.name+'_localized\''
+                    mutationFields += ','+field.name+'_localized: LocalizedStringInput'
                 }
             })
 

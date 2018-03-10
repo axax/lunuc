@@ -5,6 +5,7 @@ import {withStyles} from 'ui/admin'
 
 const styles = theme => ({
     editor: {
+        display: 'block',
         tabSize: 2
     },
     highlight1: {
@@ -45,9 +46,9 @@ class ContentEditable extends React.Component {
         }
 
         if (setHtml || highlight) {
-            return <div {...props} dangerouslySetInnerHTML={{__html: this.highlight(children)}}/>
+            return <span {...props} dangerouslySetInnerHTML={{__html: this.highlight(children)}}/>
         } else {
-            return <div {...props}>{children}</div>
+            return <span {...props}>{children}</span>
         }
     }
 
