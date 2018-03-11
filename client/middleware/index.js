@@ -117,7 +117,7 @@ export function configureMiddleware(store) {
             } else if (o.__typename === 'KeyValue') {
                 return o.__typename + o.key
             } else if (o._id) {
-                return _app_.lang+o.__typename + o._id
+                return o.__typename + o._id
             }
             // Make sure to return null if this object doesn't have an ID
             return null

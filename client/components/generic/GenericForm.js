@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import {Button, TextField, SimpleSwitch} from 'ui/admin'
 import FileDrop from '../FileDrop'
 import TypePicker from '../TypePicker'
+import config from 'gen/config'
+
 
 class GenericForm extends React.Component {
     constructor(props) {
@@ -42,13 +44,17 @@ class GenericForm extends React.Component {
         Object.keys(props.fields).map(k => {
             const item = props.fields[k]
             let v
-            if( props.values ){
+            if (props.values) {
                 v = props.values[k]
-            }else{
+            } else {
                 // value must be null instead of undefined
-                v = item.value===undefined?null:item.value
+                v = item.value === undefined ? null : item.value
             }
             initalState.fields[k] = v
+            if (item.localized) {
+                v = props.values[k + '_localized']
+                initalState.fields[k + '_localized'] = v ? Object.assign({}, v) : null
+            }
         })
         return initalState
     }
@@ -65,7 +71,15 @@ class GenericForm extends React.Component {
         const name = target.name
         this.setState((prevState) => {
             const newState = Object.assign({}, {fields: {}}, prevState)
-            newState.fields[name] = value
+            const path = name.split('.')
+            if (path.length == 2) {
+                if (!newState.fields[path[0]]) {
+                    newState.fields[path[0]] = {}
+                }
+                newState.fields[path[0]][path[1]] = value
+            } else {
+                newState.fields[name] = value
+            }
             if (this.props.onChange) {
                 this.props.onChange({name, value})
             }
@@ -87,7 +101,7 @@ class GenericForm extends React.Component {
                 {
                     Object.keys(fields).map((k) => {
                         const o = fields[k],
-                        value = this.state.fields[k]
+                            value = this.state.fields[k]
 
                         const uitype = o.uitype || 'text'
 
@@ -95,7 +109,8 @@ class GenericForm extends React.Component {
                         if (uitype === 'image') {
                             return <FileDrop key={k}/>
                         } else if (uitype === 'type_picker') {
-                            return <TypePicker value={(value?(value.constructor===Array?value:[value]):null)} onChange={this.handleInputChange} key={k}
+                            return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
+                                               onChange={this.handleInputChange} key={k}
                                                name={k}
                                                multi={o.multi}
                                                type={o.type} placeholder={o.placeholder}/>
@@ -104,17 +119,40 @@ class GenericForm extends React.Component {
                             //TODO: implement
                         } else if (o.type === 'Boolean') {
 
-                            return <SimpleSwitch key={k} label={o.placeholder} name={k} onChange={this.handleInputChange} checked={value?true:false}/>
+                            return <SimpleSwitch key={k} label={o.placeholder} name={k}
+                                                 onChange={this.handleInputChange} checked={value ? true : false}/>
 
                         } else {
-                            return <TextField key={k}
-                                              fullWidth={o.fullWidth}
-                                              type={uitype}
-                                              placeholder={o.placeholder}
-                                              value={value || ''}
-                                              name={k}
-                                              onKeyDown={(e)=>{ onKeyDown && onKeyDown(e,value)}}
-                                              onChange={this.handleInputChange}/>
+                            if (o.localized) {
+
+                                return config.LANGUAGES.reduce((a, l) => {
+                                    const valueLocalized = this.state.fields[k + '_localized']
+                                    const fieldName = k + '_localized.' + l
+                                    a.push(<TextField key={fieldName}
+                                                      fullWidth={o.fullWidth}
+                                                      type={uitype}
+                                                      placeholder={o.placeholder + ' [' + l + ']'}
+                                                      value={(valueLocalized && valueLocalized[l] ? valueLocalized[l] : '')}
+                                                      name={fieldName}
+                                                      onKeyDown={(e) => {
+                                                          onKeyDown && onKeyDown(e, valueLocalized[l])
+                                                      }}
+                                                      onChange={this.handleInputChange}/>)
+                                    return a
+                                }, [])
+                            } else {
+                                return <TextField key={k}
+                                                  fullWidth={o.fullWidth}
+                                                  type={uitype}
+                                                  placeholder={o.placeholder}
+                                                  value={value || ''}
+                                                  name={k}
+                                                  onKeyDown={(e) => {
+                                                      onKeyDown && onKeyDown(e, value)
+                                                  }}
+                                                  onChange={this.handleInputChange}/>
+                            }
+
                         }
                     })
                 }

@@ -29,7 +29,7 @@ import {getTypes, getTypeQueries, getFormFields} from 'util/types'
 import {Link} from 'react-router-dom'
 import {getImageTag} from 'client/util/media'
 import {withStyles} from 'material-ui/styles'
-
+import {deepMerge}  from 'util/deepMerge'
 const DEFAULT_RESULT_LIMIT = 10
 const {ADMIN_BASE_URL, UPLOAD_URL, LANGUAGES} = config
 
@@ -152,7 +152,8 @@ class TypesContainer extends React.Component {
 
                                     langVar.push(<div key={lang} className={classes.tableContent}>
                                         <span
-                                            className={classes.textLight}>{lang}:</span> {localizedNames && localizedNames[lang]}
+                                            className={classes.textLight}>{lang}:</span> <span onBlur={e => this.handleDataChange.bind(this)(e, item, field.name+'_localized.'+lang)}
+                                                                                               suppressContentEditableWarning contentEditable>{localizedNames && localizedNames[lang]}</span>
                                         <br />
                                     </div>)
                                 })
@@ -394,7 +395,6 @@ class TypesContainer extends React.Component {
         const {client, user} = this.props
         if (type) {
             const queries = getTypeQueries(type)
-
             client.mutate({
                 mutation: gql(queries.create),
                 variables: {
@@ -446,7 +446,6 @@ class TypesContainer extends React.Component {
 
         if (type) {
             const queries = getTypeQueries(type)
-
             client.mutate({
                 mutation: gql(queries.update),
                 /* only send what has changed*/
@@ -470,8 +469,8 @@ class TypesContainer extends React.Component {
 
                         if (idx > -1) {
                             // update entry with new data
-                            refResults[idx] = Object.assign({}, refResults[idx], changedData, optimisticData)
-                            //console.log(refResults[idx],changedData)
+                            refResults[idx] = deepMerge({}, refResults[idx], changedData, optimisticData)
+
                             // wirte it back to the cache
                             store.writeQuery({
                                 query: gqlQuery,
@@ -602,10 +601,23 @@ class TypesContainer extends React.Component {
         const ipt2 = {}
         Object.keys(input).map(k => {
             const item = input[k]
-            const {multi} = formFields[k]
+
             if (item !== undefined) {
-                if (item && item.constructor === Array) {
+                if( k.endsWith('_localized') ){
+                    ipt2[k] = item
+                    if( item ) {
+                        delete ipt2[k].__typename //= 'LocalizedStringInput'
+                        // set default language for validation as it might be required
+                        const keyBase = k.substring(0, k.length - 10)
+                        if (!ipt2[keyBase]) {
+                            ipt2[keyBase] = item[_app_.lang]
+                        }
+                    }
+                }else if (item && item.constructor === Array) {
+
                     if (item.length > 0) {
+                        const {multi} = formFields[k]
+
                         if (multi) {
                             ipt2[k] = item.map(i => i._id)
                         } else {
@@ -631,6 +643,13 @@ class TypesContainer extends React.Component {
             value = event.target.checked
         } else {
             value = event.target.innerText.trim()
+        }
+
+        const parts = key.split('.')
+        if( parts.length === 2){
+            // localized.de
+            key = parts[0]
+            value = {[parts[1]]:value}
         }
 
         if (value !== data[key]) {
@@ -659,8 +678,10 @@ class TypesContainer extends React.Component {
 
             const fieldData = this.createEditForm.state.fields
             const submitData = this.referencesToIds(fieldData)
+
             if (this.state.dataToEdit) {
                 // if dataToEdit is set we are in edit mode
+                console.log(submitData)
                 this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...submitData}, fieldData)
             } else {
                 // create a new entry

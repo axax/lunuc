@@ -238,6 +238,10 @@ function gensrcExtension(name, options) {
             let mutationFields = '', resolverFields = '', refResolvers = '', refResolversObjectId = ''
 
             type.fields.forEach((field) => {
+                if( field.name.trim().toLowerCase().endsWith('_localized')) {
+                    throw Error('A filed name is not allowed to end with the string _localized. This is reserved for localized fields')
+                }
+
                 const type = (field.type || 'String')
                 let isRef = false
 

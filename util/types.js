@@ -72,12 +72,16 @@ export const getTypeQueries = (typeName) => {
             if (reference) {
                 t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
 
-                // todo: field name might be different than name
+                // TODO: field name might be different than name
                 query += ' ' + name + '{_id name}'
             } else {
                 query += ' ' + name
                 if ( localized){
                     query += ' '+name+'_localized{'+LANGUAGES.join(' ')+'}'
+                    const x = '$' + name + '_localized: LocalizedStringInput,'
+                    insertParams += x
+                    updateParams += x
+                    insertUpdateQuery += name + '_localized: ' + '$' + name+'_localized,'
                 }
             }
 

@@ -275,6 +275,13 @@ const GenericResolver = {
                     console.log(k, 'is localized')
                     o[k + '_localized.' + [context.lang]] = data[k]
 
+                }else if( k.endsWith('_localized') ){
+                    // if a localized object {_localized:{de:'',en:''}} gets passed
+                    // convert it to the format _localized.de='' and _localized.en=''
+                    Object.keys(data[k]).map(e=>{
+                        o[k + '.' + e] = data[k][e]
+                    })
+
                 } else {
                     o[k] = data[k]
                 }

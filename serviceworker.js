@@ -14,12 +14,6 @@ const PRECACHE_URLS = [
     'en.tr.js'
 ];
 
-const CACHE_FILES = [
-    '/index.html',
-    '/vendor.bundle.js',
-    '/main.bundle.js',
-]
-
 
 // The install handler takes care of precaching the resources we always need.
 self.addEventListener('install', event => {
