@@ -107,8 +107,10 @@ export function withKeyValues(WrappedComponent, keys) {
                             res()
                         })
                     }
+                    const valueStr = value.constructor===String?value:JSON.stringify(value)
+
                     return mutate({
-                        variables: {key, value},
+                        variables: {key, value:valueStr},
                         optimisticResponse: {
                             __typename: 'Mutation',
                             setKeyValue: {
@@ -119,7 +121,7 @@ export function withKeyValues(WrappedComponent, keys) {
                                     __typename: 'UserPublic'
                                 },
                                 key,
-                                value,
+                                value:valueStr,
                                 __typename: 'KeyValue'
                             }
                         },

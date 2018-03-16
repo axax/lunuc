@@ -14,7 +14,7 @@
     _app_ = {tr:{},trLoaded:false};
     var l = window.location.pathname.split('/')[1];
     if (!l || l.length !== 2) {
-        l = navigator.language || navigator.userLanguage;
+        l = (navigator.language || navigator.userLanguage).substr(0,2);
     } else {
         l = l.toLowerCase();
     }

@@ -52,7 +52,7 @@ class GenericForm extends React.Component {
             }
             initalState.fields[k] = v
             if (item.localized) {
-                v = props.values[k + '_localized']
+                v = props.values ? props.values[k + '_localized'] : null
                 initalState.fields[k + '_localized'] = v ? Object.assign({}, v) : null
             }
         })

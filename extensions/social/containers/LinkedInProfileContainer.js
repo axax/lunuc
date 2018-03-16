@@ -23,11 +23,8 @@ const withLinkedInCallback = (Container) => {
                 sessionStorage.removeItem('linkedInState')
                 sessionStorage.setItem('linkedInCode', code)
                 history.push(location.pathname)
-
-                return null
             }
         }
-
         return <Container linkedInCode={sessionStorage.getItem('linkedInCode')} {...props} />
     }
 }
@@ -36,9 +33,17 @@ class LinkedInProfileContainer extends React.Component {
 
     constructor(props) {
         super(props)
+        const ld = props.keyValueMap && props.keyValueMap.linkedInData
         this.state = {
-            data: null,
+            data: ld?JSON.parse(ld):null,
             disconnected: false
+        }
+    }
+
+    componentWillReceiveProps(props){
+        const ld = props.keyValueMap && props.keyValueMap.linkedInData
+        if( ld ){
+            this.setState({data:JSON.parse(ld)})
         }
     }
 
@@ -90,8 +95,10 @@ class LinkedInProfileContainer extends React.Component {
                     }
 
                     c--
-                    if (c === 0)
+                    if (c === 0) {
+                        this.props.setKeyValue({key:'linkedInData',value:data})
                         this.setState({data})
+                    }
                 }
             }
         })
@@ -326,7 +333,9 @@ class LinkedInProfileContainer extends React.Component {
 
 LinkedInProfileContainer.propTypes = {
     loading: PropTypes.bool,
-    linkedin: PropTypes.object
+    linkedin: PropTypes.object,
+    setKeyValue: PropTypes.func.isRequired,
+    keyValueMap: PropTypes.object
 }
 
 
@@ -352,7 +361,7 @@ const LinkedInProfileContainerWithGql = compose(
 )(LinkedInProfileContainer)
 
 
-export default withRouter(withLinkedInCallback(LinkedInProfileContainerWithGql))
+export default withKeyValues(withRouter(withLinkedInCallback(LinkedInProfileContainerWithGql)),['linkedInData'])
 
 
 function CSVToArray(strData, strDelimiter) {

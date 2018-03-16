@@ -2,7 +2,6 @@ import './style.less'
 import React from 'react'
 import PropTypes from 'prop-types'
 import {DrawerLayout, Button, Row, Col} from 'ui/admin'
-import {withKeyValues} from 'client/containers/generic/withKeyValues'
 
 
 class PrettyResume extends React.Component {
