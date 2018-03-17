@@ -77,20 +77,29 @@
             color:@primary-color;
           }
         }
-      }
 
-      .languages{
-        font-size: 0.7rem;
-        color:#666;
-        display: inline-block;
-        margin-right: 1rem;
-        a{
-          padding: 0 0.3rem;
-          &.active{
-            font-weight: bold;
+
+        .menu{
+          display: inline-block;
+          a:not(:last-child){
+            margin-right: 20px;
+          }
+        }
+
+        .languages{
+          font-size: 0.7rem;
+          color:#666;
+          display: inline-block;
+          margin-right: 1rem;
+          a{
+            padding: 0 0.3rem;
+            &.active{
+              font-weight: bold;
+            }
           }
         }
       }
+
     }
   }
 

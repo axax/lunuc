@@ -3,6 +3,9 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import {withStyles} from 'ui/admin'
 
+const reservedJsKeywords = ['return', 'if', 'else', 'var', 'let', 'const','this','document']
+const reservedJsCustomKeywords = ['on', 'Util','scope','history','refresh','getLocal','setLocal']
+
 const styles = theme => ({
     editor: {
         display: 'block',
@@ -18,7 +21,10 @@ const styles = theme => ({
     },
     highlight3: {
         color: '#268e00',
-
+    },
+    highlight4: {
+        color: '#af0808',
+        fontWeight: 'bold'
     }
 })
 
@@ -77,7 +83,7 @@ class ContentEditable extends React.Component {
 
     handleKeyUp(e) {
 
-        if (e.getModifierState("Control")) {
+        if (e.getModifierState("Control") || e.key === "Shift") {
             // ignore if Control is pressed
             return
         }
@@ -104,6 +110,8 @@ class ContentEditable extends React.Component {
             const {highlight} = this.props
             if (highlight === 'json') {
                 return this.highlightJson(str)
+            } else if (highlight === 'js') {
+                return this.highlightJs(str)
             }
         }
         return str
@@ -142,6 +150,59 @@ class ContentEditable extends React.Component {
         }
         return res
     }
+
+
+    highlightJs(str) {
+        const {classes} = this.props
+
+        let inDQuote = false, inSQuote = false, keyword = '', res = ''
+
+        for (let i = 0; i < str.length; i++) {
+            const c = str[i]
+
+            if (c === '\'' && !inDQuote) {
+                inSQuote = !inSQuote
+                if (inSQuote) {
+                    keyword = ''
+                    res += '<span class="' + classes.highlight3 + '">'
+                }
+                res += c
+                if (!inSQuote) {
+                    res += '</span>'
+                }
+            } else if (c === '"' && !inSQuote) {
+                inDQuote = !inDQuote
+                if (inDQuote) {
+                    keyword = ''
+                    res += '<span class="' + classes.highlight3 + '">'
+                }
+                res += c
+                if (!inDQuote) {
+                    res += '</span>'
+                }
+            } else if (!inDQuote && !inSQuote) {
+                const code = str.charCodeAt(i)
+                if (!(code > 64 && code < 91) && // upper alpha (A-Z)
+                    !(code > 96 && code < 123)) { // lower alpha (a-z)
+                    if (keyword) {
+                        if (reservedJsKeywords.indexOf(keyword) >= 0 ) {
+                            res = res.substring(0, res.length - keyword.length) + '<span class="' + classes.highlight1 + '">' + keyword + '</span>'
+                        }else if ( reservedJsCustomKeywords.indexOf(keyword) >= 0) {
+                            res = res.substring(0, res.length - keyword.length) + '<span class="' + classes.highlight4 + '">' + keyword + '</span>'
+                        }
+                        keyword = ''
+                    }
+                } else {
+                    keyword += c
+                }
+                res += c
+            } else {
+                res += c
+            }
+        }
+        return res
+    }
+
 
     saveCaretPosition(ctx, offset) {
         const sel = window.getSelection(), range = sel.getRangeAt(0)

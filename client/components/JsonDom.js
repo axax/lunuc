@@ -211,13 +211,21 @@ class JsonDom extends React.Component {
 
             if (!item) return
 
-            const {t, p, c, $c, $loop} = item
+            const {t, p, c, $c, $loop, $if} = item
             /*
              t = type
              c = children
              $c = children as html
+             $if = condition (only parse if condition is fullfilled)
              p = prop
              */
+            if ($if) {
+                // check condition
+                const tpl = new Function('const {' + Object.keys(this.scope).join(',') + '} = this.scope;return ' + $if + ';')
+                if( !tpl.call({'scope': this.scope}) ){
+                    return
+                }
+            }
             if ($loop) {
                 const {$d, d, c} = $loop
                 let data
@@ -416,13 +424,13 @@ class JsonDom extends React.Component {
         }
 
         scope.script = this.scriptResult
-        if( this.jsOnStack['beforerender'] ){
-            for( let i = 0; i< this.jsOnStack['beforerender'].length; i++){
+        if (this.jsOnStack['beforerender']) {
+            for (let i = 0; i < this.jsOnStack['beforerender'].length; i++) {
                 const cb = this.jsOnStack['beforerender'][i]
                 if (cb) {
                     try {
                         cb(scope)
-                    }catch(e){
+                    } catch (e) {
                         console.log(e)
                         return <div>Error in script in beforeRender event: <strong>{e.message}</strong></div>
                     }

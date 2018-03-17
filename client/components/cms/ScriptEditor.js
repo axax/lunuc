@@ -9,7 +9,7 @@ class ScriptEditor extends React.Component {
         return <div>
             <Typography variant="headline">Script</Typography>
 
-            <ContentEditable {...rest}/>
+            <ContentEditable highlight="js" {...rest}/>
         </div>
     }
 }

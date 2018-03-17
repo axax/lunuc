@@ -26,6 +26,7 @@ const editorStyle = {
     minHeight: 200,
     overflow: 'auto',
     whiteSpace: 'pre',
+    wordWrap: 'normal',
     fontFamily: 'monospace'
 }
 
