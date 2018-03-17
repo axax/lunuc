@@ -24,7 +24,7 @@ class Routes extends React.Component {
     pathPrefix = ''
 
     routes = [
-        {exact: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
+        {exact: true, private: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
         {
             private: true,
             exact: true,
@@ -61,7 +61,9 @@ class Routes extends React.Component {
             this.history._push(this.pathPrefix + path, state)
         }
         this.history.replace = (o, state) => {
-            o.pathname = this.pathPrefix + o.pathname
+            if (o.pathname !== this.pathPrefix && o.pathname.indexOf(this.pathPrefix + '/') < 0) {
+                o.pathname = this.pathPrefix + o.pathname
+            }
             this.history._replace(o, state)
         }
     }
@@ -77,6 +79,7 @@ class Routes extends React.Component {
                         if (o.private) {
                             return <PrivateRoute key={i} path={this.pathPrefix + o.path}
                                                  isAuthenticated={isAuthenticated}
+                                                 exact={o.exact}
                                                  component={o.component}/>
                         } else {
                             return <Route key={i} path={this.pathPrefix + o.path} exact={o.exact}

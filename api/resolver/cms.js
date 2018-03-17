@@ -73,13 +73,14 @@ let createScopeForDataResolver = function (query) {
 }
 
 export const cmsResolver = (db) => ({
-    cmsPages: async ({limit, page, offset, filter}, {context}) => {
+    cmsPages: async ({limit, page, offset, filter, sort}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
         return await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug'], {
             limit,
             page,
             offset,
-            filter
+            filter,
+            sort
         })
     },
     cmsPage: async ({slug, query}, {context}) => {
@@ -111,7 +112,7 @@ export const cmsResolver = (db) => ({
         const scope = {...createScopeForDataResolver(query), page: {slug}}
 
         const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt} = cmsPages.results[0]
-        const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver, scope)
+        const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope)
         let html
 
         if (ssr) {
@@ -208,8 +209,10 @@ export const cmsResolver = (db) => ({
         return result
     },
     deleteCmsPage: async ({_id}, {context}) => {
-        Util.checkIfUserIsLoggedIn(context)
         return GenericResolver.deleteEnity(db, context, 'CmsPage', {_id})
+    },
+    cloneCmsPage: async (data, {context}) => {
+        return GenericResolver.cloneEntity(db, context, 'CmsPage', data)
     }
 })
 

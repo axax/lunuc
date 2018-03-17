@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
 import {
+    ContentCopyIconButton,
+    WebIconButton,
     DeleteIconButton,
     EditIconButton,
     Chip,
@@ -15,7 +17,8 @@ import {
     SimpleDialog,
     SimpleTable,
     Row,
-    Col
+    Col,
+    Tooltip
 } from 'ui/admin'
 import FileDrop from 'client/components/FileDrop'
 import {withApollo} from 'react-apollo'
@@ -152,8 +155,10 @@ class TypesContainer extends React.Component {
 
                                     langVar.push(<div key={lang} className={classes.tableContent}>
                                         <span
-                                            className={classes.textLight}>{lang}:</span> <span onBlur={e => this.handleDataChange.bind(this)(e, item, field.name+'_localized.'+lang)}
-                                                                                               suppressContentEditableWarning contentEditable>{localizedNames && localizedNames[lang]}</span>
+                                            className={classes.textLight}>{lang}:</span> <span
+                                        onBlur={e => this.handleDataChange.bind(this)(e, item, field.name + '_localized.' + lang)}
+                                        suppressContentEditableWarning
+                                        contentEditable>{localizedNames && localizedNames[lang]}</span>
                                         <br />
                                     </div>)
                                 })
@@ -172,12 +177,20 @@ class TypesContainer extends React.Component {
                         user: item.createdBy.username,
                         date: Util.formattedDateFromObjectId(item._id),
                         action: [
-                            <DeleteIconButton key="deleteBtn"
-                                              disabled={(item.status == 'deleting' || item.status == 'updating')}
-                                              onClick={this.handleDeleteDataClick.bind(this, item)}/>,
-                            <EditIconButton key="editBtn"
-                                            disabled={(item.status == 'deleting' || item.status == 'updating')}
-                                            onClick={this.handleEditDataClick.bind(this, item)}/>
+                            <Tooltip key="deleteBtn" placement="top" title="Delete entry">
+                                <DeleteIconButton disabled={(item.status == 'deleting' || item.status == 'updating')}
+                                                  onClick={this.handleDeleteDataClick.bind(this, item)}/>
+                            </Tooltip>,
+                            <Tooltip key="editBtn" placement="top" title="Edit entry">
+                                <EditIconButton
+                                    disabled={(item.status == 'deleting' || item.status == 'updating')}
+                                    onClick={this.handleEditDataClick.bind(this, item)}/>
+                            </Tooltip>,
+                            <Tooltip key="copyBtn" placement="top" title="Clone entry">
+                                <ContentCopyIconButton
+                                    disabled={(item.status == 'deleting' || item.status == 'updating')}
+                                    onClick={this.handleCopyClick.bind(this, item)}/>
+                            </Tooltip>
                         ]
                     })
 
@@ -188,7 +201,7 @@ class TypesContainer extends React.Component {
             const asort = sort.split(' ')
 
             /* HOOK */
-            Hook.call('TypeTable', {type, dataSource, data, fields})
+            Hook.call('TypeTable', {type, dataSource, data, fields, container: this})
 
             this._renderedTable = <SimpleTable title={type} dataSource={dataSource} columns={columns} count={data.total}
                                                rowsPerPage={limit} page={page}
@@ -535,6 +548,56 @@ class TypesContainer extends React.Component {
     }
 
 
+    cloneData({type, page, limit, sort, filter}, variables) {
+        const {client, user} = this.props
+
+        if (type) {
+
+            const queries = getTypeQueries(type),
+                storeKey = this.getStoreKey(type)
+
+            client.mutate({
+                mutation: gql(queries.clone),
+                variables,
+                update: (store, {data}) => {
+                    console.log(data)
+                    const freshData = {
+                        ...data['clone' + type],
+                        createdBy: {
+                            _id: user.userData._id,
+                            username: user.userData.username,
+                            __typename: 'UserPublic'
+                        }
+                    }
+
+                    const gqlQuery = gql(queries.query),
+                        storeKey = this.getStoreKey(type)
+
+                    // Read the data from the cache for this query.
+                    const storeData = store.readQuery({
+                        query: gqlQuery,
+                        variables: {page, limit, sort, filter}
+                    })
+                    if (storeData[storeKey]) {
+
+                        if (freshData) {
+                            storeData[storeKey].results.unshift(freshData)
+                            storeData[storeKey].total += 1
+                        }
+                        store.writeQuery({
+                            query: gqlQuery,
+                            variables: {page, limit, sort, filter},
+                            data: storeData
+                        })
+                        this.setState({data: storeData[storeKey]})
+                    }
+
+                },
+            })
+        }
+    }
+
+
     runFilter(f) {
         const {type, limit, sort} = this.pageParams
         this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${sort}&f=${encodeURIComponent(f)}`)
@@ -603,9 +666,9 @@ class TypesContainer extends React.Component {
             const item = input[k]
 
             if (item !== undefined) {
-                if( k.endsWith('_localized') ){
+                if (k.endsWith('_localized')) {
                     ipt2[k] = item
-                    if( item ) {
+                    if (item) {
                         delete ipt2[k].__typename //= 'LocalizedStringInput'
                         // set default language for validation as it might be required
                         const keyBase = k.substring(0, k.length - 10)
@@ -613,7 +676,7 @@ class TypesContainer extends React.Component {
                             ipt2[keyBase] = item[_app_.lang]
                         }
                     }
-                }else if (item && item.constructor === Array) {
+                } else if (item && item.constructor === Array) {
 
                     if (item.length > 0) {
                         const {multi} = formFields[k]
@@ -646,10 +709,10 @@ class TypesContainer extends React.Component {
         }
 
         const parts = key.split('.')
-        if( parts.length === 2){
+        if (parts.length === 2) {
             // localized.de
             key = parts[0]
-            value = {[parts[1]]:value}
+            value = {[parts[1]]: value}
         }
 
         if (value !== data[key]) {
@@ -663,6 +726,10 @@ class TypesContainer extends React.Component {
 
     handleEditDataClick = (data) => {
         this.setState({createEditDialog: true, dataToEdit: data})
+    }
+
+    handleCopyClick = (data) => {
+        this.cloneData(this.pageParams, {_id: data._id, slug: data.slug + ' copy'})
     }
 
     handleConfirmDeletion = (action) => {
@@ -720,15 +787,18 @@ Hook.on('TypeTableColumns', ({type, columns}) => {
 })
 
 // add some extra data to the table
-Hook.on('TypeTable', ({type, dataSource, data}) => {
+Hook.on('TypeTable', ({type, dataSource, data, container}) => {
     if (type === 'Media') {
         dataSource.forEach((d, i) => {
             d.data = <img height="40" src={UPLOAD_URL + '/' + data.results[i]._id}/>
         })
     } else if (type === 'CmsPage') {
         dataSource.forEach((d, i) => {
-            d.action.push(<Link key="viewBtn"
-                                to={'/' + data.results[i].slug}> View</Link>)
+            d.action.push(<Tooltip key="viewBtn" placement="top" title="View page">
+                <WebIconButton onClick={() => {
+                    container.props.history.push('/' + data.results[i].slug)
+                }}/>
+            </Tooltip>)
         })
     }
 })

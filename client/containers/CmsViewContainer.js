@@ -45,6 +45,7 @@ class CmsViewContainer extends React.Component {
     oriTitle = document.title
 
     dataResolverSaveTimeout = 0
+    setScriptTimeout = 0
     registeredSubscriptions = {}
 
 
@@ -61,7 +62,7 @@ class CmsViewContainer extends React.Component {
     }
 
 
-    propsToState(props){
+    propsToState(props) {
         const {template, script, dataResolver, ssr} = props.cmsPage || {}
 
         return {
@@ -170,7 +171,10 @@ class CmsViewContainer extends React.Component {
     }
 
     handleClientScriptChange = (script) => {
-        this.setState({script})
+        clearTimeout(this.setScriptTimeout)
+        this.setScriptTimeout = setTimeout(() => {
+            this.setState({script})
+        }, 500)
     }
 
     handleDataResolverChange = (str) => {
@@ -196,14 +200,15 @@ class CmsViewContainer extends React.Component {
         }
     }
 
-    shouldComponentUpdate(props,state){
+    shouldComponentUpdate(props, state) {
         // only update if cms page was modified
         return !this.props.cmsPage ||
             props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
-            props.location.search!==this.props.location.search ||
-            props.user!==this.props.user ||
-            (isEditMode(props) && (state.template!==this.state.template || state.script!==this.state.script))
+          /*  props.location.search !== this.props.location.search ||*/
+            props.user !== this.props.user ||
+            props.children != this.props.children ||
+            (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script))
     }
 
     componentWillReceiveProps(props) {
@@ -233,7 +238,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, location,history, _parentRef, id, loading, className} = this.props
+        const {cmsPage, location, history, _parentRef, id, loading, className, children} = this.props
 
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
@@ -250,11 +255,11 @@ class CmsViewContainer extends React.Component {
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
 
-        const scope = {page: {slug: cmsPage.slug},pathname: location.pathname, params: Util.extractQueryParams()}
+        const scope = {page: {slug: cmsPage.slug}, pathname: location.pathname, params: Util.extractQueryParams()}
 
         const startTime = new Date()
-
         const jsonDom = <JsonDom id={id}
+                                 children={children}
                                  className={className}
                                  _parentRef={_parentRef}
                                  template={template}
@@ -387,7 +392,11 @@ const CmsViewContainerWithGql = compose(
                         })
                         if (data.cmsPage) {
                             // update cmsPage
-                            data.cmsPage = {_id, [key]: updateCmsPage[key], ...rest, modifiedAt: updateCmsPage.modifiedAt}
+                            data.cmsPage = {
+                                _id,
+                                [key]: updateCmsPage[key], ...rest,
+                                modifiedAt: updateCmsPage.modifiedAt
+                            }
 
                             // update resolvedData
                             if (updateCmsPage.resolvedData) {

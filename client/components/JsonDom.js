@@ -63,22 +63,46 @@ class JsonDom extends React.Component {
             localStorage.setItem(key, JSON.stringify(value))
         }
     }
+    jsRootComponent = () => {
+        let p = this, root
+        while (p) {
+            root = p
+            p = p.props._parentRef
+        }
+        return root
+    }
+    jsGetComponent = (id) => {
+
+        const jsGetComponentRec = (comp, id)=>{
+            let res = null
+            if( comp ) {
+                let k
+                for (k of Object.keys(comp.componentRefs)) {
+                    const o = comp.componentRefs[k]
+                    if (id === k) {
+                        res = o
+                        break
+                    } else {
+                        res = jsGetComponentRec(o, id)
+                        if( res ){
+                            break
+                        }
+                    }
+                }
+
+            }
+            return res
+        }
+        return jsGetComponentRec(this.jsRootComponent(),id)
+    }
     jsRefresh = (id) => {
 
-        // if no id is defined or not found refresh the current dom
-        let nodeToRefresh = this
+        let nodeToRefresh = this.jsGetComponent(id)
 
-        if (id) {
-            // Only refresh the JsonDom with the specific id
-            if (this.componentRefs[id]) {
-                // it is a child of this dom
-                nodeToRefresh = this.componentRefs[id]
-            } else if (this.props._parentRef && this.props._parentRef.componentRefs[id]) {
-                // it is a child of the parent dom
-                nodeToRefresh = this.props._parentRef.componentRefs[id]
-            }
+        if (!nodeToRefresh) {
+            // if no id is defined or not found refresh the current dom
+            nodeToRefresh = this
         }
-
         nodeToRefresh.json = null
         nodeToRefresh.runScript = true
         nodeToRefresh.jsOnStack = {}
@@ -99,7 +123,6 @@ class JsonDom extends React.Component {
         if (_parentRef && id) {
             props._parentRef.componentRefs[id] = this
         }
-
     }
 
 
@@ -222,7 +245,7 @@ class JsonDom extends React.Component {
             if ($if) {
                 // check condition
                 const tpl = new Function('const {' + Object.keys(this.scope).join(',') + '} = this.scope;return ' + $if + ';')
-                if( !tpl.call({'scope': this.scope}) ){
+                if (!tpl.call({'scope': this.scope})) {
                     return
                 }
             }
@@ -279,6 +302,11 @@ class JsonDom extends React.Component {
                 let _t
                 if (!t) {
                     _t = 'div'
+                } else if (t === '$children') {
+                    if (this.props.children) {
+                        h.push(this.props.children)
+                    }
+                    return
                 } else if (!this.props.editMode && t.slice(-1) === '$') {
                     _t = t.slice(0, -1) // remove last char
                 } else {
@@ -404,7 +432,7 @@ class JsonDom extends React.Component {
             try {
                 this.scriptResult = new Function(`
                 const scope = arguments[0]
-                const {on, setLocal, getLocal, refresh, Util, _t}= arguments[1]
+                const {on, setLocal, getLocal, refresh, getComponent, Util, _t}= arguments[1]
                 const history= arguments[2]
                 const parent= arguments[3]
                 ${script}`).call(this, scope, {
@@ -412,6 +440,7 @@ class JsonDom extends React.Component {
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,
+                    getComponent: this.jsGetComponent,
                     Util,
                     _t
                 }, history, this.props._parentRef)

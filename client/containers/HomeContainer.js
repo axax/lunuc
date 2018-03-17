@@ -7,7 +7,6 @@ import _t from 'util/i18n'
 
 class HomeContainer extends React.Component {
     render() {
-
         const {user} = this.props
         return <BaseLayout>
             <Typography variant="display2" gutterBottom>{_t('admin.home.title')}</Typography>

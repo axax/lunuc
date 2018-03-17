@@ -56,10 +56,11 @@ class LoginContainer extends React.Component {
 
                 if (!response.data.login.error) {
 
-                    this.setState({redirectToReferrer: true})
                     localStorage.setItem('token', response.data.login.token)
                     userActions.setUser(response.data.login.user, true)
                     errorHandlerAction.clearErrors()
+                    this.setState({redirectToReferrer: true})
+
                 }
             }
         })

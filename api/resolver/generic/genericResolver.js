@@ -275,10 +275,10 @@ const GenericResolver = {
                     console.log(k, 'is localized')
                     o[k + '_localized.' + [context.lang]] = data[k]
 
-                }else if( k.endsWith('_localized') ){
+                } else if (k.endsWith('_localized')) {
                     // if a localized object {_localized:{de:'',en:''}} gets passed
                     // convert it to the format _localized.de='' and _localized.en=''
-                    if( data[k] ) {
+                    if (data[k]) {
                         Object.keys(data[k]).map(e => {
                             o[k + '.' + e] = data[k][e]
                         })
@@ -310,7 +310,44 @@ const GenericResolver = {
             },
             status: 'updated'
         }
-    }
+    },
+    cloneEntity: async (db, context, collectionName, {_id,...rest}) => {
+
+        Util.checkIfUserIsLoggedIn(context)
+
+
+        const collection = db.collection(collectionName)
+
+        if (!_id) {
+            throw new Error('Id is missing')
+        }
+
+        const entry = await collection.findOne({_id: ObjectId(_id)})
+
+        if( !entry ){
+            throw new Error('entry with id '+_id+' does not exist')
+        }
+
+        const clone = Object.assign({},entry,{createdBy:ObjectId(context.id)},rest)
+
+        delete clone._id
+
+        const insertResult = await collection.insertOne(clone)
+
+        if (insertResult.insertedCount) {
+            const doc = insertResult.ops[0]
+
+            return {
+                ...clone,
+                _id: doc._id,
+                status: 'created',
+                createdBy: {
+                    _id: ObjectId(context.id),
+                    username: context.username
+                }
+            }
+        }
+    },
 }
 
 export default GenericResolver

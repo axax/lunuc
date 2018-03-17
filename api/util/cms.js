@@ -39,10 +39,12 @@ const UtilCms = {
                         })
                         //TODO: only return fields that are request and remove sensitiv data
 
-                        result.results.map(e=>{
-                            // return only user _id and username
-                            e.createdBy = {_id: e.createdBy._id,username: e.createdBy.username}
-                        })
+                        if( result.results ) {
+                            result.results.map(e => {
+                                // return only user _id and username
+                                e.createdBy = {_id: e.createdBy._id, username: e.createdBy.username}
+                            })
+                        }
 
                         resolvedData[type] = result
                     }

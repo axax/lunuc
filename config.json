@@ -30,6 +30,8 @@
       "name": "admin",
       "impl": "material",
       "icons": [
+        "ContentCopy",
+        "Web",
         "Edit",
         "Delete",
         "Close",

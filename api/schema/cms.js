@@ -36,5 +36,6 @@ export const cmsSchemaRaw = `
 		): CmsPage
 		updateCmsPage(_id: ID!, query: String, slug: String, template: String, script: String, dataResolver: String, ssr: Boolean, public: Boolean): CmsPage	
 		deleteCmsPage(_id: ID!): CmsPage
+		cloneCmsPage(_id: ID!, slug: String, public: Boolean): CmsPage
 	}
 `

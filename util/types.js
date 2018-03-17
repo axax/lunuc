@@ -98,6 +98,7 @@ export const getTypeQueries = (typeName) => {
     result.create = `mutation create${name}(${insertParams}){create${name}(${insertUpdateQuery}){${queryMutation}}}`
     result.update = `mutation update${name}($_id: ID!,${updateParams}){update${name}(_id:$_id,${insertUpdateQuery}){${queryMutation}}}`
     result.delete = `mutation delete${name}($_id: ID!){delete${name}(_id: $_id){${queryMutation}}}`
+    result.clone = `mutation clone${name}($_id: ID!,${updateParams}){clone${name}(_id: $_id,${insertUpdateQuery}){${query}}}`
 
     typeQueries[typeName] = result
     return result

@@ -3,8 +3,8 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import {withStyles} from 'ui/admin'
 
-const reservedJsKeywords = ['return', 'if', 'else', 'var', 'let', 'const','this','document']
-const reservedJsCustomKeywords = ['on', 'Util','scope','history','refresh','getLocal','setLocal']
+const reservedJsKeywords = ['return', 'if', 'else', 'var', 'let', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export']
+const reservedJsCustomKeywords = ['on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent','getComponent']
 
 const styles = theme => ({
     editor: {
@@ -25,6 +25,10 @@ const styles = theme => ({
     highlight4: {
         color: '#af0808',
         fontWeight: 'bold'
+    },
+    highlight5: {
+        color: '#a1a1a1',
+        fontStyle: 'italic'
     }
 })
 
@@ -107,12 +111,16 @@ class ContentEditable extends React.Component {
 
     highlight(str) {
         if (str) {
+            let res
+            const startTime = new Date()
             const {highlight} = this.props
             if (highlight === 'json') {
-                return this.highlightJson(str)
+                res = this.highlightJson(str)
             } else if (highlight === 'js') {
-                return this.highlightJs(str)
+                res = this.highlightJs(str)
             }
+            console.info(`highlight ${highlight} for in ${new Date() - startTime}ms`)
+            return res
         }
         return str
     }
@@ -155,12 +163,18 @@ class ContentEditable extends React.Component {
     highlightJs(str) {
         const {classes} = this.props
 
-        let inDQuote = false, inSQuote = false, keyword = '', res = ''
+        let inDQuote = false, inSQuote = false, inComment = false, inCommentMulti = false, keyword = '', res = ''
 
         for (let i = 0; i < str.length; i++) {
             const c = str[i]
 
-            if (c === '\'' && !inDQuote) {
+            if (inComment) {
+                res += c
+                if ((!inCommentMulti && c === '\n') || (inCommentMulti && c === '/' && str[i - 1] === '*')) {
+                    res += '</span>'
+                    inCommentMulti = inComment = false
+                }
+            } else if (c === '\'' && !inDQuote && !(inSQuote && str[i - 1] === '\\')) {
                 inSQuote = !inSQuote
                 if (inSQuote) {
                     keyword = ''
@@ -170,7 +184,7 @@ class ContentEditable extends React.Component {
                 if (!inSQuote) {
                     res += '</span>'
                 }
-            } else if (c === '"' && !inSQuote) {
+            } else if (c === '"' && !inSQuote && !(inDQuote && str[i - 1] === '\\')) {
                 inDQuote = !inDQuote
                 if (inDQuote) {
                     keyword = ''
@@ -181,19 +195,28 @@ class ContentEditable extends React.Component {
                     res += '</span>'
                 }
             } else if (!inDQuote && !inSQuote) {
-                const code = str.charCodeAt(i)
-                if (!(code > 64 && code < 91) && // upper alpha (A-Z)
-                    !(code > 96 && code < 123)) { // lower alpha (a-z)
-                    if (keyword) {
-                        if (reservedJsKeywords.indexOf(keyword) >= 0 ) {
-                            res = res.substring(0, res.length - keyword.length) + '<span class="' + classes.highlight1 + '">' + keyword + '</span>'
-                        }else if ( reservedJsCustomKeywords.indexOf(keyword) >= 0) {
-                            res = res.substring(0, res.length - keyword.length) + '<span class="' + classes.highlight4 + '">' + keyword + '</span>'
-                        }
-                        keyword = ''
+                if ((c === '/' || c === '*') && i > 0 && str[i - 1] === '/') {
+                    res = res.substring(0, res.length - 1) + '<span class="' + classes.highlight5 + '">' + res.substring(res.length - 1)
+                    //comment
+                    if (c === '*') {
+                        inCommentMulti = true
                     }
+                    inComment = true
                 } else {
-                    keyword += c
+                    const code = str.charCodeAt(i)
+                    if (!(code > 64 && code < 91) && // upper alpha (A-Z)
+                        !(code > 96 && code < 123)) { // lower alpha (a-z)
+                        if (keyword) {
+                            if (reservedJsKeywords.indexOf(keyword) >= 0) {
+                                res = res.substring(0, res.length - keyword.length) + '<span class="' + classes.highlight1 + '">' + keyword + '</span>'
+                            } else if (reservedJsCustomKeywords.indexOf(keyword) >= 0) {
+                                res = res.substring(0, res.length - keyword.length) + '<span class="' + classes.highlight4 + '">' + keyword + '</span>'
+                            }
+                            keyword = ''
+                        }
+                    } else {
+                        keyword += c
+                    }
                 }
                 res += c
             } else {

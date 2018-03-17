@@ -54,8 +54,11 @@
     box-shadow: 0 0 8px rgba(0,0,0,0.1);
     height:4rem;
     &__title{
-      color: black;
-      font-weight: bold;
+      a {
+        color: black;
+        font-weight: bold;
+        text-decoration: none;
+      }
     }
     &__children{
       flex:4;
@@ -73,6 +76,8 @@
         flex:1 auto;
         a{
           cursor: pointer;
+          text-decoration: none;
+          color: black;
           &:hover{
             color:@primary-color;
           }
