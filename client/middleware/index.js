@@ -113,11 +113,11 @@ export function configureMiddleware(store) {
         dataIdFromObject: (o) => {
             if (o.__typename === 'Token') {
                 // this is the login methode
-                return o.__typename + o.username
+                return o.__typename + (o.user ? o.user.username : '')
             } else if (o.__typename === 'KeyValue') {
                 return o.__typename + o.key
             } else if (o._id) {
-                return o.__typename + o._id
+                return o.__typename + o._id + (o.cacheKey ? o.cacheKey: '')
             }
             // Make sure to return null if this object doesn't have an ID
             return null
@@ -134,7 +134,8 @@ export function configureMiddleware(store) {
         // use restore on the cache instead of initialState
         cache: cache,
         ssrMode: false,
-        ssrForceFetchDelay: 100,
+        /* if this is set to greater than 0 and fetch-policy is network-only, the policy gets changed to cache-first before the time im ms has passed */
+        ssrForceFetchDelay: 0,
         connectToDevTools: true,
         queryDeduplication: true,
         /*defaultOptions: {

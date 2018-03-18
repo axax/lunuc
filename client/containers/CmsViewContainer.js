@@ -16,7 +16,7 @@ import Util from 'client/util'
 import {getType} from 'util/types'
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){slug template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
+const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){cacheKey slug template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
 
 
 const editorStyle = {
@@ -37,7 +37,8 @@ const isPreview = (location) => {
 
 const isEditMode = (props) => {
     const {user, location, dynamic} = props
-    return (user.isAuthenticated && !isPreview(location) && !dynamic)
+
+    return (user.isAuthenticated && Util.hasCapability(user, 'manage_cms_pages') && !isPreview(location) && !dynamic)
 }
 
 
@@ -205,7 +206,7 @@ class CmsViewContainer extends React.Component {
         return !this.props.cmsPage ||
             props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
-          /*  props.location.search !== this.props.location.search ||*/
+            props.location.search !== this.props.location.search ||
             props.user !== this.props.user ||
             props.children != this.props.children ||
             (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script))
@@ -238,8 +239,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, location, history, _parentRef, id, loading, className, children} = this.props
-
+        const {cmsPage, location, history, _parentRef, id, loading, className, children, user} = this.props
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
             if (!loading)
@@ -249,13 +249,11 @@ class CmsViewContainer extends React.Component {
 
         const editMode = isEditMode(this.props)
 
-
         if (cmsPage.ssr && !editMode) {
             // it was already rendered on the server side
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
-
-        const scope = {page: {slug: cmsPage.slug}, pathname: location.pathname, params: Util.extractQueryParams()}
+        const scope = {page: {slug: cmsPage.slug}, user, pathname: location.pathname, params: Util.extractQueryParams()}
 
         const startTime = new Date()
         const jsonDom = <JsonDom id={id}
@@ -333,34 +331,44 @@ CmsViewContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
     cmsPage: PropTypes.object,
-    user: PropTypes.object.isRequired,
     updateCmsPage: PropTypes.func.isRequired,
     slug: PropTypes.string,
-    dynamic: PropTypes.bool,
+    user: PropTypes.object.isRequired,
+    /* with Router */
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
     match: PropTypes.object.isRequired,
     /* Reference to the parent JsonDom */
     _parentRef: PropTypes.object,
-    id: PropTypes.string
+    id: PropTypes.string,
+    dynamic: PropTypes.bool,
+    /* if true data gets refetched with query on url change*/
+    urlSensitiv: PropTypes.bool
 }
 
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
         options(ownProps) {
-            const slug = ownProps.slug
+            const {slug, urlSensitiv} = ownProps,
+                variables = {
+                    slug
+                }
+
+            if (urlSensitiv) {
+                variables.query = window.location.search.substring(1)
+            }
             return {
-                variables: {
-                    slug,
-                    query: window.location.search.substring(1)
-                },
+                variables,
                 fetchPolicy: isEditMode(ownProps) ? 'network-only' : 'cache-and-network'
             }
         },
-        props: ({data: {loading, cmsPage}}) => ({
-            cmsPage,
-            loading
-        })
+        props: ({data: {loading, cmsPage}}) => {
+
+            return {
+                cmsPage,
+                loading
+            }
+        }
     }),
     graphql(gql`mutation updateCmsPage($_id: ID!,$template: String,$slug: String,$script: String,$dataResolver: String,$ssr: Boolean){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr){slug template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
@@ -384,11 +392,18 @@ const CmsViewContainerWithGql = compose(
                         }
                     },
                     update: (store, {data: {updateCmsPage}}) => {
-                        const slug = ownProps.slug
+                        const {slug, urlSensitiv} = ownProps,
+                            variables = {
+                                slug
+                            }
+
+                        if (urlSensitiv) {
+                            variables.query = window.location.search.substring(1)
+                        }
 
                         const data = store.readQuery({
                             query: gqlQuery,
-                            variables: {slug, query: window.location.search.substring(1)}
+                            variables
                         })
                         if (data.cmsPage) {
                             // update cmsPage

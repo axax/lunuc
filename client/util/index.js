@@ -30,7 +30,7 @@ const Util = {
         return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId), options)
     },
     formattedDatetime(stamp){
-       return new Date(stamp).toLocaleString()
+        return new Date(stamp).toLocaleString()
     },
     escapeHtml: (str) => {
         const entityMap = {
@@ -73,7 +73,7 @@ const Util = {
         var b = {};
         for (var i = 0; i < a.length; ++i) {
             var p = a[i].split('=', 2)
-            if( p[0] ) {
+            if (p[0]) {
                 if (p.length === 1)
                     b[p[0]] = ""
                 else
@@ -85,7 +85,7 @@ const Util = {
     parseFilter: filter => {
         const parts = {}, rest = []
 
-        if( filter ) {
+        if (filter) {
             filter.split(' ').forEach(i => {
                 const q = i.split(/=|:/)
                 if (q.length > 1) {
@@ -108,6 +108,10 @@ const Util = {
         const script = document.createElement("script")
         script.src = url
         document.head.appendChild(script)
+    },
+    hasCapability(user, capa){
+        const capabilities = (user && user.userData && user.userData.role && user.userData.role.capabilities) || []
+        return capabilities.indexOf(capa) >= 0
     }
 }
 export default Util

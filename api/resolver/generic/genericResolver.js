@@ -50,6 +50,7 @@ const GenericResolver = {
         const group = {}
         const filterMatch = []
         const lookups = []
+        const fields = getFormFields(collectionName)
 
         const addLookup = (type, fieldName, multi) => {
             lookups.push({
@@ -68,22 +69,23 @@ const GenericResolver = {
             }
         }
 
-        const addFilter = (value, isRef) => {
+        const addFilter = (value, isRef, localized) => {
             if (filter) {
+                const filterKey = value + (localized ? '_localized.' + context.lang : '')
                 if (parsedFilter.parts[value]) {
                     if (isRef) {
-                        filterMatch.push({[value]: ObjectId(parsedFilter.parts[value])})
+                        filterMatch.push({[filterKey]: ObjectId(parsedFilter.parts[value])})
                     } else {
-                        filterMatch.push({[value]: {'$regex': parsedFilter.parts[value], '$options': 'i'}})
+                        filterMatch.push({[filterKey]: {'$regex': parsedFilter.parts[value], '$options': 'i'}})
                     }
                 }
                 parsedFilter.rest.forEach(i => {
-                    filterMatch.push({[value]: {'$regex': i, '$options': 'i'}})
+
+                    filterMatch.push({[filterKey]: {'$regex': i, '$options': 'i'}})
                 })
             }
         }
 
-        const fields = getFormFields(collectionName)
         data.forEach((value, i) => {
 
             if (value.constructor === Object) {
@@ -117,10 +119,11 @@ const GenericResolver = {
                 // regular field
                 if (fields && fields[value] && fields[value].localized) {
                     group[value] = {'$first': '$' + value + '_localized.' + context.lang}
+                    addFilter(value, false, true)
                 } else {
                     group[value] = {'$first': '$' + value}
+                    addFilter(value)
                 }
-                addFilter(value)
 
             }
 
@@ -311,7 +314,7 @@ const GenericResolver = {
             status: 'updated'
         }
     },
-    cloneEntity: async (db, context, collectionName, {_id,...rest}) => {
+    cloneEntity: async (db, context, collectionName, {_id, ...rest}) => {
 
         Util.checkIfUserIsLoggedIn(context)
 
@@ -324,11 +327,11 @@ const GenericResolver = {
 
         const entry = await collection.findOne({_id: ObjectId(_id)})
 
-        if( !entry ){
-            throw new Error('entry with id '+_id+' does not exist')
+        if (!entry) {
+            throw new Error('entry with id ' + _id + ' does not exist')
         }
 
-        const clone = Object.assign({},entry,{createdBy:ObjectId(context.id)},rest)
+        const clone = Object.assign({}, entry, {createdBy: ObjectId(context.id)}, rest)
 
         delete clone._id
 

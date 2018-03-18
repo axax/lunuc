@@ -13,6 +13,7 @@ export const cmsSchemaRaw = `
         subscriptions: [String],
         public: Boolean,
         modifiedAt: Float
+        cacheKey: String
     }
     
     

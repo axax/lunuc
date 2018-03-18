@@ -67,8 +67,7 @@ class LoginContainer extends React.Component {
     }
 
     render() {
-
-        const {from} = this.props.location.state || {from: {pathname: config.ADMIN_BASE_URL}}
+        const {from} = (this.props.location && this.props.location.state) || {from: {pathname: config.ADMIN_BASE_URL}}
         const {redirectToReferrer, loading, username, password, error} = this.state
 
         if (redirectToReferrer) {

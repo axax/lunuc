@@ -102,7 +102,7 @@ export const cmsResolver = (db) => ({
                 match = {slug}
             }
             cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public'], {match})
-            Cache.set(cacheKey, cmsPages)
+            Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
         }
 
 
@@ -146,7 +146,11 @@ export const cmsResolver = (db) => ({
                 ssr,
                 resolvedData: JSON.stringify(resolvedData),
                 html,
-                subscriptions
+                subscriptions,
+                /* we return a cacheKey here because the resolvedData may be dependent on the query that gets passed.
+                   that leads to ambiguous results for the same id.
+                 */
+                cacheKey: query
             }
         } else {
 
@@ -162,7 +166,8 @@ export const cmsResolver = (db) => ({
                 script,
                 html,
                 resolvedData: JSON.stringify(resolvedData),
-                subscriptions
+                subscriptions,
+                cacheKey: query
             }
 
         }

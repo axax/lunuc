@@ -1,5 +1,6 @@
 import Hook from 'util/hook'
 import './style.less'
+import Login from 'client/containers/LoginContainer'
 
 Hook.on('ApiResponse', ({data}) => {
     if( data.products ){
@@ -11,4 +12,9 @@ Hook.on('ApiResponse', ({data}) => {
             })
         }
     }
+})
+
+
+Hook.on('JsonDom', ({components,props}) => {
+    components['Login'] = Login
 })

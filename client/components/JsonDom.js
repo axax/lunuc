@@ -73,9 +73,9 @@ class JsonDom extends React.Component {
     }
     jsGetComponent = (id) => {
 
-        const jsGetComponentRec = (comp, id)=>{
+        const jsGetComponentRec = (comp, id) => {
             let res = null
-            if( comp ) {
+            if (comp) {
                 let k
                 for (k of Object.keys(comp.componentRefs)) {
                     const o = comp.componentRefs[k]
@@ -84,7 +84,7 @@ class JsonDom extends React.Component {
                         break
                     } else {
                         res = jsGetComponentRec(o, id)
-                        if( res ){
+                        if (res) {
                             break
                         }
                     }
@@ -93,7 +93,7 @@ class JsonDom extends React.Component {
             }
             return res
         }
-        return jsGetComponentRec(this.jsRootComponent(),id)
+        return jsGetComponentRec(this.jsRootComponent(), id)
     }
     jsRefresh = (id) => {
 
@@ -119,10 +119,7 @@ class JsonDom extends React.Component {
         /* HOOK */
         Hook.call('JsonDom', this)
 
-        const {id, _parentRef} = props
-        if (_parentRef && id) {
-            props._parentRef.componentRefs[id] = this
-        }
+        this.addParentRef(props)
     }
 
 
@@ -131,6 +128,8 @@ class JsonDom extends React.Component {
     }
 
     componentWillReceiveProps(props) {
+
+        this.addParentRef(props)
 
         if (this.props.scope !== props.scope) {
             this.scope = null
@@ -157,6 +156,7 @@ class JsonDom extends React.Component {
         }
         if (this.props.resolvedData !== props.resolvedData) {
             this.resolvedDataJson = undefined
+            this.json = null
             //console.log('reset resolvedData')
         }
         this.setState({hasReactError: false})
@@ -167,11 +167,18 @@ class JsonDom extends React.Component {
 
         if (!props.template || !props.scope) return true
 
-        return this.props.template !== props.template || this.props.scope !== props.scope || this.props.script !== props.script || this.props.resolvedData !== props.resolvedData
+        return props.children !== this.props.children || this.props.template !== props.template || this.props.scope !== props.scope || this.props.script !== props.script || this.props.resolvedData !== props.resolvedData
     }
 
     componentWillUpdate(props) {
         this.parseError = null
+    }
+
+    addParentRef(props) {
+        const {id, _parentRef} = props
+        if (_parentRef && id) {
+            props._parentRef.componentRefs[id] = this
+        }
     }
 
     resetTemplate() {
@@ -330,9 +337,17 @@ class JsonDom extends React.Component {
                         }
                     })
                 }
+
+                // if we have a cms component in another cms component the location props gets not refreshed
+                // that's way we pass it directly to the reactElement as a prop
+                let cmsProps = null
+                if (t === 'Cms') {
+                    cmsProps = {location: this.props.history.location}
+                }
+
                 h.push(React.createElement(
                     this.components[_t] || _t,
-                    {id: key, key, ...p},
+                    {id: key, key, ...cmsProps, ...p},
                     ($c ? <span dangerouslySetInnerHTML={{__html: $c}}/> :
                         this.parseRec(c, key, childScope))
                 ))
@@ -385,7 +400,7 @@ class JsonDom extends React.Component {
             return tpl.call(data, this.props._parentRef)
         } catch (e) {
             //this.emitJsonError(e)
-
+            console.error("Error in renderString", e)
             return str
         }
     }
@@ -428,7 +443,7 @@ class JsonDom extends React.Component {
         scope._t = _t
         if (this.runScript) {
             this.runScript = false
-            //console.log('render script')
+
             try {
                 this.scriptResult = new Function(`
                 const scope = arguments[0]

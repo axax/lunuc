@@ -1,7 +1,6 @@
 import React from 'react'
 import Hook from 'util/hook'
 import LinkedInProfileContainer from './containers/LinkedInProfileContainer'
-import Util from 'client/util'
 import {SimpleToolbar, Button} from 'ui/admin'
 
 
