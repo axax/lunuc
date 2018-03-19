@@ -84,16 +84,20 @@ class TypesContainer extends React.Component {
     parseSettings(props) {
         try {
             this.settings = JSON.parse(props.keyValueMap.TypesContainerSettings)
-        }catch(e){
+        } catch (e) {
             this.settings = {}
         }
+    }
+
+    setSettingsForType(type, settings) {
+        this.settings[type] = Object.assign({},this.settings[type], settings)
     }
 
     componentWillUnmount() {
         const value = JSON.stringify(this.settings)
         if (value !== this.props.keyValueMap.TypesContainerSettings) {
             console.log('save settings')
-            this.props.setKeyValue({key:'TypesContainerSettings', value})
+            this.props.setKeyValue({key: 'TypesContainerSettings', value})
         }
     }
 
@@ -373,20 +377,27 @@ class TypesContainer extends React.Component {
         const {params} = props.match
         const {p, l, s, f} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
-        const result = {limit: lInt || DEFAULT_RESULT_LIMIT, page: pInt || 1, sort: s || '', filter: f || ''}
+        let type
         if (props.fixType) {
-            result.type = props.fixType
+            type = props.fixType
         } else if (params.type) {
-            result.type = params.type
-        } else if ( this.settings.lastType ){
-            result.type = this.settings.lastType
+            type = params.type
+        } else if (this.settings.lastType) {
+            type = this.settings.lastType
         } else {
             for (const prop in this.types) {
-                result.type = prop
+                type = prop
                 break
             }
         }
-
+        const typeSettings = this.settings[type] || {}
+        const result = {
+            limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,
+            page: pInt || typeSettings.page || 1,
+            sort: s || typeSettings.sort || '',
+            filter: f || typeSettings.filter || ''
+        }
+        result.type = type
         return result
     }
 
@@ -662,6 +673,7 @@ class TypesContainer extends React.Component {
             orderDirection = 'asc'
         }
         const newSort = `${orderBy} ${orderDirection}`
+        this.setSettingsForType(type, {sort: newSort})
 
         this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${newSort}&f=${filter}`)
     }
