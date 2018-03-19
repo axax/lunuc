@@ -29,7 +29,7 @@ import GenericForm from 'client/components/generic/GenericForm'
 import config from 'gen/config'
 import Hook from 'util/hook'
 import {getTypes, getTypeQueries, getFormFields} from 'util/types'
-import {Link} from 'react-router-dom'
+import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {withStyles} from 'material-ui/styles'
 import {deepMerge}  from 'util/deepMerge'
@@ -57,11 +57,13 @@ class TypesContainer extends React.Component {
     createEditForm = null
     typeColumns = {}
     typesToSelect = []
+    settings = {}
 
     constructor(props) {
         super(props)
-        this.types = getTypes()
+        this.parseSettings(props)
 
+        this.types = getTypes()
         this.pageParams = this.determinPageParams(props)
         this.state = {
             confirmDeletionDialog: true,
@@ -71,21 +73,47 @@ class TypesContainer extends React.Component {
             data: null
         }
 
+
         // prepare list with types for select box
         Object.keys(this.types).map((k) => {
             const t = this.types[k]
             this.typesToSelect.push({value: k, name: k, hint: t.usedBy && 'used by ' + t.usedBy.join(',')})
         })
+    }
 
+    parseSettings(props) {
+        try {
+            this.settings = JSON.parse(props.keyValueMap.TypesContainerSettings)
+        }catch(e){
+            this.settings = {}
+        }
+    }
+
+    componentWillUnmount() {
+        const value = JSON.stringify(this.settings)
+        if (value !== this.props.keyValueMap.TypesContainerSettings) {
+            console.log('save settings')
+            this.props.setKeyValue({key:'TypesContainerSettings', value})
+        }
     }
 
     componentDidMount() {
         this.getData(this.pageParams, true)
     }
 
+    shouldComponentUpdate(props, state) {
+        // maybe this can be optimized even more
+        return this.state !== state ||
+            this.props.location !== props.location ||
+            this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
+    }
 
     componentWillReceiveProps(props) {
         const pageParams = this.determinPageParams(props)
+
+        if (this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings) {
+            this.parseSettings(props)
+        }
 
         if (this.pageParams.type !== pageParams.type || this.pageParams.page !== pageParams.page || this.pageParams.limit !== pageParams.limit || this.pageParams.sort !== pageParams.sort || this.pageParams.filter !== pageParams.filter) {
             this.pageParams = pageParams
@@ -350,6 +378,8 @@ class TypesContainer extends React.Component {
             result.type = props.fixType
         } else if (params.type) {
             result.type = params.type
+        } else if ( this.settings.lastType ){
+            result.type = this.settings.lastType
         } else {
             for (const prop in this.types) {
                 result.type = prop
@@ -626,7 +656,6 @@ class TypesContainer extends React.Component {
 
     handleSortChange = (orderBy) => {
         const {type, limit, sort, filter} = this.pageParams
-
         const aSort = sort.split(' ')
         let orderDirection = 'desc'
         if (aSort.length > 1 && orderBy === aSort[0] && orderDirection === aSort[1]) {
@@ -639,9 +668,10 @@ class TypesContainer extends React.Component {
 
 
     handleTypeChange = event => {
-        if (event.target.value !== this.pageParams.type) {
-            console.log(this.props.history)
-            this.props.history.push(`${ADMIN_BASE_URL}/types/${event.target.value}`)
+        const v = event.target.value
+        if (v !== this.pageParams.type) {
+            this.settings.lastType = v
+            this.props.history.push(`${ADMIN_BASE_URL}/types/${v}`)
         }
     }
 
@@ -767,7 +797,10 @@ TypesContainer.propTypes = {
     match: PropTypes.object.isRequired,
     user: PropTypes.object.isRequired,
     fixType: PropTypes.string,
-    classes: PropTypes.object.isRequired
+    classes: PropTypes.object.isRequired,
+    /* To get and set settings */
+    setKeyValue: PropTypes.func.isRequired,
+    keyValueMap: PropTypes.object
 }
 
 
@@ -776,7 +809,7 @@ const mapStateToProps = (store) => ({user: store.user})
 
 export default connect(
     mapStateToProps
-)(withApollo(withStyles(styles)(TypesContainer)))
+)(withApollo(withStyles(styles)(withKeyValues(TypesContainer, ['TypesContainerSettings']))))
 
 
 // add an extra column for Media at the beginning

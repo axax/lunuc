@@ -35,15 +35,14 @@ export function withKeyValues(WrappedComponent, keys) {
         }
 
         render() {
-            const {keyValues, user, ...rest} = this.props
+            const {keyValues, kvUser, ...rest} = this.props
 
-            let keyValueMap
+            let keyValueMap = {}
 
-            if (!user.isAuthenticated) {
+            if (!kvUser.isAuthenticated) {
                 // fallback: load keyValues from localstore
                 keyValueMap = getKeyValuesFromLS()
             } else if (keyValues) {
-                keyValueMap = {}
                 // create a keyvalue map
                 const {results} = keyValues
                 if (results) {
@@ -61,7 +60,7 @@ export function withKeyValues(WrappedComponent, keys) {
 
     WithKeyValues.propTypes = {
         keyValues: PropTypes.object,
-        user: PropTypes.object.isRequired,
+        kvUser: PropTypes.object.isRequired,
         loading: PropTypes.bool,
         setKeyValue: PropTypes.func.isRequired,
         deleteKeyValue: PropTypes.func.isRequired,
@@ -87,7 +86,7 @@ export function withKeyValues(WrappedComponent, keys) {
 
     const WithKeyValuesWithGql = compose(
         graphql(gqlKeyValueQuery, {
-            skip: props => !props.user.isAuthenticated, // skip request if user is not logged in
+            skip: props => !props.kvUser.isAuthenticated, // skip request if user is not logged in
             options() {
                 return {
                     fetchPolicy: 'cache-and-network',
@@ -101,7 +100,8 @@ export function withKeyValues(WrappedComponent, keys) {
         graphql(gqlKeyValueUpdate, {
             props: ({ownProps, mutate}) => ({
                 setKeyValue: ({key, value}) => {
-                    if (!ownProps.user.isAuthenticated) {
+                    if( !key ) throw Error('Key is missing in setKeyValue')
+                    if (!ownProps.kvUser.isAuthenticated) {
                         return new Promise((res) => {
                             setKeyValueToLS(key, value)
                             res()
@@ -116,8 +116,8 @@ export function withKeyValues(WrappedComponent, keys) {
                             setKeyValue: {
                                 status: 'creating',
                                 createdBy: {
-                                    _id: ownProps.user.userData._id,
-                                    username: ownProps.user.userData.username,
+                                    _id: ownProps.kvUser.userData._id,
+                                    username: ownProps.kvUser.userData.username,
                                     __typename: 'UserPublic'
                                 },
                                 key,
@@ -149,7 +149,7 @@ export function withKeyValues(WrappedComponent, keys) {
         graphql(gqlKeyValueDelete, {
             props: ({ownProps, mutate}) => ({
                 deleteKeyValue: ({key}) => {
-                    if (!ownProps.user.isAuthenticated) {
+                    if (!ownProps.kvUser.isAuthenticated) {
                         return new Promise((res) => {
                             setKeyValueToLS(key, null)
                             res()
@@ -189,7 +189,7 @@ export function withKeyValues(WrappedComponent, keys) {
     /**
      * Map the state to props.
      */
-    const mapStateToProps = (store) => ({user: store.user})
+    const mapStateToProps = (store) => ({kvUser: store.user})
 
 
     /**
