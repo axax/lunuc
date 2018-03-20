@@ -96,22 +96,24 @@ class CmsViewContainer extends React.Component {
                 const type = getType(subs)
                 let query = '_id'
 
-                type.fields.map(({name, required, multi, reference}) => {
+                type.fields.map(({name, required, multi, reference, localized}) => {
 
                     if (reference) {
                         // todo: field name might be different than name
                         //query += ' ' + name + '{_id name}'
                     } else {
-                        query += ' ' + name
+                        if (localized) {
+                            query += ' ' + name + '_localized{' + _app_.lang + '}'
+                        } else {
+                            query += ' ' + name
+                        }
                     }
                 })
-
                 const qqlSubscribe = gql`subscription{subscribe${subs}{action data{${query}}}}`
 
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,
-                    variables: {},
-
+                    variables: {}
                 }).subscribe({
                     next(supscriptionData) {
                         if (!supscriptionData.data) {
@@ -133,7 +135,18 @@ class CmsViewContainer extends React.Component {
                                     const refResults = resolvedDataJson[subs].results
                                     const idx = refResults.findIndex(o => o._id === data._id)
                                     if (idx > -1) {
-                                        refResults[idx] = Object.assign({}, refResults[idx], Util.removeNullValues(data))
+                                        const noNullData = Util.removeNullValues(data)
+                                        Object.keys(noNullData).map(k=>{
+                                            // if there are localized values in the current language
+                                            // set them to the regular field
+                                            if( k.endsWith('_localized') ){
+                                                const v = noNullData[k][_app_.lang]
+                                                if( v ){
+                                                    noNullData[k.substring(0,k.length-10)] = v
+                                                }
+                                            }
+                                        })
+                                        refResults[idx] = Object.assign({}, refResults[idx], noNullData)
                                         // back to string data
                                         storeData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
                                         client.writeQuery({
