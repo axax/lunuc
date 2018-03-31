@@ -46,7 +46,6 @@ const GenericResolver = {
         }
 
         const parsedFilter = ClientUtil.parseFilter(filter)
-
         const group = {}
         const filterMatch = []
         const lookups = []
@@ -76,7 +75,13 @@ const GenericResolver = {
                     if (isRef) {
                         filterMatch.push({[filterKey]: ObjectId(parsedFilter.parts[value])})
                     } else {
-                        filterMatch.push({[filterKey]: {'$regex': parsedFilter.parts[value], '$options': 'i'}})
+                        if( parsedFilter.parts[value].constructor === Array ){
+                            parsedFilter.parts[value].forEach(e=>{
+                                filterMatch.push({[filterKey]: {'$regex': e, '$options': 'i'}})
+                            })
+                        }else {
+                            filterMatch.push({[filterKey]: {'$regex': parsedFilter.parts[value], '$options': 'i'}})
+                        }
                     }
                 }
                 parsedFilter.rest.forEach(i => {

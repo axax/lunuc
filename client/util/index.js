@@ -87,9 +87,20 @@ const Util = {
 
         if (filter) {
             filter.split(' ').forEach(i => {
+                /*let isOr=false
+                if( i == '||'){
+                    isOr=true
+                }*/
                 const q = i.split(/=|:/)
                 if (q.length > 1) {
-                    parts[q[0]] = q[1]
+                    if( parts[q[0]] ){
+                        parts[q[0]] = [parts[q[0]]]
+                        parts[q[0]].push(q[1])
+                    }else{
+                        parts[q[0]] = q[1]
+
+                    }
+
                 } else {
                     rest.push(q[0])
                 }
