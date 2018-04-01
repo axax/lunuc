@@ -406,7 +406,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {template, script, resolvedData, history, className} = this.props
+        const {template, script, resolvedData, history, className, setKeyValue} = this.props
         if (!template) {
             console.warn('Template is missing.')
             return null
@@ -447,11 +447,12 @@ class JsonDom extends React.Component {
             try {
                 this.scriptResult = new Function(`
                 const scope = arguments[0]
-                const {on, setLocal, getLocal, refresh, getComponent, Util, _t}= arguments[1]
+                const {on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue}= arguments[1]
                 const history= arguments[2]
                 const parent= arguments[3]
                 ${script}`).call(this, scope, {
                     on: this.jsOn,
+                    setKeyValue,
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,
@@ -499,6 +500,7 @@ JsonDom.propTypes = {
     resolvedData: PropTypes.string,
     script: PropTypes.string,
     scope: PropTypes.string,
+    setKeyValue: PropTypes.func,
     onChange: PropTypes.func,
     onError: PropTypes.func,
     editMode: PropTypes.bool,

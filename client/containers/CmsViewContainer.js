@@ -94,6 +94,7 @@ class CmsViewContainer extends React.Component {
             if (!this.registeredSubscriptions[subs]) {
 
                 const type = getType(subs)
+                if (!type) return
                 let query = '_id'
 
                 type.fields.map(({name, required, multi, reference, localized}) => {
@@ -136,13 +137,13 @@ class CmsViewContainer extends React.Component {
                                     const idx = refResults.findIndex(o => o._id === data._id)
                                     if (idx > -1) {
                                         const noNullData = Util.removeNullValues(data)
-                                        Object.keys(noNullData).map(k=>{
+                                        Object.keys(noNullData).map(k => {
                                             // if there are localized values in the current language
                                             // set them to the regular field
-                                            if( k.endsWith('_localized') ){
+                                            if (k.endsWith('_localized')) {
                                                 const v = noNullData[k][_app_.lang]
-                                                if( v ){
-                                                    noNullData[k.substring(0,k.length-10)] = v
+                                                if (v) {
+                                                    noNullData[k.substring(0, k.length - 10)] = v
                                                 }
                                             }
                                         })
@@ -221,6 +222,7 @@ class CmsViewContainer extends React.Component {
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             props.location.search !== this.props.location.search ||
             props.user !== this.props.user ||
+            props.cmsPages !== this.props.cmsPages ||
             props.children != this.props.children ||
             (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script))
     }
@@ -252,7 +254,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, location, history, _parentRef, id, loading, className, children, user} = this.props
+        const {cmsPage, cmsPages, location, history, _parentRef, id, loading, className, children, user} = this.props
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
             if (!loading)
@@ -279,6 +281,7 @@ class CmsViewContainer extends React.Component {
                                  editMode={editMode}
                                  scope={JSON.stringify(scope)}
                                  history={history}
+                                 setKeyValue={this.setKeyValue.bind(this)}
                                  onChange={this.handleTemplateSaveChange}/>
         let content
         if (!editMode) {
@@ -316,6 +319,25 @@ class CmsViewContainer extends React.Component {
                         checked={!!this.state.ssr}
                         onChange={this.handleSsrChange}
                     />
+                    {cmsPages && cmsPages.results && cmsPages.results.length && <div>
+                        <Divider />
+                        <Typography variant="headline">Related pages</Typography>
+                        <MenuList>
+                            {
+                                cmsPages.results.map(i => {
+                                        if (i.slug !== cmsPage.slug) {
+                                            return <MenuListItem key={i.slug} onClick={e => {
+                                                history.push('/' + i.slug)
+                                            }} button primary={i.slug}/>
+                                        }
+                                    }
+                                )
+                            }
+
+                        </MenuList>
+                    </div>
+                    }
+
                 </div>
             </div>
 
@@ -337,6 +359,55 @@ class CmsViewContainer extends React.Component {
 
         return content
     }
+
+    setKeyValue({key, value}) {
+        const {client, user} = this.props
+        const variables = {
+            key,
+            value
+        }
+
+        console.log(key,value)
+
+        const gqlQuery = gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`
+        client.mutate({
+            mutation: gqlQuery,
+            variables,
+            update: (store, {data}) => {
+
+                /*const freshData = {
+                    ...data['setKeyValue'],
+                    createdBy: {
+                        _id: user.userData._id,
+                        username: user.userData.username,
+                        __typename: 'UserPublic'
+                    }
+                }
+
+                const storeData = store.readQuery({
+                    query: gqlQuery,
+                    variables
+                })
+                if (storeData[storeKey]) {
+                    if (!storeData[storeKey].results) {
+                        storeData[storeKey].results = []
+                    }
+
+                    if (freshData) {
+                        storeData[storeKey].results.unshift(freshData)
+                        storeData[storeKey].total += 1
+                    }
+                    store.writeQuery({
+                        query: gqlQuery,
+                        variables: {page, limit, sort, filter},
+                        data: storeData
+                    })
+                    this.setState({data: storeData[storeKey]})
+                }
+*/
+            },
+        })
+    }
 }
 
 
@@ -344,6 +415,7 @@ CmsViewContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
     cmsPage: PropTypes.object,
+    cmsPages: PropTypes.object,
     updateCmsPage: PropTypes.func.isRequired,
     slug: PropTypes.string,
     user: PropTypes.object.isRequired,
@@ -358,6 +430,8 @@ CmsViewContainer.propTypes = {
     /* if true data gets refetched with query on url change*/
     urlSensitiv: PropTypes.bool
 }
+
+const gqlQueryRel = gql`query cmsPages($filter: String){cmsPages(filter:$filter){results{slug}}}`
 
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
@@ -379,6 +453,25 @@ const CmsViewContainerWithGql = compose(
 
             return {
                 cmsPage,
+                loading
+            }
+        }
+    }),
+    graphql(gqlQueryRel, {
+        skip: props => props.dynamic || !isEditMode(props),
+        options(ownProps) {
+            const {slug} = ownProps,
+                variables = {
+                    filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`
+                }
+            return {
+                variables,
+                fetchPolicy: 'network-only'
+            }
+        },
+        props: ({data: {loading, cmsPages, slug}}) => {
+            return {
+                cmsPages,
                 loading
             }
         }
