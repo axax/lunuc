@@ -406,7 +406,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {template, script, resolvedData, history, className, setKeyValue} = this.props
+        const {dynamic, template, script, resolvedData, history, className, setKeyValue} = this.props
         if (!template) {
             console.warn('Template is missing.')
             return null
@@ -482,13 +482,26 @@ class JsonDom extends React.Component {
                 }
             }
         }
-        const content = this.parseRec(this.getJson(this.props), 0)
+        let content = this.parseRec(this.getJson(this.props), 0)
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
-            return <div
+
+            content = <div
                 className={'JsonDom Cms-' + scope.page.slug.replace(/[\W_-]+/g, '-') + (className ? ' ' + className : '')}>{content}</div>
+
+            if (!dynamic) {
+                const p = scope.page.slug.split('/')
+                let path = ''
+                for (let i = 0; i < p.length - 1; i++) {
+                    if( path !== '') path += '-'
+                    path +=p[i]
+                    content = <div
+                        className={'Cms-' + path}>{content}</div>
+                }
+            }
+            return content
         }
 
     }
@@ -506,7 +519,9 @@ JsonDom.propTypes = {
     editMode: PropTypes.bool,
     _parentRef: PropTypes.object,
     history: PropTypes.object,
-    id: PropTypes.string
+    id: PropTypes.string,
+    /* if dynamic is set to true that means it is a child of another JsonDom */
+    dynamic: PropTypes.bool
 }
 
 export default JsonDom

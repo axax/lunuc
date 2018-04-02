@@ -254,7 +254,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, cmsPages, location, history, _parentRef, id, loading, className, children, user} = this.props
+        const {cmsPage, cmsPages, location, history, _parentRef, id, loading, className, children, user, dynamic} = this.props
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
             if (!loading)
@@ -272,6 +272,7 @@ class CmsViewContainer extends React.Component {
 
         const startTime = new Date()
         const jsonDom = <JsonDom id={id}
+                                 dynamic={dynamic}
                                  children={children}
                                  className={className}
                                  _parentRef={_parentRef}
@@ -426,6 +427,7 @@ CmsViewContainer.propTypes = {
     /* Reference to the parent JsonDom */
     _parentRef: PropTypes.object,
     id: PropTypes.string,
+    /* if dynamic is set to true that means it is a child of another CmsViewContainer */
     dynamic: PropTypes.bool,
     /* if true data gets refetched with query on url change*/
     urlSensitiv: PropTypes.bool

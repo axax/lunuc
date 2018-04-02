@@ -3,5 +3,10 @@
   "shop.search.placeholder":"Was suchen Sie?",
   "shop.cart":"Warenkorb",
   "shop.cart.is.empty":"Der Warenkorb ist leer",
-  "shop.myaccount":"Mein Konto"
+  "shop.myaccount":"Mein Konto",
+  "shop.myaccount.address":"Adresse",
+  "shop.myaccount.address.name": "Name",
+  "shop.myaccount.address.firstname": "Vorname",
+  "shop.myaccount.address.street": "Strasse",
+  "shop.myaccount.address.place": "Ort"
 }
