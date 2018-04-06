@@ -67,6 +67,7 @@ class TypesContainer extends React.Component {
         this.pageParams = this.determinPageParams(props)
         this.state = {
             confirmDeletionDialog: true,
+            viewSettingDialog: false,
             dataToDelete: null,
             createEditDialog: false,
             dataToEdit: null,
@@ -90,7 +91,7 @@ class TypesContainer extends React.Component {
     }
 
     setSettingsForType(type, settings) {
-        this.settings[type] = Object.assign({},this.settings[type], settings)
+        this.settings[type] = Object.assign({}, this.settings[type], settings)
     }
 
     componentWillUnmount() {
@@ -238,15 +239,20 @@ class TypesContainer extends React.Component {
             this._renderedTable = <SimpleTable title={type} dataSource={dataSource} columns={columns} count={data.total}
                                                rowsPerPage={limit} page={page}
                                                orderBy={asort[0]}
-                                               actions={[{
-                                                   name: 'Add new ' + type, onClick: () => {
+                                               actions={[
+                                                   {
+                                                       name: 'Add new ' + type, onClick: () => {
                                                        this.setState({createEditDialog: true})
                                                    }
-                                               }, {
-                                                   name: 'Refresh', onClick: () => {
-                                                       this.getData(this.pageParams, false)
-                                                   }
-                                               }]}
+                                                   }, {
+                                                       name: 'View settings', onClick: () => {
+                                                           this.setState({viewSettingDialog: true})
+                                                       }
+                                                   }, {
+                                                       name: 'Refresh', onClick: () => {
+                                                           this.getData(this.pageParams, false)
+                                                       }
+                                                   }]}
                                                orderDirection={asort.length > 1 && asort[1] || null}
                                                onSort={this.handleSortChange}
                                                onChangePage={this.handleChangePage.bind(this)}
@@ -270,6 +276,18 @@ class TypesContainer extends React.Component {
             exist.
             Types can be specified in an extension.</Typography></BaseLayout>
 
+
+
+        const viewSettingDialogProps = {
+            title: 'View settings',
+            open: this.state.viewSettingDialog,
+            actions: [{key: 'cancel', label: 'Cancel'}, {
+                key: 'save',
+                label: 'Save',
+                type: 'primary'
+            }],
+            children: <div />
+        }
 
         const editDialogProps = {
             title: type,
@@ -335,6 +353,7 @@ class TypesContainer extends React.Component {
             }
 
             <SimpleDialog {...editDialogProps}/>
+            <SimpleDialog {...viewSettingDialogProps}/>
         </BaseLayout>
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
