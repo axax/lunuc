@@ -18,7 +18,8 @@ import {
     SimpleTable,
     Row,
     Col,
-    Tooltip
+    Tooltip,
+    SimpleSwitch
 } from 'ui/admin'
 import FileDrop from 'client/components/FileDrop'
 import {withApollo} from 'react-apollo'
@@ -127,7 +128,7 @@ class TypesContainer extends React.Component {
     }
 
 
-    renderTable() {
+    renderTable(columns) {
 
         const {classes} = this.props
         const {data} = this.state
@@ -143,7 +144,7 @@ class TypesContainer extends React.Component {
 
             const {type, page, limit, sort} = this.pageParams
 
-            const fields = this.types[type].fields, columns = this.getTableColumns(type), dataSource = []
+            const fields = this.types[type].fields, dataSource = []
 
             if (data.results) {
                 data.results.forEach(item => {
@@ -270,32 +271,43 @@ class TypesContainer extends React.Component {
         const {dataToEdit} = this.state
         const {fixType} = this.props
         const {type, filter} = this.pageParams
-        const formFields = getFormFields(type)
+        const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
         if (!this.types[type]) return <BaseLayout><Typography variant="subheading" color="error">Type {type} does not
             exist.
             Types can be specified in an extension.</Typography></BaseLayout>
 
 
-
         const viewSettingDialogProps = {
             title: 'View settings',
             open: this.state.viewSettingDialog,
+            onClose: this.handleViewSettingClose,
             actions: [{key: 'cancel', label: 'Cancel'}, {
                 key: 'save',
                 label: 'Save',
                 type: 'primary'
             }],
-            children: <div />
+            children: <div>
+                <Typography variant="caption" component="h2" gutterBottom>Available columns</Typography>
+
+                {columns &&
+                columns.map(c => {
+                    return <div key={c.id}><SimpleSwitch label={c.title} name={c.id}
+                                              onChange={this.handleInputChange} checked={true ? true : false}/></div>
+                })
+                }
+
+
+            </div>
         }
 
         const editDialogProps = {
             title: type,
             open: this.state.createEditDialog,
             onClose: this.handleCreateEditData,
-            actions: [{key: 'cancel', label: 'Cancel'}, {
-                key: 'save',
-                label: 'Save',
+            actions: [{
+                key: 'ok',
+                label: 'Ok',
                 type: 'primary'
             }],
             children: <GenericForm ref={ref => {
@@ -334,23 +346,7 @@ class TypesContainer extends React.Component {
                 </Col>
             </Row>
 
-            {this.renderTable()}
-
-            <Typography variant="display1" component="h2" gutterBottom>Available fields</Typography>
-
-            {type &&
-            this.types[type].fields.map(field => {
-                return <Chip key={field.name} label={field.name + (field.reference ? ' -> ' + field.type : '')}/>
-            })
-            }
-
-            {this.state.dataToDelete &&
-            <SimpleDialog open={this.state.confirmDeletionDialog} onClose={this.handleConfirmDeletion}
-                          actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
-                          title="Confirm deletion">
-                Are you sure you want to delete this item?
-            </SimpleDialog>
-            }
+            {this.renderTable(columns)}
 
             <SimpleDialog {...editDialogProps}/>
             <SimpleDialog {...viewSettingDialogProps}/>
@@ -818,6 +814,15 @@ class TypesContainer extends React.Component {
 
         }
         this.setState({createEditDialog: false, dataToEdit: null})
+    }
+
+    handleViewSettingClose = (action) => {
+        if (action && action.key === 'save') {
+
+
+
+        }
+        this.setState({viewSettingDialog: false})
     }
 }
 
