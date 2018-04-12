@@ -282,9 +282,9 @@ class TypesContainer extends React.Component {
             title: 'View settings',
             open: this.state.viewSettingDialog,
             onClose: this.handleViewSettingClose,
-            actions: [{key: 'cancel', label: 'Cancel'}, {
-                key: 'save',
-                label: 'Save',
+            actions: [{
+                key: 'ok',
+                label: 'Ok',
                 type: 'primary'
             }],
             children: <div>
@@ -292,8 +292,14 @@ class TypesContainer extends React.Component {
 
                 {columns &&
                 columns.map(c => {
+                    let val = true
+                    if (this.settings && this.settings[type] && this.settings[type].columns) {
+                        val = this.settings[type].columns[c.id] === undefined || this.settings[type].columns[c.id]
+                    }
+
                     return <div key={c.id}><SimpleSwitch label={c.title} name={c.id}
-                                              onChange={this.handleInputChange} checked={true ? true : false}/></div>
+                                                         onChange={(e)=>{this.handleViewSettingChange.bind(this)(e,type)}}
+                                                         checked={ val }/></div>
                 })
                 }
 
@@ -305,9 +311,9 @@ class TypesContainer extends React.Component {
             title: type,
             open: this.state.createEditDialog,
             onClose: this.handleCreateEditData,
-            actions: [{
-                key: 'ok',
-                label: 'Ok',
+            actions: [{key: 'cancel', label: 'Cancel'}, {
+                key: 'save',
+                label: 'Save',
                 type: 'primary'
             }],
             children: <GenericForm ref={ref => {
@@ -355,6 +361,15 @@ class TypesContainer extends React.Component {
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
         return content
+    }
+
+
+    handleViewSettingChange(e,type) {
+        const target = e.target
+        const value = target.checked
+        const name = target.name
+        this.settings = deepMerge(this.settings, {[type]: {columns: {[name]: value}}})
+        this.forceUpdate()
     }
 
 
@@ -818,7 +833,6 @@ class TypesContainer extends React.Component {
 
     handleViewSettingClose = (action) => {
         if (action && action.key === 'save') {
-
 
 
         }
