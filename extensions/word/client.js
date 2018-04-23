@@ -13,21 +13,3 @@ Hook.on('Routes', ({routes}) => {
 Hook.on('MenuMenu', ({menuItems}) => {
     menuItems.push({name: 'Words', to: ADMIN_BASE_URL+'/word', auth: true})
 })
-
-
-
-Hook.on('Types', ({types}) => {
-    types.Word = {
-        "name": "Word",
-        "usedBy": ["Words extension"],
-        "fields": [
-            {
-                "name": "de"
-            },
-            {
-                "name": "en",
-                "required": true
-            }
-        ]
-    }
-})

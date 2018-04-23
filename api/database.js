@@ -3,11 +3,10 @@ import {createAllInitialData} from './data/initialDbData'
 import {createAllIndexes} from './index/indexes'
 
 const MONGO_URL = (process.env.MONGO_URL || process.env.LUNUC_MONGO_URL)
-
 /*
 
 Backup: mongodump --uri $LUNUC_MONGO_URL -v --archive=backup.25022018.gz --gzip
-
+Restore: mongorestore --gzip --archive=backup.1522675219299.gz --port 27018
  */
 
 export const dbPreparation = async (db, cb) => {

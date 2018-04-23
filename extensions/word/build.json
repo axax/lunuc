@@ -1,0 +1,32 @@
+{
+  "types": [
+    {
+      "name": "Word",
+      "fields": [
+        {
+          "name": "en"
+        },
+        {
+          "name": "de"
+        },
+        {
+          "name": "it"
+        },
+        {
+          "name": "categories",
+          "type": "WordCategory",
+          "multi": true
+        }
+      ]
+    },
+    {
+      "name": "WordCategory",
+      "fields": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

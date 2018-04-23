@@ -10,7 +10,6 @@ import {dbConnection, dbPreparation} from './database'
 import {auth} from './auth'
 import {formatError} from './error'
 import {subscriptionManager} from './subscription'
-import path from 'path'
 import handleUpload from './upload'
 
 const PORT = (process.env.PORT || 3000)

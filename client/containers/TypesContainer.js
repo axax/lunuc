@@ -84,11 +84,14 @@ class TypesContainer extends React.Component {
     }
 
     parseSettings(props) {
+        const {onSettings} = props
         try {
             this.settings = JSON.parse(props.keyValueMap.TypesContainerSettings)
         } catch (e) {
             this.settings = {}
         }
+        if (onSettings)
+            onSettings(this.settings)
     }
 
     setSettingsForType(type, settings) {
@@ -105,6 +108,8 @@ class TypesContainer extends React.Component {
 
     componentDidMount() {
         this.getData(this.pageParams, true)
+        if (this.props.onRef)
+            this.props.onRef(this)
     }
 
     shouldComponentUpdate(props, state) {
@@ -129,7 +134,6 @@ class TypesContainer extends React.Component {
 
 
     renderTable(columns) {
-
         const {classes} = this.props
         const {data} = this.state
 
@@ -146,71 +150,87 @@ class TypesContainer extends React.Component {
 
             const fields = this.types[type].fields, dataSource = []
 
+            const columnsFiltered = [], columnsMap = {}
+
+            columns.forEach((col) => {
+                columnsMap[col.id] = this.isColumnActive(type, col.id)
+                if (columnsMap[col.id]) {
+                    columnsFiltered.push(col)
+                }
+            })
+
             if (data.results) {
                 data.results.forEach(item => {
                     const dynamic = {}
                     fields.forEach(field => {
-                        let v = item[field.name]
-                        if (field.reference) {
-                            if (v) {
-                                if (v.constructor === Array) {
-                                    if (field.type === 'Media') {
-                                        dynamic[field.name] = v.reduce((s, i) => {
-                                            s.push(getImageTag(i._id, {key: i._id, height: 40}))
-                                            return s
-                                        }, [])
-                                    } else {
-                                        dynamic[field.name] = v.reduce((s, i) => s + (s !== '' ? ', ' : '') + i.name, '')
-                                    }
+                        if (columnsMap[field.name]) {
+
+                            let v = item[field.name]
+                            if (field.reference) {
+                                if (v) {
+                                    if (v.constructor === Array) {
+                                        if (field.type === 'Media') {
+                                            dynamic[field.name] = v.reduce((s, i) => {
+                                                s.push(getImageTag(i._id, {key: i._id, height: 40}))
+                                                return s
+                                            }, [])
+                                        } else {
+                                            dynamic[field.name] = v.reduce((s, i) => s + (s !== '' ? ', ' : '') + i.name, '')
+                                        }
 
 
-                                } else {
-                                    if (field.type === 'Media') {
-                                        dynamic[field.name] = getImageTag(v._id, {height: 40})
                                     } else {
-                                        dynamic[field.name] = v.name
+                                        if (field.type === 'Media') {
+                                            dynamic[field.name] = getImageTag(v._id, {height: 40})
+                                        } else {
+                                            dynamic[field.name] = v.name
+                                        }
                                     }
                                 }
-                            }
-                        } else if (field.type === 'Boolean') {
-                            dynamic[field.name] = <Switch name={field.name}
-                                                          onChange={e => this.handleDataChange.bind(this)(e, item, field.name)}
-                                                          checked={!!v}/>
-                        } else if (field.uitype === 'image') {
-                            dynamic[field.name] =
-                                <img style={{height: '40px'}}
-                                     src={v}/>
-                        } else {
-                            if (field.localized) {
-                                const localizedNames = item[field.name + '_localized'],
-                                    langVar = []
+                            } else if (field.type === 'Boolean') {
+                                dynamic[field.name] = <Switch name={field.name}
+                                                              onChange={e => this.handleDataChange.bind(this)(e, item, field.name)}
+                                                              checked={!!v}/>
+                            } else if (field.uitype === 'image') {
+                                dynamic[field.name] =
+                                    <img style={{height: '40px'}}
+                                         src={v}/>
+                            } else {
+                                if (field.localized) {
+                                    const localizedNames = item[field.name + '_localized'],
+                                        langVar = []
 
-                                LANGUAGES.map(lang => {
+                                    LANGUAGES.map(lang => {
 
-                                    langVar.push(<div key={lang} className={classes.tableContent}>
+                                        langVar.push(<div key={lang} className={classes.tableContent}>
                                         <span
                                             className={classes.textLight}>{lang}:</span> <span
-                                        onBlur={e => this.handleDataChange.bind(this)(e, item, field.name + '_localized.' + lang)}
-                                        suppressContentEditableWarning
-                                        contentEditable>{localizedNames && localizedNames[lang]}</span>
-                                        <br />
-                                    </div>)
-                                })
-                                dynamic[field.name] = langVar
-                            } else {
-                                dynamic[field.name] =
-                                    <span onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
-                                          suppressContentEditableWarning contentEditable>{v}</span>
+                                            onBlur={e => this.handleDataChange.bind(this)(e, item, field.name + '_localized.' + lang)}
+                                            suppressContentEditableWarning
+                                            contentEditable>{localizedNames && localizedNames[lang]}</span>
+                                            <br />
+                                        </div>)
+                                    })
+                                    dynamic[field.name] = langVar
+                                } else {
+                                    dynamic[field.name] =
+                                        <span onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
+                                              suppressContentEditableWarning contentEditable>{v}</span>
+                                }
+
+
                             }
-
-
                         }
                     })
-                    dataSource.push({
-                        ...dynamic,
-                        user: item.createdBy.username,
-                        date: Util.formattedDateFromObjectId(item._id),
-                        action: [
+
+                    if (columnsMap['user']) {
+                        dynamic.user = item.createdBy.username
+                    }
+                    if (columnsMap['date']) {
+                        dynamic.date = Util.formattedDateFromObjectId(item._id)
+                    }
+                    if (columnsMap['action']) {
+                        dynamic.action = [
                             <Tooltip key="deleteBtn" placement="top" title="Delete entry">
                                 <DeleteIconButton disabled={(item.status == 'deleting' || item.status == 'updating')}
                                                   onClick={this.handleDeleteDataClick.bind(this, item)}/>
@@ -226,9 +246,8 @@ class TypesContainer extends React.Component {
                                     onClick={this.handleCopyClick.bind(this, item)}/>
                             </Tooltip>
                         ]
-                    })
-
-
+                    }
+                    dataSource.push(dynamic)
                 })
 
             }
@@ -237,27 +256,28 @@ class TypesContainer extends React.Component {
             /* HOOK */
             Hook.call('TypeTable', {type, dataSource, data, fields, container: this})
 
-            this._renderedTable = <SimpleTable title={type} dataSource={dataSource} columns={columns} count={data.total}
-                                               rowsPerPage={limit} page={page}
-                                               orderBy={asort[0]}
-                                               actions={[
-                                                   {
-                                                       name: 'Add new ' + type, onClick: () => {
-                                                       this.setState({createEditDialog: true})
-                                                   }
-                                                   }, {
-                                                       name: 'View settings', onClick: () => {
-                                                           this.setState({viewSettingDialog: true})
-                                                       }
-                                                   }, {
-                                                       name: 'Refresh', onClick: () => {
-                                                           this.getData(this.pageParams, false)
-                                                       }
-                                                   }]}
-                                               orderDirection={asort.length > 1 && asort[1] || null}
-                                               onSort={this.handleSortChange}
-                                               onChangePage={this.handleChangePage.bind(this)}
-                                               onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
+            this._renderedTable =
+                <SimpleTable title={type} dataSource={dataSource} columns={columnsFiltered} count={data.total}
+                             rowsPerPage={limit} page={page}
+                             orderBy={asort[0]}
+                             actions={[
+                                 {
+                                     name: 'Add new ' + type, onClick: () => {
+                                     this.setState({createEditDialog: true})
+                                 }
+                                 }, {
+                                     name: 'View settings', onClick: () => {
+                                         this.setState({viewSettingDialog: true})
+                                     }
+                                 }, {
+                                     name: 'Refresh', onClick: () => {
+                                         this.getData(this.pageParams, false)
+                                     }
+                                 }]}
+                             orderDirection={asort.length > 1 && asort[1] || null}
+                             onSort={this.handleSortChange}
+                             onChangePage={this.handleChangePage.bind(this)}
+                             onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
 
             return this._renderedTable
         }
@@ -269,7 +289,7 @@ class TypesContainer extends React.Component {
     render() {
         const startTime = new Date()
         const {dataToEdit} = this.state
-        const {fixType} = this.props
+        const {fixType, noLayout, title} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
@@ -292,14 +312,11 @@ class TypesContainer extends React.Component {
 
                 {columns &&
                 columns.map(c => {
-                    let val = true
-                    if (this.settings && this.settings[type] && this.settings[type].columns) {
-                        val = this.settings[type].columns[c.id] === undefined || this.settings[type].columns[c.id]
-                    }
-
                     return <div key={c.id}><SimpleSwitch label={c.title} name={c.id}
-                                                         onChange={(e)=>{this.handleViewSettingChange.bind(this)(e,type)}}
-                                                         checked={ val }/></div>
+                                                         onChange={(e) => {
+                                                             this.handleViewSettingChange.bind(this)(e, type)
+                                                         }}
+                                                         checked={ this.isColumnActive(type, c.id) }/></div>
                 })
                 }
 
@@ -325,8 +342,9 @@ class TypesContainer extends React.Component {
         Hook.call('TypeCreateEditDialog', {type, props: editDialogProps, dataToEdit}, this)
 
 
-        const content = <BaseLayout>
-            <Typography variant="display2" gutterBottom>{fixType ? fixType : 'Types'}</Typography>
+        const content = <div>
+            {title === false ? '' :
+                <Typography variant="display2" gutterBottom>{fixType ? fixType : 'Types'}</Typography>}
 
             <Row spacing={16}>
                 {!fixType &&
@@ -356,26 +374,37 @@ class TypesContainer extends React.Component {
 
             <SimpleDialog {...editDialogProps}/>
             <SimpleDialog {...viewSettingDialogProps}/>
-        </BaseLayout>
+        </div>
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
-        return content
+        if (noLayout) {
+            return content
+        }
+        return <BaseLayout>{content}</BaseLayout>
     }
 
+    isColumnActive(type, id) {
+        if (this.settings[type] && this.settings[type].columns) {
+            return this.settings[type].columns[id] === undefined || this.settings[type].columns[id]
+        }
+        return true
+    }
 
-    handleViewSettingChange(e,type) {
+    handleViewSettingChange(e, type) {
         const target = e.target
         const value = target.checked
         const name = target.name
         this.settings = deepMerge(this.settings, {[type]: {columns: {[name]: value}}})
+
+        // force rerendering
+        this._lastData = null
         this.forceUpdate()
     }
 
 
     getTableColumns(type) {
         if (this.typeColumns[type]) return this.typeColumns[type]
-
         this.typeColumns[type] = []
         this.types[type].fields.forEach(field => {
             this.typeColumns[type].push({
@@ -668,10 +697,15 @@ class TypesContainer extends React.Component {
         }
     }
 
+    goTo(type, page, limit, sort, filter) {
+        const {baseUrl, fixType} = this.props
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type + '/'}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}`)
+    }
+
 
     runFilter(f) {
         const {type, limit, sort} = this.pageParams
-        this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${sort}&f=${encodeURIComponent(f)}`)
+        this.goTo(type, 1, limit, sort, f)
     }
 
     handleFilterTimeout = null
@@ -704,8 +738,7 @@ class TypesContainer extends React.Component {
         }
         const newSort = `${orderBy} ${orderDirection}`
         this.setSettingsForType(type, {sort: newSort})
-
-        this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${newSort}&f=${filter}`)
+        this.goTo(type, 1, limit, newSort, filter)
     }
 
 
@@ -719,13 +752,13 @@ class TypesContainer extends React.Component {
 
     handleChangePage = (page) => {
         const {type, limit, sort, filter} = this.pageParams
-        this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=${page}&l=${limit}&s=${sort}&f=${filter}`)
+        this.goTo(type, page, limit, sort, filter)
     }
 
 
     handleChangeRowsPerPage = (limit) => {
         const {type, sort, filter} = this.pageParams
-        this.props.history.push(`${ADMIN_BASE_URL}/types/${type}/?p=1&l=${limit}&s=${sort}&f=${filter}`)
+        this.goTo(type, 1, limit, sort, filter)
     }
 
 
@@ -820,7 +853,6 @@ class TypesContainer extends React.Component {
 
             if (this.state.dataToEdit) {
                 // if dataToEdit is set we are in edit mode
-                console.log(submitData)
                 this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...submitData}, fieldData)
             } else {
                 // create a new entry
@@ -847,6 +879,11 @@ TypesContainer.propTypes = {
     match: PropTypes.object.isRequired,
     user: PropTypes.object.isRequired,
     fixType: PropTypes.string,
+    noLayout: PropTypes.bool,
+    baseUrl: PropTypes.string,
+    title: PropTypes.any,
+    onSettings: PropTypes.func,
+    onRef: PropTypes.func,
     classes: PropTypes.object.isRequired,
     /* To get and set settings */
     setKeyValue: PropTypes.func.isRequired,
@@ -877,11 +914,13 @@ Hook.on('TypeTable', ({type, dataSource, data, container}) => {
         })
     } else if (type === 'CmsPage') {
         dataSource.forEach((d, i) => {
-            d.action.push(<Tooltip key="viewBtn" placement="top" title="View page">
-                <WebIconButton onClick={() => {
-                    container.props.history.push('/' + data.results[i].slug)
-                }}/>
-            </Tooltip>)
+            if (d.action) {
+                d.action.push(<Tooltip key="viewBtn" placement="top" title="View page">
+                    <WebIconButton onClick={() => {
+                        container.props.history.push('/' + data.results[i].slug)
+                    }}/>
+                </Tooltip>)
+            }
         })
     }
 })

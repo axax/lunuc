@@ -1,177 +1,65 @@
 import React from 'react'
-import GenericForm from 'client/components/generic/GenericForm'
-import genericComposer from 'client/containers/generic/genericComposer'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import {Row, Col, SimpleTable, SimpleDialog, DeleteIconButton} from 'ui/admin'
-import Util from 'client/util'
+import TypesContainer from 'client/containers/TypesContainer'
 import PropTypes from 'prop-types'
-import config from 'gen/config'
+import Hook from 'util/hook'
+import {
+    SimpleSelect,
+    Typography
+} from 'ui/admin'
+import extensions from 'gen/extensions'
 
-const WORDS_PER_PAGE = 10
+const TYPE = 'Word'
 
 class WordContainer extends React.Component {
-
 
     constructor(props) {
         super(props)
 
         this.state = {
-            orderBy: '_id',
-            orderDirection: 'desc',
-            rowsPerPage: WORDS_PER_PAGE,
-            confirmDeletionDialog: false,
-            dataToDelete: false,
-            filter: ''
-        }
-    }
-
-    handleAddWordClick = (data) => {
-        const {createWord} = this.props
-        createWord({
-            en: data.en,
-            de: data.de
-        }).then(() => {
-            this.addWordForm.reset()
-        })
-    }
-
-    handleAddWordValidate = (data) => {
-        return data.en && data.en.trim() !== '' && data.de && data.de.trim() !== ''
-    }
-
-    handleWordChange = (event, data, lang) => {
-
-        const t = event.target.innerText
-        if (t != data[lang]) {
-            const {updateWord} = this.props
-            updateWord(
-                Object.assign({},data,{[lang]:t})
-            )
-        }
-    }
-
-    handleDeleteWordClick = (data) => {
-        this.setState({confirmDeletionDialog: true, dataToDelete: data})
-    }
-
-    handleFilter = ({value}) => {
-        this.setState({filter: value})
-
-        this.props.setOptionsForWords({filter: value})
-        this.props.refetchWords()
-    }
-
-    handleChangeRowsPerPage = (rowsPerPage) => {
-        this.setState({rowsPerPage})
-        this.props.setOptionsForWords({limit: rowsPerPage})
-        this.props.refetchWords()
-    }
-
-    handleChangePage = (page) => {
-        this.props.history.push(`${config.ADMIN_BASE_URL}/word/${(page)}`)
-    }
-
-    handleConfirmDeletion = (action) => {
-        if (action && action.key === 'yes') {
-            const {deleteWord} = this.props
-            deleteWord({
-                _id: this.state.dataToDelete._id
-            })
-        }
-        this.setState({confirmDeletionDialog: false, dataToDelete: false})
-    }
-
-    handleSortChange = (orderBy) => {
-
-        let orderDirection = 'desc';
-
-        if (this.state.orderBy === orderBy && this.state.orderDirection === 'desc') {
-            orderDirection = 'asc';
+            currentPair: ''
         }
 
-        this.props.setOptionsForWords({sort: `${orderBy} ${orderDirection}`})
-        this.props.refetchWords()
-        this.setState({orderBy, orderDirection})
+        this.typeContainer = React.createRef()
     }
+
 
     render() {
         const startTime = (new Date()).getTime()
-        const {words} = this.props
+        const {history, location, match} = this.props
+        const {currentPair} = this.state
+        const selectFrom = [], selectTo = [], pairs = [], selectPairs = []
 
+        extensions.word.options.types[0].fields.forEach((a) => {
+            if (a.name.length === 2) {
+                extensions.word.options.types[0].fields.forEach((b) => {
+                    if (b.name.length === 2 && b.name !== a.name) {
+                        const name = a.name + ' / ' + b.name
+                        if (!pairs.includes(name) && !pairs.includes(b.name + ' / ' + a.name)) {
+                            pairs.push(name)
+                            selectPairs.push({value: name, name})
+                        }
+                    }
+                })
+            }
+        })
 
-        const currentPage = Math.ceil((words ? words.offset : 0) / this.state.rowsPerPage) + 1
-
-        const columns = [{
-            title: 'Deutsch',
-            id: 'de',
-            sortable: true
-        }, {
-            title: 'English',
-            id: 'en',
-            sortable: true
-        },
-            {
-                title: 'User',
-                id: 'user'
-            },
-            {
-                title: 'Created at',
-                id: '_id',
-                sortable: true
-            },
-            {
-                title: 'Actions',
-                id: 'action'
-            }]
-
-        const dataSource = words && words.results && words.results.map((word) => ({
-                    de: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'de')}
-                              suppressContentEditableWarning contentEditable>{word.de}</span>,
-                    en: <span onBlur={(e) => this.handleWordChange.bind(this)(e, word, 'en')}
-                              suppressContentEditableWarning contentEditable>{word.en}</span>,
-                    user: word.createdBy.username,
-                    _id: Util.formattedDateFromObjectId(word._id),
-                    action: <DeleteIconButton disabled={(word.status == 'deleting' || word.status == 'updating')}
-                                              onClick={this.handleDeleteWordClick.bind(this, word)}>Delete
-                    </DeleteIconButton>
-                }))
 
         const content = (
             <BaseLayout>
-                <h1>Words</h1>
-                <Row spacing={16} style={{marginBottom: 50}}>
-                    <Col md={6}>
-                        <GenericForm caption="Add Word" ref={(e) => {
-                            this.addWordForm = e
-                        }} fields={{en: {placeholder: 'English'}, de: {placeholder: 'Deutsch'}}}
-                                     onValidate={this.handleAddWordValidate}
-                                     onClick={this.handleAddWordClick}/>
-                    </Col>
-                    <Col md={6}>
-                        <GenericForm onChange={this.handleFilter} primaryButton={false}
-                                     fields={{term: {placeholder: 'Filter', value:this.state.filter}}}/>
-                    </Col>
-                </Row>
-
-                <SimpleTable dataSource={dataSource}
-                       columns={columns}
-                       count={(words ? words.total : 0)}
-                       rowsPerPage={this.state.rowsPerPage}
-                       page={currentPage}
-                       orderBy={this.state.orderBy}
-                       orderDirection={this.state.orderDirection}
-                       onSort={this.handleSortChange}
-                       onChangePage={this.handleChangePage.bind(this)}
-                       onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
-
-                <SimpleDialog open={this.state.confirmDeletionDialog} onClose={this.handleConfirmDeletion.bind(this)}
-                        actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
-                        title="Confirm deletion">
-                    Are you sure you want to delete the word
-                    <strong>{Util.escapeHtml('"' + this.state.dataToDelete.en)}
-                        - {Util.escapeHtml(this.state.dataToDelete.de + '"')}</strong>?
-                </SimpleDialog>
-
+                <Typography variant="display2" gutterBottom>Words</Typography>
+                <SimpleSelect
+                    value={currentPair}
+                    onChange={this.handlePairChange.bind(this)}
+                    items={selectPairs}
+                />
+                <TypesContainer onRef={ref => (this.typeContainer = ref)}
+                                onSettings={this.typeSetting.bind(this)}
+                                baseUrl={location.pathname}
+                                title={false}
+                                noLayout={true}
+                                fixType={ TYPE }
+                                history={history} location={location} match={match}/>
             </BaseLayout>
         )
 
@@ -180,23 +68,76 @@ class WordContainer extends React.Component {
 
         return content
     }
+
+    typeSetting(settings) {
+        if (settings[TYPE]) {
+            const {currentPair} = settings[TYPE]
+            if( currentPair )
+                this.setState({currentPair})
+        }
+    }
+
+    refrehTypeSetting() {
+        const {currentPair} = this.state
+        const settings = Object.assign({}, this.typeContainer.settings[TYPE])
+        if (settings.columns) {
+            settings.columns = Object.keys(settings.columns)
+                .filter(key => key.length > 2)
+                .reduce((obj, key) => {
+                    obj[key] = settings.columns[key];
+                    return obj;
+                }, {})
+        } else {
+            settings.columns = {}
+        }
+
+        const a = currentPair.split('/'), fromSelected = a[0].trim(), toSelected = (a.length>1?a[1].trim():'')
+
+
+        extensions.word.options.types[0].fields.forEach((a) => {
+            if (a.name.length === 2) {
+                settings.columns[a.name] = false
+            }
+        })
+
+        if (fromSelected) {
+            settings.columns[fromSelected] = true
+        }
+
+        if (toSelected) {
+            settings.columns[toSelected] = true
+        }
+
+        settings.currentPair = currentPair
+
+
+        this.typeContainer.setSettingsForType(TYPE, settings)
+        this.typeContainer._lastData = null
+
+        this.typeContainer.forceUpdate()
+    }
+
+    handlePairChange(e) {
+        const o = {currentPair: e.target.value}
+        this.setState(o, this.refrehTypeSetting)
+    }
+
 }
 
 
 WordContainer.propTypes = {
-    history: PropTypes.object,
-    words: PropTypes.object,
-    createWord: PropTypes.func.isRequired,
-    refetchWords: PropTypes.func.isRequired,
-    updateWord: PropTypes.func.isRequired,
-    deleteWord: PropTypes.func.isRequired,
-    setOptionsForWords: PropTypes.func.isRequired,
-    loading: PropTypes.bool
+    history: PropTypes.object.isRequired,
+    location: PropTypes.object.isRequired,
+    match: PropTypes.object.isRequired
 }
 
 
-export default genericComposer(WordContainer, 'word', {
-    hasFilter: true,
-    fields: {'en': 'String!', 'de': 'String'},
-    limit: WORDS_PER_PAGE
+export default WordContainer
+
+
+// add an extra column for Media at the beginning
+Hook.on('TypeTableColumns', ({type, columns}) => {
+    if (type === TYPE) {
+
+    }
 })

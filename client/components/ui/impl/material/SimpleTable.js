@@ -98,7 +98,7 @@ class SimpleTable extends React.Component {
                 <TableHead>
                     <TableRow>
                         {columns && columns.map(column => {
-                            return <TableCell key={column.id}>
+                            return !column.hidden && <TableCell key={column.id}>
 
                                 {column.sortable ?
                                     <Tooltip

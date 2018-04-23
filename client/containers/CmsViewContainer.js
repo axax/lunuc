@@ -368,8 +368,6 @@ class CmsViewContainer extends React.Component {
             value
         }
 
-        console.log(key,value)
-
         const gqlQuery = gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`
         client.mutate({
             mutation: gqlQuery,
