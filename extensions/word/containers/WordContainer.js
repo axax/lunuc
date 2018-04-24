@@ -8,6 +8,8 @@ import {
     Typography
 } from 'ui/admin'
 import extensions from 'gen/extensions'
+import {graphql, compose} from 'react-apollo'
+import gql from 'graphql-tag'
 
 const TYPE = 'Word'
 
@@ -17,7 +19,8 @@ class WordContainer extends React.Component {
         super(props)
 
         this.state = {
-            currentPair: ''
+            currentPair: '',
+            currentCategory: ''
         }
 
         this.typeContainer = React.createRef()
@@ -26,9 +29,9 @@ class WordContainer extends React.Component {
 
     render() {
         const startTime = (new Date()).getTime()
-        const {history, location, match} = this.props
-        const {currentPair} = this.state
-        const selectFrom = [], selectTo = [], pairs = [], selectPairs = []
+        const {history, location, match, wordCategorys} = this.props
+        const {currentPair,currentCategory} = this.state
+        const selectFrom = [], selectTo = [], pairs = [], selectPairs = [], categoryPair = []
 
         extensions.word.options.types[0].fields.forEach((a) => {
             if (a.name.length === 2) {
@@ -44,7 +47,9 @@ class WordContainer extends React.Component {
             }
         })
 
+        //wordCategorys.res
 
+//console.log(wordCategorys)
         const content = (
             <BaseLayout>
                 <Typography variant="display2" gutterBottom>Words</Typography>
@@ -132,7 +137,16 @@ WordContainer.propTypes = {
 }
 
 
-export default WordContainer
+const WordContainerWithGql = compose(
+    graphql(gql`query{wordCategorys{results{_id name}}}`, {
+        props: ({data: {wordCategorys}}) => ({
+            wordCategorys
+        })
+    })
+)(WordContainer)
+
+
+export default WordContainerWithGql
 
 
 // add an extra column for Media at the beginning

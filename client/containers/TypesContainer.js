@@ -68,9 +68,9 @@ class TypesContainer extends React.Component {
         this.pageParams = this.determinPageParams(props)
         this.state = {
             confirmDeletionDialog: true,
-            viewSettingDialog: false,
+            viewSettingDialog: undefined,
             dataToDelete: null,
-            createEditDialog: false,
+            createEditDialog: undefined,
             dataToEdit: null,
             data: null
         }
@@ -288,7 +288,7 @@ class TypesContainer extends React.Component {
 
     render() {
         const startTime = new Date()
-        const {dataToEdit} = this.state
+        const {dataToEdit, createEditDialog, viewSettingDialog} = this.state
         const {fixType, noLayout, title} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
@@ -298,48 +298,51 @@ class TypesContainer extends React.Component {
             Types can be specified in an extension.</Typography></BaseLayout>
 
 
-        const viewSettingDialogProps = {
-            title: 'View settings',
-            open: this.state.viewSettingDialog,
-            onClose: this.handleViewSettingClose,
-            actions: [{
-                key: 'ok',
-                label: 'Ok',
-                type: 'primary'
-            }],
-            children: <div>
-                <Typography variant="caption" component="h2" gutterBottom>Available columns</Typography>
+        let viewSettingDialogProps, editDialogProps
 
-                {columns &&
-                columns.map(c => {
-                    return <div key={c.id}><SimpleSwitch label={c.title} name={c.id}
-                                                         onChange={(e) => {
-                                                             this.handleViewSettingChange.bind(this)(e, type)
-                                                         }}
-                                                         checked={ this.isColumnActive(type, c.id) }/></div>
-                })
-                }
+        if( viewSettingDialog !== undefined ) {
+            viewSettingDialogProps = {
+                title: 'View settings',
+                open: this.state.viewSettingDialog,
+                onClose: this.handleViewSettingClose,
+                actions: [{
+                    key: 'ok',
+                    label: 'Ok',
+                    type: 'primary'
+                }],
+                children: <div>
+                    <Typography variant="caption" component="h2" gutterBottom>Available columns</Typography>
 
-
-            </div>
+                    {columns &&
+                    columns.map(c => {
+                        return <div key={c.id}><SimpleSwitch label={c.title} name={c.id}
+                                                             onChange={(e) => {
+                                                                 this.handleViewSettingChange.bind(this)(e, type)
+                                                             }}
+                                                             checked={ this.isColumnActive(type, c.id) }/></div>
+                    })
+                    }
+                </div>
+            }
         }
 
-        const editDialogProps = {
-            title: type,
-            open: this.state.createEditDialog,
-            onClose: this.handleCreateEditData,
-            actions: [{key: 'cancel', label: 'Cancel'}, {
-                key: 'save',
-                label: 'Save',
-                type: 'primary'
-            }],
-            children: <GenericForm ref={ref => {
-                this.createEditForm = ref
-            }} primaryButton={false} fields={formFields} values={dataToEdit}/>
+        if( createEditDialog !== undefined ) {
+            editDialogProps = {
+                title: type,
+                open: this.state.createEditDialog,
+                onClose: this.handleCreateEditData,
+                actions: [{key: 'cancel', label: 'Cancel'}, {
+                    key: 'save',
+                    label: 'Save',
+                    type: 'primary'
+                }],
+                children: <GenericForm ref={ref => {
+                    this.createEditForm = ref
+                }} primaryButton={false} fields={formFields} values={dataToEdit}/>
+            }
+            /* HOOK */
+            Hook.call('TypeCreateEditDialog', {type, props: editDialogProps, dataToEdit}, this)
         }
-
-        /* HOOK */
-        Hook.call('TypeCreateEditDialog', {type, props: editDialogProps, dataToEdit}, this)
 
 
         const content = <div>
@@ -372,8 +375,8 @@ class TypesContainer extends React.Component {
 
             {this.renderTable(columns)}
 
-            <SimpleDialog {...editDialogProps}/>
-            <SimpleDialog {...viewSettingDialogProps}/>
+            {createEditDialog !== undefined && <SimpleDialog {...editDialogProps}/> }
+            {viewSettingDialog !== undefined && <SimpleDialog {...viewSettingDialogProps}/> }
         </div>
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
