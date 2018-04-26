@@ -86,23 +86,25 @@ const Util = {
         const parts = {}, rest = []
 
         if (filter) {
+            let operator = 'or'
             filter.split(' ').forEach(i => {
-                /*let isOr=false
-                if( i == '||'){
-                    isOr=true
-                }*/
-                const q = i.split(/=|:/)
-                if (q.length > 1) {
-                    if( parts[q[0]] ){
-                        parts[q[0]] = [parts[q[0]]]
-                        parts[q[0]].push(q[1])
-                    }else{
-                        parts[q[0]] = q[1]
 
-                    }
-
+                if (i === '&&') {
+                    operator = 'and'
                 } else {
-                    rest.push(q[0])
+                    const q = i.split(/=|:/)
+                    if (q.length > 1) {
+                        if (parts[q[0]]) {
+                            parts[q[0]] = [parts[q[0]]]
+                            parts[q[0]].push({value: q[1], operator})
+                        } else {
+                            parts[q[0]] = {value: q[1], operator}
+                        }
+
+                    } else {
+                        rest.push({value: q[0], operator})
+                    }
+                    operator = 'or'
                 }
             })
         }

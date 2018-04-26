@@ -47,16 +47,26 @@ class WordContainer extends React.Component {
             }
         })
 
-        //wordCategorys.res
 
-//console.log(wordCategorys)
+        categoryPair.push({value:'all',name:'All'})
+
+        wordCategorys.results.forEach(e=>{
+            categoryPair.push({value:e._id,name:e.name})
+        })
         const content = (
             <BaseLayout>
                 <Typography variant="display2" gutterBottom>Words</Typography>
                 <SimpleSelect
+                    label="Language pair"
                     value={currentPair}
                     onChange={this.handlePairChange.bind(this)}
                     items={selectPairs}
+                />
+                <SimpleSelect
+                    label="Category"
+                    value={currentCategory}
+                    onChange={this.handleCategoryChange.bind(this)}
+                    items={categoryPair}
                 />
                 <TypesContainer onRef={ref => (this.typeContainer = ref)}
                                 onSettings={this.typeSetting.bind(this)}
@@ -64,6 +74,7 @@ class WordContainer extends React.Component {
                                 title={false}
                                 noLayout={true}
                                 fixType={ TYPE }
+                                baseFilter="categories:5adda47ddf91df36a5ec63b6"
                                 history={history} location={location} match={match}/>
             </BaseLayout>
         )
@@ -76,14 +87,14 @@ class WordContainer extends React.Component {
 
     typeSetting(settings) {
         if (settings[TYPE]) {
-            const {currentPair} = settings[TYPE]
+            const {currentPair, currentCategory} = settings[TYPE]
             if( currentPair )
-                this.setState({currentPair})
+                this.setState({currentPair, currentCategory})
         }
     }
 
     refrehTypeSetting() {
-        const {currentPair} = this.state
+        const {currentPair, currentCategory} = this.state
         const settings = Object.assign({}, this.typeContainer.settings[TYPE])
         if (settings.columns) {
             settings.columns = Object.keys(settings.columns)
@@ -114,6 +125,7 @@ class WordContainer extends React.Component {
         }
 
         settings.currentPair = currentPair
+        settings.currentCategory = currentCategory
 
 
         this.typeContainer.setSettingsForType(TYPE, settings)
@@ -124,6 +136,11 @@ class WordContainer extends React.Component {
 
     handlePairChange(e) {
         const o = {currentPair: e.target.value}
+        this.setState(o, this.refrehTypeSetting)
+    }
+
+    handleCategoryChange(e) {
+        const o = {currentCategory: e.target.value}
         this.setState(o, this.refrehTypeSetting)
     }
 

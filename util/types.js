@@ -163,6 +163,10 @@ Hook.on('Types', ({types}) => {
             {
                 "name": "public",
                 "type":"Boolean"
+            },
+            {
+                "name": "urlSensitiv",
+                "type":"Boolean"
             }
         ]
     }

@@ -16,7 +16,7 @@ import Util from 'client/util'
 import {getType} from 'util/types'
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){cacheKey slug template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
+const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){cacheKey slug urlSensitiv template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
 
 
 const editorStyle = {
@@ -375,35 +375,35 @@ class CmsViewContainer extends React.Component {
             update: (store, {data}) => {
 
                 /*const freshData = {
-                    ...data['setKeyValue'],
-                    createdBy: {
-                        _id: user.userData._id,
-                        username: user.userData.username,
-                        __typename: 'UserPublic'
-                    }
-                }
+                 ...data['setKeyValue'],
+                 createdBy: {
+                 _id: user.userData._id,
+                 username: user.userData.username,
+                 __typename: 'UserPublic'
+                 }
+                 }
 
-                const storeData = store.readQuery({
-                    query: gqlQuery,
-                    variables
-                })
-                if (storeData[storeKey]) {
-                    if (!storeData[storeKey].results) {
-                        storeData[storeKey].results = []
-                    }
+                 const storeData = store.readQuery({
+                 query: gqlQuery,
+                 variables
+                 })
+                 if (storeData[storeKey]) {
+                 if (!storeData[storeKey].results) {
+                 storeData[storeKey].results = []
+                 }
 
-                    if (freshData) {
-                        storeData[storeKey].results.unshift(freshData)
-                        storeData[storeKey].total += 1
-                    }
-                    store.writeQuery({
-                        query: gqlQuery,
-                        variables: {page, limit, sort, filter},
-                        data: storeData
-                    })
-                    this.setState({data: storeData[storeKey]})
-                }
-*/
+                 if (freshData) {
+                 storeData[storeKey].results.unshift(freshData)
+                 storeData[storeKey].total += 1
+                 }
+                 store.writeQuery({
+                 query: gqlQuery,
+                 variables: {page, limit, sort, filter},
+                 data: storeData
+                 })
+                 this.setState({data: storeData[storeKey]})
+                 }
+                 */
             },
         })
     }
@@ -433,6 +433,7 @@ CmsViewContainer.propTypes = {
 
 const gqlQueryRel = gql`query cmsPages($filter: String){cmsPages(filter:$filter){results{slug}}}`
 
+const urlSensitivMap = {}
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
         options(ownProps) {
@@ -441,7 +442,7 @@ const CmsViewContainerWithGql = compose(
                     slug
                 }
 
-            if (urlSensitiv) {
+            if (urlSensitiv || (urlSensitiv === undefined && urlSensitivMap[slug])) {
                 variables.query = window.location.search.substring(1)
             }
             return {
@@ -450,7 +451,7 @@ const CmsViewContainerWithGql = compose(
             }
         },
         props: ({data: {loading, cmsPage}}) => {
-
+            urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv
             return {
                 cmsPage,
                 loading

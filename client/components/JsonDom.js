@@ -9,7 +9,7 @@ import _t from 'util/i18n'
 import Util from 'client/util'
 
 
-const TEMPLATE_EVENTS = ['Click', 'KeyDown']
+const TEMPLATE_EVENTS = ['Click', 'KeyDown','Change']
 
 class JsonDom extends React.Component {
 

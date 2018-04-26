@@ -468,16 +468,16 @@ class TypesContainer extends React.Component {
     }
 
     getData({type, page, limit, sort, filter}, cacheFirst) {
-        const {client} = this.props
+        const {client, baseFilter} = this.props
         if (type) {
             const queries = getTypeQueries(type)
 
             if (queries) {
 
                 const storeKey = this.getStoreKey(type),
-                    variables = {limit, page, sort, filter},
+                    variables = {limit, page, sort, filter: filter + (baseFilter?(filter?' && ':'')+baseFilter:'')},
                     gqlQuery = gql(queries.query)
-
+console.log(variables)
                 if (cacheFirst) {
                     try {
                         const storeData = client.readQuery({
@@ -884,6 +884,7 @@ TypesContainer.propTypes = {
     fixType: PropTypes.string,
     noLayout: PropTypes.bool,
     baseUrl: PropTypes.string,
+    baseFilter: PropTypes.string,
     title: PropTypes.any,
     onSettings: PropTypes.func,
     onRef: PropTypes.func,

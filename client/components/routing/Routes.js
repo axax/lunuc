@@ -29,7 +29,7 @@ class Routes extends React.Component {
             private: true,
             exact: true,
             path: ADMIN_BASE_URL + '/cms/:page*',
-            component: (p) => <TypesContainer fixType="CmsPage" {...p} />
+            component: (p) => <TypesContainer baseUrl={ADMIN_BASE_URL+"/cms/"} fixType="CmsPage" {...p} />
         },
         {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},

@@ -47,7 +47,6 @@ const GenericResolver = {
 
         const parsedFilter = ClientUtil.parseFilter(filter)
         const group = {}
-        const filterMatch = []
         const lookups = []
         const fields = getFormFields(collectionName)
 
@@ -68,31 +67,46 @@ const GenericResolver = {
             }
         }
 
+        const addFilterToMatch = (filterPart, filterKey, data) =>
+        {
+
+            if (!filterPart || filterPart.operator === 'or') {
+                if (!match.$or) {
+                    match.$or = []
+                }
+                match.$or.push({[filterKey]: data})
+            } else {
+                match[filterKey] = data
+            }
+
+        }
+
         const addFilter = (value, isRef, localized) => {
             if (filter) {
                 const filterKey = value + (localized ? '_localized.' + context.lang : '')
-                if (parsedFilter.parts[value]) {
+
+                const filterPart = parsedFilter.parts[value]
+
+                if (filterPart) {
                     if (isRef) {
-                        filterMatch.push({[filterKey]: ObjectId(parsedFilter.parts[value])})
+                        addFilterToMatch(filterPart, filterKey, ObjectId(filterPart.value))
                     } else {
-                        if( parsedFilter.parts[value].constructor === Array ){
-                            parsedFilter.parts[value].forEach(e=>{
-                                filterMatch.push({[filterKey]: {'$regex': e, '$options': 'i'}})
+                        if (filterPart.constructor === Array) {
+                            filterPart.forEach(e => {
+                                addFilterToMatch(e, filterKey, {'$regex': e.value, '$options': 'i'})
                             })
-                        }else {
-                            filterMatch.push({[filterKey]: {'$regex': parsedFilter.parts[value], '$options': 'i'}})
+                        } else {
+                            addFilterToMatch(filterPart, filterKey, {'$regex': filterPart.value, '$options': 'i'})
                         }
                     }
                 }
-                parsedFilter.rest.forEach(i => {
-
-                    filterMatch.push({[filterKey]: {'$regex': i, '$options': 'i'}})
+                parsedFilter.rest.forEach(e => {
+                    addFilterToMatch(e, filterKey, {'$regex': e.value, '$options': 'i'})
                 })
             }
         }
 
         data.forEach((value, i) => {
-
             if (value.constructor === Object) {
                 // if a value is in this format {'categories':['name']}
                 // we expect that the field categories is a reference to another type
@@ -119,7 +133,7 @@ const GenericResolver = {
                     type = type.substring(1, type.length - 1)
                 }
                 addLookup(type, fieldName, multi)
-                addFilter(fieldName)
+                addFilter(fieldName, true)
             } else {
                 // regular field
                 if (fields && fields[value] && fields[value].localized) {
@@ -134,11 +148,7 @@ const GenericResolver = {
 
 
         })
-        if (filterMatch.length > 0) {
-            match.$or = filterMatch
-        }
         const collection = db.collection(collectionName)
-
         let a = (await collection.aggregate([
             {
                 $match: match

@@ -75,7 +75,7 @@ let createScopeForDataResolver = function (query) {
 export const cmsResolver = (db) => ({
     cmsPages: async ({limit, page, offset, filter, sort}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
-        return await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug'], {
+        return await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug', 'urlSensitiv'], {
             limit,
             page,
             offset,
@@ -101,17 +101,16 @@ export const cmsResolver = (db) => ({
             } else {
                 match = {slug}
             }
-            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public'], {match})
+            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {match})
             Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
         }
-
 
         if (!cmsPages.results) {
             throw new Error('Cms page doesn\'t exist')
         }
         const scope = {...createScopeForDataResolver(query), page: {slug}}
 
-        const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt} = cmsPages.results[0]
+        const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt, urlSensitiv} = cmsPages.results[0]
         const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope)
         let html
 
@@ -147,8 +146,9 @@ export const cmsResolver = (db) => ({
                 resolvedData: JSON.stringify(resolvedData),
                 html,
                 subscriptions,
+                urlSensitiv,
                 /* we return a cacheKey here because the resolvedData may be dependent on the query that gets passed.
-                   that leads to ambiguous results for the same id.
+                 that leads to ambiguous results for the same id.
                  */
                 cacheKey: query
             }
@@ -167,6 +167,7 @@ export const cmsResolver = (db) => ({
                 html,
                 resolvedData: JSON.stringify(resolvedData),
                 subscriptions,
+                urlSensitiv,
                 cacheKey: query
             }
 
@@ -197,7 +198,7 @@ export const cmsResolver = (db) => ({
 
             result.resolvedData = JSON.stringify(resolvedData)
             result.subscriptions = subscriptions
-        }else if( rest.dataResolver === ''){
+        } else if (rest.dataResolver === '') {
             // if resolver explicitly is set to ''
             result.resolvedData = '{}'
         }
