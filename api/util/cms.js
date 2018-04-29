@@ -37,6 +37,7 @@ const UtilCms = {
                             offset: o,
                             match: {}
                         })
+
                         //TODO: only return fields that are request and remove sensitiv data
 
                         if( result.results ) {

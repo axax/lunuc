@@ -442,7 +442,7 @@ const CmsViewContainerWithGql = compose(
                     slug
                 }
 
-            if (urlSensitiv || (urlSensitiv === undefined && urlSensitivMap[slug])) {
+            if (urlSensitiv || (urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
                 variables.query = window.location.search.substring(1)
             }
             return {
@@ -451,7 +451,8 @@ const CmsViewContainerWithGql = compose(
             }
         },
         props: ({data: {loading, cmsPage}}) => {
-            urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv
+            if (cmsPage)
+                urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv
             return {
                 cmsPage,
                 loading
@@ -470,7 +471,7 @@ const CmsViewContainerWithGql = compose(
                 fetchPolicy: 'network-only'
             }
         },
-        props: ({data: {loading, cmsPages, slug}}) => {
+        props: ({data: {loading, cmsPages}}) => {
             return {
                 cmsPages,
                 loading

@@ -14,7 +14,6 @@ const GenericResolver = {
         }
         //Util.checkIfUserIsLoggedIn(context)
         let {limit, offset, page, match, filter, sort} = options
-
         if (!limit) {
             limit = 10
         }
@@ -49,7 +48,6 @@ const GenericResolver = {
         const group = {}
         const lookups = []
         const fields = getFormFields(collectionName)
-
         const addLookup = (type, fieldName, multi) => {
             lookups.push({
                 $lookup: {
@@ -84,9 +82,7 @@ const GenericResolver = {
         const addFilter = (value, isRef, localized) => {
             if (filter) {
                 const filterKey = value + (localized ? '_localized.' + context.lang : '')
-
                 const filterPart = parsedFilter.parts[value]
-
                 if (filterPart) {
                     if (isRef) {
                         addFilterToMatch(filterPart, filterKey, ObjectId(filterPart.value))
@@ -107,6 +103,7 @@ const GenericResolver = {
         }
 
         data.forEach((value, i) => {
+
             if (value.constructor === Object) {
                 // if a value is in this format {'categories':['name']}
                 // we expect that the field categories is a reference to another type
@@ -145,8 +142,6 @@ const GenericResolver = {
                 }
 
             }
-
-
         })
         const collection = db.collection(collectionName)
         let a = (await collection.aggregate([

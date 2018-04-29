@@ -92,7 +92,6 @@ export const cmsResolver = (db) => ({
             // get page from cache
             cmsPages = Cache.get(cacheKey)
         }
-
         if (!cmsPages) {
             let match
             if (!userIsLoggedIn) {
@@ -112,8 +111,8 @@ export const cmsResolver = (db) => ({
 
         const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt, urlSensitiv} = cmsPages.results[0]
         const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope)
-        let html
 
+        let html
         if (ssr) {
             // Server side rendering
             // todo: ssr for apollo https://github.com/apollographql/apollo-client/blob/master/docs/source/recipes/server-side-rendering.md
