@@ -9,11 +9,12 @@ import _t from 'util/i18n'
 import Util from 'client/util'
 
 
-const TEMPLATE_EVENTS = ['Click', 'KeyDown','Change']
+const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change']
 
 class JsonDom extends React.Component {
 
     components = {
+        'input': JsonDomInput,
         'SimpleMenu': SimpleMenu,
         'Link': Link,
         'Cms': ({...rest}) => <CmsViewContainer _parentRef={this} dynamic={true} {...rest}/>,
@@ -130,12 +131,9 @@ class JsonDom extends React.Component {
     componentWillReceiveProps(props) {
 
         this.addParentRef(props)
-
         if (this.props.scope !== props.scope) {
             this.scope = null
             this.json = null
-            //this.resetTemplate()
-
             /* if( this.props.scope.params !== props.scope.params ){
              // set it to undefined. null wouldn't be enough because null can also be a resolved value
              this.resolvedDataJson = undefined
@@ -344,7 +342,6 @@ class JsonDom extends React.Component {
                 if (t === 'Cms') {
                     cmsProps = {location: this.props.history.location}
                 }
-
                 h.push(React.createElement(
                     this.components[_t] || _t,
                     {id: key, key, ...cmsProps, ...p},
@@ -466,6 +463,8 @@ class JsonDom extends React.Component {
             if (jsError) {
                 return <div>Error in the script: <strong>{jsError}</strong></div>
             }
+        }else{
+            console.log(this.scriptResult)
         }
 
         scope.script = this.scriptResult
@@ -495,8 +494,8 @@ class JsonDom extends React.Component {
                 const p = scope.page.slug.split('/')
                 let path = ''
                 for (let i = 0; i < p.length - 1; i++) {
-                    if( path !== '') path += '-'
-                    path +=p[i]
+                    if (path !== '') path += '-'
+                    path += p[i]
                     content = <div
                         className={'Cms-' + path}>{content}</div>
                 }
@@ -525,3 +524,34 @@ JsonDom.propTypes = {
 }
 
 export default JsonDom
+
+
+/* Wrapper for input so we are able to pass a value prop  */
+class JsonDomInput extends React.Component {
+    state = {value: ''}
+
+    constructor(props) {
+        super(props)
+        this.state = {
+            value: props.value
+        }
+    }
+
+    componentWillReceiveProps(props) {
+        this.setState({value: props.value})
+    }
+
+    valueChange = (e) => {
+        const {onChange} = this.props
+        this.setState({value: e.target.value})
+        if (onChange) {
+            onChange(e)
+        }
+    }
+
+    render() {
+        const {value, onChange, ...rest} = this.props
+        return <input onChange={this.valueChange.bind(this)} value={this.state.value} {...rest} />
+    }
+
+}

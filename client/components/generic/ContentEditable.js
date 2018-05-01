@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import {withStyles} from 'ui/admin'
 
-const reservedJsKeywords = ['return', 'if', 'else', 'var', 'let', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export']
+const reservedJsKeywords = ['return', 'if', 'else', 'var', 'let', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export', 'function', 'undefined']
 const reservedJsCustomKeywords = ['on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent','getComponent']
 
 const styles = theme => ({

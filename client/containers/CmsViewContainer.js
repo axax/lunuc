@@ -221,6 +221,7 @@ class CmsViewContainer extends React.Component {
             props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             props.location.search !== this.props.location.search ||
+            props.location.hash !== this.props.location.hash ||
             props.user !== this.props.user ||
             props.cmsPages !== this.props.cmsPages ||
             props.children != this.props.children ||
@@ -268,8 +269,13 @@ class CmsViewContainer extends React.Component {
             // it was already rendered on the server side
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
-        const scope = {page: {slug: cmsPage.slug}, user, pathname: location.pathname, params: Util.extractQueryParams()}
-
+        const scope = {
+            page: {slug: cmsPage.slug},
+            user,
+            pathname: location.pathname,
+            params: Util.extractQueryParams(),
+            hashParams: (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})
+        }
         const startTime = new Date()
         const jsonDom = <JsonDom id={id}
                                  dynamic={dynamic}
