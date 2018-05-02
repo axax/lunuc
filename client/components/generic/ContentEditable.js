@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom'
 import {withStyles} from 'ui/admin'
 
 const reservedJsKeywords = ['return', 'if', 'else', 'var', 'let', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export', 'function', 'undefined']
-const reservedJsCustomKeywords = ['on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent','getComponent']
+const reservedJsCustomKeywords = ['on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent', 'getComponent']
 
 const styles = theme => ({
     editor: {
@@ -132,7 +132,6 @@ class ContentEditable extends React.Component {
 
         for (let i = 0; i < str.length; i++) {
             const c = str[i]
-
             if (c === '<') {
                 // escape html tag in json
                 res += '&lt;'
@@ -163,7 +162,8 @@ class ContentEditable extends React.Component {
     highlightJs(str) {
         const {classes} = this.props
 
-        let inDQuote = false, inSQuote = false, inComment = false, inCommentMulti = false, keyword = '', res = ''
+        let inDQuote = false, inSQuote = false, inLitQuote = false, inComment = false, inCommentMulti = false,
+            keyword = '', res = ''
 
         for (let i = 0; i < str.length; i++) {
             const c = str[i]
@@ -174,7 +174,16 @@ class ContentEditable extends React.Component {
                     res += '</span>'
                     inCommentMulti = inComment = false
                 }
-            } else if (c === '\'' && !inDQuote && !(inSQuote && str[i - 1] === '\\')) {
+            } else if (c === '`' && !inDQuote && !inSQuote) {
+                inLitQuote = !inLitQuote
+                if (inLitQuote) {
+                    res += '<span class="' + classes.highlight3 + '">'
+                }
+                res += c
+                if (!inLitQuote) {
+                    res += '</span>'
+                }
+            } else if (c === '\'' && !inLitQuote && !inDQuote && !(inSQuote && str[i - 1] === '\\')) {
                 inSQuote = !inSQuote
                 if (inSQuote) {
                     keyword = ''
@@ -184,7 +193,7 @@ class ContentEditable extends React.Component {
                 if (!inSQuote) {
                     res += '</span>'
                 }
-            } else if (c === '"' && !inSQuote && !(inDQuote && str[i - 1] === '\\')) {
+            } else if (c === '"' && !inLitQuote && !inSQuote && !(inDQuote && str[i - 1] === '\\')) {
                 inDQuote = !inDQuote
                 if (inDQuote) {
                     keyword = ''
@@ -194,7 +203,7 @@ class ContentEditable extends React.Component {
                 if (!inDQuote) {
                     res += '</span>'
                 }
-            } else if (!inDQuote && !inSQuote) {
+            } else if (!inDQuote && !inSQuote && !inLitQuote) {
                 if ((c === '/' || c === '*') && i > 0 && str[i - 1] === '/') {
                     res = res.substring(0, res.length - 1) + '<span class="' + classes.highlight5 + '">' + res.substring(res.length - 1)
                     //comment

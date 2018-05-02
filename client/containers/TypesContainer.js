@@ -288,7 +288,7 @@ class TypesContainer extends React.Component {
 
     render() {
         const startTime = new Date()
-        const {dataToEdit, createEditDialog, viewSettingDialog} = this.state
+        const {dataToEdit, createEditDialog, viewSettingDialog, dataToDelete, confirmDeletionDialog} = this.state
         const {fixType, noLayout, title} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
@@ -374,6 +374,14 @@ class TypesContainer extends React.Component {
             </Row>
 
             {this.renderTable(columns)}
+
+            {dataToDelete &&
+            <SimpleDialog open={confirmDeletionDialog} onClose={this.handleConfirmDeletion}
+                          actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
+                          title="Confirm deletion">
+                Are you sure you want to delete this item?
+            </SimpleDialog>
+            }
 
             {createEditDialog !== undefined && <SimpleDialog {...editDialogProps}/> }
             {viewSettingDialog !== undefined && <SimpleDialog {...viewSettingDialogProps}/> }
@@ -477,7 +485,6 @@ class TypesContainer extends React.Component {
                 const storeKey = this.getStoreKey(type),
                     variables = {limit, page, sort, filter: filter + (baseFilter?(filter?' && ':'')+baseFilter:'')},
                     gqlQuery = gql(queries.query)
-console.log(variables)
                 if (cacheFirst) {
                     try {
                         const storeData = client.readQuery({
@@ -511,6 +518,8 @@ console.log(variables)
         const {client, user} = this.props
         if (type) {
             const queries = getTypeQueries(type)
+            console.log(queries.create)
+
             client.mutate({
                 mutation: gql(queries.create),
                 variables: {
@@ -526,10 +535,8 @@ console.log(variables)
                             __typename: 'UserPublic'
                         }, ...optimisticInput
                     }
-
                     const gqlQuery = gql(queries.query),
                         storeKey = this.getStoreKey(type)
-
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
@@ -610,7 +617,6 @@ console.log(variables)
 
             const queries = getTypeQueries(type),
                 storeKey = this.getStoreKey(type)
-
             client.mutate({
                 mutation: gql(queries.delete),
                 variables: {

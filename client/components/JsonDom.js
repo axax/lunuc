@@ -443,10 +443,13 @@ class JsonDom extends React.Component {
 
             try {
                 this.scriptResult = new Function(`
-                const scope = arguments[0]
+                let scope = arguments[0]
                 const {on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue}= arguments[1]
                 const history= arguments[2]
                 const parent= arguments[3]
+                on('refreshscope',(newScope)=>{
+                    scope = newScope
+                })
                 ${script}`).call(this, scope, {
                     on: this.jsOn,
                     setKeyValue,
@@ -464,7 +467,10 @@ class JsonDom extends React.Component {
                 return <div>Error in the script: <strong>{jsError}</strong></div>
             }
         }else{
-            console.log(this.scriptResult)
+            // if script was already executed only refresh the scope
+            this.jsOnStack["refreshscope"].forEach(cb => {
+                cb(scope)
+            })
         }
 
         scope.script = this.scriptResult
@@ -536,9 +542,12 @@ class JsonDomInput extends React.Component {
             value: props.value
         }
     }
-
+    shouldComponentUpdate(props){
+        return props.value !== this.props.value
+    }
     componentWillReceiveProps(props) {
-        this.setState({value: props.value})
+        if( props.value )
+            this.setState({value: props.value})
     }
 
     valueChange = (e) => {

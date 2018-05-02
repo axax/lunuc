@@ -4,9 +4,12 @@ import TypesContainer from 'client/containers/TypesContainer'
 import PropTypes from 'prop-types'
 import Hook from 'util/hook'
 import {
+    Row,
+    Col,
     SimpleSelect,
     Typography
 } from 'ui/admin'
+import GenericForm from 'client/components/generic/GenericForm'
 import extensions from 'gen/extensions'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
@@ -32,6 +35,7 @@ class WordContainer extends React.Component {
         const {history, location, match, wordCategorys} = this.props
         const {currentPair,currentCategory} = this.state
         const selectFrom = [], selectTo = [], pairs = [], selectPairs = [], categoryPair = []
+        const a = currentPair.split('/'), fromSelected = a[0].trim(), toSelected = (a.length>1?a[1].trim():'')
 
         extensions.word.options.types[0].fields.forEach((a) => {
             if (a.name.length === 2) {
@@ -46,28 +50,40 @@ class WordContainer extends React.Component {
                 })
             }
         })
-
-
         categoryPair.push({value:'all',name:'All'})
 
         wordCategorys.results.forEach(e=>{
             categoryPair.push({value:e._id,name:e.name})
         })
+
+
         const content = (
             <BaseLayout>
                 <Typography variant="display2" gutterBottom>Words</Typography>
-                <SimpleSelect
-                    label="Language pair"
-                    value={currentPair}
-                    onChange={this.handlePairChange.bind(this)}
-                    items={selectPairs}
-                />
-                <SimpleSelect
-                    label="Category"
-                    value={currentCategory}
-                    onChange={this.handleCategoryChange.bind(this)}
-                    items={categoryPair}
-                />
+
+
+                <Row>
+                    <Col md={6}>
+                        <SimpleSelect
+                            label="Language pair"
+                            value={currentPair}
+                            onChange={this.handlePairChange.bind(this)}
+                            items={selectPairs}
+                        />
+                        <SimpleSelect
+                            label="Category"
+                            value={currentCategory}
+                            onChange={this.handleCategoryChange.bind(this)}
+                            items={categoryPair}
+                        />
+                    </Col>
+                    <Col md={6}>
+                        {fromSelected && toSelected && <GenericForm fields={{[fromSelected]: {value: '', label: fromSelected}, [toSelected]: {value: '', label: toSelected}}}
+                                     onValidate={this.handleAddValidate} onClick={this.handleAddClick.bind(this)}/>}
+                    </Col>
+                </Row>
+
+
                 <TypesContainer onRef={ref => (this.typeContainer = ref)}
                                 onSettings={this.typeSetting.bind(this)}
                                 baseUrl={location.pathname}
@@ -83,6 +99,24 @@ class WordContainer extends React.Component {
         console.info(`render ${this.constructor.name} in ${(new Date()).getTime() - startTime}ms`)
 
         return content
+    }
+
+
+    handleAddValidate(e){
+        for (const k of Object.keys(e)) {
+            if( e[k] === '') return false
+        }
+        return true
+    }
+
+    handleAddClick(e){
+
+        const {currentCategory} = this.state
+        if( !currentCategory )
+            return
+        const submitData = Object.assign({},e,{categories:currentCategory,en:''})
+console.log(submitData,currentCategory)
+        this.typeContainer.createData(this.typeContainer.pageParams, submitData)
     }
 
     typeSetting(settings) {

@@ -112,6 +112,7 @@ class GenericForm extends React.Component {
                             return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
                                                onChange={this.handleInputChange} key={k}
                                                name={k}
+                                               label={o.label}
                                                multi={o.multi}
                                                type={o.type} placeholder={o.placeholder}/>
                         } else if (uitype === 'select') {
@@ -129,6 +130,7 @@ class GenericForm extends React.Component {
                                     const valueLocalized = this.state.fields[k + '_localized']
                                     const fieldName = k + '_localized.' + l
                                     a.push(<TextField key={fieldName}
+                                                      label={o.label}
                                                       fullWidth={o.fullWidth}
                                                       type={uitype}
                                                       placeholder={o.placeholder + ' [' + l + ']'}
@@ -142,6 +144,7 @@ class GenericForm extends React.Component {
                                 }, [])
                             } else {
                                 return <TextField key={k}
+                                                  label={o.label}
                                                   fullWidth={o.fullWidth}
                                                   type={uitype}
                                                   placeholder={o.placeholder}
