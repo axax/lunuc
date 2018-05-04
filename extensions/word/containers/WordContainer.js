@@ -110,13 +110,23 @@ class WordContainer extends React.Component {
     }
 
     handleAddClick(e){
+        const {wordCategorys} = this.props
 
         const {currentCategory} = this.state
-        if( !currentCategory )
+        if( !currentCategory || !wordCategorys.results )
             return
-        const submitData = Object.assign({},e,{categories:currentCategory,en:''})
-console.log(submitData,currentCategory)
-        this.typeContainer.createData(this.typeContainer.pageParams, submitData)
+
+        const cat = wordCategorys.results.filter(f=>f._id===currentCategory)
+
+        if( cat.length === 0)
+            return
+
+
+        const submitData = Object.assign({},e,{categories:currentCategory, en: ''})
+        const optimisticData = Object.assign({},submitData)
+        optimisticData.categories = cat
+
+        this.typeContainer.createData(this.typeContainer.pageParams, submitData, optimisticData)
     }
 
     typeSetting(settings) {

@@ -300,7 +300,7 @@ class TypesContainer extends React.Component {
 
         let viewSettingDialogProps, editDialogProps
 
-        if( viewSettingDialog !== undefined ) {
+        if (viewSettingDialog !== undefined) {
             viewSettingDialogProps = {
                 title: 'View settings',
                 open: this.state.viewSettingDialog,
@@ -326,7 +326,7 @@ class TypesContainer extends React.Component {
             }
         }
 
-        if( createEditDialog !== undefined ) {
+        if (createEditDialog !== undefined) {
             editDialogProps = {
                 title: type,
                 open: this.state.createEditDialog,
@@ -430,7 +430,9 @@ class TypesContainer extends React.Component {
             },
             {
                 title: 'Created at',
-                id: 'date'
+                id: 'date',
+                sortid: '_id',
+                sortable: true
             },
             {
                 title: 'Actions',
@@ -475,26 +477,31 @@ class TypesContainer extends React.Component {
         return type.charAt(0).toLowerCase() + type.slice(1) + 's'
     }
 
-    enhanceOptimisticData(o){
+    enhanceOptimisticData(o) {
         for (let k in o) {
-            if( o[k] && k.endsWith('_localized')){
+            if (o[k] && k.endsWith('_localized')) {
                 o[k].__typename = 'LocalizedString'
-                LANGUAGES.forEach(l=>{
-                    if(!o[k][l]) o[k][l] = ''
+                LANGUAGES.forEach(l => {
+                    if (!o[k][l]) o[k][l] = ''
                 })
             }
         }
     }
 
+    extendFilter(filter) {
+        const {baseFilter} = this.props
+        return filter + (baseFilter ? (filter ? ' && ' : '') + baseFilter : '')
+    }
+
     getData({type, page, limit, sort, filter}, cacheFirst) {
-        const {client, baseFilter} = this.props
+        const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
 
             if (queries) {
 
                 const storeKey = this.getStoreKey(type),
-                    variables = {limit, page, sort, filter: filter + (baseFilter?(filter?' && ':'')+baseFilter:'')},
+                    variables = {limit, page, sort, filter: this.extendFilter(filter)},
                     gqlQuery = gql(queries.query)
                 if (cacheFirst) {
                     try {
@@ -547,10 +554,12 @@ class TypesContainer extends React.Component {
                     this.enhanceOptimisticData(freshData)
                     const gqlQuery = gql(queries.query),
                         storeKey = this.getStoreKey(type)
+                    const extendedFilter = this.extendFilter(filter)
+
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
-                        variables: {page, limit, sort, filter}
+                        variables: {page, limit, sort, filter: extendedFilter}
                     })
                     if (storeData[storeKey]) {
                         if (!storeData[storeKey].results) {
@@ -563,7 +572,7 @@ class TypesContainer extends React.Component {
                         }
                         store.writeQuery({
                             query: gqlQuery,
-                            variables: {page, limit, sort, filter},
+                            variables: {page, limit, sort, filter: extendedFilter},
                             data: storeData
                         })
                         this.setState({data: storeData[storeKey]})
@@ -587,10 +596,12 @@ class TypesContainer extends React.Component {
                         storeKey = this.getStoreKey(type),
                         responseItem = data['update' + type]
 
+                    const extendedFilter = this.extendFilter(filter)
+
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
-                        variables: {page, limit, sort, filter}
+                        variables: {page, limit, sort, filter: extendedFilter}
                     })
 
 
@@ -602,10 +613,11 @@ class TypesContainer extends React.Component {
                         if (idx > -1) {
                             // update entry with new data
                             refResults[idx] = deepMerge({}, refResults[idx], changedData, optimisticData)
+                            this.enhanceOptimisticData(refResults[idx])
                             // wirte it back to the cache
                             store.writeQuery({
                                 query: gqlQuery,
-                                variables: {page, limit, sort, filter},
+                                variables: {page, limit, sort, filter: extendedFilter},
                                 data: storeData
                             })
                             this.setState({data: storeData[storeKey]})
@@ -632,13 +644,13 @@ class TypesContainer extends React.Component {
                 },
                 update: (store, {data}) => {
                     const gqlQuery = gql(queries.query)
+                    const extendedFilter = this.extendFilter(filter)
 
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
-                        variables: {page, limit, sort, filter}
+                        variables: {page, limit, sort, filter: extendedFilter}
                     })
-
                     if (storeData[storeKey]) {
                         const refResults = storeData[storeKey].results
 
@@ -652,7 +664,7 @@ class TypesContainer extends React.Component {
                             }
                             store.writeQuery({
                                 query: gqlQuery,
-                                variables: {page, limit, sort, filter},
+                                variables: {page, limit, sort, filter: extendedFilter},
                                 data: storeData
                             })
                             this.setState({data: storeData[storeKey]})

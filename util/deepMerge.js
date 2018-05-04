@@ -3,6 +3,7 @@ const _deepMerge =(concatArrays, ...objects) => {
 
     return objects.reduce((prev, obj) => {
         if( obj) {
+
             Object.keys(obj).forEach(key => {
                 const pVal = prev[key]
                 const oVal = obj[key]
@@ -16,13 +17,11 @@ const _deepMerge =(concatArrays, ...objects) => {
                 }
                 else if (isObject(pVal) && isObject(oVal)) {
                     prev[key] = _deepMerge(pVal, oVal)
-                }
-                else {
+                } else {
                     prev[key] = oVal
                 }
             })
         }
-
         return prev
     }, {})
 }

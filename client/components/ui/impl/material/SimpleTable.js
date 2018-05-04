@@ -107,9 +107,9 @@ class SimpleTable extends React.Component {
                                         enterDelay={300}
                                     >
                                         <TableSortLabel
-                                            active={orderBy === column.id}
+                                            active={orderBy === (column.sortid || column.id)}
                                             direction={orderDirection || 'asc'}
-                                            onClick={this.createSortHandler.bind(this, column.id)}
+                                            onClick={this.createSortHandler.bind(this, column.sortid || column.id)}
                                         >
                                             {column.title}
                                         </TableSortLabel>
