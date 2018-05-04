@@ -285,15 +285,19 @@ const GenericResolver = {
 
                 if (fields && fields[k] && fields[k].localized) {
                     // is field localized
-                    console.log(k, 'is localized')
-                    o[k + '_localized.' + [context.lang]] = data[k]
+                    if( !o[k + '_localized'] )
+                        o[k + '_localized'] = {}
+                    o[k + '_localized'][context.lang] = data[k]
 
                 } else if (k.endsWith('_localized')) {
                     // if a localized object {_localized:{de:'',en:''}} gets passed
                     // convert it to the format _localized.de='' and _localized.en=''
                     if (data[k]) {
+
                         Object.keys(data[k]).map(e => {
-                            o[k + '.' + e] = data[k][e]
+                            if( !o[k] )
+                                o[k] = {}
+                            o[k][e] = data[k][e]
                         })
                     }
 
@@ -303,7 +307,8 @@ const GenericResolver = {
             }
             return o
         }, {})
-
+console.log('dataet',data)
+console.log('dataSet',dataSet)
         // set timestamp
         dataSet.modifiedAt = new Date().getTime()
 

@@ -1,4 +1,4 @@
-export function deepMerge(...objects) {
+const _deepMerge =(concatArrays, ...objects) => {
     const isObject = obj => obj && typeof obj === 'object'
 
     return objects.reduce((prev, obj) => {
@@ -7,11 +7,15 @@ export function deepMerge(...objects) {
                 const pVal = prev[key]
                 const oVal = obj[key]
 
-                if (Array.isArray(pVal) && Array.isArray(oVal)) {
-                    prev[key] = pVal.concat(...oVal)
+                if ( Array.isArray(pVal) && Array.isArray(oVal)) {
+                    if( concatArrays ) {
+                        prev[key] = pVal.concat(...oVal)
+                    }else{
+                        prev[key] = oVal
+                    }
                 }
                 else if (isObject(pVal) && isObject(oVal)) {
-                    prev[key] = deepMerge(pVal, oVal)
+                    prev[key] = _deepMerge(pVal, oVal)
                 }
                 else {
                     prev[key] = oVal
@@ -21,4 +25,12 @@ export function deepMerge(...objects) {
 
         return prev
     }, {})
+}
+
+export function deepMerge(...objects) {
+    return _deepMerge(false, ...objects)
+}
+
+export function deepMergeConcatArrays(...objects) {
+    return _deepMerge(true, ...objects)
 }

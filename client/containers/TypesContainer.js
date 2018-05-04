@@ -475,6 +475,17 @@ class TypesContainer extends React.Component {
         return type.charAt(0).toLowerCase() + type.slice(1) + 's'
     }
 
+    enhanceOptimisticData(o){
+        for (let k in o) {
+            if( o[k] && k.endsWith('_localized')){
+                o[k].__typename = 'LocalizedString'
+                LANGUAGES.forEach(l=>{
+                    if(!o[k][l]) o[k][l] = ''
+                })
+            }
+        }
+    }
+
     getData({type, page, limit, sort, filter}, cacheFirst) {
         const {client, baseFilter} = this.props
         if (type) {
@@ -518,8 +529,6 @@ class TypesContainer extends React.Component {
         const {client, user} = this.props
         if (type) {
             const queries = getTypeQueries(type)
-            console.log(queries.create)
-
             client.mutate({
                 mutation: gql(queries.create),
                 variables: {
@@ -535,6 +544,7 @@ class TypesContainer extends React.Component {
                             __typename: 'UserPublic'
                         }, ...optimisticInput
                     }
+                    this.enhanceOptimisticData(freshData)
                     const gqlQuery = gql(queries.query),
                         storeKey = this.getStoreKey(type)
                     // Read the data from the cache for this query.
@@ -566,7 +576,6 @@ class TypesContainer extends React.Component {
 
     updateData({type, page, limit, sort, filter}, changedData, optimisticData) {
         const {client} = this.props
-
         if (type) {
             const queries = getTypeQueries(type)
             client.mutate({
@@ -593,7 +602,6 @@ class TypesContainer extends React.Component {
                         if (idx > -1) {
                             // update entry with new data
                             refResults[idx] = deepMerge({}, refResults[idx], changedData, optimisticData)
-
                             // wirte it back to the cache
                             store.writeQuery({
                                 query: gqlQuery,
@@ -859,7 +867,6 @@ class TypesContainer extends React.Component {
 
             const fieldData = this.createEditForm.state.fields
             const submitData = this.referencesToIds(fieldData)
-
             if (this.state.dataToEdit) {
                 // if dataToEdit is set we are in edit mode
                 this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...submitData}, fieldData)

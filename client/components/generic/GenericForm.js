@@ -5,7 +5,6 @@ import FileDrop from '../FileDrop'
 import TypePicker from '../TypePicker'
 import config from 'gen/config'
 
-
 class GenericForm extends React.Component {
     constructor(props) {
         super(props)
