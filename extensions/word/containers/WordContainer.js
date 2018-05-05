@@ -13,6 +13,7 @@ import GenericForm from 'client/components/generic/GenericForm'
 import extensions from 'gen/extensions'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
+import {withKeyValues} from 'client/containers/generic/withKeyValues'
 
 const TYPE = 'Word'
 
@@ -20,12 +21,15 @@ class WordContainer extends React.Component {
 
     constructor(props) {
         super(props)
-
-        this.state = {
-            currentPair: '',
-            currentCategory: ''
+        try {
+            this.state = JSON.parse(props.keyValueMap.WordContainerState)
+        } catch (e) {
+            this.state = {
+                currentPair: '',
+                currentCategory: ''
+            }
         }
-
+        this.prepareTypeSetting()
         this.typeContainer = React.createRef()
     }
 
@@ -33,9 +37,9 @@ class WordContainer extends React.Component {
     render() {
         const startTime = (new Date()).getTime()
         const {history, location, match, wordCategorys} = this.props
-        const {currentPair,currentCategory} = this.state
+        const {currentPair, currentCategory} = this.state
         const selectFrom = [], selectTo = [], pairs = [], selectPairs = [], categoryPair = []
-        const a = currentPair.split('/'), fromSelected = a[0].trim(), toSelected = (a.length>1?a[1].trim():'')
+        const a = currentPair.split('/'), fromSelected = a[0].trim(), toSelected = (a.length > 1 ? a[1].trim() : '')
 
         extensions.word.options.types[0].fields.forEach((a) => {
             if (a.name.length === 2) {
@@ -50,12 +54,11 @@ class WordContainer extends React.Component {
                 })
             }
         })
-        categoryPair.push({value:'all',name:'All'})
+        categoryPair.push({value: 'all', name: 'All'})
 
-        wordCategorys.results.forEach(e=>{
-            categoryPair.push({value:e._id,name:e.name})
+        wordCategorys.results.forEach(e => {
+            categoryPair.push({value: e._id, name: e.name})
         })
-
 
         const content = (
             <BaseLayout>
@@ -78,19 +81,22 @@ class WordContainer extends React.Component {
                         />
                     </Col>
                     <Col md={6}>
-                        {fromSelected && toSelected && <GenericForm fields={{[fromSelected]: {value: '', label: fromSelected}, [toSelected]: {value: '', label: toSelected}}}
-                                     onValidate={this.handleAddValidate} onClick={this.handleAddClick.bind(this)}/>}
+                        {fromSelected && toSelected && <GenericForm fields={{
+                            [fromSelected]: {value: '', label: fromSelected},
+                            [toSelected]: {value: '', label: toSelected}
+                        }}
+                                                                    onValidate={this.handleAddValidate}
+                                                                    onClick={this.handleAddClick.bind(this)}/>}
                     </Col>
                 </Row>
 
-
                 <TypesContainer onRef={ref => (this.typeContainer = ref)}
-                                onSettings={this.typeSetting.bind(this)}
                                 baseUrl={location.pathname}
                                 title={false}
                                 noLayout={true}
                                 fixType={ TYPE }
-                                baseFilter="categories:5adda47ddf91df36a5ec63b6"
+                                settings={this.settings}
+                                baseFilter={currentCategory && currentCategory !== 'all' ? 'categories:' + currentCategory : ''}
                                 history={history} location={location} match={match}/>
             </BaseLayout>
         )
@@ -102,80 +108,60 @@ class WordContainer extends React.Component {
     }
 
 
-    handleAddValidate(e){
+    handleAddValidate(e) {
         for (const k of Object.keys(e)) {
-            if( e[k] === '') return false
+            if (e[k] === '') return false
         }
         return true
     }
 
-    handleAddClick(e){
+    handleAddClick(e) {
         const {wordCategorys} = this.props
 
         const {currentCategory} = this.state
-        if( !currentCategory || !wordCategorys.results )
+        if (!currentCategory || !wordCategorys.results)
             return
 
-        const cat = wordCategorys.results.filter(f=>f._id===currentCategory)
+        const cat = wordCategorys.results.filter(f => f._id === currentCategory)
 
-        if( cat.length === 0)
-            return
-
-
-        const submitData = Object.assign({},e,{categories:currentCategory, en: ''})
-        const optimisticData = Object.assign({},submitData)
+        const submitData = Object.assign({}, e, {categories: currentCategory!=='all'?currentCategory:null})
+        extensions.word.options.types[0].fields.forEach((a) => {
+            if ( submitData[a.name]===undefined ) {
+                submitData[a.name] = null
+            }
+        })
+        const optimisticData = Object.assign({}, submitData)
         optimisticData.categories = cat
 
         this.typeContainer.createData(this.typeContainer.pageParams, submitData, optimisticData)
     }
 
-    typeSetting(settings) {
-        if (settings[TYPE]) {
-            const {currentPair, currentCategory} = settings[TYPE]
-            if( currentPair )
-                this.setState({currentPair, currentCategory})
-        }
-    }
+    prepareTypeSetting() {
+        const {currentPair} = this.state
+        const settings = {[TYPE]:{columns: {}}}
 
-    refrehTypeSetting() {
-        const {currentPair, currentCategory} = this.state
-        const settings = Object.assign({}, this.typeContainer.settings[TYPE])
-        if (settings.columns) {
-            settings.columns = Object.keys(settings.columns)
-                .filter(key => key.length > 2)
-                .reduce((obj, key) => {
-                    obj[key] = settings.columns[key];
-                    return obj;
-                }, {})
-        } else {
-            settings.columns = {}
-        }
-
-        const a = currentPair.split('/'), fromSelected = a[0].trim(), toSelected = (a.length>1?a[1].trim():'')
+        const a = currentPair.split('/'), fromSelected = a[0].trim(), toSelected = (a.length > 1 ? a[1].trim() : '')
 
 
         extensions.word.options.types[0].fields.forEach((a) => {
             if (a.name.length === 2) {
-                settings.columns[a.name] = false
+                settings[TYPE].columns[a.name] = false
             }
         })
 
         if (fromSelected) {
-            settings.columns[fromSelected] = true
+            settings[TYPE].columns[fromSelected] = true
         }
 
         if (toSelected) {
-            settings.columns[toSelected] = true
+            settings[TYPE].columns[toSelected] = true
         }
+        this.settings = settings
+    }
 
-        settings.currentPair = currentPair
-        settings.currentCategory = currentCategory
-
-
-        this.typeContainer.setSettingsForType(TYPE, settings)
-        this.typeContainer._lastData = null
-
-        this.typeContainer.forceUpdate()
+    refrehTypeSetting() {
+        this.props.setKeyValue({key: 'WordContainerState', value: this.state})
+        this.prepareTypeSetting()
     }
 
     handlePairChange(e) {
@@ -194,7 +180,10 @@ class WordContainer extends React.Component {
 WordContainer.propTypes = {
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
-    match: PropTypes.object.isRequired
+    match: PropTypes.object.isRequired,
+    /* To get and set settings */
+    setKeyValue: PropTypes.func.isRequired,
+    keyValueMap: PropTypes.object
 }
 
 
@@ -207,8 +196,7 @@ const WordContainerWithGql = compose(
 )(WordContainer)
 
 
-export default WordContainerWithGql
-
+export default withKeyValues(WordContainerWithGql, ['WordContainerState'])
 
 // add an extra column for Media at the beginning
 Hook.on('TypeTableColumns', ({type, columns}) => {

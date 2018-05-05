@@ -66,6 +66,7 @@ class TypesContainer extends React.Component {
 
         this.types = getTypes()
         this.pageParams = this.determinPageParams(props)
+        this.baseFilter = props.baseFilter
         this.state = {
             confirmDeletionDialog: true,
             viewSettingDialog: undefined,
@@ -84,14 +85,11 @@ class TypesContainer extends React.Component {
     }
 
     parseSettings(props) {
-        const {onSettings} = props
         try {
             this.settings = JSON.parse(props.keyValueMap.TypesContainerSettings)
         } catch (e) {
             this.settings = {}
         }
-        if (onSettings)
-            onSettings(this.settings)
     }
 
     setSettingsForType(type, settings) {
@@ -116,6 +114,7 @@ class TypesContainer extends React.Component {
         // maybe this can be optimized even more
         return this.state !== state ||
             this.props.location !== props.location ||
+            this.props.baseFilter !== props.baseFilter ||
             this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
     }
 
@@ -126,8 +125,9 @@ class TypesContainer extends React.Component {
             this.parseSettings(props)
         }
 
-        if (this.pageParams.type !== pageParams.type || this.pageParams.page !== pageParams.page || this.pageParams.limit !== pageParams.limit || this.pageParams.sort !== pageParams.sort || this.pageParams.filter !== pageParams.filter) {
+        if (this.props.settings !== props.settings || this.props.baseFilter !== props.baseFilter || this.pageParams.type !== pageParams.type || this.pageParams.page !== pageParams.page || this.pageParams.limit !== pageParams.limit || this.pageParams.sort !== pageParams.sort || this.pageParams.filter !== pageParams.filter) {
             this.pageParams = pageParams
+            this.baseFilter = props.baseFilter
             this.getData(pageParams, true)
         }
     }
@@ -396,8 +396,18 @@ class TypesContainer extends React.Component {
     }
 
     isColumnActive(type, id) {
-        if (this.settings[type] && this.settings[type].columns) {
-            return this.settings[type].columns[id] === undefined || this.settings[type].columns[id]
+        const {settings} = this.props
+        let s
+        if( settings && settings[type] ){
+            // check settings from props if available
+            s = settings[type]
+            return settings[type].columns[id] === undefined || settings[type].columns[id]
+        }else{
+            s = this.settings[type]
+        }
+
+        if (s && s.columns) {
+            return s.columns[id] === undefined || s.columns[id]
         }
         return true
     }
@@ -489,8 +499,7 @@ class TypesContainer extends React.Component {
     }
 
     extendFilter(filter) {
-        const {baseFilter} = this.props
-        return filter + (baseFilter ? (filter ? ' && ' : '') + baseFilter : '')
+        return filter + (this.baseFilter ? (filter ? ' && ' : '') + this.baseFilter : '')
     }
 
     getData({type, page, limit, sort, filter}, cacheFirst) {
@@ -910,8 +919,8 @@ TypesContainer.propTypes = {
     noLayout: PropTypes.bool,
     baseUrl: PropTypes.string,
     baseFilter: PropTypes.string,
+    settings: PropTypes.object,
     title: PropTypes.any,
-    onSettings: PropTypes.func,
     onRef: PropTypes.func,
     classes: PropTypes.object.isRequired,
     /* To get and set settings */
