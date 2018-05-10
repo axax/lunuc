@@ -286,11 +286,11 @@ class JsonDom extends React.Component {
                         if (loopChild.constructor !== Object) {
                             loopChild = {data: loopChild}
                         }
-
                         const tpl = new Function('const {' + Object.keys(loopChild).join(',') + '} = this.' + s + ';return `' + cStr + '`;')
                         // back to json
                         loopChild._index = childIdx
-                        const json = JSON.parse(tpl.call({[s]: loopChild}))
+                        // remove tabs and parse
+                        const json = JSON.parse(tpl.call({[s]: loopChild}).replace(/\t/g, '\\t'))
 
                         const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
                         h.push(this.parseRec(json, key, {...childScope, [s]: loopChild}))
@@ -298,6 +298,7 @@ class JsonDom extends React.Component {
 
                     })
                 } catch (ex) {
+                    console.log(ex)
                     return 'Error in parseRec: ' + ex.message
                 }
 
@@ -371,6 +372,7 @@ class JsonDom extends React.Component {
              */
             this.json = JSON.parse(this.renderString(template, scope))
         } catch (e) {
+            console.log(e)
             this.emitJsonError(e)
         }
         return this.json
@@ -394,7 +396,8 @@ class JsonDom extends React.Component {
     renderString(str, data) {
         try {
             const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this; const parent=arguments[0];return `' + str + '`;')
-            return tpl.call(data, this.props._parentRef)
+            //.replace(/(\r\n|\n|\r)/g,"");
+            return tpl.call(data, this.props._parentRef).replace(/\t/g, '\\t')
         } catch (e) {
             //this.emitJsonError(e)
             console.error("Error in renderString", e)

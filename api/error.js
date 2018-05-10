@@ -47,6 +47,5 @@ export function formatError(error) {
 	if( error.originalError.state ){
 		o.state = error.originalError.state
 	}
-
 	return o
 }

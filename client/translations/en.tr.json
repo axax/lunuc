@@ -1,4 +1,5 @@
 {
   "admin.home.title":"Administration console",
-  "admin.home.hi":"Hi %username%!"
+  "admin.home.hi":"Hi %username%!",
+  "GenericForm.validation.required":"Field is required"
 }

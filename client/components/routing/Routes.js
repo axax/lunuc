@@ -58,7 +58,13 @@ class Routes extends React.Component {
         this.history._replace = this.history.replace
         this.history._push = this.history.push
         this.history.push = (path, state) => {
-            this.history._push(this.pathPrefix + path, state)
+            let newPath
+            if( path.indexOf(this.pathPrefix + '/') < 0 ){
+                newPath = this.pathPrefix + path
+            }else{
+                newPath = path
+            }
+            this.history._push(newPath, state)
         }
         this.history.replace = (o, state) => {
             if (o.pathname !== this.pathPrefix && o.pathname.indexOf(this.pathPrefix + '/') < 0) {

@@ -2,10 +2,11 @@ import Util from '../util'
 import {ObjectId} from 'mongodb'
 import {auth} from '../auth'
 import {ApiError, ValidationError} from '../error'
-import {pubsub} from '../subscription'
 import {speechLanguages, translateLanguages} from '../data/common'
+import GenericResolver from './generic/genericResolver'
 
 
+// deprecrated
 const enhanceUserSettings = (user) => {
     // settings
     const settings = {
@@ -39,6 +40,26 @@ const enhanceUserSettings = (user) => {
 
 
 export const userResolver = (db) => ({
+    users: async ({limit, page, offset, filter, sort}, {context}) => {
+        Util.checkIfUserIsLoggedIn(context)
+        return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'email', 'emailConfirmed','role$UserRole'], {
+            limit,
+            page,
+            offset,
+            filter,
+            sort
+        })
+    },
+    userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
+        Util.checkIfUserIsLoggedIn(context)
+        return await GenericResolver.entities(db, context, 'UserRole', ['name'], {
+            limit,
+            page,
+            offset,
+            filter,
+            sort
+        })
+    },
     me: async (data, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
         var user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
@@ -47,12 +68,12 @@ export const userResolver = (db) => ({
         } else {
             user.role = Util.getUserRoles(db,user.role)
 
-            enhanceUserSettings(user)
+            //enhanceUserSettings(user)
 
         }
         return user
     },
-    users: async ({limit, offset}, {context, query}) => {
+    publicUsers: async ({limit, offset}, {context, query}) => {
         Util.checkIfUserIsLoggedIn(context)
 
         const userCollection = db.collection('User')
@@ -83,8 +104,6 @@ export const userResolver = (db) => ({
     },
     login: async ({username, password}) => {
         const result = await auth.createToken(username, password, db)
-
-
         return result
     },
     createUser: async ({username, password, email}) => {
@@ -154,7 +173,7 @@ export const userResolver = (db) => ({
             if (result.ok !== 1) {
                 throw new ApiError('User could not be changed')
             }
-            enhanceUserSettings(result.value)
+            //enhanceUserSettings(result.value)
             return result.value
         }
     },
@@ -224,5 +243,8 @@ export const userResolver = (db) => ({
         }
 
         return {value: '', _id: _id}
+    },
+    deleteUser: async ({_id}, {context}) => {
+        return GenericResolver.deleteEnity(db, context, 'User', {_id})
     }
 })

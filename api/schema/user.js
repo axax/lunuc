@@ -2,29 +2,35 @@ export const userSchemaRaw = `
 
 	type UserRole {
 		_id: ID!
+		status: String
         name: String!
         capabilities: [String]!
     }
-    
-	type UserSettings {
-		speechLang: SingleSelection!
-		translateLang: SingleSelection!
-    }
-    
-	input UserSettingsInput {
-		speechLang: String,
-		translateLang: String
-    }
   
+    type UserRoleResult {
+        results: [UserRole]
+        offset: Int
+        limit: Int
+        total: Int
+    }
+    
 	type User {
 		_id: ID!
+		status: String
+        modifiedAt: Float
         username: String!
         password: String!
         email: String!
         emailConfirmed: Boolean!
         note: [Note]
         role: UserRole!
-        settings: UserSettings!
+    }
+    
+    type UserResult {
+        results: [User]
+        offset: Int
+        limit: Int
+        total: Int
     }
   
 	type UserPublic  {
@@ -45,9 +51,14 @@ export const userSchemaRaw = `
 	}
 	
     type Query {
+        users(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserResult
+        userRoles(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserRoleResult
+        
+        
+        publicUsers(limit: Int=10, offset: Int=0): [UserPublic]
+        
         me: User
-        login(username: String!, password: String!): Token,
-        users(limit: Int=10, offset: Int=0): [UserPublic]
+        login(username: String!, password: String!): Token
     }
 		
 	type Mutation {
@@ -55,13 +66,15 @@ export const userSchemaRaw = `
 			email: String!
 			username: String!
 			password: String!
-			settings: UserSettingsInput
+            role: ID
 		): User
+		
+    	deleteUser(_id: ID!): User
+
 						
 		updateMe (
 			email: String
 			username: String
-			settings: UserSettingsInput
 		): User
 		
 		updateNote (

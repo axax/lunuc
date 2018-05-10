@@ -43,12 +43,12 @@ class LoginContainer extends React.Component {
 
         client.query({
             fetchPolicy: 'network-only',
-            query: gql`query login($username:String!,$password:String!){login(username:$username,password:$password){token error user{username email _id role{capabilities}}}}`,
+            query: gql`query login($username:String!,$password:String!){login(username:$username,password:$password){token error user{username email _id role{_id capabilities}}}}`,
             variables: {
                 username: this.state.username,
                 password: this.state.password
             },
-            operationName: 'login',
+            operationName: 'login'
         }).then(response => {
             this.setState({loading: false})
             if (response.data && response.data.login) {

@@ -100,7 +100,7 @@ class ChatContainer extends React.Component {
 	}
 
 	render() {
-		const {chatsWithMessages, users, loading, match} = this.props
+		const {chatsWithMessages, publicUsers, loading, match} = this.props
 		const selectedChatId = match.params.id
 
 		if (!chatsWithMessages) {
@@ -141,7 +141,7 @@ class ChatContainer extends React.Component {
 								return <span key={i}
 														 style={{fontWeight: (isCreator ? 'bold' : 'normal')}}>{user.username}{isCreator?'': <button onClick={this.handleRemoveUserFromChatClick.bind(this, selectedChat, user)}>x</button>}{(i < selectedChat.users.length - 1 ? ', ' : '')}</span>
 							})}
-							<AddChatUser users={users} selectedUsers={selectedChat.users} onClick={this.handleAddChatUserClick}/>
+							<AddChatUser users={publicUsers} selectedUsers={selectedChat.users} onClick={this.handleAddChatUserClick}/>
 						</div>
 
 						<button onClick={this.handleOnLoadMore.bind(this, selectedChat)}>load older</button>
@@ -182,7 +182,7 @@ ChatContainer.propTypes = {
 const MESSAGES_PER_PAGE = 10
 const CHATS_PER_PAGE = 99
 
-const gqlQuery = gql`query{users{_id username} chatsWithMessages(limit: ${CHATS_PER_PAGE}, messageLimit: ${MESSAGES_PER_PAGE}){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
+const gqlQuery = gql`query{publicUsers{_id username} chatsWithMessages(limit: ${CHATS_PER_PAGE}, messageLimit: ${MESSAGES_PER_PAGE}){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
 const gqlQueryMoreMessages = gql`query chatMessages($chatId: String!, $messageOffset: Int, $messageLimit: Int){
 	chatMessages(chatId:$chatId, messageOffset:$messageOffset, messageLimit:$messageLimit){
 		_id text status from{username _id}
@@ -217,10 +217,10 @@ const ChatContainerWithGql = compose(
 			}
 		},
 		props: props => {
-			const {loading, chatsWithMessages, users, fetchMore} = props.data
+			const {loading, chatsWithMessages, publicUsers, fetchMore} = props.data
 			return {
 				chatsWithMessages,
-				users,
+                publicUsers,
 				loading,
 				onCreateMessage: params => {
 					return props.data.subscribeToMore({
@@ -323,7 +323,7 @@ const ChatContainerWithGql = compose(
 	graphql(gqlAddUserToChat, {
 		props: ({ownProps, mutate}) => ({
 			addUserToChat: ({userId, chatId}) => {
-				const user = ownProps.users.find(u => u._id === userId)
+				const user = ownProps.publicUsers.find(u => u._id === userId)
 
 				return mutate({
 				  fetchPolicy: 'network-only',

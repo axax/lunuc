@@ -64,7 +64,7 @@ class SignUpContainer extends React.Component {
                 username,
                 password
             }
-        }).then(({data,errors}) => {
+        }).then(({errors}) => {
             if( errors && errors.length){
                 errors.forEach(e=>{
                     if( e.state ){

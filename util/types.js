@@ -53,13 +53,16 @@ export const getTypeQueries = (typeName) => {
     const {name, fields} = types[typeName]
     const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
 
-    let query = '_id status createdBy{_id username}'
+    let query = '_id status'
+    if( typeName !== 'User' && typeName !== 'UserRole'){
+        query += ' createdBy{_id username}'
+    }
     let queryMutation = '_id status'
 
     let insertParams = '', insertUpdateQuery = '', updateParams = ''
 
-
     if (fields) {
+        console.log(fields)
         fields.map(({name, type, required, multi, reference, localized}) => {
             if (insertParams !== '') {
                 insertParams += ', '
@@ -129,6 +132,7 @@ export const getFormFields = (type)=> {
             uitype,
             multi: !!field.multi,
             type: field.type,
+            required: !!field.required,
             localized: !!field.localized
         }
     })
@@ -139,9 +143,45 @@ export const getFormFields = (type)=> {
 
 
 
-/* Add some types */
+/* Add core types */
 
 Hook.on('Types', ({types}) => {
+
+    types.UserRole = {
+        "name": "UserRole",
+        "usedBy": ["core"],
+        "fields": [
+            {
+                "name": "name"
+            }
+        ]
+    }
+
+    types.User = {
+        "name": "User",
+        "usedBy": ["core"],
+        "fields": [
+            {
+                "name": "username",
+                "required": true
+            },
+            {
+                "name": "email",
+                "required": true
+            },
+            {
+                "name": "password",
+                "required": true
+            },
+            {
+                "name": "role",
+                "type": "UserRole",
+                "reference": true
+            }
+        ]
+    }
+
+
     types.Media = {
         "name": "Media",
         "usedBy": ["core"],

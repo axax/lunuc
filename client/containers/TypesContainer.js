@@ -398,11 +398,11 @@ class TypesContainer extends React.Component {
     isColumnActive(type, id) {
         const {settings} = this.props
         let s
-        if( settings && settings[type] ){
+        if (settings && settings[type]) {
             // check settings from props if available
             s = settings[type]
             return settings[type].columns[id] === undefined || settings[type].columns[id]
-        }else{
+        } else {
             s = this.settings[type]
         }
 
@@ -434,10 +434,13 @@ class TypesContainer extends React.Component {
                 sortable: true
             })
         })
-        this.typeColumns[type].push({
+        if (type !== 'User' && type !== 'UserRole') {
+            this.typeColumns[type].push({
                 title: 'User',
                 id: 'user'
-            },
+            })
+        }
+        this.typeColumns[type].push(
             {
                 title: 'Created at',
                 id: 'date',
@@ -545,7 +548,7 @@ class TypesContainer extends React.Component {
         const {client, user} = this.props
         if (type) {
             const queries = getTypeQueries(type)
-            client.mutate({
+            return client.mutate({
                 mutation: gql(queries.create),
                 variables: {
                     ...input
@@ -886,25 +889,40 @@ class TypesContainer extends React.Component {
     handleCreateEditData = (action) => {
         if (action && action.key === 'save') {
 
+            if(!this.createEditForm.validate()){
+                return
+            }
+
             const fieldData = this.createEditForm.state.fields
+
             const submitData = this.referencesToIds(fieldData)
             if (this.state.dataToEdit) {
                 // if dataToEdit is set we are in edit mode
                 this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...submitData}, fieldData)
+                this.setState({createEditDialog: false, dataToEdit: null})
+
             } else {
                 // create a new entry
-                this.createData(this.pageParams, submitData, fieldData)
+                this.createData(this.pageParams, submitData, fieldData).then(({errors}) => {
+                    if( errors && errors.length){
+                        const fieldErrors = {}
+                        errors.forEach(e=>{
+                            if( e.state ){
+                                console.log(e.state)
+                            }
+                        })
+                    }else{
+                        this.setState({createEditDialog: false, dataToEdit: null})
+                    }
+                })
             }
 
+        }else{
+            this.setState({createEditDialog: false, dataToEdit: null})
         }
-        this.setState({createEditDialog: false, dataToEdit: null})
     }
 
     handleViewSettingClose = (action) => {
-        if (action && action.key === 'save') {
-
-
-        }
         this.setState({viewSettingDialog: false})
     }
 }

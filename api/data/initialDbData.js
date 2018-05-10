@@ -32,15 +32,19 @@ export const createUsers = async (db) => {
 
     const userCollection = db.collection('User')
 
-    if( userCollection.count() ){
+    if (userCollection.count()) {
         const userRole = (await db.collection('UserRole').findOne({name: 'administrator'}))
 
-        const insertResult = await userCollection.insertOne({
-            role: userRole._id,
-            emailConfirmed: false,
-            email: 'axax@gmx.net',
-            username: 'admin',
-            password: Util.hashPassword('password')
-        })
+        const insertResult = await userCollection.updateOne({
+            username: 'admin'
+        }, {
+            $set: {
+                role: userRole._id,
+                emailConfirmed: false,
+                email: 'axax@gmx.net',
+                username: 'admin',
+                password: Util.hashPassword('password')
+            }
+        }, {upsert: true})
     }
 }

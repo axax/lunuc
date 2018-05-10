@@ -117,7 +117,7 @@ export function configureMiddleware(store) {
             } else if (o.__typename === 'KeyValue') {
                 return o.__typename + o.key
             } else if (o._id) {
-                return o.__typename + o._id + (o.cacheKey ? o.cacheKey: '')
+                return o.__typename + o._id + (o.cacheKey ? o.cacheKey : '')
             }
             // Make sure to return null if this object doesn't have an ID
             return null
@@ -138,19 +138,17 @@ export function configureMiddleware(store) {
         ssrForceFetchDelay: 0,
         connectToDevTools: true,
         queryDeduplication: true,
-        /*defaultOptions: {
-         watchQuery: {
-         fetchPolicy: 'cache-and-network',
-         errorPolicy: 'all',
-         },
-         query: {
-         fetchPolicy: 'cache-and-network',
-         errorPolicy: 'all',
-         },
-         mutate: {
-         errorPolicy: 'all',
-         },
-         }*/
+        defaultOptions: {
+            watchQuery: {
+                errorPolicy: 'all'
+            },
+            query: {
+                errorPolicy: 'all'
+            },
+            mutate: {
+                errorPolicy: 'all'
+            }
+        }
     })
 
     return client

@@ -15,8 +15,13 @@ export const systemSchemaRaw = `
         limit: Int
         total: Int
     }
+    
+    type BrokenReferencesResult {
+        total: Int
+    }
         
     type Query {
+        brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!): RunResult
     	dbDumps: DbDumpResult   
     }

@@ -9,11 +9,9 @@ export const systemResolver = (db) => ({
     run: async ({command}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
 
-
         if (!command) {
             throw new Error('No command to execute.')
         }
-
 
         const options = {
             encoding: 'utf8'
@@ -22,6 +20,11 @@ export const systemResolver = (db) => ({
         const response = execSync(command, options)
 
         return {response}
+    },
+    brokenReferences: async ({command}, {context}) => {
+        Util.checkIfUserIsLoggedIn(context)
+
+        throw new Error('Not implmented yet.')
     },
     dbDumps: async (data, {context}) => {
         Util.checkIfUserIsLoggedIn(context)

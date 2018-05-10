@@ -55,11 +55,10 @@ class WordContainer extends React.Component {
             }
         })
         categoryPair.push({value: 'all', name: 'All'})
-
-        wordCategorys.results.forEach(e => {
+        wordCategorys && wordCategorys.results.forEach(e => {
             categoryPair.push({value: e._id, name: e.name})
         })
-
+console.log(currentCategory && currentCategory !== 'all' ? 'categories:' + currentCategory : '')
         const content = (
             <BaseLayout>
                 <Typography variant="display2" gutterBottom>Words</Typography>
@@ -89,7 +88,6 @@ class WordContainer extends React.Component {
                                                                     onClick={this.handleAddClick.bind(this)}/>}
                     </Col>
                 </Row>
-
                 <TypesContainer onRef={ref => (this.typeContainer = ref)}
                                 baseUrl={location.pathname}
                                 title={false}

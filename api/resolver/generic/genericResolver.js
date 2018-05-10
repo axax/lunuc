@@ -27,9 +27,13 @@ const GenericResolver = {
             }
         }
 
-        if (!match) {
+        if (!match ) {
             // if not specific match is defined, only select items that belong to the current user
-            match = {createdBy: ObjectId(context.id)}
+            if( collectionName !== 'User' && collectionName !== 'UserRole') {
+                match = {createdBy: ObjectId(context.id)}
+            }else {
+                match = {}
+            }
         }
 
         if (!sort) {
@@ -103,7 +107,6 @@ const GenericResolver = {
         }
 
         data.forEach((value, i) => {
-
             if (value.constructor === Object) {
                 // if a value is in this format {'categories':['name']}
                 // we expect that the field categories is a reference to another type
@@ -143,18 +146,22 @@ const GenericResolver = {
 
             }
         })
-        const collection = db.collection(collectionName)
-        let a = (await collection.aggregate([
-            {
-                $match: match
-            },
-            {
+        if( collectionName !== 'User' && collectionName !== 'UserRole' ){
+            lookups.push({
                 $lookup: {
                     from: 'User',
                     localField: 'createdBy',
                     foreignField: '_id',
                     as: 'createdBy'
                 }
+            })
+            group.createdBy =  {'$first': {$arrayElemAt: ['$createdBy', 0]}} // return as as single doc not an array
+
+        }
+        const collection = db.collection(collectionName)
+        let a = (await collection.aggregate([
+            {
+                $match: match
             },
             ...lookups,
             // Group back to arrays
@@ -162,8 +169,7 @@ const GenericResolver = {
                 $group: {
                     _id: '$_id',
                     modifiedAt: {'$first': '$modifiedAt'},
-                    ...group,
-                    createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
+                    ...group
                 }
             },
             {$sort: sort},
@@ -307,8 +313,7 @@ const GenericResolver = {
             }
             return o
         }, {})
-console.log('dataet',data)
-console.log('dataSet',dataSet)
+
         // set timestamp
         dataSet.modifiedAt = new Date().getTime()
 
