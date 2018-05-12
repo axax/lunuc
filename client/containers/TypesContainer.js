@@ -904,13 +904,19 @@ class TypesContainer extends React.Component {
             } else {
                 // create a new entry
                 this.createData(this.pageParams, submitData, fieldData).then(({errors}) => {
+                    // server side validation
                     if( errors && errors.length){
                         const fieldErrors = {}
                         errors.forEach(e=>{
                             if( e.state ){
-                                console.log(e.state)
+                                Object.keys(e.state).forEach(k=>{
+                                    fieldErrors[k.substring(0, k.length-5)] = e.state[k]
+                                })
                             }
                         })
+                        if( Object.keys(fieldErrors).length ) {
+                            this.createEditForm.setState({fieldErrors})
+                        }
                     }else{
                         this.setState({createEditDialog: false, dataToEdit: null})
                     }

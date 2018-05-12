@@ -62,7 +62,6 @@ export const getTypeQueries = (typeName) => {
     let insertParams = '', insertUpdateQuery = '', updateParams = ''
 
     if (fields) {
-        console.log(fields)
         fields.map(({name, type, required, multi, reference, localized}) => {
             if (insertParams !== '') {
                 insertParams += ', '

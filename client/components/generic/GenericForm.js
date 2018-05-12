@@ -35,29 +35,29 @@ class GenericForm extends React.Component {
     validate(state) {
         let theState
 
-        if( state ){
+        if (state) {
             theState = state
-        }else{
+        } else {
             theState = this.state
         }
 
-        const {fields,onValidate} = this.props
+        const {fields, onValidate} = this.props
 
-        let basicValidation = true
         const fieldErrors = {}
-        Object.keys(fields).forEach(k=>{
+        Object.keys(fields).forEach(k => {
             const field = fields[k]
-            if( field.required ){
-                if( !theState.fields[k] || theState.fields[k].trim()==='' ){
+            if (field.required) {
+                if (!theState.fields[k] || theState.fields[k].trim() === '') {
                     fieldErrors[k] = _t('GenericForm.validation.required')
-                    basicValidation = false
                 }
             }
         })
 
-        if( !basicValidation ){
+        if( Object.keys(fieldErrors).length || Object.keys(this.state.fieldErrors).length ){
             this.setState({fieldErrors})
+        }
 
+        if (Object.keys(fieldErrors).length) {
             return false
         }
 
@@ -68,7 +68,7 @@ class GenericForm extends React.Component {
     }
 
     getInitalState = (props) => {
-        const initalState = {fields: {}, fieldErrors:{}, isValid: true}
+        const initalState = {fields: {}, fieldErrors: {}, isValid: true}
         Object.keys(props.fields).map(k => {
             const item = props.fields[k]
             let v
@@ -159,6 +159,7 @@ class GenericForm extends React.Component {
                                     const fieldName = k + '_localized.' + l
                                     a.push(<TextField key={fieldName}
                                                       error={!!this.state.fieldErrors[fieldName]}
+                                                      helperText={this.state.fieldErrors[fieldName]}
                                                       label={o.label}
                                                       fullWidth={o.fullWidth}
                                                       type={uitype}
@@ -174,6 +175,7 @@ class GenericForm extends React.Component {
                             } else {
                                 return <TextField error={!!this.state.fieldErrors[k]} key={k}
                                                   label={o.label}
+                                                  helperText={this.state.fieldErrors[k]}
                                                   fullWidth={o.fullWidth}
                                                   type={uitype}
                                                   placeholder={o.placeholder}

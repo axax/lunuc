@@ -106,12 +106,9 @@ export const userResolver = (db) => ({
         const result = await auth.createToken(username, password, db)
         return result
     },
-    createUser: async ({username, password, email}) => {
-
-        //TODO: Improve error handling -> https://medium.com/@tarkus/validation-and-user-errors-in-graphql-mutations-39ca79cd00bf
+    createUser: async ({username, password, email, role}) => {
 
         const errors = []
-
 
         // Validate Username
         if (username.trim() === '') {
@@ -145,10 +142,16 @@ export const userResolver = (db) => ({
 
 
         const hashedPw = Util.hashPassword(password)
-        const userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
 
+        let roleId
+        if ( role ) {
+            roleId = ObjectId(role)
+        }else{
+            const userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
+            roleId = userRole._id
+        }
         const insertResult = await userCollection.insertOne({
-            role: userRole._id,
+            role: roleId,
             emailConfirmed: false,
             email: email,
             username: username,
