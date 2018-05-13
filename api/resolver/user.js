@@ -163,6 +163,64 @@ export const userResolver = (db) => ({
             return doc
         }
     },
+    updateUser: async ({_id, username, email, password, role}, {context}) => {
+        Util.checkIfUserIsLoggedIn(context)
+
+        const user = {}
+        const errors = []
+        const userCollection = db.collection('User')
+
+        if( username ){
+            // Validate Username
+            const existingUser = (await userCollection.findOne({$or: [{username}]}))
+            if (existingUser != null && existingUser._id.toString() !== _id) {
+                //errors.push({key: 'usernameError', message: `Username ${username} already taken`, messageKey:'username.taken'})
+                throw new ApiError(`Username ${username} already taken`, 'username.taken', {x: 'sss'})
+            }else{
+                user.username = username
+            }
+        }
+
+        if( email ) {
+            // Validate Email Address
+            if (!Util.validateEmail(email)) {
+                errors.push({key: 'emailError', message: 'Email is not valid'})
+            } else {
+                const existingUser = (await userCollection.findOne({$or: [{email}]}))
+                if (existingUser != null && existingUser._id.toString() !== _id) {
+                    throw new ApiError(`Email ${email} already taken`, 'email.taken')
+                }else{
+                    user.email = email
+                }
+            }
+        }
+
+
+        if( password ){
+            // Validate Password
+            const err = Util.validatePassword(password)
+            if (err.length > 0) {
+                errors.push({key: 'passwordError', message: 'Invalid Password: \n' + err.join('\n')})
+            }else{
+                user.password = Util.hashPassword(password)
+            }
+        }
+
+        if (errors.length > 0) {
+            throw new ValidationError(errors)
+        }
+
+        if ( role ) {
+            user.role = ObjectId(role)
+        }
+
+        const result = (await userCollection.findOneAndUpdate({_id: ObjectId(_id)}, {$set: user}, {returnOriginal: false}))
+        if (result.ok !== 1) {
+            throw new ApiError('User could not be changed')
+        }
+        return result.value
+
+    },
     updateMe: async (user, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
 

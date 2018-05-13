@@ -449,7 +449,9 @@ const CmsViewContainerWithGql = compose(
                 }
 
             if (urlSensitiv || (urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
-                variables.query = window.location.search.substring(1)
+                const q = window.location.search.substring(1)
+                if( q )
+                    variables.query = q
             }
             return {
                 variables,
@@ -510,11 +512,11 @@ const CmsViewContainerWithGql = compose(
                             variables = {
                                 slug
                             }
-
                         if (urlSensitiv) {
-                            variables.query = window.location.search.substring(1)
+                            const q = window.location.search.substring(1)
+                            if( q )
+                                variables.query = q
                         }
-
                         const data = store.readQuery({
                             query: gqlQuery,
                             variables
@@ -532,7 +534,7 @@ const CmsViewContainerWithGql = compose(
                                 data.cmsPage.resolvedData = updateCmsPage.resolvedData
                                 data.cmsPage.subscriptions = updateCmsPage.subscriptions
                             }
-                            store.writeQuery({query: gqlQuery, variables: {slug}, data})
+                            store.writeQuery({query: gqlQuery, variables, data})
                         }
                     }
                 })

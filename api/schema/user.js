@@ -69,12 +69,22 @@ export const userSchemaRaw = `
             role: ID
 		): User
 		
+		updateUser (
+		    _id: ID!
+			email: String
+			username: String
+			password: String
+            role: ID
+		): User
+		
     	deleteUser(_id: ID!): User
 
 						
 		updateMe (
 			email: String
 			username: String
+			password: String
+            role: ID
 		): User
 		
 		updateNote (

@@ -16,7 +16,7 @@ const _deepMerge =(concatArrays, ...objects) => {
                     }
                 }
                 else if (isObject(pVal) && isObject(oVal)) {
-                    prev[key] = _deepMerge(pVal, oVal)
+                    prev[key] = _deepMerge(concatArrays, pVal, oVal)
                 } else {
                     prev[key] = oVal
                 }

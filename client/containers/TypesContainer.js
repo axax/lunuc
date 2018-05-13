@@ -416,8 +416,8 @@ class TypesContainer extends React.Component {
         const target = e.target
         const value = target.checked
         const name = target.name
-        this.settings = deepMerge(this.settings, {[type]: {columns: {[name]: value}}})
 
+        this.settings = deepMerge(this.settings, {[type]: {columns: {[name]: value}}})
         // force rerendering
         this._lastData = null
         this.forceUpdate()
@@ -599,7 +599,7 @@ class TypesContainer extends React.Component {
         const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
-            client.mutate({
+            return client.mutate({
                 mutation: gql(queries.update),
                 /* only send what has changed*/
                 variables: changedData,
@@ -636,7 +636,7 @@ class TypesContainer extends React.Component {
                         }
                     }
 
-                },
+                }
             })
         }
     }
@@ -887,44 +887,69 @@ class TypesContainer extends React.Component {
 
 
     handleCreateEditData = (action) => {
+
+        const closeModal = () =>{
+            this.setState({createEditDialog: false, dataToEdit: null})
+        }
+
         if (action && action.key === 'save') {
 
-            if(!this.createEditForm.validate()){
+            if (!this.createEditForm.validate()) {
                 return
             }
 
             const fieldData = this.createEditForm.state.fields
 
             const submitData = this.referencesToIds(fieldData)
+
+
+            const callback = ({errors}) => {
+                // server side validation
+                if (errors && errors.length) {
+                    const fieldErrors = {}
+                    errors.forEach(e => {
+                        if (e.state) {
+                            Object.keys(e.state).forEach(k => {
+                                fieldErrors[k.substring(0, k.length - 5)] = e.state[k]
+                            })
+                        }
+                    })
+                    if (Object.keys(fieldErrors).length) {
+                        this.createEditForm.setState({fieldErrors})
+                    }
+                } else {
+                    closeModal()
+                }
+            }
+
             if (this.state.dataToEdit) {
                 // if dataToEdit is set we are in edit mode
-                this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...submitData}, fieldData)
-                this.setState({createEditDialog: false, dataToEdit: null})
+                const updateData = {}
+                Object.keys(submitData).forEach(k => {
+                    const before = this.state.dataToEdit[k]
+                    if (before.constructor === Object ) {
+                        if( before._id !== submitData[k] ) {
+                            updateData[k] = submitData[k]
+                        }
+                    } else if (submitData[k] !== before) {
+                        updateData[k] = submitData[k]
+                    }
+                })
+                if( Object.keys(updateData).length ) {
+                    // only send data if they have really changed
+                    console.log(updateData, this.state.dataToEdit)
+                    this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...updateData}, fieldData).then(callback)
+                }else{
+                    closeModal()
+                }
 
             } else {
                 // create a new entry
-                this.createData(this.pageParams, submitData, fieldData).then(({errors}) => {
-                    // server side validation
-                    if( errors && errors.length){
-                        const fieldErrors = {}
-                        errors.forEach(e=>{
-                            if( e.state ){
-                                Object.keys(e.state).forEach(k=>{
-                                    fieldErrors[k.substring(0, k.length-5)] = e.state[k]
-                                })
-                            }
-                        })
-                        if( Object.keys(fieldErrors).length ) {
-                            this.createEditForm.setState({fieldErrors})
-                        }
-                    }else{
-                        this.setState({createEditDialog: false, dataToEdit: null})
-                    }
-                })
+                this.createData(this.pageParams, submitData, fieldData).then(callback)
             }
 
-        }else{
-            this.setState({createEditDialog: false, dataToEdit: null})
+        } else {
+            closeModal()
         }
     }
 

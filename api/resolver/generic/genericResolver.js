@@ -27,14 +27,18 @@ const GenericResolver = {
             }
         }
 
+        // default match
         if (!match ) {
             // if not specific match is defined, only select items that belong to the current user
-            if( collectionName !== 'User' && collectionName !== 'UserRole') {
-                match = {createdBy: ObjectId(context.id)}
-            }else {
+            if( Util.userHasCapability(db, context, 'manage_types') ){
                 match = {}
+
+            }else{
+                //
+                match = {createdBy: ObjectId(context.id)}
             }
         }
+
 
         if (!sort) {
             sort = {_id: -1}

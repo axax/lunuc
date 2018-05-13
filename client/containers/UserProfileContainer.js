@@ -204,7 +204,7 @@ UserProfileContainer.propTypes = {
     loading: PropTypes.bool
 }
 
-const gqlQuery = gql`query {me{username email _id note{_id value}role{name capabilities}}}`
+const gqlQuery = gql`query {me{username email _id note{_id value}role{_id name capabilities}}}`
 
 
 const gqlUpdate = gql`
