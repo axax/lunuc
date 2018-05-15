@@ -24,3 +24,8 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
     schemas.push(genSchema)
 })
+
+
+Hook.on('cmsCustomResolver', ({resolver, resolvedData}) => {
+    resolvedData.test = 'test custom resolver'
+})

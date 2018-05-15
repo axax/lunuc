@@ -367,19 +367,36 @@ class CmsViewContainer extends React.Component {
         return content
     }
 
-    setKeyValue({key, value}) {
+    setKeyValue(arg1, arg2) {
+        let key, value
+        if (arg1.constructor === String) {
+            key = arg1
+            value = arg2
+        } else if (arg1.constructor === Object) {
+            key = arg1.key
+            value = arg1.value
+        }
+
+
+        if (!key || !value) {
+            return
+        }
+
+        if (value.constructor === Object) {
+            value = JSON.stringify(value)
+        }
+
         const {client, user} = this.props
         const variables = {
             key,
             value
         }
-
         const gqlQuery = gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`
         client.mutate({
             mutation: gqlQuery,
             variables,
             update: (store, {data}) => {
-
+                console.log(data)
                 /*const freshData = {
                  ...data['setKeyValue'],
                  createdBy: {
@@ -450,7 +467,7 @@ const CmsViewContainerWithGql = compose(
 
             if (urlSensitiv || (urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
                 const q = window.location.search.substring(1)
-                if( q )
+                if (q)
                     variables.query = q
             }
             return {
@@ -514,7 +531,7 @@ const CmsViewContainerWithGql = compose(
                             }
                         if (urlSensitiv) {
                             const q = window.location.search.substring(1)
-                            if( q )
+                            if (q)
                                 variables.query = q
                         }
                         const data = store.readQuery({

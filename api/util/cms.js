@@ -1,5 +1,6 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
 import {ObjectId} from 'mongodb'
+import Hook from '../../util/hook'
 
 const UtilCms = {
     resolveData: async (db, context, dataResolver, scope) => {
@@ -8,23 +9,23 @@ const UtilCms = {
         if (dataResolver) {
             let debugInfo = null
             try {
-                const tpl = new Function('const {'+Object.keys(scope).join(',')+'} = this; return `' + dataResolver + '`;')
-                const dataResolverReplaced =  tpl.call(scope)
+                const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this; return `' + dataResolver + '`;')
+                const dataResolverReplaced = tpl.call(scope)
                 const json = JSON.parse(dataResolverReplaced)
 
                 for (let i = 0; i < json.length; i++) {
                     debugInfo = ''
-                    const {t, f, l, o,p, d,restriction} = json[i]
+                    const {t, f, l, o, p, d, KeyValues, restriction} = json[i]
                     /*
-                    f = filter for the query
-                    t = type
-                    d = the data / fields you want to access
-                    l = limit of results
-                    o = offset
-                    p = page (if no offset is defined, offset is limit * (page -1) )
-                    restriction = if it is set to "user" only entries that belongs to the user are returned
+                     f = filter for the query
+                     t = type
+                     d = the data / fields you want to access
+                     l = limit of results
+                     o = offset
+                     p = page (if no offset is defined, offset is limit * (page -1) )
+                     restriction = if it is set to "user" only entries that belongs to the user are returned
                      */
-                    if( t ) {
+                    if (t) {
                         let type, match
                         if (t.indexOf('$') === 0) {
                             type = t.substring(1)
@@ -33,13 +34,13 @@ const UtilCms = {
                             type = t
                         }
 
-                        if( restriction && restriction === 'user'){
+                        if (restriction && restriction === 'user') {
                             match = {createdBy: ObjectId(context.id)}
-                        }else{
+                        } else {
                             match = {}
                         }
 
-                        debugInfo += ' type='+type
+                        debugInfo += ' type=' + type
                         const result = await GenericResolver.entities(db, context, type, d, {
                             filter: f,
                             limit: l,
@@ -51,21 +52,47 @@ const UtilCms = {
                         debugInfo += ' result=true'
                         //TODO: only return fields that are request and remove sensitiv data
 
-                        if( result.results ) {
+                        if (result.results) {
                             result.results.map(e => {
                                 // return only user _id and username
-                                if ( e.createdBy ) {
+                                if (e.createdBy) {
                                     e.createdBy = {_id: e.createdBy._id, username: e.createdBy.username}
                                 }
                             })
                         }
 
-                        resolvedData[type] = result
+                        resolvedData[json[i].key || type] = result
+                    } else if (KeyValues) {
+
+                        const map = {}
+
+                        const match = {createdBy: ObjectId(context.id), key: {$in: KeyValues}}
+
+                        const result = await GenericResolver.entities(db, context, 'KeyValue', ["key", "value"], {
+                            match
+                        })
+
+
+                        if (result.results) {
+                            result.results.map(e => {
+                                try {
+                                    map[e.key] = JSON.parse(e.value);
+                                } catch (e) {
+                                    map[e.key] = e.value
+                                }
+                            })
+                        }
+
+                        resolvedData[json[i].key || 'KeyValues'] = map
+
+                    } else {
+                        console.log('call cmsCustomResolver', json[i])
+                        Hook.call('cmsCustomResolver', {resolvedData, resolver: json[i]})
                     }
 
                 }
             } catch (e) {
-                resolvedData.error = e.message + ' -> scope='+JSON.stringify(scope)+debugInfo
+                resolvedData.error = e.message + ' -> scope=' + JSON.stringify(scope) + debugInfo
             }
         }
         return {resolvedData, subscriptions}
