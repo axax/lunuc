@@ -249,8 +249,13 @@ class JsonDom extends React.Component {
              */
             if ($if) {
                 // check condition
-                const tpl = new Function('const {' + Object.keys(this.scope).join(',') + '} = this.scope;return ' + $if + ';')
-                if (!tpl.call({'scope': this.scope})) {
+                try {
+                    const tpl = new Function('const {' + Object.keys(this.scope).join(',') + '} = this.scope;return ' + $if + ';')
+                    if (!tpl.call({scope: this.scope})) {
+                        return
+                    }
+                }catch(e){
+                    console.log(e, this.scope)
                     return
                 }
             }

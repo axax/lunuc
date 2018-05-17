@@ -93,8 +93,14 @@ const UtilCms = {
 
                         resolvedData[segment.key || type] = result
                     } else if (segment.eval) {
-                        const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope; const {data} = this;' + segment.eval)
-                        tpl.call({data: resolvedData, scope})
+                        debugInfo += ' in eval'
+                        try {
+                            const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope; const {data} = this;' + segment.eval)
+                            tpl.call({data: resolvedData, scope})
+                        }catch (e){
+                            if( !segment.ignoreError )
+                                throw e
+                        }
                     } else if (segment.keyValues) {
 
                         const map = {}
