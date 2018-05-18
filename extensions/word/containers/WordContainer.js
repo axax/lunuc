@@ -58,7 +58,6 @@ class WordContainer extends React.Component {
         wordCategorys && wordCategorys.results.forEach(e => {
             categoryPair.push({value: e._id, name: e.name})
         })
-console.log(currentCategory && currentCategory !== 'all' ? 'categories:' + currentCategory : '')
         const content = (
             <BaseLayout>
                 <Typography variant="display2" gutterBottom>Words</Typography>
@@ -115,14 +114,13 @@ console.log(currentCategory && currentCategory !== 'all' ? 'categories:' + curre
 
     handleAddClick(e) {
         const {wordCategorys} = this.props
-
         const {currentCategory} = this.state
-        if (!currentCategory || !wordCategorys.results)
-            return
+        let cat = null
 
-        const cat = wordCategorys.results.filter(f => f._id === currentCategory)
+        if (currentCategory && !wordCategorys.results)
+            cat = wordCategorys.results.filter(f => f._id === currentCategory)
 
-        const submitData = Object.assign({}, e, {categories: currentCategory!=='all'?currentCategory:null})
+        const submitData = Object.assign({}, e, {categories: cat?cat:null})
         extensions.word.options.types[0].fields.forEach((a) => {
             if ( submitData[a.name]===undefined ) {
                 submitData[a.name] = null

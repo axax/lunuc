@@ -14,6 +14,7 @@ import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
 import {getType} from 'util/types'
+import ErrorPage from 'client/components/layout/ErrorPage'
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
 const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){cacheKey slug urlSensitiv template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
@@ -258,8 +259,10 @@ class CmsViewContainer extends React.Component {
         const {cmsPage, cmsPages, location, history, _parentRef, id, loading, className, children, user, dynamic} = this.props
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
-            if (!loading)
+            if (!loading) {
                 console.warn('cmsPage missing')
+                return <ErrorPage />
+            }
             return null
         }
 
