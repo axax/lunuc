@@ -5,7 +5,6 @@ import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import PostEditor from '../components/post/PostEditor'
 import Util from 'client/util'
-import {Link} from 'react-router-dom'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import GenericForm from 'client/components/generic/GenericForm'
 import {Row, Col, Typography, SimpleList, DeleteIconButton, SimpleDialog} from 'ui/admin'
@@ -15,7 +14,7 @@ const {ADMIN_BASE_URL} = config
 class PostContainer extends React.Component {
     constructor(props) {
         super(props)
-
+console.log('xxx')
         this.state = {
             confirmDeletionDialog: true,
             dataToDelete: null

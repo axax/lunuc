@@ -1,11 +1,15 @@
+import React from 'react'
 import Hook from 'util/hook'
-import PostContainer from './containers/PostContainer'
 import config from 'gen/config'
 const {ADMIN_BASE_URL} = config
+import Async from 'client/components/Async'
+
+const PostContainerAsync = (props) => <Async {...props} load={import(/* webpackChunkName: "post" */ './containers/PostContainer')} />
+
 
 // add routes for this extension
 Hook.on('Routes', ({routes}) => {
-    routes.push({exact: true, path: ADMIN_BASE_URL+'/post/:id*', component: PostContainer})
+    routes.push({exact: true, path: ADMIN_BASE_URL+'/post/:id*', component: PostContainerAsync})
 })
 
 

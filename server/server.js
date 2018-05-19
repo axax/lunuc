@@ -22,6 +22,7 @@ const MIME_TYPES = {
     'png': 'image/png',
     'ico': 'image/x-icon',
     'js': 'text/javascript',
+    'json': 'application/json',
     'css': 'text/css'
 }
 

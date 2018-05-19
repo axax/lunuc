@@ -1,12 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ContentEditable from '../components/generic/ContentEditable'
 import {SimpleMenu, DrawerLayout, Button, Divider, Col, Row, SimpleToolbar, Card, DeleteIconButton} from 'ui'
 import Hook from 'util/hook'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
 import _t from 'util/i18n'
 import Util from 'client/util'
+import Async from 'client/components/Async'
+
+
+const ContentEditable = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/generic/ContentEditable')} />
 
 
 const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change']

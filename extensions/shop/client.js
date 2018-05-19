@@ -1,6 +1,10 @@
+import React from 'react'
 import Hook from 'util/hook'
 import './style.less'
-import Login from 'client/containers/LoginContainer'
+import Async from 'client/components/Async'
+
+const Login = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../client/containers/LoginContainer')} />
+
 
 Hook.on('ApiResponse', ({data}) => {
     if( data.products ){

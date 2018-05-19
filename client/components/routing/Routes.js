@@ -2,19 +2,24 @@ import React from 'react'
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
 import {Router, Route} from 'react-router-dom'
-import LoginContainer from 'client/containers/LoginContainer'
-import SignUpContainer from 'client/containers/SignUpContainer'
-import UserProfileContainer from 'client/containers/UserProfileContainer'
-import CmsViewContainer from 'client/containers/CmsViewContainer'
-import SystemContainer from 'client/containers/SystemContainer'
-import DbDumpContainer from 'client/containers/DbDumpContainer'
-import TypesContainer from 'client/containers/TypesContainer'
-import HomeContainer from 'client/containers/HomeContainer'
 import PrivateRoute from './PrivateRoute'
 import Hook from 'util/hook'
 import config from 'gen/config'
 import {createBrowserHistory} from 'history'
 const {ADMIN_BASE_URL} = config
+import CmsViewContainer from 'client/containers/CmsViewContainer'
+
+import Async from 'client/components/Async'
+
+const LoginContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/LoginContainer')} />
+const SignUpContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/SignUpContainer')} />
+const UserProfileContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/UserProfileContainer')} />
+const SystemContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/SystemContainer')} />
+const DbDumpContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/DbDumpContainer')} />
+const TypesContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/TypesContainer')} />
+const HomeContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/HomeContainer')} />
+
+
 
 class Routes extends React.Component {
 

@@ -77,9 +77,14 @@ GenSourceCode.prototype.apply = function (compiler) {
                          gensrcExtension(file,buildOptions)
                          }*/
 
-
                         if (fs.existsSync(EXTENSION_PATH + file + '/client.js')) {
-                            clientContent += `import '.${EXTENSION_PATH}${file}/client.js'\n`
+                            if( manifestJson[file].lazyLoad ){
+                                clientContent += `//load lazy
+import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
+`
+                            }else {
+                                clientContent += `import '.${EXTENSION_PATH}${file}/client.js'\n`
+                            }
                         }
                         if (fs.existsSync(EXTENSION_PATH + file + '/server.js')) {
                             serverContent += `import '.${EXTENSION_PATH}${file}/server.js'\n`
@@ -172,7 +177,14 @@ function gensrcUi() {
 
             let uiContentIconsHooks = ''
             let uiContentIcons = `import React from 'react'\nimport Hook from 'util/hook'\n`
+
+
+
+            //let uiContent = `${GENSRC_HEADER}import(/* webpackChunkName: "admin" */ '${ui.name?'../':''}../../client/components/ui/impl/${ui.impl || 'material'}/index')`
+            //uiContent += `${GENSRC_HEADER}\nexport * from './icons'\n`
+
             let uiContent = `${GENSRC_HEADER}export * from 'client/components/ui/impl/${ui.impl || 'material'}/index'\nexport * from './icons'\n`
+
 
             if (ui.icons) {
                 if (ui.impl === 'material') {

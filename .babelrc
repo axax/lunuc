@@ -43,6 +43,7 @@
   "env": {
     "api": {
       "plugins": [
+        "dynamic-import-node",
         [
           "css-modules-transform",
           {
@@ -53,6 +54,11 @@
             ]
           }
         ]
+      ]
+    },
+    "client": {
+      "plugins": [
+        "syntax-dynamic-import"
       ]
     }
   }

@@ -10,6 +10,7 @@ import Hook from 'util/hook'
 import {withRouter} from 'react-router-dom'
 import config from 'gen/config'
 import * as UserActions from 'client/actions/UserAction'
+import {UIProvider} from 'ui/admin'
 
 const {ADMIN_BASE_URL} = config
 
@@ -38,27 +39,29 @@ class BaseLayout extends React.Component {
         const {history, children, isAuthenticated, userActions} = this.props
 
 
-        return <ResponsiveDrawerLayout title="lunuc"
-                                       menuItems={this.menuItems}
-                                       headerRight={
-                                           isAuthenticated ?
-                                               <Button color="inherit" size="small" onClick={() => {
-                                                   localStorage.removeItem('token')
-                                                   userActions.setUser(null, false)
-                                                   history.push('/')
-                                               }}>Logout</Button>
+        return <UIProvider>
+            <ResponsiveDrawerLayout title="lunuc"
+                                    menuItems={this.menuItems}
+                                    headerRight={
+                                        isAuthenticated ?
+                                            <Button color="inherit" size="small" onClick={() => {
+                                                localStorage.removeItem('token')
+                                                userActions.setUser(null, false)
+                                                history.push('/')
+                                            }}>Logout</Button>
 
-                                               : <Button color="inherit" size="small"
-                                                         onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
-                                       }>
+                                            : <Button color="inherit" size="small"
+                                                      onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
+                                    }>
 
-            <ErrorHandler />
-            <NotificationHandler />
-            <NetworkStatusHandler />
+                <ErrorHandler />
+                <NotificationHandler />
+                <NetworkStatusHandler />
 
 
-            {children}
-        </ResponsiveDrawerLayout>
+                {children}
+            </ResponsiveDrawerLayout>
+        </UIProvider>
 
 
         /*return <Layout className="Layout">

@@ -5,6 +5,7 @@ const merge = require("merge")
 const webpack = require('webpack')
 
 // webpack plugins
+const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const CompressionPlugin = require("compression-webpack-plugin")
 const GenSourceCode = require('./webpack.gensrc')
@@ -71,7 +72,9 @@ const config = {
     target: 'web',
     output: {
         path: path.resolve(__dirname, 'build'),
-        filename: '[name].bundle.js'
+        filename: '[name].bundle.js',
+        chunkFilename: '[name].bundle.js',
+        publicPath: '/'
     },
     module: {
         rules: [
@@ -103,12 +106,18 @@ const config = {
     },
     plugins: [
         new GenSourceCode(), /* Generate some source code based on the config.json file */
-        new ExtractTextPlugin('style.css'), /* Extract css from bundle */
+        new ExtractTextPlugin({
+            filename: 'style.css',
+            allChunks: true
+        }), /* Extract css from bundle */
         new WebpackI18nPlugin({
             src: './**/*.tr.json',
             dest: '[name].js'
         })
-    ]
+    ],
+    optimization: {
+        minimizer: []
+    }
 }
 
 /**
@@ -157,11 +166,22 @@ if (DEV_MODE) {
     config.plugins.push(
         new CopyWebpackPlugin([
             {from: 'serviceworker.js', to: 'serviceworker.js'},
+            {from: 'manifest.json', to: 'manifest.json'},
             {from: 'favicon.ico', to: 'favicon.ico'}
         ])
     )
 
-    /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+
+    config.optimization.minimizer.push(
+            new UglifyJSPlugin({
+                uglifyOptions: {
+                    compress: {
+                        drop_console: true
+                    }
+                }
+            }))
+
+   /* const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
      config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'

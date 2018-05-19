@@ -1,4 +1,5 @@
 {
   "name": "post editor",
-  "description": ""
+  "description": "",
+  "lazyLoad": false
 }

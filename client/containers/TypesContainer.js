@@ -425,6 +425,7 @@ class TypesContainer extends React.Component {
 
 
     getTableColumns(type) {
+        if( !this.types[type] ) return
         if (this.typeColumns[type]) return this.typeColumns[type]
         this.typeColumns[type] = []
         this.types[type].fields.forEach(field => {

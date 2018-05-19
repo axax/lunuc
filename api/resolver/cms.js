@@ -84,6 +84,7 @@ export const cmsResolver = (db) => ({
         })
     },
     cmsPage: async ({slug, query}, {context}) => {
+        // TODO: Not just check if user is logged in but also check what role he has
         const userIsLoggedIn = Util.isUserLoggedIn(context)
         const startTime = (new Date()).getTime()
         let cmsPages
@@ -101,6 +102,12 @@ export const cmsResolver = (db) => ({
                 match = {slug}
             }
             cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {match})
+
+            // minify template if no user is logged in
+            if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
+                // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
+                cmsPages.results[0].template =JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
+            }
             Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
         }
 

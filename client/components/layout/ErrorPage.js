@@ -1,7 +1,4 @@
 import React from 'react'
-import {Row, Col, TextField, Button} from 'ui/admin'
-
-
 
 const ErrorPage = () => {
 

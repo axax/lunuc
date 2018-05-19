@@ -7,12 +7,10 @@
 
 import './style.less'
 import React from 'react'
-import Hook from 'util/hook'
 
 // material theme
 import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles'
 const defaultTheme = createMuiTheme()
-
 // override the default theme
 export const theme = createMuiTheme({
     overrides: {

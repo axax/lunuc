@@ -4,17 +4,30 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import JsonDom from 'client/components/JsonDom'
-import {Typography, DrawerLayout, Button, MenuList, MenuListItem, Divider, Col, Row, SimpleSwitch} from 'ui/admin'
 import {withRouter} from 'react-router-dom'
 import config from 'gen/config'
-import DataResolverEditor from 'client/components/cms/DataResolverEditor'
-import TemplateEditor from 'client/components/cms/TemplateEditor'
-import ScriptEditor from 'client/components/cms/ScriptEditor'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
 import {getType} from 'util/types'
-import ErrorPage from 'client/components/layout/ErrorPage'
+
+import Async from 'client/components/Async'
+const ErrorPage = (props) => <Async {...props} load={import(/* webpackChunkName: "misc" */ '../components/layout/ErrorPage')} />
+
+// admin pack
+const DataResolverEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/cms/DataResolverEditor')} />
+const TemplateEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/cms/TemplateEditor')} />
+const ScriptEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/cms/ScriptEditor')} />
+const DrawerLayout = (props) => <Async {...props} expose="DrawerLayout" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
+const MenuList = (props) => <Async {...props} expose="MenuList" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
+const Typography = (props) => <Async {...props} expose="Typography" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
+const Button = (props) => <Async {...props} expose="Button" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
+const MenuListItem = (props) => <Async {...props} expose="MenuListItem" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
+const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
+const Divider = (props) => <Async {...props} expose="Divider" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
+
+
+
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
 const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){cacheKey slug urlSensitiv template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
@@ -399,37 +412,6 @@ class CmsViewContainer extends React.Component {
             mutation: gqlQuery,
             variables,
             update: (store, {data}) => {
-                console.log(data)
-                /*const freshData = {
-                 ...data['setKeyValue'],
-                 createdBy: {
-                 _id: user.userData._id,
-                 username: user.userData.username,
-                 __typename: 'UserPublic'
-                 }
-                 }
-
-                 const storeData = store.readQuery({
-                 query: gqlQuery,
-                 variables
-                 })
-                 if (storeData[storeKey]) {
-                 if (!storeData[storeKey].results) {
-                 storeData[storeKey].results = []
-                 }
-
-                 if (freshData) {
-                 storeData[storeKey].results.unshift(freshData)
-                 storeData[storeKey].total += 1
-                 }
-                 store.writeQuery({
-                 query: gqlQuery,
-                 variables: {page, limit, sort, filter},
-                 data: storeData
-                 })
-                 this.setState({data: storeData[storeKey]})
-                 }
-                 */
             },
         })
     }

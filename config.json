@@ -1,10 +1,10 @@
 {
   "extensions": {
     "chat": {
-      "active": true
+      "active": false
     },
     "finance": {
-      "active": true
+      "active": false
     },
     "word": {
       "active": true
@@ -19,7 +19,7 @@
       "active": false
     },
     "social": {
-      "active": true
+      "active": false
     },
     "shop": {
       "active": true

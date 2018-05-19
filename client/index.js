@@ -26,13 +26,13 @@ if (_app_.trLoaded) {
 
 
 /* Register serviceworker only on production */
-if ('serviceWorker' in navigator) {
+if ( 'serviceWorker' in navigator) {
     console.log('Service Worker is supported')
 
     if ('PushManager' in window) {
         console.log('Push is supported')
 
-        if (config.DEV_MODE) {
+        if (true || config.DEV_MODE) {
             navigator.serviceWorker.getRegistrations().then(function (registrations) {
                 for (let registration of registrations) {
                     registration.unregister()
