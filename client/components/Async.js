@@ -2,21 +2,30 @@ import React from 'react'
 import PropTypes from 'prop-types'
 
 class Async extends React.Component {
+
+    static cache = {}
+
     componentWillMount = () => {
         const {load, expose} = this.props
+        if( expose && Async.cache[expose]){
+            this.Component = Async.cache[expose]
+        }else {
+            load.then((Component) => {
+                console.log(expose, load)
 
-        load.then((Component) => {
-            if (expose) {
-                this.Component = Component[expose]
-            }else{
-                this.Component = Component.default
-            }
-            this.forceUpdate()
-        })
+                if (expose) {
+                    Async.cache = Component
+                    this.Component = Component[expose]
+                } else {
+                    this.Component = Component.default
+                }
+                this.forceUpdate()
+            })
+        }
     }
 
     render = () => {
-        const {load, expose, ...rest} = this.props
+        const { load, expose, ...rest} = this.props
         return this.Component ? <this.Component {...rest}/> : null
     }
 }

@@ -364,7 +364,6 @@ class CmsViewContainer extends React.Component {
                 </div>
             </div>
 
-
             content = <DrawerLayout sidebar={sidebar()}
                                     drawerSize="large"
                                     toolbarRight={

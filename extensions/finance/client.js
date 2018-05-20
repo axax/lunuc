@@ -1,6 +1,9 @@
-import Hook from '../../util/hook'
-import StockTicker from './components/StockTicker'
-import CurrencyTicker from './components/CurrencyTicker'
+import React from 'react'
+import Hook from 'util/hook'
+import Async from 'client/components/Async'
+
+const StockTicker = (props) => <Async {...props} load={import(/* webpackChunkName: "finance" */ './components/StockTicker')} />
+const CurrencyTicker = (props) => <Async {...props} load={import(/* webpackChunkName: "finance" */ './components/CurrencyTicker')} />
 
 
 Hook.on('JsonDom', ({components}) => {
