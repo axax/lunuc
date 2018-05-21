@@ -117,10 +117,10 @@ class WordContainer extends React.Component {
         const {currentCategory} = this.state
         let cat = null
 
-        if (currentCategory && !wordCategorys.results)
+        if (currentCategory && wordCategorys.results)
             cat = wordCategorys.results.filter(f => f._id === currentCategory)
 
-        const submitData = Object.assign({}, e, {categories: cat?cat:null})
+        const submitData = Object.assign({}, e, {categories: cat && cat.length?cat[0]._id:null})
         extensions.word.options.types[0].fields.forEach((a) => {
             if ( submitData[a.name]===undefined ) {
                 submitData[a.name] = null

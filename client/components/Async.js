@@ -11,8 +11,6 @@ class Async extends React.Component {
             this.Component = Async.cache[expose]
         }else {
             load.then((Component) => {
-                console.log(expose, load)
-
                 if (expose) {
                     Async.cache = Component
                     this.Component = Component[expose]

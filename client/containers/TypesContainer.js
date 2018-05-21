@@ -928,7 +928,7 @@ class TypesContainer extends React.Component {
                 const updateData = {}
                 Object.keys(submitData).forEach(k => {
                     const before = this.state.dataToEdit[k]
-                    if (before.constructor === Object ) {
+                    if (before && before.constructor === Object ) {
                         if( before._id !== submitData[k] ) {
                             updateData[k] = submitData[k]
                         }
@@ -938,7 +938,6 @@ class TypesContainer extends React.Component {
                 })
                 if( Object.keys(updateData).length ) {
                     // only send data if they have really changed
-                    console.log(updateData, this.state.dataToEdit)
                     this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...updateData}, fieldData).then(callback)
                 }else{
                     closeModal()
