@@ -134,15 +134,20 @@ class DrawerLayout extends React.Component {
     }
 
     render() {
-        const {classes, theme, title, sidebar, toolbarRight, children} = this.props
+        const {classes, theme, title, sidebar, toolbarRight, children, fixHeader} = this.props
         const {open} = this.state
 
         const drawerSize = this.props.drawerSize || 'medium'
 
+        const appBarStyle = {}
+        if (fixHeader) {
+            appBarStyle.position = 'fixed'
+        }
         return (
             <div className={classes.root}>
                 <div className={classes.appFrame}>
-                    <AppBar className={classNames(classes.appBar, open && classes[drawerSize + 'AppBarShift'])}>
+                    <AppBar style={appBarStyle}
+                            className={classNames(classes.appBar, open && classes[drawerSize + 'AppBarShift'])}>
                         <Toolbar>
                             <IconButton
                                 color="inherit"
@@ -189,6 +194,7 @@ class DrawerLayout extends React.Component {
 DrawerLayout.propTypes = {
     classes: PropTypes.object.isRequired,
     theme: PropTypes.object.isRequired,
+    fixHeader: PropTypes.boolean
 }
 
 export default withStyles(styles, {withTheme: true})(DrawerLayout);

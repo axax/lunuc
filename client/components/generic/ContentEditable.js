@@ -34,10 +34,13 @@ const styles = theme => ({
 
 class ContentEditable extends React.Component {
     lastText = []
+    changeHistory = []
+
 
     constructor(props) {
         super(props)
 
+        this.changeHistory.push(props.children)
     }
 
     render() {
@@ -68,25 +71,34 @@ class ContentEditable extends React.Component {
 
     componentDidUpdate() {
         const {children, highlight} = this.props
-        if (this.props.children !== ReactDOM.findDOMNode(this).innerText) {
+        if (children !== ReactDOM.findDOMNode(this).innerText) {
             if (highlight) {
-                ReactDOM.findDOMNode(this).innerHtml = this.highlight(this.props.children)
+                ReactDOM.findDOMNode(this).innerHtml = this.highlight(children)
             } else {
-                ReactDOM.findDOMNode(this).innerText = this.props.children
+                ReactDOM.findDOMNode(this).innerText =children
             }
         }
     }
+
+
+
 
     handleKeyDown(e) {
         // handle tab
         if (e.key === "Tab") {
             e.preventDefault();
             document.execCommand('insertHTML', false, '&#009')
+        }else if(e.metaKey  || e.ctrlKey){
+
+            if( e.key==='z' || e.key==='Z' ){
+               // TODO: implement undo history
+            }else if(  (e.key==='y' || e.key==='Y') ){
+
+            }
         }
     }
 
     handleKeyUp(e) {
-
         if (e.getModifierState("Control") || e.key === "Shift") {
             // ignore if Control is pressed
             return
@@ -96,11 +108,13 @@ class ContentEditable extends React.Component {
         if (highlight) {
 
 
-            const ignoreKeys = ["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Meta"] // arrows
+            const ignoreKeys = ["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Meta", "Control"] // arrows
             if (ignoreKeys.indexOf(e.key) < 0) {
 
                 const t = e.target
                 var restore = this.saveCaretPosition(t, (e.key === "Enter" ? 1 : 0))
+
+                this.changeHistory.push(t.innerText)
 
                 t.innerHTML = this.highlight(t.innerText)
 

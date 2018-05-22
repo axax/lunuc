@@ -365,6 +365,7 @@ class CmsViewContainer extends React.Component {
             </div>
 
             content = <DrawerLayout sidebar={sidebar()}
+                                    fixHeader={true}
                                     drawerSize="large"
                                     toolbarRight={
                                         <Button size="small" color="inherit" onClick={e => {
@@ -406,13 +407,19 @@ class CmsViewContainer extends React.Component {
             key,
             value
         }
-        const gqlQuery = gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`
-        client.mutate({
-            mutation: gqlQuery,
-            variables,
-            update: (store, {data}) => {
-            },
-        })
+
+        if( user.isAuthenticated ){
+            const gqlQuery = gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`
+            client.mutate({
+                mutation: gqlQuery,
+                variables,
+                update: (store, {data}) => {
+                },
+            })
+        }else{
+
+        }
+
     }
 }
 
@@ -448,6 +455,10 @@ const CmsViewContainerWithGql = compose(
                 variables = {
                     slug
                 }
+
+                const localData = localStorage.getItem('CMS-'+slug)
+
+            console.log(localData)
 
             if (urlSensitiv || (urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
                 const q = window.location.search.substring(1)
