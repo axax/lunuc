@@ -163,7 +163,7 @@ import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
 
 
 export const ExpansionPanel = ({heading, children, ...rest}) => {
-    return <MaterialExpansionPanel>
+    return <MaterialExpansionPanel {...rest}>
         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
             {heading}
         </ExpansionPanelSummary>

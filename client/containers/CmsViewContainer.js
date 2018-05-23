@@ -12,21 +12,30 @@ import Util from 'client/util'
 import {getType} from 'util/types'
 
 import Async from 'client/components/Async'
-const ErrorPage = (props) => <Async {...props} load={import(/* webpackChunkName: "misc" */ '../components/layout/ErrorPage')} />
+const ErrorPage = (props) => <Async {...props}
+                                    load={import(/* webpackChunkName: "misc" */ '../components/layout/ErrorPage')}/>
 
 // admin pack
-const DataResolverEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/cms/DataResolverEditor')} />
-const TemplateEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/cms/TemplateEditor')} />
-const ScriptEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/cms/ScriptEditor')} />
-const DrawerLayout = (props) => <Async {...props} expose="DrawerLayout" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
-const MenuList = (props) => <Async {...props} expose="MenuList" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
-const Typography = (props) => <Async {...props} expose="Typography" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
-const Button = (props) => <Async {...props} expose="Button" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
-const MenuListItem = (props) => <Async {...props} expose="MenuListItem" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
-const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
-const Divider = (props) => <Async {...props} expose="Divider" load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')} />
-
-
+const Expandable = (props) => <Async {...props}
+                                     load={import(/* webpackChunkName: "admin" */ '../components/cms/Expandable')}/>
+const DataResolverEditor = (props) => <Async {...props}
+                                             load={import(/* webpackChunkName: "admin" */ '../components/cms/DataResolverEditor')}/>
+const TemplateEditor = (props) => <Async {...props}
+                                         load={import(/* webpackChunkName: "admin" */ '../components/cms/TemplateEditor')}/>
+const ScriptEditor = (props) => <Async {...props}
+                                       load={import(/* webpackChunkName: "admin" */ '../components/cms/ScriptEditor')}/>
+const DrawerLayout = (props) => <Async {...props} expose="DrawerLayout"
+                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const MenuList = (props) => <Async {...props} expose="MenuList"
+                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const Button = (props) => <Async {...props} expose="Button"
+                                 load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const MenuListItem = (props) => <Async {...props} expose="MenuListItem"
+                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch"
+                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const Divider = (props) => <Async {...props} expose="Divider"
+                                  load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
@@ -239,7 +248,8 @@ class CmsViewContainer extends React.Component {
             props.user !== this.props.user ||
             props.cmsPages !== this.props.cmsPages ||
             props.children != this.props.children ||
-            (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script))
+            (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script)) ||
+            this.state.fixedLayout !== state.fixedLayout
     }
 
     componentWillReceiveProps(props) {
@@ -336,41 +346,49 @@ class CmsViewContainer extends React.Component {
                         onChange={this.handleClientScriptChange}
                         onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ScriptEditor>
 
-                    <Typography variant="headline">Settings</Typography>
-                    <SimpleSwitch
-                        label="SSR (Server side Rendering)"
-                        checked={!!this.state.ssr}
-                        onChange={this.handleSsrChange}
-                    />
-                    {cmsPages && cmsPages.results && cmsPages.results.length && <div>
-                        <Divider />
-                        <Typography variant="headline">Related pages</Typography>
-                        <MenuList>
-                            {
-                                cmsPages.results.map(i => {
-                                        if (i.slug !== cmsPage.slug) {
-                                            return <MenuListItem key={i.slug} onClick={e => {
-                                                history.push('/' + i.slug)
-                                            }} button primary={i.slug}/>
-                                        }
-                                    }
-                                )
-                            }
+                    <Expandable title="Settings">
+                        <SimpleSwitch
+                            label="SSR (Server side Rendering)"
+                            checked={!!this.state.ssr}
+                            onChange={this.handleSsrChange}
+                        />
+                    </Expandable>
 
-                        </MenuList>
-                    </div>
+
+                    {cmsPages && cmsPages.results && cmsPages.results.length>1 &&
+
+                        <Expandable title="Related pages">
+                            <MenuList>
+                                {
+                                    cmsPages.results.map(i => {
+                                            if (i.slug !== cmsPage.slug) {
+                                                return <MenuListItem key={i.slug} onClick={e => {
+                                                    history.push('/' + i.slug)
+                                                }} button primary={i.slug}/>
+                                            }
+                                        }
+                                    )
+                                }
+
+                            </MenuList>
+                        </Expandable>
                     }
 
                 </div>
             </div>
 
             content = <DrawerLayout sidebar={sidebar()}
-                                    fixHeader={true}
+                                    fixedLayout={this.state.fixedLayout}
                                     drawerSize="large"
-                                    toolbarRight={
-                                        <Button size="small" color="inherit" onClick={e => {
+                                    toolbarRight={[
+                                        <SimpleSwitch key="switch" color="default" checked={this.state.fixedLayout}
+                                                      onChange={this.handleChangeFixed.bind(this)} contrast
+                                                      label="Fixed"/>,
+
+                                        <Button key="button" size="small" color="inherit" onClick={e => {
                                             this.props.history.push(config.ADMIN_BASE_URL + '/cms')
                                         }}>Back</Button>
+                                    ]
                                     }
                                     drawerWidth="500px"
                                     title={'Edit Page "' + cmsPage.slug + '"'}>
@@ -381,6 +399,10 @@ class CmsViewContainer extends React.Component {
         console.info(`render ${this.constructor.name} for ${cmsPage.slug} in ${new Date() - startTime}ms`)
 
         return content
+    }
+
+    handleChangeFixed(e) {
+        this.setState({fixedLayout: e.target.checked})
     }
 
     setKeyValue(arg1, arg2) {
@@ -408,7 +430,7 @@ class CmsViewContainer extends React.Component {
             value
         }
 
-        if( user.isAuthenticated ){
+        if (user.isAuthenticated) {
             const gqlQuery = gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`
             client.mutate({
                 mutation: gqlQuery,
@@ -416,7 +438,7 @@ class CmsViewContainer extends React.Component {
                 update: (store, {data}) => {
                 },
             })
-        }else{
+        } else {
 
         }
 
@@ -456,7 +478,7 @@ const CmsViewContainerWithGql = compose(
                     slug
                 }
 
-                const localData = localStorage.getItem('CMS-'+slug)
+            const localData = localStorage.getItem('CMS-' + slug)
 
             console.log(localData)
 

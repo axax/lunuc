@@ -38,6 +38,9 @@ const styles = theme => ({
             duration: theme.transitions.duration.leavingScreen,
         }),
     },
+    appBarFixed: {
+        position:'fixed'
+    },
     smallAppBarShift: {
         width: `calc(100% - ${DRAWER_WIDTH_SMALL})`
     },
@@ -55,7 +58,13 @@ const styles = theme => ({
         display: 'none',
     },
     drawerDocked: {
-        maxWidth: "100%",
+        maxWidth: '100%'
+    },
+    drawerDockedFixed:{
+        position: 'fixed',
+        top: '0px',
+        bottom: '0px',
+        zIndex: 2
     },
     drawerPaper: {
         display: 'block',
@@ -87,7 +96,7 @@ const styles = theme => ({
         }),
     },
     drawerInner: {
-        maxWidth: '100%',
+        maxWidth: '100%'
     },
     smallDrawerInner: {
         width: DRAWER_WIDTH_SMALL,
@@ -99,6 +108,7 @@ const styles = theme => ({
         width: DRAWER_WIDTH_LARGE,
     },
     drawerHeader: {
+        backgroundColor: '#fff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-end',
@@ -117,6 +127,16 @@ const styles = theme => ({
             height: 'calc(100% - 64px)',
             marginTop: 64,
         },
+        transition: theme.transitions.create('margin', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+        }),
+    },
+    contentClose: {
+        transition: theme.transitions.create('margin', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+        }),
     },
 })
 
@@ -134,20 +154,19 @@ class DrawerLayout extends React.Component {
     }
 
     render() {
-        const {classes, theme, title, sidebar, toolbarRight, children, fixHeader} = this.props
+        const {classes, theme, title, sidebar, toolbarRight, children, fixedLayout} = this.props
         const {open} = this.state
 
         const drawerSize = this.props.drawerSize || 'medium'
 
-        const appBarStyle = {}
-        if (fixHeader) {
-            appBarStyle.position = 'fixed'
+        const contentFixed = {}
+        if (fixedLayout && open) {
+            contentFixed.marginLeft = (drawerSize === 'large' ? DRAWER_WIDTH_LARGE : (drawerSize === 'medium' ? DRAWER_WIDTH_MEDIUM : DRAWER_WIDTH_SMALL))
         }
         return (
             <div className={classes.root}>
                 <div className={classes.appFrame}>
-                    <AppBar style={appBarStyle}
-                            className={classNames(classes.appBar, open && classes[drawerSize + 'AppBarShift'])}>
+                    <AppBar className={classNames(classes.appBar, open && classes[drawerSize + 'AppBarShift'], fixedLayout && classes.appBarFixed)}>
                         <Toolbar>
                             <IconButton
                                 color="inherit"
@@ -167,7 +186,7 @@ class DrawerLayout extends React.Component {
                     <Drawer
                         variant="permanent"
                         classes={{
-                            docked: classes.drawerDocked,
+                            docked: classNames(classes.drawerDocked,fixedLayout && classes.drawerDockedFixed),
                             paper: classNames(classes.drawerPaper, classes[drawerSize + 'DrawerPaper'], !open && classes.drawerPaperClose),
                         }}
                         open={open}
@@ -182,7 +201,7 @@ class DrawerLayout extends React.Component {
                             {sidebar}
                         </div>
                     </Drawer>
-                    <main className={classes.content}>
+                    <main style={contentFixed} className={classNames(classes.content, fixedLayout && !open && classes.contentClose)}>
                         {children}
                     </main>
                 </div>
@@ -194,7 +213,7 @@ class DrawerLayout extends React.Component {
 DrawerLayout.propTypes = {
     classes: PropTypes.object.isRequired,
     theme: PropTypes.object.isRequired,
-    fixHeader: PropTypes.boolean
+    fixedLayout: PropTypes.bool
 }
 
 export default withStyles(styles, {withTheme: true})(DrawerLayout);

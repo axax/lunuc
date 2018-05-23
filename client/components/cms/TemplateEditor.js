@@ -1,12 +1,13 @@
 import React from 'react'
 import ContentEditable from '../generic/ContentEditable'
-import {Typography, SimpleMenu, ExpansionPanel} from 'ui/admin'
+import {SimpleMenu} from 'ui/admin'
+import Expandable from './Expandable'
 
 class TemplateEditor extends React.Component {
     render() {
         const {...rest} = this.props
 
-        return <ExpansionPanel heading={<Typography variant="headline">Template</Typography>}>
+        return <Expandable title="Template">
 
 
             <SimpleMenu mini fab color="secondary" style={{position: 'absolute', bottom: '8px', right: '8px'}}
@@ -14,7 +15,7 @@ class TemplateEditor extends React.Component {
 
 
             <ContentEditable highlight="json" setHtml={false} {...rest}/>
-        </ExpansionPanel>
+        </Expandable>
     }
 
     prettify() {
