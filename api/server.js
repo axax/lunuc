@@ -1,6 +1,7 @@
 import 'gen/extensions-server'
 import express from 'express'
 import graphqlHTTP from 'express-graphql'
+import { GraphQLError } from 'graphql'
 import {createServer} from 'http'
 import {SubscriptionServer} from 'subscriptions-transport-ws'
 import {execute, subscribe} from 'graphql'
@@ -40,15 +41,22 @@ export const start = (done) => {
             // maybe move file upload to another server
             app.use('/graphql/upload', handleUpload(db))
 
-            app.use('/graphql', graphqlHTTP((req) => ({
+
+            app.use('/graphql', (req, res, next) => {
+                graphqlHTTP({
                     schema,
                     rootValue,
                     graphiql: true,
                     formatError: formatError,
                     extensions({document, variables, operationName, result}) {
                     }
-                }))
-            )
+                })(req, res, next).catch((e) => {
+
+                    res.writeHead(500, {'content-type': 'application/json'})
+                    res.end(`{"errors":[{"message":"Error in graphql. Probably there is something wrong with the schema or the resolver: ${e.message}"}]}`)
+
+                })
+            })
 
 
             // Create WebSocket listener server

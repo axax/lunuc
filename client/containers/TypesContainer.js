@@ -32,7 +32,7 @@ import Hook from 'util/hook'
 import {getTypes, getTypeQueries, getFormFields} from 'util/types'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
-import {withStyles} from 'material-ui/styles'
+import {withStyles} from '@material-ui/core/styles'
 import {deepMerge}  from 'util/deepMerge'
 const DEFAULT_RESULT_LIMIT = 10
 const {ADMIN_BASE_URL, UPLOAD_URL, LANGUAGES} = config
@@ -876,7 +876,7 @@ class TypesContainer extends React.Component {
     }
 
     handleCopyClick = (data) => {
-        this.cloneData(this.pageParams, {_id: data._id, slug: data.slug + ' copy'})
+        this.cloneData(this.pageParams, {_id: data._id, name: data.name + ' copy'})
     }
 
     handleConfirmDeletion = (action) => {

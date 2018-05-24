@@ -1,23 +1,22 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Table, {
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
-    TableFooter,
-    TablePagination,
-    TableSortLabel
-} from 'material-ui/Table'
-import Tooltip from 'material-ui/Tooltip'
-import Toolbar from 'material-ui/Toolbar'
-import {withStyles} from 'material-ui/styles'
-import Paper from 'material-ui/Paper'
-import Typography from 'material-ui/Typography'
-import IconButton from 'material-ui/IconButton'
-import DeleteIcon from 'material-ui-icons/Delete'
+import Table from '@material-ui/core/Table'
+import TableBody from '@material-ui/core/TableBody'
+import TableCell from '@material-ui/core/TableCell'
+import TableHead from '@material-ui/core/TableHead'
+import TableRow from '@material-ui/core/TableRow'
+import TableFooter from '@material-ui/core/TableFooter'
+import TablePagination from '@material-ui/core/TablePagination'
+import TableSortLabel from '@material-ui/core/TableSortLabel'
+import Tooltip from '@material-ui/core/Tooltip'
+import Toolbar from '@material-ui/core/Toolbar'
+import {withStyles} from '@material-ui/core/styles'
+import Paper from '@material-ui/core/Paper'
+import Typography from '@material-ui/core/Typography'
+import IconButton from '@material-ui/core/IconButton'
+import DeleteIcon from '@material-ui/icons/Delete'
 import classNames from 'classnames'
-import {lighten} from 'material-ui/styles/colorManipulator'
+import {lighten} from '@material-ui/core/styles/colorManipulator'
 import SimpleMenu from './SimpleMenu'
 
 const styles = theme => ({

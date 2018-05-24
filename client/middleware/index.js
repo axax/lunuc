@@ -33,23 +33,45 @@ export function configureMiddleware(store) {
     // create a middleware for error handling
     const errorLink = onError(({networkError, graphQLErrors, operation, response}) => {
         // check for mongodb/graphql errors
+        let errorCount = 0
         if (graphQLErrors) {
             graphQLErrors.map(({message, locations, path, state}) => {
                     // don't handle errors with a state.
                     if (!state) {
+                        errorCount++
                         store.dispatch(addError({
-                            key: 'graphql_error',
-                            msg: message + ' (in operation ' + path.join('/') + ')'
+                            key: 'graphql_error-'+errorCount,
+                            msg: message + (path?' (in operation ' + path.join('/') + ')':'')
                         }))
                     }
                 }
             )
         }
-        if (networkError) store.dispatch(addError({key: 'api_error', msg: networkError.message}))
+        if (networkError){
+            if( networkError.statusCode === 500){
+                // this is needed in order to get rid of the loading bar
+                dispatchNetworkSatus()
+            }
+            if( errorCount == 0) {
+                // this is only shown if not already a graphql_error has dispatched
+                store.dispatch(addError({key: 'api_error', msg: networkError.message}))
+            }
+        }
     })
 
     // create a middleware for state handling and to attach the hook
     let loadingCounter = 0
+
+    const dispatchNetworkSatus = () =>{
+        loadingCounter--
+        if (loadingCounter === 0) {
+            // send loading false when all request are done
+            store.dispatch(setNetworkStatus({
+                networkStatus: {loading: false}
+            }))
+        }
+    }
+
     const statusLink = new ApolloLink((operation, forward) => {
         loadingCounter++
         if (loadingCounter === 1) {
@@ -58,13 +80,7 @@ export function configureMiddleware(store) {
             }))
         }
         return forward(operation).map((data) => {
-            loadingCounter--
-            if (loadingCounter === 0) {
-                // send loading false when all request are done
-                store.dispatch(setNetworkStatus({
-                    networkStatus: {loading: false}
-                }))
-            }
+            dispatchNetworkSatus()
             /* HOOK */
             Hook.call('ApiResponse', data)
             return data

@@ -35,7 +35,8 @@ export const dbConnection = (cb) => {
                 reconnectTries: 0,
                 autoReconnect: true,
                 poolSize: 10,
-                ssl: false
+                ssl: false,
+                useNewUrlParser: true
             },
             function (err, client) {
                 const parts = MONGO_URL.split('/')

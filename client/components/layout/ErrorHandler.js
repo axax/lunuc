@@ -10,39 +10,20 @@ import {SimpleDialog} from 'ui/admin'
 
 class ErrorHandler extends React.Component {
 
-    constructor(props) {
-        super(props)
-        this.state = {
-        	openDialog:0
-        }
-    }
-
     handleDialogClose(key){
         this.props.actions.clearError(key)
-
-    	this.setState({openDialog: this.state.openDialog+1})
 	}
-
-    componentWillReceiveProps(nextProps){
-        this.setState({openDialog: 0})
-    }
-
     render(){
     	const {messages} = this.props
         if( !messages || !Object.keys(messages).length )
             return null
 
-        const dialogs = []
-        Object.keys(messages).forEach(
-            (key,i) => dialogs.push(<SimpleDialog key={key} open={this.state.openDialog===i} onClose={this.handleDialogClose.bind(this,key)}
-                                          actions={[{key: 'ok', label: 'Ok', type:'primary'}]} title="Error">
-                {messages[key].msg}
-            </SimpleDialog>)
-        )
+        const key = Object.keys(messages)[0], msg = messages[key].msg
 
-        return <div>
-            {dialogs}
-        </div>
+        return <SimpleDialog open={true} onClose={this.handleDialogClose.bind(this,key)}
+                             actions={[{key: 'ok', label: 'Ok', type:'primary'}]} title="Error">
+            {msg}
+        </SimpleDialog>
 
     }
 }

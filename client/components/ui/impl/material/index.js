@@ -9,7 +9,7 @@ import './style.less'
 import React from 'react'
 
 // material theme
-import {MuiThemeProvider, createMuiTheme} from 'material-ui/styles'
+import {MuiThemeProvider, createMuiTheme} from '@material-ui/core/styles'
 const defaultTheme = createMuiTheme()
 // override the default theme
 export const theme = createMuiTheme({
@@ -57,7 +57,7 @@ export const theme = createMuiTheme({
 
 
 import JssProvider from 'react-jss/lib/JssProvider'
-import {createGenerateClassName} from 'material-ui/styles'
+import {createGenerateClassName} from '@material-ui/core/styles'
 
 const generateClassName = createGenerateClassName({
     dangerouslyUseGlobalCSS: false,
@@ -72,27 +72,31 @@ export const UIProvider = ({children, ...rest}) => {
 }
 
 // define some styles so it can be used in the components
-export {withStyles} from 'material-ui/styles'
+export {withStyles} from '@material-ui/core/styles'
 
 // Export material-ui coponents directly
-export Typography from 'material-ui/Typography'
-export Button from 'material-ui/Button'
-export Input from 'material-ui/Input'
-export TextField from 'material-ui/TextField'
-export Select from 'material-ui/Select'
-export Checkbox from 'material-ui/Checkbox'
-export Switch from 'material-ui/Switch'
-export {FormLabel, FormControl, FormControlLabel, FormHelperText} from 'material-ui/Form'
-export Chip from 'material-ui/Chip'
-export Divider from 'material-ui/Divider'
-export Drawer from 'material-ui/Drawer'
-export Snackbar from 'material-ui/Snackbar'
-export Tooltip from 'material-ui/Tooltip'
-export {LinearProgress, CircularProgress} from 'material-ui/Progress'
-export {MenuItem} from 'material-ui/Menu'
-export Paper from 'material-ui/Paper'
-export Avatar from 'material-ui/Avatar'
-export Stepper, { Step, StepLabel, StepContent } from 'material-ui/Stepper'
+export Typography from '@material-ui/core/Typography'
+export Button from '@material-ui/core/Button'
+export Input from '@material-ui/core/Input'
+export TextField from '@material-ui/core/TextField'
+export Select from '@material-ui/core/Select'
+export Checkbox from '@material-ui/core/Checkbox'
+export Switch from '@material-ui/core/Switch'
+export FormLabel from '@material-ui/core/FormLabel'
+export FormControl from '@material-ui/core/FormControl'
+export FormControlLabel from '@material-ui/core/FormControlLabel'
+export FormHelperText from '@material-ui/core/FormHelperText'
+export Chip from '@material-ui/core/Chip'
+export Divider from '@material-ui/core/Divider'
+export Drawer from '@material-ui/core/Drawer'
+export Snackbar from '@material-ui/core/Snackbar'
+export Tooltip from '@material-ui/core/Tooltip'
+export LinearProgress from '@material-ui/core/LinearProgress'
+export CircularProgress from '@material-ui/core/CircularProgress'
+export MenuItem from '@material-ui/core/MenuItem'
+export Paper from '@material-ui/core/Paper'
+export Avatar from '@material-ui/core/Avatar'
+export Stepper, { Step, StepLabel, StepContent } from '@material-ui/core/Stepper'
 
 
 // simple components are extended componente with features easy to use
@@ -107,7 +111,7 @@ export SimpleList from './SimpleList'
 export SimpleToolbar from './SimpleToolbar'
 
 // grid
-import Grid from 'material-ui/Grid'
+import Grid from '@material-ui/core/Grid'
 
 export const Row = ({...rest}) => {
     return <Grid container {...rest} />
@@ -122,30 +126,30 @@ export ResponsiveDrawerLayout from './layouts/ResponsiveDrawerLayout'
 
 
 // list
-import MaterialList, {
-    ListItem as MaterialListItem,
-    ListItemIcon as MaterialListItemIcon,
-    ListItemText as MaterialListItemText
-} from 'material-ui/List'
+import List from '@material-ui/core/List'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemText from '@material-ui/core/ListItemText'
 
 export const MenuList = ({children, ...rest}) => {
-    return <MaterialList {...rest}>
+    return <List {...rest}>
         {children}
-    </MaterialList>
+    </List>
 }
 
 export const MenuListItem = ({primary, ...rest}) => {
-    return <MaterialListItem {...rest}>
-        <MaterialListItemText
+    return <ListItem {...rest}>
+        <ListItemText
             primary={primary}
             secondary={null}
         />
-    </MaterialListItem>
+    </ListItem>
 }
 
 
 // cards
-import MaterialCard, {CardActions as MaterialCardActions, CardContent as MaterialCardContent} from 'material-ui/Card'
+import MaterialCard from '@material-ui/core/Card'
+import MaterialCardActions from '@material-ui/core/CardActions'
+import MaterialCardContent from '@material-ui/core/CardContent'
 export const Card = ({children, ...rest}) => {
     return <MaterialCard {...rest}>
         <MaterialCardContent>
@@ -155,11 +159,10 @@ export const Card = ({children, ...rest}) => {
 }
 
 // ExpansionPanel
-import MaterialExpansionPanel, {
-    ExpansionPanelSummary,
-    ExpansionPanelDetails,
-} from 'material-ui/ExpansionPanel'
-import ExpandMoreIcon from 'material-ui-icons/ExpandMore';
+import MaterialExpansionPanel from '@material-ui/core/ExpansionPanel'
+import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary'
+import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails'
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 
 export const ExpansionPanel = ({heading, children, ...rest}) => {
