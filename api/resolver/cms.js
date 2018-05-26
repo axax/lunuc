@@ -156,7 +156,10 @@ export const cmsResolver = (db) => ({
                 /* we return a cacheKey here because the resolvedData may be dependent on the query that gets passed.
                  that leads to ambiguous results for the same id.
                  */
-                cacheKey: query
+                cacheKey: query,
+                /* Return the current user settings of the view
+                */
+                settings: ""
             }
         } else {
 

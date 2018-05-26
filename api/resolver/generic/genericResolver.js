@@ -342,7 +342,7 @@ const GenericResolver = {
 
         Util.checkIfUserIsLoggedIn(context)
 
-
+console.log(_id,rest)
         const collection = db.collection(collectionName)
 
         if (!_id) {

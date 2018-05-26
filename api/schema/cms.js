@@ -14,7 +14,8 @@ export const cmsSchemaRaw = `
         public: Boolean,
         urlSensitiv: Boolean,
         modifiedAt: Float
-        cacheKey: String
+        cacheKey: String,
+        settings: String
     }
     
     
@@ -38,6 +39,6 @@ export const cmsSchemaRaw = `
 		): CmsPage
 		updateCmsPage(_id: ID!, query: String, slug: String, template: String, script: String, dataResolver: String, ssr: Boolean, public: Boolean, urlSensitiv: Boolean): CmsPage	
 		deleteCmsPage(_id: ID!): CmsPage
-		cloneCmsPage(_id: ID!, slug: String, public: Boolean): CmsPage
+		cloneCmsPage(_id: ID!, slug: String, public: Boolean, urlSensitiv: Boolean): CmsPage
 	}
 `

@@ -193,11 +193,13 @@ Hook.on('Types', ({types}) => {
 
     types.CmsPage = {
         "name": "CmsPage",
+        "clonable": true,
         "usedBy": ["core"],
         "fields": [
             {
                 "name": "slug",
-                "required": true
+                "required": true,
+                "clone":"${slug}_copy"
             },
             {
                 "name": "public",

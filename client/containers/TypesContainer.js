@@ -239,13 +239,16 @@ class TypesContainer extends React.Component {
                                 <EditIconButton
                                     disabled={(item.status == 'deleting' || item.status == 'updating')}
                                     onClick={this.handleEditDataClick.bind(this, item)}/>
-                            </Tooltip>,
-                            <Tooltip key="copyBtn" placement="top" title="Clone entry">
-                                <ContentCopyIconButton
-                                    disabled={(item.status == 'deleting' || item.status == 'updating')}
-                                    onClick={this.handleCopyClick.bind(this, item)}/>
                             </Tooltip>
                         ]
+
+                        if( this.types[type].clonable ) {
+                            dynamic.action.push(<Tooltip key="copyBtn" placement="top" title="Clone entry">
+                                <ContentCopyIconButton
+                                    disabled={(item.status == 'deleting' || item.status == 'updating')}
+                                    onClick={this.handleCopyClick.bind(this, item, fields)}/>
+                            </Tooltip>)
+                        }
                     }
                     dataSource.push(dynamic)
                 })
@@ -702,7 +705,6 @@ class TypesContainer extends React.Component {
                 mutation: gql(queries.clone),
                 variables,
                 update: (store, {data}) => {
-                    console.log(data)
                     const freshData = {
                         ...data['clone' + type],
                         createdBy: {
@@ -875,8 +877,15 @@ class TypesContainer extends React.Component {
         this.setState({createEditDialog: true, dataToEdit: data})
     }
 
-    handleCopyClick = (data) => {
-        this.cloneData(this.pageParams, {_id: data._id, name: data.name + ' copy'})
+    handleCopyClick = (data,fields) => {
+        const newData = {}
+        fields.forEach(field=>{
+            if( field.clone ){
+                const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;return `' + field.clone + '`;')
+                newData[field.name]= tpl.call({data})
+            }
+        })
+        this.cloneData(this.pageParams, {_id: data._id, ...newData})
     }
 
     handleConfirmDeletion = (action) => {

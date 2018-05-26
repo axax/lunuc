@@ -240,7 +240,8 @@ class CmsViewContainer extends React.Component {
 
     shouldComponentUpdate(props, state) {
         // only update if cms page was modified
-        return !this.props.cmsPage ||
+        return !props.cmsPage ||
+            !this.props.cmsPage ||
             props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             props.location.search !== this.props.location.search ||
