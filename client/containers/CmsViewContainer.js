@@ -356,23 +356,23 @@ class CmsViewContainer extends React.Component {
                     </Expandable>
 
 
-                    {cmsPages && cmsPages.results && cmsPages.results.length>1 &&
+                    {cmsPages && cmsPages.results && cmsPages.results.length > 1 &&
 
-                        <Expandable title="Related pages">
-                            <MenuList>
-                                {
-                                    cmsPages.results.map(i => {
-                                            if (i.slug !== cmsPage.slug) {
-                                                return <MenuListItem key={i.slug} onClick={e => {
-                                                    history.push('/' + i.slug)
-                                                }} button primary={i.slug}/>
-                                            }
+                    <Expandable title="Related pages">
+                        <MenuList>
+                            {
+                                cmsPages.results.map(i => {
+                                        if (i.slug !== cmsPage.slug) {
+                                            return <MenuListItem key={i.slug} onClick={e => {
+                                                history.push('/' + i.slug)
+                                            }} button primary={i.slug}/>
                                         }
-                                    )
-                                }
+                                    }
+                                )
+                            }
 
-                            </MenuList>
-                        </Expandable>
+                        </MenuList>
+                    </Expandable>
                     }
 
                 </div>
@@ -439,8 +439,21 @@ class CmsViewContainer extends React.Component {
                 update: (store, {data}) => {
                 },
             })
+            localStorage.removeItem('NoUserKeyValues')
         } else {
-
+            const kv = localStorage.getItem('NoUserKeyValues')
+            let json
+            if (kv) {
+                try {
+                    json = JSON.parse(kv)
+                } catch (e) {
+                    json = {}
+                }
+            } else {
+                json = {}
+            }
+            json[key] = value
+            localStorage.setItem('NoUserKeyValues', JSON.stringify(json))
         }
 
     }
@@ -479,9 +492,9 @@ const CmsViewContainerWithGql = compose(
                     slug
                 }
 
-            const localData = localStorage.getItem('CMS-' + slug)
+            const kv = localStorage.getItem('NoUserKeyValues')
 
-            console.log(localData)
+            console.log(kv)
 
             if (urlSensitiv || (urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
                 const q = window.location.search.substring(1)

@@ -84,10 +84,16 @@ class ContentEditable extends React.Component {
 
 
     handleKeyDown(e) {
+        const {highlight} = this.props
+
         // handle tab
         if (e.key === "Tab") {
             e.preventDefault();
-            document.execCommand('insertHTML', false, '&#009')
+            if( highlight === 'json'){
+                document.execCommand('insertHTML', false, '  ')
+            }else{
+                document.execCommand('insertHTML', false, '&#009')
+            }
         }else if(e.metaKey  || e.ctrlKey){
 
             if( e.key==='z' || e.key==='Z' ){

@@ -76,6 +76,9 @@ class JsonDom extends React.Component {
         return root
     }
     jsGetComponent = (id) => {
+        if( !id ){
+            return null
+        }
 
         const jsGetComponentRec = (comp, id) => {
             let res = null
@@ -99,7 +102,7 @@ class JsonDom extends React.Component {
         }
         return jsGetComponentRec(this.jsRootComponent(), id)
     }
-    jsRefresh = (id) => {
+    jsRefresh = (id, noScript) => {
 
         let nodeToRefresh = this.jsGetComponent(id)
 
@@ -108,8 +111,10 @@ class JsonDom extends React.Component {
             nodeToRefresh = this
         }
         nodeToRefresh.json = null
-        nodeToRefresh.runScript = true
-        nodeToRefresh.jsOnStack = {}
+        if( !noScript ) {
+            nodeToRefresh.runScript = true
+            nodeToRefresh.jsOnStack = {}
+        }
         nodeToRefresh.forceUpdate()
 
     }

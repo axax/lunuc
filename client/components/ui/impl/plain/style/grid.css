@@ -204,6 +204,13 @@
         max-width: 100%;
         flex: 0 0 100%;
     }
+
+    .row .col.col-md-align-center {
+        text-align: center;
+    }
+    .row .col.col-md-align-right {
+        text-align: right;
+    }
 }
 
 @media (min-width: 1200px) {

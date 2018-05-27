@@ -85,8 +85,8 @@ export {default as Pagination} from './Pagination'
 export const Row = ({...rest}) => {
     return <div className="row" {...rest} />
 }
-export const Col = ({span, lg, md, sm, ...rest}) => {
-    return <div className={'col ' + (md && 'col-md-' + md + ' ')} {...rest} />
+export const Col = ({span, lg, md, mdAlign, sm, ...rest}) => {
+    return <div className={'col' + (md ? ' col-md-' + md:'') + (mdAlign ? ' col-md-align-' + mdAlign:'')} {...rest} />
 }
 
 // table
