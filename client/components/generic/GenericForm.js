@@ -53,7 +53,7 @@ class GenericForm extends React.Component {
             }
         })
 
-        if( Object.keys(fieldErrors).length || Object.keys(this.state.fieldErrors).length ){
+        if (Object.keys(fieldErrors).length || Object.keys(this.state.fieldErrors).length) {
             this.setState({fieldErrors})
         }
 
@@ -123,11 +123,11 @@ class GenericForm extends React.Component {
     }
 
     render() {
-        const {fields, onKeyDown, primaryButton, caption} = this.props
+        const {fields, onKeyDown, primaryButton, caption, autoFocus} = this.props
         return (
             <form>
                 {
-                    Object.keys(fields).map((k) => {
+                    Object.keys(fields).map((k, i) => {
                         const o = fields[k],
                             value = this.state.fields[k]
 
@@ -173,7 +173,8 @@ class GenericForm extends React.Component {
                                     return a
                                 }, [])
                             } else {
-                                return <TextField error={!!this.state.fieldErrors[k]} key={k}
+                                return <TextField autoFocus={autoFocus && i === 0} error={!!this.state.fieldErrors[k]}
+                                                  key={k}
                                                   label={o.label}
                                                   helperText={this.state.fieldErrors[k]}
                                                   fullWidth={o.fullWidth}
@@ -206,7 +207,8 @@ GenericForm.propTypes = {
     onKeyDown: PropTypes.func,
     onValidate: PropTypes.func,
     caption: PropTypes.string,
-    primaryButton: PropTypes.bool
+    primaryButton: PropTypes.bool,
+    autoFocus: PropTypes.bool
 }
 
 export default GenericForm

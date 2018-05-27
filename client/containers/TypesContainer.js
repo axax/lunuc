@@ -242,7 +242,7 @@ class TypesContainer extends React.Component {
                             </Tooltip>
                         ]
 
-                        if( this.types[type].clonable ) {
+                        if (this.types[type].clonable) {
                             dynamic.action.push(<Tooltip key="copyBtn" placement="top" title="Clone entry">
                                 <ContentCopyIconButton
                                     disabled={(item.status == 'deleting' || item.status == 'updating')}
@@ -266,7 +266,10 @@ class TypesContainer extends React.Component {
                              actions={[
                                  {
                                      name: 'Add new ' + type, onClick: () => {
-                                     this.setState({createEditDialog: true})
+                                     setTimeout(() => {
+                                         this.setState({createEditDialog: true})
+                                     }, 300)
+
                                  }
                                  }, {
                                      name: 'View settings', onClick: () => {
@@ -339,7 +342,7 @@ class TypesContainer extends React.Component {
                     label: 'Save',
                     type: 'primary'
                 }],
-                children: <GenericForm ref={ref => {
+                children: <GenericForm autoFocus ref={ref => {
                     this.createEditForm = ref
                 }} primaryButton={false} fields={formFields} values={dataToEdit}/>
             }
@@ -428,7 +431,7 @@ class TypesContainer extends React.Component {
 
 
     getTableColumns(type) {
-        if( !this.types[type] ) return
+        if (!this.types[type]) return
         if (this.typeColumns[type]) return this.typeColumns[type]
         this.typeColumns[type] = []
         this.types[type].fields.forEach(field => {
@@ -877,12 +880,12 @@ class TypesContainer extends React.Component {
         this.setState({createEditDialog: true, dataToEdit: data})
     }
 
-    handleCopyClick = (data,fields) => {
+    handleCopyClick = (data, fields) => {
         const newData = {}
-        fields.forEach(field=>{
-            if( field.clone ){
+        fields.forEach(field => {
+            if (field.clone) {
                 const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;return `' + field.clone + '`;')
-                newData[field.name]= tpl.call({data})
+                newData[field.name] = tpl.call({data})
             }
         })
         this.cloneData(this.pageParams, {_id: data._id, ...newData})
@@ -898,7 +901,7 @@ class TypesContainer extends React.Component {
 
     handleCreateEditData = (action) => {
 
-        const closeModal = () =>{
+        const closeModal = () => {
             this.setState({createEditDialog: false, dataToEdit: null})
         }
 
@@ -937,18 +940,18 @@ class TypesContainer extends React.Component {
                 const updateData = {}
                 Object.keys(submitData).forEach(k => {
                     const before = this.state.dataToEdit[k]
-                    if (before && before.constructor === Object ) {
-                        if( before._id !== submitData[k] ) {
+                    if (before && before.constructor === Object) {
+                        if (before._id !== submitData[k]) {
                             updateData[k] = submitData[k]
                         }
                     } else if (submitData[k] !== before) {
                         updateData[k] = submitData[k]
                     }
                 })
-                if( Object.keys(updateData).length ) {
+                if (Object.keys(updateData).length) {
                     // only send data if they have really changed
                     this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...updateData}, fieldData).then(callback)
-                }else{
+                } else {
                     closeModal()
                 }
 
