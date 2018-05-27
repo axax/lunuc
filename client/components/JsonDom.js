@@ -180,6 +180,17 @@ class JsonDom extends React.Component {
         this.parseError = null
     }
 
+    componentWillUnmount(){
+        if (this.jsOnStack['unmount']) {
+            this.jsOnStack['unmount'].forEach(cb => {
+                if (cb) {
+                    cb()
+                }
+            })
+        }
+        this.resetTemplate()
+    }
+
     addParentRef(props) {
         const {id, _parentRef} = props
         if (_parentRef && id) {
