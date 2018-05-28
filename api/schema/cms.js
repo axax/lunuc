@@ -14,8 +14,7 @@ export const cmsSchemaRaw = `
         public: Boolean,
         urlSensitiv: Boolean,
         modifiedAt: Float
-        cacheKey: String,
-        settings: String
+        cacheKey: String
     }
     
     

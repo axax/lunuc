@@ -88,8 +88,20 @@ class CmsViewContainer extends React.Component {
 
     propsToState(props) {
         const {template, script, dataResolver, ssr} = props.cmsPage || {}
+        let settings = null
+        if( props.keyValue ) {
+            // TODO optimize so JSON.parse is only called once
+            try {
+                settings = JSON.parse(props.keyValue.value)
+            } catch (e) {
+                settings = {}
+            }
+        }else{
+            settings = {}
+        }
 
         return {
+            settings,
             template,
             script,
             dataResolver,
@@ -250,7 +262,7 @@ class CmsViewContainer extends React.Component {
             props.cmsPages !== this.props.cmsPages ||
             props.children != this.props.children ||
             (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script)) ||
-            this.state.fixedLayout !== state.fixedLayout
+            this.state.settings.fixedLayout !== state.settings.fixedLayout
     }
 
     componentWillReceiveProps(props) {
@@ -321,6 +333,7 @@ class CmsViewContainer extends React.Component {
         if (!editMode) {
             content = jsonDom
         } else {
+            const {settings} = this.state
             const sidebar = () => <div>
                 <MenuList>
                     <MenuListItem onClick={e => {
@@ -379,10 +392,11 @@ class CmsViewContainer extends React.Component {
             </div>
 
             content = <DrawerLayout sidebar={sidebar()}
-                                    fixedLayout={this.state.fixedLayout}
+                                    fixedLayout={settings.fixedLayout}
                                     drawerSize="large"
                                     toolbarRight={[
-                                        <SimpleSwitch key="switch" color="default" checked={this.state.fixedLayout}
+                                        <SimpleSwitch key="switch" color="default"
+                                                      checked={settings.fixedLayout}
                                                       onChange={this.handleChangeFixed.bind(this)} contrast
                                                       label="Fixed"/>,
 
@@ -403,7 +417,11 @@ class CmsViewContainer extends React.Component {
     }
 
     handleChangeFixed(e) {
-        this.setState({fixedLayout: e.target.checked})
+       this.setState({settings: Object.assign({}, this.state.settings, {fixedLayout: e.target.checked})},this.saveSettings)
+    }
+
+    saveSettings(){
+        this.setKeyValue('CmsViewContainerSettings',this.state.settings)
     }
 
     setKeyValue(arg1, arg2) {
@@ -465,6 +483,7 @@ CmsViewContainer.propTypes = {
     loading: PropTypes.bool,
     cmsPage: PropTypes.object,
     cmsPages: PropTypes.object,
+    keyValue: PropTypes.object,
     updateCmsPage: PropTypes.func.isRequired,
     slug: PropTypes.string,
     user: PropTypes.object.isRequired,
@@ -482,6 +501,7 @@ CmsViewContainer.propTypes = {
 }
 
 const gqlQueryRel = gql`query cmsPages($filter: String){cmsPages(filter:$filter){results{slug}}}`
+const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){_id key value}}`
 
 const urlSensitivMap = {}
 const CmsViewContainerWithGql = compose(
@@ -527,10 +547,22 @@ const CmsViewContainerWithGql = compose(
                 fetchPolicy: 'network-only'
             }
         },
-        props: ({data: {loading, cmsPages}}) => {
+        props: ({data: {cmsPages}}) => {
             return {
-                cmsPages,
-                loading
+                cmsPages
+            }
+        }
+    }),
+    graphql(gqlQueryKeyValue, {
+        skip: props => props.dynamic || !isEditMode(props),
+        options(ownProps) {
+            return {
+                fetchPolicy: 'network-only'
+            }
+        },
+        props: ({data: {keyValue}}) => {
+            return {
+                keyValue
             }
         }
     }),
