@@ -89,14 +89,14 @@ class CmsViewContainer extends React.Component {
     propsToState(props) {
         const {template, script, dataResolver, ssr} = props.cmsPage || {}
         let settings = null
-        if( props.keyValue ) {
+        if (props.keyValue) {
             // TODO optimize so JSON.parse is only called once
             try {
                 settings = JSON.parse(props.keyValue.value)
             } catch (e) {
                 settings = {}
             }
-        }else{
+        } else {
             settings = {}
         }
 
@@ -345,22 +345,35 @@ class CmsViewContainer extends React.Component {
 
                 <div style={{padding: '10px'}}>
 
-                    <DataResolverEditor
-                        style={editorStyle}
-                        onChange={this.handleDataResolverChange}
-                        onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'dataResolver')}>{dataResolver}</DataResolverEditor>
+                    <Expandable title="Data resolver"
+                                onChange={(expanded) => this.handleExpandable.call(this,'dataResolverExpanded',expanded)}
+                                expanded={settings.dataResolverExpanded}>
+                        <DataResolverEditor
+                            style={editorStyle}
+                            onChange={this.handleDataResolverChange}
+                            onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'dataResolver')}>{dataResolver}</DataResolverEditor>
+                    </Expandable>
 
-                    <TemplateEditor
-                        style={editorStyle}
-                        onChange={this.handleTemplateChange}
-                        onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'template')}>{template}</TemplateEditor>
+                    <Expandable title="Template"
+                                onChange={(expanded) => this.handleExpandable.call(this,'templateExpanded',expanded)}
+                                expanded={settings.templateExpanded}>
+                        <TemplateEditor
+                            style={editorStyle}
+                            onChange={this.handleTemplateChange}
+                            onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'template')}>{template}</TemplateEditor>
+                    </Expandable>
 
-                    <ScriptEditor
-                        style={editorStyle}
-                        onChange={this.handleClientScriptChange}
-                        onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ScriptEditor>
-
-                    <Expandable title="Settings">
+                    <Expandable title="Script"
+                                onChange={(expanded) => this.handleExpandable.call(this,'scriptExpanded',expanded)}
+                                expanded={settings.scriptExpanded}>
+                        <ScriptEditor
+                            style={editorStyle}
+                            onChange={this.handleClientScriptChange}
+                            onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ScriptEditor>
+                    </Expandable>
+                    <Expandable title="Settings"
+                                onChange={(expanded) => this.handleExpandable.call(this,'settingsExpanded',expanded)}
+                                expanded={settings.settingsExpanded}>
                         <SimpleSwitch
                             label="SSR (Server side Rendering)"
                             checked={!!this.state.ssr}
@@ -371,7 +384,9 @@ class CmsViewContainer extends React.Component {
 
                     {cmsPages && cmsPages.results && cmsPages.results.length > 1 &&
 
-                    <Expandable title="Related pages">
+                    <Expandable title="Related pages"
+                                onChange={(expanded) => this.handleExpandable.call(this,'relatedPagesExpanded',expanded)}
+                                expanded={settings.relatedPagesExpanded}>
                         <MenuList>
                             {
                                 cmsPages.results.map(i => {
@@ -416,12 +431,16 @@ class CmsViewContainer extends React.Component {
         return content
     }
 
-    handleChangeFixed(e) {
-       this.setState({settings: Object.assign({}, this.state.settings, {fixedLayout: e.target.checked})},this.saveSettings)
+    handleExpandable(key, expanded){
+        this.setState({settings: Object.assign({}, this.state.settings, {[key]: expanded})}, this.saveSettings)
     }
 
-    saveSettings(){
-        this.setKeyValue('CmsViewContainerSettings',this.state.settings)
+    handleChangeFixed(e) {
+        this.setState({settings: Object.assign({}, this.state.settings, {fixedLayout: e.target.checked})}, this.saveSettings)
+    }
+
+    saveSettings() {
+        this.setKeyValue('CmsViewContainerSettings', this.state.settings)
     }
 
     setKeyValue(arg1, arg2) {

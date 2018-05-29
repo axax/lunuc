@@ -7,15 +7,11 @@ class TemplateEditor extends React.Component {
     render() {
         const {...rest} = this.props
 
-        return <Expandable title="Template">
-
-
-            <SimpleMenu mini fab color="secondary" style={{position: 'absolute', bottom: '8px', right: '8px'}}
+        return <div style={{position: 'relative'}}>
+            <SimpleMenu mini fab color="secondary" style={{position: 'absolute', bottom: '-8px', right: '-8px'}}
                         items={[{name: 'Prettify', onClick: this.prettify.bind(this)}]}/>
-
-
             <ContentEditable highlight="json" setHtml={false} {...rest}/>
-        </Expandable>
+        </div>
     }
 
     prettify() {
