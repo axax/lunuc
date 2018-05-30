@@ -44,8 +44,7 @@ proxy.on('error', function (err, req, res) {
 const app = http.createServer(function (req, res) {
 
         const uri = url.parse(req.url).pathname
-
-        if (uri === '/graphql') {
+        if (uri.startsWith('/graphql') ) {
             proxy.web(req, res, {target: `http://localhost:${API_PORT}/graphql`})
         } else {
 
