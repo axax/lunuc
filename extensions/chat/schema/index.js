@@ -1,23 +1,23 @@
 export default `
 
-  # Same as above but with ids resolved
-  type Message {
-  	_id: ID! # unique id for message
-    to: Chat! # chat message was sent in
-    from: UserPublic! # user who sent the message
-    text: String! # message text
-    status: String # status of the message
-  }
+    # Same as above but with ids resolved
+    type Message {
+        _id: ID! # unique id for message
+        to: Chat! # chat message was sent in
+        from: UserPublic! # user who sent the message
+        text: String! # message text
+        status: String # status of the message
+    }
   
-	type Chat {
+    type Chat {
 		_id: ID! # unique id for chat
 		name: String! # name of the chat
 		createdBy: UserPublic! # id of user
-    users: [UserPublic]! # users in the chat
-    messageCount: Int # returns the total number of messages
-    messages(limit: Int, offset: Int): [Message] # messages sent to the chat
-    status: String # status of the chat
-  }
+        users: [UserPublic]! # users in the chat
+        messageCount: Int # returns the total number of messages
+        messages(limit: Int, offset: Int): [Message] # messages sent to the chat
+        status: String # status of the chat
+    }
   
   
   type Query {

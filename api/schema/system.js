@@ -16,6 +16,19 @@ export const systemSchemaRaw = `
         total: Int
     }
     
+    type MediaDump {
+        name: String
+        createdAt: Float
+        size: String
+    }
+    
+    type MediaDumpResult {
+        results: [MediaDump]
+        offset: Int
+        limit: Int
+        total: Int
+    }
+    
     type BrokenReferencesResult {
         total: Int
     }
@@ -24,10 +37,12 @@ export const systemSchemaRaw = `
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!): RunResult
     	dbDumps: DbDumpResult   
+    	mediaDumps: MediaDumpResult   
     }
     
       
     type Mutation {   	
     	createDbDump(type: String): DbDump
+    	createMediaDump(type: String): MediaDump
     }
 `

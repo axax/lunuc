@@ -45,6 +45,7 @@ const app = http.createServer(function (req, res) {
 
         const uri = url.parse(req.url).pathname
         if (uri.startsWith('/graphql') ) {
+            // there is also /graphql/upload
             proxy.web(req, res, {target: `http://localhost:${API_PORT}${uri}`})
         } else {
 
