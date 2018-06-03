@@ -10,8 +10,7 @@ import {resolver} from './resolver/index'
 import {dbConnection, dbPreparation} from './database'
 import {auth} from './auth'
 import {formatError} from './error'
-import {subscriptionManager} from './subscription'
-import handleUpload from './upload'
+import {handleUpload, handleMediaDumpUpload} from './upload'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -38,6 +37,8 @@ export const start = (done) => {
             const rootValue = resolver(db)
 
             // upload
+            app.use('/graphql/upload/mediadump', handleMediaDumpUpload(db))
+
             // maybe move file upload to another server
             app.use('/graphql/upload', handleUpload(db))
 

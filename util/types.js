@@ -187,6 +187,9 @@ Hook.on('Types', ({types}) => {
         "fields": [
             {
                 "name": "name"
+            },
+            {
+                "name": "mimeType"
             }
         ]
     }

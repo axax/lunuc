@@ -134,7 +134,7 @@ class FileDrop extends React.Component {
     }
 
     handelDrop(e) {
-        const {onFileContent, onFiles, accept} = this.props
+        const {onFileContent, onFiles, accept, uploadTo} = this.props
         this.setDragState(e, false)
 
         const accepts = (accept || DEFAULT_ACCEPT).split('|'), acceptsType = [], acceptsExt = []
@@ -168,12 +168,14 @@ class FileDrop extends React.Component {
                     return
                 }
             })
-
+console.log(isValid)
             //TODO: also check for acceptsType images/*
 
             if (isValid) {
                 filteredFiles.push(f)
-                if ((/\.(?=gif|jpg|png|jpeg)/gi).test(f.name)) {
+                if (uploadTo) {
+                    this.uploadData(URL.createObjectURL(f), f, uploadTo)
+                } else if ((/\.(?=gif|jpg|png|jpeg)/gi).test(f.name)) {
                     // is image
 
                     images.push(URL.createObjectURL(f))
@@ -249,44 +251,7 @@ class FileDrop extends React.Component {
             //const blobData = this.dataURLToBlob(dataUrl) // as png?
             if (file.size <= MAX_FILE_SIZE_MB * 1024 * 1024) {
 
-                this.setState({uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0})
-                this.dataURLtoBlob(dataUrl, (blob) => {
-
-                    const xhr = new XMLHttpRequest()
-                    xhr.responseType = 'json'
-                    // Progress bar
-                    xhr.upload.addEventListener('progress', this.updateFileProgress.bind(this), false)
-
-                    xhr.onload = () => {
-                        const {status, message} = xhr.response
-                        if (status === 'success') {
-                            this.setState({successMessage: 'upload was successfull', uploading: false})
-
-                            const {onSuccess} = this.props
-                            if (onSuccess) {
-                                onSuccess(xhr.response)
-                            }
-
-                        } else {
-                            this.setState({errorMessage: message, uploading: false})
-                        }
-                    }
-
-                    xhr.onerror = (e) => {
-                        this.setState({errorMessage: e.message, uploading: false})
-                    }
-
-
-                    xhr.open('POST', UPLOAD_API_URL, true)
-                    xhr.setRequestHeader('Authorization', Util.getAuthToken())
-
-                    const fd = new FormData();
-
-                    fd.append('blob', blob, file.name);
-
-                    xhr.send(fd)
-
-                })
+                this.uploadData(dataUrl, file, UPLOAD_API_URL)
             } else {
 
             }
@@ -309,6 +274,48 @@ class FileDrop extends React.Component {
 
         req.send()
     }
+
+
+    uploadData(dataUrl, file, destination) {
+        this.setState({uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0})
+        this.dataURLtoBlob(dataUrl, (blob) => {
+
+            const xhr = new XMLHttpRequest()
+            xhr.responseType = 'json'
+            // Progress bar
+            xhr.upload.addEventListener('progress', this.updateFileProgress.bind(this), false)
+
+            xhr.onload = () => {
+                const {status, message} = xhr.response
+                if (status === 'success') {
+                    this.setState({successMessage: 'upload was successfull', uploading: false})
+
+                    const {onSuccess} = this.props
+                    if (onSuccess) {
+                        onSuccess(xhr.response)
+                    }
+
+                } else {
+                    this.setState({errorMessage: message, uploading: false})
+                }
+            }
+
+            xhr.onerror = (e) => {
+                this.setState({errorMessage: e.message, uploading: false})
+            }
+
+
+            xhr.open('POST', destination, true)
+            xhr.setRequestHeader('Authorization', Util.getAuthToken())
+
+            const fd = new FormData();
+
+            fd.append('blob', blob, file.name);
+
+            xhr.send(fd)
+
+        })
+    }
 }
 
 FileDrop.propTypes = {
@@ -317,7 +324,8 @@ FileDrop.propTypes = {
     label: PropTypes.string,
     accept: PropTypes.string,
     onFileContent: PropTypes.func,
-    onFiles: PropTypes.func
+    onFiles: PropTypes.func,
+    uploadTo: PropTypes.string
 }
 
 export default withStyles(styles)(FileDrop)

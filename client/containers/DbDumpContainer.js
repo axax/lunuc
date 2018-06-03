@@ -3,7 +3,8 @@ import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import {SimpleButton, Typography, TextField, Divider, DeleteIconButton, Chip, SimpleList, Row, Col} from 'ui/admin'
+import {SimpleButton, SimpleDialog, Typography, TextField, Divider, DeleteIconButton, Chip, SimpleList, Row, Col} from 'ui/admin'
+import FileDrop from 'client/components/FileDrop'
 import Util from 'client/util'
 import config from 'gen/config'
 
@@ -19,7 +20,8 @@ class DbDumpContainer extends React.Component {
         this.state = {
             creatingDump: false,
             creatingMediaDump: false,
-            importingMediaDump: false
+            importingMediaDump: false,
+            importMediaDumpDialog: false
         }
     }
 
@@ -41,16 +43,25 @@ class DbDumpContainer extends React.Component {
 
     }
     importMediaDump() {
-        this.setState({importMediaDump: true})
-        this.props.createMediaDump().then(e => {
+        this.setState({importMediaDumpDialog: true})
+        /*this.props.createMediaDump().then(e => {
             this.setState({importMediaDump: false})
-        })
+        })*/
 
+    }
+
+    handleConfirmDialog(){
+        this.setState({importMediaDumpDialog: false})
+
+    }
+
+    handleMediaDumpUpload(e){
+        console.log(e)
     }
 
     render() {
         const {dbDumps, mediaDumps} = this.props
-        const {creatingDump, creatingMediaDump, importingMediaDump} = this.state
+        const {creatingDump, creatingMediaDump, importingMediaDump, importMediaDumpDialog} = this.state
         return (
             <BaseLayout>
                 <Typography variant="display2" gutterBottom>Backups</Typography>
@@ -84,9 +95,9 @@ class DbDumpContainer extends React.Component {
                                       showProgress={creatingMediaDump}
                                       onClick={this.createMediaDump.bind(this)}>{creatingMediaDump ? 'Dump is beeing created' : 'Create new media dump'}</SimpleButton>
 
-                        <SimpleButton color="secondary"
+                        {!importMediaDumpDialog && <SimpleButton color="secondary"
                                       showProgress={importingMediaDump}
-                                      onClick={this.importMediaDump.bind(this)}>{importingMediaDump ? 'Dump is beeing imported' : 'Import media dump'}</SimpleButton>
+                                      onClick={this.importMediaDump.bind(this)}>{importingMediaDump ? 'Dump is beeing imported' : 'Import media dump'}</SimpleButton>}
 
 
                         {mediaDumps && mediaDumps.results && mediaDumps.results.length > 0 &&
@@ -104,6 +115,16 @@ class DbDumpContainer extends React.Component {
                         }
                     </Col>
                 </Row>
+
+                <SimpleDialog open={importMediaDumpDialog} onClose={this.handleConfirmDialog.bind(this)}
+                              actions={[{key: 'close', label: 'Close'}]}
+                              title="Select dump file">
+
+                    <FileDrop style={{width:'15rem',height:'10rem'}} accept="application/x-gzip"
+                              uploadTo="/graphql/upload/mediadump"
+                              label="Drop dump file here"/>
+
+                </SimpleDialog>
 
             </BaseLayout>
         )

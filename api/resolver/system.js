@@ -2,8 +2,9 @@ import Util from '../util'
 import {execSync} from 'child_process'
 import path from 'path'
 import fs from 'fs'
-import archiver from 'archiver'
 import config from 'gen/config'
+import zipper from 'zip-local'
+
 const {BACKUP_DIR,UPLOAD_DIR} = config
 
 export const systemResolver = (db) => ({
@@ -120,19 +121,10 @@ export const systemResolver = (db) => ({
         if( files.length === 0){
             throw new Error(`No files in folder -> ${media_dir}`)
         }
-        const output = fs.createWriteStream(fullName)
 
-        // create a file to stream archive data to.
-        const archive = archiver('zip', {
-            zlib: { level: 9 } // Sets the compression level.
-        })
+        // zip media dir
+        zipper.sync.zip(media_dir).compress().save(fullName);
 
-        // pipe archive data to the file
-        archive.pipe(output)
-
-        archive.directory(media_dir, false)
-
-        await archive.finalize()
 
         const stats = fs.statSync(fullName)
 

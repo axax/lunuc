@@ -1033,7 +1033,7 @@ Hook.on('TypeCreateEditDialog', function ({type, props, dataToEdit}) {
             this.setState({createEditDialog: false})
 
             this.getData(this.pageParams, false)
-            // todo: but it directly into the store instead of reload
+            // TODO: but it directly into the store instead of reload
             //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
 
 

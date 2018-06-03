@@ -1,11 +1,17 @@
 import GenericResolver from './generic/genericResolver'
 import React from 'react'
 import Util from '../util'
+import fs from 'fs'
+import path from 'path'
+import config from 'gen/config'
+
+const {UPLOAD_DIR} = config
+
 
 export const mediaResolver = (db) => ({
     medias: async ({limit, offset, page, sort, filter}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
-        return await GenericResolver.entities(db, context, 'Media', ['name', 'src'], {
+        return await GenericResolver.entities(db, context, 'Media', ['name', 'mimeType', 'src'], {
             limit,
             offset,
             page, sort, filter
@@ -26,7 +32,14 @@ export const mediaResolver = (db) => ({
     },
     deleteMedia: async ({_id}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
-        return GenericResolver.deleteEnity(db, context, 'Media', {_id})
+        const res = await GenericResolver.deleteEnity(db, context, 'Media', {_id})
+        if (res.status === 'deleted') {
+            // delete file
+            const fileName = path.join(__dirname, '../../' + UPLOAD_DIR + '/' + _id)
+            console.log('delete file '+fileName)
+            fs.unlinkSync(fileName)
+        }
+        return res
     }
 })
 
