@@ -1009,7 +1009,7 @@ Hook.on('TypeTableColumns', ({type, columns}) => {
 Hook.on('TypeTable', ({type, dataSource, data, container}) => {
     if (type === 'Media') {
         dataSource.forEach((d, i) => {
-            d.data = <img height="40" src={UPLOAD_URL + '/' + data.results[i]._id}/>
+            d.data = <a target="_blank" rel="noopener" href={UPLOAD_URL + '/' + data.results[i]._id}><img height="40" src={UPLOAD_URL + '/' + data.results[i]._id}/></a>
         })
     } else if (type === 'CmsPage') {
         dataSource.forEach((d, i) => {
@@ -1029,7 +1029,7 @@ Hook.on('TypeCreateEditDialog', function ({type, props, dataToEdit}) {
     if (type === 'Media' && !dataToEdit) {
         // remove save button
         props.actions.splice(1, 1)
-        props.children = <FileDrop multi={false} onSuccess={r => {
+        props.children = <FileDrop multi={false} uploadTo="/graphql/upload" resizeImages={true} onSuccess={r => {
             this.setState({createEditDialog: false})
 
             this.getData(this.pageParams, false)

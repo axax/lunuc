@@ -7,6 +7,7 @@ import {Snackbar, Button, CloseIconButton} from 'ui/admin'
 class NotificationHandler extends React.Component {
 
     notificationStack = []
+    currentStackPosition = 0
 
     constructor(props) {
         super(props)
@@ -17,12 +18,11 @@ class NotificationHandler extends React.Component {
 
     handleNotificationClose() {
         this.setState({notificationOpen: false})
+        this.currentStackPosition++
     }
 
     handleNotificationClosed() {
-        this.notificationStack.shift()
         this.setState({notificationOpen: true})
-
     }
 
     componentWillReceiveProps(props) {
@@ -35,14 +35,14 @@ class NotificationHandler extends React.Component {
 
     addToNotificationStack(props) {
         const {newNotification} = props
-        if (newNotification) {
+        if (newNotification && this.notificationStack.indexOf(newNotification) < 0) {
             this.notificationStack.push(newNotification)
         }
     }
 
     render() {
-        if (this.notificationStack.length > 0) {
-            const notification = this.notificationStack[0]
+        if (this.notificationStack.length > this.currentStackPosition) {
+            const notification = this.notificationStack[this.currentStackPosition]
             return <Snackbar
                 key={notification.key}
                 anchorOrigin={{
@@ -53,7 +53,7 @@ class NotificationHandler extends React.Component {
                 open={this.state.notificationOpen}
                 autoHideDuration={5000}
                 onClose={this.handleNotificationClose.bind(this, notification)}
-                SnackbarContentProps={{
+                ContentProps={{
                     'aria-describedby': 'message-id',
                 }}
                 message={<span id="message-id">{notification.message}</span>}

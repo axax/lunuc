@@ -10,12 +10,22 @@ import {pubsub} from '../subscription'
 import Cache from 'util/cache'
 
 const defaultDataResolver = `[
-    {
-        "c":"Word",
-        "f":["de","en"],
-        "l":20,
-        "o":0
-    }
+  {
+    "t": "$Word",
+    "d": [
+      "en",
+      "de",
+      "it",
+      {
+        "categories": [
+          "name",
+          "_id"
+        ]
+      }
+    ],
+    "l": 20,
+    "o": 0
+  }
 ]`
 
 

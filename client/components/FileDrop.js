@@ -4,8 +4,8 @@ import {Button, TextField, withStyles, FileUploadIcon, Typography, LinearProgres
 import classNames from 'classnames'
 import Util from 'client/util'
 
-const UPLOAD_API_URL = '/graphql/upload',
-    MAX_FILE_SIZE_MB = 10,
+/* TODO: make it configurable */
+const MAX_FILE_SIZE_MB = 10,
     IMAGE_QUALITY = 0.6,
     IMAGE_MAX_WIDTH = 1000,
     IMAGE_MAX_HEIGHT = 1000,
@@ -134,7 +134,7 @@ class FileDrop extends React.Component {
     }
 
     handelDrop(e) {
-        const {onFileContent, onFiles, accept, uploadTo} = this.props
+        const {onFileContent, onFiles, accept, uploadTo, resizeImages} = this.props
         this.setDragState(e, false)
 
         const accepts = (accept || DEFAULT_ACCEPT).split('|'), acceptsType = [], acceptsExt = []
@@ -168,34 +168,32 @@ class FileDrop extends React.Component {
                     return
                 }
             })
-console.log(isValid)
             //TODO: also check for acceptsType images/*
 
             if (isValid) {
                 filteredFiles.push(f)
-                if (uploadTo) {
-                    this.uploadData(URL.createObjectURL(f), f, uploadTo)
-                } else if ((/\.(?=gif|jpg|png|jpeg)/gi).test(f.name)) {
-                    // is image
 
+                const isImage = (/\.(?=gif|jpg|png|jpeg)/gi).test(f.name)
+                if (isImage) {
                     images.push(URL.createObjectURL(f))
-                    //preview(f);
-                    this.resizeImageAndUpload(f)
-                } else if (ext === 'csv') {
-
-                    if (onFileContent) {
-                        const reader = new FileReader()
-                        reader.readAsText(f, "UTF-8")
-                        reader.onload = function (e) {
-                            onFileContent(f, e.target.result)
-                        }
-                    }
-                    /* reader.onerror = function (evt) {
-                     document.getElementById("fileContents").innerHTML = "error reading file";
-                     }*/
-
-
                 }
+                if (uploadTo) {
+
+                    if (resizeImages && isImage) {
+                        this.resizeImageAndUpload(f, uploadTo)
+                    } else {
+                        this.uploadData(URL.createObjectURL(f), f, uploadTo)
+                    }
+                }
+
+                if (onFileContent) {
+                    const reader = new FileReader()
+                    reader.readAsText(f, "UTF-8")
+                    reader.onload = function (e) {
+                        onFileContent(f, e.target.result)
+                    }
+                }
+
             } else {
                 this.setState({errorMessage: `File format ${f.type} is not accepted`})
             }
@@ -211,7 +209,7 @@ console.log(isValid)
     }
 
 
-    resizeImageAndUpload(file) {
+    resizeImageAndUpload(file, uploadTo) {
 
         const oriImg = new Image()
         oriImg.onload = () => {
@@ -250,10 +248,7 @@ console.log(isValid)
 
             //const blobData = this.dataURLToBlob(dataUrl) // as png?
             if (file.size <= MAX_FILE_SIZE_MB * 1024 * 1024) {
-
-                this.uploadData(dataUrl, file, UPLOAD_API_URL)
-            } else {
-
+                this.uploadData(dataUrl, file, uploadTo)
             }
 
 
@@ -276,7 +271,7 @@ console.log(isValid)
     }
 
 
-    uploadData(dataUrl, file, destination) {
+    uploadData(dataUrl, file, uploadTo) {
         this.setState({uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0})
         this.dataURLtoBlob(dataUrl, (blob) => {
 
@@ -305,7 +300,7 @@ console.log(isValid)
             }
 
 
-            xhr.open('POST', destination, true)
+            xhr.open('POST', uploadTo, true)
             xhr.setRequestHeader('Authorization', Util.getAuthToken())
 
             const fd = new FormData();
@@ -325,7 +320,8 @@ FileDrop.propTypes = {
     accept: PropTypes.string,
     onFileContent: PropTypes.func,
     onFiles: PropTypes.func,
-    uploadTo: PropTypes.string
+    uploadTo: PropTypes.string,
+    resizeImages: PropTypes.bool
 }
 
 export default withStyles(styles)(FileDrop)
