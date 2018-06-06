@@ -16,7 +16,7 @@ export const keyvalueSchemaRaw = `
     }
     
     type Query {
-    	keyValues(keys: [String],limit: Int=10, offset: Int=0): KeyValueResult
+    	keyValues(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String, keys: [String]): KeyValueResult
     	keyValue(key: String!): KeyValue
     }
     

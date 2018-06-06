@@ -30,7 +30,7 @@ class NotificationHandler extends React.Component {
     }
 
     shouldComponentUpdate(props) {
-        return !!props.newNotification
+        return !!props.newNotification && this.currentStackPosition < this.notificationStack.length
     }
 
     addToNotificationStack(props) {
@@ -41,6 +41,7 @@ class NotificationHandler extends React.Component {
     }
 
     render() {
+        console.log('render NotificationHandler')
         if (this.notificationStack.length > this.currentStackPosition) {
             const notification = this.notificationStack[this.currentStackPosition]
             return <Snackbar

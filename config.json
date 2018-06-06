@@ -64,6 +64,7 @@
     "UPLOAD_DIR": "/uploads",
     "UPLOAD_URL": "/uploads",
     "LANGUAGES": ["de","en"],
-    "DEFAULT_LANGUAGE": "de"
+    "DEFAULT_LANGUAGE": "de",
+    "DEFAULT_RESULT_LIMIT": 10
   }
 }

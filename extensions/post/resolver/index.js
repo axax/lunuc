@@ -1,24 +1,28 @@
 import Util from 'api/util'
 import {ObjectId} from 'mongodb'
+import GenericResolver from 'api/resolver/generic/genericResolver'
 
 
 export default db => ({
-    posts: async ({limit, offset, query}, {context}) => {
+    posts: async ({limit, page, offset, filter}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
-
-        const postCollection = db.collection('Post')
 
         const pipe = []
 
         let sort = {_id: 1},
-            match = {createdBy: ObjectId(context.id)},
-            project = {title:1,body:1,search:1,createdBy:1}
+            match = {createdBy: ObjectId(context.id)}
 
-        if (query) {
-            match.$text={$search: query}
-            project.searchScore = { $meta: 'textScore' }
+        if (filter) {
+            match.$text={$search: filter}
             sort = {score: {$meta: 'textScore'}}
         }
+
+
+        const posts = await GenericResolver.entities(db, context, 'Post', ['title', 'body', 'search', 'searchScore'], {match, page, limit, offset, sort})
+
+
+        /*const postCollection = db.collection('Post')
+
 
         pipe.push(...[
             {
@@ -55,7 +59,7 @@ export default db => ({
             {$sort: sort}
         ])
 
-        let posts = (await postCollection.aggregate(pipe).toArray())
+        let posts = (await postCollection.aggregate(pipe).toArray())*/
 
         return posts
     },

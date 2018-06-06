@@ -34,8 +34,7 @@ import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {withStyles} from '@material-ui/core/styles'
 import {deepMerge}  from 'util/deepMerge'
-const DEFAULT_RESULT_LIMIT = 10
-const {ADMIN_BASE_URL, UPLOAD_URL, LANGUAGES} = config
+const {ADMIN_BASE_URL, UPLOAD_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
 
 
 const styles = theme => ({

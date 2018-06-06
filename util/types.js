@@ -142,9 +142,23 @@ export const getFormFields = (type)=> {
 
 
 
-/* Add core types */
+/* Register core types */
 
 Hook.on('Types', ({types}) => {
+
+    types.KeyValue = {
+        "name": "KeyValue",
+        "usedBy": ["core"],
+        "fields": [
+            {
+                "name": "key"
+            },
+            {
+                "name": "value"
+            }
+        ]
+    }
+
 
     types.UserRole = {
         "name": "UserRole",

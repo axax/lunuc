@@ -9,16 +9,18 @@ import BaseLayout from 'client/components/layout/BaseLayout'
 import GenericForm from 'client/components/generic/GenericForm'
 import {Row, Col, Typography, SimpleList, DeleteIconButton, SimpleDialog} from 'ui/admin'
 import config from 'gen/config'
-const {ADMIN_BASE_URL} = config
+const {ADMIN_BASE_URL, DEFAULT_RESULT_LIMIT} = config
 
 class PostContainer extends React.Component {
     constructor(props) {
         super(props)
-console.log('xxx')
         this.state = {
             confirmDeletionDialog: true,
             dataToDelete: null
         }
+
+        this.filter = Util.extractQueryParams(window.location.search.substring(1)).f
+
     }
 
     handleAddPostClick = (post) => {
@@ -70,16 +72,33 @@ console.log('xxx')
         )
     }
 
+    handleChangePage = (page) => {
+        this.goTo(null, page, this.props.posts.limit)
+    }
+
+
+    handleChangeRowsPerPage = (limit) => {
+        this.goTo(null, 1, limit)
+    }
+
+    handleFilterChange = (e) => {
+        this.filter = e.target.value
+        this.goTo(null, 1, this.props.posts.limit, this.filter)
+    }
+
+    goTo(id, page, limit, filter) {
+        this.props.history.push(`${ADMIN_BASE_URL}/post${(id ? '/' + id : '')}?p=${page}&l=${limit}${filter ? '&f=' + filter : ''}`)
+    }
+
     render() {
-        const {posts, loading, match,history} = this.props
+        const {posts, match, history} = this.props
         const selectedPostId = match.params.id
 
-        if (!posts)
+        if (!posts )
             return <BaseLayout />
 
         let selectedPost = false
-
-        const listItems = posts.reduce((a, post) => {
+        const listItems = (posts.results ? posts.results.reduce((a, post) => {
             if (post._id === selectedPostId) {
                 selectedPost = post
             }
@@ -87,14 +106,14 @@ console.log('xxx')
                 selected: post._id === selectedPostId,
                 primary: post.title,
                 onClick: () => {
-                    history.push(ADMIN_BASE_URL + '/post/' + post._id)
+                    this.goTo(post._id, posts.page, posts.limit)
                 },
                 secondary: Util.formattedDatetimeFromObjectId(post._id),
                 actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
                 disabled: ['creating', 'deleting'].indexOf(post.status) > -1
             })
             return a
-        }, [])
+        }, []): [])
 
 
         return (
@@ -102,7 +121,14 @@ console.log('xxx')
                 <Typography variant="display2" gutterBottom>Posts</Typography>
                 <Row spacing={24}>
                     <Col md={4}>
-                        <SimpleList items={listItems}/>
+                        <SimpleList items={listItems}
+                                    filter={this.filter}
+                                    rowsPerPage={posts.limit}
+                                    onFilterChange={this.handleFilterChange.bind(this)}
+                                    onChangePage={this.handleChangePage.bind(this)}
+                                    onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}
+                                    count={posts.total}
+                                    page={posts.page}/>
 
                         <GenericForm ref={(e) => {
                             this.addPostForm = e
@@ -142,20 +168,26 @@ PostContainer.propTypes = {
     history: PropTypes.object.isRequired,
     /* apollo client props */
     loading: PropTypes.bool,
-    posts: PropTypes.array,
+    posts: PropTypes.object,
     createPost: PropTypes.func.isRequired,
     updatePost: PropTypes.func.isRequired,
     deletePost: PropTypes.func.isRequired
 }
 
-const POSTS_PER_PAGE = 100
-
-const gqlQuery = gql`query{posts(limit: ${POSTS_PER_PAGE}){_id title body status createdBy{_id username}}}`
+const gqlQuery = gql`query posts($limit: Int, $page: Int, $filter: String){posts(limit: $limit, page: $page, filter: $filter){limit page total results{_id title body status createdBy{_id username}}}}`
 const PostContainerWithGql = compose(
     graphql(gqlQuery, {
         options() {
+            const {p, l, f} = Util.extractQueryParams(window.location.search.substring(1))
+            const variables = {
+                limit: l || DEFAULT_RESULT_LIMIT,
+                page: p || 1,
+                filter: f || ''
+            }
+
             return {
-                fetchPolicy: 'cache-and-network'
+                fetchPolicy: 'cache-and-network',
+                variables
             }
         },
         props: ({data: {loading, posts}}) => ({

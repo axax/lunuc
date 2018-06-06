@@ -17,7 +17,6 @@ const GenericResolver = {
         if (!limit) {
             limit = 10
         }
-
         if (!offset) {
 
             if (page) {
@@ -25,6 +24,9 @@ const GenericResolver = {
             } else {
                 offset = 0
             }
+        }
+        if (!page) {
+            page = 1
         }
 
         // default match
@@ -200,12 +202,14 @@ const GenericResolver = {
         ]).toArray())
         if (a.length === 0) {
             return {
+                page,
                 limit,
                 offset,
                 total: 0,
                 results: null
             }
         }
+        a[0].page = page
         return a[0]
     },
     createEnity: async (db, context, collectionName, data) => {

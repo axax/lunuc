@@ -1,4 +1,3 @@
-import GenericResolver from 'api/resolver/generic/genericResolver'
 import translate from 'google-translate-api'
 
 export default db => ({

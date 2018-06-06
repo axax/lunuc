@@ -16,11 +16,22 @@ class SystemContainer extends React.Component {
             <Typography variant="display1" component="h2" gutterBottom>Extensions</Typography>
             {
                 Object.keys(extensions).map(k => {
-                    const value = extensions[k]
+                    const extension = extensions[k]
+                    console.log(extension)
+                    return <ExpansionPanel heading={<Typography variant="title">{extension.name}</Typography>} key={k}>
+                        <div>
 
-                    return <ExpansionPanel heading={<Typography variant="title">{value.name}</Typography>} key={k}>
-                        <Typography variant="body1" gutterBottom>{value.description}</Typography>
-                        <Typography variant="caption" gutterBottom>Types</Typography>
+                        <Typography variant="body1" gutterBottom>{extension.description}</Typography>
+                            { extension.options && extension.options.types &&
+                            <ul>
+                                {extension.options.types.map(type => {
+                                    return <li key={type.name}>{type.name} {type.fields && type.fields.length && <ul>{type.fields.map(field=>{
+                                        return <li key={field.name}>{field.name}</li>
+                                    })}</ul>}</li>
+                                })}
+                            </ul>
+                            }
+                        </div>
                     </ExpansionPanel>
                 })
             }

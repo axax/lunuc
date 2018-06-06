@@ -27,12 +27,18 @@ export default `
         searchScore: Float
     }
     
-    
+    type PostResult {
+        results: [Post]
+        offset: Int
+        page: Int
+        limit: Int
+        total: Int
+    }
+        
     type Query {
-    	posts(limit: Int=10, offset: Int=0, query: String): [Post]
+    	posts(limit: Int=10, page: Int, offset: Int=0, filter: String): PostResult
     }
     
-		
 	type Mutation {
 		createPost (
 			title: String!
