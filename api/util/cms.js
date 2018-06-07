@@ -78,7 +78,6 @@ const UtilCms = {
                             offset: o,
                             match
                         })
-
                         debugInfo += ' result=true'
 
                         if (result.results) {

@@ -5,6 +5,7 @@ import path from 'path'
 import fs from 'fs'
 import zlib from 'zlib'
 import config from 'gen/config'
+import MimeType from '../util/mime'
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL} = config
 
 // Port to listen to
@@ -13,19 +14,6 @@ const API_PORT = (process.env.API_PORT || 3000)
 
 // Build dir
 const BUILD_DIR = path.join(__dirname, '../build')
-
-// mime type mapping
-const MIME_TYPES = {
-    'html': 'text/html',
-    'jpeg': 'image/jpeg',
-    'jpg': 'image/jpeg',
-    'png': 'image/png',
-    'ico': 'image/x-icon',
-    'js': 'text/javascript',
-    'json': 'application/json',
-    'css': 'text/css'
-}
-
 
 //
 // Setup our server to proxy standard HTTP requests
@@ -107,7 +95,7 @@ const app = http.createServer(function (req, res) {
                             res.write('404 Not Found\n')
                             res.end()
                         } else {
-                            const mimeType = MIME_TYPES[path.extname(filename).split('.')[1]],
+                            const mimeType = MimeType.detectByExtension(ext),
                                 headerExtra = {'Cache-Control': 'public, max-age=604800', 'content-type': mimeType}
 
 
@@ -138,7 +126,7 @@ const app = http.createServer(function (req, res) {
                         }
                     })
                 } else {
-                    const headers = {'Cache-Control': 'public, max-age=604800', 'content-type': MIME_TYPES['html']}
+                    const headers = {'Cache-Control': 'public, max-age=604800', 'content-type': MimeType.detectByExtension('html')}
 
                     // send index.html
                     const indexfile = path.join(BUILD_DIR, '/../index.html')

@@ -4,7 +4,7 @@ import GenericResolver from 'api/resolver/generic/genericResolver'
 
 
 export default db => ({
-    posts: async ({limit, page, offset, filter}, {context}) => {
+    posts: async ({limit, page, offset, filter, query}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
 
         const pipe = []
@@ -12,54 +12,12 @@ export default db => ({
         let sort = {_id: 1},
             match = {createdBy: ObjectId(context.id)}
 
-        if (filter) {
-            match.$text={$search: filter}
+        if (query) {
+            match.$or = [{title:{$regex: query, $options: 'i'}}, {$text:{$search: query}}]
             sort = {score: {$meta: 'textScore'}}
         }
-
-
-        const posts = await GenericResolver.entities(db, context, 'Post', ['title', 'body', 'search', 'searchScore'], {match, page, limit, offset, sort})
-
-
-        /*const postCollection = db.collection('Post')
-
-
-        pipe.push(...[
-            {
-                $match: match
-            },
-            {
-                $project: project
-            },
-            {
-                $skip: offset,
-            },
-            {
-                $limit: limit
-            },
-            {
-                $lookup: {
-                    from: 'User',
-                    localField: 'createdBy',
-                    foreignField: '_id',
-                    as: 'createdBy'
-                }
-            },
-            // Group back to arrays
-            {
-                $group: {
-                    _id: '$_id',
-                    title: {'$first': '$title'},
-                    body: {'$first': '$body'},
-                    search: {'$first': '$search'},
-                    createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
-                    searchScore: {'$first': '$searchScore'},
-                }
-            },
-            {$sort: sort}
-        ])
-
-        let posts = (await postCollection.aggregate(pipe).toArray())*/
+console.log( filter )
+        const posts = await GenericResolver.entities(db, context, 'Post', ['title', 'body', 'search', 'searchScore'], {match, page, limit, offset, filter, sort})
 
         return posts
     },
@@ -99,7 +57,6 @@ export default db => ({
         const postCollection = db.collection('Post')
 
         const search = Util.draftjsRawToFields(body)
-
         const result = (await postCollection.findOneAndUpdate({_id: ObjectId(_id)}, {
             $set: {
                 title,

@@ -94,7 +94,7 @@ class PostContainer extends React.Component {
         const {posts, match, history} = this.props
         const selectedPostId = match.params.id
 
-        if (!posts )
+        if (!posts)
             return <BaseLayout />
 
         let selectedPost = false
@@ -106,14 +106,14 @@ class PostContainer extends React.Component {
                 selected: post._id === selectedPostId,
                 primary: post.title,
                 onClick: () => {
-                    this.goTo(post._id, posts.page, posts.limit)
+                    this.goTo(post._id, posts.page, posts.limit, this.filter)
                 },
                 secondary: Util.formattedDatetimeFromObjectId(post._id),
                 actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
                 disabled: ['creating', 'deleting'].indexOf(post.status) > -1
             })
             return a
-        }, []): [])
+        }, []) : [])
 
 
         return (
@@ -144,7 +144,7 @@ class PostContainer extends React.Component {
                                 <PostEditor onChange={this.handleBodyChange.bind(this, selectedPost)}
                                             post={selectedPost}/>
 
-
+                                <small>Post ID: {selectedPostId}</small>
                             </div>
                             : ''}
                     </Col>
@@ -174,20 +174,23 @@ PostContainer.propTypes = {
     deletePost: PropTypes.func.isRequired
 }
 
-const gqlQuery = gql`query posts($limit: Int, $page: Int, $filter: String){posts(limit: $limit, page: $page, filter: $filter){limit page total results{_id title body status createdBy{_id username}}}}`
+
+const getVariables = () => {
+    const {p, l, f} = Util.extractQueryParams(window.location.search.substring(1))
+    return {
+        limit: l || DEFAULT_RESULT_LIMIT,
+        page: p || 1,
+        query: f || ''
+    }
+}
+
+const gqlQuery = gql`query posts($limit: Int, $page: Int, $query: String){posts(limit: $limit, page: $page, query: $query){limit page total results{_id title body status createdBy{_id username}}}}`
 const PostContainerWithGql = compose(
     graphql(gqlQuery, {
         options() {
-            const {p, l, f} = Util.extractQueryParams(window.location.search.substring(1))
-            const variables = {
-                limit: l || DEFAULT_RESULT_LIMIT,
-                page: p || 1,
-                filter: f || ''
-            }
-
             return {
                 fetchPolicy: 'cache-and-network',
-                variables
+                variables: getVariables()
             }
         },
         props: ({data: {loading, posts}}) => ({
@@ -217,12 +220,13 @@ const PostContainerWithGql = compose(
                         }
                     },
                     update: (store, {data: {createPost}}) => {
+                        const variables = getVariables()
                         //console.log('createPost', createPost)
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery})
+                        const data = store.readQuery({query: gqlQuery, variables})
 
-                        data.posts.push(createPost)
-                        store.writeQuery({query: gqlQuery, data})
+                        data.posts.results.push(createPost)
+                        store.writeQuery({query: gqlQuery, variables, data})
                     }
                 })
             }
@@ -250,13 +254,15 @@ const PostContainerWithGql = compose(
                         }
                     },
                     update: (store, {data: {updatePost}}) => {
+                        const variables = getVariables()
+
                         //console.log('updatePost', updatePost)
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery})
-                        const idx = data.posts.findIndex(x => x._id === updatePost._id)
+                        const data = store.readQuery({query: gqlQuery, variables})
+                        const idx = data.posts.results.findIndex(x => x._id === updatePost._id)
                         if (idx > -1) {
-                            data.posts[idx] = updatePost
-                            store.writeQuery({query: gqlQuery, data})
+                            data.posts.results[idx] = updatePost
+                            store.writeQuery({query: gqlQuery, variables, data})
                         }
                     }
                 })
@@ -277,19 +283,21 @@ const PostContainerWithGql = compose(
                         }
                     },
                     update: (store, {data: {deletePost}}) => {
+                        const variables = getVariables()
+
                         console.log('deletePost', deletePost)
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery})
+                        const data = store.readQuery({query: gqlQuery, variables})
 
-                        const idx = data.posts.findIndex((e) => e._id === deletePost._id)
+                        const idx = data.posts.results.findIndex((e) => e._id === deletePost._id)
                         if (idx >= 0) {
                             if (deletePost.status == 'deleting') {
                                 console.log(data.posts[idx])
-                                data.posts[idx].status = 'deleting'
+                                data.posts.results[idx].status = 'deleting'
                             } else {
-                                data.posts.splice(idx, 1)
+                                data.posts.results.splice(idx, 1)
                             }
-                            store.writeQuery({query: gqlQuery, data})
+                            store.writeQuery({query: gqlQuery, variables, data})
                         }
 
                     }

@@ -36,7 +36,7 @@ export default `
     }
         
     type Query {
-    	posts(limit: Int=10, page: Int, offset: Int=0, filter: String): PostResult
+    	posts(limit: Int=10, page: Int, offset: Int=0, query: String, filter: String): PostResult
     }
     
 	type Mutation {

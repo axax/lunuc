@@ -6,6 +6,7 @@ import path from 'path'
 import Util from './util'
 import config from 'gen/config'
 import zipper from 'zip-local'
+import MimeType from '../util/mime'
 
 const {UPLOAD_DIR} = config
 
@@ -72,11 +73,13 @@ export const handleUpload = db => (req, res) => {
 
                 // store file under the name of the _id
                 fs.rename(file.path, path.join(upload_dir, _id.toString()), async () => {
+
+                    const mimeType = MimeType.detectByFileName(file.name)
                     // save to db
                     const insertResult = await db.collection('Media').insertOne({
                         _id,
                         name: file.name,
-                        mimeType: 'application/octet-stream', /* TODO: implement mime type detection */
+                        mimeType: mimeType || 'application/octet-stream',
                         createdBy: ObjectId(authContext.id)
                     })
                     if (insertResult.insertedCount>0) {

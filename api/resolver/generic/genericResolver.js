@@ -152,6 +152,12 @@ const GenericResolver = {
 
             }
         })
+
+        if( parsedFilter && parsedFilter.parts._id ){
+            // if there is a filter on _id
+            // handle it here
+            addFilterToMatch(parsedFilter.parts._id, '_id', )
+        }
         if( collectionName !== 'User' && collectionName !== 'UserRole' ){
             lookups.push({
                 $lookup: {
@@ -197,7 +203,7 @@ const GenericResolver = {
             },
             // return offset and limit
             {
-                $addFields: {limit, offset}
+                $addFields: {limit, offset, page}
             }
         ]).toArray())
         if (a.length === 0) {
@@ -209,7 +215,6 @@ const GenericResolver = {
                 results: null
             }
         }
-        a[0].page = page
         return a[0]
     },
     createEnity: async (db, context, collectionName, data) => {
