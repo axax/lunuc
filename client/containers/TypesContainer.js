@@ -1008,7 +1008,18 @@ Hook.on('TypeTableColumns', ({type, columns}) => {
 Hook.on('TypeTable', ({type, dataSource, data, container}) => {
     if (type === 'Media') {
         dataSource.forEach((d, i) => {
-            d.data = <a target="_blank" rel="noopener" href={UPLOAD_URL + '/' + data.results[i]._id}><img height="40" src={UPLOAD_URL + '/' + data.results[i]._id}/></a>
+            const item = data.results[i]
+            d.data = <a target="_blank" rel="noopener" href={UPLOAD_URL + '/' + item._id}>
+                {
+                    (item.mimeType && item.mimeType.startsWith('image')?
+                            <img height="40" src={UPLOAD_URL + '/' + item._id}/>
+                            :
+                            <div className="file-icon file-icon-xl" data-type={item.mimeType}></div>
+                    )
+                }
+
+
+            </a>
         })
     } else if (type === 'CmsPage') {
         dataSource.forEach((d, i) => {

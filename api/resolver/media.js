@@ -17,12 +17,13 @@ export const mediaResolver = (db) => ({
             page, sort, filter
         })
     },
-    createMedia: async ({name, src}, {context}) => {
+    createMedia: async ({name, src, mimeType}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
 
         return await GenericResolver.createEnity(db, context, 'Media', {
             name,
-            src
+            src,
+            mimeType
         })
     },
     updateMedia: async ({_id, ...rest}, {context}) => {

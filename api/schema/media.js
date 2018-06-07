@@ -22,8 +22,8 @@ export const mediaSchemaRaw = `
     
 		
 	type Mutation {
-		createMedia(name: String, src: String): Media
-		updateMedia(_id: ID!, name: String, src: String): Media	
+		createMedia(name: String, src: String, mimeType: String): Media
+		updateMedia(_id: ID!, name: String, src: String, mimeType: String): Media	
 		deleteMedia(_id: ID!): Media
 	}
 `
