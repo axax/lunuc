@@ -1009,16 +1009,16 @@ Hook.on('TypeTable', ({type, dataSource, data, container}) => {
     if (type === 'Media') {
         dataSource.forEach((d, i) => {
             const item = data.results[i]
+            const mimeType = item.mimeType ? item.mimeType.split('/') : ['file']
+
             d.data = <a target="_blank" rel="noopener" href={UPLOAD_URL + '/' + item._id}>
                 {
-                    (item.mimeType && item.mimeType.startsWith('image')?
+                    (mimeType[0] === 'image' ?
                             <img height="40" src={UPLOAD_URL + '/' + item._id}/>
                             :
-                            <div className="file-icon file-icon-xl" data-type={item.mimeType}></div>
+                            <div className="file-icon" data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
                     )
                 }
-
-
             </a>
         })
     } else if (type === 'CmsPage') {

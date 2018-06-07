@@ -13,7 +13,9 @@ const MIME_TYPES = {
     'js': 'text/javascript',
     'json': 'application/json',
     'css': 'text/css',
-    'mp3': 'audio/mpeg'
+    'mp3': 'audio/mpeg',
+    'gz': 'application/gzip',
+    'zip': 'application/zip',
 }
 
 
