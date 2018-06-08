@@ -79,7 +79,6 @@ const UtilCms = {
                             match
                         })
                         debugInfo += ' result=true'
-
                         if (result.results) {
                             const filterdResults = []
                             result.results.map(e => {

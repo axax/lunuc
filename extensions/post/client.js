@@ -5,6 +5,12 @@ const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'
 
 const PostContainerAsync = (props) => <Async {...props} load={import(/* webpackChunkName: "post" */ './containers/PostContainer')} />
+const PostRenderer = (props) => <Async {...props} load={import(/* webpackChunkName: "post" */ './components/PostRenderer')} />
+
+
+Hook.on('JsonDom', ({components}) => {
+    components['PostRenderer'] = PostRenderer
+})
 
 
 // add routes for this extension

@@ -1,4 +1,10 @@
 const Util = {
+    escapeForJson: (str) => {
+        if (str && str.constructor === String) {
+            return str.replace(/"/g, '\\"')
+        }
+        return str
+    },
     getAuthToken: () => {
         // get the authentication token from local storage if it exists
         const token = localStorage.getItem('token')

@@ -304,6 +304,7 @@ class JsonDom extends React.Component {
                     const re = new RegExp('\\$\\.' + s + '{', 'g')
                     const cStr = JSON.stringify(c).replace(re, '${') /* $.loop{ --> ${ */
                         .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
+
                     /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
                     data.forEach((loopChild, childIdx) => {
 
@@ -314,7 +315,7 @@ class JsonDom extends React.Component {
                         // back to json
                         loopChild._index = childIdx
                         // remove tabs and parse
-                        const json = JSON.parse(tpl.call({[s]: loopChild}).replace(/\t/g, '\\t'))
+                        const json = JSON.parse(tpl.call({[s]: loopChild,escape: Util.escapeForJson}).replace(/\t/g, '\\t'))
 
                         const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
                         h.push(this.parseRec(json, key, {...childScope, [s]: loopChild}))
@@ -322,7 +323,7 @@ class JsonDom extends React.Component {
 
                     })
                 } catch (ex) {
-                    console.log(ex)
+                    console.log(ex, c)
                     return 'Error in parseRec: ' + ex.message
                 }
 

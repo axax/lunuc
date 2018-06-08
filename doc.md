@@ -108,6 +108,13 @@ you can subcribe to data changes with $ character placed in front of the type.
 ```                    
                     
 ### Template
+
+Use can use this.escape within a template string literal to make sure the json doesn't break with after inserting the value.
+
+```json
+"data": "$.x{this.escape(body)}"       
+```    
+
 ### Script
 **Reserved keywords**
 

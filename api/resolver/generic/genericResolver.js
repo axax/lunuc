@@ -53,7 +53,6 @@ const GenericResolver = {
                 }, {})
             }
         }
-
         const parsedFilter = ClientUtil.parseFilter(filter)
         const group = {}
         const lookups = []
@@ -156,7 +155,8 @@ const GenericResolver = {
         if( parsedFilter && parsedFilter.parts._id ){
             // if there is a filter on _id
             // handle it here
-            addFilterToMatch(parsedFilter.parts._id, '_id', )
+            addFilterToMatch(parsedFilter.parts._id, '_id', ObjectId(parsedFilter.parts._id.value))
+            //match._id =ObjectId(parsedFilter.parts._id.value)
         }
         if( collectionName !== 'User' && collectionName !== 'UserRole' ){
             lookups.push({
