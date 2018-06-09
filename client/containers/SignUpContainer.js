@@ -86,8 +86,8 @@ class SignUpContainer extends React.Component {
         return (
             <BlankLayout style={{marginTop: '5rem'}}>
                 <Row>
-                    <Col sm={1} md={4}></Col>
-                    <Col sm={10} md={4}>
+                    <Col xs={1} sm={2} md={4}></Col>
+                    <Col xs={10} sm={8} md={4}>
                         <Card>
                             <Typography variant="display4" gutterBottom>Sign up</Typography>
 
@@ -144,7 +144,7 @@ class SignUpContainer extends React.Component {
                             }
                         </Card>
                     </Col>
-                    <Col sm={1} md={4}></Col>
+                    <Col xs={1} sm={2} md={4}></Col>
                 </Row>
             </BlankLayout>
         )
