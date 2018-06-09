@@ -430,17 +430,20 @@ class TypesContainer extends React.Component {
 
 
     getTableColumns(type) {
-        if (!this.types[type]) return
+        const typeDefinition = this.types[type]
+        if (!typeDefinition) return
+
         if (this.typeColumns[type]) return this.typeColumns[type]
         this.typeColumns[type] = []
-        this.types[type].fields.forEach(field => {
+        typeDefinition.fields.forEach(field => {
             this.typeColumns[type].push({
                 title: field.name + (field.localized ? ' [' + _app_.lang + ']' : ''),
                 id: field.name,
                 sortable: true
             })
         })
-        if (type !== 'User' && type !== 'UserRole') {
+
+        if (!typeDefinition.noUserRelation) {
             this.typeColumns[type].push({
                 title: 'User',
                 id: 'user'

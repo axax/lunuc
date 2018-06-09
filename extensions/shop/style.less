@@ -3,8 +3,7 @@
 @light-text: #ABB0BE;
 @grey: #777;
 @border-radius: 0.2rem;
-@input-height:  2.225rem;
-
+@input-height: 2.225rem;
 
 @mobile: ~"only screen and (max-width:690px)";
 @tablet: ~"only screen and (min-width:690px) and (max-width: 995px)";
@@ -12,10 +11,10 @@
 
 .Cms-shop {
   font-family: Roboto, sans-serif;
-  background-color:#fcfbfa;
+  background-color: #fcfbfa;
   position: relative;
 
-  input{
+  input {
     border: 1px solid #e5e5e5;
     padding: 0 1em;
     height: @input-height;
@@ -64,63 +63,61 @@
 
   }
 
-
   .clearfix:after {
     content: "";
     display: table;
     clear: both;
   }
 
-  .SimpleToolbar{
+  .SimpleToolbar {
     background-color: white;
-    box-shadow: 0 0 8px rgba(0,0,0,0.1);
-    height:4rem;
-    &__title{
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    height: 4rem;
+    &__title {
       a {
         color: black;
         font-weight: bold;
         text-decoration: none;
       }
     }
-    &__children{
-      flex:4;
+    &__children {
+      flex: 4;
       display: flex;
       flex-flow: row wrap;
       align-items: center;
-      .center{
-        flex:1 auto;
-        input{
+      .center {
+        flex: 1 auto;
+        input {
           width: 100%;
         }
       }
-      .right{
+      .right {
         text-align: right;
-        flex:1 auto;
-        a{
+        flex: 1 auto;
+        a {
           cursor: pointer;
           text-decoration: none;
           color: black;
-          &:hover{
-            color:@primary-color;
+          &:hover {
+            color: @primary-color;
           }
         }
 
-
-        .menu{
+        .menu {
           display: inline-block;
-          a:not(:last-child){
+          a:not(:last-child) {
             margin-right: 20px;
           }
         }
 
-        .languages{
+        .languages {
           font-size: 0.7rem;
-          color:#666;
+          color: #666;
           display: inline-block;
           margin-right: 1rem;
-          a{
+          a {
             padding: 0 0.3rem;
-            &.active{
+            &.active {
               font-weight: bold;
             }
           }
@@ -141,13 +138,13 @@
     border-radius: 3px;
     padding: 2rem;
     z-index: 2;
-    box-shadow: rgba(0,0,0,0.16) 0 0 4px 0;
+    box-shadow: rgba(0, 0, 0, 0.16) 0 0 4px 0;
 
     visibility: hidden;
     opacity: 0;
     transition: visibility 0s 0.3s, opacity 0.3s linear;
 
-    &__visible{
+    &__visible {
       visibility: visible;
       opacity: 1;
       transition: opacity 0.3s linear;
@@ -168,7 +165,6 @@
       transform: rotate(135deg);
 
       box-shadow: -1px 1px 1px 0 rgba(0, 0, 0, 0.16);
-
 
     }
 
@@ -195,7 +191,6 @@
         max-width: 30px;
       }
 
-
       .item-name {
         display: block;
         padding-top: 10px;
@@ -214,7 +209,6 @@
 
   }
 
-
   .main {
     padding: 2rem 1rem;
     .search {
@@ -225,7 +219,6 @@
         padding-left: 0;
       }
 
-
       input {
         width: calc(100% - @input-height);
         border: 3px solid @secondary-color;
@@ -234,7 +227,7 @@
 
       button {
         position: absolute;
-        right:4px;
+        right: 4px;
         width: @input-height;
         height: @input-height;
         border: 1px solid @secondary-color;
@@ -247,23 +240,29 @@
       }
     }
 
-    .categories{
+    .categories {
       margin-top: 1.5rem;
-      a{
+      a {
         transition: background-color 0.3s ease;
         margin: 0.2rem;
         background-color: @primary-color;
         color: #fff;
-        padding:0.3rem 0.6rem;
+        padding: 0.3rem 0.6rem;
         border-radius: @border-radius*3;
         cursor: pointer;
-        &:hover,&.active{
+        &:hover, &.active {
           background-color: @secondary-color;
         }
       }
     }
+
+    &.productlist{
+      .Card{
+        .Card__content{
+          padding:1rem;
+        }
+      }
+    }
   }
-
-
 
 }

@@ -9,7 +9,7 @@ const types = {}, typeQueries = {}, typeFormFields = {}
 
 export const getTypes = () => {
 
-    if( Object.keys(types).length === 0 ) {
+    if (Object.keys(types).length === 0) {
         //  create types object only once
         for (const extensionName in extensions) {
             const extension = extensions[extensionName]
@@ -34,7 +34,7 @@ export const getTypes = () => {
     return types
 }
 
-export const getType = (typeName) =>{
+export const getType = (typeName) => {
     // todo: optimise so that not all types need to be loaded
     const types = getTypes()
     return types[typeName]
@@ -42,7 +42,7 @@ export const getType = (typeName) =>{
 
 export const getTypeQueries = (typeName) => {
 
-    if( typeQueries[typeName] ) return typeQueries[typeName]
+    if (typeQueries[typeName]) return typeQueries[typeName]
 
     const types = getTypes()
 
@@ -50,11 +50,11 @@ export const getTypeQueries = (typeName) => {
 
     const result = {}
 
-    const {name, fields} = types[typeName]
+    const {name, fields, noUserRelation} = types[typeName]
     const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
 
     let query = '_id status'
-    if( typeName !== 'User' && typeName !== 'UserRole'){
+    if (!noUserRelation) {
         query += ' createdBy{_id username}'
     }
     let queryMutation = '_id status'
@@ -78,12 +78,12 @@ export const getTypeQueries = (typeName) => {
                 query += ' ' + name + '{_id name}'
             } else {
                 query += ' ' + name
-                if ( localized){
-                    query += ' '+name+'_localized{'+LANGUAGES.join(' ')+'}'
+                if (localized) {
+                    query += ' ' + name + '_localized{' + LANGUAGES.join(' ') + '}'
                     const x = '$' + name + '_localized: LocalizedStringInput,'
                     insertParams += x
                     updateParams += x
-                    insertUpdateQuery += name + '_localized: ' + '$' + name+'_localized,'
+                    insertUpdateQuery += name + '_localized: ' + '$' + name + '_localized,'
                 }
             }
 
@@ -96,7 +96,6 @@ export const getTypeQueries = (typeName) => {
                 ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{${query}}}}`
 
 
-
     result.create = `mutation create${name}(${insertParams}){create${name}(${insertUpdateQuery}){${queryMutation}}}`
     result.update = `mutation update${name}($_id: ID!,${updateParams}){update${name}(_id:$_id,${insertUpdateQuery}){${queryMutation}}}`
     result.delete = `mutation delete${name}($_id: ID!){delete${name}(_id: $_id){${queryMutation}}}`
@@ -107,11 +106,10 @@ export const getTypeQueries = (typeName) => {
 }
 
 
-
-export const getFormFields = (type)=> {
+export const getFormFields = (type) => {
     if (typeFormFields[type]) return typeFormFields[type]
     const types = getTypes()
-    if( !types[type] ){
+    if (!types[type]) {
         return null
         //throw new Error('Cannot find type "'+type+'" in getFormFields')
     }
@@ -140,8 +138,6 @@ export const getFormFields = (type)=> {
 }
 
 
-
-
 /* Register core types */
 
 Hook.on('Types', ({types}) => {
@@ -162,6 +158,7 @@ Hook.on('Types', ({types}) => {
 
     types.UserRole = {
         "name": "UserRole",
+        "noUserRelation": true,
         "usedBy": ["core"],
         "fields": [
             {
@@ -172,6 +169,7 @@ Hook.on('Types', ({types}) => {
 
     types.User = {
         "name": "User",
+        "noUserRelation": true,
         "usedBy": ["core"],
         "fields": [
             {
@@ -216,15 +214,15 @@ Hook.on('Types', ({types}) => {
             {
                 "name": "slug",
                 "required": true,
-                "clone":"${slug}_copy"
+                "clone": "${slug}_copy"
             },
             {
                 "name": "public",
-                "type":"Boolean"
+                "type": "Boolean"
             },
             {
                 "name": "urlSensitiv",
-                "type":"Boolean"
+                "type": "Boolean"
             }
         ]
     }

@@ -131,7 +131,6 @@ class CmsViewContainer extends React.Component {
                 const type = getType(subs)
                 if (!type) return
                 let query = '_id'
-
                 type.fields.map(({name, required, multi, reference, localized}) => {
 
                     if (reference) {
@@ -531,9 +530,9 @@ const CmsViewContainerWithGql = compose(
                     slug
                 }
 
-            const kv = localStorage.getItem('NoUserKeyValues')
+            /*const kv = localStorage.getItem('NoUserKeyValues')
 
-            console.log(kv)
+            console.log(kv)*/
 
             if (urlSensitiv || (urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
                 const q = window.location.search.substring(1)

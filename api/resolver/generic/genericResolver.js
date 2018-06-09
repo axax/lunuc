@@ -1,7 +1,7 @@
 import Util from '../../util'
 //import Types form
 import {ObjectId} from 'mongodb'
-import {getFormFields} from 'util/types'
+import {getFormFields, getType} from 'util/types'
 import ClientUtil from 'client/util'
 import config from 'gen/config'
 
@@ -12,8 +12,11 @@ const GenericResolver = {
         if (!context.lang) {
             throw new Error('lang on context is missing')
         }
+        const startTime = new Date()
+        const typeDefinition = getType(collectionName)|| {}
+
         //Util.checkIfUserIsLoggedIn(context)
-        let {limit, offset, page, match, filter, sort} = options
+        let {limit, offset, page, match, filter, sort, projectResult} = options
         if (!limit) {
             limit = 10
         }
@@ -30,14 +33,15 @@ const GenericResolver = {
         }
 
         // default match
-        if (!match ) {
+        if (!match) {
             // if not specific match is defined, only select items that belong to the current user
-            if( Util.userHasCapability(db, context, 'manage_types') ){
+            if (Util.userHasCapability(db, context, 'manage_types')) {
                 match = {}
 
-            }else{
-                //
-                match = {createdBy: ObjectId(context.id)}
+            } else {
+                if (!typeDefinition.noUserRelation) {
+                    match = {createdBy: ObjectId(context.id)}
+                }
             }
         }
 
@@ -56,16 +60,22 @@ const GenericResolver = {
         const parsedFilter = ClientUtil.parseFilter(filter)
         const group = {}
         const lookups = []
+        const afterSort = []
         const fields = getFormFields(collectionName)
+
+
         const addLookup = (type, fieldName, multi) => {
-            lookups.push({
+
+            const lookup = {
                 $lookup: {
                     from: type,
                     localField: fieldName,
                     foreignField: '_id',
                     as: fieldName
                 }
-            })
+            }
+
+            lookups.push(lookup)
 
             if (multi) {
                 group[fieldName] = {'$first': '$' + fieldName}
@@ -74,8 +84,7 @@ const GenericResolver = {
             }
         }
 
-        const addFilterToMatch = (filterPart, filterKey, data) =>
-        {
+        const addFilterToMatch = (filterPart, filterKey, data) => {
 
             if (!filterPart || filterPart.operator === 'or') {
                 if (!match.$or) {
@@ -111,25 +120,43 @@ const GenericResolver = {
             }
         }
 
+        const projectResultData = {}
+        const tempLocalizedMapRemoveWithMongo36 = []
+
         data.forEach((value, i) => {
             if (value.constructor === Object) {
                 // if a value is in this format {'categories':['name']}
                 // we expect that the field categories is a reference to another type
                 // so we create a lookup for this type
                 const keys = Object.keys(value)
-                //check if this field is a reference
-                if (fields && fields[keys[0]]) {
-                    addLookup(fields[keys[0]].type, keys[0], fields[keys[0]].multi)
+                if (keys.length > 0) {
+                    // there should be only one attribute
+                    const key = keys[0]
+                    //check if this field is a reference
+                    if (fields && fields[key]) {
+                        const field = fields[keys[0]]
+                        addLookup(field.type, key, field.multi, value[key])
+
+
+                        const lookupFields = getFormFields(field.type)
+                        value[key].forEach(item => {
+                            projectResultData[key + '.' + item] = 1
+
+                            // TODO: remove with mongo 3.6 and use pipeline inside lookup instead
+                            if( lookupFields[item] && lookupFields[item].localized ){
+                                tempLocalizedMapRemoveWithMongo36.push({field:key, lookupField: item })
+                                projectResultData[key + '.' + item+ '_localized.' + context.lang] = 1
+                            }
+                        })
+                        addFilter(keys[0], true)
+
+                    }
+
                 }
-
-
-                addFilter(keys[0], true)
-
 
             } else if (value.indexOf('$') > 0) {
                 // this is a reference
                 // for instance image$Media --> field image is a reference to the type Media
-
                 const part = value.split('$')
                 const fieldName = part[0]
                 let type = part[1], multi = false
@@ -139,38 +166,55 @@ const GenericResolver = {
                 }
                 addLookup(type, fieldName, multi)
                 addFilter(fieldName, true)
+                projectResultData[fieldName] = 1
+
             } else {
                 // regular field
-                if (fields && fields[value] && fields[value].localized) {
-                    group[value] = {'$first': '$' + value + '_localized.' + context.lang}
-                    addFilter(value, false, true)
-                } else {
-                    group[value] = {'$first': '$' + value}
-                    addFilter(value)
+                if (value !== '_id') {
+                    if (fields && fields[value] && fields[value].localized) {
+                        group[value] = {'$first': '$' + value + '_localized.' + context.lang}
+                        addFilter(value, false, true)
+                    } else {
+                        group[value] = {'$first': '$' + value}
+                        addFilter(value)
+                    }
                 }
+                projectResultData[value] = 1
 
             }
         })
-
-        if( parsedFilter && parsedFilter.parts._id ){
+        if (parsedFilter && parsedFilter.parts._id) {
             // if there is a filter on _id
             // handle it here
             addFilterToMatch(parsedFilter.parts._id, '_id', ObjectId(parsedFilter.parts._id.value))
             //match._id =ObjectId(parsedFilter.parts._id.value)
         }
-        if( collectionName !== 'User' && collectionName !== 'UserRole' ){
-            lookups.push({
-                $lookup: {
-                    from: 'User',
-                    localField: 'createdBy',
-                    foreignField: '_id',
-                    as: 'createdBy'
-                }
-            })
-            group.createdBy =  {'$first': {$arrayElemAt: ['$createdBy', 0]}} // return as as single doc not an array
 
+        if (projectResult) {
+            // also remove id if it is not wanted
+            if (!projectResultData._id) {
+                projectResultData._id = 0
+            }
+            afterSort.push({$project: projectResultData})
+        }else{
+            // also return extra fields
+            if (!typeDefinition.noUserRelation) {
+                lookups.push({
+                    $lookup: {
+                        from: 'User',
+                        localField: 'createdBy',
+                        foreignField: '_id',
+                        as: 'createdBy'
+                    }
+                })
+                group.createdBy = {'$first': {$arrayElemAt: ['$createdBy', 0]}} // return as as single doc not an array
+            }
+            group.modifiedAt = {'$first': '$modifiedAt'}
         }
+
         const collection = db.collection(collectionName)
+
+        const startTimeAggregate = new Date()
         let a = (await collection.aggregate([
             {
                 $match: match
@@ -180,12 +224,13 @@ const GenericResolver = {
             {
                 $group: {
                     _id: '$_id',
-                    modifiedAt: {'$first': '$modifiedAt'},
                     ...group
                 }
             },
             {$sort: sort},
+            ...afterSort,
             {
+                //TODO maybe it is better to use facet for pagination
                 $group: {
                     _id: null,
                     // get a count of every result that matches until now
@@ -208,6 +253,7 @@ const GenericResolver = {
         ]).toArray())
         if (a.length === 0) {
             return {
+                aggregateTime: new Date() - startTimeAggregate,
                 page,
                 limit,
                 offset,
@@ -215,6 +261,24 @@ const GenericResolver = {
                 results: null
             }
         }
+        a[0].aggregateTime = new Date() - startTimeAggregate
+
+
+        // TODO: remove with mongo 3.6 and use pipeline inside lookup instead
+        if( tempLocalizedMapRemoveWithMongo36.length && a[0].results){
+            a[0].results.forEach(record => {
+                tempLocalizedMapRemoveWithMongo36.forEach(item=>{
+                    if( record[item.field].constructor === Array){
+                        record[item.field].forEach( subItem => {
+                            subItem[item.lookupField] = subItem[item.lookupField+'_localized'][context.lang]
+                        })
+                    }else{
+                        record[item.field][item.lookupField] = record[item.field][item.lookupField+'_localized'][context.lang]
+                    }
+                })
+            })
+        }
+        console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${a[0].aggregateTime}ms total time ${new Date() - startTime}ms`)
         return a[0]
     },
     createEnity: async (db, context, collectionName, data) => {
@@ -297,6 +361,10 @@ const GenericResolver = {
         //check if this field is a reference
         const fields = getFormFields(collectionName)
 
+
+        // we create also a dataSet with dot notation format for partial update
+        const dataSetDotNotation = {}
+
         // clone object but without _id and undefined property
         // keep null values to remove references
         const dataSet = Object.keys(data).reduce((o, k) => {
@@ -304,35 +372,46 @@ const GenericResolver = {
 
                 if (fields && fields[k] && fields[k].localized) {
                     // is field localized
-                    if( !o[k + '_localized'] )
+                    if (!o[k + '_localized'])
                         o[k + '_localized'] = {}
                     o[k + '_localized'][context.lang] = data[k]
-
+                    dataSetDotNotation[k + '_localized.' + e] = data[k][e]
                 } else if (k.endsWith('_localized')) {
                     // if a localized object {_localized:{de:'',en:''}} gets passed
                     // convert it to the format _localized.de='' and _localized.en=''
                     if (data[k]) {
 
                         Object.keys(data[k]).map(e => {
-                            if( !o[k] )
+                            if (!o[k])
                                 o[k] = {}
                             o[k][e] = data[k][e]
+                            dataSetDotNotation[k + '.' + e] = data[k][e]
                         })
                     }
 
                 } else {
                     o[k] = data[k]
+                    dataSetDotNotation[k] = data[k]
                 }
             }
             return o
         }, {})
 
         // set timestamp
-        dataSet.modifiedAt = new Date().getTime()
+        dataSet.modifiedAt = dataSetDotNotation.modifiedAt = new Date().getTime()
 
-        const result = (await collection.findOneAndUpdate({_id: ObjectId(data._id)}, {
-            $set: dataSet
+        // try with dot notation for partial update
+        let result = (await collection.findOneAndUpdate({_id: ObjectId(data._id)}, {
+            $set: dataSetDotNotation
         }, {returnOriginal: false}))
+
+        if (result.ok !== 1) {
+            // if it fails try again without dot notation
+            result = (await collection.findOneAndUpdate({_id: ObjectId(data._id)}, {
+                $set: dataSet
+            }, {returnOriginal: false}))
+        }
+
 
         if (result.ok !== 1) {
             throw new ApiError(collectionName + ' could not be changed')
@@ -351,7 +430,7 @@ const GenericResolver = {
 
         Util.checkIfUserIsLoggedIn(context)
 
-console.log(_id,rest)
+        console.log(_id, rest)
         const collection = db.collection(collectionName)
 
         if (!_id) {

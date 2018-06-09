@@ -214,7 +214,6 @@ class FileDrop extends React.Component {
         const oriImg = new Image()
         oriImg.onload = () => {
 
-
             let width = oriImg.width, height = oriImg.height
 
             if (width > height) {
@@ -235,6 +234,7 @@ class FileDrop extends React.Component {
             canvas.height = height
 
             const ctx = canvas.getContext("2d")
+            ctx.clearRect( 0, 0, width, height )
             ctx.drawImage(oriImg, 0, 0, width, height)
 
             //Some update on canvas
@@ -243,7 +243,7 @@ class FileDrop extends React.Component {
             ctx.fillText(file.name, 5, height - 8)
 
 
-            const dataUrl = canvas.toDataURL('image/jpeg' /*file.type*/, IMAGE_QUALITY)
+            const dataUrl = canvas.toDataURL(file.type, IMAGE_QUALITY)
 
 
             //const blobData = this.dataURLToBlob(dataUrl) // as png?

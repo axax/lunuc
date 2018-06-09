@@ -76,32 +76,10 @@ const UtilCms = {
                             limit: l,
                             page: p,
                             offset: o,
-                            match
+                            match,
+                            projectResult: true
                         })
                         debugInfo += ' result=true'
-                        if (result.results) {
-                            const filterdResults = []
-                            result.results.map(e => {
-
-                                //  only return fields that are request and remove sensitiv data
-                                const newEntry = {}
-                                if ( e._id ){
-                                    newEntry._id= e._id
-                                }
-                                d.forEach(key=>{
-                                    if( key.constructor === Object){
-                                        key = Object.keys(key)[0]
-                                    }
-                                    newEntry[key] = e[key]
-                                })
-                                filterdResults.push(newEntry)
-                                // return only user _id and username
-                                /*if (newEntry.createdBy) {
-                                    newEntry.createdBy = {_id: newEntry.createdBy._id, username: newEntry.createdBy.username}
-                                }*/
-                            })
-                            result.results = filterdResults
-                        }
 
                         resolvedData[segment.key || type] = result
                     } else if (segment.eval) {
