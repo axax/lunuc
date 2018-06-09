@@ -1,6 +1,7 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
 import {ObjectId} from 'mongodb'
 import Hook from '../../util/hook'
+import Util from '.'
 
 const UtilCms = {
     createSegments: (json, scope) => {
@@ -29,7 +30,7 @@ const UtilCms = {
     replaceSegment: (str, data) => {
 
     },
-    resolveData: async (db, context, dataResolver, scope) => {
+    resolveData: async (db, context, dataResolver, scope, nosession) => {
         const resolvedData = {}, subscriptions = []
 
         if (dataResolver) {
@@ -87,29 +88,46 @@ const UtilCms = {
                         try {
                             const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope; const {data} = this;' + segment.eval)
                             tpl.call({data: resolvedData, scope})
-                        }catch (e){
-                            if( !segment.ignoreError )
+                        } catch (e) {
+                            if (!segment.ignoreError)
                                 throw e
                         }
                     } else if (segment.keyValues) {
 
                         const map = {}
 
-                        const match = {createdBy: ObjectId(context.id), key: {$in: segment.keyValues}}
+                        if (Util.isUserLoggedIn(context)) {
+                            const match = {createdBy: ObjectId(context.id), key: {$in: segment.keyValues}}
+                            const result = await GenericResolver.entities(db, context, 'KeyValue', ["key", "value"], {
+                                match
+                            })
 
-                        const result = await GenericResolver.entities(db, context, 'KeyValue', ["key", "value"], {
-                            match
-                        })
-
-
-                        if (result.results) {
-                            result.results.map(e => {
-                                try {
-                                    map[e.key] = JSON.parse(e.value);
-                                } catch (e) {
-                                    map[e.key] = e.value
+                            if (result.results) {
+                                result.results.map(e => {
+                                    try {
+                                        map[e.key] = JSON.parse(e.value);
+                                    } catch (e) {
+                                        map[e.key] = e.value
+                                    }
+                                })
+                            }
+                        } else if (nosession) {
+                            let nosessionJson
+                            try {
+                                nosessionJson = JSON.parse(nosession)
+                            } catch (e) {
+                                nosessionJson = {}
+                            }
+                            segment.keyValues.forEach(key => {
+                                if (nosessionJson[key]) {
+                                    try {
+                                        map[key] = JSON.parse(nosessionJson[key]);
+                                    } catch (e) {
+                                        map[key] = nosessionJson[key]
+                                    }
                                 }
                             })
+                            console.log(map)
                         }
 
                         resolvedData[segment.key || 'keyValues'] = map

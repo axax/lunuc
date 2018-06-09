@@ -27,7 +27,7 @@ export const cmsSchemaRaw = `
     
     type Query {
     	cmsPages(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): CmsPageResult
-    	cmsPage(slug: String!, query: String): CmsPage
+    	cmsPage(slug: String!, query: String, nosession: String): CmsPage
     }
     
 		

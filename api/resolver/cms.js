@@ -93,7 +93,7 @@ export const cmsResolver = (db) => ({
             sort
         })
     },
-    cmsPage: async ({slug, query}, {context}) => {
+    cmsPage: async ({slug, query, nosession}, {context}) => {
         // TODO: Not just check if user is logged in but also check what role he has
         const userIsLoggedIn = Util.isUserLoggedIn(context)
 
@@ -129,7 +129,7 @@ export const cmsResolver = (db) => ({
         const scope = {...createScopeForDataResolver(query), page: {slug}}
 
         const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt, urlSensitiv} = cmsPages.results[0]
-        const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope)
+        const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope, nosession)
 
         let html
         if (ssr) {

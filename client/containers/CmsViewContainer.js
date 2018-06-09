@@ -10,6 +10,7 @@ import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
 import {getType} from 'util/types'
+import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from './generic/withKeyValues'
 
 import Async from 'client/components/Async'
 const ErrorPage = (props) => <Async {...props}
@@ -39,7 +40,7 @@ const Divider = (props) => <Async {...props} expose="Divider"
 
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug: String!,$query:String){ cmsPage(slug: $slug,query: $query){cacheKey slug urlSensitiv template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
+const gqlQuery = gql`query cmsPage($slug: String!,$query:String,$nosession: String){ cmsPage(slug: $slug,query: $query, nosession: $nosession){cacheKey slug urlSensitiv template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
 
 
 const editorStyle = {
@@ -345,7 +346,7 @@ class CmsViewContainer extends React.Component {
                 <div style={{padding: '10px'}}>
 
                     <Expandable title="Data resolver"
-                                onChange={(expanded) => this.handleExpandable.call(this,'dataResolverExpanded',expanded)}
+                                onChange={(expanded) => this.handleExpandable.call(this, 'dataResolverExpanded', expanded)}
                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
                             style={editorStyle}
@@ -354,7 +355,7 @@ class CmsViewContainer extends React.Component {
                     </Expandable>
 
                     <Expandable title="Template"
-                                onChange={(expanded) => this.handleExpandable.call(this,'templateExpanded',expanded)}
+                                onChange={(expanded) => this.handleExpandable.call(this, 'templateExpanded', expanded)}
                                 expanded={settings.templateExpanded}>
                         <TemplateEditor
                             style={editorStyle}
@@ -363,7 +364,7 @@ class CmsViewContainer extends React.Component {
                     </Expandable>
 
                     <Expandable title="Script"
-                                onChange={(expanded) => this.handleExpandable.call(this,'scriptExpanded',expanded)}
+                                onChange={(expanded) => this.handleExpandable.call(this, 'scriptExpanded', expanded)}
                                 expanded={settings.scriptExpanded}>
                         <ScriptEditor
                             style={editorStyle}
@@ -371,7 +372,7 @@ class CmsViewContainer extends React.Component {
                             onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ScriptEditor>
                     </Expandable>
                     <Expandable title="Settings"
-                                onChange={(expanded) => this.handleExpandable.call(this,'settingsExpanded',expanded)}
+                                onChange={(expanded) => this.handleExpandable.call(this, 'settingsExpanded', expanded)}
                                 expanded={settings.settingsExpanded}>
                         <SimpleSwitch
                             label="SSR (Server side Rendering)"
@@ -384,7 +385,7 @@ class CmsViewContainer extends React.Component {
                     {cmsPages && cmsPages.results && cmsPages.results.length > 1 &&
 
                     <Expandable title="Related pages"
-                                onChange={(expanded) => this.handleExpandable.call(this,'relatedPagesExpanded',expanded)}
+                                onChange={(expanded) => this.handleExpandable.call(this, 'relatedPagesExpanded', expanded)}
                                 expanded={settings.relatedPagesExpanded}>
                         <MenuList>
                             {
@@ -430,7 +431,7 @@ class CmsViewContainer extends React.Component {
         return content
     }
 
-    handleExpandable(key, expanded){
+    handleExpandable(key, expanded) {
         this.setState({settings: Object.assign({}, this.state.settings, {[key]: expanded})}, this.saveSettings)
     }
 
@@ -442,14 +443,16 @@ class CmsViewContainer extends React.Component {
         this.setKeyValue('CmsViewContainerSettings', this.state.settings)
     }
 
-    setKeyValue(arg1, arg2) {
-        let key, value
+    setKeyValue(arg1, arg2, arg3) {
+        let key, value, server
         if (arg1.constructor === String) {
             key = arg1
             value = arg2
+            server = arg3
         } else if (arg1.constructor === Object) {
             key = arg1.key
             value = arg1.value
+            server = arg1.server
         }
 
 
@@ -475,9 +478,13 @@ class CmsViewContainer extends React.Component {
                 update: (store, {data}) => {
                 },
             })
-            localStorage.removeItem('NoUserKeyValues')
+            // clear local key values as there is a user session now
+            localStorage.removeItem(NO_SESSION_KEY_VALUES)
+            localStorage.removeItem(NO_SESSION_KEY_VALUES_SERVER)
         } else {
-            const kv = localStorage.getItem('NoUserKeyValues')
+            const localStorageKey = server ? NO_SESSION_KEY_VALUES_SERVER : NO_SESSION_KEY_VALUES
+            // if there is no user session store key value temporary in the localStorage
+            const kv = localStorage.getItem(localStorageKey)
             let json
             if (kv) {
                 try {
@@ -489,7 +496,7 @@ class CmsViewContainer extends React.Component {
                 json = {}
             }
             json[key] = value
-            localStorage.setItem('NoUserKeyValues', JSON.stringify(json))
+            localStorage.setItem(localStorageKey, JSON.stringify(json))
         }
 
     }
@@ -525,14 +532,17 @@ const urlSensitivMap = {}
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
         options(ownProps) {
-            const {slug, urlSensitiv} = ownProps,
+            const {slug, urlSensitiv, user} = ownProps,
                 variables = {
                     slug
                 }
+            if (!user.isAuthenticated) {
+                const kv = localStorage.getItem(NO_SESSION_KEY_VALUES_SERVER)
+                if (kv) {
+                    variables.nosession = kv
+                }
+            }
 
-            /*const kv = localStorage.getItem('NoUserKeyValues')
-
-            console.log(kv)*/
 
             if (urlSensitiv || (urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
                 const q = window.location.search.substring(1)

@@ -4,29 +4,46 @@ import gql from 'graphql-tag'
 import {graphql, compose} from 'react-apollo'
 import {connect} from 'react-redux'
 
-const LOCAL_STORAGE_KEY = 'noUserKeyValues'
+export const NO_SESSION_KEY_VALUES = 'NO_SESSION_KEY_VALUES'
+export const NO_SESSION_KEY_VALUES_SERVER = 'NO_SESSION_KEY_VALUES_SERVER'
+
 /*
  this is a warpper component for accessing user key values
  */
 
-let keyValuesFromLS = null
+const keyValuesFromLS = {}
+
+export const getKeyValuesFromLS = () => {
+    const kvServer = getKeyValuesFromLSByKey(NO_SESSION_KEY_VALUES_SERVER),
+        kvClient = getKeyValuesFromLSByKey(NO_SESSION_KEY_VALUES)
+    return Object.assign({}, kvClient, kvServer)
+}
+
+export const getKeyValuesFromLSByKey = (localStorageKey) => {
+
+    if (!keyValuesFromLS[localStorageKey]) {
+        try {
+            keyValuesFromLS[localStorageKey] = JSON.parse(localStorage.getItem(localStorageKey))
+        } finally {
+        }
+        if (!keyValuesFromLS[localStorageKey]) keyValuesFromLS[localStorageKey] = {}
+    }
+    return keyValuesFromLS[localStorageKey]
+}
+
+export const setKeyValueToLS = (key, value, server) => {
+    const localStorageKey = server ? NO_SESSION_KEY_VALUES_SERVER : NO_SESSION_KEY_VALUES
+
+    const kv = getKeyValuesFromLSByKey(localStorageKey)
+    kv[key] = value
+
+    localStorage.setItem(localStorageKey, JSON.stringify(kv))
+}
 
 // This function takes a component...
 export function withKeyValues(WrappedComponent, keys) {
 
-    const getKeyValuesFromLS = () => {
-        if (!keyValuesFromLS) {
-            keyValuesFromLS = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY))
-            if (!keyValuesFromLS) keyValuesFromLS = {}
-        }
-        return keyValuesFromLS
-    }
 
-    const setKeyValueToLS = (key, value) => {
-        const kv = getKeyValuesFromLS()
-        kv[key] = value
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(kv))
-    }
 
     // ...and returns another component...
     class WithKeyValues extends React.Component {
@@ -99,18 +116,18 @@ export function withKeyValues(WrappedComponent, keys) {
         }),
         graphql(gqlKeyValueUpdate, {
             props: ({ownProps, mutate}) => ({
-                setKeyValue: ({key, value}) => {
-                    if( !key ) throw Error('Key is missing in setKeyValue')
+                setKeyValue: ({key, value, server}) => {
+                    if (!key) throw Error('Key is missing in setKeyValue')
                     if (!ownProps.kvUser.isAuthenticated) {
                         return new Promise((res) => {
-                            setKeyValueToLS(key, value)
+                            setKeyValueToLS(key, value, server)
                             res()
                         })
                     }
-                    const valueStr = value.constructor===String?value:JSON.stringify(value)
+                    const valueStr = value.constructor === String ? value : JSON.stringify(value)
 
                     return mutate({
-                        variables: {key, value:valueStr},
+                        variables: {key, value: valueStr},
                         optimisticResponse: {
                             __typename: 'Mutation',
                             setKeyValue: {
@@ -121,7 +138,7 @@ export function withKeyValues(WrappedComponent, keys) {
                                     __typename: 'UserPublic'
                                 },
                                 key,
-                                value:valueStr,
+                                value: valueStr,
                                 __typename: 'KeyValue'
                             }
                         },
