@@ -20,7 +20,7 @@ import {lighten} from '@material-ui/core/styles/colorManipulator'
 import SimpleMenu from './SimpleMenu'
 
 const styles = theme => ({
-    root: {
+    scrollArea: {
         width: '100%',
         overflowY: 'auto',
     },
@@ -59,7 +59,7 @@ class SimpleTable extends React.Component {
     render() {
         const {title, actions, classes, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, columns, dataSource} = this.props
         const numSelected = 0
-        return <Paper className={classes.root}>
+        return <Paper>
 
             { (title || actions ?
                 <Toolbar
@@ -93,53 +93,58 @@ class SimpleTable extends React.Component {
                 </Toolbar> : null)
             }
 
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        {columns && columns.map(column => {
-                            return !column.hidden && <TableCell key={column.id}>
+            <div className={classes.scrollArea}>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            {columns && columns.map(column => {
+                                return !column.hidden && <TableCell key={column.id}>
 
-                                {column.sortable ?
-                                    <Tooltip
-                                        title="Sort"
-                                        placement={column.numeric ? 'bottom-end' : 'bottom-start'}
-                                        enterDelay={300}
-                                    >
-                                        <TableSortLabel
-                                            active={orderBy === (column.sortid || column.id)}
-                                            direction={orderDirection || 'asc'}
-                                            onClick={this.createSortHandler.bind(this, column.sortid || column.id)}
-                                        >
-                                            {column.title}
-                                        </TableSortLabel>
-                                    </Tooltip> : column.title }
+                                        {column.sortable ?
+                                            <Tooltip
+                                                title="Sort"
+                                                placement={column.numeric ? 'bottom-end' : 'bottom-start'}
+                                                enterDelay={300}
+                                            >
+                                                <TableSortLabel
+                                                    active={orderBy === (column.sortid || column.id)}
+                                                    direction={orderDirection || 'asc'}
+                                                    onClick={this.createSortHandler.bind(this, column.sortid || column.id)}
+                                                >
+                                                    {column.title}
+                                                </TableSortLabel>
+                                            </Tooltip> : column.title }
 
 
-                            </TableCell>
-                        })}
-                    </TableRow>
-                </TableHead>
-                {dataSource &&
-                <TableBody>
-                    {dataSource.map((entry, i) => {
-                        return (
-                            <TableRow hover key={i}>
-                                { columns ?
+                                    </TableCell>
+                            })}
+                        </TableRow>
+                    </TableHead>
+                    {dataSource &&
+                    <TableBody>
+                        {dataSource.map((entry, i) => {
+                            return (
+                                <TableRow hover key={i}>
+                                    { columns ?
                                         // use columns if available to have the same order
-                                    columns.map(col => (
-                                        <TableCell key={col.id}>{entry[col.id]}</TableCell>
-                                    ))
-                                    :
-                                    // in case there are no columns defined
-                                    Object.keys(entry).map((key) => (
-                                        <TableCell key={key}>{entry[key]}</TableCell>
-                                    ))
-                                }
-                            </TableRow>
-                        )
-                    })}
-                </TableBody>
-                }
+                                        columns.map(col => (
+                                            <TableCell key={col.id}>{entry[col.id]}</TableCell>
+                                        ))
+                                        :
+                                        // in case there are no columns defined
+                                        Object.keys(entry).map((key) => (
+                                            <TableCell key={key}>{entry[key]}</TableCell>
+                                        ))
+                                    }
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                    }
+
+                </Table>
+            </div>
+            <Table>
                 <TableFooter>
                     <TableRow>
                         <TablePagination

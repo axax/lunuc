@@ -364,7 +364,7 @@ class TypesContainer extends React.Component {
                     />
                 </Col>
                 }
-                <Col md={(fixType ? 12 : 3)} align="right">
+                <Col xs={12} md={(fixType ? 12 : 3)} align="right">
                     <GenericForm onChange={this.handleFilter}
                                  onKeyDown={this.handelFilterKeyDown}
                                  primaryButton={false}
