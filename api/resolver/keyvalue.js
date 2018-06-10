@@ -23,7 +23,7 @@ export const keyvalueResolver = (db) => ({
     },
     setKeyValue: async ({key, value}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
-        await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
+        //await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
 
         // update or insert if not exists
         return Util.setKeyValue(db, context, key, value).then((doc) => {

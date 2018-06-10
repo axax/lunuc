@@ -111,6 +111,7 @@ const UtilCms = {
                                     }
                                 })
                             }
+                            console.log(map)
                         } else if (nosession) {
                             let nosessionJson
                             try {

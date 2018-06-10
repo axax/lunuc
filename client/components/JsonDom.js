@@ -7,6 +7,7 @@ import {Link} from 'react-router-dom'
 import _t from 'util/i18n'
 import Util from 'client/util'
 import Async from 'client/components/Async'
+import {getKeyValueFromLS} from '../containers/generic/withKeyValues'
 
 
 const ContentEditable = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/generic/ContentEditable')} />
@@ -472,7 +473,7 @@ class JsonDom extends React.Component {
             try {
                 this.scriptResult = new Function(`
                 let scope = arguments[0]
-                const {on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue}= arguments[1]
+                const {on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS}= arguments[1]
                 const history= arguments[2]
                 const parent= arguments[3]
                 on('refreshscope',(newScope)=>{
@@ -481,6 +482,7 @@ class JsonDom extends React.Component {
                 ${script}`).call(this, scope, {
                     on: this.jsOn,
                     setKeyValue,
+                    getKeyValueFromLS,
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,

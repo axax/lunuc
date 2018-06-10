@@ -13,6 +13,16 @@ export const NO_SESSION_KEY_VALUES_SERVER = 'NO_SESSION_KEY_VALUES_SERVER'
 
 const keyValuesFromLS = {}
 
+
+export const getKeyValueFromLS = (key) => {
+    const kv = getKeyValuesFromLS()
+    try {
+        return JSON.parse(kv[key])
+    } catch (e) {
+        return kv[key]
+    }
+}
+
 export const getKeyValuesFromLS = () => {
     const kvServer = getKeyValuesFromLSByKey(NO_SESSION_KEY_VALUES_SERVER),
         kvClient = getKeyValuesFromLSByKey(NO_SESSION_KEY_VALUES)
