@@ -7,6 +7,8 @@ import Util from './util'
 import config from 'gen/config'
 import zipper from 'zip-local'
 import MimeType from '../util/mime'
+import {execSync} from 'child_process'
+
 
 const {UPLOAD_DIR} = config
 
@@ -34,6 +36,7 @@ const authContextOrError = (res, req) => {
     // check auth token
     const authContext = auth.decodeToken(req.headers.authorization)
 
+    // TODO implement premission check
     if (!authContext) {
         // no auth
         res.writeHead(401, {'content-type': 'application/json'});
@@ -82,20 +85,20 @@ export const handleUpload = db => (req, res) => {
                         mimeType: mimeType || 'application/octet-stream',
                         createdBy: ObjectId(authContext.id)
                     })
-                    if (insertResult.insertedCount>0) {
+                    if (insertResult.insertedCount > 0) {
                         /*const doc = insertResult.ops[0]
 
 
-                        console.log({
-                            _id: doc._id,
-                            title,
-                            body,
-                            createdBy: {
-                                _id: ObjectId(context.id),
-                                username: context.username
-                            },
-                            status: 'created'
-                        })*/
+                         console.log({
+                         _id: doc._id,
+                         title,
+                         body,
+                         createdBy: {
+                         _id: ObjectId(context.id),
+                         username: context.username
+                         },
+                         status: 'created'
+                         })*/
                     }
                 })
             })
@@ -168,5 +171,51 @@ export const handleMediaDumpUpload = db => (req, res) => {
             // parse the incoming request containing the form data
             form.parse(req)
         }
+    }
+}
+
+
+export const handleDbDumpUpload = (db, client) => (req, res) => {
+
+
+    const authContext = authContextOrError(res, req)
+    if (authContext) {
+
+        /* Process the uploads */
+        const form = new formidable.IncomingForm()
+
+        res.writeHead(200, {'content-type': 'application/json'})
+
+
+        // every time a file has been uploaded successfully,
+        // rename it to it's orignal name
+        form.on('file', function (field, file) {
+
+            const response = execSync(`mongorestore --gzip --archive="${file.path}" --port ${client.topology.port}`)
+            console.log('restoreDbDump',response)
+
+        })
+
+        // log any errors that occur
+        form.on('error', function (err) {
+            res.end('{"status":"error","message":"' + err.message + '"}')
+        })
+        form.on('aborted', function () {
+            res.end('{"status":"aborted","message":"Upload was aborted"}')
+        })
+
+        form.on('progress', function (bytesReceived, bytesExpected) {
+            const percent = (bytesReceived / bytesExpected * 100) | 0
+            console.log('Uploading: ' + percent + '%')
+        })
+
+
+        // once all the files have been uploaded, send a response to the client
+        form.on('end', function () {
+            res.end('{"status":"success"}')
+        })
+
+        // parse the incoming request containing the form data
+        form.parse(req)
     }
 }

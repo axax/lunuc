@@ -10,14 +10,14 @@ import {resolver} from './resolver/index'
 import {dbConnection, dbPreparation} from './database'
 import {auth} from './auth'
 import {formatError} from './error'
-import {handleUpload, handleMediaDumpUpload} from './upload'
+import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload} from './upload'
 
 const PORT = (process.env.PORT || 3000)
 
 export const start = (done) => {
 
 
-    dbConnection((err, db) => dbPreparation(db, () => {
+    dbConnection((err, db, client) => dbPreparation(db, () => {
 
         if (!db) {
             reject(err)
@@ -36,7 +36,10 @@ export const start = (done) => {
 
             const rootValue = resolver(db)
 
-            // upload
+            // upload db dump
+            app.use('/graphql/upload/dbdump', handleDbDumpUpload(db, client))
+
+            // upload media dump
             app.use('/graphql/upload/mediadump', handleMediaDumpUpload(db))
 
             // maybe move file upload to another server

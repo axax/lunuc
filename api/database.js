@@ -3,6 +3,9 @@ import {createAllInitialData} from './data/initialDbData'
 import {createAllIndexes} from './index/indexes'
 
 const MONGO_URL = (process.env.MONGO_URL || process.env.LUNUC_MONGO_URL)
+
+//const MONGO_URL="mongodb://localhost:27018/lunuc"
+
 /*
 
 Backup: mongodump --uri $LUNUC_MONGO_URL -v --archive=backup.25022018.gz --gzip
@@ -39,14 +42,17 @@ export const dbConnection = (cb) => {
                 useNewUrlParser: true
             },
             function (err, client) {
-                const parts = MONGO_URL.split('/')
-                const db = client.db(parts[parts.length - 1])
                 if (err) {
-                    console.error(err.message)
+                    console.error( err.message, MONGO_URL)
                 } else {
                     console.log(`Connection to db ${MONGO_URL} established.`)
+
+                    const parts = MONGO_URL.split('/')
+                    const db = client.db(parts[parts.length - 1])
+
+                    cb(err, db, client)
                 }
-                cb(err, db)
+
             }
         )
     }

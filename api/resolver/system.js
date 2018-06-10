@@ -39,9 +39,13 @@ export const systemResolver = (db) => ({
 
         const files = []
         fs.readdirSync(backup_dir).forEach(file => {
-            const stats = fs.statSync(backup_dir+'/'+file)
-            files.push({name:file,createdAt:new Date(stats.mtime), size: (stats.size / 1000) + 'kb'})
+            if( file !== '.DS_Store') {
+                const stats = fs.statSync(backup_dir + '/' + file)
+                files.push({name: file, createdAt: new Date(stats.mtime), size: (stats.size / 1000) + 'kb'})
+            }
         })
+
+        files.reverse()
 
         const response = {
             results: files,
@@ -88,10 +92,12 @@ export const systemResolver = (db) => ({
 
         const files = []
         fs.readdirSync(backup_dir).forEach(file => {
-            const stats = fs.statSync(backup_dir+'/'+file)
-            files.push({name:file,createdAt:new Date(stats.mtime), size: (stats.size / 1000) + 'kb'})
+            if( file !== '.DS_Store') {
+                const stats = fs.statSync(backup_dir + '/' + file)
+                files.push({name: file, createdAt: new Date(stats.mtime), size: (stats.size / 1000) + 'kb'})
+            }
         })
-
+        files.reverse()
         const response = {
             results: files,
             offset: 0,
