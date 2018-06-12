@@ -160,10 +160,10 @@ class TypesContainer extends React.Component {
 
             if (data.results) {
                 data.results.forEach(item => {
+                    if( !item ) return
                     const dynamic = {}
                     fields.forEach(field => {
                         if (columnsMap[field.name]) {
-
                             let v = item[field.name]
                             if (field.reference) {
                                 if (v) {

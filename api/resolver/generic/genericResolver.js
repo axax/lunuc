@@ -213,7 +213,6 @@ const GenericResolver = {
         }
 
         const collection = db.collection(collectionName)
-
         const startTimeAggregate = new Date()
         let a = (await collection.aggregate([
             {

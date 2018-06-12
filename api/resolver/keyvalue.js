@@ -4,12 +4,30 @@ import {ObjectId} from 'mongodb'
 
 
 export const keyvalueResolver = (db) => ({
-    keyValues: async ({keys, limit, sort, offset}, {context}) => {
-        const match = {createdBy: ObjectId(context.id)}
+    keyValues: async ({keys, limit, sort, offset, all}, {context}) => {
+        const match = {}
+
+        if (all) {
+            await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
+        } else {
+            match.createdBy = ObjectId(context.id)
+        }
         if (keys) {
             match.key = {$in: keys}
         }
         return await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {limit, offset, sort, match})
+    },
+    keyValuesGlobal: async ({keys, limit, sort, offset}, {context}) => {
+        const match = {}
+        if (keys) {
+            match.key = {$in: keys}
+        }
+        return await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value'], {
+            limit,
+            offset,
+            sort,
+            match
+        })
     },
     keyValue: async ({key}, {context}) => {
         const keyValues = await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {
@@ -37,6 +55,13 @@ export const keyvalueResolver = (db) => ({
                 },
             }
         })
+    },
+    setKeyValueGlobal: async ({key, value}, {context}) => {
+        await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
+
+        return db.collection('KeyValueGlobal').updateOne({
+            key
+        }, {$set: {key, value}}, {upsert: true})
     },
     deleteKeyValue: async ({key}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)

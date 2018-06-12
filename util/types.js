@@ -50,7 +50,7 @@ export const getTypeQueries = (typeName) => {
 
     const result = {}
 
-    const {name, fields, noUserRelation} = types[typeName]
+    const {name, fields, noUserRelation, selectParams} = types[typeName]
     const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
 
     let query = '_id status'
@@ -92,8 +92,14 @@ export const getTypeQueries = (typeName) => {
             insertUpdateQuery += name + ': ' + '$' + name
         })
     }
+    let selectParamsString = ''
+    if( selectParams ){
+        selectParams.forEach(item=>{
+            selectParamsString += `,${item.name}:${item.defaultValue}`
+        })
+    }
     result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String){
-                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{${query}}}}`
+                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}){limit offset total results{${query}}}}`
 
 
     result.create = `mutation create${name}(${insertParams}){create${name}(${insertUpdateQuery}){${queryMutation}}}`
@@ -143,7 +149,25 @@ export const getFormFields = (type) => {
 Hook.on('Types', ({types}) => {
 
     types.KeyValue = {
-        "name": "KeyValue",
+        name: 'KeyValue',
+        usedBy: ['core'],
+        fields: [
+            {
+                name: 'key'
+            },
+            {
+                name: 'value'
+            }
+        ],
+        selectParams: [{
+            name: 'all',
+            type: 'Boolean',
+            defaultValue: true
+        }]
+    }
+
+    types.KeyValueGlobal = {
+        "name": "KeyValueGlobal",
         "usedBy": ["core"],
         "fields": [
             {
