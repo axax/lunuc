@@ -131,7 +131,7 @@ export function configureMiddleware(store) {
                 // this is the login methode
                 return o.__typename + (o.user ? o.user.username : '')
             } else if (o.__typename === 'KeyValue') {
-                return o.__typename + o.key
+                return o.__typename + (o._id ? o._id : o.key)
             } else if (o._id) {
                 return o.__typename + o._id + (o.cacheKey ? o.cacheKey : '')
             }

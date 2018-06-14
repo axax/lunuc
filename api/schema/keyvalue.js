@@ -4,7 +4,7 @@ export const keyvalueSchemaRaw = `
 		_id: ID!
 		key: String!
 		value: String
-        createdBy: UserPublic!
+        createdBy: UserPublic
         status: String
 	}
     

@@ -26,6 +26,15 @@ export const createUserRoles = async (db) => {
         }
     )
 
+
+    userRoleCollection.updateOne(
+        {name: 'demo'},
+        {$addToSet: {capabilities: {$each: ['view_app', 'read_everythin']}}},
+        {
+            upsert: true
+        }
+    )
+
 }
 
 export const createUsers = async (db) => {

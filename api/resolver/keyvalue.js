@@ -17,7 +17,7 @@ export const keyvalueResolver = (db) => ({
         }
         return await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {limit, offset, sort, match})
     },
-    keyValuesGlobal: async ({keys, limit, sort, offset}, {context}) => {
+    keyValueGlobals: async ({keys, limit, sort, offset}, {context}) => {
         const match = {}
         if (keys) {
             match.key = {$in: keys}

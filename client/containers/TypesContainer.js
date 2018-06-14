@@ -46,7 +46,13 @@ const styles = theme => ({
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         maxWidth: 150
-    }
+    },
+    tableLargeContent: {
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        maxWidth: 600,
+        maxHeight: 200
+}
 })
 
 
@@ -135,9 +141,7 @@ class TypesContainer extends React.Component {
     renderTable(columns) {
         const {classes} = this.props
         const {data} = this.state
-
         if (data) {
-
             // small optimization. only render table if data changed
             if (data === this._lastData) {
                 return this._renderedTable
@@ -213,8 +217,8 @@ class TypesContainer extends React.Component {
                                     dynamic[field.name] = langVar
                                 } else {
                                     dynamic[field.name] =
-                                        <span onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
-                                              suppressContentEditableWarning contentEditable>{v}</span>
+                                        <div className={classes.tableLargeContent} onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
+                                              suppressContentEditableWarning contentEditable>{v}</div>
                                 }
 
 
@@ -223,7 +227,7 @@ class TypesContainer extends React.Component {
                     })
 
                     if (columnsMap['user']) {
-                        dynamic.user = item.createdBy.username
+                        dynamic.user = (item.createdBy ? item.createdBy.username : '???')
                     }
                     if (columnsMap['date']) {
                         dynamic.date = Util.formattedDateFromObjectId(item._id)
@@ -537,7 +541,6 @@ class TypesContainer extends React.Component {
                     } catch (e) {
                     }
                 }
-
                 client.query({
                     fetchPolicy: 'network-only',
                     forceFetch: true,
