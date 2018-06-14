@@ -167,7 +167,7 @@ class TypesContainer extends React.Component {
                     if( !item ) return
                     const dynamic = {}
                     fields.forEach(field => {
-                        if (columnsMap[field.name]) {
+                        if ( columnsMap[field.name]) {
                             let v = item[field.name]
                             if (field.reference) {
                                 if (v) {
@@ -440,11 +440,13 @@ class TypesContainer extends React.Component {
         if (this.typeColumns[type]) return this.typeColumns[type]
         this.typeColumns[type] = []
         typeDefinition.fields.forEach(field => {
-            this.typeColumns[type].push({
-                title: field.name + (field.localized ? ' [' + _app_.lang + ']' : ''),
-                id: field.name,
-                sortable: true
-            })
+            if( field.name !== 'createdBy') {
+                this.typeColumns[type].push({
+                    title: field.name + (field.localized ? ' [' + _app_.lang + ']' : ''),
+                    id: field.name,
+                    sortable: true
+                })
+            }
         })
 
         if (!typeDefinition.noUserRelation) {
@@ -919,7 +921,6 @@ class TypesContainer extends React.Component {
             const fieldData = this.createEditForm.state.fields
 
             const submitData = this.referencesToIds(fieldData)
-
 
             const callback = ({errors}) => {
                 // server side validation

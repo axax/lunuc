@@ -56,6 +56,11 @@ export const keyvalueResolver = (db) => ({
             }
         })
     },
+    createKeyValue: async ({key, value, createdBy}, {context}) => {
+        await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
+
+        return await GenericResolver.createEnity(db, context, 'KeyValue', {key, value, createdBy})
+    },
     setKeyValueGlobal: async ({key, value}, {context}) => {
         await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
 

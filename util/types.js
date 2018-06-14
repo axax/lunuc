@@ -63,6 +63,7 @@ export const getTypeQueries = (typeName) => {
 
     if (fields) {
         fields.map(({name, type, required, multi, reference, localized}) => {
+
             if (insertParams !== '') {
                 insertParams += ', '
                 updateParams += ', '
@@ -71,15 +72,20 @@ export const getTypeQueries = (typeName) => {
 
             let t = type || 'String'
 
+
             if (reference) {
                 t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
 
-                // TODO: field name might be different than name
-                query += ' ' + name + '{_id name}'
+                if( name !== 'createdBy') {
+                    // TODO: field name might be different than name
+                    query += ' ' + name + '{_id name}'
+                }
             } else {
                 query += ' ' + name
                 if (localized) {
-                    query += ' ' + name + '_localized{' + LANGUAGES.join(' ') + '}'
+                    if( name !== 'createdBy') {
+                        query += ' ' + name + '_localized{' + LANGUAGES.join(' ') + '}'
+                    }
                     const x = '$' + name + '_localized: LocalizedStringInput,'
                     insertParams += x
                     updateParams += x
@@ -136,7 +142,8 @@ export const getFormFields = (type) => {
             multi: !!field.multi,
             type: field.type,
             required: !!field.required,
-            localized: !!field.localized
+            localized: !!field.localized,
+            pickerField: field.pickerField
         }
     })
 
@@ -153,10 +160,17 @@ Hook.on('Types', ({types}) => {
         usedBy: ['core'],
         fields: [
             {
-                name: 'key'
+                name: 'key',
+                required: true
             },
             {
                 name: 'value'
+            },
+            {
+                name: 'createdBy',
+                pickerField: 'username',
+                type: 'User',
+                reference: true
             }
         ],
         selectParams: [{

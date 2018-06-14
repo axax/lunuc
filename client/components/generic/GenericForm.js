@@ -142,6 +142,7 @@ class GenericForm extends React.Component {
                                                name={k}
                                                label={o.label}
                                                multi={o.multi}
+                                               field={o.pickerField}
                                                type={o.type} placeholder={o.placeholder}/>
                         } else if (uitype === 'select') {
 

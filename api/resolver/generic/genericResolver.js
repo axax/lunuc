@@ -286,11 +286,23 @@ const GenericResolver = {
         if (!context.lang) {
             throw new Error('lang on context is missing')
         }
+        let createdBy, username
+        console.log(data)
+        if( data.createdBy && data.createdBy !== context.id ){
+            await Util.checkIfUserHasCapability(db, context, 'manage_other_users')
+            createdBy = data.createdBy
+
+            // TODO: resolve username
+            username = data.createdBy
+        }else{
+            createdBy = context.id
+            username = context.id
+        }
 
         const collection = db.collection(collectionName)
         const insertResult = await collection.insertOne({
             ...data,
-            createdBy: ObjectId(context.id)
+            createdBy: ObjectId(createdBy)
         })
 
         if (insertResult.insertedCount) {
@@ -317,8 +329,8 @@ const GenericResolver = {
                 _id: doc._id,
                 status: 'created',
                 createdBy: {
-                    _id: ObjectId(context.id),
-                    username: context.username
+                    _id: ObjectId(createdBy),
+                    username
                 },
                 ...newData
             }

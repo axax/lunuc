@@ -12,7 +12,7 @@ export const createUserRoles = async (db) => {
     const userRoleCollection = db.collection('UserRole')
     userRoleCollection.updateOne(
         {name: 'administrator'},
-        {$addToSet: {capabilities: {$each: ['view_app', 'access_admin_page', 'manage_types', 'manage_keyvalues', 'manage_cms_pages']}}},
+        {$addToSet: {capabilities: {$each: ['view_app', 'access_admin_page', 'manage_types', 'manage_keyvalues', 'manage_cms_pages', 'manage_other_users']}}},
         {
             upsert: true
         }
