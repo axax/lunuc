@@ -907,7 +907,6 @@ class TypesContainer extends React.Component {
 
 
     handleCreateEditData = (action) => {
-
         const closeModal = () => {
             this.setState({createEditDialog: false, dataToEdit: null})
         }
@@ -918,10 +917,18 @@ class TypesContainer extends React.Component {
                 return
             }
 
-            const fieldData = this.createEditForm.state.fields
+            const fieldData = Object.assign({},this.createEditForm.state.fields)
+            const formFields = getFormFields(this.pageParams.type)
+
+            // convert array to single value for not multivalue references
+            Object.keys(formFields).forEach(key=>{
+                const field = formFields[key]
+                if( field.reference && !field.multi && fieldData[key] && fieldData[key].length ){
+                    fieldData[key] = fieldData[key][0]
+                }
+            })
 
             const submitData = this.referencesToIds(fieldData)
-
             const callback = ({errors}) => {
                 // server side validation
                 if (errors && errors.length) {

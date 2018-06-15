@@ -143,7 +143,8 @@ export const getFormFields = (type) => {
             type: field.type,
             required: !!field.required,
             localized: !!field.localized,
-            pickerField: field.pickerField
+            pickerField: field.pickerField,
+            reference: !!field.reference
         }
     })
 
@@ -170,7 +171,8 @@ Hook.on('Types', ({types}) => {
                 name: 'createdBy',
                 pickerField: 'username',
                 type: 'User',
-                reference: true
+                reference: true,
+                required: true
             }
         ],
         selectParams: [{

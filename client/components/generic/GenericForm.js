@@ -47,12 +47,27 @@ class GenericForm extends React.Component {
         Object.keys(fields).forEach(k => {
             const field = fields[k]
             if (field.required) {
-                if (!theState.fields[k] || theState.fields[k].trim() === '') {
-                    fieldErrors[k] = _t('GenericForm.validation.required')
+
+                if (field.reference) {
+                    if (!theState.fields[k] || !theState.fields[k].length || !theState.fields[k][0]._id) {
+                        fieldErrors[k] = _t('GenericForm.validation.required')
+                    }
+                } else {
+                    if (field.localized) {
+                        config.LANGUAGES.forEach(lang => {
+                            const newKey = k + '_localized'
+                            if (!theState.fields[newKey] || !theState.fields[newKey][lang]) {
+                                fieldErrors[newKey + '.' + lang] = _t('GenericForm.validation.required')
+                            }
+                        })
+                    } else {
+                        if (!theState.fields[k] || theState.fields[k].trim() === '') {
+                            fieldErrors[k] = _t('GenericForm.validation.required')
+                        }
+                    }
                 }
             }
         })
-
         if (Object.keys(fieldErrors).length || Object.keys(this.state.fieldErrors).length) {
             this.setState({fieldErrors})
         }
@@ -138,6 +153,8 @@ class GenericForm extends React.Component {
                             return <FileDrop key={k}/>
                         } else if (uitype === 'type_picker') {
                             return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
+                                               error={!!this.state.fieldErrors[k]}
+                                               helperText={this.state.fieldErrors[k]}
                                                onChange={this.handleInputChange} key={k}
                                                name={k}
                                                label={o.label}

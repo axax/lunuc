@@ -4,7 +4,7 @@ import {ObjectId} from 'mongodb'
 
 
 export const keyvalueResolver = (db) => ({
-    keyValues: async ({keys, limit, sort, offset, all}, {context}) => {
+    keyValues: async ({keys, limit, sort, offset, filter, all}, {context}) => {
         const match = {}
 
         if (all) {
@@ -15,7 +15,7 @@ export const keyvalueResolver = (db) => ({
         if (keys) {
             match.key = {$in: keys}
         }
-        return await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {limit, offset, sort, match})
+        return await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {limit, offset, sort, filter, match})
     },
     keyValueGlobals: async ({keys, limit, sort, offset}, {context}) => {
         const match = {}

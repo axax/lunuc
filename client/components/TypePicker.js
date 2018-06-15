@@ -36,17 +36,18 @@ class TypePicker extends React.Component {
 
     render() {
         console.log('render TypePicker')
-        const {classes, placeholder, multi} = this.props
+        const {classes, placeholder, multi, error, helperText} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
         const field = this.props.field || 'name'
 
         return <div className={classes.root}>
 
-            { (!value.length || multi) && <TextField value={textValue} onChange={this.handleChange.bind(this)}
-                                                     onKeyDown={this.handleKeyDown.bind(this)}
-                                                     onFocus={() => this.setState({hasFocus: true})}
-                                                     onBlur={this.handleBlur.bind(this)} placeholder={placeholder}/> }
+            { (!value.length || multi) &&
+            <TextField error={error} helperText={helperText} value={textValue} onChange={this.handleChange.bind(this)}
+                       onKeyDown={this.handleKeyDown.bind(this)}
+                       onFocus={() => this.setState({hasFocus: true})}
+                       onBlur={this.handleBlur.bind(this)} placeholder={placeholder}/> }
 
             { value.map((v, i) =>
                 <Chip key={i} label={v[field]} onDelete={this.handleRemovePick.bind(this, i)}
@@ -160,6 +161,8 @@ class TypePicker extends React.Component {
 TypePicker.propTypes = {
     value: PropTypes.array,
     placeholder: PropTypes.string,
+    error: PropTypes.bool,
+    helperText: PropTypes.string,
     multi: PropTypes.bool,
     name: PropTypes.string.isRequired,
     field: PropTypes.string,
