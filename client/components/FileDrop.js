@@ -151,7 +151,7 @@ class FileDrop extends React.Component {
         })
 
         // Fetch FileList object
-        const files = e.target.files || e.dataTransfer.files;
+        const files = e.target.files || e.dataTransfer.files
         // Process all File objects
         const images = [], filteredFiles = []
         for (let i = 0, f; f = files[i]; i++) {
@@ -188,7 +188,7 @@ class FileDrop extends React.Component {
 
                 if (onFileContent) {
                     const reader = new FileReader()
-                    reader.readAsText(f, "UTF-8")
+                    reader.readAsText(f, 'UTF-8')
                     reader.onload = function (e) {
                         onFileContent(f, e.target.result)
                     }
@@ -233,13 +233,13 @@ class FileDrop extends React.Component {
             canvas.width = width
             canvas.height = height
 
-            const ctx = canvas.getContext("2d")
+            const ctx = canvas.getContext('2d')
             ctx.clearRect( 0, 0, width, height )
             ctx.drawImage(oriImg, 0, 0, width, height)
 
             //Some update on canvas
-            ctx.font = "30px serif"
-            ctx.fillStyle = "rgba(0, 0, 0, 0.4)"
+            ctx.font = '30px serif'
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
             ctx.fillText(file.name, 5, height - 8)
 
 
@@ -303,9 +303,9 @@ class FileDrop extends React.Component {
             xhr.open('POST', uploadTo, true)
             xhr.setRequestHeader('Authorization', Util.getAuthToken())
 
-            const fd = new FormData();
+            const fd = new FormData()
 
-            fd.append('blob', blob, file.name);
+            fd.append('blob', blob, file.name)
 
             xhr.send(fd)
 
@@ -321,7 +321,9 @@ FileDrop.propTypes = {
     onFileContent: PropTypes.func,
     onFiles: PropTypes.func,
     uploadTo: PropTypes.string,
-    resizeImages: PropTypes.bool
+    style: PropTypes.object,
+    resizeImages: PropTypes.bool,
+    multi: PropTypes.bool
 }
 
 export default withStyles(styles)(FileDrop)

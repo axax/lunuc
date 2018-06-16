@@ -137,7 +137,7 @@ class JsonDom extends React.Component {
         this.setState({hasReactError: true})
     }
 
-    componentWillReceiveProps(props) {
+    UNSAFE_componentWillReceiveProps(props) {
 
         this.addParentRef(props)
         if (this.props.scope !== props.scope) {
@@ -177,7 +177,7 @@ class JsonDom extends React.Component {
         return props.children !== this.props.children || this.props.template !== props.template || this.props.scope !== props.scope || this.props.script !== props.script || this.props.resolvedData !== props.resolvedData
     }
 
-    componentWillUpdate(props) {
+    UNSAFE_componentWillUpdate(props) {
         this.parseError = null
     }
 
@@ -426,7 +426,7 @@ class JsonDom extends React.Component {
             return tpl.call(data, this.props._parentRef).replace(/\t/g, '\\t')
         } catch (e) {
             //this.emitJsonError(e)
-            console.error("Error in renderString", e)
+            console.error('Error in renderString', e)
             return str
         }
     }
@@ -498,7 +498,7 @@ class JsonDom extends React.Component {
             }
         }else{
             // if script was already executed only refresh the scope
-            this.jsOnStack["refreshscope"].forEach(cb => {
+            this.jsOnStack['refreshscope'].forEach(cb => {
                 cb(scope)
             })
         }
@@ -544,6 +544,7 @@ class JsonDom extends React.Component {
 }
 
 JsonDom.propTypes = {
+    className: PropTypes.string,
     template: PropTypes.string,
     resolvedData: PropTypes.string,
     script: PropTypes.string,
@@ -554,6 +555,7 @@ JsonDom.propTypes = {
     editMode: PropTypes.bool,
     _parentRef: PropTypes.object,
     history: PropTypes.object,
+    children: PropTypes.object,
     id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another JsonDom */
     dynamic: PropTypes.bool
@@ -575,7 +577,7 @@ class JsonDomInput extends React.Component {
     shouldComponentUpdate(props){
         return props.value !== this.props.value
     }
-    componentWillReceiveProps(props) {
+    UNSAFE_componentWillReceiveProps(props) {
         if( props.value )
             this.setState({value: props.value})
     }
@@ -593,4 +595,10 @@ class JsonDomInput extends React.Component {
         return <input onChange={this.valueChange.bind(this)} value={this.state.value} {...rest} />
     }
 
+}
+
+
+JsonDomInput.propTypes = {
+    value: PropTypes.string,
+    onChange: PropTypes.func
 }

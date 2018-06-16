@@ -64,7 +64,7 @@ const UtilCms = {
                             type = t
                         }
 
-                        // restriction = if it is set to "user" only entries that belongs to the user are returned
+                        // restriction = if it is set to 'user' only entries that belongs to the user are returned
                         if (segment.restriction && segment.restriction === 'user') {
                             match = {createdBy: ObjectId(context.id)}
                         } else {
@@ -92,22 +92,39 @@ const UtilCms = {
                             if (!segment.ignoreError)
                                 throw e
                         }
+                    } else if (segment.keyValueGlobals) {
+                        const match = {key: {$in: segment.keyValueGlobals}}
+                        const result = await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value'], {
+                            match
+                        })
+                        const map = {}
+                        if (result.results) {
+                            result.results.map(entry => {
+                                console.log(entry)
+                                try {
+                                    map[entry.key] = JSON.parse(entry.value);
+                                } catch (e) {
+                                    map[entry.key] = entry.value
+                                }
+                            })
+                        }
+                        resolvedData[segment.key || 'keyValueGlobals'] = map
                     } else if (segment.keyValues) {
 
                         const map = {}
 
                         if (Util.isUserLoggedIn(context)) {
                             const match = {createdBy: ObjectId(context.id), key: {$in: segment.keyValues}}
-                            const result = await GenericResolver.entities(db, context, 'KeyValue', ["key", "value"], {
+                            const result = await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {
                                 match
                             })
 
                             if (result.results) {
-                                result.results.map(e => {
+                                result.results.map(entry => {
                                     try {
-                                        map[e.key] = JSON.parse(e.value);
+                                        map[entry.key] = JSON.parse(entry.value);
                                     } catch (e) {
-                                        map[e.key] = e.value
+                                        map[entry.key] = entry.value
                                     }
                                 })
                             }
@@ -128,7 +145,6 @@ const UtilCms = {
                                     }
                                 }
                             })
-                            console.log(map)
                         }
 
                         resolvedData[segment.key || 'keyValues'] = map

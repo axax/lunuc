@@ -4,6 +4,10 @@ import {ObjectId} from 'mongodb'
 import {getFormFields, getType} from 'util/types'
 import ClientUtil from 'client/util'
 import config from 'gen/config'
+import {
+    CAPABILITY_MANAGE_TYPES,
+    CAPABILITY_MANAGE_OTHER_USERS
+} from '../../data/capabilities'
 
 const {DEFAULT_LANGUAGE} = config
 
@@ -13,7 +17,7 @@ const GenericResolver = {
             throw new Error('lang on context is missing')
         }
         const startTime = new Date()
-        const typeDefinition = getType(collectionName)|| {}
+        const typeDefinition = getType(collectionName) || {}
 
         //Util.checkIfUserIsLoggedIn(context)
         let {limit, offset, page, match, filter, sort, projectResult} = options
@@ -35,7 +39,7 @@ const GenericResolver = {
         // default match
         if (!match) {
             // if not specific match is defined, only select items that belong to the current user
-            if (Util.userHasCapability(db, context, 'manage_types')) {
+            if (Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
                 match = {}
 
             } else {
@@ -143,9 +147,9 @@ const GenericResolver = {
                             projectResultData[key + '.' + item] = 1
 
                             // TODO: remove with mongo 3.6 and use pipeline inside lookup instead
-                            if( lookupFields[item] && lookupFields[item].localized ){
-                                tempLocalizedMapRemoveWithMongo36.push({field:key, lookupField: item })
-                                projectResultData[key + '.' + item+ '_localized.' + context.lang] = 1
+                            if (lookupFields[item] && lookupFields[item].localized) {
+                                tempLocalizedMapRemoveWithMongo36.push({field: key, lookupField: item})
+                                projectResultData[key + '.' + item + '_localized.' + context.lang] = 1
                             }
                         })
                         addFilter(keys[0], true)
@@ -196,7 +200,7 @@ const GenericResolver = {
                 projectResultData._id = 0
             }
             afterSort.push({$project: projectResultData})
-        }else{
+        } else {
             // also return extra fields
             if (!typeDefinition.noUserRelation) {
                 lookups.push({
@@ -264,15 +268,15 @@ const GenericResolver = {
 
 
         // TODO: remove with mongo 3.6 and use pipeline inside lookup instead
-        if( tempLocalizedMapRemoveWithMongo36.length && a[0].results){
+        if (tempLocalizedMapRemoveWithMongo36.length && a[0].results) {
             a[0].results.forEach(record => {
-                tempLocalizedMapRemoveWithMongo36.forEach(item=>{
-                    if( record[item.field].constructor === Array){
-                        record[item.field].forEach( subItem => {
-                            subItem[item.lookupField] = subItem[item.lookupField+'_localized'][context.lang]
+                tempLocalizedMapRemoveWithMongo36.forEach(item => {
+                    if (record[item.field].constructor === Array) {
+                        record[item.field].forEach(subItem => {
+                            subItem[item.lookupField] = subItem[item.lookupField + '_localized'][context.lang]
                         })
-                    }else{
-                        record[item.field][item.lookupField] = record[item.field][item.lookupField+'_localized'][context.lang]
+                    } else {
+                        record[item.field][item.lookupField] = record[item.field][item.lookupField + '_localized'][context.lang]
                     }
                 })
             })
@@ -287,14 +291,13 @@ const GenericResolver = {
             throw new Error('lang on context is missing')
         }
         let createdBy, username
-        console.log(data)
-        if( data.createdBy && data.createdBy !== context.id ){
-            await Util.checkIfUserHasCapability(db, context, 'manage_other_users')
+        if (data.createdBy && data.createdBy !== context.id) {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
             createdBy = data.createdBy
 
             // TODO: resolve username
             username = data.createdBy
-        }else{
+        } else {
             createdBy = context.id
             username = context.id
         }
@@ -340,32 +343,44 @@ const GenericResolver = {
 
         Util.checkIfUserIsLoggedIn(context)
 
-
-        const collection = db.collection(collectionName)
-
         if (!data._id) {
             throw new Error('Id is missing')
         }
 
-        const deletedResult = await collection.deleteOne({
+        const options = {
             _id: ObjectId(data._id)
-        })
+        }
+        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+            options.createdBy = ObjectId(context.id)
+        }
 
-        if (deletedResult.deletedCount) {
+        const collection = db.collection(collectionName)
+
+        const deletedResult = await collection.deleteOne(options)
+
+        if (deletedResult.deletedCount > 0) {
             return {
                 _id: data._id,
                 status: 'deleted'
             }
         } else {
-            return {
-                _id: data._id,
-                status: 'error'
-            }
+            throw new Error('Error deleting entry. You might not have premissions to manage other users')
         }
     },
     updateEnity: async (db, context, collectionName, data) => {
 
         Util.checkIfUserIsLoggedIn(context)
+
+        if (!data._id) {
+            throw new Error('Id is missing')
+        }
+
+        const options = {
+            _id: ObjectId(data._id)
+        }
+        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+            options.createdBy = ObjectId(context.id)
+        }
 
         const collection = db.collection(collectionName)
 
@@ -410,22 +425,19 @@ const GenericResolver = {
 
         // set timestamp
         dataSet.modifiedAt = dataSetDotNotation.modifiedAt = new Date().getTime()
-
         // try with dot notation for partial update
-        let result = (await collection.findOneAndUpdate({_id: ObjectId(data._id)}, {
+        let result = (await collection.findOneAndUpdate(options, {
             $set: dataSetDotNotation
         }, {returnOriginal: false}))
 
         if (result.ok !== 1) {
             // if it fails try again without dot notation
-            result = (await collection.findOneAndUpdate({_id: ObjectId(data._id)}, {
+            result = (await collection.findOneAndUpdate(options, {
                 $set: dataSet
             }, {returnOriginal: false}))
         }
-
-
-        if (result.ok !== 1) {
-            throw new ApiError(collectionName + ' could not be changed')
+        if (result.ok !== 1 || !result.lastErrorObject.updatedExisting) {
+            throw new Error(collectionName + ' could not be changed. You might not have premissions to manage other users')
         }
         return {
             ...data,

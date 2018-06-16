@@ -16,7 +16,6 @@ export default db => ({
             match.$or = [{title:{$regex: query, $options: 'i'}}, {$text:{$search: query}}]
             sort = {score: {$meta: 'textScore'}}
         }
-console.log( filter )
         const posts = await GenericResolver.entities(db, context, 'Post', ['title', 'body', 'search', 'searchScore'], {match, page, limit, offset, filter, sort})
 
         return posts

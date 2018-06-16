@@ -49,7 +49,11 @@ class GenericForm extends React.Component {
             if (field.required) {
 
                 if (field.reference) {
-                    if (!theState.fields[k] || !theState.fields[k].length || !theState.fields[k][0]._id) {
+                    let fieldValue = theState.fields[k]
+                    if( fieldValue && fieldValue.length){
+                        fieldValue = fieldValue[0]
+                    }
+                    if (!fieldValue || !fieldValue._id) {
                         fieldErrors[k] = _t('GenericForm.validation.required')
                     }
                 } else {

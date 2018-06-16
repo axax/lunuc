@@ -1,5 +1,13 @@
 import Util from '../util'
-
+import {
+    CAPABILITY_VIEW_APP,
+    CAPABILITY_ACCESS_ADMIN_PAGE,
+    CAPABILITY_MANAGE_TYPES,
+    CAPABILITY_MANAGE_CMS_PAGES,
+    CAPABILITY_MANAGE_KEYVALUES,
+    CAPABILITY_MANAGE_OTHER_USERS,
+    CAPABILITY_READ_EVERYTHING
+} from './capabilities'
 
 export const createAllInitialData = async (db) => {
     console.log('Inserting data...')
@@ -12,7 +20,23 @@ export const createUserRoles = async (db) => {
     const userRoleCollection = db.collection('UserRole')
     userRoleCollection.updateOne(
         {name: 'administrator'},
-        {$addToSet: {capabilities: {$each: ['view_app', 'access_admin_page', 'manage_types', 'manage_keyvalues', 'manage_cms_pages', 'manage_other_users']}}},
+        {
+            $addToSet: {
+                capabilities: {
+                    $each: [CAPABILITY_VIEW_APP,
+                        CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_CMS_PAGES,
+                        CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_OTHER_USERS]
+                }
+            }
+        },
+        {
+            upsert: true
+        }
+    )
+
+    userRoleCollection.updateOne(
+        {name: 'contributor'},
+        {$addToSet: {capabilities: {$each: [CAPABILITY_VIEW_APP, CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_CMS_PAGES]}}},
         {
             upsert: true
         }
@@ -20,7 +44,7 @@ export const createUserRoles = async (db) => {
 
     userRoleCollection.updateOne(
         {name: 'subscriber'},
-        {$addToSet: {capabilities: {$each: ['view_app']}}},
+        {$addToSet: {capabilities: {$each: [CAPABILITY_VIEW_APP]}}},
         {
             upsert: true
         }
@@ -29,7 +53,7 @@ export const createUserRoles = async (db) => {
 
     userRoleCollection.updateOne(
         {name: 'demo'},
-        {$addToSet: {capabilities: {$each: ['view_app', 'read_everythin']}}},
+        {$addToSet: {capabilities: {$each: [CAPABILITY_VIEW_APP, CAPABILITY_READ_EVERYTHING]}}},
         {
             upsert: true
         }

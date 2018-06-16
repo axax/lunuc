@@ -4,6 +4,7 @@ import {auth} from '../auth'
 import {ApiError, ValidationError} from '../error'
 import {speechLanguages, translateLanguages} from '../data/common'
 import GenericResolver from './generic/genericResolver'
+import Cache from 'util/cache'
 
 
 // deprecrated
@@ -218,6 +219,11 @@ export const userResolver = (db) => ({
         if (result.ok !== 1) {
             throw new ApiError('User could not be changed')
         }
+
+
+        // clear cache
+        Cache.set(null, 'User' + _id)
+
         return result.value
 
     },
@@ -234,7 +240,10 @@ export const userResolver = (db) => ({
             if (result.ok !== 1) {
                 throw new ApiError('User could not be changed')
             }
-            //enhanceUserSettings(result.value)
+
+            // clear cache
+            Cache.set(null, 'User' + context.id)
+
             return result.value
         }
     },

@@ -183,89 +183,90 @@ Hook.on('Types', ({types}) => {
     }
 
     types.KeyValueGlobal = {
-        "name": "KeyValueGlobal",
-        "usedBy": ["core"],
-        "fields": [
+        name: 'KeyValueGlobal',
+        usedBy: ['core'],
+        fields: [
             {
-                "name": "key"
+                name: 'key',
+                required: true
             },
             {
-                "name": "value"
+                name: 'value'
             }
         ]
     }
 
 
     types.UserRole = {
-        "name": "UserRole",
-        "noUserRelation": true,
-        "usedBy": ["core"],
-        "fields": [
+        'name': 'UserRole',
+        'noUserRelation': true,
+        'usedBy': ['core'],
+        'fields': [
             {
-                "name": "name"
+                'name': 'name'
             },
             /*{
-                "name": "capabilities"
+                'name': 'capabilities'
             }*/
         ]
     }
 
     types.User = {
-        "name": "User",
-        "noUserRelation": true,
-        "usedBy": ["core"],
-        "fields": [
+        'name': 'User',
+        'noUserRelation': true,
+        'usedBy': ['core'],
+        'fields': [
             {
-                "name": "username",
-                "required": true
+                'name': 'username',
+                'required': true
             },
             {
-                "name": "email",
-                "required": true
+                'name': 'email',
+                'required': true
             },
             {
-                "name": "password",
-                "required": true
+                'name': 'password',
+                'required': true
             },
             {
-                "name": "role",
-                "type": "UserRole",
-                "reference": true
+                'name': 'role',
+                'type': 'UserRole',
+                'reference': true
             }
         ]
     }
 
 
     types.Media = {
-        "name": "Media",
-        "usedBy": ["core"],
-        "fields": [
+        'name': 'Media',
+        'usedBy': ['core'],
+        'fields': [
             {
-                "name": "name"
+                'name': 'name'
             },
             {
-                "name": "mimeType"
+                'name': 'mimeType'
             }
         ]
     }
 
     types.CmsPage = {
-        "name": "CmsPage",
-        "clonable": true,
-        "usedBy": ["core"],
-        "fields": [
+        'name': 'CmsPage',
+        'clonable': true,
+        'usedBy': ['core'],
+        'fields': [
             {
-                "name": "slug",
-                "required": true,
-                "clone": "${slug}_copy"
+                'name': 'slug',
+                'required': true,
+                'clone': '${slug}_copy'
             },
             {
-                "name": "public",
-                "type": "Boolean"
+                'name': 'public',
+                'type': 'Boolean'
             },
             {
-                "name": "urlSensitiv",
-                "type": "Boolean"
+                'name': 'urlSensitiv',
+                'type': 'Boolean'
             }
         ]
     }

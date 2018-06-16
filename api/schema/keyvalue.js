@@ -23,11 +23,16 @@ export const keyvalueSchemaRaw = `
     
 		
 	type Mutation {
-		setKeyValue(key: String!, value: String): KeyValue	
 		createKeyValue(key: String!, value: String, createdBy: ID!): KeyValue	
-		deleteKeyValue(key: String!): KeyValue
+		updateKeyValue(_id: ID!, key: String, value: String, createdBy: ID): KeyValue
+		deleteKeyValue(_id: ID!): KeyValue
+		
+		setKeyValue(key: String!, value: String): KeyValue	
+		deleteKeyValueByKey(key: String!): KeyValue
 		
 		
-		createKeyValueGlobals (key: String!, value: String): KeyValue
+		createKeyValueGlobal(key: String!, value: String): KeyValue
+		updateKeyValueGlobal(_id: ID!, key: String, value: String): KeyValue
+		deleteKeyValueGlobal(_id: ID!): KeyValue
 	}
 `

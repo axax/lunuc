@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt'
 import {ObjectId} from 'mongodb'
 import path from 'path'
 import fs from 'fs'
+import Cache from 'util/cache'
 
 
 const PASSWORD_MIN_LENGTH = 5
@@ -80,13 +81,26 @@ const Util = {
     },
     userHasCapability: async (db, context, capability) => {
         if (context && context.id) {
-            // TODO: Cache implementation
-            const user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
-            if (user && user.role) {
-                const userRole = (await db.collection('UserRole').findOne({_id: ObjectId(user.role)}))
-                return userRole.capabilities.includes(capability)
+
+            const cacheKeyUser = 'User' + context.id
+            let user = Cache.get(cacheKeyUser)
+
+            if( !user ){
+                user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
+                Cache.set(cacheKeyUser, user, 6000000) // cache expires in 100 min
             }
 
+            if (user && user.role) {
+                const cacheKeyUserRole = 'UserRole' + user.role
+                let userRole = Cache.get(cacheKeyUserRole)
+
+                if( !userRole ){
+                    userRole = (await db.collection('UserRole').findOne({_id: ObjectId(user.role)}))
+                    Cache.set(cacheKeyUserRole, userRole, 6000000) // cache expires in 100 min
+                }
+
+                return userRole.capabilities.includes(capability)
+            }
         }
         return false
     },

@@ -1,21 +1,68 @@
 import GenericResolver from './generic/genericResolver'
 import Util from '../util'
 import {ObjectId} from 'mongodb'
-
+import {
+    CAPABILITY_MANAGE_TYPES
+} from '../data/capabilities'
 
 export const keyvalueResolver = (db) => ({
-    keyValues: async ({keys, limit, sort, offset, filter, all}, {context}) => {
+    keyValues: async ({keys, limit, sort, offset, page, filter, all}, {context}) => {
         const match = {}
 
         if (all) {
-            await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
         } else {
             match.createdBy = ObjectId(context.id)
         }
         if (keys) {
             match.key = {$in: keys}
         }
-        return await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {limit, offset, sort, filter, match})
+        return await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {
+            limit,
+            offset,
+            page,
+            sort,
+            filter,
+            match
+        })
+    },
+    createKeyValue: async ({key, value, createdBy}, {context}) => {
+        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+
+        return await GenericResolver.createEnity(db, context, 'KeyValue', {key, value, createdBy})
+    },
+    updateKeyValue: async ({_id, key, value, createdBy}, {context}) => {
+        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+
+        return await GenericResolver.updateEnity(db, context, 'KeyValue', {
+            _id,
+            key,
+            value,
+            createdBy: (createdBy ? ObjectId(createdBy) : createdBy)
+        })
+    },
+    deleteKeyValue: async ({_id}, {context}) => {
+        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+        return GenericResolver.deleteEnity(db, context, 'KeyValue', {_id})
+    },
+    createKeyValueGlobal: async ({key, value}, {context}) => {
+        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+        return await GenericResolver.createEnity(db, context, 'KeyValueGlobal', {key, value})
+    },
+    updateKeyValueGlobal: async ({_id, key, value}, {context}) => {
+        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+        return await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {_id, key, value})
+    },
+    deleteKeyValueGlobal: async ({_id}, {context}) => {
+        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+        return await GenericResolver.deleteEnity(db, context, 'KeyValueGlobal', {_id})
+    },
+    setKeyValueGlobal: async ({key, value}, {context}) => {
+        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+
+        return db.collection('KeyValueGlobal').updateOne({
+            key
+        }, {$set: {key, value}}, {upsert: true})
     },
     keyValueGlobals: async ({keys, limit, sort, offset}, {context}) => {
         const match = {}
@@ -56,19 +103,7 @@ export const keyvalueResolver = (db) => ({
             }
         })
     },
-    createKeyValue: async ({key, value, createdBy}, {context}) => {
-        await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
-
-        return await GenericResolver.createEnity(db, context, 'KeyValue', {key, value, createdBy})
-    },
-    setKeyValueGlobal: async ({key, value}, {context}) => {
-        await Util.checkIfUserHasCapability(db, context, 'manage_keyvalues')
-
-        return db.collection('KeyValueGlobal').updateOne({
-            key
-        }, {$set: {key, value}}, {upsert: true})
-    },
-    deleteKeyValue: async ({key}, {context}) => {
+    deleteKeyValueByKey: async ({key}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
 
         const collection = db.collection('KeyValue')
@@ -86,5 +121,5 @@ export const keyvalueResolver = (db) => ({
                 status: 'error'
             }
         }
-    }
+    },
 })

@@ -90,7 +90,7 @@ export function withKeyValues(WrappedComponent, keys) {
         kvUser: PropTypes.object.isRequired,
         loading: PropTypes.bool,
         setKeyValue: PropTypes.func.isRequired,
-        deleteKeyValue: PropTypes.func.isRequired,
+        deleteKeyValueByKey: PropTypes.func.isRequired,
     }
 
     const gqlKeyValueQuery = gql`query{ 
@@ -105,8 +105,8 @@ export function withKeyValues(WrappedComponent, keys) {
       }`
 
     const gqlKeyValueDelete = gql`
-      mutation deleteKeyValue($key: String!) {
-        deleteKeyValue(key: $key){
+      mutation deleteKeyValueByKey($key: String!) {
+        deleteKeyValueByKey(key: $key){
             key status
         }
       }`
@@ -175,7 +175,7 @@ export function withKeyValues(WrappedComponent, keys) {
         }),
         graphql(gqlKeyValueDelete, {
             props: ({ownProps, mutate}) => ({
-                deleteKeyValue: ({key}) => {
+                deleteKeyValueByKey: ({key}) => {
                     if (!ownProps.kvUser.isAuthenticated) {
                         return new Promise((res) => {
                             setKeyValueToLS(key, null)
@@ -186,19 +186,19 @@ export function withKeyValues(WrappedComponent, keys) {
                         variables: {key},
                         optimisticResponse: {
                             __typename: 'Mutation',
-                            deleteKeyValue: {
+                            deleteKeyValueByKey: {
                                 status: 'deleting',
                                 key,
                                 __typename: 'KeyValue'
                             }
                         },
-                        update: (proxy, {data: {deleteKeyValue}}) => {
+                        update: (proxy, {data: {deleteKeyValueByKey}}) => {
                             // Read the data from our cache for this query.
                             const data = proxy.readQuery({query: gqlKeyValueQuery})
                             // Add our note from the mutation to the end.
-                            const idx = data.keyValues.results.findIndex(x => x.key === deleteKeyValue.key)
+                            const idx = data.keyValues.results.findIndex(x => x.key === deleteKeyValueByKey.key)
                             if (idx >= 0) {
-                                if (deleteKeyValue.status == 'deleting') {
+                                if (deleteKeyValueByKey.status == 'deleting') {
                                     data.keyValues.results[idx].status = 'deleting'
                                 } else {
                                     data.keyValues.results.splice(idx, 1)

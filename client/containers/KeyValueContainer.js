@@ -5,7 +5,7 @@ import {withKeyValues} from './generic/withKeyValues'
 import PropTypes from 'prop-types'
 
 
-const KeyValueContainer = ({keyValues, loading, setKeyValue, deleteKeyValue}) => {
+const KeyValueContainer = ({keyValues, loading, setKeyValue, deleteKeyValueByKey}) => {
 
 	const handelValueChange = (key, e) => {
         setKeyValue({
@@ -18,7 +18,7 @@ const KeyValueContainer = ({keyValues, loading, setKeyValue, deleteKeyValue}) =>
 	}
 
 	const handelDeletion = (key) => {
-        deleteKeyValue({key}).then(({data}) => {
+        deleteKeyValueByKey({key}).then(({data}) => {
 		}).catch((e) => {
 			console.log(e)
 		})
@@ -56,7 +56,7 @@ KeyValueContainer.propTypes = {
     keyValues: PropTypes.object,
     keyValueMap: PropTypes.object,
     setKeyValue: PropTypes.func.isRequired,
-    deleteKeyValue: PropTypes.func.isRequired
+    deleteKeyValueByKey: PropTypes.func.isRequired
 }
 
 
