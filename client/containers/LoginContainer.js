@@ -12,6 +12,7 @@ import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import config from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
+import Util from 'client/util'
 
 class LoginContainer extends React.Component {
     state = {
@@ -52,7 +53,6 @@ class LoginContainer extends React.Component {
         }).then(response => {
             this.setState({loading: false})
             if (response.data && response.data.login) {
-                this.setState({error: response.data.login.error})
 
                 if (!response.data.login.error) {
 
@@ -61,19 +61,36 @@ class LoginContainer extends React.Component {
                     errorHandlerAction.clearErrors()
                     this.setState({redirectToReferrer: true})
 
+                }else{
+                    this.setState({error: response.data.login.error})
                 }
             }
         })
     }
 
     render() {
-        const {from} = (this.props.location && this.props.location.state) || {from: {pathname: config.ADMIN_BASE_URL}}
+        let from
+
+        if( this.props.location && this.props.location.state ){
+            from = this.props.location.state.from
+        }
+
+        if (!from) {
+            if (window.location.hash) {
+                const params = Util.extractQueryParams(window.location.hash.substring(1))
+                if (params.forward) {
+                    from = {pathname: params.forward}
+                }
+            }
+        }
+        if (!from) {
+            from = {pathname: config.ADMIN_BASE_URL}
+        }
+
         const {redirectToReferrer, loading, username, password, error} = this.state
 
         if (redirectToReferrer) {
-            return (
-                <Redirect to={from} push={false}/>
-            )
+            return <Redirect to={from} push={false}/>
         }
 
         return (
@@ -117,7 +134,8 @@ class LoginContainer extends React.Component {
 
                                 <div style={{textAlign: 'right'}}>
                                     <SimpleButton variant="raised" color="primary"
-                                            showProgress={loading} onClick={this.login.bind(this)}>Login</SimpleButton>
+                                                  showProgress={loading}
+                                                  onClick={this.login.bind(this)}>Login</SimpleButton>
                                 </div>
                                 <Typography>Don&apos;t have an account? <Link to={config.ADMIN_BASE_URL + '/signup'}>Sign
                                     up</Link></Typography>

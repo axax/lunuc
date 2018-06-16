@@ -18,8 +18,8 @@ const SystemContainer = (props) => <Async {...props} load={import(/* webpackChun
 const DbDumpContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/DbDumpContainer')} />
 const TypesContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/TypesContainer')} />
 const HomeContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/HomeContainer')} />
-
-
+const ErrorPage = (props) => <Async {...props}
+                                    load={import(/* webpackChunkName: "misc" */ '../../components/layout/ErrorPage')}/>
 
 class Routes extends React.Component {
 
@@ -85,8 +85,7 @@ class Routes extends React.Component {
         return <Router history={this.history}>
             <div id="router">
                 {this.routes.map((o, i) => {
-
-                    if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || capabilities.indexOf('access_admin_page') >= 0) {
+                    if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || o.path.startsWith(ADMIN_BASE_URL+'/login') || capabilities.indexOf('access_admin_page') >= 0) {
                         if (o.private) {
                             return <PrivateRoute key={i} path={this.pathPrefix + o.path}
                                                  isAuthenticated={isAuthenticated}
@@ -97,6 +96,9 @@ class Routes extends React.Component {
                                           component={o.component}
                                           render={o.render}/>
                         }
+                    }else{
+                        return <Route key={i} path={this.pathPrefix + o.path} exact={o.exact}
+                                      component={ErrorPage}/>
                     }
                 })}
             </div>

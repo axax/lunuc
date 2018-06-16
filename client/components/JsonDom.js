@@ -555,7 +555,7 @@ JsonDom.propTypes = {
     editMode: PropTypes.bool,
     _parentRef: PropTypes.object,
     history: PropTypes.object,
-    children: PropTypes.object,
+    children: PropTypes.any,
     id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another JsonDom */
     dynamic: PropTypes.bool
