@@ -128,7 +128,7 @@ class ResponsiveDrawer extends React.Component {
                 </List>
                 <Divider />
             </div>
-        );
+        )
 
         return (
             <div className={classes.root}>
@@ -195,7 +195,7 @@ ResponsiveDrawer.propTypes = {
     theme: PropTypes.object.isRequired,
     menuItems: PropTypes.array.isRequired,
     isAuthenticated: PropTypes.bool,
-    headerRight: PropTypes.object,
+    headerRight: PropTypes.any,
     title: PropTypes.string
 }
 

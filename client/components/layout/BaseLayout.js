@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
-import {Button, ResponsiveDrawerLayout} from 'ui/admin'
+import {Button, ResponsiveDrawerLayout, HomeIconButton} from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
@@ -43,15 +43,23 @@ class BaseLayout extends React.Component {
             <ResponsiveDrawerLayout title="lunuc"
                                     menuItems={this.menuItems}
                                     headerRight={
-                                        isAuthenticated ?
-                                            <Button color="inherit" size="small" onClick={() => {
-                                                localStorage.removeItem('token')
-                                                userActions.setUser(null, false)
-                                                history.push('/')
-                                            }}>Logout</Button>
+                                        [
+                                            (isAuthenticated ?
+                                                <Button key="logout" color="inherit" size="small" onClick={() => {
+                                                    localStorage.removeItem('token')
+                                                    userActions.setUser(null, false)
+                                                    history.push('/')
+                                                }}>Logout</Button>
 
-                                            : <Button color="inherit" size="small"
-                                                      onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
+                                                : <Button key="login" color="inherit" size="small"
+                                                          onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>),
+                                            <HomeIconButton
+                                                key="home"
+                                                onClick={() => {
+                                                    history.push('/')
+                                                }}
+                                                color="inherit"/>
+                                        ]
                                     }>
 
                 <ErrorHandler />

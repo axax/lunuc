@@ -10,7 +10,7 @@ const Util = {
         try{
             return eval(str)
         }catch (e){
-            console.log(e)
+           // console.log(e)
         }
 
         return ''
