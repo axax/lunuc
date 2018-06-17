@@ -109,10 +109,19 @@ you can subcribe to data changes with $ character placed in front of the type.
                     
 ### Template
 
-Use can use this.escape within a template string literal to make sure the json doesn't break with after inserting the value.
+Here are some useful helper methods that can be used with in the template 
+
+**this.escape** can be use to make sure the json doesn't break after inserting the value.
 
 ```json
 "data": "$.x{this.escape(body)}"       
+```    
+
+
+**this.tryCatch** to eval a string and return result. errors are ignored and in case of an error an empty string is returned
+
+```json
+"c": "Category ${this.tryCatch('this.filter.parts.categories[0]')}"   
 ```    
 
 ### Script

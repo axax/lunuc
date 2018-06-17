@@ -5,6 +5,7 @@
   "shop.cart.is.empty":"Der Warenkorb ist leer",
   "shop.myaccount":"Mein Konto",
   "shop.myaccount.address":"Adresse",
+  "shop.myaccount.save":"Speichern",
   "shop.myaccount.address.name": "Name",
   "shop.myaccount.address.firstname": "Vorname",
   "shop.myaccount.address.street": "Strasse",

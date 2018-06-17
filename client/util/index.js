@@ -5,6 +5,16 @@ const Util = {
         }
         return str
     },
+    /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
+    tryCatch: function(str){
+        try{
+            return eval(str)
+        }catch (e){
+            console.log(e)
+        }
+
+        return ''
+    },
     getAuthToken: () => {
         // get the authentication token from local storage if it exists
         const token = localStorage.getItem('token')

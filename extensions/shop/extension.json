@@ -1,4 +1,5 @@
 {
   "name": "Shop",
-  "description": "basic shop implementation"
+  "description": "basic shop implementation",
+  "author": "Simon Schärer"
 }

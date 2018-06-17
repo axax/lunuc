@@ -10,7 +10,8 @@ import Async from 'client/components/Async'
 import {getKeyValueFromLS} from '../containers/generic/withKeyValues'
 
 
-const ContentEditable = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/generic/ContentEditable')} />
+const ContentEditable = (props) => <Async {...props}
+                                          load={import(/* webpackChunkName: "admin" */ '../components/generic/ContentEditable')}/>
 
 
 const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change']
@@ -77,7 +78,7 @@ class JsonDom extends React.Component {
         return root
     }
     jsGetComponent = (id) => {
-        if( !id ){
+        if (!id) {
             return null
         }
 
@@ -112,7 +113,7 @@ class JsonDom extends React.Component {
             nodeToRefresh = this
         }
         nodeToRefresh.json = null
-        if( !noScript ) {
+        if (!noScript) {
             nodeToRefresh.runScript = true
             nodeToRefresh.jsOnStack = {}
         }
@@ -181,7 +182,7 @@ class JsonDom extends React.Component {
         this.parseError = null
     }
 
-    componentWillUnmount(){
+    componentWillUnmount() {
         if (this.jsOnStack['unmount']) {
             this.jsOnStack['unmount'].forEach(cb => {
                 if (cb) {
@@ -274,7 +275,7 @@ class JsonDom extends React.Component {
                     if (!tpl.call({scope: this.scope})) {
                         return
                     }
-                }catch(e){
+                } catch (e) {
                     console.log(e, this.scope)
                     return
                 }
@@ -291,8 +292,8 @@ class JsonDom extends React.Component {
                 } else {
                     data = d
                 }
-                if (!data || data.constructor !== Array) return ''
 
+                if (!data || data.constructor !== Array) return ''
                 let {s} = $loop
                 if (!s) s = 'loop'
                 /*
@@ -316,7 +317,11 @@ class JsonDom extends React.Component {
                         // back to json
                         loopChild._index = childIdx
                         // remove tabs and parse
-                        const json = JSON.parse(tpl.call({[s]: loopChild,escape: Util.escapeForJson}).replace(/\t/g, '\\t'))
+                        const json = JSON.parse(tpl.call({
+                            [s]: loopChild,
+                            escape: Util.escapeForJson,
+                            tryCatch: Util.tryCatch
+                        }).replace(/\t/g, '\\t'))
 
                         const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
                         h.push(this.parseRec(json, key, {...childScope, [s]: loopChild}))
@@ -421,9 +426,9 @@ class JsonDom extends React.Component {
 
     renderString(str, data) {
         try {
-            const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this; const parent=arguments[0];return `' + str + '`;')
+            const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const parent = this.parent;return `' + str + '`;')
             //.replace(/(\r\n|\n|\r)/g,"");
-            return tpl.call(data, this.props._parentRef).replace(/\t/g, '\\t')
+            return tpl.call({data, parent: this.props._parentRef, tryCatch: Util.tryCatch.bind(data)}).replace(/\t/g, '\\t')
         } catch (e) {
             //this.emitJsonError(e)
             console.error('Error in renderString', e)
@@ -496,7 +501,7 @@ class JsonDom extends React.Component {
             if (jsError) {
                 return <div>Error in the script: <strong>{jsError}</strong></div>
             }
-        }else{
+        } else {
             // if script was already executed only refresh the scope
             this.jsOnStack['refreshscope'].forEach(cb => {
                 cb(scope)
@@ -574,11 +579,13 @@ class JsonDomInput extends React.Component {
             value: props.value
         }
     }
-    shouldComponentUpdate(props){
+
+    shouldComponentUpdate(props) {
         return props.value !== this.props.value
     }
+
     UNSAFE_componentWillReceiveProps(props) {
-        if( props.value )
+        if (props.value)
             this.setState({value: props.value})
     }
 

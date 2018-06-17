@@ -3,6 +3,14 @@ export const systemSchemaRaw = `
         response: String
     }
     
+    type MailResult { 
+        response: String
+    }
+    
+    type PingResult { 
+        response: String
+    }
+    
     type DbDump {
         name: String
         createdAt: Float
@@ -36,8 +44,10 @@ export const systemSchemaRaw = `
     type Query {
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!): RunResult
+    	sendMail(recipient: String!, subject: String, body: String): MailResult
     	dbDumps: DbDumpResult   
-    	mediaDumps: MediaDumpResult   
+    	mediaDumps: MediaDumpResult  
+    	ping: PingResult
     }
     
       

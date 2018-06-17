@@ -771,7 +771,7 @@ class TypesContainer extends React.Component {
         } else {
             this.handleFilterTimeout = setTimeout(() => {
                 this.runFilter(value)
-            }, 1000)
+            }, 500)
         }
 
     }

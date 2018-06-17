@@ -45,6 +45,17 @@ const Util = {
         }, {})
 
     },
+    keyValueGlobalMap: async (db, context, keys) => {
+        const keyvalues = (await db.collection('KeyValueGlobal').find({
+            key: {$in: keys}
+        }).toArray())
+
+        return keyvalues.reduce((map, obj) => {
+            map[obj.key] = obj.value
+            return map
+        }, {})
+
+    },
     hashPassword: (pw) => {
         return bcrypt.hashSync(pw, bcrypt.genSaltSync(10))
     },
