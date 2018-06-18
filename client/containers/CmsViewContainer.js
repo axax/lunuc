@@ -265,7 +265,7 @@ class CmsViewContainer extends React.Component {
             this.state.settings.fixedLayout !== state.settings.fixedLayout
     }
 
-    componentWillReceiveProps(props) {
+    UNSAFE_componentWillReceiveProps(props) {
         this.setUpSubsciptions(props)
         // in case props change and differ from inital props
         if (props.cmsPage) {
@@ -318,7 +318,6 @@ class CmsViewContainer extends React.Component {
         const startTime = new Date()
         const jsonDom = <JsonDom id={id}
                                  dynamic={dynamic}
-                                 children={children}
                                  className={className}
                                  _parentRef={_parentRef}
                                  template={template}
@@ -328,7 +327,7 @@ class CmsViewContainer extends React.Component {
                                  scope={JSON.stringify(scope)}
                                  history={history}
                                  setKeyValue={this.setKeyValue.bind(this)}
-                                 onChange={this.handleTemplateSaveChange}/>
+                                 onChange={this.handleTemplateSaveChange}>{children}</JsonDom>
         let content
         if (!editMode) {
             content = jsonDom
@@ -504,8 +503,10 @@ class CmsViewContainer extends React.Component {
 
 
 CmsViewContainer.propTypes = {
+    className: PropTypes.string,
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
+    children: PropTypes.any,
     cmsPage: PropTypes.object,
     cmsPages: PropTypes.object,
     keyValue: PropTypes.object,

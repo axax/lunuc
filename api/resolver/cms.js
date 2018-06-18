@@ -170,7 +170,7 @@ export const cmsResolver = (db) => ({
                 cacheKey: query,
                 /* Return the current user settings of the view
                 */
-                settings: ""
+                settings: ''
             }
         } else {
 

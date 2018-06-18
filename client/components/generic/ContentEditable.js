@@ -105,6 +105,7 @@ class ContentEditable extends React.Component {
     }
 
     handleKeyUp(e) {
+        console.log(e.key,e.getModifierState("Meta"))
         if (e.getModifierState("Control") || e.key === "Shift") {
             // ignore if Control is pressed
             return

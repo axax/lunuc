@@ -102,7 +102,7 @@ const UtilCms = {
                             result.results.map(entry => {
                                 console.log(entry)
                                 try {
-                                    map[entry.key] = JSON.parse(entry.value);
+                                    map[entry.key] = JSON.parse(entry.value)
                                 } catch (e) {
                                     map[entry.key] = entry.value
                                 }
@@ -122,7 +122,7 @@ const UtilCms = {
                             if (result.results) {
                                 result.results.map(entry => {
                                     try {
-                                        map[entry.key] = JSON.parse(entry.value);
+                                        map[entry.key] = JSON.parse(entry.value)
                                     } catch (e) {
                                         map[entry.key] = entry.value
                                     }
@@ -138,7 +138,7 @@ const UtilCms = {
                             segment.keyValues.forEach(key => {
                                 if (nosessionJson[key]) {
                                     try {
-                                        map[key] = JSON.parse(nosessionJson[key]);
+                                        map[key] = JSON.parse(nosessionJson[key])
                                     } catch (e) {
                                         map[key] = nosessionJson[key]
                                     }

@@ -36,7 +36,7 @@ class UserDataContainer extends React.PureComponent {
 
 	}
 
-	componentWillMount() {
+    UNSAFE_componentWillMount() {
 		this.getUserData()
 	}
 

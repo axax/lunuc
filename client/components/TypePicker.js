@@ -30,7 +30,7 @@ class TypePicker extends React.Component {
         }
     }
 
-    componentWillReceiveProps(props) {
+    UNSAFE_componentWillReceiveProps(props) {
         this.setState({value: props.value || [], hasFocus: false})
     }
 
@@ -111,11 +111,11 @@ class TypePicker extends React.Component {
         const {data, selIdx} = this.state
         if (data && data.results) {
             const l = data.results.length
-            if (e.key === "ArrowDown") {
+            if (e.key === 'ArrowDown') {
                 this.setState({selIdx: selIdx >= l - 1 ? 0 : selIdx + 1})
-            } else if (e.key === "ArrowUp") {
+            } else if (e.key === 'ArrowUp') {
                 this.setState({selIdx: selIdx <= 0 ? l - 1 : selIdx - 1})
-            } else if (e.key === "Enter") {
+            } else if (e.key === 'Enter') {
                 this.handlePick(selIdx)
             }
         }

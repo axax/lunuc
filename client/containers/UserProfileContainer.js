@@ -127,7 +127,7 @@ class UserProfileContainer extends React.Component {
     }
 
 
-    componentWillReceiveProps(nextProps) {
+    UNSAFE_componentWillReceiveProps(nextProps) {
         if (nextProps.me)
             this.setState({username: nextProps.me.username, note: nextProps.me.note})
     }

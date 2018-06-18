@@ -54,13 +54,13 @@ const Util = {
             '<': '&lt;',
             '>': '&gt;',
             '"': '&quot;',
-            "'": '&#39;',
+            '\'': '&#39;',
             '/': '&#x2F;',
             '`': '&#x60;',
             '=': '&#x3D;'
         }
         return String(str).replace(/[&<>"'`=\/]/g, function (s) {
-            return entityMap[s];
+            return entityMap[s]
         })
     },
     isOnServer: () => {
@@ -86,14 +86,14 @@ const Util = {
 
         var a = query.split('&')
 
-        var b = {};
+        var b = {}
         for (var i = 0; i < a.length; ++i) {
             var p = a[i].split('=', 2)
             if (p[0]) {
                 if (p.length === 1)
-                    b[p[0]] = ""
+                    b[p[0]] = ''
                 else
-                    b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "))
+                    b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, ' '))
             }
         }
         return b
@@ -127,14 +127,14 @@ const Util = {
         return {parts, rest}
     },
     addStyle(url) {
-        const link = document.createElement("link")
-        link.type = "text/css"
-        link.rel = "stylesheet"
+        const link = document.createElement('link')
+        link.type = 'text/css'
+        link.rel = 'stylesheet'
         link.href = url
         document.head.appendChild(link)
     },
     addScript(url) {
-        const script = document.createElement("script")
+        const script = document.createElement('script')
         script.src = url
         document.head.appendChild(script)
     },

@@ -169,7 +169,8 @@ DbDumpContainer.propTypes = {
     dbDumps: PropTypes.object,
     createDbDump: PropTypes.func.isRequired,
     createMediaDump: PropTypes.func.isRequired,
-    loading: PropTypes.bool
+    loading: PropTypes.bool,
+    mediaDumps: PropTypes.array
 }
 
 const gqlQuery = gql`query{dbDumps{results{name createdAt size}}}`

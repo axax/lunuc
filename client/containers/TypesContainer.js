@@ -123,7 +123,7 @@ class TypesContainer extends React.Component {
             this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
     }
 
-    componentWillReceiveProps(props) {
+    UNSAFE_componentWillReceiveProps(props) {
         const pageParams = this.determinPageParams(props)
 
         if (this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings) {
@@ -777,7 +777,7 @@ class TypesContainer extends React.Component {
     }
 
     handelFilterKeyDown = (e, value) => {
-        if (e.key === "Enter") {
+        if (e.key === 'Enter') {
             e.preventDefault()
             this.handleFilter({value}, true)
         }
@@ -1014,7 +1014,7 @@ export default connect(
 // add an extra column for Media at the beginning
 Hook.on('TypeTableColumns', ({type, columns}) => {
     if (type === 'Media') {
-        columns.unshift({title: "Data", id: "data"})
+        columns.unshift({title: 'Data', id: 'data'})
     }
 })
 
@@ -1025,7 +1025,7 @@ Hook.on('TypeTable', ({type, dataSource, data, container}) => {
             const item = data.results[i]
             const mimeType = item.mimeType ? item.mimeType.split('/') : ['file']
 
-            d.data = <a target="_blank" rel="noopener" href={UPLOAD_URL + '/' + item._id}>
+            d.data = <a target="_blank" rel="noopener noreferrer"  href={UPLOAD_URL + '/' + item._id}>
                 {
                     (mimeType[0] === 'image' ?
                             <img height="40" src={UPLOAD_URL + '/' + item._id}/>

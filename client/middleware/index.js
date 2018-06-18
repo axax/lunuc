@@ -25,7 +25,7 @@ export function configureMiddleware(store) {
         return {
             headers: {
                 Authorization: Util.getAuthToken(),
-                ["Content-Language"]: _app_.lang
+                ['Content-Language']: _app_.lang
             }
         }
     })

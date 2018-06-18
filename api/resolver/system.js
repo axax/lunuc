@@ -143,13 +143,13 @@ export const systemResolver = (db) => ({
 
         const media_dir = path.join(__dirname, '../../' + UPLOAD_DIR)
 
-        const files = fs.readdirSync(media_dir);
+        const files = fs.readdirSync(media_dir)
         if (files.length === 0) {
             throw new Error(`No files in folder -> ${media_dir}`)
         }
 
         // zip media dir
-        zipper.sync.zip(media_dir).compress().save(fullName);
+        zipper.sync.zip(media_dir).compress().save(fullName)
 
 
         const stats = fs.statSync(fullName)
