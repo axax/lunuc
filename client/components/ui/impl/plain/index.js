@@ -86,7 +86,7 @@ export const Row = ({...rest}) => {
     return <div className="row" {...rest} />
 }
 export const Col = ({span, lg, md, mdAlign, sm, ...rest}) => {
-    return <div className={'col' + (md ? ' col-md-' + md:'') + (mdAlign ? ' col-md-align-' + mdAlign:'')} {...rest} />
+    return <div className={'col' + (md ? ' col-md-' + md:'') + (sm ? ' col-sm-' + sm:'') + (mdAlign ? ' col-md-align-' + mdAlign:'')} {...rest} />
 }
 
 // table

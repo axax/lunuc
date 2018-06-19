@@ -35,6 +35,7 @@ const styles = theme => ({
 class ContentEditable extends React.Component {
     lastText = []
     changeHistory = []
+    historyPointer = 0
 
 
     constructor(props) {
@@ -75,12 +76,10 @@ class ContentEditable extends React.Component {
             if (highlight) {
                 ReactDOM.findDOMNode(this).innerHtml = this.highlight(children)
             } else {
-                ReactDOM.findDOMNode(this).innerText =children
+                ReactDOM.findDOMNode(this).innerText = children
             }
         }
     }
-
-
 
 
     handleKeyDown(e) {
@@ -89,23 +88,48 @@ class ContentEditable extends React.Component {
         // handle tab
         if (e.key === "Tab") {
             e.preventDefault();
-            if( highlight === 'json'){
+            if (highlight === 'json') {
                 document.execCommand('insertHTML', false, '  ')
-            }else{
+            } else {
                 document.execCommand('insertHTML', false, '&#009')
             }
-        }else if(e.metaKey  || e.ctrlKey){
+        } else if (e.metaKey || e.ctrlKey) {
 
-            if( e.key==='z' || e.key==='Z' ){
-               // TODO: implement undo history
-            }else if(  (e.key==='y' || e.key==='Y') ){
+            if (e.key === 'z' || e.key === 'Z') {
+                // TODO: implement undo history
+                const historyLength = this.changeHistory.length
+                if (historyLength > 0 && this.historyPointer+1 < historyLength) {
+                    this.historyPointer++
+
+                    console.log(this.historyPointer,this.changeHistory)
+                    const lastText = this.changeHistory[this.historyPointer]
+                    const ele = ReactDOM.findDOMNode(this)
+                    if (highlight) {
+                        ele.innerHTML = this.highlight(lastText)
+                    } else {
+                        ele.innerText = lastText
+                    }
+                    this.placeCaretAtEnd(ele)
+                }
+                e.preventDefault()
+
+            } else if ((e.key === 'y' || e.key === 'Y')) {
 
             }
         }
     }
 
+    placeCaretAtEnd(el) {
+        el.focus()
+        const range = document.createRange()
+        range.selectNodeContents(el)
+        range.collapse(false)
+        const sel = window.getSelection()
+        sel.removeAllRanges()
+        sel.addRange(range)
+    }
+
     handleKeyUp(e) {
-        console.log(e.key,e.getModifierState("Meta"))
         if (e.getModifierState("Control") || e.key === "Shift") {
             // ignore if Control is pressed
             return
@@ -121,7 +145,14 @@ class ContentEditable extends React.Component {
                 const t = e.target
                 var restore = this.saveCaretPosition(t, (e.key === "Enter" ? 1 : 0))
 
-                this.changeHistory.push(t.innerText)
+                if (this.historyPointer > 0) {
+                    this.changeHistory.splice(0, this.historyPointer)
+                }
+                this.changeHistory.unshift(t.innerText)
+                this.historyPointer = 0
+                if( this.changeHistory.length>100){
+                    this.changeHistory.splice(0,100)
+                }
 
                 t.innerHTML = this.highlight(t.innerText)
 

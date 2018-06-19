@@ -1,16 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {convertToRaw, convertFromRaw, convertFromHTML, ContentState, EditorState, RichUtils} from 'draft-js'
-
-import Editor, { composeDecorators } from 'draft-js-plugins-editor'
-import createImagePlugin from 'draft-js-image-plugin'
-import createAlignmentPlugin from 'draft-js-alignment-plugin'
-import createFocusPlugin from 'draft-js-focus-plugin'
-import createResizeablePlugin from 'draft-js-resizeable-plugin'
-import createBlockDndPlugin from 'draft-js-drag-n-drop-plugin'
-//import createDragNDropUploadPlugin from 'draft-js-drag-n-drop-upload-plugin'
-
-
+import {Editor, convertToRaw, convertFromRaw, convertFromHTML, ContentState, EditorState, RichUtils} from 'draft-js'
 
 import './PostEditor.css'
 
@@ -20,8 +10,10 @@ export default class PostEditor extends React.Component {
 
         this._currentRawData = this.props.post.body
 
-        this.state = {editorState: this._getEditorState(this.props.post.body)}
-
+        this.state = {
+            isHover: false,
+            editorState: this._getEditorState(this.props.post.body)
+        }
 
         this.focus = () => this.editor.focus()
 
@@ -126,6 +118,15 @@ export default class PostEditor extends React.Component {
         )
     }
 
+    setDragState(e, isHover) {
+        e.preventDefault()
+        e.stopPropagation()
+        this.setState({isHover})
+    }
+
+    handelDragOver(e) {
+        this.setDragState(e, true)
+    }
 
     render() {
 
@@ -151,7 +152,8 @@ export default class PostEditor extends React.Component {
                 editorState={editorState}
                 onToggle={this.toggleInlineStyle}
             />
-            <div className={className} onClick={this.focus}>
+            <div className={className} onClick={this.focus}
+                 onDragOver={this.handelDragOver.bind(this)}>
                 <Editor
                     blockStyleFn={getBlockStyle}
                     customStyleMap={styleMap}
