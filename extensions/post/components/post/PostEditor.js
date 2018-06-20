@@ -1,6 +1,16 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {Editor, convertToRaw, convertFromRaw, convertFromHTML, ContentState, EditorState, RichUtils} from 'draft-js'
+import {convertToRaw, convertFromRaw, convertFromHTML, ContentState, EditorState, RichUtils} from 'draft-js'
+
+import Editor from 'draft-js-plugins-editor'
+/*import createImagePlugin from 'draft-js-image-plugin'
+import createAlignmentPlugin from 'draft-js-alignment-plugin'
+import createFocusPlugin from 'draft-js-focus-plugin'
+import createResizeablePlugin from 'draft-js-resizeable-plugin'
+import createBlockDndPlugin from 'draft-js-drag-n-drop-plugin'*/
+//import createDragNDropUploadPlugin from 'draft-js-drag-n-drop-upload-plugin'
+
+
 
 import './PostEditor.css'
 

@@ -125,7 +125,7 @@ class JsonDom extends React.Component {
 
     constructor(props) {
         super(props)
-        this.state = {hasReactError: false}
+        this.state = {hasReactError: false, bindings: {}}
 
         /* HOOK */
         Hook.call('JsonDom', this)
@@ -151,7 +151,7 @@ class JsonDom extends React.Component {
              console.log('reset scope data res')
              }*/
         }
-        if (this.props.template !== props.template) {
+        if (this.props.template !== props.template ) {
             this.resetTemplate()
             //console.log('reset template')
         }
@@ -204,6 +204,18 @@ class JsonDom extends React.Component {
         this.json = null
         this.jsonRaw = null
         this.componentRefs = {}
+    }
+
+    handleBindingChange(cb, e) {
+        this.setState({bindings: {[e.target.name]: e.target.value}}, () => {
+            if (this.scope) {
+                this.scope.bindings = this.state.bindings
+            }
+            if( cb ){
+                cb.bind(this)(e)
+            }
+            //this.jsRefresh(null, true)
+        })
     }
 
     emitChange(id, v, save) {
@@ -374,6 +386,25 @@ class JsonDom extends React.Component {
                 if (t === 'Cms') {
                     cmsProps = {location: this.props.history.location}
                 }
+
+
+                if (p) {
+
+                    if (p.name) {
+                        // handle controlled input here
+                        if (p.value ) {
+                            p.defaultValue = p.value
+                            p.value = undefined
+                        }
+                        if( !this.state.bindings[p.name] ){
+                            this.state.bindings[p.name] = p.defaultValue
+                            this.scope.bindings = this.state.bindings
+                        }
+                        p.onChange = this.handleBindingChange.bind(this, p.onChange)
+                    } else if (p.value) {
+                        console.warn('Don\'t use property value without name')
+                    }
+                }
                 h.push(React.createElement(
                     this.components[_t] || _t,
                     {id: key, key, ...cmsProps, ...p},
@@ -428,7 +459,11 @@ class JsonDom extends React.Component {
         try {
             const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const parent = this.parent;return `' + str + '`;')
             //.replace(/(\r\n|\n|\r)/g,"");
-            return tpl.call({data, parent: this.props._parentRef, tryCatch: Util.tryCatch.bind(data)}).replace(/\t/g, '\\t')
+            return tpl.call({
+                data,
+                parent: this.props._parentRef,
+                tryCatch: Util.tryCatch.bind(data)
+            }).replace(/\t/g, '\\t')
         } catch (e) {
             //this.emitJsonError(e)
             console.error('Error in renderString', e)
@@ -437,7 +472,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {dynamic, template, script, resolvedData, history, className, setKeyValue} = this.props
+        const {dynamic, template, script, resolvedData, history, className, setKeyValue, client} = this.props
         if (!template) {
             console.warn('Template is missing.')
             return null
@@ -478,7 +513,7 @@ class JsonDom extends React.Component {
             try {
                 this.scriptResult = new Function(`
                 let scope = arguments[0]
-                const {on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS}= arguments[1]
+                const {on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, client}= arguments[1]
                 const history= arguments[2]
                 const parent= arguments[3]
                 on('refreshscope',(newScope)=>{
@@ -486,6 +521,7 @@ class JsonDom extends React.Component {
                 })
                 ${script}`).call(this, scope, {
                     on: this.jsOn,
+                    client,
                     setKeyValue,
                     getKeyValueFromLS,
                     setLocal: this.jsSetLocal,
@@ -507,7 +543,6 @@ class JsonDom extends React.Component {
                 cb(scope)
             })
         }
-
         scope.script = this.scriptResult
         if (this.jsOnStack['beforerender']) {
             for (let i = 0; i < this.jsOnStack['beforerender'].length; i++) {
@@ -549,6 +584,7 @@ class JsonDom extends React.Component {
 }
 
 JsonDom.propTypes = {
+    client: PropTypes.object,
     className: PropTypes.string,
     template: PropTypes.string,
     resolvedData: PropTypes.string,
