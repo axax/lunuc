@@ -139,7 +139,7 @@ Here are some useful helper methods that can be used with in the template
 
 * this => is the current JsonDom
 * parent => reference to the parent JsonDom
-* client => for direct communication with the backend
+* clientQuery => for direct communication with the backend
 * scope => Object with properties related to the current template
 * on => Add an event listener function
 * setLocal => put data to the localstorage

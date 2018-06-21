@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom'
 import {withStyles} from 'ui/admin'
 
 const reservedJsKeywords = ['return', 'if', 'else', 'var', 'let', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export', 'function', 'undefined']
-const reservedJsCustomKeywords = ['client', 'on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent', 'getComponent', 'getKeyValueFromLS', 'setKeyValue']
+const reservedJsCustomKeywords = ['clientQuery', 'on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent', 'getComponent', 'getKeyValueFromLS', 'setKeyValue']
 
 const styles = theme => ({
     editor: {

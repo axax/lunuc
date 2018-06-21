@@ -318,7 +318,7 @@ class CmsViewContainer extends React.Component {
         const startTime = new Date()
         const jsonDom = <JsonDom id={id}
                                  dynamic={dynamic}
-                                 client={client}
+                                 clientQuery={this.clientQuery.bind(this)}
                                  className={className}
                                  _parentRef={_parentRef}
                                  template={template}
@@ -441,6 +441,27 @@ class CmsViewContainer extends React.Component {
 
     saveSettings() {
         this.setKeyValue('CmsViewContainerSettings', this.state.settings)
+    }
+
+    clientQuery(query, options){
+        const {client} = this.props
+        if( !query || query.constructor !== String ) return
+
+        const {success, error, ...rest} = options
+
+        if( query.startsWith('mutation') ){
+            client.mutate({
+                query: gql(query),
+                ...rest
+            }).then(success).catch(error)
+        }else{
+            client.query({
+                fetchPolicy: 'network-only',
+                forceFetch: true,
+                query: gql(query),
+                ...rest
+            }).then(success).catch(error)
+        }
     }
 
     setKeyValue(arg1, arg2, arg3) {
