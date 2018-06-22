@@ -1,16 +1,19 @@
 const Util = {
-    escapeForJson: (str) => {
+    escapeDoubleQuotes: (str) => {
         if (str && str.constructor === String) {
             return str.replace(/"/g, '\\"')
         }
         return str
     },
+    escapeForJson: (str) => {
+        return Util.escapeDoubleQuotes(str)
+    },
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
-    tryCatch: function(str){
-        try{
+    tryCatch: function (str) {
+        try {
             return eval(str)
-        }catch (e){
-           // console.log(e)
+        } catch (e) {
+            // console.log(e)
         }
 
         return ''

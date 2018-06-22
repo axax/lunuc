@@ -151,7 +151,7 @@ class JsonDom extends React.Component {
              console.log('reset scope data res')
              }*/
         }
-        if (this.props.template !== props.template ) {
+        if (this.props.template !== props.template) {
             this.resetTemplate()
             //console.log('reset template')
         }
@@ -207,11 +207,11 @@ class JsonDom extends React.Component {
     }
 
     handleBindingChange(cb, e) {
-        this.setState({bindings: {[e.target.name]: e.target.value}}, () => {
+        this.setState({bindings: {...this.state.bindings, [e.target.name]: e.target.value}}, () => {
             if (this.scope) {
                 this.scope.bindings = this.state.bindings
             }
-            if( cb ){
+            if (cb) {
                 cb.bind(this)(e)
             }
             //this.jsRefresh(null, true)
@@ -392,11 +392,11 @@ class JsonDom extends React.Component {
 
                     if (p.name) {
                         // handle controlled input here
-                        if (p.value ) {
+                        if (p.value) {
                             p.defaultValue = p.value
                             p.value = undefined
                         }
-                        if( !this.state.bindings[p.name] ){
+                        if (!this.state.bindings[p.name]) {
                             this.state.bindings[p.name] = p.defaultValue
                             this.scope.bindings = this.state.bindings
                         }
@@ -543,7 +543,7 @@ class JsonDom extends React.Component {
                 cb(scope)
             })
         }
-        scope.script = this.scriptResult
+        scope.script = this.scriptResult || {}
         if (this.jsOnStack['beforerender']) {
             for (let i = 0; i < this.jsOnStack['beforerender'].length; i++) {
                 const cb = this.jsOnStack['beforerender'][i]

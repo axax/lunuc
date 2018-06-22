@@ -4,6 +4,7 @@ import path from 'path'
 import fs from 'fs'
 import config from 'gen/config'
 import zipper from 'zip-local'
+import nodemailer from 'nodemailer'
 
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
@@ -25,14 +26,32 @@ export const systemResolver = (db) => ({
     },
     sendMail: async ({recipient, subject, body}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
+        const values = await Util.keyValueGlobalMap(db,context,['MailSettings'])
+        const mailSettings = JSON.parse(values.MailSettings)
 
-        const values = Util.keyValueGlobalMap(db,context,['MailSettings'])
 
-        console.log(values.MailSettings)
+        const message = {
+            from: mailSettings.from,
+            to: recipient,
+            subject: subject,
+            text: 'Plaintext version of the message',
+            html: body
+        }
 
-        const response = 'send'
+        var transporter = nodemailer.createTransport({
+            service: mailSettings.service,
+            auth: {
+                user: mailSettings.user,
+                pass: mailSettings.password
+            }
+        })
 
-        return {response}
+        const response = await transporter.sendMail(message)
+
+        console.log(response)
+
+
+        return {response: JSON.stringify(response)}
     },
     ping: async ({}, {context}) => {
 

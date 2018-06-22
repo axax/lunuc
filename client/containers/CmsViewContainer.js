@@ -37,6 +37,7 @@ const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch"
                                        load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const Divider = (props) => <Async {...props} expose="Divider"
                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const ErrorHandler = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/layout/ErrorHandler')}/>
 
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
@@ -423,6 +424,7 @@ class CmsViewContainer extends React.Component {
                                     drawerWidth="500px"
                                     title={'Edit Page "' + cmsPage.slug + '"'}>
                 {jsonDom}
+                <ErrorHandler />
             </DrawerLayout>
         }
 
