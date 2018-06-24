@@ -3,14 +3,18 @@ import PropTypes from 'prop-types'
 import {convertToRaw, convertFromRaw, convertFromHTML, ContentState, EditorState, RichUtils} from 'draft-js'
 
 import Editor from 'draft-js-plugins-editor'
+import createLinkifyPlugin from 'draft-js-linkify-plugin'
+
 /*import createImagePlugin from 'draft-js-image-plugin'
-import createAlignmentPlugin from 'draft-js-alignment-plugin'
-import createFocusPlugin from 'draft-js-focus-plugin'
-import createResizeablePlugin from 'draft-js-resizeable-plugin'
-import createBlockDndPlugin from 'draft-js-drag-n-drop-plugin'*/
+ import createAlignmentPlugin from 'draft-js-alignment-plugin'
+ import createFocusPlugin from 'draft-js-focus-plugin'
+ import createResizeablePlugin from 'draft-js-resizeable-plugin'
+ import createBlockDndPlugin from 'draft-js-drag-n-drop-plugin'*/
 //import createDragNDropUploadPlugin from 'draft-js-drag-n-drop-upload-plugin'
 
 
+const linkifyPlugin = createLinkifyPlugin()
+const plugins = [linkifyPlugin]
 
 import './PostEditor.css'
 
@@ -35,7 +39,7 @@ export default class PostEditor extends React.Component {
             if (this.state.editorState.getCurrentContent() !== editorState.getCurrentContent()) {
                 console.log('state changed')
                 clearTimeout(this.changeTimeout)
-                this.changeTimeout = setTimeout(this.onChangeDelayed,5000)
+                this.changeTimeout = setTimeout(this.onChangeDelayed, 5000)
 
             }
         }
@@ -57,16 +61,76 @@ export default class PostEditor extends React.Component {
     }
 
 
+    render() {
+        const startTime = new Date()
+
+        const {readOnly} = this.props
+        const {editorState} = this.state
+
+
+        const editorProps = {
+            readOnly,
+            plugins,
+            editorState,
+            placeholder:'Tell a story...',
+            ref: (editor) => {
+                this.editor = editor
+            },
+            onChange: this.onChange
+        }
+
+        let content
+        if (readOnly) {
+            content = <Editor {...editorProps}/>
+        } else {
+            editorProps.blockStyleFn = getBlockStyle
+            editorProps.customStyleMap = styleMap
+            editorProps.handleKeyCommand = this.handleKeyCommand
+            editorProps.onTab = this.onTab
+            editorProps.spellCheck = true
+
+
+            // If the user changes block type before entering any text, we can
+            // either style the placeholder or hide it. Let's just hide it now.
+            let className = 'RichEditor-editor'
+            var contentState = editorState.getCurrentContent()
+            if (!contentState.hasText()) {
+                if (contentState.getBlockMap().first().getType() !== 'unstyled') {
+                    className += ' RichEditor-hidePlaceholder'
+                }
+            }
+
+            content = <div className="RichEditor-root">
+                <BlockStyleControls
+                    editorState={editorState}
+                    onToggle={this.toggleBlockType}
+                />
+                <InlineStyleControls
+                    editorState={editorState}
+                    onToggle={this.toggleInlineStyle}
+                />
+                <div className={className} onClick={this.focus}
+                     onDragOver={this.handelDragOver.bind(this)}>
+                    <Editor {...editorProps}/>
+                </div>
+            </div>
+        }
+        console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
+
+        return content
+    }
+
+
     componentWillReceiveProps(nextProps) {
-        if (nextProps.post ){
-            if( this.props.post._id !== nextProps.post._id){
-                if( this.changeTimeout ) {
+        if (nextProps.post) {
+            if (this.props.post._id !== nextProps.post._id) {
+                if (this.changeTimeout) {
                     clearTimeout(this.changeTimeout)
                     this.onChangeDelayed()
                 }
             }
 
-            if( this._currentRawData != nextProps.post.body ) {
+            if (this._currentRawData != nextProps.post.body) {
                 const contentState = this.state.editorState.getCurrentContent()
                 this.setState({editorState: this._getEditorState(nextProps.post.body)})
                 this._currentRawData = nextProps.post.body
@@ -137,70 +201,31 @@ export default class PostEditor extends React.Component {
     handelDragOver(e) {
         this.setDragState(e, true)
     }
-
-    render() {
-
-        const {editorState} = this.state
-
-        // If the user changes block type before entering any text, we can
-        // either style the placeholder or hide it. Let's just hide it now.
-        let className = 'RichEditor-editor'
-        var contentState = editorState.getCurrentContent()
-        if (!contentState.hasText()) {
-            if (contentState.getBlockMap().first().getType() !== 'unstyled') {
-                className += ' RichEditor-hidePlaceholder'
-            }
-        }
-
-
-        return <div className="RichEditor-root">
-            <BlockStyleControls
-                editorState={editorState}
-                onToggle={this.toggleBlockType}
-            />
-            <InlineStyleControls
-                editorState={editorState}
-                onToggle={this.toggleInlineStyle}
-            />
-            <div className={className} onClick={this.focus}
-                 onDragOver={this.handelDragOver.bind(this)}>
-                <Editor
-                    blockStyleFn={getBlockStyle}
-                    customStyleMap={styleMap}
-                    editorState={editorState}
-                    handleKeyCommand={this.handleKeyCommand}
-                    onChange={this.onChange}
-                    onTab={this.onTab}
-                    placeholder="Tell a story..."
-                    spellCheck={true}
-                    ref={(editor) => {
-                        this.editor = editor
-                    }}
-                ></Editor>
-            </div>
-        </div>
-
-    }
 }
 
 
-PostEditor.propTypes = {
+PostEditor
+    .propTypes = {
     onChange: PropTypes.func,
-    post: PropTypes.object.isRequired
+    post: PropTypes.object.isRequired,
+    readOnly: PropTypes.bool
 }
 
 
 // Custom overrides for "code" style.
-const styleMap = {
-    CODE: {
-        backgroundColor: 'rgba(0, 0, 0, 0.05)',
-        fontFamily: '"Inconsolata", "Menlo", "Consolas", monospace',
-        fontSize: 16,
-        padding: 2
+const
+    styleMap = {
+        CODE: {
+            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+            fontFamily: '"Inconsolata", "Menlo", "Consolas", monospace',
+            fontSize: 16,
+            padding: 2
+        }
     }
-}
 
-function getBlockStyle(block) {
+function
+
+getBlockStyle(block) {
     switch (block.getType()) {
         case 'blockquote':
             return 'RichEditor-blockquote'
@@ -209,7 +234,9 @@ function getBlockStyle(block) {
     }
 }
 
-class StyleButton extends React.Component {
+class StyleButton
+    extends React
+        .Component {
     constructor() {
         super()
         this.onToggle = (e) => {
