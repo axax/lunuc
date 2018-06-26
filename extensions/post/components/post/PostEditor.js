@@ -4,6 +4,10 @@ import {convertToRaw, convertFromRaw, convertFromHTML, ContentState, EditorState
 
 import Editor from 'draft-js-plugins-editor'
 import createLinkifyPlugin from 'draft-js-linkify-plugin'
+import createImagePlugin from 'draft-js-image-plugin'
+
+
+import ImageAdd from './ImageAdd'
 
 /*import createImagePlugin from 'draft-js-image-plugin'
  import createAlignmentPlugin from 'draft-js-alignment-plugin'
@@ -14,7 +18,9 @@ import createLinkifyPlugin from 'draft-js-linkify-plugin'
 
 
 const linkifyPlugin = createLinkifyPlugin()
-const plugins = [linkifyPlugin]
+const imagePlugin = createImagePlugin()
+
+const plugins = [linkifyPlugin, imagePlugin]
 
 import './PostEditor.css'
 
@@ -104,6 +110,7 @@ export default class PostEditor extends React.Component {
                 <BlockStyleControls
                     editorState={editorState}
                     onToggle={this.toggleBlockType}
+                    onChange={this.onChange}
                 />
                 <InlineStyleControls
                     editorState={editorState}
@@ -273,7 +280,7 @@ const BLOCK_TYPES = [
 ]
 
 const BlockStyleControls = (props) => {
-    const {editorState} = props
+    const {editorState, onChange} = props
     const selection = editorState.getSelection()
     const blockType = editorState
         .getCurrentContent()
@@ -291,6 +298,13 @@ const BlockStyleControls = (props) => {
                     style={type.style}
                 />
             )}
+
+            <ImageAdd
+                editorState={editorState}
+                onChange={onChange}
+                modifier={imagePlugin.addImage}
+            />
+
         </div>
     )
 }
