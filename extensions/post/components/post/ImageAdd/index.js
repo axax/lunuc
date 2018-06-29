@@ -154,7 +154,7 @@ class ImageAdd extends Component {
                     +
                 </button>
                 <div
-                    className={classNames(classes.addImagePopover, this.state.open &&
+                    className={classNames(classes.addImagePopover, !this.state.open &&
                         classes.addImageClosedPopover)}
                     onClick={this.onPopoverClick}
                 >
@@ -178,11 +178,13 @@ class ImageAdd extends Component {
                               label="or drop file here"
                               uploadTo="/graphql/upload"
                               resizeImages={true}
-                              onSuccess={response => {
+                              onSuccess={(response, ref) => {
                                   if( response.ids && response.ids.length ){
 
                                       const {editorState, onChange} = this.props
                                       onChange(this.props.modifier(editorState, '/uploads/'+response.ids[0]))
+
+                                      ref.reset()
                                   }
                               }}/>
                 </div>

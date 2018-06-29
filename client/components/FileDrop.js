@@ -72,7 +72,11 @@ class FileDrop extends React.Component {
     constructor(props) {
         super(props)
 
-        this.state = {
+        this.state = this.initialState()
+    }
+
+    initialState(){
+        return {
             isHover: false,
             images: [],
             uploadCompleted: 0,
@@ -80,6 +84,10 @@ class FileDrop extends React.Component {
             errorMessage: null,
             successMessage: null
         }
+    }
+
+    reset(){
+        this.setState(this.initialState())
     }
 
     render() {
@@ -238,9 +246,9 @@ class FileDrop extends React.Component {
             ctx.drawImage(oriImg, 0, 0, width, height)
 
             //Some update on canvas
-            ctx.font = '30px serif'
+          /*  ctx.font = '30px serif'
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
-            ctx.fillText(file.name, 5, height - 8)
+            ctx.fillText(file.name, 5, height - 8)*/
 
 
             const dataUrl = canvas.toDataURL(file.type, IMAGE_QUALITY)
@@ -287,7 +295,7 @@ class FileDrop extends React.Component {
 
                     const {onSuccess} = this.props
                     if (onSuccess) {
-                        onSuccess(xhr.response)
+                        onSuccess(xhr.response, this)
                     }
 
                 } else {
