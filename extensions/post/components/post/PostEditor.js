@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+
 import {convertToRaw, convertFromRaw, convertFromHTML, ContentState, EditorState, RichUtils} from 'draft-js'
 
 import Editor from 'draft-js-plugins-editor'
@@ -7,7 +8,7 @@ import createLinkifyPlugin from 'draft-js-linkify-plugin'
 import createImagePlugin from 'draft-js-image-plugin'
 
 
-import ImageAdd from './ImageAdd'
+import ImageAdd from './ImageAdd';
 
 /*import createImagePlugin from 'draft-js-image-plugin'
  import createAlignmentPlugin from 'draft-js-alignment-plugin'
@@ -116,8 +117,7 @@ export default class PostEditor extends React.Component {
                     editorState={editorState}
                     onToggle={this.toggleInlineStyle}
                 />
-                <div className={className} onClick={this.focus}
-                     onDragOver={this.handelDragOver.bind(this)}>
+                <div className={className} onClick={this.focus}>
                     <Editor {...editorProps}/>
                 </div>
             </div>
@@ -144,7 +144,6 @@ export default class PostEditor extends React.Component {
             }
         }
     }
-
 
     _getEditorState(bodyRaw) {
         console.log('get editor state')

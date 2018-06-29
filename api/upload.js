@@ -73,6 +73,7 @@ export const handleUpload = db => (req, res) => {
             form.on('file', function (field, file) {
                 //console.log(file.path, path.join(UPLOAD_DIR, file.name))
                 const _id = ObjectId()
+                fileIds.push(_id)
 
                 // store file under the name of the _id
                 fs.rename(file.path, path.join(upload_dir, _id.toString()), async () => {
