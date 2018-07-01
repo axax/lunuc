@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {Button, TextField, withStyles, FileUploadIcon, Typography, LinearProgress} from 'ui/admin'
 import classNames from 'classnames'
-import Util from 'client/util'
+import UploadUtil from 'client/util/upload'
 
 /* TODO: make it configurable */
 const MAX_FILE_SIZE_MB = 10,
@@ -75,7 +75,7 @@ class FileDrop extends React.Component {
         this.state = this.initialState()
     }
 
-    initialState(){
+    initialState() {
         return {
             isHover: false,
             images: [],
@@ -86,7 +86,7 @@ class FileDrop extends React.Component {
         }
     }
 
-    reset(){
+    reset() {
         this.setState(this.initialState())
     }
 
@@ -146,7 +146,6 @@ class FileDrop extends React.Component {
         this.setDragState(e, false)
 
         const accepts = (accept || DEFAULT_ACCEPT).split('|'), acceptsType = [], acceptsExt = []
-
         accepts.forEach(i => {
             const a = i.split('/')
             if (a.length > 1) {
@@ -162,48 +161,69 @@ class FileDrop extends React.Component {
         const files = e.target.files || e.dataTransfer.files
         // Process all File objects
         const images = [], filteredFiles = []
-        for (let i = 0, f; f = files[i]; i++) {
+        for (let i = 0, file; file = files[i]; i++) {
+
+            if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+                this.setState({errorMessage: `File size of ${file.name} exceeds the max file size of ${MAX_FILE_SIZE_MB}MB.`})
+                continue
+            }
 
             // validate
-            const aType = f.type.split('/')
+            const aType = file.type.split('/')
 
             const ext = aType.length > 1 ? aType[1] : aType[0]
+            const isImage = UploadUtil.isImage(file.name)
 
             let isValid = false
             acceptsExt.forEach(e => {
-                if (e === '*' || ext === e) {
+                if (ext === e) {
                     isValid = true
                     return
+                }else if( e === '*' ){
+                    acceptsType.forEach(type => {
+                        if (type === 'image' && isImage) {
+                            isValid = true
+                            return
+                        }
+                    })
+                    if( isValid ){
+                        return
+                    }
                 }
             })
-            //TODO: also check for acceptsType images/*
 
             if (isValid) {
-                filteredFiles.push(f)
-
-                const isImage = (/\.(?=gif|jpg|png|jpeg)/gi).test(f.name)
+                filteredFiles.push(file)
                 if (isImage) {
-                    images.push(URL.createObjectURL(f))
+                    images.push(URL.createObjectURL(file))
                 }
                 if (uploadTo) {
 
                     if (resizeImages && isImage) {
-                        this.resizeImageAndUpload(f, uploadTo)
+                        UploadUtil.resizeImageFromFile({
+                            file,
+                            maxWidth: IMAGE_MAX_WIDTH,
+                            maxHeight: IMAGE_MAX_HEIGHT,
+                            quality: IMAGE_QUALITY,
+                            onSuccess: (dataUrl) => {
+                                this.uploadData(dataUrl, file, uploadTo)
+                            }
+                        })
                     } else {
-                        this.uploadData(URL.createObjectURL(f), f, uploadTo)
+                        this.uploadData(URL.createObjectURL(file), file, uploadTo)
                     }
                 }
 
                 if (onFileContent) {
                     const reader = new FileReader()
-                    reader.readAsText(f, 'UTF-8')
+                    reader.readAsText(file, 'UTF-8')
                     reader.onload = function (e) {
-                        onFileContent(f, e.target.result)
+                        onFileContent(file, e.target.result)
                     }
                 }
 
             } else {
-                this.setState({errorMessage: `File format ${f.type} is not accepted`})
+                this.setState({errorMessage: `File format ${file.type} is not accepted`})
             }
         }
         if (filteredFiles.length > 0 && onFiles) {
@@ -216,109 +236,33 @@ class FileDrop extends React.Component {
         this.setState({uploadCompleted: Math.ceil(e.loaded * 100 / e.total)})
     }
 
-
-    resizeImageAndUpload(file, uploadTo) {
-
-        const oriImg = new Image()
-        oriImg.onload = () => {
-
-            let width = oriImg.width, height = oriImg.height
-
-            if (width > height) {
-                if (width > IMAGE_MAX_WIDTH) {
-                    height *= IMAGE_MAX_WIDTH / width
-                    width = IMAGE_MAX_WIDTH
-                }
-            } else {
-                if (height > IMAGE_MAX_HEIGHT) {
-                    width *= IMAGE_MAX_HEIGHT / height
-                    height = IMAGE_MAX_HEIGHT
-                }
-            }
-
-
-            const canvas = document.createElement('canvas')
-            canvas.width = width
-            canvas.height = height
-
-            const ctx = canvas.getContext('2d')
-            ctx.clearRect( 0, 0, width, height )
-            ctx.drawImage(oriImg, 0, 0, width, height)
-
-            //Some update on canvas
-          /*  ctx.font = '30px serif'
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
-            ctx.fillText(file.name, 5, height - 8)*/
-
-
-            const dataUrl = canvas.toDataURL(file.type, IMAGE_QUALITY)
-
-
-            //const blobData = this.dataURLToBlob(dataUrl) // as png?
-            if (file.size <= MAX_FILE_SIZE_MB * 1024 * 1024) {
-                this.uploadData(dataUrl, file, uploadTo)
-            }
-
-
-        }
-        oriImg.src = URL.createObjectURL(file)
-
-    }
-
-    dataURLtoBlob(dataUrl, callback) {
-        var req = new XMLHttpRequest
-
-        req.open('GET', dataUrl)
-        req.responseType = 'arraybuffer' // Can't use blob directly because of https://crbug.com/412752
-
-        req.onload = () => {
-            callback(new Blob([req.response], {type: req.getResponseHeader('content-type')}))
-        }
-
-        req.send()
-    }
-
-
     uploadData(dataUrl, file, uploadTo) {
         this.setState({uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0})
-        this.dataURLtoBlob(dataUrl, (blob) => {
-
-            const xhr = new XMLHttpRequest()
-            xhr.responseType = 'json'
-            // Progress bar
-            xhr.upload.addEventListener('progress', this.updateFileProgress.bind(this), false)
-
-            xhr.onload = () => {
-                const {status, message} = xhr.response
+        UploadUtil.uploadData({
+            dataUrl,
+            fileName: file.name,
+            uploadTo,
+            onProgress: this.updateFileProgress.bind(this),
+            onLoad: (e) => {
+                const {status, message} = e.target.response
                 if (status === 'success') {
                     this.setState({successMessage: 'upload was successfull', uploading: false})
 
                     const {onSuccess} = this.props
                     if (onSuccess) {
-                        onSuccess(xhr.response, this)
+                        onSuccess(e.target.response, this)
                     }
 
                 } else {
                     this.setState({errorMessage: message, uploading: false})
                 }
-            }
-
-            xhr.onerror = (e) => {
+            },
+            onError: (e) => {
                 this.setState({errorMessage: e.message, uploading: false})
             }
-
-
-            xhr.open('POST', uploadTo, true)
-            xhr.setRequestHeader('Authorization', Util.getAuthToken())
-
-            const fd = new FormData()
-
-            fd.append('blob', blob, file.name)
-
-            xhr.send(fd)
-
         })
     }
+
 }
 
 FileDrop.propTypes = {

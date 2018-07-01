@@ -151,7 +151,7 @@ class ImageAdd extends Component {
                     onMouseUp={this.openPopover}
                     type="button"
                 >
-                    +
+                    IMG
                 </button>
                 <div
                     className={classNames(classes.addImagePopover, !this.state.open &&
@@ -175,8 +175,9 @@ class ImageAdd extends Component {
 
 
                     <FileDrop multi={false}
-                              label="or drop file here"
+                              label="or drop image here"
                               uploadTo="/graphql/upload"
+                              accept="image/*"
                               resizeImages={true}
                               onSuccess={(response, ref) => {
                                   if( response.ids && response.ids.length ){

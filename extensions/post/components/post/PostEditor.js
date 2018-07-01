@@ -117,7 +117,7 @@ export default class PostEditor extends React.Component {
                     editorState={editorState}
                     onToggle={this.toggleInlineStyle}
                 />
-                <div className={className} onClick={this.focus}>
+                <div className={className} onClick={this.focus} onDrop={this.handleDrop}>
                     <Editor {...editorProps}/>
                 </div>
             </div>
@@ -143,6 +143,14 @@ export default class PostEditor extends React.Component {
                 this._currentRawData = nextProps.post.body
             }
         }
+    }
+
+    handleDrop(e){
+        const files = e.target.files || e.dataTransfer.files
+
+
+
+        console.log(files)
     }
 
     _getEditorState(bodyRaw) {
