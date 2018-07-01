@@ -145,60 +145,30 @@ class FileDrop extends React.Component {
         const {onFileContent, onFiles, accept, uploadTo, resizeImages} = this.props
         this.setDragState(e, false)
 
-        const accepts = (accept || DEFAULT_ACCEPT).split('|'), acceptsType = [], acceptsExt = []
-        accepts.forEach(i => {
-            const a = i.split('/')
-            if (a.length > 1) {
-                acceptsType.push(a[0])
-                acceptsExt.push(a[1])
-            } else {
-                acceptsExt.push(a[0])
-            }
-
-        })
-
         // Fetch FileList object
         const files = e.target.files || e.dataTransfer.files
-        // Process all File objects
-        const images = [], filteredFiles = []
-        for (let i = 0, file; file = files[i]; i++) {
 
-            if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-                this.setState({errorMessage: `File size of ${file.name} exceeds the max file size of ${MAX_FILE_SIZE_MB}MB.`})
-                continue
-            }
+        const {validFiles, invalidFiles} = UploadUtil.validateFiles({
+            files,
+            accept: (accept || DEFAULT_ACCEPT),
+            maxFileSize: MAX_FILE_SIZE_MB * 1024 * 1024
+        })
 
-            // validate
-            const aType = file.type.split('/')
+        if (invalidFiles.length) {
+            // TODO show message of all files
+            this.setState({errorMessage: invalidFiles[0].message})
+        } else {
 
-            const ext = aType.length > 1 ? aType[1] : aType[0]
-            const isImage = UploadUtil.isImage(file.name)
+            const images = []
 
-            let isValid = false
-            acceptsExt.forEach(e => {
-                if (ext === e) {
-                    isValid = true
-                    return
-                }else if( e === '*' ){
-                    acceptsType.forEach(type => {
-                        if (type === 'image' && isImage) {
-                            isValid = true
-                            return
-                        }
-                    })
-                    if( isValid ){
-                        return
-                    }
-                }
-            })
+            for (let i = 0, file; file = validFiles[i]; i++) {
+                const isImage = UploadUtil.isImage(file.name)
 
-            if (isValid) {
-                filteredFiles.push(file)
-                if (isImage) {
+                if( isImage ) {
                     images.push(URL.createObjectURL(file))
                 }
-                if (uploadTo) {
 
+                if (uploadTo) {
                     if (resizeImages && isImage) {
                         UploadUtil.resizeImageFromFile({
                             file,
@@ -222,14 +192,14 @@ class FileDrop extends React.Component {
                     }
                 }
 
-            } else {
-                this.setState({errorMessage: `File format ${file.type} is not accepted`})
             }
+
+
+            if (onFiles) {
+                onFiles(validFiles)
+            }
+            this.setState({images})
         }
-        if (filteredFiles.length > 0 && onFiles) {
-            onFiles(filteredFiles)
-        }
-        this.setState({images})
     }
 
     updateFileProgress(e) {

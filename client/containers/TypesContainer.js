@@ -1053,7 +1053,7 @@ Hook.on('TypeCreateEditDialog', function ({type, props, dataToEdit}) {
     if (type === 'Media' && !dataToEdit) {
         // remove save button
         props.actions.splice(1, 1)
-        props.children = <FileDrop multi={false} uploadTo="/graphql/upload" resizeImages={true} onSuccess={r => {
+        props.children = <FileDrop multi={false} accept="*/*" uploadTo="/graphql/upload" resizeImages={true} onSuccess={r => {
             this.setState({createEditDialog: false})
 
             this.getData(this.pageParams, false)

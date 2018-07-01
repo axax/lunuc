@@ -76,6 +76,66 @@ const UploadUtil = {
     },
     isImage: (fileName) => {
         return (/\.(?=gif|jpg|png|jpeg)/gi).test(fileName)
+    },
+    validateFiles: ({files, accept, maxFileSize}) => {
+        const results = {validFiles: [], invalidFiles: []}
+        if (files) {
+            const accepts = accept.split('|'), acceptsType = [], acceptsExt = []
+            accepts.forEach(i => {
+                const a = i.split('/')
+                if (a.length > 1) {
+                    acceptsType.push(a[0])
+                    acceptsExt.push(a[1])
+                } else {
+                    acceptsExt.push(a[0])
+                }
+
+            })
+
+            // Process all File objects
+            const images = [], filteredFiles = []
+            for (let i = 0, file; file = files[i]; i++) {
+
+                if (maxFileSize && file.size > maxFileSize) {
+                    results.invalidFiles.push({
+                        file,
+                        message: `File size of ${file.name} exceeds the max file size of ${maxFileSize/1024/1024}MB.`
+                    })
+                    continue
+                }
+
+                // validate
+                const aType = file.type.split('/')
+
+                const ext = aType.length > 1 ? aType[1] : aType[0]
+                const isImage = UploadUtil.isImage(file.name)
+
+                let isValid = false
+                acceptsExt.forEach(e => {
+                    if (ext === e) {
+                        isValid = true
+                        return
+                    } else if (e === '*') {
+                        acceptsType.forEach(type => {
+                            if (type === '*' || (type === 'image' && isImage)) {
+                                isValid = true
+                                return
+                            }
+                        })
+                        if (isValid) {
+                            return
+                        }
+                    }
+                })
+
+                if (isValid) {
+                    results.validFiles.push(file)
+                } else {
+                    results.invalidFiles.push({file, message: `File format ${file.type} is not accepted`})
+                }
+            }
+        }
+        return results
     }
 }
 export default UploadUtil

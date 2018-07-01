@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import UploadUtil from 'client/util/upload'
 
 import {convertToRaw, convertFromRaw, convertFromHTML, ContentState, EditorState, RichUtils} from 'draft-js'
 
@@ -79,7 +80,7 @@ export default class PostEditor extends React.Component {
             readOnly,
             plugins,
             editorState,
-            placeholder:'Tell a story...',
+            placeholder: 'Tell a story...',
             ref: (editor) => {
                 this.editor = editor
             },
@@ -117,7 +118,7 @@ export default class PostEditor extends React.Component {
                     editorState={editorState}
                     onToggle={this.toggleInlineStyle}
                 />
-                <div className={className} onClick={this.focus} onDrop={this.handleDrop}>
+                <div className={className} onClick={this.focus} onDrop={this.handleDrop.bind(this)}>
                     <Editor {...editorProps}/>
                 </div>
             </div>
@@ -145,13 +146,73 @@ export default class PostEditor extends React.Component {
         }
     }
 
-    handleDrop(e){
+    handleDrop(e) {
         const files = e.target.files || e.dataTransfer.files
+        const uploadTo = '/graphql/upload'
 
+        const {validFiles, invalidFiles} = UploadUtil.validateFiles({
+            files,
+            accept: 'image/*',
+            maxFileSize: 10 * 1024 * 1024
+        })
 
+        if (invalidFiles.length) {
+            // TODO implement proper error handling
+            alert(invalidFiles[0].message)
+        } else {
+
+            for (let i = 0, file; file = validFiles[i]; i++) {
+                const isImage = UploadUtil.isImage(file.name)
+
+                if (isImage) {
+                    UploadUtil.resizeImageFromFile({
+                        file,
+                        maxWidth: 1000,
+                        maxHeight: 100,
+                        quality: 0.6,
+                        onSuccess: (dataUrl) => {
+                            this.uploadData(dataUrl, file, uploadTo)
+                        }
+                    })
+                } else {
+                    this.uploadData(URL.createObjectURL(file), file, uploadTo)
+                }
+            }
+        }
 
         console.log(files)
     }
+
+    uploadData(dataUrl, file, uploadTo) {
+        UploadUtil.uploadData({
+            dataUrl,
+            fileName: file.name,
+            uploadTo,
+            onProgress: () => {
+                // TODO implement progress bar
+            },
+            onLoad: (e) => {
+                const {status, message, ids} = e.target.response
+                if (status === 'success') {
+                    if (ids && ids.length) {
+
+                        const {editorState} = this.state
+
+                        this.onChange(imagePlugin.addImage(editorState, '/uploads/' + ids[0]))
+
+
+                    }
+
+                } else {
+                    // TODO implement proper error handling
+                }
+            },
+            onError: (e) => {
+                // TODO implement proper error handling
+            }
+        })
+    }
+
 
     _getEditorState(bodyRaw) {
         console.log('get editor state')
