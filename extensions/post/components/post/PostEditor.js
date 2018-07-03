@@ -4,9 +4,11 @@ import UploadUtil from 'client/util/upload'
 
 import {convertToRaw, convertFromRaw, convertFromHTML, ContentState, EditorState, RichUtils} from 'draft-js'
 
-import Editor from 'draft-js-plugins-editor'
+import Editor, {composeDecorators} from 'draft-js-plugins-editor'
 import createLinkifyPlugin from 'draft-js-linkify-plugin'
 import createImagePlugin from 'draft-js-image-plugin'
+import createBlockDndPlugin from 'draft-js-drag-n-drop-plugin'
+import createFocusPlugin from 'draft-js-focus-plugin'
 
 
 import ImageAdd from './ImageAdd';
@@ -18,11 +20,18 @@ import ImageAdd from './ImageAdd';
  import createBlockDndPlugin from 'draft-js-drag-n-drop-plugin'*/
 //import createDragNDropUploadPlugin from 'draft-js-drag-n-drop-upload-plugin'
 
+const focusPlugin = createFocusPlugin()
+const blockDndPlugin = createBlockDndPlugin()
+
+const decorator = composeDecorators(
+    focusPlugin.decorator,
+    blockDndPlugin.decorator
+)
+const imagePlugin = createImagePlugin({decorator})
 
 const linkifyPlugin = createLinkifyPlugin()
-const imagePlugin = createImagePlugin()
 
-const plugins = [linkifyPlugin, imagePlugin]
+const plugins = [focusPlugin, blockDndPlugin, linkifyPlugin, imagePlugin]
 
 import './PostEditor.css'
 
@@ -41,10 +50,10 @@ export default class PostEditor extends React.Component {
 
         this.changeTimeout = false
 
-        this.onChange = (editorState) => {
+        this.onChange = (editorState, forceSave) => {
             this.setState({editorState})
+            if (forceSave || this.state.editorState.getCurrentContent() !== editorState.getCurrentContent()) {
 
-            if (this.state.editorState.getCurrentContent() !== editorState.getCurrentContent()) {
                 console.log('state changed')
                 clearTimeout(this.changeTimeout)
                 this.changeTimeout = setTimeout(this.onChangeDelayed, 5000)
@@ -198,9 +207,7 @@ export default class PostEditor extends React.Component {
 
                         const {editorState} = this.state
 
-                        this.onChange(imagePlugin.addImage(editorState, '/uploads/' + ids[0]))
-
-
+                        this.onChange(imagePlugin.addImage(editorState, '/uploads/' + ids[0]), true)
                     }
 
                 } else {

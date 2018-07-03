@@ -133,7 +133,7 @@ class ImageAdd extends Component {
     addImage = () => {
         if (this.state.url.trim() === '') return
         const {editorState, onChange} = this.props
-        onChange(this.props.modifier(editorState, this.state.url))
+        onChange(this.props.modifier(editorState, this.state.url), true)
     }
 
     changeUrl = (evt) => {
