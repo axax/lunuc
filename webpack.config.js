@@ -87,7 +87,7 @@ const config = {
                 }
             },
             {
-                test: /\.css$/,
+                test: /\.global\.css$/,
                 exclude: excludeFunction,
                 use: ExtractTextPlugin.extract({
                     fallback: 'style-loader',
@@ -95,12 +95,20 @@ const config = {
                 })
             },
             {
-                test: /\.less$/,
+                test: /^(?:(?!\.global).)*\.css$/,
+                use: ['style-loader','css-loader']
+            },
+            {
+                test: /\.global\.less$/,
                 exclude: excludeFunction,
                 use: ExtractTextPlugin.extract({
                     fallback: 'style-loader',
                     use: ['css-loader', 'less-loader']
                 })
+            },
+            {
+                test: /^(?:(?!\.global).)*\.less$/,
+                use: ['style-loader','css-loader', 'less-loader']
             }
         ]
     },

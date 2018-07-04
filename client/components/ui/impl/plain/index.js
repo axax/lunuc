@@ -1,4 +1,4 @@
-import './style/index.less'
+import './style/index.global.less'
 
 import React from 'react'
 import Pagination from './Pagination'

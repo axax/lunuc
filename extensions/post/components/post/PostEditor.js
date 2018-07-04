@@ -1,6 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import UploadUtil from 'client/util/upload'
+import './PostEditor.css'
+import 'draft-js-focus-plugin/lib/plugin.css'
 
 import {convertToRaw, convertFromRaw, convertFromHTML, ContentState, EditorState, RichUtils} from 'draft-js'
 
@@ -33,7 +35,6 @@ const linkifyPlugin = createLinkifyPlugin()
 
 const plugins = [focusPlugin, blockDndPlugin, linkifyPlugin, imagePlugin]
 
-import './PostEditor.css'
 
 export default class PostEditor extends React.Component {
     constructor(props) {
