@@ -22,23 +22,30 @@ import ImageAdd from './ImageAdd';
  import createBlockDndPlugin from 'draft-js-drag-n-drop-plugin'*/
 //import createDragNDropUploadPlugin from 'draft-js-drag-n-drop-upload-plugin'
 
-const focusPlugin = createFocusPlugin()
-const blockDndPlugin = createBlockDndPlugin()
-
-const decorator = composeDecorators(
-    focusPlugin.decorator,
-    blockDndPlugin.decorator
-)
-const imagePlugin = createImagePlugin({decorator})
-
-const linkifyPlugin = createLinkifyPlugin()
-
-const plugins = [focusPlugin, blockDndPlugin, linkifyPlugin, imagePlugin]
-
 
 export default class PostEditor extends React.Component {
     constructor(props) {
         super(props)
+
+        this.plugins = []
+        const {readOnly} = props
+
+        let decorator = null
+        if( !readOnly ){
+            const focusPlugin = createFocusPlugin({})
+            const blockDndPlugin = createBlockDndPlugin()
+
+            decorator = composeDecorators(
+                focusPlugin.decorator,
+                blockDndPlugin.decorator
+            )
+            this.plugins.push(focusPlugin, blockDndPlugin)
+        }
+        this.imagePlugin = createImagePlugin({decorator})
+
+        const linkifyPlugin = createLinkifyPlugin()
+
+        this.plugins.push(linkifyPlugin, this.imagePlugin)
 
         this._currentRawData = this.props.post.body
 
@@ -51,7 +58,8 @@ export default class PostEditor extends React.Component {
 
         this.changeTimeout = false
 
-        this.onChange = (editorState, forceSave) => {
+        this.onChange = (editorState, editor, forceSave) => {
+            if( this.props.readOnly ) return
             this.setState({editorState})
             if (forceSave || this.state.editorState.getCurrentContent() !== editorState.getCurrentContent()) {
 
@@ -88,7 +96,7 @@ export default class PostEditor extends React.Component {
 
         const editorProps = {
             readOnly,
-            plugins,
+            plugins: this.plugins,
             editorState,
             placeholder: 'Tell a story...',
             ref: (editor) => {
@@ -123,6 +131,7 @@ export default class PostEditor extends React.Component {
                     editorState={editorState}
                     onToggle={this.toggleBlockType}
                     onChange={this.onChange}
+                    imagePlugin={this.imagePlugin}
                 />
                 <InlineStyleControls
                     editorState={editorState}
@@ -208,7 +217,7 @@ export default class PostEditor extends React.Component {
 
                         const {editorState} = this.state
 
-                        this.onChange(imagePlugin.addImage(editorState, '/uploads/' + ids[0]), true)
+                        this.onChange(this.imagePlugin.addImage(editorState, '/uploads/' + ids[0]), null, true)
                     }
 
                 } else {
@@ -356,7 +365,7 @@ const BLOCK_TYPES = [
 ]
 
 const BlockStyleControls = (props) => {
-    const {editorState, onChange} = props
+    const {editorState, onChange, imagePlugin} = props
     const selection = editorState.getSelection()
     const blockType = editorState
         .getCurrentContent()
