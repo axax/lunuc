@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import UploadUtil from 'client/util/upload'
 import './PostEditor.css'
 import 'draft-js-focus-plugin/lib/plugin.css'
 
@@ -11,6 +10,7 @@ import createLinkifyPlugin from 'draft-js-linkify-plugin'
 import createImagePlugin from 'draft-js-image-plugin'
 import createBlockDndPlugin from 'draft-js-drag-n-drop-plugin'
 import createFocusPlugin from 'draft-js-focus-plugin'
+import createDndFileUploadPlugin from './dnd-upload-plugin'
 
 
 import ImageAdd from './ImageAdd';
@@ -20,8 +20,6 @@ import ImageAdd from './ImageAdd';
  import createFocusPlugin from 'draft-js-focus-plugin'
  import createResizeablePlugin from 'draft-js-resizeable-plugin'
  import createBlockDndPlugin from 'draft-js-drag-n-drop-plugin'*/
-//import createDragNDropUploadPlugin from 'draft-js-drag-n-drop-upload-plugin'
-
 
 export default class PostEditor extends React.Component {
     constructor(props) {
@@ -31,7 +29,7 @@ export default class PostEditor extends React.Component {
         const {readOnly} = props
 
         let decorator = null
-        if( !readOnly ){
+        if (!readOnly) {
             const focusPlugin = createFocusPlugin({})
             const blockDndPlugin = createBlockDndPlugin()
 
@@ -39,13 +37,18 @@ export default class PostEditor extends React.Component {
                 focusPlugin.decorator,
                 blockDndPlugin.decorator
             )
+
             this.plugins.push(focusPlugin, blockDndPlugin)
         }
         this.imagePlugin = createImagePlugin({decorator})
-
         const linkifyPlugin = createLinkifyPlugin()
-
         this.plugins.push(linkifyPlugin, this.imagePlugin)
+
+        if( !readOnly ){
+            const dndFileUploadPlugin = createDndFileUploadPlugin({handleUpload: true, addImage: this.imagePlugin.addImage})
+            this.plugins.push(dndFileUploadPlugin)
+        }
+
 
         this._currentRawData = this.props.post.body
 
@@ -59,7 +62,7 @@ export default class PostEditor extends React.Component {
         this.changeTimeout = false
 
         this.onChange = (editorState, editor, forceSave) => {
-            if( this.props.readOnly ) return
+            if (this.props.readOnly) return
             this.setState({editorState})
             if (forceSave || this.state.editorState.getCurrentContent() !== editorState.getCurrentContent()) {
 
@@ -137,7 +140,7 @@ export default class PostEditor extends React.Component {
                     editorState={editorState}
                     onToggle={this.toggleInlineStyle}
                 />
-                <div className={className} onClick={this.focus} onDrop={this.handleDrop.bind(this)}>
+                <div className={className} onClick={this.focus}>
                     <Editor {...editorProps}/>
                 </div>
             </div>
@@ -164,72 +167,6 @@ export default class PostEditor extends React.Component {
             }
         }
     }
-
-    handleDrop(e) {
-        const files = e.target.files || e.dataTransfer.files
-        const uploadTo = '/graphql/upload'
-
-        const {validFiles, invalidFiles} = UploadUtil.validateFiles({
-            files,
-            accept: 'image/*',
-            maxFileSize: 10 * 1024 * 1024
-        })
-
-        if (invalidFiles.length) {
-            // TODO implement proper error handling
-            alert(invalidFiles[0].message)
-        } else {
-
-            for (let i = 0, file; file = validFiles[i]; i++) {
-                const isImage = UploadUtil.isImage(file.name)
-
-                if (isImage) {
-                    UploadUtil.resizeImageFromFile({
-                        file,
-                        maxWidth: 1000,
-                        maxHeight: 100,
-                        quality: 0.6,
-                        onSuccess: (dataUrl) => {
-                            this.uploadData(dataUrl, file, uploadTo)
-                        }
-                    })
-                } else {
-                    this.uploadData(URL.createObjectURL(file), file, uploadTo)
-                }
-            }
-        }
-
-        console.log(files)
-    }
-
-    uploadData(dataUrl, file, uploadTo) {
-        UploadUtil.uploadData({
-            dataUrl,
-            fileName: file.name,
-            uploadTo,
-            onProgress: () => {
-                // TODO implement progress bar
-            },
-            onLoad: (e) => {
-                const {status, message, ids} = e.target.response
-                if (status === 'success') {
-                    if (ids && ids.length) {
-
-                        const {editorState} = this.state
-
-                        this.onChange(this.imagePlugin.addImage(editorState, '/uploads/' + ids[0]), null, true)
-                    }
-
-                } else {
-                    // TODO implement proper error handling
-                }
-            },
-            onError: (e) => {
-                // TODO implement proper error handling
-            }
-        })
-    }
-
 
     _getEditorState(bodyRaw) {
         console.log('get editor state')
