@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import {withStyles} from 'ui/admin'
 
-const reservedJsKeywords = ['return', 'if', 'else', 'var', 'let', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export', 'function', 'undefined']
+const reservedJsKeywords = ['return', 'if', 'else', 'var', 'while','let','for', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export', 'function', 'undefined']
 const reservedJsCustomKeywords = ['clientQuery', 'on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent', 'getComponent', 'getKeyValueFromLS', 'setKeyValue']
 
 const styles = theme => ({
@@ -218,7 +218,12 @@ class ContentEditable extends React.Component {
             keyword = '', res = ''
 
         for (let i = 0; i < str.length; i++) {
-            const c = str[i]
+            let c = str[i]
+            if( c === '<'){
+                c='&lt;'
+            }else if (c==='>'){
+                c='&gt;'
+            }
 
             if (inComment) {
                 res += c
