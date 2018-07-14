@@ -7,6 +7,7 @@ import {
     WebIconButton,
     DeleteIconButton,
     EditIconButton,
+    Checkbox,
     Chip,
     Typography,
     Switch,
@@ -52,7 +53,7 @@ const styles = theme => ({
         overflowY: 'auto',
         maxWidth: 600,
         maxHeight: 200
-}
+    }
 })
 
 
@@ -73,6 +74,7 @@ class TypesContainer extends React.Component {
         this.pageParams = this.determinPageParams(props)
         this.baseFilter = props.baseFilter
         this.state = {
+            selectedrows: {},
             confirmDeletionDialog: true,
             viewSettingDialog: undefined,
             dataToDelete: null,
@@ -118,6 +120,7 @@ class TypesContainer extends React.Component {
     shouldComponentUpdate(props, state) {
         // maybe this can be optimized even more
         return this.state !== state ||
+            this.state.selectedrows !== state.selectedrows ||
             this.props.location !== props.location ||
             this.props.baseFilter !== props.baseFilter ||
             this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
@@ -140,14 +143,15 @@ class TypesContainer extends React.Component {
 
     renderTable(columns) {
         const {classes} = this.props
-        const {data} = this.state
+        const {data, selectedrows} = this.state
         if (data) {
             // small optimization. only render table if data changed
-            if (data === this._lastData) {
+            if (data === this._lastData && selectedrows === this._lastSelectedRows) {
                 return this._renderedTable
             }
 
             this._lastData = data
+            this._lastSelectedRows = selectedrows
 
             const {type, page, limit, sort} = this.pageParams
 
@@ -164,10 +168,15 @@ class TypesContainer extends React.Component {
 
             if (data.results) {
                 data.results.forEach(item => {
-                    if( !item ) return
+                    if (!item) return
                     const dynamic = {}
+                    dynamic.selectrow = <Checkbox
+                        checked={!!selectedrows[item._id]}
+                        onChange={this.handleRowSelect.bind(this)}
+                        value={item._id}
+                    />
                     fields.forEach(field => {
-                        if ( columnsMap[field.name]) {
+                        if (columnsMap[field.name]) {
                             let v = item[field.name]
                             if (field.reference) {
                                 if (v) {
@@ -217,8 +226,9 @@ class TypesContainer extends React.Component {
                                     dynamic[field.name] = langVar
                                 } else {
                                     dynamic[field.name] =
-                                        <div className={classes.tableLargeContent} onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
-                                              suppressContentEditableWarning contentEditable>{v}</div>
+                                        <div className={classes.tableLargeContent}
+                                             onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
+                                             suppressContentEditableWarning contentEditable>{v}</div>
                                 }
 
 
@@ -283,6 +293,7 @@ class TypesContainer extends React.Component {
                                          this.getData(this.pageParams, false)
                                      }
                                  }]}
+                             footer={`${Object.keys(this.state.selectedrows).length} rows selected`}
                              orderDirection={asort.length > 1 && asort[1] || null}
                              onSort={this.handleSortChange}
                              onChangePage={this.handleChangePage.bind(this)}
@@ -421,10 +432,23 @@ class TypesContainer extends React.Component {
         return true
     }
 
+    handleRowSelect(e) {
+        const target = e.target, checked = target.checked, value = target.value
+
+        const selectedrows = Object.assign({},this.state.selectedrows)
+        if( checked ){
+            selectedrows[value] = checked
+        }else{
+            delete selectedrows[value];
+        }
+
+
+        this.setState({selectedrows})
+
+    }
+
     handleViewSettingChange(e, type) {
-        const target = e.target
-        const value = target.checked
-        const name = target.name
+        const target = e.target, value = target.checked, name = target.name
 
         this.settings = deepMerge(this.settings, {[type]: {columns: {[name]: value}}})
         // force rerendering
@@ -439,8 +463,18 @@ class TypesContainer extends React.Component {
 
         if (this.typeColumns[type]) return this.typeColumns[type]
         this.typeColumns[type] = []
+
+        this.typeColumns[type].push({
+            title: <Checkbox
+                checked={this.state.checkedA}
+                onChange={this.handleRowSelect}
+                value="all"
+            />,
+            id: 'selectrow'
+        })
+
         typeDefinition.fields.forEach(field => {
-            if( field.name !== 'createdBy') {
+            if (field.name !== 'createdBy') {
                 this.typeColumns[type].push({
                     title: field.name + (field.localized ? ' [' + _app_.lang + ']' : ''),
                     id: field.name,
@@ -917,13 +951,13 @@ class TypesContainer extends React.Component {
                 return
             }
 
-            const fieldData = Object.assign({},this.createEditForm.state.fields)
+            const fieldData = Object.assign({}, this.createEditForm.state.fields)
             const formFields = getFormFields(this.pageParams.type)
 
             // convert array to single value for not multivalue references
-            Object.keys(formFields).forEach(key=>{
+            Object.keys(formFields).forEach(key => {
                 const field = formFields[key]
-                if( field.reference && !field.multi && fieldData[key] && fieldData[key].length ){
+                if (field.reference && !field.multi && fieldData[key] && fieldData[key].length) {
                     fieldData[key] = fieldData[key][0]
                 }
             })
@@ -1025,7 +1059,7 @@ Hook.on('TypeTable', ({type, dataSource, data, container}) => {
             const item = data.results[i]
             const mimeType = item.mimeType ? item.mimeType.split('/') : ['file']
 
-            d.data = <a target="_blank" rel="noopener noreferrer"  href={UPLOAD_URL + '/' + item._id}>
+            d.data = <a target="_blank" rel="noopener noreferrer" href={UPLOAD_URL + '/' + item._id}>
                 {
                     (mimeType[0] === 'image' ?
                             <img height="40" src={UPLOAD_URL + '/' + item._id}/>
@@ -1053,15 +1087,16 @@ Hook.on('TypeCreateEditDialog', function ({type, props, dataToEdit}) {
     if (type === 'Media' && !dataToEdit) {
         // remove save button
         props.actions.splice(1, 1)
-        props.children = <FileDrop multi={false} accept="*/*" uploadTo="/graphql/upload" resizeImages={true} onSuccess={r => {
-            this.setState({createEditDialog: false})
+        props.children =
+            <FileDrop multi={false} accept="*/*" uploadTo="/graphql/upload" resizeImages={true} onSuccess={r => {
+                this.setState({createEditDialog: false})
 
-            this.getData(this.pageParams, false)
-            // TODO: but it directly into the store instead of reload
-            //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
+                this.getData(this.pageParams, false)
+                // TODO: but it directly into the store instead of reload
+                //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
 
 
-        }}/>
+            }}/>
     }
 })
 

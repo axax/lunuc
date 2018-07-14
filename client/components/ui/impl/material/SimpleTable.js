@@ -57,7 +57,7 @@ class SimpleTable extends React.Component {
     }
 
     render() {
-        const {title, actions, classes, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, columns, dataSource} = this.props
+        const {title, actions, classes, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, columns, dataSource, footer} = this.props
         const numSelected = 0
         return <Paper>
 
@@ -147,6 +147,7 @@ class SimpleTable extends React.Component {
             <Table>
                 <TableFooter>
                     <TableRow>
+                        <TableCell>{footer}</TableCell>
                         <TablePagination
                             rowsPerPageOptions={[5, 10, 25, 50, 100, 1000]}
                             count={count}
@@ -165,6 +166,7 @@ class SimpleTable extends React.Component {
 SimpleTable.propTypes = {
     classes: PropTypes.object.isRequired,
     theme: PropTypes.object,
+    footer: PropTypes.any,
     count: PropTypes.number,
     rowsPerPage: PropTypes.number,
     page: PropTypes.number,
