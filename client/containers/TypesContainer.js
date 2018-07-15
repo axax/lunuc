@@ -171,11 +171,13 @@ class TypesContainer extends React.Component {
                 data.results.forEach(item => {
                     if (!item) return
                     const dynamic = {}
-                    dynamic.selectrow = <Checkbox
-                        checked={!!selectedrows[item._id]}
-                        onChange={this.handleRowSelect.bind(this)}
-                        value={item._id}
-                    />
+                    if (columnsMap['check']) {
+                        dynamic.check = <Checkbox
+                            checked={!!selectedrows[item._id]}
+                            onChange={this.handleRowSelect.bind(this)}
+                            value={item._id}
+                        />
+                    }
                     fields.forEach(field => {
                         if (columnsMap[field.name]) {
                             let v = item[field.name]
@@ -273,6 +275,7 @@ class TypesContainer extends React.Component {
             /* HOOK */
             Hook.call('TypeTable', {type, dataSource, data, fields, container: this})
 
+            const selectedLength = Object.keys(this.state.selectedrows).length
             this._renderedTable =
                 <SimpleTable title={type} dataSource={dataSource} columns={columnsFiltered} count={data.total}
                              rowsPerPage={limit} page={page}
@@ -294,7 +297,12 @@ class TypesContainer extends React.Component {
                                          this.getData(this.pageParams, false)
                                      }
                                  }]}
-                             footer={`${Object.keys(this.state.selectedrows).length} rows selected`}
+                             footer={<div>{`${selectedLength} rows selected`} {selectedLength ? <SimpleSelect
+                                 label="Select action"
+                                 value=""
+                                 onChange={this.handleBatchAction.bind(this)}
+                                 items={[{name: 'Delete', value: 'delete'}]}
+                             /> : ''}</div>}
                              orderDirection={asort.length > 1 && asort[1] || null}
                              onSort={this.handleSortChange}
                              onChangePage={this.handleChangePage.bind(this)}
@@ -336,7 +344,7 @@ class TypesContainer extends React.Component {
 
                     {columns &&
                     columns.map(c => {
-                        return <div key={c.id}><SimpleSwitch label={c.title} name={c.id}
+                        return <div key={c.id}><SimpleSwitch label={c.label || c.title} name={c.id}
                                                              onChange={(e) => {
                                                                  this.handleViewSettingChange.bind(this)(e, type)
                                                              }}
@@ -400,7 +408,7 @@ class TypesContainer extends React.Component {
             <SimpleDialog open={confirmDeletionDialog} onClose={this.handleConfirmDeletion}
                           actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
                           title="Confirm deletion">
-                Are you sure you want to delete this item?
+                Are you sure you want to delete {dataToDelete.length > 1 ? 'the selected items' : 'this item'}?
             </SimpleDialog>
             }
 
@@ -432,6 +440,20 @@ class TypesContainer extends React.Component {
         }
         return true
     }
+
+
+    handleBatchAction(e) {
+        const value = e.target.value
+        if (value === 'delete') {
+            const dataToDelete = []
+            Object.keys(this.state.selectedrows).forEach(_id => {
+                dataToDelete.push({_id})
+            })
+            this.setState({dataToDelete})
+
+        }
+    }
+
 
     handleRowSelect(e) {
         const target = e.target, checked = target.checked, value = target.value
@@ -482,13 +504,14 @@ class TypesContainer extends React.Component {
         if (this.typeColumns[type] && this._lastSelectAllRows === selectAllRows) return this.typeColumns[type]
         this.typeColumns[type] = []
         this._lastSelectAllRows = selectAllRows
-        console.log(selectAllRows)
+
         this.typeColumns[type].push({
+            label: 'Check',
             title: <Checkbox
                 checked={this.state.selectAllRows}
                 onChange={this.handleRowSelect.bind(this)}
             />,
-            id: 'selectrow'
+            id: 'check'
         })
 
         typeDefinition.fields.forEach(field => {
@@ -708,7 +731,7 @@ class TypesContainer extends React.Component {
     }
 
 
-    deleteData({type, page, limit, sort, filter}, id) {
+    deleteData({type, page, limit, sort, filter}, ids) {
         const {client} = this.props
 
         if (type) {
@@ -716,9 +739,9 @@ class TypesContainer extends React.Component {
             const queries = getTypeQueries(type),
                 storeKey = this.getStoreKey(type)
             client.mutate({
-                mutation: gql(queries.delete),
+                mutation: gql(queries.deleteMany),
                 variables: {
-                    _id: id
+                    _id: ids
                 },
                 update: (store, {data}) => {
                     const gqlQuery = gql(queries.query)
@@ -732,21 +755,25 @@ class TypesContainer extends React.Component {
                     if (storeData[storeKey]) {
                         const refResults = storeData[storeKey].results
 
-                        const idx = refResults.findIndex(x => x._id === data['delete' + type]._id)
-                        if (idx > -1) {
-                            if (data['delete' + type].status === 'deleting') {
-                                refResults[idx].status = 'deleting'
-                            } else {
-                                refResults.splice(idx, 1)
-                                storeData[storeKey].total -= 1
+                        data['delete' + type + 's'].forEach(result => {
+                            const idx = refResults.findIndex(x => x._id === result._id)
+                            if (idx > -1) {
+                                if (result.status === 'deleting') {
+                                    refResults[idx].status = 'deleting'
+                                } else {
+                                    refResults.splice(idx, 1)
+                                    storeData[storeKey].total -= 1
+                                }
                             }
-                            store.writeQuery({
-                                query: gqlQuery,
-                                variables: {page, limit, sort, filter: extendedFilter},
-                                data: storeData
-                            })
-                            this.setState({data: storeData[storeKey]})
-                        }
+                        })
+
+                        store.writeQuery({
+                            query: gqlQuery,
+                            variables: {page, limit, sort, filter: extendedFilter},
+                            data: storeData
+                        })
+                        this.setState({data: storeData[storeKey]})
+
                     }
 
                 },
@@ -932,7 +959,7 @@ class TypesContainer extends React.Component {
     }
 
     handleDeleteDataClick = (data) => {
-        this.setState({confirmDeletionDialog: true, dataToDelete: data})
+        this.setState({confirmDeletionDialog: true, dataToDelete: [data]})
     }
 
     handleEditDataClick = (data) => {
@@ -952,7 +979,10 @@ class TypesContainer extends React.Component {
 
     handleConfirmDeletion = (action) => {
         if (action && action.key === 'yes') {
-            this.deleteData(this.pageParams, this.state.dataToDelete._id)
+            this.deleteData(this.pageParams, this.state.dataToDelete.reduce((acc, item) => {
+                acc.push(item._id);
+                return acc
+            }, []))
         }
         this.setState({confirmDeletionDialog: false, dataToDelete: false})
     }

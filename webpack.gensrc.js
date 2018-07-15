@@ -303,6 +303,7 @@ function gensrcExtension(name, options) {
             schema += '\tcreate' + type.name + ' (' + mutationFields + '):' + type.name + 'Status\n'
             schema += '\tupdate' + type.name + ' (_id: ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + 'Status\n'
             schema += '\tdelete' + type.name + ' (_id: ID!):' + type.name + 'Status\n'
+            schema += '\tdelete' + type.name + 's (_id: [ID]):[' + type.name + 'Status]\n'
             schema += '}\n\n'
 
             schema += 'type ' + type.name + 'SubscribeResult {\n\tdata:' + type.name + '\n\taction: String\n}\n\n'
@@ -326,6 +327,10 @@ function gensrcExtension(name, options) {
     delete${type.name}: async ({_id}, {context}) => {
          pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {_id}}})
         return GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
+    },
+    delete${type.name}s: async ({_id}, {context}) => {
+         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {_id}}})
+        return GenericResolver.deleteEnities(db, context, '${type.name}', {_id})
     },
     subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),
 		(payload, context) => {

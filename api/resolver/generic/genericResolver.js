@@ -367,6 +367,42 @@ const GenericResolver = {
             throw new Error('Error deleting entry. You might not have premissions to manage other users')
         }
     },
+    deleteEnities: async (db, context, collectionName, data) => {
+
+        Util.checkIfUserIsLoggedIn(context)
+
+        if (data._id.constructor !== Array || !data._id.length) {
+            throw new Error('Id is missing')
+        }
+
+        const $in = []
+        const result = []
+        data._id.forEach(id=>{
+            $in.push( ObjectId(id) )
+            result.push({
+                _id: id,
+                status: 'deleted'
+            })
+        })
+
+        const options = {
+            _id: { $in}
+        }
+
+        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+            options.createdBy = ObjectId(context.id)
+        }
+
+        const collection = db.collection(collectionName)
+
+        const deletedResult = await collection.deleteMany(options)
+
+        if (deletedResult.deletedCount > 0) {
+            return result
+        } else {
+            throw new Error('Error deleting entries. You might not have premissions to manage other users')
+        }
+    },
     updateEnity: async (db, context, collectionName, data) => {
 
         Util.checkIfUserIsLoggedIn(context)
