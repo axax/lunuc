@@ -74,6 +74,7 @@ class TypesContainer extends React.Component {
         this.pageParams = this.determinPageParams(props)
         this.baseFilter = props.baseFilter
         this.state = {
+            selectAllRows: false,
             selectedrows: {},
             confirmDeletionDialog: true,
             viewSettingDialog: undefined,
@@ -434,16 +435,31 @@ class TypesContainer extends React.Component {
 
     handleRowSelect(e) {
         const target = e.target, checked = target.checked, value = target.value
+        const selectedrows = Object.assign({}, this.state.selectedrows)
 
-        const selectedrows = Object.assign({},this.state.selectedrows)
-        if( checked ){
-            selectedrows[value] = checked
-        }else{
-            delete selectedrows[value];
+        const update = (value) => {
+            if (checked) {
+                selectedrows[value] = checked
+            } else {
+                delete selectedrows[value];
+            }
         }
 
-
-        this.setState({selectedrows})
+        let selectAllRows = false
+        if (value === '') {
+            const {data} = this.state
+            selectAllRows = checked
+            if (data.results) {
+                data.results.forEach(item => {
+                    if (item) {
+                        update(item._id)
+                    }
+                })
+            }
+        } else {
+            update(value)
+        }
+        this.setState({selectedrows, selectAllRows})
 
     }
 
@@ -461,14 +477,16 @@ class TypesContainer extends React.Component {
         const typeDefinition = this.types[type]
         if (!typeDefinition) return
 
-        if (this.typeColumns[type]) return this.typeColumns[type]
-        this.typeColumns[type] = []
+        const {selectAllRows} = this.state
 
+        if (this.typeColumns[type] && this._lastSelectAllRows === selectAllRows) return this.typeColumns[type]
+        this.typeColumns[type] = []
+        this._lastSelectAllRows = selectAllRows
+        console.log(selectAllRows)
         this.typeColumns[type].push({
             title: <Checkbox
-                checked={this.state.checkedA}
-                onChange={this.handleRowSelect}
-                value="all"
+                checked={this.state.selectAllRows}
+                onChange={this.handleRowSelect.bind(this)}
             />,
             id: 'selectrow'
         })
