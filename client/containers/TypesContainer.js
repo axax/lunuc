@@ -1096,7 +1096,7 @@ export default connect(
 // add an extra column for Media at the beginning
 Hook.on('TypeTableColumns', ({type, columns}) => {
     if (type === 'Media') {
-        columns.unshift({title: 'Data', id: 'data'})
+        columns.splice(1, 0, {title: 'Data', id: 'data'})
     }
 })
 
