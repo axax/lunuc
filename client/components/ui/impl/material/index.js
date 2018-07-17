@@ -97,7 +97,8 @@ export MenuItem from '@material-ui/core/MenuItem'
 export Paper from '@material-ui/core/Paper'
 export Avatar from '@material-ui/core/Avatar'
 export Stepper, { Step, StepLabel, StepContent } from '@material-ui/core/Stepper'
-
+export Tabs from '@material-ui/core/Tabs'
+export Tab from '@material-ui/core/Tab'
 
 // simple components are extended componente with features easy to use
 export SimpleHeaderMenu from './SimpleHeaderMenu'

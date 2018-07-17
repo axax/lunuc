@@ -198,7 +198,7 @@ class DrawerLayout extends React.Component {
                                 </IconButton>
                             </div>
                             <Divider />
-                            {sidebar}
+                            {open && sidebar}
                         </div>
                     </Drawer>
                     <main style={contentFixed} className={classNames(classes.content, fixedLayout && !open && classes.contentClose)}>

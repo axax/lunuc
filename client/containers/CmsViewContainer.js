@@ -360,6 +360,8 @@ class CmsViewContainer extends React.Component {
                                 expanded={settings.templateExpanded}>
                         <TemplateEditor
                             style={editorStyle}
+                            tab={settings.templateTab}
+                            onTabChange={(tab) => this.handleExpandable.call(this, 'templateTab', tab)}
                             onChange={this.handleTemplateChange}
                             onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'template')}>{template}</TemplateEditor>
                     </Expandable>
