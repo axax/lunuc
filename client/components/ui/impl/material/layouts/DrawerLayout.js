@@ -146,7 +146,14 @@ class DrawerLayout extends React.Component {
     }
 
     handleDrawerOpen = () => {
-        this.setState({open: true})
+        this.setState({open: true},()=>{
+            // this is a ugly hack
+            // right now it is only used for the tab indicator in the templateeditor. otherwise it is not properly placed
+            // we will remove this as soon as there is a better solution
+            setTimeout(()=> {
+                window.dispatchEvent(new CustomEvent('resize'))
+            },20)
+        })
     }
 
     handleDrawerClose = () => {

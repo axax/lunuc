@@ -41,15 +41,24 @@ class JsonEditor extends React.Component {
         } else if (json.constructor === Object) {
             const t = (json.t || 'div')
             key += '.' + t
+
+            const props = []
+            Object.keys(json).forEach(k=>{
+                if( k !== 't' && k!== 'c' ){
+                    props.push(<ListItem key={key+'.'+k}><ListItemText>{k +' = '+JSON.stringify(json[k])}</ListItemText></ListItem>)
+                }
+            })
             return [<ListItem key={key} button onClick={this.handleClick.bind(this,key)}>
                     <ListItemText>{t}</ListItemText>
                     {!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                 </ListItem>,
                 <Collapse key={key+'.colapse'} in={!!this.state.open[key]} timeout="auto" unmountOnExit>
+                    {props}
                     {this.renderJsonRec(json.c, key)}
+
                 </Collapse>]
         } else {
-            //return <ListItemText>json</ListItemText>
+            return <ListItem key={key+'.c'}><ListItemText>{json}</ListItemText></ListItem>
         }
     }
 
