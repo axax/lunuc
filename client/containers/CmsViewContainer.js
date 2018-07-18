@@ -45,8 +45,6 @@ const gqlQuery = gql`query cmsPage($slug: String!,$query:String,$nosession: Stri
 
 
 const editorStyle = {
-    backgroundColor: '#fff',
-    border: '#cfcfcf solid 1px',
     padding: '10px',
     minHeight: 200,
     overflow: 'auto',

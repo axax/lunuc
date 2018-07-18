@@ -1,34 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
-import {withStyles} from 'ui/admin'
-
-const reservedJsKeywords = ['return', 'if', 'else', 'var', 'while', 'let', 'for', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export', 'function', 'undefined']
-const reservedJsCustomKeywords = ['clientQuery', 'on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent', 'getComponent', 'getKeyValueFromLS', 'setKeyValue']
+import {withStyles, List, ListItem, ListItemText, Collapse, ExpandLessIcon, ExpandMoreIcon} from 'ui/admin'
 
 const styles = theme => ({
     editor: {
         display: 'block',
         tabSize: 2
     },
-    highlight1: {
-        color: '#1e0a91',
-        fontWeight: 'bold'
-    },
-    highlight2: {
-        fontStyle: 'italic',
-        fontWeight: 'bold'
-    },
-    highlight3: {
-        color: '#268e00',
-    },
-    highlight4: {
-        color: '#af0808',
-        fontWeight: 'bold'
-    },
-    highlight5: {
-        color: '#a1a1a1',
-        fontStyle: 'italic'
+    block:{
+
     }
 })
 
@@ -40,9 +21,13 @@ class JsonEditor extends React.Component {
         super(props)
 
         this.json = JSON.parse(props.children)
+        this.state = {
+            open:{}
+        }
     }
 
     renderJsonRec(json, key) {
+        const {classes} = this.props
         if (!json) return null
         if (!key) key = 'root'
 
@@ -52,27 +37,37 @@ class JsonEditor extends React.Component {
                 key += '.' + idx
                 acc.push(this.renderJsonRec(item, key))
             })
-            return acc
+            return <List component="nav">{acc}</List>
         } else if (json.constructor === Object) {
             const t = (json.t || 'div')
             key += '.' + t
-            return <div key={key}>
-                {t}
-                {this.renderJsonRec(json.c, key)}
-                </div>
+            return [<ListItem key={key} button onClick={this.handleClick.bind(this,key)}>
+                    <ListItemText>{t}</ListItemText>
+                    {!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </ListItem>,
+                <Collapse key={key+'.colapse'} in={!!this.state.open[key]} timeout="auto" unmountOnExit>
+                    {this.renderJsonRec(json.c, key)}
+                </Collapse>]
         } else {
-            return json
+            //return <ListItemText>json</ListItemText>
         }
     }
 
+    handleClick(key){
+        this.setState({open:Object.assign({},this.state.open,{ [key]:!this.state.open[key] })});
+    }
+
     render() {
+
+        console.log(this.state.open)
         const {classes} = this.props
         console.log(this.renderJsonRec(this.json))
-        return <div class={classes.editor}>{this.renderJsonRec(this.json)}</div>
+        return this.renderJsonRec(this.json)
 
     }
 
-    shouldComponentUpdate(nextProps) {
+    shouldComponentUpdate(nextProps, nextState) {
+        return nextState.open !== this.state.open
     }
 
     componentDidUpdate() {

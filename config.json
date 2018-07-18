@@ -38,7 +38,9 @@
         "Close",
         "Code",
         "AccountCircle",
-        "FileUpload"
+        "FileUpload",
+        "ExpandLess",
+        "ExpandMore"
       ],
       "theme":{
         "colors":{

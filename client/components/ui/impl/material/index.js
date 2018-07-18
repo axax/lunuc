@@ -131,6 +131,11 @@ import List from '@material-ui/core/List'
 import ListItem from '@material-ui/core/ListItem'
 import ListItemText from '@material-ui/core/ListItemText'
 
+export List from '@material-ui/core/List'
+export ListItem from '@material-ui/core/ListItem'
+export ListItemText from '@material-ui/core/ListItemText'
+export Collapse from '@material-ui/core/Collapse';
+
 export const MenuList = ({children, ...rest}) => {
     return <List {...rest}>
         {children}
