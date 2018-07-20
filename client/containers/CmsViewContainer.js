@@ -37,7 +37,8 @@ const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch"
                                        load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const Divider = (props) => <Async {...props} expose="Divider"
                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
-const ErrorHandler = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../components/layout/ErrorHandler')}/>
+const ErrorHandler = (props) => <Async {...props}
+                                       load={import(/* webpackChunkName: "admin" */ '../components/layout/ErrorHandler')}/>
 
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
@@ -382,6 +383,12 @@ class CmsViewContainer extends React.Component {
                         />
                     </Expandable>
 
+                    <Expandable title="Revisions"
+                                onChange={(expanded) => this.handleExpandable.call(this, 'revisionsExpanded', expanded)}
+                                expanded={settings.revisionsExpanded}>
+
+                    </Expandable>
+
 
                     {cmsPages && cmsPages.results && cmsPages.results.length > 1 &&
 
@@ -445,18 +452,18 @@ class CmsViewContainer extends React.Component {
         this.setKeyValue('CmsViewContainerSettings', this.state.settings)
     }
 
-    clientQuery(query, options){
+    clientQuery(query, options) {
         const {client} = this.props
-        if( !query || query.constructor !== String ) return
+        if (!query || query.constructor !== String) return
 
         const {success, error, ...rest} = options
 
-        if( query.startsWith('mutation') ){
+        if (query.startsWith('mutation')) {
             client.mutate({
                 query: gql(query),
                 ...rest
             }).then(success).catch(error)
-        }else{
+        } else {
             client.query({
                 fetchPolicy: 'network-only',
                 forceFetch: true,
@@ -465,6 +472,31 @@ class CmsViewContainer extends React.Component {
             }).then(success).catch(error)
         }
     }
+
+    updateResolvedData(json){
+
+
+        const {client, cmsPage, cmsPageVariables} = this.props
+
+
+
+        const storeData = client.readQuery({
+            query: gqlQuery,
+            variables: cmsPageVariables
+        })
+
+        // upadate data in resolvedData string
+        if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
+
+            storeData.cmsPage.resolvedData = JSON.stringify(json)
+            client.writeQuery({
+                query: gqlQuery,
+                variables: cmsPageVariables,
+                data: storeData
+            })
+        }
+    }
+
 
     setKeyValue(arg1, arg2, arg3) {
         let key, value, server
@@ -482,12 +514,19 @@ class CmsViewContainer extends React.Component {
         if (!key || !value) {
             return
         }
+        const {client, user, cmsPage} = this.props
+        const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
+        const kvk= resolvedDataJson._meta.keyValueKey
+        if ( kvk ){
+            if( !resolvedDataJson[kvk] ){
+                resolvedDataJson[kvk] = {}
+            }
+            resolvedDataJson[kvk][key] = value
+        }
 
         if (value.constructor === Object) {
             value = JSON.stringify(value)
         }
-
-        const {client, user} = this.props
         const variables = {
             key,
             value
@@ -499,6 +538,7 @@ class CmsViewContainer extends React.Component {
                 mutation: gqlQuery,
                 variables,
                 update: (store, {data}) => {
+                    this.updateResolvedData(resolvedDataJson)
                 },
             })
             // clear local key values as there is a user session now
@@ -520,6 +560,7 @@ class CmsViewContainer extends React.Component {
             }
             json[key] = value
             localStorage.setItem(localStorageKey, JSON.stringify(json))
+            this.updateResolvedData(resolvedDataJson)
         }
 
     }
@@ -531,6 +572,7 @@ CmsViewContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
     children: PropTypes.any,
+    cmsPageVariables: PropTypes.object,
     cmsPage: PropTypes.object,
     cmsPages: PropTypes.object,
     keyValue: PropTypes.object,
@@ -579,10 +621,11 @@ const CmsViewContainerWithGql = compose(
                 fetchPolicy: isEditMode(ownProps) ? 'network-only' : 'cache-and-network'
             }
         },
-        props: ({data: {loading, cmsPage}}) => {
+        props: ({data: {loading, cmsPage, variables}}) => {
             if (cmsPage)
                 urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv
             return {
+                cmsPageVariables: variables,
                 cmsPage,
                 loading
             }

@@ -331,6 +331,7 @@ class JsonDom extends React.Component {
                         // remove tabs and parse
                         const json = JSON.parse(tpl.call({
                             [s]: loopChild,
+                            scope: this.scope,
                             escape: Util.escapeForJson,
                             tryCatch: Util.tryCatch
                         }).replace(/\t/g, '\\t'))
@@ -392,15 +393,13 @@ class JsonDom extends React.Component {
 
                     if (p.name) {
                         // handle controlled input here
-                        if (p.value) {
-                            p.defaultValue = p.value
-                            p.value = undefined
-                        }
+                        console.log(p.value)
                         if (!this.state.bindings[p.name]) {
-                            this.state.bindings[p.name] = p.defaultValue
+                            this.state.bindings[p.name] = p.value
                             this.scope.bindings = this.state.bindings
                         }
                         p.onChange = this.handleBindingChange.bind(this, p.onChange)
+
                     } else if (p.value) {
                         console.warn('Don\'t use property value without name')
                     }
@@ -616,8 +615,8 @@ class JsonDomInput extends React.Component {
         }
     }
 
-    shouldComponentUpdate(props) {
-        return props.value !== this.props.value
+    shouldComponentUpdate(props, state) {
+        return state.value !== this.state.value
     }
 
     UNSAFE_componentWillReceiveProps(props) {

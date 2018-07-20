@@ -31,7 +31,7 @@ const UtilCms = {
 
     },
     resolveData: async (db, context, dataResolver, scope, nosession) => {
-        const resolvedData = {}, subscriptions = []
+        const resolvedData = {_meta:{}}, subscriptions = []
 
         if (dataResolver) {
             let debugInfo = null
@@ -108,7 +108,8 @@ const UtilCms = {
                                 }
                             })
                         }
-                        resolvedData[segment.key || 'keyValueGlobals'] = map
+                        resolvedData._meta.keyValueGlobalKey = segment.key || 'keyValueGlobals'
+                        resolvedData[resolvedData._meta.keyValueGlobalKey] = map
                     } else if (segment.keyValues) {
 
                         const map = {}
@@ -146,7 +147,8 @@ const UtilCms = {
                             })
                         }
 
-                        resolvedData[segment.key || 'keyValues'] = map
+                        resolvedData._meta.keyValueKey = segment.key || 'keyValues'
+                        resolvedData[resolvedData._meta.keyValueKey] = map
 
                     } else {
                         console.log('call cmsCustomResolver', segment)
