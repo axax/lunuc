@@ -103,6 +103,7 @@ const Util = {
     },
     parseFilter: filter => {
         const parts = {}, rest = []
+        let restString = ''
 
         if (filter) {
             let operator = 'or'
@@ -122,12 +123,14 @@ const Util = {
 
                     } else {
                         rest.push({value: q[0], operator})
+                        if (restString !== '') restString += ' '
+                        restString += (operator === 'and' ? ' and ' : '') + q[0]
                     }
                     operator = 'or'
                 }
             })
         }
-        return {parts, rest}
+        return {parts, rest, restString}
     },
     addStyle(url) {
         const link = document.createElement('link')

@@ -393,7 +393,9 @@ class JsonDom extends React.Component {
 
                     if (p.name) {
                         // handle controlled input here
-                        console.log(p.value)
+                        if( p.value === undefined){
+                            p.value = ''
+                        }
                         if (!this.state.bindings[p.name]) {
                             this.state.bindings[p.name] = p.value
                             this.scope.bindings = this.state.bindings
