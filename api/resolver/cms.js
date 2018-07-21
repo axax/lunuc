@@ -118,7 +118,7 @@ export const cmsResolver = (db) => ({
             if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
 
                 // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
-                cmsPages.results[0].template =JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
+                cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
             }
             Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
         }
@@ -129,6 +129,7 @@ export const cmsResolver = (db) => ({
         const scope = {...createScopeForDataResolver(query), page: {slug}}
 
         const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt, urlSensitiv} = cmsPages.results[0]
+        const ispublic = cmsPages.results[0].public
         const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope, nosession)
         let html
         if (ssr) {
@@ -160,6 +161,8 @@ export const cmsResolver = (db) => ({
                 script,
                 dataResolver,
                 ssr,
+                public: ispublic, // if public the content is visible to everyone
+                online: true,  // if true it is the active version that is online
                 resolvedData: JSON.stringify(resolvedData),
                 html,
                 subscriptions,
@@ -169,7 +172,7 @@ export const cmsResolver = (db) => ({
                  */
                 cacheKey: query,
                 /* Return the current user settings of the view
-                */
+                 */
                 settings: ''
             }
         } else {
@@ -181,6 +184,8 @@ export const cmsResolver = (db) => ({
                 modifiedAt,
                 createdBy,
                 ssr,
+                public: ispublic,
+                online: true,
                 slug,
                 template,
                 script,
@@ -209,12 +214,9 @@ export const cmsResolver = (db) => ({
     updateCmsPage: async ({_id, query, ...rest}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
 
-
-
         const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
 
         // if dataResolver has changed resolveData and return it
-
         if (rest.dataResolver) {
             const scope = createScopeForDataResolver(query)
             const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, rest.dataResolver, scope)

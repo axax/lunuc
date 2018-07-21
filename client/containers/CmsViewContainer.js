@@ -42,7 +42,7 @@ const ErrorHandler = (props) => <Async {...props}
 
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug: String!,$query:String,$nosession: String){ cmsPage(slug: $slug,query: $query, nosession: $nosession){cacheKey slug urlSensitiv template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
+const gqlQuery = gql`query cmsPage($slug: String!,$query:String,$nosession: String){ cmsPage(slug: $slug,query: $query, nosession: $nosession){cacheKey slug urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
 
 
 const editorStyle = {
@@ -106,7 +106,8 @@ class CmsViewContainer extends React.Component {
             template,
             script,
             dataResolver,
-            ssr
+            ssr,
+            public: props.cmsPage && props.cmsPage.public
         }
     }
 
@@ -215,10 +216,11 @@ class CmsViewContainer extends React.Component {
         }
     }
 
-    handleSsrChange = (e, ssr) => {
-        this.setState({ssr})
-        this.saveCmsPage(ssr, this.props.cmsPage, 'ssr')
+    handleFlagChange = (key, e, flag) => {
+        this.setState({[key]: flag})
+        this.saveCmsPage(flag, this.props.cmsPage, key)
     }
+
 
     handleClientScriptChange = (script) => {
         clearTimeout(this.setScriptTimeout)
@@ -379,7 +381,12 @@ class CmsViewContainer extends React.Component {
                         <SimpleSwitch
                             label="SSR (Server side Rendering)"
                             checked={!!this.state.ssr}
-                            onChange={this.handleSsrChange}
+                            onChange={this.handleFlagChange.bind(this, 'ssr')}
+                        />
+                        <SimpleSwitch
+                            label="Public (is visible to everyone)"
+                            checked={!!this.state.public}
+                            onChange={this.handleFlagChange.bind(this, 'public')}
                         />
                     </Expandable>
 
@@ -473,11 +480,10 @@ class CmsViewContainer extends React.Component {
         }
     }
 
-    updateResolvedData(json){
+    updateResolvedData(json) {
 
 
         const {client, cmsPage, cmsPageVariables} = this.props
-
 
 
         const storeData = client.readQuery({
@@ -516,9 +522,9 @@ class CmsViewContainer extends React.Component {
         }
         const {client, user, cmsPage} = this.props
         const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
-        const kvk= resolvedDataJson._meta.keyValueKey
-        if ( kvk ){
-            if( !resolvedDataJson[kvk] ){
+        const kvk = resolvedDataJson._meta.keyValueKey
+        if (kvk) {
+            if (!resolvedDataJson[kvk]) {
                 resolvedDataJson[kvk] = {}
             }
             resolvedDataJson[kvk][key] = value
@@ -662,7 +668,7 @@ const CmsViewContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id: ID!,$template: String,$slug: String,$script: String,$dataResolver: String,$ssr: Boolean){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr){slug template script dataResolver ssr resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$template:String,$slug:String,$script:String,$dataResolver:String,$ssr:Boolean,$public:Boolean){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr,public:$public){slug template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key) => {
                 return mutate({
