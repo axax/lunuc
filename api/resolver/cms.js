@@ -208,6 +208,9 @@ export const cmsResolver = (db) => ({
     },
     updateCmsPage: async ({_id, query, ...rest}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
+
+
+
         const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
 
         // if dataResolver has changed resolveData and return it

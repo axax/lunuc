@@ -6,7 +6,7 @@ const Util = {
         return str
     },
     escapeForJson: (str) => {
-        return Util.escapeDoubleQuotes(str)
+        return str.replace(/[\\\b\\\f\\\n\\\r\\\t\"\\]/g, "\\$&")
     },
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str) {

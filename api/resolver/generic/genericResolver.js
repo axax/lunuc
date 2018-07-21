@@ -403,7 +403,7 @@ const GenericResolver = {
             throw new Error('Error deleting entries. You might not have premissions to manage other users')
         }
     },
-    updateEnity: async (db, context, collectionName, data) => {
+    updateEnity: async (db, context, collectionName, data, options) => {
 
         Util.checkIfUserIsLoggedIn(context)
 
@@ -411,11 +411,16 @@ const GenericResolver = {
             throw new Error('Id is missing')
         }
 
-        const options = {
+        if( options && options.revisionControll ){
+//TODO
+
+        }
+
+        const params = {
             _id: ObjectId(data._id)
         }
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            options.createdBy = ObjectId(context.id)
+            params.createdBy = ObjectId(context.id)
         }
 
         const collection = db.collection(collectionName)
@@ -462,13 +467,13 @@ const GenericResolver = {
         // set timestamp
         dataSet.modifiedAt = dataSetDotNotation.modifiedAt = new Date().getTime()
         // try with dot notation for partial update
-        let result = (await collection.findOneAndUpdate(options, {
+        let result = (await collection.findOneAndUpdate(params, {
             $set: dataSetDotNotation
         }, {returnOriginal: false}))
 
         if (result.ok !== 1) {
             // if it fails try again without dot notation
-            result = (await collection.findOneAndUpdate(options, {
+            result = (await collection.findOneAndUpdate(params, {
                 $set: dataSet
             }, {returnOriginal: false}))
         }
