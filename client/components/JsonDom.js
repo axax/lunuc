@@ -393,7 +393,7 @@ class JsonDom extends React.Component {
 
                     if (p.name) {
                         // handle controlled input here
-                        if( p.value === undefined){
+                        if (p.value === undefined) {
                             p.value = ''
                         }
                         if (!this.state.bindings[p.name]) {
@@ -406,12 +406,27 @@ class JsonDom extends React.Component {
                         console.warn('Don\'t use property value without name')
                     }
                 }
-                h.push(React.createElement(
+                const ele = React.createElement(
                     this.components[_t] || _t,
                     {id: key, key, ...cmsProps, ...p},
                     ($c ? <span dangerouslySetInnerHTML={{__html: $c}}/> :
                         this.parseRec(c, key, childScope))
-                ))
+                )
+
+                if (this.props.editMode) {
+                    const helperKey = key + '.helper'
+                    const helper = React.createElement(
+                        JsonDomHelper,
+                        {
+                            id: helperKey,
+                            key: helperKey
+                        },
+                        ele
+                    )
+                    h.push(helper)
+                } else {
+                    h.push(ele)
+                }
             }
         })
         return h
@@ -646,3 +661,33 @@ JsonDomInput.propTypes = {
     value: PropTypes.string,
     onChange: PropTypes.func
 }
+
+
+class JsonDomHelper extends React.Component {
+    state = {hovered: false}
+
+    constructor(props) {
+        super(props)
+    }
+
+    onHelperMouseOver(e) {
+        e.stopPropagation()
+        this.setState({hovered: true})
+    }
+
+    onHelperMouseOut(e) {
+        e.stopPropagation()
+        this.setState({hovered: false})
+    }
+
+    render() {
+        console.log(this.state.hovered)
+        return <span
+            onMouseOver={this.onHelperMouseOver.bind(this)}
+            onMouseOut={this.onHelperMouseOut.bind(this)}
+            {...this.props} />
+    }
+}
+
+
+JsonDomHelper.propTypes = {}

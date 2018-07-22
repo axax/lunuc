@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import {withStyles} from 'ui/admin'
 
-const reservedJsKeywords = ['JSON','return', 'if', 'else', 'var', 'while','let','for', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export', 'function', 'undefined']
+const reservedJsKeywords = ['JSON', 'parseFloat', 'return', 'if', 'else', 'var', 'while', 'let', 'for', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export', 'function', 'undefined']
 const reservedJsCustomKeywords = ['clientQuery', 'on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent', 'getComponent', 'getKeyValueFromLS', 'setKeyValue']
 
 const styles = theme => ({
@@ -98,10 +98,10 @@ class ContentEditable extends React.Component {
             if (e.key === 'z' || e.key === 'Z') {
                 // TODO: implement undo history
                 const historyLength = this.changeHistory.length
-                if (historyLength > 0 && this.historyPointer+1 < historyLength) {
+                if (historyLength > 0 && this.historyPointer + 1 < historyLength) {
                     this.historyPointer++
 
-                    console.log(this.historyPointer,this.changeHistory)
+                    console.log(this.historyPointer, this.changeHistory)
                     const lastText = this.changeHistory[this.historyPointer]
                     const ele = ReactDOM.findDOMNode(this)
                     if (highlight) {
@@ -150,8 +150,8 @@ class ContentEditable extends React.Component {
                 }
                 this.changeHistory.unshift(t.innerText)
                 this.historyPointer = 0
-                if( this.changeHistory.length>100){
-                    this.changeHistory.splice(0,100)
+                if (this.changeHistory.length > 100) {
+                    this.changeHistory.splice(0, 100)
                 }
 
                 t.innerHTML = this.highlight(t.innerText)
@@ -219,10 +219,10 @@ class ContentEditable extends React.Component {
 
         for (let i = 0; i < str.length; i++) {
             let c = str[i]
-            if( c === '<'){
-                c='&lt;'
-            }else if (c==='>'){
-                c='&gt;'
+            if (c === '<') {
+                c = '&lt;'
+            } else if (c === '>') {
+                c = '&gt;'
             }
 
             if (inComment) {
