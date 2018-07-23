@@ -13,6 +13,9 @@ import {getKeyValueFromLS} from '../containers/generic/withKeyValues'
 const ContentEditable = (props) => <Async {...props}
                                           load={import(/* webpackChunkName: "admin" */ '../components/generic/ContentEditable')}/>
 
+const JsonDomHelper = (props) => <Async {...props}
+                                        load={import(/* webpackChunkName: "admin" */ '../components/cms/JsonDomHelper')}/>
+
 
 const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change']
 
@@ -30,12 +33,15 @@ class JsonDom extends React.Component {
         'Card': Card,
         'Col': Col,
         'Row': Row,
-        'h1$': ({id, ...rest}) => <h1><ContentEditable onChange={(v) => this.emitChange(id, v)}
-                                                       onBlur={(v) => this.emitChange(id, v, true)} {...rest} /></h1>,
-        'h2$': ({id, ...rest}) => <h2><ContentEditable onChange={(v) => this.emitChange(id, v)}
-                                                       onBlur={(v) => this.emitChange(id, v, true)} {...rest} /></h2>,
-        'p$': ({id, ...rest}) => <p><ContentEditable onChange={(v) => this.emitChange(id, v)}
-                                                     onBlur={(v) => this.emitChange(id, v, true)} {...rest} /></p>
+        'h1$': ({id, children, ...rest}) => <h1 id={id} {...rest}><ContentEditable
+            onChange={(v) => this.emitChange(id, v)}
+            onBlur={(v) => this.emitChange(id, v, true)}>{children}</ContentEditable></h1>,
+        'h2$': ({id, children, ...rest}) => <h2 id={id} {...rest}><ContentEditable
+            onChange={(v) => this.emitChange(id, v)}
+            onBlur={(v) => this.emitChange(id, v, true)}>{children}</ContentEditable></h2>,
+        'p$': ({id, children, ...rest}) => <p id={id} {...rest}><ContentEditable
+            onChange={(v) => this.emitChange(id, v)}
+            onBlur={(v) => this.emitChange(id, v, true)}>{children}</ContentEditable></p>
     }
 
     json = null
@@ -406,27 +412,21 @@ class JsonDom extends React.Component {
                         console.warn('Don\'t use property value without name')
                     }
                 }
-                const ele = React.createElement(
-                    this.components[_t] || _t,
-                    {id: key, key, ...cmsProps, ...p},
-                    ($c ? <span dangerouslySetInnerHTML={{__html: $c}}/> :
-                        this.parseRec(c, key, childScope))
-                )
+
+                let eleType = this.components[_t] || _t
+                const eleProps = {id: key, key, ...cmsProps, ...p}
 
                 if (this.props.editMode) {
-                    const helperKey = key + '.helper'
-                    const helper = React.createElement(
-                        JsonDomHelper,
-                        {
-                            id: helperKey,
-                            key: helperKey
-                        },
-                        ele
-                    )
-                    h.push(helper)
-                } else {
-                    h.push(ele)
+                    eleProps.WrappedComponent = eleType
+                    eleType = JsonDomHelper
                 }
+
+                h.push(React.createElement(
+                    eleType,
+                    eleProps,
+                    ($c ? <span dangerouslySetInnerHTML={{__html: $c}}/> :
+                        this.parseRec(c, key, childScope))
+                ))
             }
         })
         return h
@@ -662,32 +662,3 @@ JsonDomInput.propTypes = {
     onChange: PropTypes.func
 }
 
-
-class JsonDomHelper extends React.Component {
-    state = {hovered: false}
-
-    constructor(props) {
-        super(props)
-    }
-
-    onHelperMouseOver(e) {
-        e.stopPropagation()
-        this.setState({hovered: true})
-    }
-
-    onHelperMouseOut(e) {
-        e.stopPropagation()
-        this.setState({hovered: false})
-    }
-
-    render() {
-        console.log(this.state.hovered)
-        return <span
-            onMouseOver={this.onHelperMouseOver.bind(this)}
-            onMouseOut={this.onHelperMouseOut.bind(this)}
-            {...this.props} />
-    }
-}
-
-
-JsonDomHelper.propTypes = {}
