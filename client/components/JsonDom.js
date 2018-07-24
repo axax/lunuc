@@ -368,12 +368,15 @@ class JsonDom extends React.Component {
                 } else {
                     _t = t
                 }
+
+                let _p
                 if (p) {
+                    _p = Object.assign({},p)
                     // replace events with real functions and pass payload
                     TEMPLATE_EVENTS.forEach((e) => {
-                        if (p['on' + e] && p['on' + e].constructor === Object) {
-                            const payload = p['on' + e]
-                            p['on' + e] = (eo) => {
+                        if (_p['on' + e] && _p['on' + e].constructor === Object) {
+                            const payload = _p['on' + e]
+                            _p['on' + e] = (eo) => {
                                 const eLower = e.toLowerCase()
                                 if (this.jsOnStack[eLower]) {
                                     this.jsOnStack[eLower].forEach(cb => {
@@ -385,6 +388,21 @@ class JsonDom extends React.Component {
                             }
                         }
                     })
+
+                    if (_p.name) {
+                        // handle controlled input here
+                        if (_p.value === undefined) {
+                            _p.value = ''
+                        }
+                        if (!this.state.bindings[_p.name]) {
+                            this.state.bindings[_p.name] = _p.value
+                            this.scope.bindings = this.state.bindings
+                        }
+                        _p.onChange = this.handleBindingChange.bind(this, _p.onChange)
+
+                    } else if (_p.value) {
+                        console.warn('Don\'t use property value without name')
+                    }
                 }
 
                 // if we have a cms component in another cms component the location props gets not refreshed
@@ -394,30 +412,13 @@ class JsonDom extends React.Component {
                     cmsProps = {location: this.props.history.location}
                 }
 
-
-                if (p) {
-
-                    if (p.name) {
-                        // handle controlled input here
-                        if (p.value === undefined) {
-                            p.value = ''
-                        }
-                        if (!this.state.bindings[p.name]) {
-                            this.state.bindings[p.name] = p.value
-                            this.scope.bindings = this.state.bindings
-                        }
-                        p.onChange = this.handleBindingChange.bind(this, p.onChange)
-
-                    } else if (p.value) {
-                        console.warn('Don\'t use property value without name')
-                    }
-                }
-
                 let eleType = this.components[_t] || _t
-                const eleProps = {id: key, key, ...cmsProps, ...p}
+                const eleProps = {id: key, key, ...cmsProps, ..._p}
 
                 if (this.props.editMode) {
-                    eleProps.WrappedComponent = eleType
+                    eleProps._WrappedComponent = eleType
+                    eleProps._key = key
+                    eleProps._item = item
                     eleType = JsonDomHelper
                 }
 

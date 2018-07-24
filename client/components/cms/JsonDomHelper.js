@@ -1,13 +1,23 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {withStyles} from 'ui/admin'
-
+import classNames from 'classnames'
+import * as CmsActions from 'client/actions/CmsAction'
+import {bindActionCreators} from 'redux'
+import {connect} from 'react-redux'
 
 const styles = theme => ({
     toolbar: {
         position: 'absolute',
-        background: '#f00'
+        background: theme.palette.grey['200'],
+        boxShadow: theme.shadows['1'],
+        padding: theme.spacing.unit / 2,
+        opacity: 0.7,
+        fontSize: '0.9rem'
     },
+    toolbarHovered: {
+        opacity: 1
+    }
 })
 
 
@@ -20,20 +30,21 @@ class JsonDomHelper extends React.Component {
 
     onHelperMouseOver(e) {
         e.stopPropagation()
-        console.log('onHelperMouseOver')
+        clearTimeout(this.helperTimeout)
         this.setState({hovered: true, top: e.target.offsetTop, left: e.target.offsetLeft})
     }
 
+    helperTimeout = null
+
     onHelperMouseOut(e) {
         e.stopPropagation()
-        setTimeout(() => {
+        this.helperTimeout = setTimeout(() => {
             this.setState({hovered: false})
         }, 50)
     }
 
     onToolbarMouseOver(e) {
         e.stopPropagation()
-        console.log('onToolbarMouseOver')
         this.setState({toolbarHovered: true})
     }
 
@@ -44,15 +55,24 @@ class JsonDomHelper extends React.Component {
         }, 50)
     }
 
+    handleEditClick(e) {
+        e.stopPropagation()
+        const {_cmsActions, _key, _item} = this.props
+        _cmsActions.editCmsComponent(_key, _item)
+
+    }
+
     render() {
-        const {classes, WrappedComponent, children, ...rest} = this.props
+        const {classes, _WrappedComponent, _key, _cmsActions, children, ...rest} = this.props
         let toolbar
         if (this.state.hovered || this.state.toolbarHovered) {
             toolbar = <span
-                key={rest.id + '.toolbar'}
+                key={_key + '.toolbar'}
                 onMouseOver={this.onToolbarMouseOver.bind(this)}
                 onMouseOut={this.onToolbarMouseOut.bind(this)}
-                style={{top: this.state.top, left: this.state.left}} className={classes.toolbar}>{rest.id}</span>
+                onClick={this.handleEditClick.bind(this)}
+                style={{top: this.state.top, left: this.state.left}}
+                className={classNames(classes.toolbar, this.state.toolbarHovered && classes.toolbarHovered)}>{_key}</span>
         }
 
         const props = {
@@ -61,9 +81,11 @@ class JsonDomHelper extends React.Component {
         }
         if (!children) {
             // need wrapper
-            return <span {...props}><WrappedComponent {...rest}/>{toolbar}</span>
-        } else if (WrappedComponent.name && WrappedComponent.name.endsWith('$')) {
-            return <span {...props}><WrappedComponent {...rest}>{children}</WrappedComponent>{toolbar}</span>
+            return <span {...props}><_WrappedComponent {...rest}/>
+                {toolbar}</span>
+        } else if (_WrappedComponent.name && _WrappedComponent.name.endsWith('$')) {
+            return <span {...props}><_WrappedComponent {...rest}>{children}</_WrappedComponent>
+                {toolbar}</span>
 
         } else {
             let kids = children
@@ -78,7 +100,7 @@ class JsonDomHelper extends React.Component {
                     kids.push(children, toolbar)
                 }
             }
-            return <WrappedComponent {...props} {...rest}>{kids}</WrappedComponent>
+            return <_WrappedComponent {...props} {...rest}>{kids}</_WrappedComponent>
         }
     }
 }
@@ -86,7 +108,34 @@ class JsonDomHelper extends React.Component {
 
 JsonDomHelper.propTypes = {
     classes: PropTypes.object.isRequired,
-    WrappedComponent: PropTypes.any.isRequired
+    _WrappedComponent: PropTypes.any.isRequired,
+    _cmsActions: PropTypes.object.isRequired,
+    _key: PropTypes.string.isRequired,
+    _item: PropTypes.object.isRequired
 }
 
-export default withStyles(styles)(JsonDomHelper)
+
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = () => {
+    return {}
+}
+
+
+/**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => ({
+    _cmsActions: bindActionCreators(CmsActions, dispatch)
+})
+
+
+/**
+ * Connect the component to
+ * the Redux store.
+ */
+export default withStyles(styles)(connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(JsonDomHelper))

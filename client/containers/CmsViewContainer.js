@@ -35,6 +35,8 @@ const MenuListItem = (props) => <Async {...props} expose="MenuListItem"
                                        load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch"
                                        load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
+                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const Divider = (props) => <Async {...props} expose="Divider"
                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const ErrorHandler = (props) => <Async {...props}
@@ -102,6 +104,7 @@ class CmsViewContainer extends React.Component {
         }
 
         return {
+            componentEditDialog: !!props.cmsComponentEdit.key,
             settings,
             template,
             script,
@@ -256,6 +259,7 @@ class CmsViewContainer extends React.Component {
         // only update if cms page was modified
         return !props.cmsPage ||
             !this.props.cmsPage ||
+            props.cmsComponentEdit !== this.props.cmsComponentEdit ||
             props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             props.location.search !== this.props.location.search ||
@@ -264,7 +268,8 @@ class CmsViewContainer extends React.Component {
             props.cmsPages !== this.props.cmsPages ||
             props.children != this.props.children ||
             (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script)) ||
-            this.state.settings.fixedLayout !== state.settings.fixedLayout
+            this.state.settings.fixedLayout !== state.settings.fixedLayout ||
+            this.state.componentEditDialog !== state.componentEditDialog
     }
 
     UNSAFE_componentWillReceiveProps(props) {
@@ -294,7 +299,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, cmsPages, location, history, _parentRef, id, loading, className, children, user, dynamic, client} = this.props
+        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, id, loading, className, children, user, dynamic, client} = this.props
         let {template, script, dataResolver} = this.state
         if (!cmsPage) {
             if (!loading) {
@@ -335,7 +340,7 @@ class CmsViewContainer extends React.Component {
         if (!editMode) {
             content = jsonDom
         } else {
-            const {settings} = this.state
+            const {settings, componentEditDialog} = this.state
             const sidebar = () => <div>
                 <MenuList>
                     <MenuListItem onClick={e => {
@@ -439,12 +444,26 @@ class CmsViewContainer extends React.Component {
                                     title={'Edit Page "' + cmsPage.slug + '"'}>
                 {jsonDom}
                 <ErrorHandler />
+
+                {cmsComponentEdit.key &&
+                <SimpleDialog open={componentEditDialog} onClose={this.handleComponentEditClose.bind(this)}
+                              actions={[{key: 'cancel', label: 'Cancel'}, {key: 'save', label: 'Save', type: 'primary'}]}
+                              title="Edit Component">
+                    {JSON.stringify(cmsComponentEdit.component,null,2)}
+
+                </SimpleDialog>
+                }
+
             </DrawerLayout>
         }
 
         console.info(`render ${this.constructor.name} for ${cmsPage.slug} in ${new Date() - startTime}ms`)
 
         return content
+    }
+
+    handleComponentEditClose(e){
+        this.setState({componentEditDialog:false})
     }
 
     handleExpandable(key, expanded) {
@@ -581,6 +600,7 @@ CmsViewContainer.propTypes = {
     cmsPageVariables: PropTypes.object,
     cmsPage: PropTypes.object,
     cmsPages: PropTypes.object,
+    cmsComponentEdit: PropTypes.object,
     keyValue: PropTypes.object,
     updateCmsPage: PropTypes.func.isRequired,
     slug: PropTypes.string,
@@ -731,6 +751,7 @@ const CmsViewContainerWithGql = compose(
  */
 const mapStateToProps = (store) => {
     return {
+        cmsComponentEdit: store.cms.edit,
         user: store.user
     }
 }
