@@ -5,9 +5,17 @@ import classNames from 'classnames'
 import * as CmsActions from 'client/actions/CmsAction'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
+import {
+    ContentCopyIconButton,
+    DeleteIconButton,
+    EditIcon
+} from 'ui/admin'
+
 
 const styles = theme => ({
+    wrapper: {},
     toolbar: {
+        zIndex: 9999,
         position: 'absolute',
         background: theme.palette.grey['200'],
         boxShadow: theme.shadows['1'],
@@ -20,12 +28,19 @@ const styles = theme => ({
     }
 })
 
+const COMPONENT_WITH_WRAPPER = ['Button']
+
 
 class JsonDomHelper extends React.Component {
     state = {hovered: false, top: 0, left: 0, toolbarHovered: false}
 
     constructor(props) {
         super(props)
+    }
+
+    shouldComponentUpdate(props, state) {
+        return state.hovered !== this.state.hovered ||
+            state.toolbarHovered !== this.state.toolbarHovered
     }
 
     onHelperMouseOver(e) {
@@ -48,7 +63,17 @@ class JsonDomHelper extends React.Component {
         this.setState({toolbarHovered: true})
     }
 
-    onToolbarMouseOut(e) {
+    onToolbarMouseOut(className, e) {
+        let el = e.toElement || e.relatedTarget
+        while (el && el.parentNode && el.parentNode != window) {
+            if (el.classList.contains(className)) {
+                e.preventDefault()
+                e.stopPropagation()
+                return false
+            }
+            el = el.parentNode
+        }
+
         e.stopPropagation()
         setTimeout(() => {
             this.setState({toolbarHovered: false})
@@ -63,28 +88,30 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {classes, _WrappedComponent, _key, _cmsActions, children, ...rest} = this.props
+        const {classes, _WrappedComponent, _key, _item, _cmsActions, children, ...rest} = this.props
         let toolbar
         if (this.state.hovered || this.state.toolbarHovered) {
             toolbar = <span
                 key={_key + '.toolbar'}
                 onMouseOver={this.onToolbarMouseOver.bind(this)}
-                onMouseOut={this.onToolbarMouseOut.bind(this)}
+                onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
                 onClick={this.handleEditClick.bind(this)}
                 style={{top: this.state.top, left: this.state.left}}
-                className={classNames(classes.toolbar, this.state.toolbarHovered && classes.toolbarHovered)}>{_key}</span>
+                className={classNames(classes.toolbar, this.state.toolbarHovered && classes.toolbarHovered)}><EditIcon
+                size="small"/></span>
         }
 
         const props = {
             onMouseOver: this.onHelperMouseOver.bind(this),
             onMouseOut: this.onHelperMouseOut.bind(this)
         }
+
         if (!children) {
             // need wrapper
-            return <span {...props}><_WrappedComponent {...rest}/>
+            return <span className={classes.wrapper} {...props}><_WrappedComponent {...rest}/>
                 {toolbar}</span>
-        } else if (_WrappedComponent.name && _WrappedComponent.name.endsWith('$')) {
-            return <span {...props}><_WrappedComponent {...rest}>{children}</_WrappedComponent>
+        } else if (_WrappedComponent.name && (_WrappedComponent.name.endsWith('$') || COMPONENT_WITH_WRAPPER.indexOf(_WrappedComponent.name) >= 0)) {
+            return <span className={classes.wrapper} {...props}><_WrappedComponent {...rest}>{children}</_WrappedComponent>
                 {toolbar}</span>
 
         } else {
