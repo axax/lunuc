@@ -10,6 +10,8 @@ import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
 import {getType} from 'util/types'
+import * as CmsActions from 'client/actions/CmsAction'
+import {bindActionCreators} from 'redux'
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from './generic/withKeyValues'
 
 import Async from 'client/components/Async'
@@ -104,7 +106,6 @@ class CmsViewContainer extends React.Component {
         }
 
         return {
-            componentEditDialog: !!props.cmsComponentEdit.key,
             settings,
             template,
             script,
@@ -268,8 +269,7 @@ class CmsViewContainer extends React.Component {
             props.cmsPages !== this.props.cmsPages ||
             props.children != this.props.children ||
             (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script)) ||
-            this.state.settings.fixedLayout !== state.settings.fixedLayout ||
-            this.state.componentEditDialog !== state.componentEditDialog
+            this.state.settings.fixedLayout !== state.settings.fixedLayout
     }
 
     UNSAFE_componentWillReceiveProps(props) {
@@ -340,7 +340,7 @@ class CmsViewContainer extends React.Component {
         if (!editMode) {
             content = jsonDom
         } else {
-            const {settings, componentEditDialog} = this.state
+            const {settings} = this.state
             const sidebar = () => <div>
                 <MenuList>
                     <MenuListItem onClick={e => {
@@ -445,14 +445,20 @@ class CmsViewContainer extends React.Component {
                 {jsonDom}
                 <ErrorHandler />
 
-                {cmsComponentEdit.key &&
-                <SimpleDialog open={componentEditDialog} onClose={this.handleComponentEditClose.bind(this)}
+                <SimpleDialog open={!!cmsComponentEdit.key} onClose={this.handleComponentEditClose.bind(this)}
                               actions={[{key: 'cancel', label: 'Cancel'}, {key: 'save', label: 'Save', type: 'primary'}]}
                               title="Edit Component">
-                    {JSON.stringify(cmsComponentEdit.component,null,2)}
+
+                    <TemplateEditor
+                        style={editorStyle}
+                        tab={settings.templateTab}
+                        onTabChange={(tab) => this.handleExpandable.call(this, 'templateTab', tab)}
+                        onChange={()=>{}}
+                        onBlur={()=>{}}>{JSON.stringify(cmsComponentEdit.component,null,2)}</TemplateEditor>
+
+
 
                 </SimpleDialog>
-                }
 
             </DrawerLayout>
         }
@@ -463,7 +469,8 @@ class CmsViewContainer extends React.Component {
     }
 
     handleComponentEditClose(e){
-        this.setState({componentEditDialog:false})
+        const {_cmsActions, cmsComponentEdit} = this.props
+        _cmsActions.editCmsComponent(null, cmsComponentEdit.component)
     }
 
     handleExpandable(key, expanded) {
@@ -615,7 +622,9 @@ CmsViewContainer.propTypes = {
     /* if dynamic is set to true that means it is a child of another CmsViewContainer */
     dynamic: PropTypes.bool,
     /* if true data gets refetched with query on url change*/
-    urlSensitiv: PropTypes.bool
+    urlSensitiv: PropTypes.bool,
+    /* actions */
+    _cmsActions: PropTypes.object.isRequired,
 }
 
 const gqlQueryRel = gql`query cmsPages($filter: String){cmsPages(filter:$filter){results{slug}}}`
@@ -758,10 +767,19 @@ const mapStateToProps = (store) => {
 
 
 /**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => ({
+    _cmsActions: bindActionCreators(CmsActions, dispatch)
+})
+
+
+/**
  * Connect the component to
  * the Redux store.
  */
 export default connect(
-    mapStateToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(withApollo(withRouter(CmsViewContainerWithGql)))
 

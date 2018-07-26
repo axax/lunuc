@@ -21,14 +21,15 @@ const styles = theme => ({
         boxShadow: theme.shadows['1'],
         padding: theme.spacing.unit / 2,
         opacity: 0.7,
-        fontSize: '0.9rem'
+        fontSize: '0.9rem',
+        color:'black'
     },
     toolbarHovered: {
         opacity: 1
     }
 })
 
-const COMPONENT_WITH_WRAPPER = ['Button']
+const COMPONENT_WITH_WRAPPER = ['Button', 'Cms']
 
 
 class JsonDomHelper extends React.Component {
@@ -82,6 +83,7 @@ class JsonDomHelper extends React.Component {
 
     handleEditClick(e) {
         e.stopPropagation()
+        e.preventDefault()
         const {_cmsActions, _key, _item} = this.props
         _cmsActions.editCmsComponent(_key, _item)
 
@@ -97,7 +99,7 @@ class JsonDomHelper extends React.Component {
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
                 onClick={this.handleEditClick.bind(this)}
                 style={{top: this.state.top, left: this.state.left}}
-                className={classNames(classes.toolbar, this.state.toolbarHovered && classes.toolbarHovered)}><EditIcon
+                className={classNames(classes.toolbar, this.state.toolbarHovered && classes.toolbarHovered)}>{_key}<EditIcon
                 size="small"/></span>
         }
 

@@ -147,6 +147,31 @@ const Util = {
     hasCapability(user, capa){
         const capabilities = (user && user.userData && user.userData.role && user.userData.role.capabilities) || []
         return capabilities.indexOf(capa) >= 0
+    },
+    getComponentByKey(key, obj){
+        const keyParts = key.split('.')
+        // the root is always 0 so remove it
+        keyParts.shift()
+
+        if (obj.constructor === Object && keyParts[0] === '0') {
+            keyParts.shift()
+        }
+
+        let cur = obj
+        for (let i = 0; i < keyParts.length; i++) {
+            if (i > 0 && keyParts[i - 1] === '$loop') {
+                continue
+            }
+            const part = keyParts[i]
+            if (cur.constructor === Object && cur.c) cur = cur.c
+
+            if (!cur[part]) {
+                break
+            }
+            cur = cur[part]
+        }
+        return cur
+
     }
 }
 export default Util

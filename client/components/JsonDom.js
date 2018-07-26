@@ -371,7 +371,7 @@ class JsonDom extends React.Component {
 
                 let _p
                 if (p) {
-                    _p = Object.assign({},p)
+                    _p = Object.assign({}, p)
                     // replace events with real functions and pass payload
                     TEMPLATE_EVENTS.forEach((e) => {
                         if (_p['on' + e] && _p['on' + e].constructor === Object) {
@@ -416,10 +416,15 @@ class JsonDom extends React.Component {
                 const eleProps = {id: key, key, ...cmsProps, ..._p}
 
                 if (this.props.editMode) {
-                    eleProps._WrappedComponent = eleType
-                    eleProps._key = key
-                    eleProps._item = item
-                    eleType = JsonDomHelper
+                    const _item = Util.getComponentByKey(key, this.json);
+                    if (_item) {
+                        if( key.indexOf('loop')>=0 )
+                         console.log(key, _item)
+                        eleProps._WrappedComponent = eleType
+                        eleProps._key = key
+                        eleProps._item = _item
+                        eleType = JsonDomHelper
+                    }
                 }
 
                 h.push(React.createElement(
