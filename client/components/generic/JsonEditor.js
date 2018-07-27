@@ -67,12 +67,8 @@ class JsonEditor extends React.Component {
     }
 
     render() {
-
-        console.log(this.state.open)
         const {classes} = this.props
-        console.log(this.renderJsonRec(this.json))
         return this.renderJsonRec(this.json)
-
     }
 
     shouldComponentUpdate(nextProps, nextState) {

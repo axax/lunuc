@@ -100,7 +100,7 @@ class JsonDomHelper extends React.Component {
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
                 onClick={this.handleEditClick.bind(this)}
                 style={{top: this.state.top, left: this.state.left}}
-                className={classNames(classes.toolbar, this.state.toolbarHovered && classes.toolbarHovered)}>{_key}<EditIcon
+                className={classNames(classes.toolbar, this.state.toolbarHovered && classes.toolbarHovered)}><EditIcon
                 size="small"/></span>
         }
 

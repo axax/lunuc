@@ -104,7 +104,6 @@ class CmsViewContainer extends React.Component {
         } else {
             settings = {}
         }
-
         return {
             settings,
             template,
@@ -269,7 +268,8 @@ class CmsViewContainer extends React.Component {
             props.cmsPages !== this.props.cmsPages ||
             props.children != this.props.children ||
             (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script)) ||
-            this.state.settings.fixedLayout !== state.settings.fixedLayout
+            this.state.settings.fixedLayout !== state.settings.fixedLayout ||
+            this.state.settings.inlineEditor !== state.settings.inlineEditor
     }
 
     UNSAFE_componentWillReceiveProps(props) {
@@ -300,7 +300,7 @@ class CmsViewContainer extends React.Component {
 
     render() {
         const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, id, loading, className, children, user, dynamic, client} = this.props
-        let {template, script, dataResolver} = this.state
+        let {template, script, dataResolver, settings} = this.state
         if (!cmsPage) {
             if (!loading) {
                 console.warn('cmsPage missing')
@@ -332,15 +332,16 @@ class CmsViewContainer extends React.Component {
                                  script={script}
                                  resolvedData={cmsPage.resolvedData}
                                  editMode={editMode}
+                                 inlineEditor={!!settings.inlineEditor}
                                  scope={JSON.stringify(scope)}
                                  history={history}
                                  setKeyValue={this.setKeyValue.bind(this)}
                                  onChange={this.handleTemplateSaveChange}>{children}</JsonDom>
         let content
+
         if (!editMode) {
             content = jsonDom
         } else {
-            const {settings} = this.state
             const sidebar = () => <div>
                 <MenuList>
                     <MenuListItem onClick={e => {
@@ -430,9 +431,13 @@ class CmsViewContainer extends React.Component {
                                     fixedLayout={settings.fixedLayout}
                                     drawerSize="large"
                                     toolbarRight={[
-                                        <SimpleSwitch key="switch" color="default"
+                                        <SimpleSwitch key="inlineEditorSwitch" color="default"
+                                                      checked={settings.inlineEditor}
+                                                      onChange={this.handleChangeSetting.bind(this,'inlineEditor')} contrast
+                                                      label="Inline Editor"/>,
+                                        <SimpleSwitch key="fixedLayoutSwitch" color="default"
                                                       checked={settings.fixedLayout}
-                                                      onChange={this.handleChangeFixed.bind(this)} contrast
+                                                      onChange={this.handleChangeSetting.bind(this,'fixedLayout')} contrast
                                                       label="Fixed"/>,
 
                                         <Button key="button" size="small" color="inherit" onClick={e => {
@@ -502,12 +507,12 @@ class CmsViewContainer extends React.Component {
         this.setState({settings: Object.assign({}, this.state.settings, {[key]: expanded})}, this.saveSettings)
     }
 
-    handleChangeFixed(e) {
-        this.setState({settings: Object.assign({}, this.state.settings, {fixedLayout: e.target.checked})}, this.saveSettings)
+    handleChangeSetting(key,e) {
+        this.setState({settings: Object.assign({}, this.state.settings, {[key]: e.target.checked})}, this.saveSettings)
     }
 
     saveSettings() {
-        this.setKeyValue('CmsViewContainerSettings', this.state.settings)
+       this.setKeyValue('CmsViewContainerSettings', this.state.settings, false, true)
     }
 
     clientQuery(query, options) {
@@ -555,16 +560,18 @@ class CmsViewContainer extends React.Component {
     }
 
 
-    setKeyValue(arg1, arg2, arg3) {
-        let key, value, server
+    setKeyValue(arg1, arg2, arg3, arg4) {
+        let key, value, server, internal
         if (arg1.constructor === String) {
             key = arg1
             value = arg2
             server = arg3
+            internal = arg4
         } else if (arg1.constructor === Object) {
             key = arg1.key
             value = arg1.value
             server = arg1.server
+            internal = arg1.internal
         }
 
 
@@ -595,7 +602,9 @@ class CmsViewContainer extends React.Component {
                 mutation: gqlQuery,
                 variables,
                 update: (store, {data}) => {
-                    this.updateResolvedData(resolvedDataJson)
+                    if( !internal ) {
+                        this.updateResolvedData(resolvedDataJson)
+                    }
                 },
             })
             // clear local key values as there is a user session now
@@ -617,7 +626,9 @@ class CmsViewContainer extends React.Component {
             }
             json[key] = value
             localStorage.setItem(localStorageKey, JSON.stringify(json))
-            this.updateResolvedData(resolvedDataJson)
+            if( !internal ) {
+                this.updateResolvedData(resolvedDataJson)
+            }
         }
 
     }

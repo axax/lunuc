@@ -181,7 +181,12 @@ class JsonDom extends React.Component {
 
         if (!props.template || !props.scope) return true
 
-        return props.children !== this.props.children || this.props.template !== props.template || this.props.scope !== props.scope || this.props.script !== props.script || this.props.resolvedData !== props.resolvedData
+        return props.children !== this.props.children ||
+            this.props.template !== props.template ||
+            this.props.scope !== props.scope ||
+            this.props.script !== props.script ||
+            this.props.inlineEditor !== props.inlineEditor ||
+            this.props.resolvedData !== props.resolvedData
     }
 
     UNSAFE_componentWillUpdate(props) {
@@ -414,7 +419,7 @@ class JsonDom extends React.Component {
 
                 let eleType = this.components[_t] || _t
                 const eleProps = {id: key, key, ...cmsProps, ..._p}
-                if (this.props.editMode) {
+                if (this.props.editMode && this.props.inlineEditor) {
                     const _item = Util.getComponentByKey(key, this.getJsonRaw(this.props))
                     if (_item) {
                         eleProps._WrappedComponent = eleType
@@ -613,6 +618,7 @@ JsonDom.propTypes = {
     onChange: PropTypes.func,
     onError: PropTypes.func,
     editMode: PropTypes.bool,
+    inlineEditor: PropTypes.bool,
     _parentRef: PropTypes.object,
     history: PropTypes.object,
     children: PropTypes.any,
