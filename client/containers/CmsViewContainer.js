@@ -446,16 +446,20 @@ class CmsViewContainer extends React.Component {
                 <ErrorHandler />
 
                 <SimpleDialog open={!!cmsComponentEdit.key} onClose={this.handleComponentEditClose.bind(this)}
-                              actions={[{key: 'cancel', label: 'Cancel'}, {key: 'save', label: 'Save', type: 'primary'}]}
+                              actions={[{key: 'cancel', label: 'Cancel'}, {
+                                  key: 'save',
+                                  label: 'Save',
+                                  type: 'primary'
+                              }]}
                               title="Edit Component">
 
                     <TemplateEditor
                         style={editorStyle}
                         tab={settings.templateTab}
                         onTabChange={(tab) => this.handleExpandable.call(this, 'templateTab', tab)}
-                        onChange={()=>{}}
-                        onBlur={()=>{}}>{JSON.stringify(cmsComponentEdit.component,null,2)}</TemplateEditor>
-
+                        onChange={this.handleComponentEditChange.bind(this, cmsComponentEdit)}
+                        onBlur={() => {
+                        }}>{JSON.stringify(cmsComponentEdit.component, null, 4)}</TemplateEditor>
 
 
                 </SimpleDialog>
@@ -468,8 +472,29 @@ class CmsViewContainer extends React.Component {
         return content
     }
 
-    handleComponentEditClose(e){
+    handleComponentEditChange(cmsComponentEdit, str) {
+        if (cmsComponentEdit.key) {
+            const json = JSON.parse(this.state.template)
+            let item = Util.getComponentByKey(cmsComponentEdit.key, json);
+
+            if (item) {
+                // empty object but keep reference
+                for (const key in item) {
+                    delete item[key]
+                }
+                // set property of new object to existing reference
+                Object.assign(item, JSON.parse(str))
+
+                this.handleTemplateSaveChange(json)
+            }
+        }
+    }
+
+    handleComponentEditClose(e) {
         const {_cmsActions, cmsComponentEdit} = this.props
+        if( e.key === 'save'){
+            this.saveCmsPage(this.state.template, this.props.cmsPage, 'template')
+        }
         _cmsActions.editCmsComponent(null, cmsComponentEdit.component)
     }
 

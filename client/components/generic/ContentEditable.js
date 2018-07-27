@@ -40,13 +40,13 @@ class ContentEditable extends React.Component {
 
     constructor(props) {
         super(props)
+        this.lastText['onChange'] = this.lastText['onBlur'] = props.children
 
         this.changeHistory.push(props.children)
     }
 
     render() {
         const {classes, style, children, setHtml, highlight} = this.props
-        this.lastText['onChange'] = this.lastText['onBlur'] = children
 
         const props = {
             className: classes.editor,

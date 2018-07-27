@@ -40,7 +40,8 @@ class JsonDomHelper extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        return state.hovered !== this.state.hovered ||
+        return props._item !== this.props._item ||
+        state.hovered !== this.state.hovered ||
             state.toolbarHovered !== this.state.toolbarHovered
     }
 

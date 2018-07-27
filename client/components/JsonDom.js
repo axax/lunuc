@@ -414,12 +414,9 @@ class JsonDom extends React.Component {
 
                 let eleType = this.components[_t] || _t
                 const eleProps = {id: key, key, ...cmsProps, ..._p}
-
                 if (this.props.editMode) {
-                    const _item = Util.getComponentByKey(key, this.json);
+                    const _item = Util.getComponentByKey(key, this.getJsonRaw(this.props))
                     if (_item) {
-                        if( key.indexOf('loop')>=0 )
-                         console.log(key, _item)
                         eleProps._WrappedComponent = eleType
                         eleProps._key = key
                         eleProps._item = _item
