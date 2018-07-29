@@ -6,8 +6,6 @@ import * as CmsActions from 'client/actions/CmsAction'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import {
-    ContentCopyIconButton,
-    DeleteIconButton,
     EditIcon
 } from 'ui/admin'
 

@@ -129,6 +129,8 @@ class CmsViewContainer extends React.Component {
             }
         })
 
+        const _this = this
+
         // register new supscriptions
         subscriptions.forEach(subs => {
             if (!this.registeredSubscriptions[subs]) {
@@ -162,9 +164,10 @@ class CmsViewContainer extends React.Component {
                         }
                         const {data} = supscriptionData.data['subscribe' + subs]
                         if (data) {
+
                             const storeData = client.readQuery({
                                 query: gqlQuery,
-                                variables: {slug, query: window.location.search.substring(1)}
+                                variables: _this.props.cmsPageVariables
                             })
 
                             // upadate data in resolvedData string
@@ -191,7 +194,7 @@ class CmsViewContainer extends React.Component {
                                         storeData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
                                         client.writeQuery({
                                             query: gqlQuery,
-                                            variables: {slug},
+                                            variables: _this.props.cmsPageVariables,
                                             data: storeData
                                         })
                                     }
@@ -354,7 +357,7 @@ class CmsViewContainer extends React.Component {
                 <div style={{padding: '10px'}}>
 
                     <Expandable title="Data resolver"
-                                onChange={(expanded) => this.handleExpandable.call(this, 'dataResolverExpanded', expanded)}
+                                onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
                             style={editorStyle}
@@ -363,18 +366,18 @@ class CmsViewContainer extends React.Component {
                     </Expandable>
 
                     <Expandable title="Template"
-                                onChange={(expanded) => this.handleExpandable.call(this, 'templateExpanded', expanded)}
+                                onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
                                 expanded={settings.templateExpanded}>
                         <TemplateEditor
                             style={editorStyle}
                             tab={settings.templateTab}
-                            onTabChange={(tab) => this.handleExpandable.call(this, 'templateTab', tab)}
+                            onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
                             onChange={this.handleTemplateChange}
                             onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'template')}>{template}</TemplateEditor>
                     </Expandable>
 
                     <Expandable title="Script"
-                                onChange={(expanded) => this.handleExpandable.call(this, 'scriptExpanded', expanded)}
+                                onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
                                 expanded={settings.scriptExpanded}>
                         <ScriptEditor
                             style={editorStyle}
@@ -382,7 +385,7 @@ class CmsViewContainer extends React.Component {
                             onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ScriptEditor>
                     </Expandable>
                     <Expandable title="Settings"
-                                onChange={(expanded) => this.handleExpandable.call(this, 'settingsExpanded', expanded)}
+                                onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
                                 expanded={settings.settingsExpanded}>
                         <SimpleSwitch
                             label="SSR (Server side Rendering)"
@@ -397,7 +400,7 @@ class CmsViewContainer extends React.Component {
                     </Expandable>
 
                     <Expandable title="Revisions"
-                                onChange={(expanded) => this.handleExpandable.call(this, 'revisionsExpanded', expanded)}
+                                onChange={this.handleSettingChange.bind(this, 'revisionsExpanded')}
                                 expanded={settings.revisionsExpanded}>
 
                     </Expandable>
@@ -406,7 +409,7 @@ class CmsViewContainer extends React.Component {
                     {cmsPages && cmsPages.results && cmsPages.results.length > 1 &&
 
                     <Expandable title="Related pages"
-                                onChange={(expanded) => this.handleExpandable.call(this, 'relatedPagesExpanded', expanded)}
+                                onChange={this.handleSettingChange.bind(this, 'relatedPagesExpanded')}
                                 expanded={settings.relatedPagesExpanded}>
                         <MenuList>
                             {
@@ -433,11 +436,11 @@ class CmsViewContainer extends React.Component {
                                     toolbarRight={[
                                         <SimpleSwitch key="inlineEditorSwitch" color="default"
                                                       checked={settings.inlineEditor}
-                                                      onChange={this.handleChangeSetting.bind(this,'inlineEditor')} contrast
+                                                      onChange={this.handleSettingChange.bind(this,'inlineEditor')} contrast
                                                       label="Inline Editor"/>,
                                         <SimpleSwitch key="fixedLayoutSwitch" color="default"
                                                       checked={settings.fixedLayout}
-                                                      onChange={this.handleChangeSetting.bind(this,'fixedLayout')} contrast
+                                                      onChange={this.handleSettingChange.bind(this,'fixedLayout')} contrast
                                                       label="Fixed"/>,
 
                                         <Button key="button" size="small" color="inherit" onClick={e => {
@@ -446,7 +449,7 @@ class CmsViewContainer extends React.Component {
                                     ]
                                     }
                                     drawerWidth="500px"
-                                    title={'Edit Page "' + cmsPage.slug + '"'}>
+                                    title={`Edit Page "${cmsPage.slug}" - ${cmsPage.online?'Online':'Offline'}`}>
                 {jsonDom}
                 <ErrorHandler />
 
@@ -461,13 +464,16 @@ class CmsViewContainer extends React.Component {
                     <TemplateEditor
                         style={editorStyle}
                         tab={settings.templateTab}
-                        onTabChange={(tab) => this.handleExpandable.call(this, 'templateTab', tab)}
+                        onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
                         onChange={this.handleComponentEditChange.bind(this, cmsComponentEdit)}
                         onBlur={() => {
                         }}>{JSON.stringify(cmsComponentEdit.component, null, 4)}</TemplateEditor>
 
 
                 </SimpleDialog>
+
+
+
 
             </DrawerLayout>
         }
@@ -503,12 +509,19 @@ class CmsViewContainer extends React.Component {
         _cmsActions.editCmsComponent(null, cmsComponentEdit.component)
     }
 
-    handleExpandable(key, expanded) {
-        this.setState({settings: Object.assign({}, this.state.settings, {[key]: expanded})}, this.saveSettings)
-    }
+    handleSettingChange(key, any) {
+        let value
 
-    handleChangeSetting(key,e) {
-        this.setState({settings: Object.assign({}, this.state.settings, {[key]: e.target.checked})}, this.saveSettings)
+        if( any.target ){
+            if (any.target.type === 'checkbox') {
+                value = any.target.checked
+            } else {
+                value = any.target.value
+            }
+        }else{
+            value = any
+        }
+        this.setState({settings: Object.assign({}, this.state.settings, {[key]: value})}, this.saveSettings)
     }
 
     saveSettings() {
@@ -538,9 +551,7 @@ class CmsViewContainer extends React.Component {
 
     updateResolvedData(json) {
 
-
-        const {client, cmsPage, cmsPageVariables} = this.props
-
+        const {client, cmsPageVariables} = this.props
 
         const storeData = client.readQuery({
             query: gqlQuery,
@@ -597,12 +608,25 @@ class CmsViewContainer extends React.Component {
         }
 
         if (user.isAuthenticated) {
-            const gqlQuery = gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`
             client.mutate({
-                mutation: gqlQuery,
+                mutation: gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`,
                 variables,
-                update: (store, {data}) => {
-                    if( !internal ) {
+                update: (store, {data: {setKeyValue}}) => {
+                    if( internal ) {
+
+                        const storedData = store.readQuery({query: gqlQueryKeyValue})
+
+                        let newData = {keyValue:null}
+                        if( storedData.keyValue ) {
+                            newData.keyValue = Object.assign({},storedData.keyValue,{value:setKeyValue.value})
+                        }else{
+                            newData.keyValue = setKeyValue
+                        }
+
+                        // Write our data back to the cache.
+                        store.writeQuery({query: gqlQueryKeyValue, data:newData})
+
+                    }else{
                         this.updateResolvedData(resolvedDataJson)
                     }
                 },

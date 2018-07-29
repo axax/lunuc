@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
 import {
-    ContentCopyIconButton,
+    FileCopyIconButton,
     WebIconButton,
     DeleteIconButton,
     EditIconButton,
@@ -23,7 +23,7 @@ import {
     SimpleSwitch
 } from 'ui/admin'
 import FileDrop from 'client/components/FileDrop'
-import {withApollo} from 'react-apollo'
+import {withApollo, Query} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
 import Util from 'client/util'
@@ -37,6 +37,7 @@ import {withStyles} from '@material-ui/core/styles'
 import {deepMerge}  from 'util/deepMerge'
 const {ADMIN_BASE_URL, UPLOAD_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
 
+const gqlCollectionsQuery = gql`query collections($filter:String){collections(filter:$filter){results{name}}}`
 
 const styles = theme => ({
     textLight: {
@@ -260,7 +261,7 @@ class TypesContainer extends React.Component {
 
                         if (this.types[type].clonable) {
                             dynamic.action.push(<Tooltip key="copyBtn" placement="top" title="Clone entry">
-                                <ContentCopyIconButton
+                                <FileCopyIconButton
                                     disabled={(item.status == 'deleting' || item.status == 'updating')}
                                     onClick={this.handleCopyClick.bind(this, item, fields)}/>
                             </Tooltip>)
@@ -280,6 +281,20 @@ class TypesContainer extends React.Component {
                 <SimpleTable title={type} dataSource={dataSource} columns={columnsFiltered} count={data.total}
                              rowsPerPage={limit} page={page}
                              orderBy={asort[0]}
+                             header={
+                                 <Query query={gqlCollectionsQuery} variables={{filter: '$' + type + '_*'}}>
+                                     {({loading, error, data}) => {
+                                         if (loading) return "Loading..."
+                                         if (error) return `Error! ${error.message}`
+                                         return <SimpleSelect
+                                             value={type}
+                                             onChange={() => {
+                                             }}
+                                             items={data.collections.results}
+                                         />
+                                     }}
+                                 </Query>
+                             }
                              actions={[
                                  {
                                      name: 'Add new ' + type, onClick: () => {
@@ -296,6 +311,11 @@ class TypesContainer extends React.Component {
                                      name: 'Refresh', onClick: () => {
                                          this.getData(this.pageParams, false)
                                      }
+                                 },
+                                 {
+                                     name: 'Clone collection', onClick: () => {
+                                     this.cloneCollection(this.pageParams)
+                                 }
                                  }]}
                              footer={<div>{`${selectedLength} rows selected`} {selectedLength ? <SimpleSelect
                                  label="Select action"
@@ -629,6 +649,7 @@ class TypesContainer extends React.Component {
                     console.log(error.message)
                     this.setState({data: null})
                 })
+
             }
         }
     }
@@ -826,6 +847,27 @@ class TypesContainer extends React.Component {
                     }
 
                 },
+            })
+        }
+    }
+
+    cloneCollection({type}) {
+        if (type) {
+            const {client} = this.props
+            client.mutate({
+                mutation: gql(`mutation cloneCollection($name:String!){cloneCollection(name:$name){collection{name}}}`),
+                variables: {name: type},
+                update: (store, {data}) => {
+                    console.log(data)
+                    /*const freshData = {
+                     ...data['clone' + type],
+                     createdBy: {
+                     _id: user.userData._id,
+                     username: user.userData.username,
+                     __typename: 'UserPublic'
+                     }
+                     }*/
+                }
             })
         }
     }

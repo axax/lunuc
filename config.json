@@ -31,14 +31,14 @@
       "impl": "material",
       "icons": [
         "Home",
-        "ContentCopy",
+        "FileCopy",
         "Web",
         "Edit",
         "Delete",
         "Close",
         "Code",
         "AccountCircle",
-        "FileUpload",
+        "CloudUpload",
         "ExpandLess",
         "ExpandMore"
       ],

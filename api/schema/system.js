@@ -37,6 +37,22 @@ export const systemSchemaRaw = `
         total: Int
     }
     
+    type Collection {
+        name: String
+    }
+    
+    type CloneCollectionResult{
+        status: String,
+        collection: Collection
+    }
+    
+    type CollectionResult {
+        results: [Collection]
+        offset: Int
+        limit: Int
+        total: Int
+    }
+    
     type BrokenReferencesResult {
         total: Int
     }
@@ -48,11 +64,13 @@ export const systemSchemaRaw = `
     	dbDumps: DbDumpResult   
     	mediaDumps: MediaDumpResult  
     	ping: PingResult
+    	collections (filter: String): CollectionResult
     }
     
       
     type Mutation {   	
     	createDbDump(type: String): DbDump
     	createMediaDump(type: String): MediaDump
+    	cloneCollection(name: String!): CloneCollectionResult
     }
 `

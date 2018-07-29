@@ -17,6 +17,9 @@ const wsUri = (window.location.protocol === 'https:' ? 'wss' : 'ws') + `://${win
 
 export function configureMiddleware(store) {
 
+    //// TODO: batch queries is not support in graphql-express --> replace with ApolloServer
+    //const httpLink = new BatchHttpLink({uri: httpUri})
+
     // the link to our graphql api
     const httpLink = createHttpLink({uri: httpUri})
 

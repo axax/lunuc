@@ -1,11 +1,12 @@
 import 'gen/extensions-server'
 import express from 'express'
+import {buildSchema} from 'graphql'
 import graphqlHTTP from 'express-graphql'
-import { GraphQLError } from 'graphql'
+import  { ApolloServer, gql } from 'apollo-server-express'
 import {createServer} from 'http'
 import {SubscriptionServer} from 'subscriptions-transport-ws'
 import {execute, subscribe} from 'graphql'
-import {schema} from './schema/index'
+import {schemaString} from './schema/index'
 import {resolver} from './resolver/index'
 import {dbConnection, dbPreparation} from './database'
 import {auth} from './auth'
@@ -33,9 +34,6 @@ export const start = (done) => {
             // Authentication
             auth.initialize(app, db)
 
-
-            const rootValue = resolver(db)
-
             // upload db dump
             app.use('/graphql/upload/dbdump', handleDbDumpUpload(db, client))
 
@@ -45,8 +43,29 @@ export const start = (done) => {
             // maybe move file upload to another server
             app.use('/graphql/upload', handleUpload(db))
 
+            const resolvers = resolver(db)
+
+            // ApolloServer
+            // Construct a schema, using GraphQL schema language
+           /* const typeDefs = gql(schemaString)
+            const apolloServer = new ApolloServer({ typeDefs, resolvers })
+            apolloServer.applyMiddleware({ app, path: '/graphql2' });*/
+
+
+            // Graphql-Express
+            const schema =  buildSchema(schemaString)
+            let rootValue = {}
+            Object.keys(resolvers).forEach(key=>{
+                if( key === 'Query' || key === 'Mutation' || key === 'Subscription' ){
+                    rootValue = {...rootValue, ...resolvers[key]}
+                }else{
+                    rootValue[key] = resolvers[key]
+                }
+            })
 
             app.use('/graphql', (req, res, next) => {
+
+                // TODO: replace with ApolloServer so with can use batch queries
                 graphqlHTTP({
                     schema,
                     rootValue,
@@ -55,7 +74,6 @@ export const start = (done) => {
                     extensions({document, variables, operationName, result}) {
                     }
                 })(req, res, next).catch((e) => {
-
                     res.writeHead(500, {'content-type': 'application/json'})
                     res.end(`{"errors":[{"message":"Error in graphql. Probably there is something wrong with the schema or the resolver: ${e.message}"}]}`)
 
@@ -87,7 +105,7 @@ export const start = (done) => {
                     onOperation: ({payload}) => {
                         // now if auth is needed we can check if the context is available
                         const context = auth.decodeToken(payload.auth)
-                        return {context}
+                        return {context, schema}
                     }
                 },
                 {

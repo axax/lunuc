@@ -1,4 +1,3 @@
-import {buildSchema} from 'graphql'
 import { mergeStrings } from 'gql-merge'
 import Hook from '../../util/hook'
 
@@ -15,6 +14,4 @@ const schemas = [gensrcSchemaRaw,commonSchemaRaw,keyvalueSchemaRaw,userSchemaRaw
 
 Hook.call('schema', {schemas})
 
-
-// Construct a schema, using GraphQL schema language
-export const schema = buildSchema( mergeStrings(schemas) )
+export const schemaString = mergeStrings(schemas)

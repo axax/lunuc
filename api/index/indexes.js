@@ -6,7 +6,7 @@ export const createAllIndexes = async (db) =>{
 
     // field slug hast to be unique
     const cmsPageCollection = db.collection('CmsPage')
-    cmsPageCollection.createIndex( { 'slug': 1 }, { unique: true } )
+    cmsPageCollection.createIndex( { slug: 1 }, { unique: true } )
 
 
     db.collection('KeyValue').createIndex( { createdBy:1,key: 1 }, { unique: true } )

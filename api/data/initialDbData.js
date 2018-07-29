@@ -6,6 +6,7 @@ import {
     CAPABILITY_MANAGE_CMS_PAGES,
     CAPABILITY_MANAGE_KEYVALUES,
     CAPABILITY_MANAGE_OTHER_USERS,
+    CAPABILITY_MANAGE_COLLECTION,
     CAPABILITY_READ_EVERYTHING
 } from './capabilities'
 
@@ -25,7 +26,7 @@ export const createUserRoles = async (db) => {
                 capabilities: {
                     $each: [CAPABILITY_VIEW_APP,
                         CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_CMS_PAGES,
-                        CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_OTHER_USERS]
+                        CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_MANAGE_OTHER_USERS]
                 }
             }
         },
@@ -65,7 +66,7 @@ export const createUsers = async (db) => {
 
     const userCollection = db.collection('User')
 
-    if (userCollection.count()) {
+    if (userCollection.countDocuments()) {
         const userRole = (await db.collection('UserRole').findOne({name: 'administrator'}))
 
         const insertResult = await userCollection.updateOne({

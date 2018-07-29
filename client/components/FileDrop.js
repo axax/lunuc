@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {Button, TextField, withStyles, FileUploadIcon, Typography, LinearProgress} from 'ui/admin'
+import {Button, TextField, withStyles, CloudUploadIcon, Typography, LinearProgress} from 'ui/admin'
 import classNames from 'classnames'
 import UploadUtil from 'client/util/upload'
 
@@ -111,7 +111,7 @@ class FileDrop extends React.Component {
 
 
             { !uploading &&
-            <FileUploadIcon className={classNames(classes.uploadIcon, isHover && classes.uploadIconOver)}
+            <CloudUploadIcon className={classNames(classes.uploadIcon, isHover && classes.uploadIconOver)}
                             color="disabled"/> }
 
             { !uploading &&

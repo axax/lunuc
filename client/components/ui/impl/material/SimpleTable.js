@@ -57,11 +57,11 @@ class SimpleTable extends React.Component {
     }
 
     render() {
-        const {title, actions, classes, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, columns, dataSource, footer} = this.props
+        const {title, actions, header, classes, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, columns, dataSource, footer} = this.props
         const numSelected = 0
         return <Paper>
 
-            { (title || actions ?
+            { (header || title || actions ?
                 <Toolbar
                     className={classNames(classes.toolbar, {
                         [classes.highlight]: numSelected > 0,
@@ -74,6 +74,7 @@ class SimpleTable extends React.Component {
                             <Typography variant="title">{title}</Typography>
                         )}
                     </div>
+                    {header}
                     <div className={classes.spacer}/>
                     {actions &&
                     <div className={classes.actions}>
@@ -178,7 +179,8 @@ SimpleTable.propTypes = {
     onSort: PropTypes.func,
     columns: PropTypes.array,
     dataSource: PropTypes.array,
-    actions: PropTypes.array
+    actions: PropTypes.array,
+    header: PropTypes.any
 }
 
 
