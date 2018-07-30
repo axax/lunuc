@@ -82,7 +82,8 @@ class TypesContainer extends React.Component {
             dataToDelete: null,
             createEditDialog: undefined,
             dataToEdit: null,
-            data: null
+            data: null,
+            selectedVersion: 'default'
         }
 
 
@@ -259,7 +260,7 @@ class TypesContainer extends React.Component {
                             </Tooltip>
                         ]
 
-                        if (this.types[type].clonable) {
+                        if (this.types[type].entryClonable) {
                             dynamic.action.push(<Tooltip key="copyBtn" placement="top" title="Clone entry">
                                 <FileCopyIconButton
                                     disabled={(item.status == 'deleting' || item.status == 'updating')}
@@ -277,46 +278,59 @@ class TypesContainer extends React.Component {
             Hook.call('TypeTable', {type, dataSource, data, fields, container: this})
 
             const selectedLength = Object.keys(this.state.selectedrows).length
+            const actions = [
+                {
+                    name: 'Add new ' + type, onClick: () => {
+                    setTimeout(() => {
+                        this.setState({createEditDialog: true})
+                    }, 300)
+
+                }
+                }, {
+                    name: 'View settings', onClick: () => {
+                        this.setState({viewSettingDialog: true})
+                    }
+                }, {
+                    name: 'Refresh', onClick: () => {
+                        this.getData(this.pageParams, false)
+                    }
+                }]
+
+            if (this.types[type].collectionClonable) {
+                actions.push({
+                    name: 'Clone collection', onClick: () => {
+                        this.cloneCollection(this.pageParams)
+                    }
+                })
+            }
             this._renderedTable =
                 <SimpleTable title={type} dataSource={dataSource} columns={columnsFiltered} count={data.total}
                              rowsPerPage={limit} page={page}
                              orderBy={asort[0]}
-                             header={
-                                 <Query query={gqlCollectionsQuery} variables={{filter: '$' + type + '_*'}}>
+                             header={this.types[type].collectionClonable &&
+                                 <Query query={gqlCollectionsQuery}
+                                        fetchPolicy="cache-and-network"
+                                        variables={{filter: '^' + type + '_.*'}}>
                                      {({loading, error, data}) => {
                                          if (loading) return "Loading..."
                                          if (error) return `Error! ${error.message}`
+
+                                         const items = data.collections.results.reduce((a, c) => {
+                                             a.push({value: c.name, name: c.name.substring(c.name.indexOf('_') + 1)});
+                                             return a;
+                                         }, [])
+                                         items.unshift({value: 'default', name: 'Default'})
                                          return <SimpleSelect
-                                             value={type}
+                                             label="Current version"
+                                             value={this.state.selectedVersion}
                                              onChange={() => {
                                              }}
-                                             items={data.collections.results}
+                                             items={items}
                                          />
                                      }}
                                  </Query>
                              }
-                             actions={[
-                                 {
-                                     name: 'Add new ' + type, onClick: () => {
-                                     setTimeout(() => {
-                                         this.setState({createEditDialog: true})
-                                     }, 300)
-
-                                 }
-                                 }, {
-                                     name: 'View settings', onClick: () => {
-                                         this.setState({viewSettingDialog: true})
-                                     }
-                                 }, {
-                                     name: 'Refresh', onClick: () => {
-                                         this.getData(this.pageParams, false)
-                                     }
-                                 },
-                                 {
-                                     name: 'Clone collection', onClick: () => {
-                                     this.cloneCollection(this.pageParams)
-                                 }
-                                 }]}
+                             actions={actions}
                              footer={<div>{`${selectedLength} rows selected`} {selectedLength ? <SimpleSelect
                                  label="Select action"
                                  value=""
