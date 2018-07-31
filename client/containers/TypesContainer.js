@@ -82,8 +82,7 @@ class TypesContainer extends React.Component {
             dataToDelete: null,
             createEditDialog: undefined,
             dataToEdit: null,
-            data: null,
-            selectedVersion: 'default'
+            data: null
         }
 
 
@@ -136,7 +135,14 @@ class TypesContainer extends React.Component {
             this.parseSettings(props)
         }
 
-        if (this.props.settings !== props.settings || this.props.baseFilter !== props.baseFilter || this.pageParams.type !== pageParams.type || this.pageParams.page !== pageParams.page || this.pageParams.limit !== pageParams.limit || this.pageParams.sort !== pageParams.sort || this.pageParams.filter !== pageParams.filter) {
+        if (this.props.settings !== props.settings ||
+            this.props.baseFilter !== props.baseFilter ||
+            this.pageParams.type !== pageParams.type ||
+            this.pageParams.page !== pageParams.page ||
+            this.pageParams.version !== pageParams.version ||
+            this.pageParams.limit !== pageParams.limit ||
+            this.pageParams.sort !== pageParams.sort ||
+            this.pageParams.filter !== pageParams.filter) {
             this.pageParams = pageParams
             this.baseFilter = props.baseFilter
             this.getData(pageParams, true)
@@ -156,8 +162,7 @@ class TypesContainer extends React.Component {
             this._lastData = data
             this._lastSelectedRows = selectedrows
 
-            const {type, page, limit, sort} = this.pageParams
-
+            const {type, page, limit, sort, version} = this.pageParams
             const fields = this.types[type].fields, dataSource = []
 
             const columnsFiltered = [], columnsMap = {}
@@ -316,14 +321,20 @@ class TypesContainer extends React.Component {
                                          if (error) return `Error! ${error.message}`
 
                                          const items = data.collections.results.reduce((a, c) => {
-                                             a.push({value: c.name, name: c.name.substring(c.name.indexOf('_') + 1)});
-                                             return a;
+                                             const value = c.name.substring(c.name.indexOf('_') + 1)
+                                             a.push({value, name: value})
+                                             return a
                                          }, [])
                                          items.unshift({value: 'default', name: 'Default'})
                                          return <SimpleSelect
                                              label="Current version"
-                                             value={this.state.selectedVersion}
-                                             onChange={() => {
+                                             value={version}
+                                             onChange={(e) => {
+
+                                                 const {type, page, limit, sort, filter} = this.pageParams
+                                                 this.goTo(type, page, limit, sort, filter, e.target.value)
+
+                                                 //this.setState({selectedVersion:e.target.value})
                                              }}
                                              items={items}
                                          />
@@ -584,7 +595,7 @@ class TypesContainer extends React.Component {
 
     determinPageParams(props) {
         const {params} = props.match
-        const {p, l, s, f} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
         let type
         if (props.fixType) {
@@ -604,7 +615,8 @@ class TypesContainer extends React.Component {
             limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',
-            filter: f || typeSettings.filter || ''
+            filter: f || typeSettings.filter || '',
+            version: v || 'default'
         }
         result.type = type
         return result
@@ -629,7 +641,7 @@ class TypesContainer extends React.Component {
         return filter + (this.baseFilter ? (filter ? ' && ' : '') + this.baseFilter : '')
     }
 
-    getData({type, page, limit, sort, filter}, cacheFirst) {
+    getData({type, page, limit, sort, filter, version}, cacheFirst) {
         const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
@@ -637,7 +649,7 @@ class TypesContainer extends React.Component {
             if (queries) {
 
                 const storeKey = this.getStoreKey(type),
-                    variables = {limit, page, sort, filter: this.extendFilter(filter)},
+                    variables = {limit, page, sort, version, filter: this.extendFilter(filter)},
                     gqlQuery = gql(queries.query)
                 if (cacheFirst) {
                     try {
@@ -719,7 +731,7 @@ class TypesContainer extends React.Component {
         }
     }
 
-    updateData({type, page, limit, sort, filter}, changedData, optimisticData) {
+    updateData({type, page, limit, sort, filter, version}, changedData, optimisticData) {
         const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
@@ -734,10 +746,11 @@ class TypesContainer extends React.Component {
 
                     const extendedFilter = this.extendFilter(filter)
 
+                    const variables = {page, limit, sort, version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
-                        variables: {page, limit, sort, filter: extendedFilter}
+                        variables
                     })
 
 
@@ -753,7 +766,7 @@ class TypesContainer extends React.Component {
                             // wirte it back to the cache
                             store.writeQuery({
                                 query: gqlQuery,
-                                variables: {page, limit, sort, filter: extendedFilter},
+                                variables,
                                 data: storeData
                             })
                             this.setState({data: storeData[storeKey]})
@@ -886,15 +899,15 @@ class TypesContainer extends React.Component {
         }
     }
 
-    goTo(type, page, limit, sort, filter) {
+    goTo(type, page, limit, sort, filter, version) {
         const {baseUrl, fixType} = this.props
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type + '/'}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type + '/'}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${version}`)
     }
 
 
     runFilter(f) {
-        const {type, limit, sort} = this.pageParams
-        this.goTo(type, 1, limit, sort, f)
+        const {type, limit, sort, version} = this.pageParams
+        this.goTo(type, 1, limit, sort, f, version)
     }
 
     handleFilterTimeout = null
@@ -940,14 +953,14 @@ class TypesContainer extends React.Component {
     }
 
     handleChangePage = (page) => {
-        const {type, limit, sort, filter} = this.pageParams
-        this.goTo(type, page, limit, sort, filter)
+        const {type, limit, sort, filter, version} = this.pageParams
+        this.goTo(type, page, limit, sort, filter, version)
     }
 
 
     handleChangeRowsPerPage = (limit) => {
-        const {type, sort, filter} = this.pageParams
-        this.goTo(type, 1, limit, sort, filter)
+        const {type, sort, filter, version} = this.pageParams
+        this.goTo(type, 1, limit, sort, filter, version)
     }
 
 

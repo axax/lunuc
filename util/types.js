@@ -50,7 +50,7 @@ export const getTypeQueries = (typeName) => {
 
     const result = {}
 
-    const {name, fields, noUserRelation, selectParams} = types[typeName]
+    const {name, fields, noUserRelation, selectParams, collectionClonable} = types[typeName]
     const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
 
     let query = '_id status'
@@ -104,8 +104,8 @@ export const getTypeQueries = (typeName) => {
             selectParamsString += `,${item.name}:${item.defaultValue}`
         })
     }
-    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String){
-                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}){limit offset total results{${query}}}}`
+    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable?',$version: String':''}){
+                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable?',version:$version':''}){limit offset total results{${query}}}}`
 
 
     result.create = `mutation create${name}(${insertParams}){create${name}(${insertUpdateQuery}){${queryMutation}}}`
@@ -252,11 +252,11 @@ Hook.on('Types', ({types}) => {
     }
 
     types.CmsPage = {
-        'name': 'CmsPage',
-        'collectionClonable': true,
-        'entryClonable': true,
-        'usedBy': ['core'],
-        'fields': [
+        name: 'CmsPage',
+        collectionClonable: true,
+        entryClonable: true,
+        usedBy: ['core'],
+        fields: [
             {
                 'name': 'slug',
                 'required': true,

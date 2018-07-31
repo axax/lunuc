@@ -83,14 +83,15 @@ let createScopeForDataResolver = function (query) {
 }
 
 export const cmsResolver = (db) => ({
-    cmsPages: async ({limit, page, offset, filter, sort}, {context}) => {
+    cmsPages: async ({limit, page, offset, filter, sort, version}, {context}) => {
         Util.checkIfUserIsLoggedIn(context)
         return await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug', 'urlSensitiv'], {
             limit,
             page,
             offset,
             filter,
-            sort
+            sort,
+            version
         })
     },
     cmsPage: async ({slug, query, nosession}, {context}) => {

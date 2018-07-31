@@ -12,15 +12,18 @@ import {
 const {DEFAULT_LANGUAGE} = config
 
 const GenericResolver = {
-    entities: async (db, context, collectionName, data, options) => {
+    entities: async (db, context, typeName, data, options) => {
         if (!context.lang) {
             throw new Error('lang on context is missing')
         }
         const startTime = new Date()
-        const typeDefinition = getType(collectionName) || {}
+        const typeDefinition = getType(typeName) || {}
 
         //Util.checkIfUserIsLoggedIn(context)
-        let {limit, offset, page, match, filter, sort, projectResult} = options
+        let {limit, offset, page, match, filter, sort, projectResult, version} = options
+
+        const collectionName = typeName + (version && version !== 'default' ? '_' + version : '')
+console.log(collectionName)
         if (!limit) {
             limit = 10
         }
@@ -65,7 +68,7 @@ const GenericResolver = {
         const group = {}
         const lookups = []
         const afterSort = []
-        const fields = getFormFields(collectionName)
+        const fields = getFormFields(typeName)
 
 
         const addLookup = (type, fieldName, multi) => {
@@ -377,8 +380,8 @@ const GenericResolver = {
 
         const $in = []
         const result = []
-        data._id.forEach(id=>{
-            $in.push( ObjectId(id) )
+        data._id.forEach(id => {
+            $in.push(ObjectId(id))
             result.push({
                 _id: id,
                 status: 'deleted'
@@ -386,7 +389,7 @@ const GenericResolver = {
         })
 
         const options = {
-            _id: { $in}
+            _id: {$in}
         }
 
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
@@ -412,9 +415,8 @@ const GenericResolver = {
         }
 
 
-        if( options && options.revisionControll ){
+        if (options && options.revisionControll) {
 //TODO
-
 
 
         }

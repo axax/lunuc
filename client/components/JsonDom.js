@@ -25,7 +25,7 @@ class JsonDom extends React.Component {
         'input': JsonDomInput,
         'SimpleMenu': SimpleMenu,
         'Link': Link,
-        'Cms': ({...rest}) => <CmsViewContainer _parentRef={this} dynamic={true} {...rest}/>,
+        'Cms': ({props, ...rest}) => <CmsViewContainer _props={props} _parentRef={this} dynamic={true} {...rest}/>,
         'SimpleToolbar': ({position, ...rest}) => <SimpleToolbar
             position={(this.props.editMode ? 'static' : position)} {...rest} />,
         'Button': Button,
@@ -157,7 +157,7 @@ class JsonDom extends React.Component {
              console.log('reset scope data res')
              }*/
         }
-        if (this.props.template !== props.template) {
+        if (this.props.template !== props.template || this.props._props !== props._props) {
             this.resetTemplate()
             //console.log('reset template')
         }
@@ -180,9 +180,9 @@ class JsonDom extends React.Component {
         if (state.hasReactError) return true
 
         if (!props.template || !props.scope) return true
-
         return props.children !== this.props.children ||
             this.props.template !== props.template ||
+            this.props._props !== props._props ||
             this.props.scope !== props.scope ||
             this.props.script !== props.script ||
             this.props.inlineEditor !== props.inlineEditor ||
@@ -496,7 +496,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery} = this.props
+        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props} = this.props
         if (!template) {
             console.warn('Template is missing.')
             return null
@@ -531,6 +531,7 @@ class JsonDom extends React.Component {
         scope.data = this.resolvedDataJson
         scope._app_ = _app_
         scope._t = _t
+        scope.props = _props
         if (this.runScript) {
             this.runScript = false
 
@@ -620,6 +621,8 @@ JsonDom.propTypes = {
     editMode: PropTypes.bool,
     inlineEditor: PropTypes.bool,
     _parentRef: PropTypes.object,
+    /* properties that are passed from another component */
+    _props: PropTypes.object,
     history: PropTypes.object,
     children: PropTypes.any,
     id: PropTypes.string,

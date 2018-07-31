@@ -270,6 +270,7 @@ class CmsViewContainer extends React.Component {
             props.user !== this.props.user ||
             props.cmsPages !== this.props.cmsPages ||
             props.children != this.props.children ||
+            props._props !== this.props._props ||
             (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script)) ||
             this.state.settings.fixedLayout !== state.settings.fixedLayout ||
             this.state.settings.inlineEditor !== state.settings.inlineEditor
@@ -302,7 +303,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, id, loading, className, children, user, dynamic, client} = this.props
+        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _props, id, loading, className, children, user, dynamic, client} = this.props
         let {template, script, dataResolver, settings} = this.state
         if (!cmsPage) {
             if (!loading) {
@@ -331,6 +332,7 @@ class CmsViewContainer extends React.Component {
                                  clientQuery={this.clientQuery.bind(this)}
                                  className={className}
                                  _parentRef={_parentRef}
+                                 _props={_props}
                                  template={template}
                                  script={script}
                                  resolvedData={cmsPage.resolvedData}
@@ -436,11 +438,13 @@ class CmsViewContainer extends React.Component {
                                     toolbarRight={[
                                         <SimpleSwitch key="inlineEditorSwitch" color="default"
                                                       checked={settings.inlineEditor}
-                                                      onChange={this.handleSettingChange.bind(this,'inlineEditor')} contrast
+                                                      onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
+                                                      contrast
                                                       label="Inline Editor"/>,
                                         <SimpleSwitch key="fixedLayoutSwitch" color="default"
                                                       checked={settings.fixedLayout}
-                                                      onChange={this.handleSettingChange.bind(this,'fixedLayout')} contrast
+                                                      onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
+                                                      contrast
                                                       label="Fixed"/>,
 
                                         <Button key="button" size="small" color="inherit" onClick={e => {
@@ -449,7 +453,7 @@ class CmsViewContainer extends React.Component {
                                     ]
                                     }
                                     drawerWidth="500px"
-                                    title={`Edit Page "${cmsPage.slug}" - ${cmsPage.online?'Online':'Offline'}`}>
+                                    title={`Edit Page "${cmsPage.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
                 {jsonDom}
                 <ErrorHandler />
 
@@ -471,8 +475,6 @@ class CmsViewContainer extends React.Component {
 
 
                 </SimpleDialog>
-
-
 
 
             </DrawerLayout>
@@ -503,7 +505,7 @@ class CmsViewContainer extends React.Component {
 
     handleComponentEditClose(e) {
         const {_cmsActions, cmsComponentEdit} = this.props
-        if( e.key === 'save'){
+        if (e.key === 'save') {
             this.saveCmsPage(this.state.template, this.props.cmsPage, 'template')
         }
         _cmsActions.editCmsComponent(null, cmsComponentEdit.component)
@@ -512,20 +514,20 @@ class CmsViewContainer extends React.Component {
     handleSettingChange(key, any) {
         let value
 
-        if( any.target ){
+        if (any.target) {
             if (any.target.type === 'checkbox') {
                 value = any.target.checked
             } else {
                 value = any.target.value
             }
-        }else{
+        } else {
             value = any
         }
         this.setState({settings: Object.assign({}, this.state.settings, {[key]: value})}, this.saveSettings)
     }
 
     saveSettings() {
-       this.setKeyValue('CmsViewContainerSettings', this.state.settings, false, true)
+        this.setKeyValue('CmsViewContainerSettings', this.state.settings, false, true)
     }
 
     clientQuery(query, options) {
@@ -612,21 +614,21 @@ class CmsViewContainer extends React.Component {
                 mutation: gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`,
                 variables,
                 update: (store, {data: {setKeyValue}}) => {
-                    if( internal ) {
+                    if (internal) {
 
                         const storedData = store.readQuery({query: gqlQueryKeyValue})
 
-                        let newData = {keyValue:null}
-                        if( storedData.keyValue ) {
-                            newData.keyValue = Object.assign({},storedData.keyValue,{value:setKeyValue.value})
-                        }else{
+                        let newData = {keyValue: null}
+                        if (storedData.keyValue) {
+                            newData.keyValue = Object.assign({}, storedData.keyValue, {value: setKeyValue.value})
+                        } else {
                             newData.keyValue = setKeyValue
                         }
 
                         // Write our data back to the cache.
-                        store.writeQuery({query: gqlQueryKeyValue, data:newData})
+                        store.writeQuery({query: gqlQueryKeyValue, data: newData})
 
-                    }else{
+                    } else {
                         this.updateResolvedData(resolvedDataJson)
                     }
                 },
@@ -650,7 +652,7 @@ class CmsViewContainer extends React.Component {
             }
             json[key] = value
             localStorage.setItem(localStorageKey, JSON.stringify(json))
-            if( !internal ) {
+            if (!internal) {
                 this.updateResolvedData(resolvedDataJson)
             }
         }
@@ -678,6 +680,8 @@ CmsViewContainer.propTypes = {
     match: PropTypes.object.isRequired,
     /* Reference to the parent JsonDom */
     _parentRef: PropTypes.object,
+    /* Object is passed to JsonDom */
+    _props: PropTypes.object,
     id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another CmsViewContainer */
     dynamic: PropTypes.bool,
@@ -687,9 +691,7 @@ CmsViewContainer.propTypes = {
     _cmsActions: PropTypes.object.isRequired,
 }
 
-const gqlQueryRel = gql`query cmsPages($filter: String){cmsPages(filter:$filter){results{slug}}}`
 const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){_id key value}}`
-
 const urlSensitivMap = {}
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
@@ -726,7 +728,7 @@ const CmsViewContainerWithGql = compose(
             }
         }
     }),
-    graphql(gqlQueryRel, {
+    graphql(gql`query cmsPages($filter: String){cmsPages(filter:$filter){results{slug}}}`, {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {
             const {slug} = ownProps,

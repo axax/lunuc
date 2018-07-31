@@ -19,7 +19,6 @@ const styles = theme => ({
 class SimpleSelect extends React.Component {
     render() {
         const {onChange, value, items, label, classes} = this.props
-
         const name = 'name_' + Math.random()
 
         return <FormControl className={classes.formControl}>

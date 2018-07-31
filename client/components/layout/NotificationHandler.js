@@ -8,6 +8,8 @@ class NotificationHandler extends React.Component {
 
     notificationStack = []
     currentStackPosition = 0
+    lastStackLength = 0
+    lastStackPosition = 0
 
     constructor(props) {
         super(props)
@@ -16,12 +18,14 @@ class NotificationHandler extends React.Component {
         }
     }
 
-    handleNotificationClose() {
-        this.setState({notificationOpen: false})
-        this.currentStackPosition++
+    handleNotificationClose(e, reason) {
+        if (reason !== 'clickaway') {
+            this.setState({notificationOpen: false})
+        }
     }
 
     handleNotificationClosed() {
+        this.currentStackPosition++
         this.setState({notificationOpen: true})
     }
 
@@ -29,8 +33,11 @@ class NotificationHandler extends React.Component {
         this.addToNotificationStack(props)
     }
 
-    shouldComponentUpdate(props) {
-        return !!props.newNotification && this.currentStackPosition < this.notificationStack.length
+    shouldComponentUpdate(props, state) {
+        const update = this.lastStackLength !== this.notificationStack.length || this.lastStackPosition !== this.currentStackPosition
+        this.lastStackLength = this.notificationStack.length
+        this.lastStackPosition = this.currentStackPosition
+        return update || this.state.notificationOpen !== state.notificationOpen
     }
 
     addToNotificationStack(props) {
@@ -41,7 +48,7 @@ class NotificationHandler extends React.Component {
     }
 
     render() {
-        console.log('render NotificationHandler')
+        console.log('render NotificationHandler ' + this.notificationStack.length + '/' + this.currentStackPosition)
         if (this.notificationStack.length > this.currentStackPosition) {
             const notification = this.notificationStack[this.currentStackPosition]
             return <Snackbar
@@ -50,10 +57,10 @@ class NotificationHandler extends React.Component {
                     vertical: 'bottom',
                     horizontal: 'left',
                 }}
-                onExited={this.handleNotificationClosed.bind(this, notification)}
+                onExited={this.handleNotificationClosed.bind(this)}
                 open={this.state.notificationOpen}
                 autoHideDuration={5000}
-                onClose={this.handleNotificationClose.bind(this, notification)}
+                onClose={this.handleNotificationClose.bind(this)}
                 ContentProps={{
                     'aria-describedby': 'message-id',
                 }}
@@ -64,7 +71,7 @@ class NotificationHandler extends React.Component {
                         aria-label="Close"
                         color="inherit"
                         className=""
-                        onClick={this.handleNotificationClose.bind(this, notification)}
+                        onClick={this.handleNotificationClose.bind(this)}
                     />,
                 ]}
             />

@@ -127,7 +127,6 @@ export const systemResolver = (db) => ({
         },
         collections: async ({filter}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-console.log(filter)
             const collections = await db.listCollections({name: {$regex: new RegExp(filter), $options: 'i'}}).toArray()
 
             return {results: collections}
