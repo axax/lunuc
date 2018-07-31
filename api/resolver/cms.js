@@ -240,8 +240,8 @@ export const cmsResolver = (db) => ({
 
         return result
     },
-    deleteCmsPage: async ({_id}, {context}) => {
-        return GenericResolver.deleteEnity(db, context, 'CmsPage', {_id})
+    deleteCmsPage: async ({_id, _version}, {context}) => {
+        return GenericResolver.deleteEnity(db, context, 'CmsPage', {_id, _version})
     },
     cloneCmsPage: async (data, {context}) => {
         return GenericResolver.cloneEntity(db, context, 'CmsPage', data)

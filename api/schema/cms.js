@@ -34,12 +34,13 @@ export const cmsSchemaRaw = `
 		
 	type Mutation {
 		createCmsPage (
+		    _version: String
 			slug: String!
 			public: Boolean,
 			urlSensitiv: Boolean
 		): CmsPage
-		updateCmsPage(_id: ID!, query: String, slug: String, template: String, script: String, dataResolver: String, ssr: Boolean, public: Boolean, urlSensitiv: Boolean): CmsPage	
-		deleteCmsPage(_id: ID!): CmsPage
-		cloneCmsPage(_id: ID!, slug: String, public: Boolean, urlSensitiv: Boolean): CmsPage
+		updateCmsPage(_id: ID!,_version: String, query: String, slug: String, template: String, script: String, dataResolver: String, ssr: Boolean, public: Boolean, urlSensitiv: Boolean): CmsPage	
+		deleteCmsPage(_id: ID!,_version: String): CmsPage
+		cloneCmsPage(_id: ID!,_version: String, slug: String, public: Boolean, urlSensitiv: Boolean): CmsPage
 	}
 `

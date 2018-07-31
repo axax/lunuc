@@ -313,33 +313,33 @@ class TypesContainer extends React.Component {
                              rowsPerPage={limit} page={page}
                              orderBy={asort[0]}
                              header={this.types[type].collectionClonable &&
-                                 <Query query={gqlCollectionsQuery}
-                                        fetchPolicy="cache-and-network"
-                                        variables={{filter: '^' + type + '_.*'}}>
-                                     {({loading, error, data}) => {
-                                         if (loading) return "Loading..."
-                                         if (error) return `Error! ${error.message}`
+                             <Query query={gqlCollectionsQuery}
+                                    fetchPolicy="cache-and-network"
+                                    variables={{filter: '^' + type + '_.*'}}>
+                                 {({loading, error, data}) => {
+                                     if (loading) return "Loading..."
+                                     if (error) return `Error! ${error.message}`
 
-                                         const items = data.collections.results.reduce((a, c) => {
-                                             const value = c.name.substring(c.name.indexOf('_') + 1)
-                                             a.push({value, name: value})
-                                             return a
-                                         }, [])
-                                         items.unshift({value: 'default', name: 'Default'})
-                                         return <SimpleSelect
-                                             label="Current version"
-                                             value={version}
-                                             onChange={(e) => {
+                                     const items = data.collections.results.reduce((a, c) => {
+                                         const value = c.name.substring(c.name.indexOf('_') + 1)
+                                         a.push({value, name: value})
+                                         return a
+                                     }, [])
+                                     items.unshift({value: 'default', name: 'Default'})
+                                     return <SimpleSelect
+                                         label="Current version"
+                                         value={version}
+                                         onChange={(e) => {
 
-                                                 const {type, page, limit, sort, filter} = this.pageParams
-                                                 this.goTo(type, page, limit, sort, filter, e.target.value)
+                                             const {type, page, limit, sort, filter} = this.pageParams
+                                             this.goTo(type, page, limit, sort, filter, e.target.value)
 
-                                                 //this.setState({selectedVersion:e.target.value})
-                                             }}
-                                             items={items}
-                                         />
-                                     }}
-                                 </Query>
+                                             //this.setState({selectedVersion:e.target.value})
+                                         }}
+                                         items={items}
+                                     />
+                                 }}
+                             </Query>
                              }
                              actions={actions}
                              footer={<div>{`${selectedLength} rows selected`} {selectedLength ? <SimpleSelect
@@ -680,13 +680,14 @@ class TypesContainer extends React.Component {
         }
     }
 
-    createData({type, page, limit, sort, filter}, input, optimisticInput) {
+    createData({type, page, limit, sort, filter, version}, input, optimisticInput) {
         const {client, user} = this.props
         if (type) {
             const queries = getTypeQueries(type)
             return client.mutate({
                 mutation: gql(queries.create),
                 variables: {
+                    _version: version,
                     ...input
                 },
                 update: (store, {data}) => {
@@ -704,10 +705,12 @@ class TypesContainer extends React.Component {
                         storeKey = this.getStoreKey(type)
                     const extendedFilter = this.extendFilter(filter)
 
+                    const variables = {page, limit, sort, version, filter: extendedFilter}
+
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
-                        variables: {page, limit, sort, filter: extendedFilter}
+                        variables
                     })
                     if (storeData[storeKey]) {
                         if (!storeData[storeKey].results) {
@@ -720,7 +723,7 @@ class TypesContainer extends React.Component {
                         }
                         store.writeQuery({
                             query: gqlQuery,
-                            variables: {page, limit, sort, filter: extendedFilter},
+                            variables,
                             data: storeData
                         })
                         this.setState({data: storeData[storeKey]})
@@ -738,7 +741,7 @@ class TypesContainer extends React.Component {
             return client.mutate({
                 mutation: gql(queries.update),
                 /* only send what has changed*/
-                variables: changedData,
+                variables: {_version: version, ...changedData},
                 update: (store, {data}) => {
                     const gqlQuery = gql(queries.query),
                         storeKey = this.getStoreKey(type),
@@ -779,31 +782,34 @@ class TypesContainer extends React.Component {
     }
 
 
-    deleteData({type, page, limit, sort, filter}, ids) {
+    deleteData({type, page, limit, sort, filter, version}, ids) {
         const {client} = this.props
 
-        if (type) {
+        if (type && ids.length > 0) {
 
             const queries = getTypeQueries(type),
                 storeKey = this.getStoreKey(type)
             client.mutate({
-                mutation: gql(queries.deleteMany),
+                mutation: gql(ids.length > 1 ? queries.deleteMany : queries.delete),
                 variables: {
-                    _id: ids
+                    _version: version,
+                    _id: ids.length > 1 ? ids : ids[0]
                 },
                 update: (store, {data}) => {
                     const gqlQuery = gql(queries.query)
                     const extendedFilter = this.extendFilter(filter)
 
+                    const variables = {page, limit, sort, version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
-                        variables: {page, limit, sort, filter: extendedFilter}
+                        variables
                     })
                     if (storeData[storeKey]) {
                         const refResults = storeData[storeKey].results
 
-                        data['delete' + type + 's'].forEach(result => {
+                        const items = ids.length > 1 ? data['delete' + type + 's'] : [data['delete' + type]]
+                        items.forEach(result => {
                             const idx = refResults.findIndex(x => x._id === result._id)
                             if (idx > -1) {
                                 if (result.status === 'deleting') {
@@ -817,7 +823,7 @@ class TypesContainer extends React.Component {
 
                         store.writeQuery({
                             query: gqlQuery,
-                            variables: {page, limit, sort, filter: extendedFilter},
+                            variables,
                             data: storeData
                         })
                         this.setState({data: storeData[storeKey]})
@@ -830,7 +836,7 @@ class TypesContainer extends React.Component {
     }
 
 
-    cloneData({type, page, limit, sort, filter}, variables) {
+    cloneData({type, page, limit, sort, filter, version},clonable) {
         const {client, user} = this.props
 
         if (type) {
@@ -840,7 +846,7 @@ class TypesContainer extends React.Component {
 
             client.mutate({
                 mutation: gql(queries.clone),
-                variables,
+                variables:{_version:version,...clonable},
                 update: (store, {data}) => {
                     const freshData = {
                         ...data['clone' + type],
@@ -854,10 +860,13 @@ class TypesContainer extends React.Component {
                     const gqlQuery = gql(queries.query),
                         storeKey = this.getStoreKey(type)
 
+                    const extendedFilter = this.extendFilter(filter)
+                    const variables = {page, limit, sort, version, filter: extendedFilter}
+
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
-                        variables: {page, limit, sort, filter}
+                        variables
                     })
                     if (storeData[storeKey]) {
 
@@ -867,7 +876,7 @@ class TypesContainer extends React.Component {
                         }
                         store.writeQuery({
                             query: gqlQuery,
-                            variables: {page, limit, sort, filter},
+                            variables,
                             data: storeData
                         })
                         this.setState({data: storeData[storeKey]})

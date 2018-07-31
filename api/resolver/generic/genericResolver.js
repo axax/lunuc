@@ -11,6 +11,10 @@ import {
 
 const {DEFAULT_LANGUAGE} = config
 
+const buildCollectionName = (typeName, version) => {
+    return typeName + (version && version !== 'default' ? '_' + version : '')
+}
+
 const GenericResolver = {
     entities: async (db, context, typeName, data, options) => {
         if (!context.lang) {
@@ -22,8 +26,8 @@ const GenericResolver = {
         //Util.checkIfUserIsLoggedIn(context)
         let {limit, offset, page, match, filter, sort, projectResult, version} = options
 
-        const collectionName = typeName + (version && version !== 'default' ? '_' + version : '')
-console.log(collectionName)
+        const collectionName = buildCollectionName(typeName, version)
+
         if (!limit) {
             limit = 10
         }
@@ -287,12 +291,15 @@ console.log(collectionName)
         console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${a[0].aggregateTime}ms total time ${new Date() - startTime}ms`)
         return a[0]
     },
-    createEnity: async (db, context, collectionName, data) => {
+    createEnity: async (db, context, typeName, {_version, ...data}) => {
         Util.checkIfUserIsLoggedIn(context)
 
         if (!context.lang) {
             throw new Error('lang on context is missing')
         }
+
+        const collectionName = buildCollectionName(typeName, _version)
+
         let createdBy, username
         if (data.createdBy && data.createdBy !== context.id) {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
@@ -342,13 +349,16 @@ console.log(collectionName)
             }
         }
     },
-    deleteEnity: async (db, context, collectionName, data) => {
+    deleteEnity: async (db, context, typeName, {_version, ...data}) => {
 
         Util.checkIfUserIsLoggedIn(context)
 
         if (!data._id) {
             throw new Error('Id is missing')
         }
+
+        const collectionName = buildCollectionName(typeName, _version)
+
 
         const options = {
             _id: ObjectId(data._id)
@@ -370,13 +380,16 @@ console.log(collectionName)
             throw new Error('Error deleting entry. You might not have premissions to manage other users')
         }
     },
-    deleteEnities: async (db, context, collectionName, data) => {
+    deleteEnities: async (db, context, typeName, {_version, ...data}) => {
 
         Util.checkIfUserIsLoggedIn(context)
 
         if (data._id.constructor !== Array || !data._id.length) {
             throw new Error('Id is missing')
         }
+
+        const collectionName = buildCollectionName(typeName, _version)
+
 
         const $in = []
         const result = []
@@ -406,7 +419,7 @@ console.log(collectionName)
             throw new Error('Error deleting entries. You might not have premissions to manage other users')
         }
     },
-    updateEnity: async (db, context, collectionName, data, options) => {
+    updateEnity: async (db, context, typeName, {_version, ...data}, options) => {
 
         Util.checkIfUserIsLoggedIn(context)
 
@@ -414,12 +427,7 @@ console.log(collectionName)
             throw new Error('Id is missing')
         }
 
-
-        if (options && options.revisionControll) {
-//TODO
-
-
-        }
+        const collectionName = buildCollectionName(typeName, _version)
 
         const params = {
             _id: ObjectId(data._id)
@@ -431,7 +439,7 @@ console.log(collectionName)
         const collection = db.collection(collectionName)
 
         //check if this field is a reference
-        const fields = getFormFields(collectionName)
+        const fields = getFormFields(typeName)
 
 
         // we create also a dataSet with dot notation format for partial update
@@ -440,7 +448,7 @@ console.log(collectionName)
         // clone object but without _id and undefined property
         // keep null values to remove references
         const dataSet = Object.keys(data).reduce((o, k) => {
-            if (k !== '_id' && data[k] !== undefined) {
+            if (k !== '_id' && k !== '_version' && data[k] !== undefined) {
 
                 if (fields && fields[k] && fields[k].localized) {
                     // is field localized
@@ -495,11 +503,11 @@ console.log(collectionName)
             status: 'updated'
         }
     },
-    cloneEntity: async (db, context, collectionName, {_id, ...rest}) => {
+    cloneEntity: async (db, context, typeName, {_id, _version, ...rest}) => {
 
         Util.checkIfUserIsLoggedIn(context)
 
-        console.log(_id, rest)
+        const collectionName = buildCollectionName(typeName, _version)
         const collection = db.collection(collectionName)
 
         if (!_id) {
