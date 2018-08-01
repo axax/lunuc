@@ -312,7 +312,6 @@ class CmsViewContainer extends React.Component {
             }
             return null
         }
-
         const editMode = isEditMode(this.props)
 
         if (cmsPage.ssr && !editMode) {
@@ -466,6 +465,7 @@ class CmsViewContainer extends React.Component {
                               title="Edit Component">
 
                     <TemplateEditor
+                        scope={cmsComponentEdit.scope}
                         style={editorStyle}
                         tab={settings.templateTab}
                         onTabChange={this.handleSettingChange.bind(this, 'templateTab')}

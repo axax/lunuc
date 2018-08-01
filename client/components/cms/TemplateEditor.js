@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ContentEditable from '../generic/ContentEditable'
 import JsonEditor from '../generic/JsonEditor'
-import {SimpleMenu, Tabs, Tab, CodeIcon, WebIcon, withStyles} from 'ui/admin'
+import {SimpleMenu, Tabs, Tab, CodeIcon, WebIcon, SubjectIcon, withStyles} from 'ui/admin'
 
 
 const styles = theme => ({
@@ -14,7 +14,11 @@ const styles = theme => ({
         borderBottom: '1px solid #e8e8e8',
     },
     tabsIndicator: {
-        width:'50% !important',
+        width: '33.33% !important',
+        backgroundColor: '#1890ff',
+    },
+    tabsIndicator50: {
+        width: '50% !important',
         backgroundColor: '#1890ff',
     },
     tabRoot: {
@@ -54,7 +58,6 @@ const styles = theme => ({
 })
 
 
-
 function TabContainer(props) {
     return (
         <div className={props.className}>
@@ -70,49 +73,56 @@ class TemplateEditor extends React.Component {
         super(props)
 
         this.state = {
-            tab:props.tab || 0
+            tab: props.tab || 0
         }
     }
 
-    componentWillReceiveProps(props){
-        if( props.tab !== this.state.tab ){
-            this.setState({tab:props.tab})
+    componentWillReceiveProps(props) {
+        if (props.tab !== this.state.tab) {
+            this.setState({tab: props.tab})
         }
     }
 
     render() {
-        const {tab,classes,...rest} = this.props
+        const {tab, classes, scope, ...rest} = this.props
+
+        const currentTab = (!scope && this.state.tab === 2 ? 0 : this.state.tab)
         return <div style={{position: 'relative'}}>
 
             <Tabs
-                value={this.state.tab}
+                value={currentTab}
                 onChange={this.handleTabChange.bind(this)}
                 fullWidth
                 indicatorColor="primary"
                 textColor="primary"
-                classes={{ root: classes.tabsRoot, indicator: classes.tabsIndicator }}
+                classes={{root: classes.tabsRoot, indicator: (scope ? classes.tabsIndicator : classes.tabsIndicator50)}}
             >
-                <Tab icon={<CodeIcon />} classes={{ root: classes.tabRoot, selected: classes.tabSelected }}/>
-                <Tab icon={<WebIcon />} classes={{ root: classes.tabRoot, selected: classes.tabSelected }}/>
+                <Tab icon={<CodeIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>
+                <Tab icon={<WebIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>
+                {scope &&
+                <Tab icon={<SubjectIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
             </Tabs>
-            {this.state.tab === 0 && <TabContainer>
+            {currentTab === 0 && <TabContainer>
 
                 <SimpleMenu mini fab color="secondary" style={{position: 'absolute', bottom: '-8px', right: '-8px'}}
                             items={[{name: 'Prettify', onClick: this.prettify.bind(this)}]}/>
                 <ContentEditable highlight="json" setHtml={false} {...rest}/>
 
             </TabContainer>}
-            {this.state.tab === 1 && <TabContainer>
+            {currentTab === 1 && <TabContainer>
                 <JsonEditor {...rest}/>
+            </TabContainer>}
+            {scope && currentTab === 2 && <TabContainer>
+                <pre>{JSON.stringify(scope, null, 4)}</pre>
             </TabContainer>}
 
         </div>
     }
 
-    handleTabChange(event, tab){
+    handleTabChange(event, tab) {
         const {onTabChange} = this.props
-        this.setState({ tab })
-        if( onTabChange ){
+        this.setState({tab})
+        if (onTabChange) {
             onTabChange(tab)
         }
     }
@@ -133,6 +143,7 @@ class TemplateEditor extends React.Component {
 }
 
 TemplateEditor.propTypes = {
+    scope: PropTypes.object,
     classes: PropTypes.object.isRequired
 }
 

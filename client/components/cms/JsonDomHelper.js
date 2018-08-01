@@ -83,8 +83,8 @@ class JsonDomHelper extends React.Component {
     handleEditClick(e) {
         e.stopPropagation()
         e.preventDefault()
-        const {_cmsActions, _key, _item} = this.props
-        _cmsActions.editCmsComponent(_key, _item)
+        const {_cmsActions, _key, _item, _scope} = this.props
+        _cmsActions.editCmsComponent(_key, _item, _scope)
 
     }
 
@@ -107,11 +107,13 @@ class JsonDomHelper extends React.Component {
             onMouseOut: this.onHelperMouseOut.bind(this)
         }
 
-        if (!children) {
+        const componentName = _WrappedComponent.name || ''
+
+        if (!children && componentName !== 'Col') {
             // need wrapper
             return <span className={classes.wrapper} {...props}><_WrappedComponent {...rest}/>
                 {toolbar}</span>
-        } else if (_WrappedComponent.name && (_WrappedComponent.name.endsWith('$') || COMPONENT_WITH_WRAPPER.indexOf(_WrappedComponent.name) >= 0)) {
+        } else if (componentName.endsWith('$') || COMPONENT_WITH_WRAPPER.indexOf(componentName) >= 0) {
             return <span className={classes.wrapper} {...props}><_WrappedComponent {...rest}>{children}</_WrappedComponent>
                 {toolbar}</span>
 
@@ -120,6 +122,9 @@ class JsonDomHelper extends React.Component {
 
             if (toolbar) {
                 kids = []
+                if( !children ){
+                    kids.push(toolbar)
+                }else
                 if (children.constructor === Array) {
                     kids.push(...children)
                     kids.push(toolbar)
@@ -139,7 +144,8 @@ JsonDomHelper.propTypes = {
     _WrappedComponent: PropTypes.any.isRequired,
     _cmsActions: PropTypes.object.isRequired,
     _key: PropTypes.string.isRequired,
-    _item: PropTypes.object.isRequired
+    _item: PropTypes.object.isRequired,
+    _scope: PropTypes.object.isRequired
 }
 
 

@@ -416,7 +416,6 @@ class JsonDom extends React.Component {
                 if (t === 'Cms') {
                     cmsProps = {location: this.props.history.location}
                 }
-
                 let eleType = this.components[_t] || _t
                 const eleProps = {id: key, key, ...cmsProps, ..._p}
                 if (this.props.editMode && this.props.inlineEditor) {
@@ -425,6 +424,7 @@ class JsonDom extends React.Component {
                         eleProps._WrappedComponent = eleType
                         eleProps._key = key
                         eleProps._item = _item
+                        eleProps._scope = this.scope
                         eleType = JsonDomHelper
                     }
                 }
