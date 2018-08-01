@@ -184,15 +184,16 @@
 
       padding-top: 20px;
       list-style: none;
-
+      padding-left: 0;
       li {
         margin-bottom: 18px;
       }
 
       img {
         float: left;
-        margin-right: 12px;
-        max-width: 30px;
+        margin-right: 0.8rem;
+        max-width: 3rem;
+        margin-bottom: 2rem;
       }
 
       .item-name {
@@ -208,6 +209,26 @@
 
       .item-quantity {
         color: @light-text;
+      }
+    }
+
+
+    .shopping-cart-footer {
+
+      button {
+        width:100%;
+        background: @primary-color;
+        color:white;
+        text-align: center;
+        padding: 12px;
+        text-decoration: none;
+        display: block;
+        border-radius: 3px;
+        font-size: 16px;
+        margin: 25px 0 15px 0;
+        &:hover {
+          background: lighten(@primary-color, 3%);
+        }
       }
     }
 

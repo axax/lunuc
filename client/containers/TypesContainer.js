@@ -317,8 +317,10 @@ class TypesContainer extends React.Component {
                                     fetchPolicy="cache-and-network"
                                     variables={{filter: '^' + type + '_.*'}}>
                                  {({loading, error, data}) => {
-                                     if (loading) return "Loading..."
+                                     if (loading) return 'Loading...'
                                      if (error) return `Error! ${error.message}`
+
+                                     if( !data.collections.results) return null
 
                                      const items = data.collections.results.reduce((a, c) => {
                                          const value = c.name.substring(c.name.indexOf('_') + 1)
@@ -941,7 +943,7 @@ class TypesContainer extends React.Component {
     }
 
     handleSortChange = (orderBy) => {
-        const {type, limit, sort, filter} = this.pageParams
+        const {type, limit, sort, filter, version} = this.pageParams
         const aSort = sort.split(' ')
         let orderDirection = 'desc'
         if (aSort.length > 1 && orderBy === aSort[0] && orderDirection === aSort[1]) {
@@ -949,7 +951,7 @@ class TypesContainer extends React.Component {
         }
         const newSort = `${orderBy} ${orderDirection}`
         this.setSettingsForType(type, {sort: newSort})
-        this.goTo(type, 1, limit, newSort, filter)
+        this.goTo(type, 1, limit, newSort, filter, version)
     }
 
 

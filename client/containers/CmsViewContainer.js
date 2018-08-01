@@ -508,7 +508,7 @@ class CmsViewContainer extends React.Component {
         if (e.key === 'save') {
             this.saveCmsPage(this.state.template, this.props.cmsPage, 'template')
         }
-        _cmsActions.editCmsComponent(null, cmsComponentEdit.component)
+        _cmsActions.editCmsComponent(null, cmsComponentEdit.component, cmsComponentEdit.scope)
     }
 
     handleSettingChange(key, any) {
@@ -538,7 +538,7 @@ class CmsViewContainer extends React.Component {
 
         if (query.startsWith('mutation')) {
             client.mutate({
-                query: gql(query),
+                mutation: gql(query),
                 ...rest
             }).then(success).catch(error)
         } else {

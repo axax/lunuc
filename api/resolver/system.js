@@ -8,6 +8,7 @@ import nodemailer from 'nodemailer'
 import {
     CAPABILITY_MANAGE_COLLECTION
 } from '../data/capabilities'
+import Cache from 'util/cache'
 
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
@@ -127,7 +128,16 @@ export const systemResolver = (db) => ({
         },
         collections: async ({filter}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const collections = await db.listCollections({name: {$regex: new RegExp(filter), $options: 'i'}}).toArray()
+
+            const cacheKey = 'system-collections-'+filter
+
+            let collections = Cache.get(cacheKey)
+
+            if (!collections) {
+                collections = await db.listCollections({name: {$regex: new RegExp(filter), $options: 'i'}}).toArray()
+                Cache.set(cacheKey, collections, 86400000) // cache expires in 1 day
+
+            }
 
             return {results: collections}
         }
@@ -213,6 +223,8 @@ export const systemResolver = (db) => ({
             if( indexes.length > 0) {
                 newCollection.createIndexes(indexes)
             }
+
+            Cache.clearStartWith('system-collections')
 
             return {status: 'success', collection: {name: newName}}
         }

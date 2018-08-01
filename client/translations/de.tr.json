@@ -1,5 +1,14 @@
 {
   "admin.home.title":"Administrationskonsole",
   "admin.home.hi":"Hallo %username%!",
-  "GenericForm.validation.required":"Das Feld darf nicht leer sein"
+  "GenericForm.validation.required":"Das Feld darf nicht leer sein",
+  "core.save":"Speichern",
+  "core.account":"Konto",
+  "core.address":"Adresse",
+  "core.account.username":"Benutzername",
+  "core.account.email":"Email",
+  "core.address.name": "Nachname",
+  "core.address.firstname": "Vorname",
+  "core.address.street": "Strasse",
+  "core.address.place": "Ort"
 }

@@ -222,7 +222,6 @@ const GenericResolver = {
             }
             group.modifiedAt = {'$first': '$modifiedAt'}
         }
-
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
         let a = (await collection.aggregate([

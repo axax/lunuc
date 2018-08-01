@@ -1,5 +1,14 @@
 {
   "admin.home.title":"Administration console",
   "admin.home.hi":"Hi %username%!",
-  "GenericForm.validation.required":"Field is required"
+  "GenericForm.validation.required":"Field is required",
+  "core.save":"Save",
+  "core.account":"Account",
+  "core.address":"Address",
+  "core.account.username":"Username",
+  "core.account.email":"Email",
+  "core.address.name": "Name",
+  "core.address.firstname": "Firstname",
+  "core.address.street": "Street",
+  "core.address.place": "Place"
 }
