@@ -320,7 +320,7 @@ class TypesContainer extends React.Component {
                                      if (loading) return 'Loading...'
                                      if (error) return `Error! ${error.message}`
 
-                                     if( !data.collections.results) return null
+                                     if (!data.collections.results) return null
 
                                      const items = data.collections.results.reduce((a, c) => {
                                          const value = c.name.substring(c.name.indexOf('_') + 1)
@@ -590,7 +590,7 @@ class TypesContainer extends React.Component {
             })
 
         /* HOOK */
-        Hook.call('TypeTableColumns', {type, columns: this.typeColumns[type]})
+        Hook.call('TypeTableColumns', {type, version: this.pageParams.version, columns: this.typeColumns[type]})
 
         return this.typeColumns[type]
     }
@@ -838,7 +838,7 @@ class TypesContainer extends React.Component {
     }
 
 
-    cloneData({type, page, limit, sort, filter, version},clonable) {
+    cloneData({type, page, limit, sort, filter, version}, clonable) {
         const {client, user} = this.props
 
         if (type) {
@@ -848,7 +848,7 @@ class TypesContainer extends React.Component {
 
             client.mutate({
                 mutation: gql(queries.clone),
-                variables:{_version:version,...clonable},
+                variables: {_version: version, ...clonable},
                 update: (store, {data}) => {
                     const freshData = {
                         ...data['clone' + type],
@@ -1200,9 +1200,11 @@ Hook.on('TypeTable', ({type, dataSource, data, container}) => {
     } else if (type === 'CmsPage') {
         dataSource.forEach((d, i) => {
             if (d.action) {
+
                 d.action.push(<Tooltip key="viewBtn" placement="top" title="View page">
                     <WebIconButton onClick={() => {
-                        container.props.history.push('/' + data.results[i].slug)
+                        const {version} = container.pageParams
+                        container.props.history.push('/' + (version && version !== 'default' ? '@' + version + '/' : '') + data.results[i].slug)
                     }}/>
                 </Tooltip>)
             }
