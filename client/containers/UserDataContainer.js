@@ -17,10 +17,8 @@ class UserDataContainer extends React.PureComponent {
 		const {client, userActions} = this.props
 
 		const token = localStorage.getItem('token')
-
 		if( token && token != ''){
 			this.setState({loading: true})
-
 			client.query({
 				fetchPolicy: 'cache-first',
 				query: gql(USER_DATA_QUERY)

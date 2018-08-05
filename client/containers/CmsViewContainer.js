@@ -46,7 +46,7 @@ const ErrorHandler = (props) => <Async {...props}
 
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug: String!,$query:String,$nosession: String){ cmsPage(slug: $slug,query: $query, nosession: $nosession){cacheKey slug urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
+const gqlQuery = gql`query cmsPage($slug: String!,$query:String,$nosession: String, $version: String){ cmsPage(slug: $slug,query: $query, nosession: $nosession, version: $version){cacheKey slug urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
 
 
 const editorStyle = {
@@ -691,6 +691,20 @@ CmsViewContainer.propTypes = {
     _cmsActions: PropTypes.object.isRequired,
 }
 
+const getSlugVersion = (slug) => {
+    const ret = {}
+    if (slug.indexOf('@') === 0) {
+        const pos = slug.indexOf('/')
+        ret.slug = pos >= 0 ? slug.substring(pos + 1) : ''
+        ret.version = pos >= 0 ? slug.substring(1, pos) : slug.substring(1)
+
+    } else {
+        ret.slug = slug
+    }
+
+    return ret
+}
+
 const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){_id key value}}`
 const urlSensitivMap = {}
 const CmsViewContainerWithGql = compose(
@@ -698,7 +712,7 @@ const CmsViewContainerWithGql = compose(
         options(ownProps) {
             const {slug, urlSensitiv, user} = ownProps,
                 variables = {
-                    slug
+                    ...getSlugVersion(slug)
                 }
             if (!user.isAuthenticated) {
                 const kv = localStorage.getItem(NO_SESSION_KEY_VALUES_SERVER)
@@ -728,13 +742,16 @@ const CmsViewContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`query cmsPages($filter: String){cmsPages(filter:$filter){results{slug}}}`, {
+    graphql(gql`query cmsPages($filter: String,$version:String){cmsPages(filter:$filter,version:$version){results{slug}}}`, {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {
-            const {slug} = ownProps,
+            const {slug, version} = getSlugVersion(ownProps.slug),
                 variables = {
                     filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`
                 }
+            if (version) {
+                variables.version = version
+            }
             return {
                 variables,
                 fetchPolicy: 'network-only'
@@ -759,11 +776,17 @@ const CmsViewContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$template:String,$slug:String,$script:String,$dataResolver:String,$ssr:Boolean,$public:Boolean){updateCmsPage(_id:$_id,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr,public:$public){slug template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$dataResolver:String,$ssr:Boolean,$public:Boolean){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr,public:$public){slug template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key) => {
+                const variables = {_id, [key]: rest[key]}
+                const {version} = getSlugVersion(ownProps.slug)
+                if( version ){
+                    variables._version = version
+                }
+
                 return mutate({
-                    variables: {_id, [key]: rest[key]},
+                    variables,
                     optimisticResponse: {
                         __typename: 'Mutation',
                         // Optimistic message
@@ -783,7 +806,7 @@ const CmsViewContainerWithGql = compose(
                     update: (store, {data: {updateCmsPage}}) => {
                         const {slug, urlSensitiv} = ownProps,
                             variables = {
-                                slug
+                                ...getSlugVersion(slug)
                             }
                         if (urlSensitiv) {
                             const q = window.location.search.substring(1)

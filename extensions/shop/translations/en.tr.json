@@ -3,12 +3,5 @@
   "shop.search.placeholder":"What are you looking for?",
   "shop.cart":"Cart",
   "shop.cart.is.empty":"The cart is empty",
-  "shop.checkout":"Checkout",
-  "shop.myaccount":"My account",
-  "shop.myaccount.address":"Address",
-  "shop.myaccount.save":"Save",
-  "shop.myaccount.address.name": "Name",
-  "shop.myaccount.address.firstname": "Firstname",
-  "shop.myaccount.address.street": "Street",
-  "shop.myaccount.address.place": "Place"
+  "shop.checkout":"Checkout"
 }

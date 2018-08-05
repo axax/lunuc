@@ -10,5 +10,7 @@
   "core.address.name": "Name",
   "core.address.firstname": "Firstname",
   "core.address.street": "Street",
+  "core.address.street_number": "Street number",
+  "core.address.postcode": "Postcode",
   "core.address.place": "Place"
 }

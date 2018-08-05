@@ -8,6 +8,7 @@ import config from 'gen/config'
 import {createBrowserHistory} from 'history'
 const {ADMIN_BASE_URL} = config
 import CmsViewContainer from 'client/containers/CmsViewContainer'
+import LogoutContainer from 'client/containers/LogoutContainer'
 
 import Async from 'client/components/Async'
 
@@ -37,6 +38,7 @@ class Routes extends React.Component {
             component: (p) => <TypesContainer baseUrl={ADMIN_BASE_URL+"/cms/"} fixType="CmsPage" {...p} />
         },
         {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
+        {path: ADMIN_BASE_URL + '/logout', component: LogoutContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
         {exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer},
@@ -85,7 +87,7 @@ class Routes extends React.Component {
         return <Router history={this.history}>
             <div id="router">
                 {this.routes.map((o, i) => {
-                    if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || o.path.startsWith(ADMIN_BASE_URL+'/login') || capabilities.indexOf('access_admin_page') >= 0) {
+                    if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || o.path.startsWith(ADMIN_BASE_URL+'/login') || o.path.startsWith(ADMIN_BASE_URL+'/logout') || capabilities.indexOf('access_admin_page') >= 0) {
                         if (o.private) {
                             return <PrivateRoute key={i} path={this.pathPrefix + o.path}
                                                  isAuthenticated={isAuthenticated}

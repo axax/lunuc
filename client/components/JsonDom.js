@@ -481,7 +481,7 @@ class JsonDom extends React.Component {
 
     renderString(str, data) {
         try {
-            const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const parent = this.parent;return `' + str + '`;')
+            const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const parent = this.parent;const _i = this.tryCatch;return `' + str + '`;')
             //.replace(/(\r\n|\n|\r)/g,"");
             return tpl.call({
                 data,

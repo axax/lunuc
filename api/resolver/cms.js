@@ -94,7 +94,7 @@ export const cmsResolver = (db) => ({
             version
         })
     },
-    cmsPage: async ({slug, query, nosession}, {context}) => {
+    cmsPage: async ({slug, query, nosession, version}, {context}) => {
         // TODO: Not just check if user is logged in but also check what role he has
         const userIsLoggedIn = Util.isUserLoggedIn(context)
 
@@ -113,7 +113,7 @@ export const cmsResolver = (db) => ({
             } else {
                 match = {slug}
             }
-            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {match})
+            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {match, version})
 
             // minify template if no user is logged in
             if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {

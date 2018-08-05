@@ -45,11 +45,7 @@ class BaseLayout extends React.Component {
                                     headerRight={
                                         [
                                             (isAuthenticated ?
-                                                <Button key="logout" color="inherit" size="small" onClick={() => {
-                                                    localStorage.removeItem('token')
-                                                    userActions.setUser(null, false)
-                                                    history.push('/')
-                                                }}>Logout</Button>
+                                                <Button key="logout" color="inherit" size="small" onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/logout'})}>Logout</Button>
 
                                                 : <Button key="login" color="inherit" size="small"
                                                           onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>),
