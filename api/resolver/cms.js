@@ -97,7 +97,6 @@ export const cmsResolver = (db) => ({
     cmsPage: async ({slug, query, nosession, version}, {context}) => {
         // TODO: Not just check if user is logged in but also check what role he has
         const userIsLoggedIn = Util.isUserLoggedIn(context)
-
         const startTime = (new Date()).getTime()
         let cmsPages
         const cacheKey = 'cmsPage' + slug
@@ -113,7 +112,10 @@ export const cmsResolver = (db) => ({
             } else {
                 match = {slug}
             }
-            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {match, version})
+            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {
+                match,
+                version
+            })
 
             // minify template if no user is logged in
             if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
@@ -151,6 +153,8 @@ export const cmsResolver = (db) => ({
         }
         console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
+        const apolloCacheKey = (version && version !== 'default' ? version : '') + (query ? query : '')
+
         if (userIsLoggedIn) {
             // return all data
             return {
@@ -171,7 +175,7 @@ export const cmsResolver = (db) => ({
                 /* we return a cacheKey here because the resolvedData may be dependent on the query that gets passed.
                  that leads to ambiguous results for the same id.
                  */
-                cacheKey: query,
+                cacheKey: apolloCacheKey,
                 /* Return the current user settings of the view
                  */
                 settings: ''
@@ -194,7 +198,7 @@ export const cmsResolver = (db) => ({
                 resolvedData: JSON.stringify(resolvedData),
                 subscriptions,
                 urlSensitiv,
-                cacheKey: query
+                cacheKey: apolloCacheKey
             }
 
         }

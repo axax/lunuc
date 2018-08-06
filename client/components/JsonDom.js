@@ -171,6 +171,7 @@ class JsonDom extends React.Component {
         if (this.props.resolvedData !== props.resolvedData) {
             this.resolvedDataJson = undefined
             this.json = null
+            this.setState({bindings:{}})
             //console.log('reset resolvedData')
         }
         this.setState({hasReactError: false})
@@ -649,8 +650,7 @@ class JsonDomInput extends React.Component {
     }
 
     UNSAFE_componentWillReceiveProps(props) {
-        if (props.value)
-            this.setState({value: props.value})
+        this.setState({value: props.value || ''})
     }
 
     valueChange = (e) => {

@@ -126,6 +126,11 @@ class LoginContainer extends React.Component {
                                            autoComplete="current-password"
                                            value={password}
                                            onChange={this.handleInputChange}
+                                           onKeyPress={(ev) => {
+                                               if (ev.key === 'Enter') {
+                                                   this.login(ev)
+                                               }
+                                           }}
                                            type="password"
                                            placeholder="Enter Password"
                                            name="password" required/>

@@ -6,6 +6,7 @@ import {Redirect} from 'react-router-dom'
 import * as UserActions from 'client/actions/UserAction'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
+import Util from 'client/util'
 
 
 class LogoutContainer extends React.Component {
@@ -26,7 +27,16 @@ class LogoutContainer extends React.Component {
     }
 
     render() {
-        return <Redirect to={{pathname: '/'}} push={false}/>
+        let to = {pathname: '/'}
+        if (window.location.hash) {
+            const params = Util.extractQueryParams(window.location.hash.substring(1))
+            if (params.forward) {
+                to = {pathname: params.forward}
+            }
+        }
+
+
+        return <Redirect to={to} push={false}/>
     }
 }
 

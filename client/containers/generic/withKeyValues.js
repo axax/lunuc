@@ -94,7 +94,7 @@ export function withKeyValues(WrappedComponent, keys) {
     }
 
     const gqlKeyValueQuery = gql`query{ 
-        keyValues${keys ? '(keys:' + JSON.stringify(keys) + ')' : ''}{limit offset total results{key value status createdBy{_id username}} }
+        keyValues${keys ? '(keys:' + JSON.stringify(keys) + ')' : ''}{limit offset total results{_id key value status createdBy{_id username}} }
     }`
 
     const gqlKeyValueUpdate = gql`

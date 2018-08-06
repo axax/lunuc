@@ -18,7 +18,11 @@
     } else {
         l = l.toLowerCase();
     }
-    window._app_.lang = l;
+
+    _app_.langBefore = sessionStorage.getItem('lang');
+    sessionStorage.setItem('lang', l);
+
+    _app_.lang = l;
     var s = document.createElement('script');
     s.onload = function(){
         _app_.trLoaded=true;

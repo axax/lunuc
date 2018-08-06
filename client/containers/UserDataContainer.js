@@ -9,50 +9,50 @@ import ApolloClient from 'apollo-client'
 import {USER_DATA_QUERY} from '../constants'
 
 class UserDataContainer extends React.PureComponent {
-	state = {
-		loading: false
-	}
+    state = {
+        loading: false
+    }
 
-	getUserData = () => {
-		const {client, userActions} = this.props
+    getUserData = () => {
+        const {client, userActions} = this.props
+        const token = localStorage.getItem('token')
+        if (token && token != '') {
+            this.setState({loading: true})
+            console.log(_app_.lang !== _app_.langBefore)
+            client.query({
+                fetchPolicy: (_app_.lang !== _app_.langBefore ? 'network-only' : 'cache-first'),
+                query: gql(USER_DATA_QUERY)
+            }).then(response => {
+                userActions.setUser(response.data.me, !!response.data.me)
+                this.setState({loading: false})
+            }).catch(error => {
+                console.log(error)
+                this.setState({loading: false})
+            })
+        }
 
-		const token = localStorage.getItem('token')
-		if( token && token != ''){
-			this.setState({loading: true})
-			client.query({
-				fetchPolicy: 'cache-first',
-				query: gql(USER_DATA_QUERY)
-			}).then(response => {
-				userActions.setUser(response.data.me, !!response.data.me)
-				this.setState({loading: false})
-			}).catch(error => {
-				console.log(error)
-				this.setState({loading: false})
-			})
-		}
 
-
-	}
+    }
 
     UNSAFE_componentWillMount() {
-		this.getUserData()
-	}
+        this.getUserData()
+    }
 
 
-	render() {
-		const {loading} = this.state
-		if (loading)
-			return <div>loading user data...</div>
-		return this.props.children
-	}
+    render() {
+        const {loading} = this.state
+        if (loading)
+            return <div>loading user data...</div>
+        return this.props.children
+    }
 }
 
 
 UserDataContainer.propTypes = {
-	client: PropTypes.instanceOf(ApolloClient).isRequired,
-	children: PropTypes.object.isRequired,
-	/* UserReducer */
-	userActions: PropTypes.object.isRequired
+    client: PropTypes.instanceOf(ApolloClient).isRequired,
+    children: PropTypes.object.isRequired,
+    /* UserReducer */
+    userActions: PropTypes.object.isRequired
 }
 
 
@@ -60,14 +60,14 @@ UserDataContainer.propTypes = {
  * Map the state to props.
  */
 const mapStateToProps = () => {
-	return {}
+    return {}
 }
 
 /**
  * Map the actions to props.
  */
 const mapDispatchToProps = (dispatch) => ({
-	userActions: bindActionCreators(UserActions, dispatch)
+    userActions: bindActionCreators(UserActions, dispatch)
 })
 
 
@@ -82,6 +82,6 @@ const UserDataContainerWithApollo = withApollo(UserDataContainer)
  * the Redux store.
  */
 export default connect(
-	mapStateToProps,
-	mapDispatchToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(UserDataContainerWithApollo)
