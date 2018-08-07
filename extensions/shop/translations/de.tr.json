@@ -3,5 +3,6 @@
   "shop.search.placeholder":"Was suchen Sie?",
   "shop.cart":"Warenkorb",
   "shop.cart.is.empty":"Der Warenkorb ist leer",
-  "shop.checkout":"Bestellen"
+  "shop.checkout":"Bestellen",
+  "shop.payment.type":"Zahlungsart"
 }

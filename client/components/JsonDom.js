@@ -17,12 +17,13 @@ const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ '../components/cms/JsonDomHelper')}/>
 
 
-const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change']
+const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change', 'Submit']
 
 class JsonDom extends React.Component {
 
     components = {
         'input': JsonDomInput,
+        'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'SimpleMenu': SimpleMenu,
         'Link': Link,
         'Cms': ({props, ...rest}) => <CmsViewContainer _props={props} _parentRef={this} dynamic={true} {...rest}/>,
@@ -662,8 +663,12 @@ class JsonDomInput extends React.Component {
     }
 
     render() {
-        const {value, onChange, ...rest} = this.props
-        return <input onChange={this.valueChange.bind(this)} value={this.state.value} {...rest} />
+        const {value, onChange, textarea, ...rest} = this.props
+        if( textarea ){
+            return <textarea onChange={this.valueChange.bind(this)} value={this.state.value} {...rest} />
+        }else{
+            return <input onChange={this.valueChange.bind(this)} value={this.state.value} {...rest} />
+        }
     }
 
 }
@@ -671,6 +676,7 @@ class JsonDomInput extends React.Component {
 
 JsonDomInput.propTypes = {
     value: PropTypes.string,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
+    textarea: PropTypes.bool
 }
 

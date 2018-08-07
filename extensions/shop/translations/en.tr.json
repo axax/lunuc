@@ -3,5 +3,6 @@
   "shop.search.placeholder":"What are you looking for?",
   "shop.cart":"Cart",
   "shop.cart.is.empty":"The cart is empty",
-  "shop.checkout":"Checkout"
+  "shop.checkout":"Checkout",
+  "shop.payment.type":"Payment type"
 }

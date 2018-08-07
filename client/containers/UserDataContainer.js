@@ -18,7 +18,6 @@ class UserDataContainer extends React.PureComponent {
         const token = localStorage.getItem('token')
         if (token && token != '') {
             this.setState({loading: true})
-            console.log(_app_.lang !== _app_.langBefore)
             client.query({
                 fetchPolicy: (_app_.lang !== _app_.langBefore ? 'network-only' : 'cache-first'),
                 query: gql(USER_DATA_QUERY)

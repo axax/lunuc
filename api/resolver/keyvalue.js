@@ -2,7 +2,8 @@ import GenericResolver from './generic/genericResolver'
 import Util from '../util'
 import {ObjectId} from 'mongodb'
 import {
-    CAPABILITY_MANAGE_TYPES
+    CAPABILITY_MANAGE_TYPES,
+    CAPABILITY_MANAGE_KEYVALUES
 } from '../data/capabilities'
 
 export const keyvalueResolver = (db) => ({
@@ -45,31 +46,29 @@ export const keyvalueResolver = (db) => ({
         await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
         return GenericResolver.deleteEnity(db, context, 'KeyValue', {_id})
     },
-    createKeyValueGlobal: async ({key, value}, {context}) => {
+    createKeyValueGlobal: async ({key, value, ispublic}, {context}) => {
         await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
-        return await GenericResolver.createEnity(db, context, 'KeyValueGlobal', {key, value})
+        return await GenericResolver.createEnity(db, context, 'KeyValueGlobal', {key, value, ispublic})
     },
-    updateKeyValueGlobal: async ({_id, key, value}, {context}) => {
+    updateKeyValueGlobal: async ({_id, key, value, ispublic}, {context}) => {
         await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
-        return await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {_id, key, value})
+        return await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {_id, key, value, ispublic})
     },
     deleteKeyValueGlobal: async ({_id}, {context}) => {
         await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
         return await GenericResolver.deleteEnity(db, context, 'KeyValueGlobal', {_id})
-    },
-    setKeyValueGlobal: async ({key, value}, {context}) => {
-        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
-
-        return db.collection('KeyValueGlobal').updateOne({
-            key
-        }, {$set: {key, value}}, {upsert: true})
     },
     keyValueGlobals: async ({keys, limit, sort, offset}, {context}) => {
         const match = {}
         if (keys) {
             match.key = {$in: keys}
         }
-        return await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value'], {
+        // if user don't have capability to manage keys he can only see the public ones
+        if( !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES) ){
+            match.ispublic = true
+        }
+
+        return await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value', 'ispublic'], {
             limit,
             offset,
             sort,

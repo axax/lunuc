@@ -6,7 +6,8 @@ import config from 'gen/config'
 import zipper from 'zip-local'
 import nodemailer from 'nodemailer'
 import {
-    CAPABILITY_MANAGE_COLLECTION
+    CAPABILITY_MANAGE_COLLECTION,
+    CAPABILITY_RUN_COMMAND
 } from '../data/capabilities'
 import Cache from 'util/cache'
 
@@ -15,7 +16,7 @@ const {BACKUP_DIR, UPLOAD_DIR} = config
 export const systemResolver = (db) => ({
     Query: {
         run: async ({command}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
 
             if (!command) {
                 throw new Error('No command to execute.')

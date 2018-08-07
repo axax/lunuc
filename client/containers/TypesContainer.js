@@ -420,11 +420,12 @@ class TypesContainer extends React.Component {
             Hook.call('TypeCreateEditDialog', {type, props: editDialogProps, dataToEdit}, this)
         }
 
+        const {description} = this.types[type]
 
         const content = <div>
             {title === false ? '' :
                 <Typography variant="display2" gutterBottom>{fixType ? fixType : 'Types'}</Typography>}
-
+            {description ? <Typography variant="subheading" gutterBottom>{description}</Typography> : ''}
             <Row spacing={16}>
                 {!fixType &&
                 <Col md={9}>

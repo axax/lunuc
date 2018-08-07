@@ -7,7 +7,8 @@ import {
     CAPABILITY_MANAGE_KEYVALUES,
     CAPABILITY_MANAGE_OTHER_USERS,
     CAPABILITY_MANAGE_COLLECTION,
-    CAPABILITY_READ_EVERYTHING
+    CAPABILITY_READ_EVERYTHING,
+    CAPABILITY_RUN_COMMAND
 } from './capabilities'
 
 export const createAllInitialData = async (db) => {
@@ -26,7 +27,7 @@ export const createUserRoles = async (db) => {
                 capabilities: {
                     $each: [CAPABILITY_VIEW_APP,
                         CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_CMS_PAGES,
-                        CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_MANAGE_OTHER_USERS]
+                        CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_RUN_COMMAND]
                 }
             }
         },

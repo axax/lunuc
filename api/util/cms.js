@@ -2,6 +2,9 @@ import GenericResolver from 'api/resolver/generic/genericResolver'
 import {ObjectId} from 'mongodb'
 import Hook from '../../util/hook'
 import Util from '.'
+import {
+    CAPABILITY_MANAGE_KEYVALUES
+} from '../data/capabilities'
 
 const UtilCms = {
     createSegments: (json, scope) => {
@@ -94,6 +97,12 @@ const UtilCms = {
                         }
                     } else if (segment.keyValueGlobals) {
                         const match = {key: {$in: segment.keyValueGlobals}}
+
+                        // if user don't have capability to manage keys he can only see the public ones
+                        if( !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES) ){
+                            match.ispublic = true
+                        }
+
                         const result = await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value'], {
                             match
                         })

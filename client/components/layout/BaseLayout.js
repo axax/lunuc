@@ -22,6 +22,7 @@ class BaseLayout extends React.Component {
         {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true},
         {name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true},
         {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true},
+        {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true},
         {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true},
         {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true}
     ]

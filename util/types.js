@@ -185,6 +185,7 @@ Hook.on('Types', ({types}) => {
 
     types.KeyValueGlobal = {
         name: 'KeyValueGlobal',
+        description: 'If public is true on a KeyValue the value of it can be seen from everyone.',
         usedBy: ['core'],
         fields: [
             {
@@ -193,6 +194,10 @@ Hook.on('Types', ({types}) => {
             },
             {
                 name: 'value'
+            },
+            {
+                name: 'ispublic',
+                type: 'Boolean'
             }
         ]
     }

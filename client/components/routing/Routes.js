@@ -17,6 +17,7 @@ const SignUpContainer = (props) => <Async {...props} load={import(/* webpackChun
 const UserProfileContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/UserProfileContainer')} />
 const SystemContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/SystemContainer')} />
 const DbDumpContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/DbDumpContainer')} />
+const FilesContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/FilesContainer')} />
 const TypesContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/TypesContainer')} />
 const HomeContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../containers/HomeContainer')} />
 const ErrorPage = (props) => <Async {...props}
@@ -44,6 +45,7 @@ class Routes extends React.Component {
         {exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer},
         {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer},
         {private: true, path: ADMIN_BASE_URL + '/backup', component: DbDumpContainer},
+        {private: true, path: ADMIN_BASE_URL + '/files', component: FilesContainer},
         {
             // match everything but paths that start with ADMIN_BASE_URL
             exact: false, path: '/:slug*', render: ({match}) => {

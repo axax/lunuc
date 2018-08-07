@@ -6,6 +6,7 @@ export const keyvalueSchemaRaw = `
 		value: String
         createdBy: UserPublic
         status: String
+        ispublic: Boolean
 	}
     
     type KeyValueResult {
@@ -31,8 +32,8 @@ export const keyvalueSchemaRaw = `
 		deleteKeyValueByKey(key: String!): KeyValue
 		
 		
-		createKeyValueGlobal(key: String!, value: String): KeyValue
-		updateKeyValueGlobal(_id: ID!, key: String, value: String): KeyValue
+		createKeyValueGlobal(key: String!, value: String, ispublic: Boolean): KeyValue
+		updateKeyValueGlobal(_id: ID!, key: String, value: String, ispublic: Boolean): KeyValue
 		deleteKeyValueGlobal(_id: ID!): KeyValue
 	}
 `
