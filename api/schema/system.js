@@ -60,7 +60,7 @@ export const systemSchemaRaw = `
     type Query {
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!): RunResult
-    	sendMail(recipient: String!, subject: String, body: String): MailResult
+    	sendMail(recipient: String!, subject: String, body: String, slug: String): MailResult
     	dbDumps: DbDumpResult   
     	mediaDumps: MediaDumpResult  
     	ping: PingResult

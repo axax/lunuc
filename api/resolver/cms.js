@@ -7,7 +7,6 @@ import ClientUtil from 'client/util'
 import UtilCms from '../util/cms'
 import {UIProvider} from 'ui'
 import {pubsub} from '../subscription'
-import Cache from 'util/cache'
 
 const defaultDataResolver = `[
   {
@@ -98,33 +97,7 @@ export const cmsResolver = (db) => ({
         // TODO: Not just check if user is logged in but also check what role he has
         const userIsLoggedIn = Util.isUserLoggedIn(context)
         const startTime = (new Date()).getTime()
-        let cmsPages
-        const cacheKey = 'cmsPage' + slug
-        if (!userIsLoggedIn) {
-            // get page from cache
-            cmsPages = Cache.get(cacheKey)
-        }
-        if (!cmsPages) {
-            let match
-            if (!userIsLoggedIn) {
-                // if no user only match public entries
-                match = {$and: [{slug}, {public: true}]}
-            } else {
-                match = {slug}
-            }
-            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {
-                match,
-                version
-            })
-
-            // minify template if no user is logged in
-            if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
-
-                // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
-                cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
-            }
-            Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
-        }
+        let cmsPages = await UtilCms.getCmsPage(db, context, slug, version)
 
         if (!cmsPages.results) {
             throw new Error('Cms page doesn\'t exist')

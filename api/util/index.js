@@ -82,7 +82,7 @@ const Util = {
         }
     },
     isUserLoggedIn: (context) => {
-        return (context && context.username)
+        return !!(context && context.username)
     },
     checkIfUserHasCapability: async (db, context, capability) => {
         const hasCapability = await Util.userHasCapability(db, context, capability)

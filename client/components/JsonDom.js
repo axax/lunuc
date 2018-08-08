@@ -460,7 +460,7 @@ class JsonDom extends React.Component {
              */
             this.json = JSON.parse(this.renderString(template, scope))
         } catch (e) {
-            console.log(e)
+            console.log(e, this.renderString(template, scope))
             this.emitJsonError(e)
         }
         return this.json

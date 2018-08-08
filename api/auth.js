@@ -1,6 +1,9 @@
 import jwt from 'jsonwebtoken'
 import bodyParser from 'body-parser'
 import Util from './util'
+import config from 'gen/config'
+
+const {DEFAULT_LANGUAGE} = config
 
 //TODO but SECRET_KEY to a save place
 const AUTH_HEADER = 'authorization',
@@ -65,7 +68,7 @@ export const auth = {
             req.context = auth.decodeToken(token)
 
 			// add the requested language to the context
-			req.context.lang = lang
+			req.context.lang = lang || DEFAULT_LANGUAGE
 
 			next()
 		})

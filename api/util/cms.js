@@ -2,11 +2,43 @@ import GenericResolver from 'api/resolver/generic/genericResolver'
 import {ObjectId} from 'mongodb'
 import Hook from '../../util/hook'
 import Util from '.'
+import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_KEYVALUES
 } from '../data/capabilities'
 
 const UtilCms = {
+    getCmsPage: async (db, context, slug, version) => {
+        const userIsLoggedIn = Util.isUserLoggedIn(context)
+        const cacheKey = 'cmsPage' + slug + userIsLoggedIn
+        let cmsPages
+        if (!userIsLoggedIn) {
+            // get page from cache
+            cmsPages = Cache.get(cacheKey)
+        }
+        if (!cmsPages) {
+            let match
+            if (!userIsLoggedIn) {
+                // if no user only match public entries
+                match = {$and: [{slug}, {public: true}]}
+            } else {
+                match = {slug}
+            }
+            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {
+                match,
+                version
+            })
+
+            // minify template if no user is logged in
+            if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
+
+                // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
+                cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
+            }
+            Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
+        }
+        return cmsPages
+    },
     createSegments: (json, scope) => {
         let inSegment = false, segments = [], count = 0, buffer = ''
         json.split('\n').forEach(line => {
@@ -34,7 +66,7 @@ const UtilCms = {
 
     },
     resolveData: async (db, context, dataResolver, scope, nosession) => {
-        const resolvedData = {_meta:{}}, subscriptions = []
+        const resolvedData = {_meta: {}}, subscriptions = []
 
         if (dataResolver) {
             let debugInfo = null
@@ -99,7 +131,7 @@ const UtilCms = {
                         const match = {key: {$in: segment.keyValueGlobals}}
 
                         // if user don't have capability to manage keys he can only see the public ones
-                        if( !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES) ){
+                        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
                             match.ispublic = true
                         }
 

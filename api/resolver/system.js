@@ -1,3 +1,8 @@
+import ReactDOMServer from 'react-dom/server'
+import JsonDom from 'client/components/JsonDom'
+import React from 'react'
+import {UIProvider} from 'ui'
+
 import Util from '../util'
 import {execSync} from 'child_process'
 import path from 'path'
@@ -10,6 +15,7 @@ import {
     CAPABILITY_RUN_COMMAND
 } from '../data/capabilities'
 import Cache from 'util/cache'
+import UtilCms from '../util/cms'
 
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
@@ -30,18 +36,51 @@ export const systemResolver = (db) => ({
 
             return {response}
         },
-        sendMail: async ({recipient, subject, body}, {context}) => {
+        sendMail: async ({recipient, subject, body, slug}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
             const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
             const mailSettings = JSON.parse(values.MailSettings)
+            let html
 
+            if (slug) {
+                let cmsPages = await UtilCms.getCmsPage(db, context, slug)
+                if (!cmsPages.results) {
+                    throw new Error(`Template ${slug} doesn't exist`)
+                }
+                let scopeContext
+                try{
+                    scopeContext = JSON.parse(body)
+                }catch(e){
+                    throw new Error(`Error in body: ${e.message}`)
+                    scopeContext = {}
+                }
+
+                const scope = {context: scopeContext, page: {slug}}
+
+                const {template, script, dataResolver} = cmsPages.results[0]
+                const {resolvedData} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope)
+                try {
+                    global._app_ = {lang: context.lang}
+                    html = ReactDOMServer.renderToString(<UIProvider>
+                        <JsonDom template={template}
+                                 script={script}
+                                 resolvedData={JSON.stringify(resolvedData)}
+                                 editMode={false}
+                                 scope={JSON.stringify(scope)}/>
+                    </UIProvider>)
+                } catch (e){
+                    throw new Error(`Error in template: ${e.message}`)
+                }
+            } else {
+                html = body
+            }
 
             const message = {
                 from: mailSettings.from,
                 to: recipient,
                 subject: subject,
                 text: 'Plaintext version of the message',
-                html: body
+                html
             }
 
             var transporter = nodemailer.createTransport({
@@ -53,8 +92,6 @@ export const systemResolver = (db) => ({
             })
 
             const response = await transporter.sendMail(message)
-
-            console.log(response)
 
 
             return {response: JSON.stringify(response)}
@@ -130,7 +167,7 @@ export const systemResolver = (db) => ({
         collections: async ({filter}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            const cacheKey = 'system-collections-'+filter
+            const cacheKey = 'system-collections-' + filter
 
             let collections = Cache.get(cacheKey)
 
@@ -221,7 +258,7 @@ export const systemResolver = (db) => ({
                     indexes.push(x)
                 }
             })
-            if( indexes.length > 0) {
+            if (indexes.length > 0) {
                 newCollection.createIndexes(indexes)
             }
 
