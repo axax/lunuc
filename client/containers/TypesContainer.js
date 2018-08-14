@@ -335,6 +335,7 @@ class TypesContainer extends React.Component {
 
                                              const {type, page, limit, sort, filter} = this.pageParams
                                              this.goTo(type, page, limit, sort, filter, e.target.value)
+                                             this.setSettingsForType(type, {version: e.target.value})
 
                                              //this.setState({selectedVersion:e.target.value})
                                          }}
@@ -619,7 +620,7 @@ class TypesContainer extends React.Component {
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',
             filter: f || typeSettings.filter || '',
-            version: v || 'default'
+            version: v || typeSettings.version || 'default'
         }
         result.type = type
         return result

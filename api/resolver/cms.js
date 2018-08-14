@@ -140,7 +140,7 @@ export const cmsResolver = (db) => ({
                 dataResolver,
                 ssr,
                 public: ispublic, // if public the content is visible to everyone
-                online: true,  // if true it is the active version that is online
+                online: version === 'default',  // if true it is the active version that is online
                 resolvedData: JSON.stringify(resolvedData),
                 html,
                 subscriptions,
@@ -163,7 +163,7 @@ export const cmsResolver = (db) => ({
                 createdBy,
                 ssr,
                 public: ispublic,
-                online: true,
+                online: version === 'default',
                 slug,
                 template,
                 script,

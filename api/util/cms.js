@@ -33,13 +33,14 @@ const UtilCms = {
             if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
 
                 // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
+                console.log(cmsPages.results[0].template)
                 cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
             }
             Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
         }
         return cmsPages
     },
-    createSegments: (json, scope) => {
+    createSegments: (json) => {
         let inSegment = false, segments = [], count = 0, buffer = ''
         json.split('\n').forEach(line => {
             const lineTrimmed = line.trim()
@@ -71,16 +72,17 @@ const UtilCms = {
         if (dataResolver) {
             let debugInfo = null
             try {
-                const segments = UtilCms.createSegments(dataResolver, scope)
-
+                const segments = UtilCms.createSegments(dataResolver)
                 for (let i = 0; i < segments.length; i++) {
+
                     debugInfo = ''
 
                     const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope;const {data} = this; return `' + segments[i] + '`;')
                     const replacedSegmentStr = tpl.call({scope, data: resolvedData})
                     const segment = JSON.parse(replacedSegmentStr)
-
-                    if (segment.t) {
+                    if (segment.xdata) {
+                        resolvedData.data = segment.xdata
+                    } else if (segment.t) {
                         const {t, f, l, o, p, d} = segment
                         /*
                          f = filter for the query

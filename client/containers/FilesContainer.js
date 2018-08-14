@@ -38,33 +38,14 @@ class FilesContainer extends React.Component {
             <BaseLayout>
                 <Typography variant="display2" gutterBottom>Files</Typography>
 
-                <Query query={gql`query collections($filter:String){collections(filter:$filter){results{name}}}`}
+                <Query query={gql`query run($command:String!){run(command:$command){response}}`}
                        fetchPolicy="cache-and-network"
-                       variables={{filter: '^' + type + '_.*'}}>
+                       variables={{command: 'ls'}}>
                     {({loading, error, data}) => {
                         if (loading) return 'Loading...'
                         if (error) return `Error! ${error.message}`
 
-                        if (!data.collections.results) return null
-
-                        const items = data.collections.results.reduce((a, c) => {
-                            const value = c.name.substring(c.name.indexOf('_') + 1)
-                            a.push({value, name: value})
-                            return a
-                        }, [])
-                        items.unshift({value: 'default', name: 'Default'})
-                        return <SimpleSelect
-                            label="Current version"
-                            value={version}
-                            onChange={(e) => {
-
-                                const {type, page, limit, sort, filter} = this.pageParams
-                                this.goTo(type, page, limit, sort, filter, e.target.value)
-
-                                //this.setState({selectedVersion:e.target.value})
-                            }}
-                            items={items}
-                        />
+                        return data.run.response
                     }}
                 </Query>
 

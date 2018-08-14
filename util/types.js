@@ -193,7 +193,8 @@ Hook.on('Types', ({types}) => {
                 required: true
             },
             {
-                name: 'value'
+                name: 'value',
+                uitype: 'editor'
             },
             {
                 name: 'ispublic',

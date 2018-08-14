@@ -5,6 +5,7 @@ import FileDrop from '../FileDrop'
 import TypePicker from '../TypePicker'
 import config from 'gen/config'
 import _t from 'util/i18n'
+import ContentEditable from './ContentEditable'
 
 class GenericForm extends React.Component {
     constructor(props) {
@@ -153,7 +154,10 @@ class GenericForm extends React.Component {
                         const uitype = o.uitype || 'text'
 
 
-                        if (uitype === 'image') {
+                        if (uitype === 'editor') {
+                            return <ContentEditable highlight="json" setHtml={false}>{value}</ContentEditable>
+
+                        } if (uitype === 'image') {
                             return <FileDrop key={k}/>
                         } else if (uitype === 'type_picker') {
                             return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
