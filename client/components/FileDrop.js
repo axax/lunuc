@@ -72,13 +72,17 @@ class FileDrop extends React.Component {
     constructor(props) {
         super(props)
 
-        this.state = this.initialState()
+        this.state = this.initialState(props)
     }
 
-    initialState() {
+    initialState(props) {
+        const images = []
+        if (props.value) {
+            images.push(props.value)
+        }
         return {
             isHover: false,
-            images: [],
+            images,
             uploadCompleted: 0,
             uploading: false,
             errorMessage: null,
@@ -87,7 +91,7 @@ class FileDrop extends React.Component {
     }
 
     reset() {
-        this.setState(this.initialState())
+        this.setState(this.initialState(this.props))
     }
 
     render() {
@@ -112,7 +116,7 @@ class FileDrop extends React.Component {
 
             { !uploading &&
             <CloudUploadIcon className={classNames(classes.uploadIcon, isHover && classes.uploadIconOver)}
-                            color="disabled"/> }
+                             color="disabled"/> }
 
             { !uploading &&
             <Typography
@@ -142,7 +146,7 @@ class FileDrop extends React.Component {
     }
 
     handelDrop(e) {
-        const {onFileContent, onFiles, accept, uploadTo, resizeImages} = this.props
+        const {onFileContent, onFiles, onChange, name, accept, uploadTo, resizeImages} = this.props
         this.setDragState(e, false)
 
         // Fetch FileList object
@@ -164,24 +168,30 @@ class FileDrop extends React.Component {
             for (let i = 0, file; file = validFiles[i]; i++) {
                 const isImage = UploadUtil.isImage(file.name)
 
-                if( isImage ) {
+                if (isImage) {
                     images.push(URL.createObjectURL(file))
                 }
+                console.log(name)
 
-                if (uploadTo) {
-                    if (resizeImages && isImage) {
-                        UploadUtil.resizeImageFromFile({
-                            file,
-                            maxWidth: IMAGE_MAX_WIDTH,
-                            maxHeight: IMAGE_MAX_HEIGHT,
-                            quality: IMAGE_QUALITY,
-                            onSuccess: (dataUrl) => {
+                if (resizeImages && isImage) {
+                    UploadUtil.resizeImageFromFile({
+                        file,
+                        maxWidth: IMAGE_MAX_WIDTH,
+                        maxHeight: IMAGE_MAX_HEIGHT,
+                        quality: IMAGE_QUALITY,
+                        onSuccess: (dataUrl) => {
+                            if (uploadTo) {
                                 this.uploadData(dataUrl, file, uploadTo)
                             }
-                        })
-                    } else {
-                        this.uploadData(URL.createObjectURL(file), file, uploadTo)
-                    }
+                            if (onChange) {
+
+                                // call with target
+                                onChange({target: {name, value: dataUrl}})
+                            }
+                        }
+                    })
+                } else if (uploadTo) {
+                    this.uploadData(URL.createObjectURL(file), file, uploadTo)
                 }
 
                 if (onFileContent) {
@@ -242,7 +252,10 @@ FileDrop.propTypes = {
     accept: PropTypes.string,
     onFileContent: PropTypes.func,
     onFiles: PropTypes.func,
+    onChange: PropTypes.func,
     uploadTo: PropTypes.string,
+    name: PropTypes.string,
+    value: PropTypes.string,
     style: PropTypes.object,
     resizeImages: PropTypes.bool,
     multi: PropTypes.bool

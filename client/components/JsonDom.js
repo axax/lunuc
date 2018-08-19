@@ -314,7 +314,7 @@ class JsonDom extends React.Component {
             if (x && x.n) {
                 const comp = this.components[x.t]
                 if (comp) {
-                    this.components[x.n] = ({props}) => {
+                    this.components[x.n] = (props) => {
                         return comp({...x.p, ...props})
                     }
                 }
@@ -409,7 +409,6 @@ class JsonDom extends React.Component {
                             }
                         }
                     })
-
                     if (_p.name) {
                         // handle controlled input here
                         if (_p.value === undefined) {
