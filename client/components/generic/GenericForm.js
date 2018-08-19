@@ -6,6 +6,19 @@ import TypePicker from '../TypePicker'
 import config from 'gen/config'
 import _t from 'util/i18n'
 import ContentEditable from './ContentEditable'
+import {withStyles} from 'ui/admin'
+
+
+const styles = theme => ({
+    editor: {
+        border: '1px solid ' + theme.palette.grey['200'],
+        padding: theme.spacing.unit,
+        margin: theme.spacing.unit * 3 + ' 0',
+        maxHeight: 100,
+        overflow: 'auto'
+    }
+})
+
 
 class GenericForm extends React.Component {
     constructor(props) {
@@ -51,7 +64,7 @@ class GenericForm extends React.Component {
 
                 if (field.reference) {
                     let fieldValue = theState.fields[k]
-                    if( fieldValue && fieldValue.length){
+                    if (fieldValue && fieldValue.length) {
                         fieldValue = fieldValue[0]
                     }
                     if (!fieldValue || !fieldValue._id) {
@@ -143,7 +156,7 @@ class GenericForm extends React.Component {
     }
 
     render() {
-        const {fields, onKeyDown, primaryButton, caption, autoFocus} = this.props
+        const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
         return (
             <form>
                 {
@@ -155,9 +168,26 @@ class GenericForm extends React.Component {
 
 
                         if (uitype === 'editor') {
-                            return <ContentEditable highlight="json" setHtml={false}>{value}</ContentEditable>
+                            let json
+                            if (value) {
+                                try {
+                                    json = JSON.stringify(JSON.parse(value), null, 4)
+                                } catch (e) {
 
-                        } if (uitype === 'image') {
+                                }
+                            }
+                            return <ContentEditable className={classes.editor} highlight={json ? 'json' : ''}
+                                                    onChange={(v) => this.handleInputChange({
+                                                        target: {
+                                                            name: k,
+                                                            value: v
+                                                        }
+                                                    })}
+                                                    key={k}
+                                                    setHtml={false}>{json ? json : value}</ContentEditable>
+
+                        }
+                        if (uitype === 'image') {
                             return <FileDrop key={k}/>
                         } else if (uitype === 'type_picker') {
                             return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
@@ -234,7 +264,8 @@ GenericForm.propTypes = {
     onValidate: PropTypes.func,
     caption: PropTypes.string,
     primaryButton: PropTypes.bool,
+    classes: PropTypes.object.isRequired,
     autoFocus: PropTypes.bool
 }
 
-export default GenericForm
+export default withStyles(styles)(GenericForm)

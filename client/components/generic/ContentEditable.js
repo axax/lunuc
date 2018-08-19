@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import {withStyles} from 'ui/admin'
+import classNames from 'classnames'
 
 const reservedJsKeywords = ['isNaN', 'JSON', 'parseFloat', 'return', 'if', 'else', 'var', 'while', 'let', 'for', 'const', 'this', 'document', 'console', 'import', 'from', 'class', 'true', 'false', 'export', 'function', 'undefined']
 const reservedJsCustomKeywords = ['clientQuery', 'on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent', 'getComponent', 'getKeyValueFromLS', 'setKeyValue']
@@ -9,7 +10,8 @@ const reservedJsCustomKeywords = ['clientQuery', 'on', 'Util', 'scope', 'history
 const styles = theme => ({
     editor: {
         display: 'block',
-        tabSize: 2
+        tabSize: 2,
+        whiteSpace: 'pre'
     },
     highlight1: {
         color: '#1e0a91',
@@ -46,10 +48,9 @@ class ContentEditable extends React.Component {
     }
 
     render() {
-        const {classes, style, children, setHtml, highlight} = this.props
-
+        const {classes, style, children, setHtml, highlight, className} = this.props
         const props = {
-            className: classes.editor,
+            className: classNames(classes.editor, className),
             style,
             onKeyDown: this.handleKeyDown.bind(this),
             onKeyUp: this.handleKeyUp.bind(this),
@@ -58,7 +59,6 @@ class ContentEditable extends React.Component {
             contentEditable: true,
             suppressContentEditableWarning: true
         }
-
         if (setHtml || highlight) {
             return <span {...props} dangerouslySetInnerHTML={{__html: this.highlight(children)}}/>
         } else {
