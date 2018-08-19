@@ -40,48 +40,25 @@ const UtilCms = {
         }
         return cmsPages
     },
-    createSegments: (json) => {
-        let inSegment = false, segments = [], count = 0, buffer = ''
-        json.split('\n').forEach(line => {
-            const lineTrimmed = line.trim()
-            if (lineTrimmed.indexOf('{') === 0) {
-                count++
-                if (!inSegment) {
-                    inSegment = true
-                }
-            } else if (lineTrimmed.indexOf('}') === 0) {
-                count--
-                if (count === 0 && inSegment) {
-                    segments.push(buffer + '}')
-                    buffer = ''
-                    inSegment = false
-                }
-            }
-            if (inSegment) {
-                buffer += lineTrimmed
-            }
-        })
-        return segments
-    },
-    replaceSegment: (str, data) => {
-
-    },
     resolveData: async (db, context, dataResolver, scope, nosession) => {
         const resolvedData = {_meta: {}}, subscriptions = []
 
         if (dataResolver) {
             let debugInfo = null
             try {
-                const segments = UtilCms.createSegments(dataResolver)
+                let segments = JSON.parse(dataResolver)
+                if (segments.constructor === Object) segments = [segments]
+
                 for (let i = 0; i < segments.length; i++) {
 
                     debugInfo = ''
-
-                    const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope;const {data} = this; return `' + segments[i] + '`;')
+                    const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope;const {data} = this; return `' + JSON.stringify(segments[i]) + '`;')
                     const replacedSegmentStr = tpl.call({scope, data: resolvedData})
                     const segment = JSON.parse(replacedSegmentStr)
-                    if (segment.xdata) {
-                        resolvedData.data = segment.xdata
+                    if (segment.data) {
+                        Object.keys(segment.data).forEach(k=>{
+                            resolvedData[k] = segment.data[k]
+                        })
                     } else if (segment.t) {
                         const {t, f, l, o, p, d} = segment
                         /*

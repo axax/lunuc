@@ -106,7 +106,7 @@ export const cmsResolver = (db) => ({
 
         const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt, urlSensitiv} = cmsPages.results[0]
         const ispublic = cmsPages.results[0].public
-        const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope, nosession)
+        const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver, scope, nosession)
         let html
         if (ssr) {
             // Server side rendering
