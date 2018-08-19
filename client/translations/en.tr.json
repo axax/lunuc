@@ -7,6 +7,7 @@
   "core.address":"Address",
   "core.account.username":"Username",
   "core.account.email":"Email",
+  "core.account.picture":"Picture",
   "core.address.name": "Name",
   "core.address.firstname": "Firstname",
   "core.address.street": "Street",

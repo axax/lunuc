@@ -17,11 +17,16 @@ const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ '../components/cms/JsonDomHelper')}/>
 
 
+const FileDrop = (props) => <Async {...props}
+                                   load={import(/* webpackChunkName: "admin" */ '../components/FileDrop')}/>
+
+
 const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change', 'Submit']
 
 class JsonDom extends React.Component {
 
     components = {
+        'FileDrop': FileDrop,
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'SimpleMenu': SimpleMenu,
@@ -172,7 +177,7 @@ class JsonDom extends React.Component {
         if (this.props.resolvedData !== props.resolvedData) {
             this.resolvedDataJson = undefined
             this.json = null
-            this.setState({bindings:{}})
+            this.setState({bindings: {}})
             //console.log('reset resolvedData')
         }
         this.setState({hasReactError: false})
@@ -285,7 +290,7 @@ class JsonDom extends React.Component {
 
             if (!item) return
 
-            const {t, p, c, $c, $loop, $if} = item
+            const {t, p, c, $c, $loop, $if, x} = item
             /*
              t = type
              c = children
@@ -303,6 +308,15 @@ class JsonDom extends React.Component {
                 } catch (e) {
                     console.log(e, this.scope)
                     return
+                }
+            }
+            // extend type
+            if (x && x.n) {
+                const comp = this.components[x.t]
+                if (comp) {
+                    this.components[x.n] = ({props}) => {
+                        return comp({...x.p, ...props})
+                    }
                 }
             }
             if ($loop) {
@@ -664,9 +678,9 @@ class JsonDomInput extends React.Component {
 
     render() {
         const {value, onChange, textarea, ...rest} = this.props
-        if( textarea ){
+        if (textarea) {
             return <textarea onChange={this.valueChange.bind(this)} value={this.state.value} {...rest} />
-        }else{
+        } else {
             return <input onChange={this.valueChange.bind(this)} value={this.state.value} {...rest} />
         }
     }

@@ -134,6 +134,22 @@ Here are some useful helper methods that can be used with in the template
 }
 ```
       
+**Extending a type**
+
+In this example the type FileDrop is extended under the name ImageDrop. Now the type ImageDrop can be referenced anywhere within the template.
+```json
+{
+  "x": {
+    "t": "FileDrop",
+    "n": "ImageDrop",
+    "p": {
+      "label": "Add image",
+      "multi": false
+    }
+  }
+}
+```    
+
 ### Script
 **Reserved keywords**
 
