@@ -16,7 +16,7 @@ const styles = theme => ({
         boxSizing: 'border-box',
         position: 'relative',
         maxWidth: '100%',
-        padding: '2rem 1.5rem',
+        padding: '1rem 1rem',
         textAlign: 'center',
         background: '#fff',
         borderRadius: '7px',
@@ -55,8 +55,8 @@ const styles = theme => ({
     },
     inputFile: {
         position: 'absolute',
-        height: '100%',
-        width: '100%',
+        height: '100% !important',
+        width: '100% !important',
         top: 0,
         bottom: 0,
         right: 0,
@@ -114,7 +114,7 @@ class FileDrop extends React.Component {
             }
 
 
-            { !uploading &&
+            { !uploading && !(!multi && images.length) &&
             <CloudUploadIcon className={classNames(classes.uploadIcon, isHover && classes.uploadIconOver)}
                              color="disabled"/> }
 
