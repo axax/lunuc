@@ -413,7 +413,7 @@ class TypesContainer extends React.Component {
                     label: 'Save',
                     type: 'primary'
                 }],
-                children: <GenericForm autoFocus ref={ref => {
+                children: <GenericForm autoFocus innerRef={ref => {
                     this.createEditForm = ref
                 }} primaryButton={false} fields={formFields} values={dataToEdit}/>
             }
