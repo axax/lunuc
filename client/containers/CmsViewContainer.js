@@ -321,11 +321,13 @@ class CmsViewContainer extends React.Component {
         const scope = {
             page: {slug: cmsPage.slug},
             user,
+            editMode,
             pathname: location.pathname,
             params: Util.extractQueryParams(),
             hashParams: (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})
         }
         const startTime = new Date()
+
         const jsonDom = <JsonDom id={id}
                                  dynamic={dynamic}
                                  clientQuery={this.clientQuery.bind(this)}

@@ -443,7 +443,6 @@ class JsonDom extends React.Component {
                         eleType = JsonDomHelper
                     }
                 }
-
                 h.push(React.createElement(
                     eleType,
                     eleProps,
@@ -495,6 +494,15 @@ class JsonDom extends React.Component {
 
 
     renderString(str, data) {
+
+        if( str.trim().indexOf('<')===0 ){
+            //its html
+            str = JSON.stringify({
+                "t": "div",
+                "$c": Util.escapeForJson(str, true)
+            })
+        }
+
         try {
             const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const parent = this.parent;const _i = this.tryCatch;return `' + str + '`;')
             //.replace(/(\r\n|\n|\r)/g,"");

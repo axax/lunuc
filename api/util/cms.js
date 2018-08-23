@@ -34,7 +34,9 @@ const UtilCms = {
 
                 // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
                 console.log(cmsPages.results[0].template)
-                cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
+                try {
+                    cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
+                }catch (e){}
             }
             Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
         }

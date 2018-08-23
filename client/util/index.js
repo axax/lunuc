@@ -5,9 +5,9 @@ const Util = {
         }
         return str
     },
-    escapeForJson: (str) => {
+    escapeForJson: (str, removeBreaks) => {
         if( !str ) return ''
-        return str.replace(/(?:\r\n|\r|\n)/g, '\\n').replace(/[\\\b\\\f\\\t\"\\]/g, '\\$&')
+        return str.replace(/(?:\r\n|\r|\n)/g, removeBreaks?'':'\\n').replace(/[\\\b\\\f\\\t\"\\]/g, '\\$&')
     },
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str) {
