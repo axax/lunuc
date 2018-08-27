@@ -29,8 +29,7 @@ class FilesContainer extends React.Component {
     constructor(props) {
         super(props)
 
-        this.state = {
-        }
+        this.state = {}
     }
 
     render() {
@@ -40,12 +39,35 @@ class FilesContainer extends React.Component {
 
                 <Query query={gql`query run($command:String!){run(command:$command){response}}`}
                        fetchPolicy="cache-and-network"
-                       variables={{command: 'ls'}}>
+                       variables={{command: 'ls -l'}}>
                     {({loading, error, data}) => {
                         if (loading) return 'Loading...'
                         if (error) return `Error! ${error.message}`
 
-                        return data.run.response
+                        const rows = data.run.response.split('\n')
+                        rows.shift()
+
+                        const listItems = rows.reduce((a, fileRow) => {
+                            if (fileRow) {
+                                const b = fileRow.split(' ').filter(x => x);
+
+                                a.push({
+                                    selected: false,
+                                    primary: b[8],
+                                    onClick: () => {
+                                        // this.goTo(post._id, posts.page, posts.limit, this.filter)
+                                    },
+                                    secondary: Util.formatBytes(b[4])/*,
+                                     actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
+                                     disabled: ['creating', 'deleting'].indexOf(post.status) > -1*/
+                                })
+                            }
+                            return a
+                        }, [])
+
+
+                        return <SimpleList items={listItems}
+                                           count={listItems.length}/>
                     }}
                 </Query>
 
@@ -55,7 +77,6 @@ class FilesContainer extends React.Component {
 }
 
 
-FilesContainer.propTypes = {
-}
+FilesContainer.propTypes = {}
 
 export default FilesContainer

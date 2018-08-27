@@ -6,8 +6,8 @@ const Util = {
         return str
     },
     escapeForJson: (str, removeBreaks) => {
-        if( !str ) return ''
-        return str.replace(/(?:\r\n|\r|\n)/g, removeBreaks?'':'\\n').replace(/[\\\b\\\f\\\t\"\\]/g, '\\$&')
+        if (!str) return ''
+        return str.replace(/(?:\r\n|\r|\n)/g, removeBreaks ? '' : '\\n').replace(/[\\\b\\\f\\\t\"\\]/g, '\\$&')
     },
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str) {
@@ -15,7 +15,7 @@ const Util = {
         try {
             return eval(str)
         } catch (e) {
-             console.log(e)
+            console.log(e)
         }
 
         return ''
@@ -173,7 +173,14 @@ const Util = {
             cur = cur[part]
         }
         return cur
-
+    },
+    formatBytes(bytes, decimals) {
+        if (bytes == 0) return '0 Bytes';
+        var k = 1024,
+            dm = decimals || 2,
+            sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+            i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 }
 export default Util
