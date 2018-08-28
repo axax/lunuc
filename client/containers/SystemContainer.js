@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import extensions from 'gen/extensions'
 import BaseLayout from '../components/layout/BaseLayout'
-import {Typography, ExpansionPanel, Button} from 'ui/admin'
+import {Typography, ExpansionPanel, Button, SimpleSwitch} from 'ui/admin'
 import {withApollo} from 'react-apollo'
 import {CACHE_KEY} from 'client/middleware/cache'
 import ApolloClient from 'apollo-client'
@@ -18,7 +18,10 @@ class SystemContainer extends React.Component {
                 Object.keys(extensions).map(k => {
                     const extension = extensions[k]
                     console.log(extension)
-                    return <ExpansionPanel heading={<Typography variant="title">{extension.name}</Typography>} key={k}>
+                    return <ExpansionPanel heading={<Typography variant="title"><SimpleSwitch color="primary"
+                                                                                              checked={true}
+                                                                                              onChange={()=>{}}
+                                                                                              contrast/>{extension.name}</Typography>} key={k}>
                         <div>
 
                         <Typography variant="body1" gutterBottom>{extension.description}</Typography>
