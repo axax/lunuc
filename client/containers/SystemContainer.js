@@ -9,26 +9,40 @@ import ApolloClient from 'apollo-client'
 
 class SystemContainer extends React.Component {
 
+    constructor(props) {
+        super(props)
+        const extensionStates = {}
+        Object.keys(extensions).map(k => {
+            extensionStates[k] = {enabled: true}
+        })
+        this.state = {extensionStates}
+    }
 
+    setExtensionState(k,e){
+        console.log(k,e.target.value)
+    }
     render() {
+        const {extensionStates} = this.state
+
         return <BaseLayout>
             <Typography variant="display2" gutterBottom>System</Typography>
             <Typography variant="display1" component="h2" gutterBottom>Extensions</Typography>
             {
                 Object.keys(extensions).map(k => {
                     const extension = extensions[k]
-                    console.log(extension)
                     return <ExpansionPanel heading={<Typography variant="title"><SimpleSwitch color="primary"
-                                                                                              checked={true}
-                                                                                              onChange={()=>{}}
-                                                                                              contrast/>{extension.name}</Typography>} key={k}>
+                                                                                              checked={extensionStates[k].enabled}
+                                                                                              onChange={this.setExtensionState.bind(this,k)}
+                                                                                              contrast/>{extension.name}
+                    </Typography>} key={k}>
                         <div>
 
-                        <Typography variant="body1" gutterBottom>{extension.description}</Typography>
+                            <Typography variant="body1" gutterBottom>{extension.description}</Typography>
                             { extension.options && extension.options.types &&
                             <ul>
                                 {extension.options.types.map(type => {
-                                    return <li key={type.name}>{type.name} {type.fields && type.fields.length && <ul>{type.fields.map(field=>{
+                                    return <li key={type.name}>{type.name} {type.fields && type.fields.length &&
+                                    <ul>{type.fields.map(field => {
                                         return <li key={field.name}>{field.name}</li>
                                     })}</ul>}</li>
                                 })}
