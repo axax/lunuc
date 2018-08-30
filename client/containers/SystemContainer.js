@@ -18,9 +18,13 @@ class SystemContainer extends React.Component {
         this.state = {extensionStates}
     }
 
-    setExtensionState(k,e){
-        console.log(k,e.target.value)
+    setExtensionState(k, e) {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log(k, e.target.checked)
+        this.setState({extensionStates: {...this.state.extensionStates, [k]: {enabled: e.target.checked}}})
     }
+
     render() {
         const {extensionStates} = this.state
 
@@ -32,7 +36,7 @@ class SystemContainer extends React.Component {
                     const extension = extensions[k]
                     return <ExpansionPanel heading={<Typography variant="title"><SimpleSwitch color="primary"
                                                                                               checked={extensionStates[k].enabled}
-                                                                                              onChange={this.setExtensionState.bind(this,k)}
+                                                                                              onClick={this.setExtensionState.bind(this, k)}
                                                                                               contrast/>{extension.name}
                     </Typography>} key={k}>
                         <div>
