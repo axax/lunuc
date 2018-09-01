@@ -22,7 +22,7 @@ class SystemContainer extends React.Component {
         e.preventDefault()
         e.stopPropagation()
         console.log(k, e.target.checked)
-        this.setState({extensionStates: {...this.state.extensionStates, [k]: {enabled: e.target.checked}}})
+        this.setState({extensionStates: {...this.state.extensionStates, [k]: {enabled: !this.state.extensionStates[k].enabled}}})
     }
 
     render() {

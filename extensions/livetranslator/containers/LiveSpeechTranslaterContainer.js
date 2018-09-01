@@ -168,10 +168,10 @@ class LiveSpeechTranslaterContainer extends React.Component {
     render() {
         const {speechLanguages, translateLanguages} = this.props
         if (!speechLanguages && !translateLanguages) {
-            return <BaseLayout />
+            return <BaseLayout><h1>No languages available</h1></BaseLayout>
         }
         if( !this.recognition ){
-            return <div><h1>Translate</h1>Speech recognition is not supported by this browser. Check <a href="http://caniuse.com/#feat=speech-recognition">Can I use</a> for browser support</div>
+            return <BaseLayout><h1>Translate</h1>Speech recognition is not supported by this browser. Check <a href="http://caniuse.com/#feat=speech-recognition">Can I use</a> for browser support</BaseLayout>
         }
 
 
