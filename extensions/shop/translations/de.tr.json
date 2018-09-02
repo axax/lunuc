@@ -4,5 +4,6 @@
   "shop.cart":"Warenkorb",
   "shop.cart.is.empty":"Der Warenkorb ist leer",
   "shop.checkout":"Bestellen",
-  "shop.payment.type":"Zahlungsart"
+  "shop.payment.type":"Zahlungsart",
+  "shop.payment.cashinadvance":"Vorauskasse"
 }

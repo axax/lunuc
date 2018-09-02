@@ -36,7 +36,6 @@ const styles = theme => ({
 
 class ContentEditable extends React.Component {
     lastText = []
-    changeHistory = []
     historyPointer = 0
 
 
@@ -44,7 +43,11 @@ class ContentEditable extends React.Component {
         super(props)
         this.lastText['onChange'] = this.lastText['onBlur'] = props.children
 
-        this.changeHistory.push(props.children)
+    }
+
+    componentDidMount(){
+        this.changeHistory = []
+        this.changeHistory.push(this.props.children)
     }
 
     render() {
@@ -84,24 +87,40 @@ class ContentEditable extends React.Component {
 
     handleKeyDown(e) {
         const {highlight} = this.props
-
         // handle tab
         if (e.key === "Tab") {
-            e.preventDefault();
-            if (highlight === 'json') {
-                document.execCommand('insertHTML', false, '  ')
+            e.preventDefault()
+            const selStr = window.getSelection().toString()
+
+            if( e.shiftKey ){
+                if( selStr ){
+                    //TODO implement backspace for selections
+                }else {
+                    document.execCommand('delete', false, null)
+                }
             } else {
-                document.execCommand('insertHTML', false, '&#009')
+                let tabChar
+                if (highlight === 'json') {
+                    tabChar = '  '
+                } else {
+                    tabChar = '&#009'
+                }
+
+                if (selStr) {
+                    tabChar = selStr.replace(/^/gm, tabChar)
+                }
+                document.execCommand('insertHTML', false, tabChar)
             }
         } else if (e.metaKey || e.ctrlKey) {
 
             if (e.key === 'z' || e.key === 'Z') {
                 // TODO: implement undo history
+                e.preventDefault()
+
                 const historyLength = this.changeHistory.length
                 if (historyLength > 0 && this.historyPointer + 1 < historyLength) {
                     this.historyPointer++
 
-                    console.log(this.historyPointer, this.changeHistory)
                     const lastText = this.changeHistory[this.historyPointer]
                     const ele = ReactDOM.findDOMNode(this)
                     if (highlight) {
@@ -111,7 +130,6 @@ class ContentEditable extends React.Component {
                     }
                     this.placeCaretAtEnd(ele)
                 }
-                e.preventDefault()
 
             } else if ((e.key === 'y' || e.key === 'Y')) {
 

@@ -360,7 +360,8 @@ class JsonDom extends React.Component {
                             [s]: loopChild,
                             scope: this.scope,
                             escape: Util.escapeForJson,
-                            tryCatch: Util.tryCatch
+                            tryCatch: Util.tryCatch,
+                            _t
                         }).replace(/\t/g, '\\t'))
 
                         const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
