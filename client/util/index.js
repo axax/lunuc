@@ -151,6 +151,7 @@ const Util = {
         return capabilities.indexOf(capa) >= 0
     },
     getComponentByKey(key, obj){
+        if( !obj ) return
         const keyParts = key.split('.')
         // the root is always 0 so remove it
         keyParts.shift()

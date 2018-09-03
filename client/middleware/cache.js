@@ -43,7 +43,11 @@ export class OfflineCache extends InMemoryCache {
                     )
                 )
                 .reduce((res, key) => (res[key] = state[key], res), {})*/
-            window.localStorage.setItem(CACHE_KEY, JSON.stringify(state))
+            try {
+                window.localStorage.setItem(CACHE_KEY, JSON.stringify(state))
+            }catch(e){
+                window.localStorage.setItem(CACHE_KEY, '{}')
+            }
             console.info(`save to local storage in ${(new Date()-startTime)}ms`)
         }
     }

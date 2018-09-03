@@ -192,7 +192,11 @@ export const handleDbDumpUpload = (db, client) => (req, res) => {
         // rename it to it's orignal name
         form.on('file', function (field, file) {
 
-            const response = execSync(`mongorestore --gzip --archive="${file.path}" --port ${client.topology.port}`)
+            /*const parts = client.s.url.split('/')
+            const host = parts[2].split('@')[1]*/
+
+
+            const response = execSync(`mongorestore --gzip --archive="${file.path}" ${client.topology.port?' --port '+client.topology.port:''}`)
             console.log('restoreDbDump',response)
 
         })
