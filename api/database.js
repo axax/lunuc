@@ -38,16 +38,19 @@ export const dbConnection = (cb) => {
         cb(new Error('Mongo URL missing. Please set env variable (export MONGO_URL=mongodb://user:password@mongodb/)'), null)
     } else {
         const urlParts = MONGO_URL.split('?')
-        const urlParams = urlParts.length > 1 ? ClientUtil.extractQueryParams(urlParts[1]) : {}
+        const urlParams = urlParts.length > 1 ? ClientUtil.extractQueryParams(urlParts[1], true) : {}
+        const options = {
+            /* http://mongodb.github.io/node-mongodb-native/2.1/reference/connecting/connection-settings/ */
+            reconnectTries: 0,
+            autoReconnect: true,
+            poolSize: 10,
+            ssl: false,
+            useNewUrlParser: true,
+            ...urlParams
+        }
+
         MongoClient.connect(urlParts[0],
-            {
-                /* http://mongodb.github.io/node-mongodb-native/2.1/reference/connecting/connection-settings/ */
-                reconnectTries: 0,
-                autoReconnect: true,
-                poolSize: 10,
-                ssl: urlParams.ssl === 'true' ? true : false,
-                useNewUrlParser: true
-            },
+            options,
             function (err, client) {
                 if (err) {
                     console.error(err.message, MONGO_URL)

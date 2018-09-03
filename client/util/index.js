@@ -84,7 +84,7 @@ const Util = {
         })
         return newObj
     },
-    extractQueryParams: query => {
+    extractQueryParams: (query, typeDetection) => {
         if (!query) {
             query = window && window.location.search.substring(1)
         }
@@ -97,8 +97,21 @@ const Util = {
             if (p[0]) {
                 if (p.length === 1)
                     b[p[0]] = ''
-                else
-                    b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, ' '))
+                else {
+                    const str = p[1].replace(/\+/g, ' ')
+                    if (typeDetection) {
+                        if (str === 'true') {
+                            b[p[0]] = true
+                        } else if (str === 'false') {
+                            b[p[0]] = false
+                        } else {
+                            b[p[0]] = decodeURIComponent(str)
+                        }
+
+                    } else {
+                        b[p[0]] = decodeURIComponent(str)
+                    }
+                }
             }
         }
         return b
@@ -151,7 +164,7 @@ const Util = {
         return capabilities.indexOf(capa) >= 0
     },
     getComponentByKey(key, obj){
-        if( !obj ) return
+        if (!obj) return
         const keyParts = key.split('.')
         // the root is always 0 so remove it
         keyParts.shift()
