@@ -86,16 +86,22 @@ class TemplateEditor extends React.Component {
     render() {
         const {tab, classes, scope, ...rest} = this.props
 
+        if (rest.children.trim().indexOf('<') === 0) {
+            return <ContentEditable highlight="html" setHtml={false} {...rest}/>
+        }
+
         const currentTab = (!scope && this.state.tab === 2 ? 0 : this.state.tab)
         return <div style={{position: 'relative'}}>
-
             <Tabs
                 value={currentTab}
                 onChange={this.handleTabChange.bind(this)}
                 fullWidth
                 indicatorColor="primary"
                 textColor="primary"
-                classes={{root: classes.tabsRoot, indicator: (scope ? classes.tabsIndicator : classes.tabsIndicator50)}}
+                classes={{
+                    root: classes.tabsRoot,
+                    indicator: (scope ? classes.tabsIndicator : classes.tabsIndicator50)
+                }}
             >
                 <Tab icon={<CodeIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>
                 <Tab icon={<WebIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>

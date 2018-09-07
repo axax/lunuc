@@ -48,7 +48,6 @@ export const dbConnection = (cb) => {
             useNewUrlParser: true,
             ...urlParams
         }
-
         MongoClient.connect(urlParts[0],
             options,
             function (err, client) {
