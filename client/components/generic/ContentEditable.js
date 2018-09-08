@@ -174,9 +174,7 @@ class ContentEditable extends React.Component {
                 if (this.changeHistory.length > 100) {
                     this.changeHistory.splice(0, 100)
                 }
-
                 t.innerHTML = this.highlight(t.innerText)
-
                 restore()
             }
         }
@@ -249,7 +247,7 @@ class ContentEditable extends React.Component {
                     res += c + '</span>'
                 }
 
-            } else if (!inComment && c === '$' && i + 2 < str.length && str[i + 1] == '{') {
+            } else if (!inScript && !inComment && c === '$' && i + 2 < str.length && str[i + 1] == '{') {
                 inScript = true
                 res += '<span class="' + classes.highlight4 + '">$'
             } else if (inScript && !inScriptLiteral && c === '}') {
