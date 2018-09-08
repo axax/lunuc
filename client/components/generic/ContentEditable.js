@@ -234,11 +234,17 @@ class ContentEditable extends React.Component {
     highlightHtml(str) {
         const {classes} = this.props
 
-        let inDQuote = false, res = '', inTag = false, inComment = false
+        let inDQuote = false, res = '', inTag = false, inComment = false, inScript = false
 
         for (let i = 0; i < str.length; i++) {
             const c = str[i]
-            if (!inComment && c === '"') {
+            if( !inComment && c === '$' && i+2<str.length && str[i+1] == '{') {
+                inScript = true
+                res += '<span class="' + classes.highlight4 + '">$'
+            }else if(inScript && c==='}'){
+                inScript=false
+                res += '}</span>'
+            }else if (!inScript && !inComment && c === '"') {
                 inDQuote = !inDQuote
                 if (inDQuote) {
                     res += '<span class="' + classes.highlight3 + '">'
@@ -248,10 +254,10 @@ class ContentEditable extends React.Component {
                     res += '</span>'
                 }
             } else if (c === '<' ) {
-                if( !inComment && !inDQuote && !inTag && i+3<str.length && str[i+1] == '!' && str[i+2] == '-' && str[i+3] == '-' ){
+                if( !inScript && !inComment && !inDQuote && !inTag && i+3<str.length && str[i+1] == '!' && str[i+2] == '-' && str[i+3] == '-' ){
                     inComment = true
-                    res += '<span class="' + classes.highlight4 + '">&lt;'
-                }else if( !inComment && !inDQuote && !inTag ){
+                    res += '<span class="' + classes.highlight5 + '">&lt;'
+                }else if( !inScript && !inComment && !inDQuote && !inTag ){
                     inTag = true
                     res += '<span class="' + classes.highlight1 + '">&lt;'
                 }else{

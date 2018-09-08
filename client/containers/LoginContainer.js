@@ -13,6 +13,7 @@ import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import config from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
 import Util from 'client/util'
+import {USER_DATA_QUERY} from '../constants'
 
 class LoginContainer extends React.Component {
     state = {
@@ -55,6 +56,16 @@ class LoginContainer extends React.Component {
             if (response.data && response.data.login) {
 
                 if (!response.data.login.error) {
+
+                    try {
+                        const data = client.readQuery({query: gql(USER_DATA_QUERY)})
+
+                        if( data ){
+                            data.me = response.data.login.user
+                            client.writeQuery({query: gql(USER_DATA_QUERY), data})
+                        }
+                    }catch(e){}
+
                     localStorage.setItem('token', response.data.login.token)
                     userActions.setUser(response.data.login.user, true)
                     errorHandlerAction.clearErrors()

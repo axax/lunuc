@@ -103,7 +103,7 @@ const UtilCms = {
                         debugInfo += ' in eval'
                         try {
                             const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope; const {data} = this;' + segment.eval)
-                            tpl.call({data: resolvedData, scope})
+                            tpl.call({data: resolvedData, scope, context})
                         } catch (e) {
                             if (!segment.ignoreError)
                                 throw e
