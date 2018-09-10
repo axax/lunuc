@@ -200,14 +200,12 @@ class JsonDom extends React.Component {
         this.parseError = null
     }
 
+    componentDidMount() {
+        this.runJsEvent('mount')
+    }
+
     componentWillUnmount() {
-        if (this.jsOnStack['unmount']) {
-            this.jsOnStack['unmount'].forEach(cb => {
-                if (cb) {
-                    cb()
-                }
-            })
-        }
+        this.runJsEvent('unmount')
         this.resetTemplate()
     }
 
@@ -400,13 +398,7 @@ class JsonDom extends React.Component {
                             const payload = _p['on' + e]
                             _p['on' + e] = (eo) => {
                                 const eLower = e.toLowerCase()
-                                if (this.jsOnStack[eLower]) {
-                                    this.jsOnStack[eLower].forEach(cb => {
-                                        if (cb) {
-                                            cb(payload, eo)
-                                        }
-                                    })
-                                }
+                                this.runJsEvent(eLower, payload, eo)
                             }
                         }
                     })
@@ -496,7 +488,7 @@ class JsonDom extends React.Component {
 
     renderString(str, data) {
 
-        if( str.trim().indexOf('<')===0 ){
+        if (str.trim().indexOf('<') === 0) {
             //its html
             str = JSON.stringify({
                 "t": "div",
@@ -517,6 +509,25 @@ class JsonDom extends React.Component {
             console.error('Error in renderString', e)
             return str
         }
+    }
+
+    runJsEvent(name, ...args) {
+        console.log(name,args)
+        let hasError = false
+        if (this.jsOnStack[name]) {
+            for (let i = 0; i < this.jsOnStack[name].length; i++) {
+                const cb = this.jsOnStack[name][i]
+                if (cb) {
+                    try {
+                        cb(...args)
+                    } catch (e) {
+                        console.log(name, e)
+                        hasError = true;
+                    }
+                }
+            }
+        }
+        return !hasError
     }
 
     render() {
@@ -588,25 +599,16 @@ class JsonDom extends React.Component {
             }
         } else {
             // if script was already executed only refresh the scope
-            this.jsOnStack['refreshscope'].forEach(cb => {
-                cb(scope)
-            })
+            this.runJsEvent('refreshscope', scope)
         }
         scope.script = this.scriptResult || {}
-        if (this.jsOnStack['beforerender']) {
-            for (let i = 0; i < this.jsOnStack['beforerender'].length; i++) {
-                const cb = this.jsOnStack['beforerender'][i]
-                if (cb) {
-                    try {
-                        cb(scope)
-                    } catch (e) {
-                        console.log(e)
-                        return <div>Error in script in beforeRender event: <strong>{e.message}</strong></div>
-                    }
-                }
-            }
+
+        if( !this.runJsEvent('beforerender', scope) ){
+            return <div>Error in script in {name} event: <strong>{e.message}</strong></div>
         }
+
         let content = this.parseRec(this.getJson(this.props), 0)
+
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>

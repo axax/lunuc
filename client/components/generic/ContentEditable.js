@@ -342,7 +342,7 @@ class ContentEditable extends React.Component {
                     res += '</span>'
                 }
             } else if (!inDQuote && !inSQuote && !inLitQuote) {
-                if ((c === '/' || c === '*') && i > 0 && str[i - 1] === '/') {
+                if ( (c === '/' || c === '*') && i > 0 && str[i - 1] === '/') {
                     res = res.substring(0, res.length - 1) + '<span class="' + classes.highlight5 + '">' + res.substring(res.length - 1)
                     //comment
                     if (c === '*') {
