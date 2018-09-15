@@ -58,10 +58,16 @@ class JsonDom extends React.Component {
     scriptResult = null
     componentRefs = {} // this is the object with references to elements with identifier
     jsOnStack = {}
-    jsOn = (key, cb) => {
-        const keyLower = key.toLowerCase()
-        if (!this.jsOnStack[keyLower]) this.jsOnStack[keyLower] = []
-        this.jsOnStack[keyLower].push(cb)
+    jsOn = (keys, cb) => {
+        if( keys.constructor !== Array ){
+            keys = [keys]
+        }
+        for(let i = 0; i < keys.length; i++) {
+            const key = keys[i]
+            const keyLower = key.toLowerCase()
+            if (!this.jsOnStack[keyLower]) this.jsOnStack[keyLower] = []
+            this.jsOnStack[keyLower].push(cb)
+        }
     }
     jsGetLocal = (key, def) => {
         if (typeof localStorage === 'undefined') return def
@@ -172,13 +178,11 @@ class JsonDom extends React.Component {
             this.scriptResult = null
             this.jsOnStack = {}
             this.runScript = true
-            //console.log('reset script')
         }
         if (this.props.resolvedData !== props.resolvedData) {
             this.resolvedDataJson = undefined
             this.json = null
             this.setState({bindings: {}})
-            //console.log('reset resolvedData')
         }
         this.setState({hasReactError: false})
     }
@@ -209,6 +213,10 @@ class JsonDom extends React.Component {
         this.resetTemplate()
     }
 
+    componentDidUpdate() {
+        this.runJsEvent('update')
+    }
+
     addParentRef(props) {
         const {id, _parentRef} = props
         if (_parentRef && id) {
@@ -217,6 +225,7 @@ class JsonDom extends React.Component {
     }
 
     resetTemplate() {
+        this.runJsEvent('reset')
         this.json = null
         this.jsonRaw = null
         this.componentRefs = {}
@@ -512,7 +521,7 @@ class JsonDom extends React.Component {
     }
 
     runJsEvent(name, ...args) {
-        console.log(name,args)
+        //console.log(name,args)
         let hasError = false
         if (this.jsOnStack[name]) {
             for (let i = 0; i < this.jsOnStack[name].length; i++) {
