@@ -258,6 +258,11 @@ class CmsViewContainer extends React.Component {
         }
     }
 
+
+    drawerWidthChange = (newWidth) => {
+        this.handleSettingChange('drawerWidth', newWidth)
+    }
+
     shouldComponentUpdate(props, state) {
         // only update if cms page was modified
         return !props.cmsPage ||
@@ -273,7 +278,8 @@ class CmsViewContainer extends React.Component {
             props._props !== this.props._props ||
             (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script)) ||
             this.state.settings.fixedLayout !== state.settings.fixedLayout ||
-            this.state.settings.inlineEditor !== state.settings.inlineEditor
+            this.state.settings.inlineEditor !== state.settings.inlineEditor ||
+            this.state.settings.drawerWidth !== state.settings.drawerWidth
     }
 
     UNSAFE_componentWillReceiveProps(props) {
@@ -435,7 +441,8 @@ class CmsViewContainer extends React.Component {
 
             content = <DrawerLayout sidebar={sidebar()}
                                     fixedLayout={settings.fixedLayout}
-                                    drawerSize="large"
+                                    drawerWidth={settings.drawerWidth || 800}
+                                    onDrawerWidthChange={this.drawerWidthChange}
                                     toolbarRight={[
                                         <SimpleSwitch key="inlineEditorSwitch" color="default"
                                                       checked={settings.inlineEditor}
@@ -453,7 +460,6 @@ class CmsViewContainer extends React.Component {
                                         }}>Back</Button>
                                     ]
                                     }
-                                    drawerWidth="500px"
                                     title={`Edit Page "${cmsPage.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
                 {jsonDom}
                 <ErrorHandler />
@@ -783,7 +789,7 @@ const CmsViewContainerWithGql = compose(
             updateCmsPage: ({_id, ...rest}, key) => {
                 const variables = {_id, [key]: rest[key]}
                 const {version} = getSlugVersion(ownProps.slug)
-                if( version ){
+                if (version) {
                     variables._version = version
                 }
 

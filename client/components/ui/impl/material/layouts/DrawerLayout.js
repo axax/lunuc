@@ -12,9 +12,7 @@ import MenuIcon from '@material-ui/icons/Menu'
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft'
 import ChevronRightIcon from '@material-ui/icons/ChevronRight'
 
-const DRAWER_WIDTH_LARGE = '800px'
-const DRAWER_WIDTH_MEDIUM = '400px'
-const DRAWER_WIDTH_SMALL = '300px'
+const DRAWER_WIDTH_DEFAULT = 400
 
 const styles = theme => ({
     root: {
@@ -39,16 +37,7 @@ const styles = theme => ({
         }),
     },
     appBarFixed: {
-        position:'fixed'
-    },
-    smallAppBarShift: {
-        width: `calc(100% - ${DRAWER_WIDTH_SMALL})`
-    },
-    mediumAppBarShift: {
-        width: `calc(100% - ${DRAWER_WIDTH_MEDIUM})`
-    },
-    largeAppBarShift: {
-        width: `calc(100% - ${DRAWER_WIDTH_LARGE})`
+        position: 'fixed'
     },
     menuButton: {
         marginLeft: 12,
@@ -60,7 +49,7 @@ const styles = theme => ({
     drawerDocked: {
         maxWidth: '100%'
     },
-    drawerDockedFixed:{
+    drawerDockedFixed: {
         position: 'fixed',
         top: '0px',
         bottom: '0px',
@@ -75,15 +64,6 @@ const styles = theme => ({
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
         }),
-    },
-    smallDrawerPaper: {
-        width: DRAWER_WIDTH_SMALL,
-    },
-    mediumDrawerPaper: {
-        width: DRAWER_WIDTH_MEDIUM,
-    },
-    largeDrawerPaper: {
-        width: DRAWER_WIDTH_LARGE,
         flex: '1 auto'
     },
     drawerPaperClose: {
@@ -96,16 +76,8 @@ const styles = theme => ({
         }),
     },
     drawerInner: {
-        maxWidth: '100%'
-    },
-    smallDrawerInner: {
-        width: DRAWER_WIDTH_SMALL,
-    },
-    mediumDrawerInner: {
-        width: DRAWER_WIDTH_MEDIUM,
-    },
-    largeDrawerInner: {
-        width: DRAWER_WIDTH_LARGE,
+        maxWidth: '100%',
+        position: 'relative'
     },
     drawerHeader: {
         backgroundColor: '#fff',
@@ -114,6 +86,20 @@ const styles = theme => ({
         justifyContent: 'flex-end',
         padding: '0 8px',
         ...theme.mixins.toolbar,
+    },
+    drawerDivider: {
+        position: 'absolute',
+        width: '3px',
+        background: 'black',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        cursor: 'ew-resize',
+        zIndex: 999,
+        opacity: 0,
+        '&:hover': {
+            opacity: 1
+        }
     },
     content: {
         boxSizing: 'border-box',
@@ -141,39 +127,71 @@ const styles = theme => ({
 })
 
 class DrawerLayout extends React.Component {
-    state = {
-        open: false,
+
+
+    constructor(props) {
+        super(props)
+        this.state = {
+            open: false,
+            drawerWidth: this.props.drawerWidth || DRAWER_WIDTH_DEFAULT
+        }
     }
 
+
     handleDrawerOpen = () => {
-        this.setState({open: true},()=>{
+        this.setState({open: true}, () => {
             // this is a ugly hack
             // right now it is only used for the tab indicator in the templateeditor. otherwise it is not properly placed
             // we will remove this as soon as there is a better solution
-            setTimeout(()=> {
+            setTimeout(() => {
                 window.dispatchEvent(new CustomEvent('resize'))
-            },20)
+            }, 20)
         })
     }
+
+    mouseDividerPos = false
 
     handleDrawerClose = () => {
         this.setState({open: false})
     }
 
+    dividerMouseDown = (e) => {
+        this.mouseDividerPos = e.pageX
+    }
+
+    dividerMouseMove = (e) => {
+        if (this.mouseDividerPos !== false) {
+            const drawerWidth = parseFloat(this.props.drawerWidth || DRAWER_WIDTH_DEFAULT)
+            this.setState({drawerWidth: drawerWidth + (e.pageX - this.mouseDividerPos)})
+        }
+    }
+
+    dividerMouseUp = (e) => {
+        const {onDrawerWidthChange} = this.props
+        if (onDrawerWidthChange) {
+            onDrawerWidthChange(this.state.drawerWidth)
+        }
+        this.mouseDividerPos = false
+    }
+
     render() {
         const {classes, theme, title, sidebar, toolbarRight, children, fixedLayout} = this.props
-        const {open} = this.state
+        const {open, drawerWidth} = this.state
 
-        const drawerSize = this.props.drawerSize || 'medium'
 
         const contentFixed = {}
         if (fixedLayout && open) {
-            contentFixed.marginLeft = (drawerSize === 'large' ? DRAWER_WIDTH_LARGE : (drawerSize === 'medium' ? DRAWER_WIDTH_MEDIUM : DRAWER_WIDTH_SMALL))
+            contentFixed.marginLeft = drawerWidth + 'px'
         }
         return (
-            <div className={classes.root}>
+            <div className={classes.root}
+                 onMouseMove={this.dividerMouseMove}
+                 onMouseUp={this.dividerMouseUp}>
                 <div className={classes.appFrame}>
-                    <AppBar className={classNames(classes.appBar, open && classes[drawerSize + 'AppBarShift'], fixedLayout && classes.appBarFixed)}>
+                    <AppBar
+                        className={classNames(classes.appBar, fixedLayout && classes.appBarFixed)}
+                        style={open ? {width: `calc(100% - ${drawerWidth}px)`} : {}}
+                    >
                         <Toolbar>
                             <IconButton
                                 color="inherit"
@@ -193,12 +211,12 @@ class DrawerLayout extends React.Component {
                     <Drawer
                         variant="permanent"
                         classes={{
-                            docked: classNames(classes.drawerDocked,fixedLayout && classes.drawerDockedFixed),
-                            paper: classNames(classes.drawerPaper, classes[drawerSize + 'DrawerPaper'], !open && classes.drawerPaperClose),
+                            docked: classNames(classes.drawerDocked, fixedLayout && classes.drawerDockedFixed),
+                            paper: classNames(classes.drawerPaper, !open && classes.drawerPaperClose),
                         }}
                         open={open}
                     >
-                        <div className={ classNames(classes.drawerInner, classes[drawerSize + 'DrawerInner']) }>
+                        <div className={ classNames(classes.drawerInner) } style={{width: drawerWidth + 'px'}}>
                             <div className={classes.drawerHeader}>
                                 <IconButton onClick={this.handleDrawerClose}>
                                     {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
@@ -206,9 +224,12 @@ class DrawerLayout extends React.Component {
                             </div>
                             <Divider />
                             {open && sidebar}
+                            <div className={classes.drawerDivider}
+                                 onMouseDown={this.dividerMouseDown}></div>
                         </div>
                     </Drawer>
-                    <main style={contentFixed} className={classNames(classes.content, fixedLayout && !open && classes.contentClose)}>
+                    <main style={contentFixed}
+                          className={classNames(classes.content, fixedLayout && !open && classes.contentClose)}>
                         {children}
                     </main>
                 </div>
@@ -220,7 +241,10 @@ class DrawerLayout extends React.Component {
 DrawerLayout.propTypes = {
     classes: PropTypes.object.isRequired,
     theme: PropTypes.object.isRequired,
-    fixedLayout: PropTypes.bool
+    fixedLayout: PropTypes.bool,
+    onDrawerWidthChange: PropTypes.func,
+    drawerWidth: PropTypes.number
 }
+
 
 export default withStyles(styles, {withTheme: true})(DrawerLayout);
