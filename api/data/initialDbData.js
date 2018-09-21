@@ -11,6 +11,13 @@ import {
     CAPABILITY_RUN_COMMAND
 } from './capabilities'
 
+import {ObjectId} from 'mongodb'
+
+// https://github.com/apollographql/apollo-server/issues/1633
+ObjectId.prototype.valueOf = function () {
+    return this.toString()
+}
+
 export const createAllInitialData = async (db) => {
     console.log('Inserting data...')
     await createUserRoles(db)

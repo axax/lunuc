@@ -90,6 +90,10 @@ class ContentEditable extends React.Component {
 
     handleKeyDown(e) {
         const {highlight} = this.props
+        if( e.key === "Enter"){
+            e.preventDefault()
+            document.execCommand('insertHTML', false, '\n')
+        }else
         // handle tab
         if (e.key === "Tab") {
             e.preventDefault()
@@ -160,12 +164,10 @@ class ContentEditable extends React.Component {
         if (highlight) {
 
 
-            const ignoreKeys = ["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Meta", "Control"] // arrows
+            const ignoreKeys = [ "ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Meta", "Control"] // arrows
             if (ignoreKeys.indexOf(e.key) < 0) {
-
                 const t = e.target
-                var restore = this.saveCaretPosition(t, (e.key === "Enter" ? 1 : 0))
-
+                var restore = this.saveCaretPosition(t,0)
                 if (this.historyPointer > 0) {
                     this.changeHistory.splice(0, this.historyPointer)
                 }
@@ -315,6 +317,7 @@ class ContentEditable extends React.Component {
             } else if (c === '`' && !inDQuote && !inSQuote) {
                 inLitQuote = !inLitQuote
                 if (inLitQuote) {
+                    keyword = ''
                     res += '<span class="' + classes.highlight3 + '">'
                 }
                 res += c
@@ -378,6 +381,7 @@ class ContentEditable extends React.Component {
         const sel = window.getSelection(), range = sel.getRangeAt(0)
         range.setStart(ctx, 0)
         const len = range.toString().length + offset
+        console.log(len,this.keyRangeEndOffset )
         return () => {
             const pos = this.getTextNodeAtPosition(ctx, len), range = new Range()
             sel.removeAllRanges()
