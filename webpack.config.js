@@ -6,7 +6,7 @@ const webpack = require('webpack')
 
 // webpack plugins
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
-const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CompressionPlugin = require("compression-webpack-plugin")
 const GenSourceCode = require('./webpack.gensrc')
 const WebpackI18nPlugin = require("./webpack.i18n");
@@ -89,10 +89,10 @@ const config = {
             {
                 test: /\.global\.css$/,
                 exclude: excludeFunction,
-                use: ExtractTextPlugin.extract({
-                    fallback: 'style-loader',
-                    use: ['css-loader']
-                })
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    "css-loader"
+                ]
             },
             {
                 test: /^(?:(?!\.global).)*\.css$/,
@@ -101,10 +101,11 @@ const config = {
             {
                 test: /\.global\.less$/,
                 exclude: excludeFunction,
-                use: ExtractTextPlugin.extract({
-                    fallback: 'style-loader',
-                    use: ['css-loader', 'less-loader']
-                })
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    "css-loader",
+                    "less-loader"
+                ]
             },
             {
                 test: /^(?:(?!\.global).)*\.less$/,
@@ -114,7 +115,7 @@ const config = {
     },
     plugins: [
         new GenSourceCode(), /* Generate some source code based on the config.json file */
-        new ExtractTextPlugin({
+        new MiniCssExtractPlugin({
             filename: 'style.css',
             allChunks: true
         }), /* Extract css from bundle */
