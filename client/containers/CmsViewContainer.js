@@ -241,7 +241,7 @@ class CmsViewContainer extends React.Component {
         this.dataResolverSaveTimeout = setTimeout(() => {
             // auto save after some time
             this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
-        }, 2500)
+        }, 5000)
     }
 
     handleTemplateChange = (str) => {

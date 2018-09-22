@@ -522,10 +522,10 @@ class JsonDom extends React.Component {
 
     runJsEvent(name, ...args) {
         //console.log(name,args)
-        let hasError = false
-        if (this.jsOnStack[name]) {
-            for (let i = 0; i < this.jsOnStack[name].length; i++) {
-                const cb = this.jsOnStack[name][i]
+        let hasError = false, t = this.jsOnStack[name]
+        if (t && t.length) {
+            for (let i = 0; i < t.length; i++) {
+                const cb = t[i]
                 if (cb) {
                     try {
                         cb(...args)

@@ -123,10 +123,9 @@ export const systemResolver = (db) => ({
             fs.readdirSync(backup_dir).forEach(file => {
                 if (file !== '.DS_Store') {
                     const stats = fs.statSync(backup_dir + '/' + file)
-                    files.push({name: file, createdAt: new Date(stats.mtime), size: (stats.size / 1000) + 'kb'})
+                    files.push({name: file, createdAt: (new Date(stats.mtime)).getTime(), size: (stats.size / 1000) + 'kb'})
                 }
             })
-
             files.reverse()
 
             const response = {
@@ -135,7 +134,6 @@ export const systemResolver = (db) => ({
                 limit: 0,
                 total: files.length
             }
-
             return response
         },
         mediaDumps: async (data, {context}) => {
@@ -151,7 +149,7 @@ export const systemResolver = (db) => ({
             fs.readdirSync(backup_dir).forEach(file => {
                 if (file !== '.DS_Store') {
                     const stats = fs.statSync(backup_dir + '/' + file)
-                    files.push({name: file, createdAt: new Date(stats.mtime), size: (stats.size / 1000) + 'kb'})
+                    files.push({name: file, createdAt: (new Date(stats.mtime)).getTime(), size: (stats.size / 1000) + 'kb'})
                 }
             })
             files.reverse()
