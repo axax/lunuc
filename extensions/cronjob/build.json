@@ -1,0 +1,24 @@
+{
+  "types": [
+    {
+      "name": "CronJob",
+      "fields": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "script"
+        },
+        {
+          "name": "cronExpression",
+          "label": "Cron expression"
+        },
+        {
+          "name": "active",
+          "type": "Boolean"
+        }
+      ]
+    }
+  ]
+}

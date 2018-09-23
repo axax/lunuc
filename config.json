@@ -23,6 +23,9 @@
     },
     "shop": {
       "active": true
+    },
+    "cronjob": {
+      "active": true
     }
   },
   "ui": [

@@ -1,0 +1,5 @@
+{
+  "name": "CronJob",
+  "description": "Execute script in Schedule (Cron Job)",
+  "author": "Simon Schärer"
+}

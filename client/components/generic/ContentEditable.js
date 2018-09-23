@@ -90,10 +90,10 @@ class ContentEditable extends React.Component {
 
     handleKeyDown(e) {
         const {highlight} = this.props
-        if( e.key === "Enter"){
+        if (e.key === "Enter") {
             e.preventDefault()
             document.execCommand('insertHTML', false, '\n')
-        }else
+        } else
         // handle tab
         if (e.key === "Tab") {
             e.preventDefault()
@@ -162,24 +162,28 @@ class ContentEditable extends React.Component {
 
         const {highlight} = this.props
         if (highlight) {
-
-
-            const ignoreKeys = [ "ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Meta", "Control"] // arrows
+            const ignoreKeys = ["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Meta", "Control"] // arrows
             if (ignoreKeys.indexOf(e.key) < 0) {
-                const t = e.target
-                var restore = this.saveCaretPosition(t,0)
-                if (this.historyPointer > 0) {
-                    this.changeHistory.splice(0, this.historyPointer)
-                }
-                this.changeHistory.unshift(t.innerText)
-                this.historyPointer = 0
-                if (this.changeHistory.length > 100) {
-                    this.changeHistory.splice(0, 100)
-                }
-                t.innerHTML = this.highlight(t.innerText)
-                restore()
+                this.highlightDelay(e.target)
             }
         }
+    }
+
+    highlightDelay(t) {
+        clearTimeout(this.highlightTimeout)
+        this.highlightTimeout = setTimeout(()=> {
+            const restore = this.saveCaretPosition(t, 0)
+            if (this.historyPointer > 0) {
+                this.changeHistory.splice(0, this.historyPointer)
+            }
+            this.changeHistory.unshift(t.innerText)
+            this.historyPointer = 0
+            if (this.changeHistory.length > 100) {
+                this.changeHistory.splice(0, 100)
+            }
+            t.innerHTML = this.highlight(t.innerText)
+            restore()
+        },1000)
     }
 
     highlight(str) {
@@ -345,7 +349,7 @@ class ContentEditable extends React.Component {
                     res += '</span>'
                 }
             } else if (!inDQuote && !inSQuote && !inLitQuote) {
-                if ( (c === '/' || c === '*') && i > 0 && str[i - 1] === '/') {
+                if ((c === '/' || c === '*') && i > 0 && str[i - 1] === '/') {
                     res = res.substring(0, res.length - 1) + '<span class="' + classes.highlight5 + '">' + res.substring(res.length - 1)
                     //comment
                     if (c === '*') {
@@ -381,7 +385,7 @@ class ContentEditable extends React.Component {
         const sel = window.getSelection(), range = sel.getRangeAt(0)
         range.setStart(ctx, 0)
         const len = range.toString().length + offset
-        console.log(len,this.keyRangeEndOffset )
+        console.log(len, this.keyRangeEndOffset)
         return () => {
             const pos = this.getTextNodeAtPosition(ctx, len), range = new Range()
             sel.removeAllRanges()

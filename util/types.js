@@ -153,7 +153,7 @@ export const getFormFields = (type) => {
 }
 
 
-/* Register core types */
+/* Register manually created types */
 
 Hook.on('Types', ({types}) => {
 
