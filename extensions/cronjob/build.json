@@ -12,7 +12,7 @@
           "uitype": "jseditor"
         },
         {
-          "name": "cronExpression",
+          "name": "expression",
           "label": "Cron expression"
         },
         {

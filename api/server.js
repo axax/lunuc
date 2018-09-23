@@ -12,6 +12,8 @@ import {dbConnection, dbPreparation} from './database'
 import {auth} from './auth'
 import {formatError} from './error'
 import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload} from './upload'
+import Hook from 'util/hook'
+
 
 const PORT = (process.env.PORT || 3000)
 
@@ -23,6 +25,9 @@ export const start = (done) => {
         if (!db) {
             reject(err)
         } else {
+
+            Hook.call('dbready', {db})
+
             // Initialize http api
             const app = express()
 
