@@ -385,7 +385,6 @@ class ContentEditable extends React.Component {
         const sel = window.getSelection(), range = sel.getRangeAt(0)
         range.setStart(ctx, 0)
         const len = range.toString().length + offset
-        console.log(len, this.keyRangeEndOffset)
         return () => {
             const pos = this.getTextNodeAtPosition(ctx, len), range = new Range()
             sel.removeAllRanges()

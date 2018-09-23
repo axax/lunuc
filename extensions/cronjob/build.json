@@ -8,7 +8,8 @@
           "required": true
         },
         {
-          "name": "script"
+          "name": "script",
+          "uitype": "jseditor"
         },
         {
           "name": "cronExpression",

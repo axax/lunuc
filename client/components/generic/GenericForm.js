@@ -167,16 +167,21 @@ class GenericForm extends React.Component {
                         const uitype = o.uitype || 'text'
 
 
-                        if (uitype === 'editor') {
-                            let json
+                        if (uitype === 'editor' || uitype === 'jseditor') {
+                            let highlight, json
+                            if( uitype === 'jseditor'){
+                                highlight = 'js'
+                            }else
                             if (value) {
+                                // detect type
                                 try {
                                     json = JSON.stringify(JSON.parse(value), null, 4)
+                                    highlight = 'json'
                                 } catch (e) {
 
                                 }
                             }
-                            return <ContentEditable className={classes.editor} highlight={json ? 'json' : ''}
+                            return <ContentEditable className={classes.editor} highlight={highlight}
                                                     onChange={(v) => this.handleInputChange({
                                                         target: {
                                                             name: k,
