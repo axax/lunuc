@@ -91,6 +91,7 @@
     "node-cron": "^2.0.1",
     "nodemailer": "^4.6.8",
     "nodemon": "^1.18.4",
+    "phantom": "^6.0.3",
     "prop-types": "^15.6.2",
     "react": "^16.5.2",
     "react-apollo": "^2.1.11",
