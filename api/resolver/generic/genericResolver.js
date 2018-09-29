@@ -8,6 +8,7 @@ import {
     CAPABILITY_MANAGE_TYPES,
     CAPABILITY_MANAGE_OTHER_USERS
 } from '../../data/capabilities'
+import Hook from 'util/hook'
 
 const {DEFAULT_LANGUAGE} = config
 
@@ -492,7 +493,7 @@ const GenericResolver = {
         if (result.ok !== 1 || !result.lastErrorObject.updatedExisting) {
             throw new Error(collectionName + ' could not be changed. You might not have premissions to manage other users')
         }
-        return {
+        const returnValue = {
             ...data,
             modifiedAt: dataSet.modifiedAt,
             createdBy: {
@@ -501,6 +502,10 @@ const GenericResolver = {
             },
             status: 'updated'
         }
+
+        Hook.call('typeUpdated_'+typeName, {result: returnValue, db})
+
+        return returnValue
     },
     cloneEntity: async (db, context, typeName, {_id, _version, ...rest}) => {
 

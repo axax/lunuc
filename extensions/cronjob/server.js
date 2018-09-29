@@ -3,6 +3,30 @@ import schema from './gensrc/schema'
 import resolver from './gensrc/resolver'
 import cron from 'node-cron'
 
+let registeredCronJobs = []
+
+const registerCronJobs =async (db) => {
+    const cronJobs = (await db.collection('CronJob').find({active: true}).toArray())
+    cronJobs.forEach( cronJob => {
+        registeredCronJobs.push(cron.schedule(cronJob.expression, () => {
+
+            const tpl = new Function(cronJob.script)
+            const result = tpl.call({scope:{}})
+
+            //console.log(result);
+        }))
+    })
+}
+
+
+const unregisterCronJobs = (db) => {
+    registeredCronJobs.forEach(job => {
+        job.destroy()
+    })
+
+    registeredCronJobs = []
+}
+
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
     const newResolvers = resolver(db)
@@ -20,16 +44,12 @@ Hook.on('schema', ({schemas}) => {
 
 
 // Hook when db is ready
-Hook.on('dbready',async ({db}) => {
+Hook.on('dbready',({db}) => {
+    registerCronJobs(db)
+})
 
-    const cronJobs = (await db.collection('CronJob').find({active: true}).toArray())
-    cronJobs.forEach( cronJob => {
-        cron.schedule(cronJob.expression, () => {
-
-            const tpl = new Function(cronJob.script)
-            const result = tpl.call({scope:{}})
-
-            //console.log(result);
-        })
-    })
+// Hook when the type CronJob has changed
+Hook.on('typeUpdated_CronJob',({db, result}) => {
+    unregisterCronJobs()
+    registerCronJobs(db)
 })
