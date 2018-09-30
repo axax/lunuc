@@ -13,8 +13,8 @@ const styles = theme => ({
     editor: {
         border: '1px solid ' + theme.palette.grey['200'],
         padding: theme.spacing.unit,
-        margin: theme.spacing.unit * 3 + ' 0',
-        maxHeight: 100,
+        margin: theme.spacing.unit * 3 + 'px 0',
+        maxHeight: 200,
         overflow: 'auto'
     }
 })
@@ -181,15 +181,15 @@ class GenericForm extends React.Component {
 
                                 }
                             }
-                            return <ContentEditable className={classes.editor} highlight={highlight}
+                            return <div className={classes.editor}><ContentEditable highlight={highlight}
                                                     onChange={(v) => this.handleInputChange({
                                                         target: {
                                                             name: k,
                                                             value: v
                                                         }
                                                     })}
-                                                    key={k}
-                                                    setHtml={false}>{json ? json : value}</ContentEditable>
+                                                    key={k} setHtml={false}>{json ? json : value}</ContentEditable>
+                            </div>
 
                         }
                         if (uitype === 'image') {
