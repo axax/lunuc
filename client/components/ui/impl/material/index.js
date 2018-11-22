@@ -43,6 +43,7 @@ export const theme = createMuiTheme({
         }
     },
     typography: {
+        useNextVariants: true,
         display4: {
             fontSize: '3rem'
         },

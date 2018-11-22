@@ -370,7 +370,7 @@ class TypesContainer extends React.Component {
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
-        if (!this.types[type]) return <BaseLayout><Typography variant="subheading" color="error">Type {type} does not
+        if (!this.types[type]) return <BaseLayout><Typography variant="subtitle1" color="error">Type {type} does not
             exist.
             Types can be specified in an extension.</Typography></BaseLayout>
 
@@ -388,7 +388,7 @@ class TypesContainer extends React.Component {
                     type: 'primary'
                 }],
                 children: <div>
-                    <Typography variant="caption" component="h2" gutterBottom>Available columns</Typography>
+                    <Typography variant="subtitle1" component="h2" gutterBottom>Available columns</Typography>
 
                     {columns &&
                     columns.map(c => {
@@ -425,8 +425,8 @@ class TypesContainer extends React.Component {
 
         const content = <div>
             {title === false ? '' :
-                <Typography variant="display2" gutterBottom>{fixType ? fixType : 'Types'}</Typography>}
-            {description ? <Typography variant="subheading" gutterBottom>{description}</Typography> : ''}
+                <Typography variant="h3" gutterBottom>{fixType ? fixType : 'Types'}</Typography>}
+            {description ? <Typography variant="subtitle1" gutterBottom>{description}</Typography> : ''}
             <Row spacing={16}>
                 {!fixType &&
                 <Col md={9}>
@@ -1071,6 +1071,7 @@ class TypesContainer extends React.Component {
 
 
     handleCreateEditData = (action) => {
+
         const closeModal = () => {
             this.setState({createEditDialog: false, dataToEdit: null})
         }
@@ -1137,8 +1138,10 @@ class TypesContainer extends React.Component {
                 this.createData(this.pageParams, submitData, fieldData).then(callback)
             }
 
-        } else {
+        } else if (action && action.key === 'cancel') {
             closeModal()
+        } else {
+            Hook.call('HandleTypeCreateEditDialog', {type: this.pageParams.type,closeModal, action}, this)
         }
     }
 

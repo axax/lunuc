@@ -157,101 +157,102 @@ class GenericForm extends React.Component {
 
     render() {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
+
+        const formFields = Object.keys(fields).map((k, i) => {
+            const o = fields[k],
+                value = this.state.fields[k]
+
+            const uitype = o.uitype || 'text'
+
+
+            if (uitype === 'editor' || uitype === 'jseditor') {
+                let highlight, json
+                if( uitype === 'jseditor'){
+                    highlight = 'js'
+                }else
+                if (value) {
+                    // detect type
+                    try {
+                        json = JSON.stringify(JSON.parse(value), null, 4)
+                        highlight = 'json'
+                    } catch (e) {
+
+                    }
+                }
+                return <div key={k} className={classes.editor}><ContentEditable highlight={highlight}
+                                                                        onChange={(v) => this.handleInputChange({
+                                                                            target: {
+                                                                                name: k,
+                                                                                value: v
+                                                                            }
+                                                                        })}
+                                                                        setHtml={false}>{json ? json : value}</ContentEditable>
+                </div>
+
+            }
+            if (uitype === 'image') {
+                return <FileDrop key={k}/>
+            } else if (uitype === 'type_picker') {
+                return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
+                                   error={!!this.state.fieldErrors[k]}
+                                   helperText={this.state.fieldErrors[k]}
+                                   onChange={this.handleInputChange} key={k}
+                                   name={k}
+                                   label={o.label}
+                                   multi={o.multi}
+                                   field={o.pickerField}
+                                   type={o.type} placeholder={o.placeholder}/>
+            } else if (uitype === 'select') {
+
+                //TODO: implement
+            } else if (o.type === 'Boolean') {
+
+                return <SimpleSwitch key={k} label={o.placeholder} name={k}
+                                     onChange={this.handleInputChange} checked={value ? true : false}/>
+
+            } else {
+                if (o.localized) {
+
+                    return config.LANGUAGES.reduce((a, l) => {
+                        const valueLocalized = this.state.fields[k + '_localized']
+                        const fieldName = k + '_localized.' + l
+                        a.push(<TextField key={fieldName}
+                                          error={!!this.state.fieldErrors[fieldName]}
+                                          helperText={this.state.fieldErrors[fieldName]}
+                                          label={o.label}
+                                          fullWidth={o.fullWidth}
+                                          type={uitype}
+                                          placeholder={o.placeholder + ' [' + l + ']'}
+                                          value={(valueLocalized && valueLocalized[l] ? valueLocalized[l] : '')}
+                                          name={fieldName}
+                                          onKeyDown={(e) => {
+                                              onKeyDown && onKeyDown(e, valueLocalized[l])
+                                          }}
+                                          onChange={this.handleInputChange}/>)
+                        return a
+                    }, [])
+                } else {
+                    return <TextField autoFocus={autoFocus && i === 0} error={!!this.state.fieldErrors[k]}
+                                      key={k}
+                                      label={o.label}
+                                      helperText={this.state.fieldErrors[k]}
+                                      fullWidth={o.fullWidth}
+                                      type={uitype}
+                                      placeholder={o.placeholder}
+                                      value={value || ''}
+                                      name={k}
+                                      onKeyDown={(e) => {
+                                          onKeyDown && onKeyDown(e, value)
+                                      }}
+                                      onChange={this.handleInputChange}/>
+                }
+
+            }
+        })
+
         return (
             <form>
-                {
-                    Object.keys(fields).map((k, i) => {
-                        const o = fields[k],
-                            value = this.state.fields[k]
-
-                        const uitype = o.uitype || 'text'
-
-
-                        if (uitype === 'editor' || uitype === 'jseditor') {
-                            let highlight, json
-                            if( uitype === 'jseditor'){
-                                highlight = 'js'
-                            }else
-                            if (value) {
-                                // detect type
-                                try {
-                                    json = JSON.stringify(JSON.parse(value), null, 4)
-                                    highlight = 'json'
-                                } catch (e) {
-
-                                }
-                            }
-                            return <div className={classes.editor}><ContentEditable highlight={highlight}
-                                                    onChange={(v) => this.handleInputChange({
-                                                        target: {
-                                                            name: k,
-                                                            value: v
-                                                        }
-                                                    })}
-                                                    key={k} setHtml={false}>{json ? json : value}</ContentEditable>
-                            </div>
-
-                        }
-                        if (uitype === 'image') {
-                            return <FileDrop key={k}/>
-                        } else if (uitype === 'type_picker') {
-                            return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
-                                               error={!!this.state.fieldErrors[k]}
-                                               helperText={this.state.fieldErrors[k]}
-                                               onChange={this.handleInputChange} key={k}
-                                               name={k}
-                                               label={o.label}
-                                               multi={o.multi}
-                                               field={o.pickerField}
-                                               type={o.type} placeholder={o.placeholder}/>
-                        } else if (uitype === 'select') {
-
-                            //TODO: implement
-                        } else if (o.type === 'Boolean') {
-
-                            return <SimpleSwitch key={k} label={o.placeholder} name={k}
-                                                 onChange={this.handleInputChange} checked={value ? true : false}/>
-
-                        } else {
-                            if (o.localized) {
-
-                                return config.LANGUAGES.reduce((a, l) => {
-                                    const valueLocalized = this.state.fields[k + '_localized']
-                                    const fieldName = k + '_localized.' + l
-                                    a.push(<TextField key={fieldName}
-                                                      error={!!this.state.fieldErrors[fieldName]}
-                                                      helperText={this.state.fieldErrors[fieldName]}
-                                                      label={o.label}
-                                                      fullWidth={o.fullWidth}
-                                                      type={uitype}
-                                                      placeholder={o.placeholder + ' [' + l + ']'}
-                                                      value={(valueLocalized && valueLocalized[l] ? valueLocalized[l] : '')}
-                                                      name={fieldName}
-                                                      onKeyDown={(e) => {
-                                                          onKeyDown && onKeyDown(e, valueLocalized[l])
-                                                      }}
-                                                      onChange={this.handleInputChange}/>)
-                                    return a
-                                }, [])
-                            } else {
-                                return <TextField autoFocus={autoFocus && i === 0} error={!!this.state.fieldErrors[k]}
-                                                  key={k}
-                                                  label={o.label}
-                                                  helperText={this.state.fieldErrors[k]}
-                                                  fullWidth={o.fullWidth}
-                                                  type={uitype}
-                                                  placeholder={o.placeholder}
-                                                  value={value || ''}
-                                                  name={k}
-                                                  onKeyDown={(e) => {
-                                                      onKeyDown && onKeyDown(e, value)
-                                                  }}
-                                                  onChange={this.handleInputChange}/>
-                            }
-
-                        }
-                    })
-                }
+                {formFields}
                 {primaryButton != false ?
                     <Button color="primary" variant="raised" disabled={!this.state.isValid}
                             onClick={this.onAddClick}>{caption || 'Add'}</Button>

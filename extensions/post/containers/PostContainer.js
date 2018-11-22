@@ -118,7 +118,7 @@ class PostContainer extends React.Component {
 
         return (
             <BaseLayout>
-                <Typography variant="display2" gutterBottom>Posts</Typography>
+                <Typography variant="h3" gutterBottom>Posts</Typography>
                 <Row spacing={24}>
                     <Col md={4}>
                         <SimpleList items={listItems}

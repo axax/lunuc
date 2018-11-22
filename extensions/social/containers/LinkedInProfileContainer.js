@@ -308,9 +308,9 @@ class LinkedInProfileContainer extends React.Component {
                 <Row>
                     <Col md={3}>
 
-                        <Typography variant="headline" gutterBottom={true}>{_t('social.linkedin.enhanceCv')}</Typography>
+                        <Typography variant="h5" gutterBottom={true}>{_t('social.linkedin.enhanceCv')}</Typography>
 
-                        <Typography variant="caption">{_t('social.linkedin.downloadAccount')}</Typography>
+                        <Typography variant="subtitle1">{_t('social.linkedin.downloadAccount')}</Typography>
                         <FileDrop style={{marginBottom: "2rem"}} multi onFiles={this.handleFiles} accept="text/csv"
                                   label="Drop linked in cvs files here"/>
 

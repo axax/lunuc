@@ -154,7 +154,7 @@ class UserProfileContainer extends React.Component {
 
         return (
             <BaseLayout>
-                <Typography variant="display2" gutterBottom>Profile</Typography>
+                <Typography variant="h3" gutterBottom>Profile</Typography>
 
 
                 <div>
@@ -163,7 +163,7 @@ class UserProfileContainer extends React.Component {
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
                 </div>
-                <Typography variant="display1" component="h2" gutterBottom>Role & capabilities</Typography>
+                <Typography variant="h2" component="h2" gutterBottom>Role & capabilities</Typography>
 
                 <p>Role {me.role.name}</p>
                 {
@@ -175,14 +175,14 @@ class UserProfileContainer extends React.Component {
 
 
                 <Divider />
-                <Typography variant="display1" component="h2" gutterBottom>Notes</Typography>
+                <Typography variant="h4" component="h2" gutterBottom>Notes</Typography>
                 {noteElements}
                 <br />
                 <Button variant="raised" color="primary" onClick={this.createNote}>Add new note</Button>
                 {hasManageKeyvalue ?
                     <div>
                         <Divider />
-                        <Typography variant="display1" component="h2" gutterBottom>KeyValue Store</Typography>
+                        <Typography variant="h2" component="h2" gutterBottom>KeyValue Store</Typography>
 
                         <KeyValueContainer />
                     </div> : ''}

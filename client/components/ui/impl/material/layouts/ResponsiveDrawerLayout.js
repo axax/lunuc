@@ -118,7 +118,7 @@ class ResponsiveDrawer extends React.Component {
                                              key={i}
                                              button>
                                 <ListItemText disableTypography
-                                              primary={<Typography variant="subheading"
+                                              primary={<Typography variant="subtitle1"
                                                                    component="h3"
                                                                    className={(isActive ? classes.listItemActive: '')}>{item.name}</Typography>}/>
                             </ListItem>
@@ -144,7 +144,7 @@ class ResponsiveDrawer extends React.Component {
                             >
                                 <MenuIcon />
                             </IconButton>
-                            <Typography className={classes.flex} variant="title" color="inherit" noWrap>
+                            <Typography className={classes.flex} variant="h6" color="inherit" noWrap>
                                 {title}
                             </Typography>
 

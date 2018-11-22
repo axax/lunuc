@@ -81,7 +81,7 @@ class DbDumpContainer extends React.Component {
         const {creatingDump, creatingMediaDump, importingMediaDump, importMediaDumpDialog, importDbDumpDialog, importingDbDump} = this.state
         return (
             <BaseLayout>
-                <Typography variant="display2" gutterBottom>Backups</Typography>
+                <Typography variant="h3" gutterBottom>Backups</Typography>
 
                 <Row spacing={32}>
                     <Col md={6}>

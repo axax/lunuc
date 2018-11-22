@@ -35,7 +35,7 @@ class FilesContainer extends React.Component {
     render() {
         return (
             <BaseLayout>
-                <Typography variant="display2" gutterBottom>Files</Typography>
+                <Typography variant="h3" gutterBottom>Files</Typography>
 
                 <Query query={gql`query run($command:String!){run(command:$command){response}}`}
                        fetchPolicy="cache-and-network"

@@ -89,7 +89,7 @@ class SignUpContainer extends React.Component {
                     <Col xs={1} sm={2} md={4}></Col>
                     <Col xs={10} sm={8} md={4}>
                         <Card>
-                            <Typography variant="display4" gutterBottom>Sign up</Typography>
+                            <Typography variant="h3" gutterBottom>Sign up</Typography>
 
                             {signupFinished ?
                                 <Typography gutterBottom>Thanks for your registration! <Link to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography> :

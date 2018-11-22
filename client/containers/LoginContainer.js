@@ -110,7 +110,7 @@ class LoginContainer extends React.Component {
                     <Col xs={10} sm={8} md={4}>
                         <Card>
                             <form noValidate autoComplete="off">
-                                <Typography variant="display4" gutterBottom>Login</Typography>
+                                <Typography variant="h3" gutterBottom>Login</Typography>
 
                                 <Typography gutterBottom>You must log in to view the page
                                     at {from.pathname}</Typography>

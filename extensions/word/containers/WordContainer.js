@@ -60,7 +60,7 @@ class WordContainer extends React.Component {
         })
         const content = (
             <BaseLayout>
-                <Typography variant="display2" gutterBottom>Words</Typography>
+                <Typography variant="h3" gutterBottom>Words</Typography>
 
 
                 <Row>

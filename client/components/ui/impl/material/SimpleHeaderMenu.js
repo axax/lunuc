@@ -43,7 +43,7 @@ class SimpleHeaderMenu extends React.Component {
                 <Toolbar>
                     <div className={classes.toolbarLeft}>
                         {title &&
-                        <Typography variant="title" color="inherit">
+                        <Typography variant="h6" color="inherit">
                             {title}
                         </Typography>
                         }

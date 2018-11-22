@@ -17,7 +17,7 @@ class SimpleToolbar extends React.Component {
         const {title,classes,children,...rest} = this.props
 
         return <AppBar {...rest} ><Toolbar>
-            <Typography variant="title" color="inherit" className={classes.flex}>
+            <Typography variant="h6" color="inherit" className={classes.flex}>
                 {title}
             </Typography>
             {children}

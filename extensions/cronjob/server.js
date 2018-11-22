@@ -1,6 +1,8 @@
 import Hook from 'util/hook'
-import schema from './gensrc/schema'
-import resolver from './gensrc/resolver'
+import schemaGen from './gensrc/schema'
+import resolverGen from './gensrc/resolver'
+import schema from './schema'
+import resolver from './resolver'
 import cron from 'node-cron'
 
 let registeredCronJobs = []
@@ -9,6 +11,8 @@ const registerCronJobs =async (db) => {
     const cronJobs = (await db.collection('CronJob').find({active: true}).toArray())
     cronJobs.forEach( cronJob => {
         registeredCronJobs.push(cron.schedule(cronJob.expression, () => {
+
+
             const tpl = new Function('const require = this.require;'+cronJob.script)
             const result = tpl.call({require, db})
 
@@ -27,7 +31,7 @@ const unregisterCronJobs = (db) => {
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
-    const newResolvers = resolver(db)
+    const newResolvers = {...resolverGen(db),...resolver(db)}
 
     // add new resolvers
     for (const n in newResolvers) {
@@ -37,6 +41,7 @@ Hook.on('resolver', ({db, resolvers}) => {
 
 // Hook to add mongodb schema
 Hook.on('schema', ({schemas}) => {
+    schemas.push(schemaGen)
     schemas.push(schema)
 })
 
