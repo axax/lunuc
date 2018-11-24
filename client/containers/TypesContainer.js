@@ -309,7 +309,7 @@ class TypesContainer extends React.Component {
                 })
             }
             this._renderedTable =
-                <SimpleTable title={type} dataSource={dataSource} columns={columnsFiltered} count={data.total}
+                <SimpleTable key="typeTable" title={type} dataSource={dataSource} columns={columnsFiltered} count={data.total}
                              rowsPerPage={limit} page={page}
                              orderBy={asort[0]}
                              header={this.types[type].collectionClonable &&
@@ -423,11 +423,11 @@ class TypesContainer extends React.Component {
 
         const {description} = this.types[type]
 
-        const content = <div>
-            {title === false ? '' :
-                <Typography variant="h3" gutterBottom>{fixType ? fixType : 'Types'}</Typography>}
-            {description ? <Typography variant="subtitle1" gutterBottom>{description}</Typography> : ''}
-            <Row spacing={16}>
+        const content = [
+            title === false ? '' :
+                <Typography key="typeTitle" variant="h3" gutterBottom>{fixType ? fixType : 'Types'}</Typography>,
+            description ? <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : '',
+            <Row spacing={16} key="typeHeader">
                 {!fixType &&
                 <Col md={9}>
                     <SimpleSelect
@@ -449,21 +449,19 @@ class TypesContainer extends React.Component {
                                      }
                                  }}/>
                 </Col>
-            </Row>
-
-            {this.renderTable(columns)}
-
-            {dataToDelete &&
-            <SimpleDialog open={confirmDeletionDialog} onClose={this.handleConfirmDeletion}
+            </Row>,
+            this.renderTable(columns),
+            dataToDelete &&
+            <SimpleDialog key="deleteDialog" open={confirmDeletionDialog} onClose={this.handleConfirmDeletion}
                           actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
                           title="Confirm deletion">
                 Are you sure you want to delete {dataToDelete.length > 1 ? 'the selected items' : 'this item'}?
-            </SimpleDialog>
-            }
+            </SimpleDialog>,
+            createEditDialog !== undefined && <SimpleDialog key="editDialog" {...editDialogProps}/>,
+            viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>
+        ]
 
-            {createEditDialog !== undefined && <SimpleDialog {...editDialogProps}/> }
-            {viewSettingDialog !== undefined && <SimpleDialog {...viewSettingDialogProps}/> }
-        </div>
+        Hook.call('TypesContainerRender', {type, content}, this)
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 

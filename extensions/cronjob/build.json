@@ -20,6 +20,25 @@
           "type": "Boolean"
         }
       ]
+    },
+    {
+      "name": "CronJobExecution",
+      "fields": [
+        {
+          "name": "state"
+        },
+        {
+          "name": "endTime",
+          "type": "Float"
+        },
+        {
+          "name": "scriptLog"
+        },
+        {
+          "name": "cronjob",
+          "type": "CronJob"
+        }
+      ]
     }
   ]
 }

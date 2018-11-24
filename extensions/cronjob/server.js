@@ -12,7 +12,6 @@ const registerCronJobs =async (db) => {
     cronJobs.forEach( cronJob => {
         registeredCronJobs.push(cron.schedule(cronJob.expression, () => {
 
-
             const tpl = new Function('const require = this.require;'+cronJob.script)
             const result = tpl.call({require, db})
 

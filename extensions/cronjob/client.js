@@ -1,11 +1,9 @@
 import React from 'react'
 import Hook from 'util/hook'
-import Async from 'client/components/Async'
 import gql from 'graphql-tag'
-
-const Login = (props) => <Async {...props}
-                                load={import(/* webpackChunkName: "admin" */ '../../client/containers/LoginContainer')}/>
-
+import {
+    SimpleDialog
+} from 'ui/admin'
 
 Hook.on('ApiResponse', ({data}) => {
     if (data.products) {
@@ -26,18 +24,37 @@ Hook.on('TypeCreateEditDialog', ({type, props}) => {
 })
 
 
-Hook.on('HandleTypeCreateEditDialog', function ({type, action, closeModal, client}) {
+Hook.on('HandleTypeCreateEditDialog', function ({type, action}) {
     if (type === 'CronJob' && action && action.key === 'run') {
         this.props.client.query({
             fetchPolicy: 'network-only',
             forceFetch: true,
-            query: gql`query testJob($script:String){testJob(script:$script){status}}`,
-            variables: {script: this.createEditForm.state.fields.script}
+            query: gql`query testJob($cronjobId:String!,$script:String){testJob(cronjobId:$cronjobId,script:$script){status}}`,
+            variables: {
+                script: this.createEditForm.state.fields.script,
+                cronjobId: this.state.dataToEdit ? this.state.dataToEdit._id : 'none'
+            }
         }).then(response => {
-            console.log(response)
+            this.setState({cronjobResponse: response})
         }).catch(error => {
             console.log(error.message)
         })
+    }
+})
+
+
+Hook.on('TypesContainerRender', function ({type, content}) {
+    if (type === 'CronJob') {
+        if (this.state.cronjobResponse && this.state.cronjobResponse.data.testJob && this.state.cronjobResponse.data.testJob.status) {
+            content.push(<SimpleDialog key="cronjobDialog" open={true} onClose={() => {
+                this.setState({cronjobResponse: null})
+            }}
+                                       actions={[{key: 'ok', label: 'Ok'}]}
+                                       title="CronJob response">
+                {this.state.cronjobResponse.data.testJob.status}
+            </SimpleDialog>)
+
+        }
     }
 })
 

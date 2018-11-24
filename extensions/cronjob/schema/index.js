@@ -5,6 +5,6 @@ export default `
     }
     
     type Query {
-    	testJob(script: String): TestJobResult
+    	testJob(cronjobId: String!, script: String): TestJobResult
     }
 `
