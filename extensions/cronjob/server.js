@@ -4,6 +4,7 @@ import resolverGen from './gensrc/resolver'
 import schema from './schema'
 import resolver from './resolver'
 import cron from 'node-cron'
+import cronjobUtil from './cronjobUtil'
 
 let registeredCronJobs = []
 
@@ -12,8 +13,8 @@ const registerCronJobs =async (db) => {
     cronJobs.forEach( cronJob => {
         registeredCronJobs.push(cron.schedule(cronJob.expression, () => {
 
-            const tpl = new Function('const require = this.require;'+cronJob.script)
-            const result = tpl.call({require, db})
+            const context = {lang:'en', id: cronJob.createdBy, username: 'unknown'}
+            cronjobUtil.runScript({cronjobId: cronJob._id, script: cronJob.script, context, db})
 
         }))
     })

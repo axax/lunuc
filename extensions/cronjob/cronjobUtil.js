@@ -10,23 +10,30 @@ const cronjobUtil = {
             state: 'running',
             cronjob: ObjectId(cronjobId)
         })
-
         const tpl = new Function(`
         const _this = this;
         const require = this.require;
         (async () => {
-            var oldLog = console.log;
-            console.log = (msg) => {
-                _this.log(msg);
-                oldLog.apply(console, arguments);
-            };
+            try {
             ${script}
-            _this.end();
+            } catch(e) {
+                this.error(e);
+            }
+            this.end();
         })();`)
 
         let scriptLog = ''
         const log = (msg) => {
             scriptLog += msg
+        }
+
+        const error = (e) => {
+            GenericResolver.updateEnity(db, context, 'CronJobExecution', {
+                _id: dbResult._id,
+                state: 'error',
+                endTime: (new Date()).getTime(),
+                scriptLog: e.message
+            })
         }
 
         const end = () => {
@@ -38,8 +45,7 @@ const cronjobUtil = {
             })
         }
 
-        const result = tpl.call({require, log, end, ...props})
-
+        const result = tpl.call({require, log, end, error, ...props})
 
         return dbResult._id;
     }

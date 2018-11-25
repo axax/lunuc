@@ -217,6 +217,8 @@ class TypesContainer extends React.Component {
                                 dynamic[field.name] =
                                     <img style={{height: '40px'}}
                                          src={v}/>
+                            } else if (field.uitype === 'datetime') {
+                                dynamic[field.name] = Util.formattedDatetime(v)
                             } else {
                                 if (field.localized) {
                                     const localizedNames = item[field.name + '_localized'],

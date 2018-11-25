@@ -57,8 +57,3 @@ Hook.on('TypesContainerRender', function ({type, content}) {
         }
     }
 })
-
-
-Hook.on('JsonDom', ({components, props}) => {
-    components['Login'] = Login
-})

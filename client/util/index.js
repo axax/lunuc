@@ -59,6 +59,7 @@ const Util = {
         return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId), options)
     },
     formattedDatetime(stamp){
+        if( !stamp ) return ''
         return new Date(stamp).toLocaleString()
     },
     escapeHtml: (str) => {

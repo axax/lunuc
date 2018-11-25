@@ -29,10 +29,12 @@
         },
         {
           "name": "endTime",
-          "type": "Float"
+          "type": "Float",
+          "uitype": "datetime"
         },
         {
-          "name": "scriptLog"
+          "name": "scriptLog",
+          "uitype": "editor"
         },
         {
           "name": "cronjob",
