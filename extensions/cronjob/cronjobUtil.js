@@ -13,14 +13,12 @@ const cronjobUtil = {
 
         const tpl = new Function(`
         const require = this.require;
-        (async () => {
             try {
             ${script}
             } catch(e) {
                 this.error(e);
             }
-            this.end();
-        })();`)
+            this.end();`)
 
         let scriptLog = ''
         const log = (msg) => {
