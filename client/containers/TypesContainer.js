@@ -424,7 +424,6 @@ class TypesContainer extends React.Component {
         }
 
         const {description} = this.types[type]
-
         const content = [
             title === false ? '' :
                 <Typography key="typeTitle" variant="h3" gutterBottom>{fixType ? fixType : 'Types'}</Typography>,
@@ -498,7 +497,7 @@ class TypesContainer extends React.Component {
             Object.keys(this.state.selectedrows).forEach(_id => {
                 dataToDelete.push({_id})
             })
-            this.setState({dataToDelete})
+            this.setState({dataToDelete, confirmDeletionDialog: true})
 
         }
     }
@@ -1066,7 +1065,7 @@ class TypesContainer extends React.Component {
                 return acc
             }, []))
         }
-        this.setState({confirmDeletionDialog: false, dataToDelete: false})
+        this.setState({confirmDeletionDialog: false, dataToDelete: false, selectAllRows: false, selectedrows: {}})
     }
 
 

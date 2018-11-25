@@ -10,8 +10,8 @@ const cronjobUtil = {
             state: 'running',
             cronjob: ObjectId(cronjobId)
         })
+
         const tpl = new Function(`
-        const _this = this;
         const require = this.require;
         (async () => {
             try {
@@ -45,7 +45,11 @@ const cronjobUtil = {
             })
         }
 
-        const result = tpl.call({require, log, end, error, ...props})
+        const select = async (collection, fields, filter) => {
+            await GenericResolver.entities(db, context, collection, fields, filter)
+        }
+
+        const result = tpl.call({require, log, end, error, select, ...props})
 
         return dbResult._id;
     }
