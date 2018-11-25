@@ -164,7 +164,6 @@ class CmsViewContainer extends React.Component {
                         }
                         const {data} = supscriptionData.data['subscribe' + subs]
                         if (data) {
-
                             const storeData = client.readQuery({
                                 query: gqlQuery,
                                 variables: _this.props.cmsPageVariables
@@ -191,11 +190,13 @@ class CmsViewContainer extends React.Component {
                                         })
                                         refResults[idx] = Object.assign({}, refResults[idx], noNullData)
                                         // back to string data
-                                        storeData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
+                                        const newStoreData = Object.assign({}, storeData)
+                                        newStoreData.cmsPage = Object.assign({}, storeData.cmsPage)
+                                        newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
                                         client.writeQuery({
                                             query: gqlQuery,
                                             variables: _this.props.cmsPageVariables,
-                                            data: storeData
+                                            data: newStoreData
                                         })
                                     }
                                 }
