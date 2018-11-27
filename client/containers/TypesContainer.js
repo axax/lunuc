@@ -309,9 +309,15 @@ class TypesContainer extends React.Component {
                         this.cloneCollection(this.pageParams)
                     }
                 })
+                actions.push({
+                    name: 'Manage collections', onClick: () => {
+                        //TODO implement
+                    }
+                })
             }
             this._renderedTable =
-                <SimpleTable key="typeTable" title={type} dataSource={dataSource} columns={columnsFiltered} count={data.total}
+                <SimpleTable key="typeTable" title={type} dataSource={dataSource} columns={columnsFiltered}
+                             count={data.total}
                              rowsPerPage={limit} page={page}
                              orderBy={asort[0]}
                              header={this.types[type].collectionClonable &&
@@ -326,7 +332,7 @@ class TypesContainer extends React.Component {
 
                                      const items = data.collections.results.reduce((a, c) => {
                                          const value = c.name.substring(c.name.indexOf('_') + 1)
-                                         a.push({value, name: value})
+                                         a.push({value, name: Util.formattedDatetime(value)})
                                          return a
                                      }, [])
                                      items.unshift({value: 'default', name: 'Default'})
@@ -427,7 +433,8 @@ class TypesContainer extends React.Component {
         const content = [
             title === false ? '' :
                 <Typography key="typeTitle" variant="h3" gutterBottom>{fixType ? fixType : 'Types'}</Typography>,
-            description ? <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : '',
+            description ?
+                <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : '',
             <Row spacing={16} key="typeHeader">
                 {!fixType &&
                 <Col md={9}>
@@ -1140,7 +1147,7 @@ class TypesContainer extends React.Component {
         } else if (action && action.key === 'cancel') {
             closeModal()
         } else {
-            Hook.call('HandleTypeCreateEditDialog', {type: this.pageParams.type,closeModal, action}, this)
+            Hook.call('HandleTypeCreateEditDialog', {type: this.pageParams.type, closeModal, action}, this)
         }
     }
 

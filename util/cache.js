@@ -20,7 +20,7 @@ const Cache = {
     },
     clearStartWith: (startkey) => {
         Object.keys(Cache.cache).forEach(key => {
-            if (key.indexOf(startkey)) {
+            if (key.indexOf(startkey)>=0) {
                 delete Cache.cache[key]
             }
         })

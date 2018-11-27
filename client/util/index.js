@@ -9,13 +9,13 @@ const Util = {
         if (!str) return ''
 
         let replace = '(?:\r\n|\r|\n'
-        if( removeBreaks ){
+        if (removeBreaks) {
             // use remove breaks for html
             replace += '|\t'
         }
         replace += ')'
 
-        return str.replace(new RegExp(replace,'g'), removeBreaks ? '' : '\\n').replace(/[\\\b\\\f\\\t\"\\]/g, '\\$&')
+        return str.replace(new RegExp(replace, 'g'), removeBreaks ? '' : '\\n').replace(/[\\\b\\\f\\\t\"\\]/g, '\\$&')
     },
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str) {
@@ -59,7 +59,10 @@ const Util = {
         return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId), options)
     },
     formattedDatetime(stamp){
-        if( !stamp ) return ''
+        if (!stamp) return ''
+        if (typeof stamp === 'string') {
+            stamp = parseFloat(stamp);
+        }
         return new Date(stamp).toLocaleString()
     },
     escapeHtml: (str) => {
