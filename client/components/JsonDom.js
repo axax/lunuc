@@ -59,10 +59,10 @@ class JsonDom extends React.Component {
     componentRefs = {} // this is the object with references to elements with identifier
     jsOnStack = {}
     jsOn = (keys, cb) => {
-        if( keys.constructor !== Array ){
+        if (keys.constructor !== Array) {
             keys = [keys]
         }
-        for(let i = 0; i < keys.length; i++) {
+        for (let i = 0; i < keys.length; i++) {
             const key = keys[i]
             const keyLower = key.toLowerCase()
             if (!this.jsOnStack[keyLower]) this.jsOnStack[keyLower] = []
@@ -339,7 +339,14 @@ class JsonDom extends React.Component {
                     data = d
                 }
 
-                if (!data || data.constructor !== Array) return ''
+                if (!data) return ''
+                if (data.constructor === Object) {
+                    data = Object.keys(data).map((k) => {
+                        return {key: k, value: data[k]}
+                    })
+                }
+
+                if (data.constructor !== Array) return ''
                 let {s} = $loop
                 if (!s) s = 'loop'
                 /*
@@ -612,7 +619,7 @@ class JsonDom extends React.Component {
         }
         scope.script = this.scriptResult || {}
 
-        if( !this.runJsEvent('beforerender', scope) ){
+        if (!this.runJsEvent('beforerender', scope)) {
             return <div>Error in script in {name} event: <strong>{e.message}</strong></div>
         }
 

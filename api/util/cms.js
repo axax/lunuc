@@ -6,6 +6,7 @@ import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_KEYVALUES
 } from '../data/capabilities'
+import * as os from 'os'
 
 const UtilCms = {
     getCmsPage: async (db, context, slug, version) => {
@@ -36,7 +37,8 @@ const UtilCms = {
                 console.log(cmsPages.results[0].template)
                 try {
                     cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
-                }catch (e){}
+                } catch (e) {
+                }
             }
             Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
         }
@@ -58,7 +60,7 @@ const UtilCms = {
                     const replacedSegmentStr = tpl.call({scope, data: resolvedData})
                     const segment = JSON.parse(replacedSegmentStr)
                     if (segment.data) {
-                        Object.keys(segment.data).forEach(k=>{
+                        Object.keys(segment.data).forEach(k => {
                             resolvedData[k] = segment.data[k]
                         })
                     } else if (segment.t) {
@@ -108,6 +110,14 @@ const UtilCms = {
                             if (!segment.ignoreError)
                                 throw e
                         }
+                    } else if (segment.system) {
+                        const system = ['hostname', 'arch', 'homedir', 'freemem', 'loadavg', 'platform', 'release', 'tmpdir', 'totalmem', 'type', 'uptime'].reduce((a, key) => {
+                            a[key] = os[key]()
+                            return a
+                        }, {})
+                        console.log(system)
+                        resolvedData._meta.system = segment.key || 'system'
+                        resolvedData[resolvedData._meta.system] = system
                     } else if (segment.keyValueGlobals) {
                         const match = {key: {$in: segment.keyValueGlobals}}
 
