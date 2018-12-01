@@ -3,6 +3,7 @@ import {ObjectId} from 'mongodb'
 import path from 'path'
 import fs from 'fs'
 import Cache from 'util/cache'
+import * as os from 'os'
 
 
 const PASSWORD_MIN_LENGTH = 5
@@ -96,7 +97,7 @@ const Util = {
             const cacheKeyUser = 'User' + context.id
             let user = Cache.get(cacheKeyUser)
 
-            if( !user ){
+            if (!user) {
                 user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
                 Cache.set(cacheKeyUser, user, 6000000) // cache expires in 100 min
             }
@@ -105,7 +106,7 @@ const Util = {
                 const cacheKeyUserRole = 'UserRole' + user.role
                 let userRole = Cache.get(cacheKeyUserRole)
 
-                if( !userRole ){
+                if (!userRole) {
                     userRole = (await db.collection('UserRole').findOne({_id: ObjectId(user.role)}))
                     Cache.set(cacheKeyUserRole, userRole, 6000000) // cache expires in 100 min
                 }
@@ -176,6 +177,34 @@ const Util = {
         Util.ensureDirectoryExistence(path.dirname(dir))
         fs.mkdirSync(dir)
         return fs.existsSync(dir)
+    },
+    matchFilterExpression: (filter, data) => {
+        let match = false
+        const filters = filter.split(' ')
+        for (let i = 0; i < filters.length; i++) {
+            const filter = filters[i]
+            const pos = filter.indexOf('=')
+            if (pos >= 0) {
+                const key = filter.substring(0, pos).trim()
+                const value = filter.substring(pos + 1).trim()
+
+                const re = new RegExp(value, 'i')
+
+                if (re.test(data[key])) {
+                    match = true
+                } else {
+                    match = false
+                    break
+                }
+            }
+        }
+        return match
+    },
+    systemProperties: () => {
+        return ['hostname', 'arch', 'homedir', 'freemem', 'loadavg', 'platform', 'release', 'tmpdir', 'totalmem', 'type', 'uptime'].reduce((a, key) => {
+            a[key] = os[key]()
+            return a
+        }, {})
     }
 }
 

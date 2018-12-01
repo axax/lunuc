@@ -423,6 +423,8 @@ class TypesContainer extends React.Component {
                 }],
                 children: <GenericForm autoFocus innerRef={ref => {
                     this.createEditForm = ref
+                }} onChange={field=>{
+                    Hook.call('TypeCreateEditDialogChange', {field, type, props: editDialogProps, dataToEdit}, this)
                 }} primaryButton={false} fields={formFields} values={dataToEdit}/>
             }
             /* HOOK */
@@ -1147,7 +1149,7 @@ class TypesContainer extends React.Component {
         } else if (action && action.key === 'cancel') {
             closeModal()
         } else {
-            Hook.call('HandleTypeCreateEditDialog', {type: this.pageParams.type, closeModal, action}, this)
+            Hook.call('TypeCreateEditDialogAction', {type: this.pageParams.type, closeModal, action}, this)
         }
     }
 

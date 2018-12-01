@@ -17,18 +17,10 @@ Hook.on('ApiResponse', ({data}) => {
     }
 })
 
-Hook.on('TypeCreateEditDialog', ({type, props}) => {
-    if (type === 'CronJob') {
-        props.actions.unshift({key: 'run', label: 'Run CronJob'})
-    }
-})
-
-
-Hook.on('HandleTypeCreateEditDialog', function ({type, action}) {
+Hook.on('TypeCreateEditDialogAction', function ({type, action}) {
     if (type === 'CronJob' && action && action.key === 'run') {
         this.props.client.query({
             fetchPolicy: 'network-only',
-            forceFetch: true,
             query: gql`query testJob($cronjobId:String!,$script:String){testJob(cronjobId:$cronjobId,script:$script){status}}`,
             variables: {
                 script: this.createEditForm.state.fields.script,
@@ -38,6 +30,33 @@ Hook.on('HandleTypeCreateEditDialog', function ({type, action}) {
             this.setState({cronjobResponse: response})
         }).catch(error => {
             console.log(error.message)
+        })
+    }
+})
+
+
+Hook.on('TypeCreateEditDialog', ({type, props}) => {
+    if (type === 'CronJob') {
+        props.actions.unshift({key: 'run', label: 'Run CronJob'})
+    }
+})
+
+
+Hook.on('TypeCreateEditDialogChange', function ({field, type}) {
+    if (type === 'CronJob' && field.name === 'execfilter') {
+
+        this.props.client.query({
+            fetchPolicy: 'network-only',
+            query: gql`query testExecFilter($filter:String!){testExecFilter(filter:$filter){match}}`,
+            variables: {
+                filter: field.value
+            }
+        }).then(response => {
+            if (!response.data.testExecFilter.match) {
+                field.target.style.backgroundColor = 'red'
+            } else {
+                field.target.style.backgroundColor = 'green'
+            }
         })
     }
 })

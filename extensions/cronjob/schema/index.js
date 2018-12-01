@@ -4,7 +4,12 @@ export default `
         status: String
     }
     
+    type TestExecFilterResult {
+        match: Boolean
+    }
+    
     type Query {
     	testJob(cronjobId: String!, script: String): TestJobResult
+    	testExecFilter(filter: String!): TestExecFilterResult
     }
 `

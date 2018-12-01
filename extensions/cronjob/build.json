@@ -16,6 +16,10 @@
           "label": "Cron expression"
         },
         {
+          "name": "execfilter",
+          "label": "Execution filter"
+        },
+        {
           "name": "active",
           "type": "Boolean"
         }

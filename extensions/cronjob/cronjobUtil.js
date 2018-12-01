@@ -1,5 +1,6 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
 import {ObjectId} from 'mongodb'
+import Util from 'api/util'
 
 const cronjobUtil = {
     runScript: async (props) => {
@@ -13,7 +14,7 @@ const cronjobUtil = {
 
         const tpl = new Function(`
         const require = this.require;
-        const start = async () => {
+        const start = (async () => {
             try {
             
             ${script}
@@ -22,8 +23,7 @@ const cronjobUtil = {
                 this.error(e);
             }
             this.end();
-        };
-        start();
+        })();
         `)
 
         let scriptLog = ''
@@ -56,6 +56,9 @@ const cronjobUtil = {
         const result = tpl.call({require, log, end, error, select, ...props})
 
         return dbResult._id;
+    },
+    execFilter: (filter) => {
+        return Util.matchFilterExpression(filter, Util.systemProperties() )
     }
 }
 

@@ -6,7 +6,6 @@ import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_KEYVALUES
 } from '../data/capabilities'
-import * as os from 'os'
 
 const UtilCms = {
     getCmsPage: async (db, context, slug, version) => {
@@ -111,11 +110,7 @@ const UtilCms = {
                                 throw e
                         }
                     } else if (segment.system) {
-                        const system = ['hostname', 'arch', 'homedir', 'freemem', 'loadavg', 'platform', 'release', 'tmpdir', 'totalmem', 'type', 'uptime'].reduce((a, key) => {
-                            a[key] = os[key]()
-                            return a
-                        }, {})
-                        console.log(system)
+                        const system = Util.systemProperties()
                         resolvedData._meta.system = segment.key || 'system'
                         resolvedData[resolvedData._meta.system] = system
                     } else if (segment.keyValueGlobals) {
