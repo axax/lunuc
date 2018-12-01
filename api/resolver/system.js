@@ -37,7 +37,7 @@ export const systemResolver = (db) => ({
             return {response}
         },
         sendMail: async ({recipient, subject, body, slug}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
+            //Util.checkIfUserIsLoggedIn(context)
             const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
             const mailSettings = JSON.parse(values.MailSettings)
             let html
