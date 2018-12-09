@@ -178,8 +178,8 @@ PostContainer.propTypes = {
 const getVariables = () => {
     const {p, l, f} = Util.extractQueryParams(window.location.search.substring(1))
     return {
-        limit: l || DEFAULT_RESULT_LIMIT,
-        page: p || 1,
+        limit: l ? parseInt(l) : DEFAULT_RESULT_LIMIT,
+        page: p ? parseInt(p) : 1,
         query: f || ''
     }
 }

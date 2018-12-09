@@ -148,7 +148,7 @@ class LoginContainer extends React.Component {
 
 
                                 <div style={{textAlign: 'right'}}>
-                                    <SimpleButton variant="raised" color="primary"
+                                    <SimpleButton variant="contained" color="primary"
                                                   showProgress={loading}
                                                   onClick={this.login.bind(this)}>Login</SimpleButton>
                                 </div>

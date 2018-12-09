@@ -12,7 +12,7 @@ const KeyValuePair = ({keyvalue, onChange, onDelete}) => {
 					 onChange={onChange}/>
 		</Col>
 		<Col md={2}>
-			<Button variant="raised"
+			<Button variant="contained"
 				onClick={onDelete}>Delete</Button>
 		</Col>
 	</Row>

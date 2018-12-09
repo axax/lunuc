@@ -86,7 +86,7 @@ class DbDumpContainer extends React.Component {
                 <Row spacing={32}>
                     <Col md={6}>
 
-                        <SimpleButton variant="raised" color="primary"
+                        <SimpleButton variant="contained" color="primary"
                                       showProgress={creatingDump}
                                       onClick={this.createDump.bind(this)}>{creatingDump ? 'Dump is beeing created' : 'Create new db dump'}</SimpleButton>
 
@@ -112,7 +112,7 @@ class DbDumpContainer extends React.Component {
 
                     <Col md={6}>
 
-                        <SimpleButton variant="raised" color="primary"
+                        <SimpleButton variant="contained" color="primary"
                                       disabled={importMediaDumpDialog}
                                       showProgress={creatingMediaDump}
                                       onClick={this.createMediaDump.bind(this)}>{creatingMediaDump ? 'Dump is beeing created' : 'Create new media dump'}</SimpleButton>

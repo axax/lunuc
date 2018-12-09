@@ -303,7 +303,7 @@ class LinkedInProfileContainer extends React.Component {
         console.log('render linkedin')
 
         return <div className="linkedin-container">
-            {!linkedin || disconnected ? <Button variant="raised" color="primary"
+            {!linkedin || disconnected ? <Button variant="contained" color="primary"
                                                  onClick={this.handelLinkedInConnect}>{_t('social.linkedin.connect')}</Button> :
                 <Row>
                     <Col md={3}>
@@ -314,11 +314,11 @@ class LinkedInProfileContainer extends React.Component {
                         <FileDrop style={{marginBottom: "2rem"}} multi onFiles={this.handleFiles} accept="text/csv"
                                   label="Drop linked in cvs files here"/>
 
-                        <Button variant="raised" color="primary"
+                        <Button variant="contained" color="primary"
                                 onClick={this.createPdf.bind(this)}>{_t('social.linkedin.createpdf')}</Button>
 
 
-                        <Button variant="raised"
+                        <Button variant="contained"
                                 onClick={this.handleLinkedInDisconnect}>{_t('social.linkedin.disconnect')}</Button>
                     </Col>
                     <Col md={9}>

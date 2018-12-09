@@ -50,7 +50,7 @@ class SimpleHeaderMenu extends React.Component {
                         {items && items.map((item, i) => {
                             if (item.auth && isAuthenticated || !item.auth) {
                                 const isActive = this.isActive(item.to)
-                                return <Button variant={isActive ? 'raised' : 'flat'}
+                                return <Button variant={isActive ? 'contained' : 'flat'}
                                                color={(isActive ? 'default' : 'inherit')}
                                                onClick={this.linkTo.bind(this, item)} key={i}>{item.name}</Button>
                             }

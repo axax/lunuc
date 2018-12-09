@@ -254,7 +254,7 @@ class GenericForm extends React.Component {
             <form>
                 {formFields}
                 {primaryButton != false ?
-                    <Button color="primary" variant="raised" disabled={!this.state.isValid}
+                    <Button color="primary" variant="contained" disabled={!this.state.isValid}
                             onClick={this.onAddClick}>{caption || 'Add'}</Button>
                     : ''}
             </form>

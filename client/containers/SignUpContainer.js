@@ -134,7 +134,7 @@ class SignUpContainer extends React.Component {
                                                name="password" required/>
 
                                     <div style={{textAlign: 'right'}}>
-                                        <SimpleButton variant="raised" color="primary"
+                                        <SimpleButton variant="contained" color="primary"
                                                       showProgress={loading} onClick={this.signup.bind(this)}>Sign
                                             up</SimpleButton>
                                     </div>

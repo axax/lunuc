@@ -62,7 +62,7 @@ class SystemContainer extends React.Component {
                 this.props.client.resetStore().then(() => {
                     console.log('cache cleared')
                 })
-            } } variant="raised">Clear API cache</Button>
+            } } variant="contained">Clear API cache</Button>
 
         </BaseLayout>
     }

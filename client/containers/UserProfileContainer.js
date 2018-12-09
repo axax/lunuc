@@ -159,7 +159,7 @@ class UserProfileContainer extends React.Component {
 
                 <div>
                     <TextField type="text" name="username" value={username} onChange={this.handleInputChange}/>
-                    <Button onClick={this.updateProfile.bind(this)} variant="raised" color="primary">Update profile</Button>
+                    <Button onClick={this.updateProfile.bind(this)} variant="contained" color="primary">Update profile</Button>
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
                 </div>
@@ -178,7 +178,7 @@ class UserProfileContainer extends React.Component {
                 <Typography variant="h4" component="h2" gutterBottom>Notes</Typography>
                 {noteElements}
                 <br />
-                <Button variant="raised" color="primary" onClick={this.createNote}>Add new note</Button>
+                <Button variant="contained" color="primary" onClick={this.createNote}>Add new note</Button>
                 {hasManageKeyvalue ?
                     <div>
                         <Divider />

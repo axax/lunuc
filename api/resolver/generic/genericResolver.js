@@ -13,6 +13,7 @@ import Hook from 'util/hook'
 const {DEFAULT_LANGUAGE} = config
 
 const buildCollectionName = (typeName, version) => {
+
     return typeName + (version && version !== 'default' ? '_' + version : '')
 }
 

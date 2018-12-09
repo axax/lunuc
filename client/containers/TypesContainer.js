@@ -79,6 +79,7 @@ class TypesContainer extends React.Component {
             selectedrows: {},
             confirmDeletionDialog: true,
             viewSettingDialog: undefined,
+            viewCollectionDialog: undefined,
             dataToDelete: null,
             createEditDialog: undefined,
             dataToEdit: null,
@@ -311,6 +312,9 @@ class TypesContainer extends React.Component {
                 })
                 actions.push({
                     name: 'Manage collections', onClick: () => {
+                        this.setState({viewCollectionDialog: true})
+
+
                         //TODO implement
                     }
                 })
@@ -373,7 +377,7 @@ class TypesContainer extends React.Component {
 
     render() {
         const startTime = new Date()
-        const {dataToEdit, createEditDialog, viewSettingDialog, dataToDelete, confirmDeletionDialog} = this.state
+        const {dataToEdit, createEditDialog, viewSettingDialog, viewCollectionDialog, dataToDelete, confirmDeletionDialog} = this.state
         const {fixType, noLayout, title} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
@@ -383,7 +387,7 @@ class TypesContainer extends React.Component {
             Types can be specified in an extension.</Typography></BaseLayout>
 
 
-        let viewSettingDialogProps, editDialogProps
+        let viewSettingDialogProps, editDialogProps, viewCollectionDialogProps
 
         if (viewSettingDialog !== undefined) {
             viewSettingDialogProps = {
@@ -423,12 +427,30 @@ class TypesContainer extends React.Component {
                 }],
                 children: <GenericForm autoFocus innerRef={ref => {
                     this.createEditForm = ref
-                }} onChange={field=>{
+                }} onChange={field => {
                     Hook.call('TypeCreateEditDialogChange', {field, type, props: editDialogProps, dataToEdit}, this)
                 }} primaryButton={false} fields={formFields} values={dataToEdit}/>
             }
             /* HOOK */
             Hook.call('TypeCreateEditDialog', {type, props: editDialogProps, dataToEdit}, this)
+        }
+
+        if (viewCollectionDialog !== undefined) {
+            viewCollectionDialogProps = {
+                title: 'Manage collections',
+                open: this.state.viewCollectionDialog,
+                onClose: this.handleViewCollectionClose,
+                actions: [{
+                    key: 'ok',
+                    label: 'Ok',
+                    type: 'primary'
+                }],
+                children: <div>
+                    <Typography variant="subtitle1" component="h2" gutterBottom>Manage collections</Typography>
+
+
+                </div>
+            }
         }
 
         const {description} = this.types[type]
@@ -468,7 +490,8 @@ class TypesContainer extends React.Component {
                 Are you sure you want to delete {dataToDelete.length > 1 ? 'the selected items' : 'this item'}?
             </SimpleDialog>,
             createEditDialog !== undefined && <SimpleDialog key="editDialog" {...editDialogProps}/>,
-            viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>
+            viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,
+            viewCollectionDialog !== undefined && <SimpleDialog key="collectionDialog" {...viewCollectionDialogProps}/>
         ]
 
         Hook.call('TypesContainerRender', {type, content}, this)
@@ -1155,6 +1178,10 @@ class TypesContainer extends React.Component {
 
     handleViewSettingClose = (action) => {
         this.setState({viewSettingDialog: false})
+    }
+
+    handleViewCollectionClose = (action) => {
+        this.setState({viewCollectionDialog: false})
     }
 }
 
