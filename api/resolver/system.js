@@ -48,9 +48,9 @@ export const systemResolver = (db) => ({
                     throw new Error(`Template ${slug} doesn't exist`)
                 }
                 let scopeContext
-                try{
+                try {
                     scopeContext = JSON.parse(body)
-                }catch(e){
+                } catch (e) {
                     throw new Error(`Error in body: ${e.message}`)
                     scopeContext = {}
                 }
@@ -68,7 +68,7 @@ export const systemResolver = (db) => ({
                                  editMode={false}
                                  scope={JSON.stringify(scope)}/>
                     </UIProvider>)
-                } catch (e){
+                } catch (e) {
                     throw new Error(`Error in template: ${e.message}`)
                 }
             } else {
@@ -123,7 +123,11 @@ export const systemResolver = (db) => ({
             fs.readdirSync(backup_dir).forEach(file => {
                 if (file !== '.DS_Store') {
                     const stats = fs.statSync(backup_dir + '/' + file)
-                    files.push({name: file, createdAt: (new Date(stats.mtime)).getTime(), size: (stats.size / 1000) + 'kb'})
+                    files.push({
+                        name: file,
+                        createdAt: (new Date(stats.mtime)).getTime(),
+                        size: (stats.size / 1000) + 'kb'
+                    })
                 }
             })
             files.reverse()
@@ -149,7 +153,11 @@ export const systemResolver = (db) => ({
             fs.readdirSync(backup_dir).forEach(file => {
                 if (file !== '.DS_Store') {
                     const stats = fs.statSync(backup_dir + '/' + file)
-                    files.push({name: file, createdAt: (new Date(stats.mtime)).getTime(), size: (stats.size / 1000) + 'kb'})
+                    files.push({
+                        name: file,
+                        createdAt: (new Date(stats.mtime)).getTime(),
+                        size: (stats.size / 1000) + 'kb'
+                    })
                 }
             })
             files.reverse()
@@ -231,11 +239,19 @@ export const systemResolver = (db) => ({
 
             return {name, createdAt: date, size: (stats.size / 1000) + 'kb'}
         },
-        cloneCollection: async ({name}, {context}) => {
+        cloneCollection: async ({type, name}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
 
-            const newName = `${name}_${new Date().getTime()}`
-            const oldCollection = db.collection(name)
+            let customName
+            if (name) {
+                customName = name.replace(/[\W_]+/g, '_')
+                if (customName) {
+                    customName = '_' + customName
+                }
+            }
+
+            const newName = `${type}_${new Date().getTime()}${customName}`
+            const oldCollection = db.collection(type)
             const newCollection = db.collection(newName)
 
             // this is not the best way to copy a collection

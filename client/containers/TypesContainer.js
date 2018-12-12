@@ -79,11 +79,13 @@ class TypesContainer extends React.Component {
             selectedrows: {},
             confirmDeletionDialog: true,
             viewSettingDialog: undefined,
-            viewCollectionDialog: undefined,
+            manageColDialog: undefined,
+            confirmCloneColDialog: undefined,
             dataToDelete: null,
             createEditDialog: undefined,
             dataToEdit: null,
-            data: null
+            data: null,
+            collectionName: ''
         }
 
 
@@ -307,12 +309,12 @@ class TypesContainer extends React.Component {
             if (this.types[type].collectionClonable) {
                 actions.push({
                     name: 'Clone collection', onClick: () => {
-                        this.cloneCollection(this.pageParams)
+                        this.setState({confirmCloneColDialog: true})
                     }
                 })
                 actions.push({
                     name: 'Manage collections', onClick: () => {
-                        this.setState({viewCollectionDialog: true})
+                        this.setState({manageColDialog: true})
 
 
                         //TODO implement
@@ -335,8 +337,11 @@ class TypesContainer extends React.Component {
                                      if (!data.collections.results) return null
 
                                      const items = data.collections.results.reduce((a, c) => {
-                                         const value = c.name.substring(c.name.indexOf('_') + 1)
-                                         a.push({value, name: Util.formattedDatetime(value)})
+                                         const value = c.name.substring(c.name.indexOf('_') + 1), parts = value.split('_')
+                                         a.push({
+                                             value,
+                                             name: Util.formattedDatetime(parts[0]) + (parts.length > 1 ? ' - ' + parts[1] : '')
+                                         })
                                          return a
                                      }, [])
                                      items.unshift({value: 'default', name: 'Default'})
@@ -377,7 +382,7 @@ class TypesContainer extends React.Component {
 
     render() {
         const startTime = new Date()
-        const {dataToEdit, createEditDialog, viewSettingDialog, viewCollectionDialog, dataToDelete, confirmDeletionDialog} = this.state
+        const {dataToEdit, createEditDialog, viewSettingDialog, confirmCloneColDialog, manageColDialog, dataToDelete, confirmDeletionDialog} = this.state
         const {fixType, noLayout, title} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
@@ -387,7 +392,7 @@ class TypesContainer extends React.Component {
             Types can be specified in an extension.</Typography></BaseLayout>
 
 
-        let viewSettingDialogProps, editDialogProps, viewCollectionDialogProps
+        let viewSettingDialogProps, editDialogProps, manageColDialogProps
 
         if (viewSettingDialog !== undefined) {
             viewSettingDialogProps = {
@@ -435,10 +440,10 @@ class TypesContainer extends React.Component {
             Hook.call('TypeCreateEditDialog', {type, props: editDialogProps, dataToEdit}, this)
         }
 
-        if (viewCollectionDialog !== undefined) {
-            viewCollectionDialogProps = {
+        if (manageColDialog !== undefined) {
+            manageColDialogProps = {
                 title: 'Manage collections',
-                open: this.state.viewCollectionDialog,
+                open: this.state.manageColDialog,
                 onClose: this.handleViewCollectionClose,
                 actions: [{
                     key: 'ok',
@@ -489,9 +494,21 @@ class TypesContainer extends React.Component {
                           title="Confirm deletion">
                 Are you sure you want to delete {dataToDelete.length > 1 ? 'the selected items' : 'this item'}?
             </SimpleDialog>,
+            confirmCloneColDialog !== undefined &&
+            <SimpleDialog key="confirmClonCol" open={confirmCloneColDialog} onClose={this.handleCloneClollection}
+                          actions={[{key: 'cancel', label: 'Cancel'}, {
+                              key: 'create',
+                              label: 'Create',
+                              type: 'primary'
+                          }]}
+                          title={'Clone collection ' + type}>
+                <TextField value={this.state.collectionName} onChange={(e) => {
+                    this.setState({collectionName: e.target.value})
+                }} placeholder="Enter a name (optional)"/>
+            </SimpleDialog>,
             createEditDialog !== undefined && <SimpleDialog key="editDialog" {...editDialogProps}/>,
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,
-            viewCollectionDialog !== undefined && <SimpleDialog key="collectionDialog" {...viewCollectionDialogProps}/>
+            manageColDialog !== undefined && <SimpleDialog key="collectionDialog" {...manageColDialogProps}/>
         ]
 
         Hook.call('TypesContainerRender', {type, content}, this)
@@ -922,14 +939,33 @@ class TypesContainer extends React.Component {
         }
     }
 
-    cloneCollection({type}) {
+    cloneCollection({type, name}) {
         if (type) {
             const {client} = this.props
             client.mutate({
-                mutation: gql(`mutation cloneCollection($name:String!){cloneCollection(name:$name){collection{name}}}`),
-                variables: {name: type},
+                mutation: gql(`mutation cloneCollection($type:String!,$name:String){cloneCollection(type:$type,name:$name){collection{name}}}`),
+                variables: {name, type},
                 update: (store, {data}) => {
-                    console.log(data)
+
+                    if (data.cloneCollection && data.cloneCollection.collection) {
+
+                        const variables = {filter: '^' + type + '_.*'}
+
+                        // Read the data from the cache for this query.
+                        const storeData = store.readQuery({
+                            query: gqlCollectionsQuery,
+                            variables
+                        })
+                        if (storeData.collections) {
+                            storeData.collections.results.push(data.cloneCollection.collection)
+                            store.writeQuery({
+                                query: gqlCollectionsQuery,
+                                variables,
+                                data: storeData
+                            })
+                        }
+                    }
+
                     /*const freshData = {
                      ...data['clone' + type],
                      createdBy: {
@@ -1100,6 +1136,14 @@ class TypesContainer extends React.Component {
         this.setState({confirmDeletionDialog: false, dataToDelete: false, selectAllRows: false, selectedrows: {}})
     }
 
+    handleCloneClollection = (action) => {
+        if (action && action.key === 'create') {
+            const {type} = this.pageParams
+            this.cloneCollection({type, name: this.state.collectionName})
+        }
+        this.setState({confirmCloneColDialog: false, collectionName: ''})
+    }
+
 
     handleCreateEditData = (action) => {
 
@@ -1181,7 +1225,7 @@ class TypesContainer extends React.Component {
     }
 
     handleViewCollectionClose = (action) => {
-        this.setState({viewCollectionDialog: false})
+        this.setState({manageColDialog: false})
     }
 }
 

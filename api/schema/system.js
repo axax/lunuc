@@ -71,6 +71,6 @@ export const systemSchemaRaw = `
     type Mutation {   	
     	createDbDump(type: String): DbDump
     	createMediaDump(type: String): MediaDump
-    	cloneCollection(name: String!): CloneCollectionResult
+    	cloneCollection(type: String!, name: String): CloneCollectionResult
     }
 `
