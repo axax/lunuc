@@ -462,26 +462,12 @@ class TypesContainer extends React.Component {
 
                             if (!data.collections.results) return null
 
-                            const items = data.collections.results.reduce((a, c) => {
-                                const value = c.name.substring(c.name.indexOf('_') + 1), parts = value.split('_')
-                                a.push({
-                                    value,
-                                    name: Util.formattedDatetime(parts[0]) + (parts.length > 1 ? ' - ' + parts[1] : '')
-                                })
-                                return a
-                            }, [])
-                            items.unshift({value: 'default', name: 'Default'})
-                            return <SimpleSelect
-                                onChange={(e) => {
-
-                                    const {type, page, limit, sort, filter} = this.pageParams
-                                    this.goTo(type, page, limit, sort, filter, e.target.value)
-                                    this.setSettingsForType(type, {version: e.target.value})
-
-                                    //this.setState({selectedVersion:e.target.value})
-                                }}
-                                items={items}
-                            />
+                            return <div>
+                                {data.collections.results.map((c, i) => {
+                                    const value = c.name.substring(c.name.indexOf('_') + 1), parts = value.split('_')
+                                    return <div key={i}>{Util.formattedDatetime(parts[0]) + (parts.length > 1 ? ' - ' + parts[1] : '')}</div>
+                                })}
+                            </div>
                         }}
                     </Query>
 
