@@ -453,6 +453,37 @@ class TypesContainer extends React.Component {
                 children: <div>
                     <Typography variant="subtitle1" component="h2" gutterBottom>Manage collections</Typography>
 
+                    <Query query={gqlCollectionsQuery}
+                           fetchPolicy="cache-first"
+                           variables={{filter: '^' + type + '_.*'}}>
+                        {({loading, error, data}) => {
+                            if (loading) return 'Loading...'
+                            if (error) return `Error! ${error.message}`
+
+                            if (!data.collections.results) return null
+
+                            const items = data.collections.results.reduce((a, c) => {
+                                const value = c.name.substring(c.name.indexOf('_') + 1), parts = value.split('_')
+                                a.push({
+                                    value,
+                                    name: Util.formattedDatetime(parts[0]) + (parts.length > 1 ? ' - ' + parts[1] : '')
+                                })
+                                return a
+                            }, [])
+                            items.unshift({value: 'default', name: 'Default'})
+                            return <SimpleSelect
+                                onChange={(e) => {
+
+                                    const {type, page, limit, sort, filter} = this.pageParams
+                                    this.goTo(type, page, limit, sort, filter, e.target.value)
+                                    this.setSettingsForType(type, {version: e.target.value})
+
+                                    //this.setState({selectedVersion:e.target.value})
+                                }}
+                                items={items}
+                            />
+                        }}
+                    </Query>
 
                 </div>
             }
