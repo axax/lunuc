@@ -11,24 +11,22 @@ import {USER_DATA_QUERY} from '../constants'
 class UserDataContainer extends React.PureComponent {
     state = {
         loading: false,
-        loaded: false
+        loaded: false,
+        token: localStorage.getItem('token') || ''
     }
 
     getUserData = () => {
         const {client, userActions} = this.props
-        const token = localStorage.getItem('token')
-        if (token && token != '') {
-            client.query({
-                fetchPolicy: (_app_.lang !== _app_.langBefore ? 'network-only' : 'cache-first'),
-                query: gql(USER_DATA_QUERY)
-            }).then(response => {
-                userActions.setUser(response.data.me, !!response.data.me)
-                this.setState({loading: false, loaded: true})
-            }).catch(error => {
-                console.log(error)
-                this.setState({loading: false, loaded: true})
-            })
-        }
+        client.query({
+            fetchPolicy: (_app_.lang !== _app_.langBefore ? 'network-only' : 'cache-first'),
+            query: gql(USER_DATA_QUERY)
+        }).then(response => {
+            userActions.setUser(response.data.me, !!response.data.me)
+            this.setState({loading: false, loaded: true})
+        }).catch(error => {
+            console.log(error)
+            this.setState({loading: false, loaded: true})
+        })
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -39,7 +37,7 @@ class UserDataContainer extends React.PureComponent {
     }
 
     render() {
-        if (this.state.loading) {
+        if (this.state.loading && this.state.token != '') {
             this.getUserData()
             return <div>loading user data...</div>
         }
