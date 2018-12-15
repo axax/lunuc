@@ -10,38 +10,39 @@ import {USER_DATA_QUERY} from '../constants'
 
 class UserDataContainer extends React.PureComponent {
     state = {
-        loading: false
+        loading: false,
+        loaded: false
     }
 
     getUserData = () => {
         const {client, userActions} = this.props
         const token = localStorage.getItem('token')
         if (token && token != '') {
-            this.setState({loading: true})
             client.query({
                 fetchPolicy: (_app_.lang !== _app_.langBefore ? 'network-only' : 'cache-first'),
                 query: gql(USER_DATA_QUERY)
             }).then(response => {
                 userActions.setUser(response.data.me, !!response.data.me)
-                this.setState({loading: false})
+                this.setState({loading: false, loaded: true})
             }).catch(error => {
                 console.log(error)
-                this.setState({loading: false})
+                this.setState({loading: false, loaded: true})
             })
         }
-
-
     }
 
-    UNSAFE_componentWillMount() {
-        this.getUserData()
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (!prevState.loaded) {
+            return Object.assign({}, prevState, {loading: true})
+        }
+        return prevState
     }
-
 
     render() {
-        const {loading} = this.state
-        if (loading)
+        if (this.state.loading) {
+            this.getUserData()
             return <div>loading user data...</div>
+        }
         return this.props.children
     }
 }

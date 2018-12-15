@@ -10,19 +10,20 @@ import React from 'react'
 
 // material theme
 import {MuiThemeProvider, createMuiTheme} from '@material-ui/core/styles'
-const defaultTheme = createMuiTheme()
+import defaultSpacing from '@material-ui/core/styles/spacing'
+
 // override the default theme
 export const theme = createMuiTheme({
     overrides: {
         MuiButton: {
             // Name of the styleSheet
             root: {
-                margin: defaultTheme.spacing.unit
+                margin: defaultSpacing.unit
             },
         },
         MuiInput: {
             root: {
-                margin: defaultTheme.spacing.unit
+                margin: defaultSpacing.unit
             },
             formControl: {
                 margin: 0
@@ -30,15 +31,15 @@ export const theme = createMuiTheme({
         },
         MuiFormControl: {
             root: {
-                margin: defaultTheme.spacing.unit
+                margin: defaultSpacing.unit
             },
             fullWidth: {
-                margin: `${defaultTheme.spacing.unit}px 0`
+                margin: `${defaultSpacing.unit}px 0`
             }
         },
         MuiChip: {
             root: {
-                margin: defaultTheme.spacing.unit
+                margin: defaultSpacing.unit
             },
         }
     },
