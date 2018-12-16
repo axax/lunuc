@@ -1,6 +1,4 @@
 import React from 'react'
-import PropTypes from 'prop-types'
-import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {
@@ -15,12 +13,10 @@ import {
     Row,
     Col
 } from 'ui/admin'
-import FileDrop from 'client/components/FileDrop'
 import Util from 'client/util'
 import config from 'gen/config'
 import {Query} from 'react-apollo'
 
-const {BACKUP_URL} = config
 
 
 class FilesContainer extends React.Component {

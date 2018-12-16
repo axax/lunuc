@@ -44,6 +44,11 @@ export const systemSchemaRaw = `
     type CloneCollectionResult{
         status: String,
         collection: Collection
+    } 
+    
+    type DeleteCollectionResult{
+        status: String,
+        collection: Collection
     }
     
     type CollectionResult {
@@ -72,5 +77,6 @@ export const systemSchemaRaw = `
     	createDbDump(type: String): DbDump
     	createMediaDump(type: String): MediaDump
     	cloneCollection(type: String!, name: String): CloneCollectionResult
+    	deleteCollection(name: String!): DeleteCollectionResult
     }
 `

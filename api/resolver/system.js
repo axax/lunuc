@@ -277,6 +277,15 @@ export const systemResolver = (db) => ({
             Cache.clearStartWith('system-collections')
 
             return {status: 'success', collection: {name: newName}}
+        },
+        deleteCollection: async ({name}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
+
+            db.collection(name).drop()
+
+            Cache.clearStartWith('system-collections')
+
+            return {status: 'success', collection: {name: newName}}
         }
     }
 })

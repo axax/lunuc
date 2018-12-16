@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
+import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import {
     FileCopyIconButton,
     WebIconButton,
@@ -20,7 +21,7 @@ import {
     Row,
     Col,
     Tooltip,
-    SimpleSwitch
+    SimpleSwitch,
 } from 'ui/admin'
 import FileDrop from 'client/components/FileDrop'
 import {withApollo, Query} from 'react-apollo'
@@ -36,8 +37,9 @@ import {getImageTag} from 'client/util/media'
 import {withStyles} from '@material-ui/core/styles'
 import {deepMerge}  from 'util/deepMerge'
 const {ADMIN_BASE_URL, UPLOAD_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
+import {COLLECTIONS_QUERY} from '../constants'
 
-const gqlCollectionsQuery = gql`query collections($filter:String){collections(filter:$filter){results{name}}}`
+const gqlCollectionsQuery = gql(COLLECTIONS_QUERY)
 
 const styles = theme => ({
     textLight: {
@@ -313,7 +315,7 @@ class TypesContainer extends React.Component {
                     }
                 })
                 actions.push({
-                    name: 'Manage collections', onClick: () => {
+                    name: 'Manage clones', onClick: () => {
                         this.setState({manageColDialog: true})
 
 
@@ -442,7 +444,8 @@ class TypesContainer extends React.Component {
 
         if (manageColDialog !== undefined) {
             manageColDialogProps = {
-                title: 'Manage collections',
+                title: 'Manage clones',
+                fullScreen:true,
                 open: this.state.manageColDialog,
                 onClose: this.handleViewCollectionClose,
                 actions: [{
@@ -450,28 +453,7 @@ class TypesContainer extends React.Component {
                     label: 'Ok',
                     type: 'primary'
                 }],
-                children: <div>
-                    <Typography variant="subtitle1" component="h2" gutterBottom>Manage collections</Typography>
-
-                    <Query query={gqlCollectionsQuery}
-                           fetchPolicy="cache-first"
-                           variables={{filter: '^' + type + '_.*'}}>
-                        {({loading, error, data}) => {
-                            if (loading) return 'Loading...'
-                            if (error) return `Error! ${error.message}`
-
-                            if (!data.collections.results) return null
-
-                            return <div>
-                                {data.collections.results.map((c, i) => {
-                                    const value = c.name.substring(c.name.indexOf('_') + 1), parts = value.split('_')
-                                    return <div key={i}>{Util.formattedDatetime(parts[0]) + (parts.length > 1 ? ' - ' + parts[1] : '')}</div>
-                                })}
-                            </div>
-                        }}
-                    </Query>
-
-                </div>
+                children: <ManageCollectionClones type={type} />
             }
         }
 
