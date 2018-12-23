@@ -28,7 +28,14 @@ class ManageCollectionClones extends React.PureComponent {
 
     handleDeleteClick(item) {
         this.setState({showConfirmDeletion: true, dataToDelete: item})
-        console.log(item)
+    }
+
+
+    handleConfirmDeletion(action) {
+        if (action && action.key === 'yes') {
+
+        }
+        this.setState({showConfirmDeletion: false, dataToDelete: false})
     }
 
     render() {
@@ -67,7 +74,7 @@ class ManageCollectionClones extends React.PureComponent {
         </Query>,
 
             dataToDelete &&
-            <SimpleDialog key="deleteDialog" open={showConfirmDeletion} onClose={this.handleConfirmDeletion}
+            <SimpleDialog key="deleteDialog" open={showConfirmDeletion} onClose={this.handleConfirmDeletion.bind(this)}
                           actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
                           title="Confirm deletion">
                 Are you sure you want to delete this item?
