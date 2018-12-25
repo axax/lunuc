@@ -33,7 +33,7 @@ class ManageCollectionClones extends React.PureComponent {
 
     handleConfirmDeletion(action) {
         if (action && action.key === 'yes') {
-
+            this.deleteData(this.state.dataToDelete)
         }
         this.setState({showConfirmDeletion: false, dataToDelete: false})
     }
@@ -42,7 +42,6 @@ class ManageCollectionClones extends React.PureComponent {
 
         const {type} = this.props
         const {showConfirmDeletion, dataToDelete} = this.state
-
         return [<Query key="query" query={gqlCollectionsQuery}
                        fetchPolicy="cache-first"
                        variables={{filter: '^' + type + '_.*'}}>
@@ -80,6 +79,37 @@ class ManageCollectionClones extends React.PureComponent {
                 Are you sure you want to delete this item?
             </SimpleDialog>]
     }
+
+
+    deleteData({name}) {
+        const {client, type} = this.props
+
+        if (name) {
+
+            client.mutate({
+                mutation: gql`mutation deleteCollection($name:String!){deleteCollection(name:$name){status}}`,
+                variables: {
+                    name
+                },
+                update: (store, {data}) => {
+                    const variables = {filter: '^' + type + '_.*'}
+                    const storeData = store.readQuery({
+                        query: gqlCollectionsQuery,
+                        variables
+                    })
+
+                    storeData.collections.results = storeData.collections.results.filter(f => f.name != name)
+
+                    store.writeQuery({
+                        query: gqlCollectionsQuery,
+                        variables,
+                        data: storeData
+                    })
+                },
+            })
+        }
+    }
+
 }
 
 

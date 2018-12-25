@@ -285,7 +285,7 @@ export const systemResolver = (db) => ({
 
             Cache.clearStartWith('system-collections')
 
-            return {status: 'success', collection: {name: newName}}
+            return {status: 'success', collection: {name}}
         }
     }
 })
