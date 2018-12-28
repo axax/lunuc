@@ -2,14 +2,21 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {
     DeleteIconButton,
+    DoneIconButton,
     SimpleList,
-    SimpleDialog
+    SimpleDialog,
+    Tooltip
 } from 'ui/admin'
 import Util from 'client/util'
 import {withApollo, Query} from 'react-apollo'
 import gql from 'graphql-tag'
 import ApolloClient from 'apollo-client'
 import {COLLECTIONS_QUERY} from '../../constants'
+import {withKeyValues} from 'client/containers/generic/withKeyValues'
+
+const gqlKeyValueGlobalsQuery = `query{ 
+        keyValueGlobals(keys:['TypesSelectedVersions']){results{_id key value status createdBy{_id username}}}
+    }`
 const gqlCollectionsQuery = gql(COLLECTIONS_QUERY)
 
 
@@ -30,6 +37,14 @@ class ManageCollectionClones extends React.PureComponent {
         this.setState({showConfirmDeletion: true, dataToDelete: item})
     }
 
+    handleSelectClick(item) {
+        const {setKeyValueGlobal, keyValueGlobalMap, type} = this.props
+
+        const o = Object.assign({}, keyValueGlobalMap['TypesSelectedVersions'] || {}, {[type]: item.name.substring(item.name.indexOf('_') + 1)})
+
+
+        setKeyValueGlobal({key: 'TypesSelectedVersions', value: o})
+    }
 
     handleConfirmDeletion(action) {
         if (action && action.key === 'yes') {
@@ -40,7 +55,9 @@ class ManageCollectionClones extends React.PureComponent {
 
     render() {
 
-        const {type} = this.props
+        const {type, keyValueGlobalMap, loading} = this.props
+        if (loading) return null
+
         const {showConfirmDeletion, dataToDelete} = this.state
         return [<Query key="query" query={gqlCollectionsQuery}
                        fetchPolicy="cache-first"
@@ -51,21 +68,39 @@ class ManageCollectionClones extends React.PureComponent {
 
                 if (!data.collections.results) return null
 
+                const versions = keyValueGlobalMap['TypesSelectedVersions'] || {}
+
                 const listItems = data.collections.results.reduce((a, item) => {
-                    const value = item.name.substring(item.name.indexOf('_') + 1), parts = value.split('_')
+                    const value = item.name.substring(item.name.indexOf('_') + 1)
+                    let date, name = 'no name'
+
+                    if (value.indexOf('_') >= 0) {
+                        date = value.substring(0, value.indexOf('_'))
+                        name = value.substring(value.indexOf('_') + 1).replace('_', ' ')
+                    } else {
+                        date = value
+                    }
 
                     a.push({
+                        style: versions[type] === value ? {backgroundColor: '#c1c1c1'} : {},
                         selected: false,
-                        primary: (parts.length > 1 ? parts[1] : 'no name'),
-                        onClick: (e) => {
-                            console.log(e)
-                            // this.goTo(post._id, posts.page, posts.limit, this.filter)
-                        },
-                        secondary: Util.formattedDatetime(parts[0]),
-                        actions: <DeleteIconButton onClick={this.handleDeleteClick.bind(this, item)}/>,
+                        primary: name,
+                        secondary: Util.formattedDatetime(date),
+                        actions: [<Tooltip title="Deploy version" key="select"><DoneIconButton
+                            onClick={this.handleSelectClick.bind(this, item)}/></Tooltip>,
+                            <DeleteIconButton key="delete" onClick={this.handleDeleteClick.bind(this, item)}/>],
                     })
                     return a
                 }, [])
+
+                listItems.unshift({
+                    style: !versions || !versions[type] || versions[type] === 'default' ? {backgroundColor: '#c1c1c1'} : {},
+                    actions: <Tooltip title="Set collection as active" key="select"><DoneIconButton
+                        onClick={this.handleSelectClick.bind(this, {name: "default"})}/></Tooltip>,
+                    primary: 'Default',
+                    secondary: 'Can not be deleted'
+                })
+
 
                 return <SimpleList items={listItems}
                                    count={listItems.length}/>
@@ -76,7 +111,7 @@ class ManageCollectionClones extends React.PureComponent {
             <SimpleDialog key="deleteDialog" open={showConfirmDeletion} onClose={this.handleConfirmDeletion.bind(this)}
                           actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
                           title="Confirm deletion">
-                Are you sure you want to delete this item?
+                Are you sure you want to delete this version?
             </SimpleDialog>]
     }
 
@@ -115,11 +150,13 @@ class ManageCollectionClones extends React.PureComponent {
 
 ManageCollectionClones.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
-    type: PropTypes.string.isRequired
+    type: PropTypes.string.isRequired,
+    keyValueGlobalMap: PropTypes.object,
+    setKeyValueGlobal: PropTypes.func
 }
 
 
 /**
  * Make ApolloClient accessable
  */
-export default withApollo(ManageCollectionClones)
+export default withKeyValues(withApollo(ManageCollectionClones), false, ['TypesSelectedVersions'])

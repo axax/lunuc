@@ -5,6 +5,7 @@ import {
     CAPABILITY_MANAGE_TYPES,
     CAPABILITY_MANAGE_KEYVALUES
 } from '../data/capabilities'
+import Cache from 'util/cache'
 
 export const keyvalueResolver = (db) => ({
     keyValues: async ({keys, limit, sort, offset, page, filter, all}, {context}) => {
@@ -52,6 +53,8 @@ export const keyvalueResolver = (db) => ({
     },
     updateKeyValueGlobal: async ({_id, key, value, ispublic}, {context}) => {
         await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+        Cache.remove('KeyValueGlobal_' + key)
+
         return await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {_id, key, value, ispublic})
     },
     deleteKeyValueGlobal: async ({_id}, {context}) => {
@@ -99,6 +102,22 @@ export const keyvalueResolver = (db) => ({
                     _id: ObjectId(context.id),
                     username: context.username
                 },
+            }
+        })
+    },
+    setKeyValueGlobal: async ({key, value}, {context}) => {
+        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+
+        // update or insert if not exists
+        return Util.setKeyValueGlobal(db, context, key, value).then((doc) => {
+            return {
+                key,
+                value,
+                status: 'created',
+                createdBy: {
+                    _id: ObjectId(context.id),
+                    username: context.username
+                }
             }
         })
     },

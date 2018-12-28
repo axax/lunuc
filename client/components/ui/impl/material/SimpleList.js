@@ -29,7 +29,7 @@ class SimpleList extends React.Component {
                 {
                     (items && items.length ?
                         items.map((item, i) =>
-                            <ListItem key={i} button={!!item.onClick} disabled={item.disabled} onClick={item.onClick}>
+                            <ListItem key={i} button={!!item.onClick} style={item.style} disabled={item.disabled} onClick={item.onClick}>
                                 <ListItemText primary={item.primary} secondary={item.secondary}/>
                                 <ListItemSecondaryAction>
                                     {item.actions}

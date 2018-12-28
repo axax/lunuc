@@ -310,12 +310,12 @@ class TypesContainer extends React.Component {
 
             if (this.types[type].collectionClonable) {
                 actions.push({
-                    name: 'Clone collection', onClick: () => {
+                    name: 'Create new version', onClick: () => {
                         this.setState({confirmCloneColDialog: true})
                     }
                 })
                 actions.push({
-                    name: 'Manage clones', onClick: () => {
+                    name: 'Manage versions', onClick: () => {
                         this.setState({manageColDialog: true})
 
 
@@ -339,16 +339,25 @@ class TypesContainer extends React.Component {
                                      if (!data.collections.results) return null
 
                                      const items = data.collections.results.reduce((a, c) => {
-                                         const value = c.name.substring(c.name.indexOf('_') + 1), parts = value.split('_')
+                                         const value = c.name.substring(c.name.indexOf('_') + 1)
+                                         let date, name = 'no name'
+
+                                         if (value.indexOf('_') >= 0) {
+                                             date = value.substring(0, value.indexOf('_'))
+                                             name = value.substring(value.indexOf('_') + 1).replace('_', ' ')
+                                         } else {
+                                             date = value
+                                         }
+
                                          a.push({
                                              value,
-                                             name: Util.formattedDatetime(parts[0]) + (parts.length > 1 ? ' - ' + parts[1] : '')
+                                             name: Util.formattedDatetime(date) + (name ? ' - ' + name : '')
                                          })
                                          return a
                                      }, [])
                                      items.unshift({value: 'default', name: 'Default'})
                                      return <SimpleSelect
-                                         label="Current version"
+                                         label="Select version to edit"
                                          value={version}
                                          onChange={(e) => {
 
@@ -444,8 +453,8 @@ class TypesContainer extends React.Component {
 
         if (manageColDialog !== undefined) {
             manageColDialogProps = {
-                title: 'Manage clones',
-                fullScreen:true,
+                title: 'Manage versions',
+                fullScreen: true,
                 open: this.state.manageColDialog,
                 onClose: this.handleViewCollectionClose,
                 actions: [{
@@ -453,7 +462,7 @@ class TypesContainer extends React.Component {
                     label: 'Ok',
                     type: 'primary'
                 }],
-                children: <ManageCollectionClones type={type} />
+                children: <ManageCollectionClones type={type}/>
             }
         }
 
@@ -500,7 +509,7 @@ class TypesContainer extends React.Component {
                               label: 'Create',
                               type: 'primary'
                           }]}
-                          title={'Clone collection ' + type}>
+                          title={'Create new version: ' + type}>
                 <TextField value={this.state.collectionName} onChange={(e) => {
                     this.setState({collectionName: e.target.value})
                 }} placeholder="Enter a name (optional)"/>

@@ -18,6 +18,9 @@ const Cache = {
         }
         return null
     },
+    remove: function (key){
+        delete Cache.cache[key]
+    },
     clearStartWith: (startkey) => {
         Object.keys(Cache.cache).forEach(key => {
             if (key.indexOf(startkey)>=0) {

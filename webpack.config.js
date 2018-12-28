@@ -31,7 +31,7 @@ const EXCLUDE_FROM_BUILD = [
 
 const INCLUDE_IN_BUILD = []
 
-const APP_CONFIG = require('./config.json')
+const APP_CONFIG = require('./buildconfig.json')
 
 if (APP_CONFIG.extensions) {
     for (const extensionName in APP_CONFIG.extensions) {
@@ -114,7 +114,7 @@ const config = {
         ]
     },
     plugins: [
-        new GenSourceCode(), /* Generate some source code based on the config.json file */
+        new GenSourceCode(), /* Generate some source code based on the buildconfig.json file */
         new MiniCssExtractPlugin({
             filename: 'style.css',
             allChunks: true

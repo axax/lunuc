@@ -4,7 +4,9 @@ import path from 'path'
 import fs from 'fs'
 import Cache from 'util/cache'
 import * as os from 'os'
-
+import {
+    CAPABILITY_MANAGE_KEYVALUES
+} from '../data/capabilities'
 
 const PASSWORD_MIN_LENGTH = 5
 
@@ -29,6 +31,15 @@ const Util = {
             }, {$set: {createdBy: ObjectId(context.id), key, value}}, {upsert: true})
         }
     },
+    setKeyValueGlobal: async (db, context, key, value) => {
+        if (Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
+            Cache.remove('KeyValueGlobal_' + key)
+
+            return db.collection('KeyValueGlobal').updateOne({
+                key
+            }, {$set: {createdBy: ObjectId(context.id), key, value, ispublic: false}}, {upsert: true})
+        }
+    },
     keyvalueMap: async (db, context, keys) => {
         if (!Util.isUserLoggedIn(context)) {
             // return empty map if no user is logged in
@@ -46,13 +57,41 @@ const Util = {
         }, {})
 
     },
-    keyValueGlobalMap: async (db, context, keys) => {
+    keyValueGlobalMap: async (db, context, keys, nocache) => {
+
+        // check if all keys are in the cache
+        if (!nocache) {
+            let map = {}
+            for (const k of keys) {
+                const fromCache = Cache.get('KeyValueGlobal_' + k)
+                if (fromCache) {
+                    map[k] = fromCache
+                } else {
+                    map = false
+                    break
+                }
+            }
+            if (map) {
+                return map
+            }
+        }
+
         const keyvalues = (await db.collection('KeyValueGlobal').find({
             key: {$in: keys}
         }).toArray())
 
+        console.log("load KeyValueGlobal", keys)
         return keyvalues.reduce((map, obj) => {
-            map[obj.key] = obj.value
+            let v
+            try {
+                v = JSON.parse(obj.value)
+            } catch (e) {
+                v = obj.value
+            }
+            map[obj.key] = v
+            if (!nocache) {
+                Cache.set('KeyValueGlobal_' + obj.key, v)
+            }
             return map
         }, {})
 

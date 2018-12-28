@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Button from '@material-ui/core/Button'
+import Fab from '@material-ui/core/Fab'
 import Menu from '@material-ui/core/Menu'
 import MenuItem from '@material-ui/core/MenuItem'
 import MoreVertIcon from '@material-ui/icons/MoreVert'
@@ -26,10 +27,20 @@ class SimpleMenu extends React.Component {
             <div style={style}>
                 {
                     label !== undefined || fab !== undefined ?
+                        fab ?
+                            <Fab aria-label="Simple menu"
+                                 size={mini?'small':'medium'}
+                                 color={color}
+                                 aria-owns={anchorEl ? 'simple-menu' : null}
+                                 aria-haspopup="true"
+                                 onClick={this.handleClick}>
+                                {label ? label : <MoreVertIcon /> }
+                            </Fab>
+                                :
                         <Button
                             aria-label="Simple menu"
-                            variant={fab?'fab':'flat'}
-                            mini={mini}
+                            variant='flat'
+                            size={mini?'small':'medium'}
                             color={color}
                             aria-owns={anchorEl ? 'simple-menu' : null}
                             aria-haspopup="true"

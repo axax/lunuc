@@ -511,7 +511,6 @@ class JsonDom extends React.Component {
                 "$c": Util.escapeForJson(str, true)
             })
         }
-
         try {
             const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const parent = this.parent;const _i = this.tryCatch;return `' + str + '`;')
             //.replace(/(\r\n|\n|\r)/g,"");

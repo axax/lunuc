@@ -12,7 +12,14 @@ import Hook from 'util/hook'
 
 const {DEFAULT_LANGUAGE} = config
 
-const buildCollectionName = (typeName, version) => {
+const buildCollectionName = async (db, context, typeName, version) => {
+
+    if( !version ) {
+        const values = await Util.keyValueGlobalMap(db, context, ['TypesSelectedVersions'])
+        if( values && values['TypesSelectedVersions'] ) {
+            version = values['TypesSelectedVersions'][typeName]
+        }
+    }
 
     return typeName + (version && version !== 'default' ? '_' + version : '')
 }
@@ -28,8 +35,7 @@ const GenericResolver = {
         //Util.checkIfUserIsLoggedIn(context)
         let {limit, offset, page, match, filter, sort, projectResult, version} = options
 
-        const collectionName = buildCollectionName(typeName, version)
-
+        const collectionName = await buildCollectionName(db, context, typeName, version)
         if (!limit) {
             limit = 10
         }
@@ -299,7 +305,7 @@ const GenericResolver = {
             throw new Error('lang on context is missing')
         }
 
-        const collectionName = buildCollectionName(typeName, _version)
+        const collectionName = await buildCollectionName(db, context, typeName, _version)
 
         let createdBy, username
         if (data.createdBy && data.createdBy !== context.id) {
@@ -358,7 +364,7 @@ const GenericResolver = {
             throw new Error('Id is missing')
         }
 
-        const collectionName = buildCollectionName(typeName, _version)
+        const collectionName = await buildCollectionName(db, context, typeName, _version)
 
 
         const options = {
@@ -389,7 +395,7 @@ const GenericResolver = {
             throw new Error('Id is missing')
         }
 
-        const collectionName = buildCollectionName(typeName, _version)
+        const collectionName = await buildCollectionName(db, context, typeName, _version)
 
 
         const $in = []
@@ -428,7 +434,7 @@ const GenericResolver = {
             throw new Error('Id is missing')
         }
 
-        const collectionName = buildCollectionName(typeName, _version)
+        const collectionName = await buildCollectionName(db, context, typeName, _version)
 
         const params = {
             _id: ObjectId(data._id)
@@ -512,7 +518,7 @@ const GenericResolver = {
 
         Util.checkIfUserIsLoggedIn(context)
 
-        const collectionName = buildCollectionName(typeName, _version)
+        const collectionName = await buildCollectionName(db, context, typeName, _version)
         const collection = db.collection(collectionName)
 
         if (!_id) {
