@@ -1,7 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
-import {withStyles, List, ListItem, ListItemText, Collapse, ExpandLessIcon, ExpandMoreIcon} from 'ui/admin'
+import {withStyles, List, ListItem, ListItemText, Collapse, ExpandLessIcon, ExpandMoreIcon, TextField} from 'ui/admin'
+import Util from 'client/util'
 
 const styles = theme => ({
     editor: {
@@ -37,14 +38,12 @@ class JsonEditor extends React.Component {
         if (json.constructor === Array) {
             const acc = []
             json.forEach((item, idx) => {
-                key += '.' + idx
-                acc.push(this.renderJsonRec(item, key))
+                console.log(key + '.' + idx, item)
+                acc.push(this.renderJsonRec(item, key + '.' + idx))
             })
             return <List component="nav">{acc}</List>
         } else if (json.constructor === Object) {
             const t = (json.t || 'div')
-            key += '.' + t
-
             const props = []
             Object.keys(json).forEach(k => {
                 if (k !== 't' && k !== 'c') {
@@ -52,17 +51,33 @@ class JsonEditor extends React.Component {
                         key={key + '.' + k}><ListItemText>{k + ' = ' + JSON.stringify(json[k])}</ListItemText></ListItem>)
                 }
             })
+
             return [<ListItem key={key} button onClick={this.handleClick.bind(this, key)}>
                 <ListItemText>{t}</ListItemText>
                 {!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </ListItem>,
                 <Collapse key={key + '.colapse'} in={!!this.state.open[key]} timeout="auto" unmountOnExit>
                     {props}
-                    {this.renderJsonRec(json.c, key)}
+                    {this.renderJsonRec(json.c, key + (json.c && json.c.constructor === Object ? '.0' : ''))}
 
                 </Collapse>]
         } else {
-            return <ListItem key={key + '.c'}><ListItemText>{json}</ListItemText></ListItem>
+            return <ListItem key={key + '.c'}><ListItemText>
+                <TextField value={json} onChange={e => {
+                    this.setChildComponent(key, e.target.value)
+                }
+                } onBlur={e => {
+                    this.props.onBlur(JSON.stringify(this.json, null, 4))
+                }}/>
+            </ListItemText></ListItem>
+        }
+    }
+
+    setChildComponent(key, value) {
+        const o = Util.getComponentByKey(key, this.json)
+        if (o) {
+            o.c = value
+            this.props.onChange(JSON.stringify(this.json, null, 4))
         }
     }
 
@@ -71,30 +86,19 @@ class JsonEditor extends React.Component {
     }
 
     render() {
-        const {classes} = this.props
         return this.renderJsonRec(this.json)
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        return nextState.open !== this.state.open
+        return nextState.open !== this.state.open || nextProps.children != this.props.children
     }
 
-    componentDidUpdate() {
-    }
-
-
-    emitChange(prop) {
-        var text = ReactDOM.findDOMNode(this).innerText
-        if (this.props[prop] && text !== this.lastText[prop]) {
-            this.props[prop](text)
-        }
-        this.lastText[prop] = text
-    }
 }
 
 JsonEditor.propTypes = {
     style: PropTypes.object,
     onChange: PropTypes.func,
+    onBlur: PropTypes.func,
     classes: PropTypes.object.isRequired,
 }
 

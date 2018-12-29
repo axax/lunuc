@@ -85,7 +85,6 @@ class TemplateEditor extends React.Component {
 
     render() {
         const {tab, classes, scope, ...rest} = this.props
-
         if (rest.children.trim().indexOf('<') === 0) {
             return <ContentEditable highlight="html" setHtml={false} {...rest}/>
         }

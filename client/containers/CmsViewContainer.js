@@ -498,7 +498,6 @@ class CmsViewContainer extends React.Component {
         if (cmsComponentEdit.key) {
             const json = JSON.parse(this.state.template)
             let item = Util.getComponentByKey(cmsComponentEdit.key, json);
-
             if (item) {
                 // empty object but keep reference
                 for (const key in item) {

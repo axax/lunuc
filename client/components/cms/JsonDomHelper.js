@@ -20,7 +20,7 @@ const styles = theme => ({
         padding: theme.spacing.unit / 2,
         opacity: 0.7,
         fontSize: '0.9rem',
-        color:'black'
+        color: 'black'
     },
     toolbarHovered: {
         opacity: 1
@@ -39,14 +39,28 @@ class JsonDomHelper extends React.Component {
 
     shouldComponentUpdate(props, state) {
         return props._item !== this.props._item ||
-        state.hovered !== this.state.hovered ||
+            state.hovered !== this.state.hovered ||
             state.toolbarHovered !== this.state.toolbarHovered
+    }
+
+    elemOffset(elem) {
+        if (!elem) elem = this;
+
+        var x = elem.offsetLeft;
+        var y = elem.offsetTop;
+
+        while (elem = elem.offsetParent) {
+            x += elem.offsetLeft;
+            y += elem.offsetTop;
+        }
+
+        return {left: x, top: y};
     }
 
     onHelperMouseOver(e) {
         e.stopPropagation()
         clearTimeout(this.helperTimeout)
-        this.setState({hovered: true, top: e.target.offsetTop, left: e.target.offsetLeft})
+        this.setState({hovered: true, ...this.elemOffset(e.target)})
     }
 
     helperTimeout = null
@@ -57,6 +71,7 @@ class JsonDomHelper extends React.Component {
             this.setState({hovered: false})
         }, 50)
     }
+
 
     onToolbarMouseOver(e) {
         e.stopPropagation()
@@ -108,7 +123,6 @@ class JsonDomHelper extends React.Component {
         }
 
         const componentName = _WrappedComponent.name || ''
-
         if (!children && componentName !== 'Col') {
             // need wrapper
             return <span className={classes.wrapper} {...props}><_WrappedComponent {...rest}/>
@@ -122,10 +136,9 @@ class JsonDomHelper extends React.Component {
 
             if (toolbar) {
                 kids = []
-                if( !children ){
+                if (!children) {
                     kids.push(toolbar)
-                }else
-                if (children.constructor === Array) {
+                } else if (children.constructor === Array) {
                     kids.push(...children)
                     kids.push(toolbar)
 

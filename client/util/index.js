@@ -181,10 +181,6 @@ const Util = {
         // the root is always 0 so remove it
         keyParts.shift()
 
-        if (obj.constructor === Object && keyParts[0] === '0') {
-            keyParts.shift()
-        }
-
         let cur = obj
         for (let i = 0; i < keyParts.length; i++) {
             if (i > 0 && keyParts[i - 1] === '$loop') {
@@ -192,9 +188,11 @@ const Util = {
             }
             const part = keyParts[i]
             if (cur.constructor === Object && cur.c) cur = cur.c
+            if (cur.constructor === Object && !isNaN(part)) cur = [cur]
 
             if (!cur[part]) {
-                break
+                console.warn('Something is wrong with the key: ' + key, part)
+                return null
             }
             cur = cur[part]
         }
