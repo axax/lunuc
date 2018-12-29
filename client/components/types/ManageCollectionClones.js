@@ -13,6 +13,7 @@ import gql from 'graphql-tag'
 import ApolloClient from 'apollo-client'
 import {COLLECTIONS_QUERY} from '../../constants'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
+import {theme} from 'ui/admin'
 
 const gqlKeyValueGlobalsQuery = `query{ 
         keyValueGlobals(keys:['TypesSelectedVersions']){results{_id key value status createdBy{_id username}}}
@@ -82,7 +83,7 @@ class ManageCollectionClones extends React.PureComponent {
                     }
 
                     a.push({
-                        style: versions[type] === value ? {backgroundColor: '#c1c1c1'} : {},
+                        style: versions[type] === value ? {backgroundColor: theme.palette.primary.light} : {},
                         selected: false,
                         primary: name,
                         secondary: Util.formattedDatetime(date),
@@ -94,7 +95,7 @@ class ManageCollectionClones extends React.PureComponent {
                 }, [])
 
                 listItems.unshift({
-                    style: !versions || !versions[type] || versions[type] === 'default' ? {backgroundColor: '#c1c1c1'} : {},
+                    style: !versions || !versions[type] || versions[type] === 'default' ? {backgroundColor: theme.palette.primary.light} : {},
                     actions: <Tooltip title="Set collection as active" key="select"><DoneIconButton
                         onClick={this.handleSelectClick.bind(this, {name: "default"})}/></Tooltip>,
                     primary: 'Default',

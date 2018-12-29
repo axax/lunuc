@@ -7,6 +7,7 @@
 
 import './style.less'
 import React from 'react'
+import blue from '@material-ui/core/colors/blue';
 
 // material theme
 import {MuiThemeProvider, createMuiTheme} from '@material-ui/core/styles'
@@ -14,6 +15,9 @@ import defaultSpacing from '@material-ui/core/styles/spacing'
 
 // override the default theme
 export const theme = createMuiTheme({
+    palette: {
+        primary: blue,
+    },
     overrides: {
         MuiButton: {
             // Name of the styleSheet

@@ -41,6 +41,8 @@ const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
                                        load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const Divider = (props) => <Async {...props} expose="Divider"
                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const UIProvider = (props) => <Async {...props} expose="UIProvider"
+                                  load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const ErrorHandler = (props) => <Async {...props}
                                        load={import(/* webpackChunkName: "admin" */ '../components/layout/ErrorHandler')}/>
 
@@ -440,28 +442,28 @@ class CmsViewContainer extends React.Component {
                 </div>
             </div>
 
-            content = <DrawerLayout sidebar={sidebar()}
-                                    fixedLayout={settings.fixedLayout}
-                                    drawerWidth={settings.drawerWidth || 800}
-                                    onDrawerWidthChange={this.drawerWidthChange}
-                                    toolbarRight={[
-                                        <SimpleSwitch key="inlineEditorSwitch" color="default"
-                                                      checked={settings.inlineEditor}
-                                                      onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
-                                                      contrast
-                                                      label="Inline Editor"/>,
-                                        <SimpleSwitch key="fixedLayoutSwitch" color="default"
-                                                      checked={settings.fixedLayout}
-                                                      onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
-                                                      contrast
-                                                      label="Fixed"/>,
+            content = <UIProvider><DrawerLayout sidebar={sidebar()}
+                                                fixedLayout={settings.fixedLayout}
+                                                drawerWidth={settings.drawerWidth || 800}
+                                                onDrawerWidthChange={this.drawerWidthChange}
+                                                toolbarRight={[
+                                                    <SimpleSwitch key="inlineEditorSwitch" color="default"
+                                                                  checked={settings.inlineEditor}
+                                                                  onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
+                                                                  contrast
+                                                                  label="Inline Editor"/>,
+                                                    <SimpleSwitch key="fixedLayoutSwitch" color="default"
+                                                                  checked={settings.fixedLayout}
+                                                                  onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
+                                                                  contrast
+                                                                  label="Fixed"/>,
 
-                                        <Button key="button" size="small" color="inherit" onClick={e => {
-                                            this.props.history.push(config.ADMIN_BASE_URL + '/cms')
-                                        }}>Back</Button>
-                                    ]
-                                    }
-                                    title={`Edit Page "${cmsPage.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
+                                                    <Button key="button" size="small" color="inherit" onClick={e => {
+                                                        this.props.history.push(config.ADMIN_BASE_URL + '/cms')
+                                                    }}>Back</Button>
+                                                ]
+                                                }
+                                                title={`Edit Page "${cmsPage.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
                 {jsonDom}
                 <ErrorHandler />
 
@@ -486,7 +488,7 @@ class CmsViewContainer extends React.Component {
                 </SimpleDialog>
 
 
-            </DrawerLayout>
+            </DrawerLayout></UIProvider>
         }
 
         console.info(`render ${this.constructor.name} for ${cmsPage.slug} in ${new Date() - startTime}ms`)
