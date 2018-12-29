@@ -6,7 +6,6 @@ import Async from 'client/components/Async'
 
 const WordContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "word" */ './containers/WordContainer')} />
 
-
 // add routes for this extension
 Hook.on('Routes', ({routes}) => {
     routes.push({exact: true, path: ADMIN_BASE_URL+'/word/:page*', component: WordContainer})

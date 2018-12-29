@@ -89,6 +89,7 @@ class Routes extends React.Component {
         return <Router history={this.history}>
             <div id="router">
                 {this.routes.map((o, i) => {
+
                     if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || o.path.startsWith(ADMIN_BASE_URL+'/login') || o.path.startsWith(ADMIN_BASE_URL+'/logout') || capabilities.indexOf('access_admin_page') >= 0) {
                         if (o.private) {
                             return <PrivateRoute key={i} path={this.pathPrefix + o.path}

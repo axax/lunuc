@@ -4,7 +4,7 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import KeyValueContainer from './KeyValueContainer'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import {Button, Typography, TextField, Divider, DeleteIconButton, Chip} from 'ui/admin'
+import {Button, Typography, TextField, Divider, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
 
 
 class UserProfileContainer extends React.Component {
@@ -113,7 +113,7 @@ class UserProfileContainer extends React.Component {
             })
     }
 
-    deleteNote = (e,note) => {
+    deleteNote = (e, note) => {
         e.preventDefault()
         this.setState({loading: true})
 
@@ -134,7 +134,7 @@ class UserProfileContainer extends React.Component {
 
     render() {
         const {me} = this.props
-        if( !me ) return <BaseLayout />
+        if (!me) return <BaseLayout />
 
         const {username, usernameError, loading, note} = this.state
 
@@ -145,48 +145,52 @@ class UserProfileContainer extends React.Component {
         if (note) {
             note.forEach(
                 (o) => noteElements.push(<div key={o._id}>
-					<TextField multiline name="note" id={o._id} onBlur={this.handleBlur} onChange={this.handleInputChange}
-                              defaultValue={o.value}/>
-                    <DeleteIconButton id={o._id} onClick={(e) => this.deleteNote(e, o)} />
+                    <TextField multiline name="note" id={o._id} onBlur={this.handleBlur}
+                               onChange={this.handleInputChange}
+                               defaultValue={o.value}/>
+                    <DeleteIconButton id={o._id} onClick={(e) => this.deleteNote(e, o)}/>
                 </div>)
             )
         }
 
         return (
             <BaseLayout>
-                <Typography variant="h3" gutterBottom>Profile</Typography>
+                <Typography variant="h3" component="h1" gutterBottom>Profile</Typography>
 
 
-                <div>
+                <ContentBlock>
                     <TextField type="text" name="username" value={username} onChange={this.handleInputChange}/>
-                    <Button onClick={this.updateProfile.bind(this)} variant="contained" color="primary">Update profile</Button>
+                    <Button onClick={this.updateProfile.bind(this)} variant="contained" color="primary">Update
+                        profile</Button>
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
-                </div>
-                <Typography variant="h2" component="h2" gutterBottom>Role & capabilities</Typography>
+                </ContentBlock>
 
-                <p>Role {me.role.name}</p>
-                {
-                    me.role.capabilities.map((v,i) => {
-                        return <Chip key={i} label={v} />
-                    })
-                }
+                <Typography variant="h4" component="h2" gutterBottom>Role & capabilities</Typography>
+
+                <ContentBlock>
+                    <p>Role {me.role.name}</p>
+                    {
+                        me.role.capabilities.map((v, i) => {
+                            return <Chip key={i} label={v}/>
+                        })
+                    }
+                </ContentBlock>
 
 
-
-                <Divider />
                 <Typography variant="h4" component="h2" gutterBottom>Notes</Typography>
-                {noteElements}
-                <br />
-                <Button variant="contained" color="primary" onClick={this.createNote}>Add new note</Button>
+                <ContentBlock>
+                    {noteElements}
+                    <br />
+                    <Button variant="contained" color="primary" onClick={this.createNote}>Add new note</Button>
+                </ContentBlock>
+
                 {hasManageKeyvalue ?
-                    <div>
-                        <Divider />
-                        <Typography variant="h2" component="h2" gutterBottom>KeyValue Store</Typography>
+                    <ContentBlock>
+                        <Typography variant="h4" component="h2" gutterBottom>KeyValue Store</Typography>
 
                         <KeyValueContainer />
-                    </div> : ''}
-                <Divider />
+                    </ContentBlock> : ''}
 
             </BaseLayout>
         )
@@ -267,6 +271,7 @@ const UserProfileContainerWithGql = compose(
                     // Read the data from our cache for this query.
                     const data = proxy.readQuery({query: gqlQuery})
                     // Add our note from the mutation to the end.
+                    if (!data.me.note) data.me.note = []
                     data.me.note.push(createNote)
                     // Write our data back to the cache.
                     proxy.writeQuery({query: gqlQuery, data})
@@ -300,8 +305,6 @@ const UserProfileContainerWithGql = compose(
     })
 )
 (UserProfileContainer)
-
-
 
 
 /**

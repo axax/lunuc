@@ -117,6 +117,8 @@ export SimpleButton from './SimpleButton'
 export SimpleList from './SimpleList'
 export SimpleToolbar from './SimpleToolbar'
 
+export ContentBlock from './ContentBlock'
+
 // grid
 import Grid from '@material-ui/core/Grid'
 

@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import extensions from 'gen/extensions'
 import BaseLayout from '../components/layout/BaseLayout'
-import {Typography, ExpansionPanel, Button, SimpleSwitch} from 'ui/admin'
+import {Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock} from 'ui/admin'
 import {withApollo} from 'react-apollo'
 import {CACHE_KEY} from 'client/middleware/cache'
 import ApolloClient from 'apollo-client'
@@ -29,8 +29,10 @@ class SystemContainer extends React.Component {
         const {extensionStates} = this.state
 
         return <BaseLayout>
-            <Typography variant="h3" gutterBottom>System</Typography>
-            <Typography variant="h2" component="h2" gutterBottom>Extensions</Typography>
+            <Typography variant="h3" component="h1" gutterBottom>System</Typography>
+            <Typography variant="h4" component="h2" gutterBottom>Extensions</Typography>
+
+            <ContentBlock>
             {
                 Object.keys(extensions).map(k => {
                     const extension = extensions[k]
@@ -56,6 +58,8 @@ class SystemContainer extends React.Component {
                     </ExpansionPanel>
                 })
             }
+            </ContentBlock>
+
             <Typography variant="h4" component="h2" gutterBottom>Cache</Typography>
 
             <Button color="secondary" onClick={e => {

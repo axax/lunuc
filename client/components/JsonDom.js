@@ -441,7 +441,7 @@ class JsonDom extends React.Component {
                     cmsProps = {location: this.props.history.location}
                 }
                 let eleType = this.components[_t] || _t
-                const eleProps = {id: key, key, ...cmsProps, ..._p}
+                const eleProps = {id: key, key, _editmode: this.props.editMode.toString(), ...cmsProps, ..._p}
                 if (this.props.editMode && this.props.inlineEditor) {
                     const _item = Util.getComponentByKey(key, this.getJsonRaw(this.props))
 

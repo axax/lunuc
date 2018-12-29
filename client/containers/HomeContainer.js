@@ -9,7 +9,7 @@ class HomeContainer extends React.Component {
     render() {
         const {user} = this.props
         return <BaseLayout>
-            <Typography variant="h3" gutterBottom>{_t('admin.home.title')}</Typography>
+            <Typography variant="h3" component="h1" gutterBottom>{_t('admin.home.title')}</Typography>
             <Typography gutterBottom>
             {
                 user.isAuthenticated ? <span>{_t('admin.home.hi',user.userData)}</span> : <span>Please login!</span>

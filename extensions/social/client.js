@@ -17,7 +17,7 @@ const SimpleToolbar = (props) => <Async {...props} expose="SimpleToolbar"
 Hook.on('JsonDom', ({components, props}) => {
     components['LinkedInProfile'] = LinkedInProfileContainer
     components['Button'] = Button
-    components['LinkedInToolbar'] = ({position, editMode, ...rest}) => <SimpleToolbar
-        position={(editMode ? 'static' : position)} {...rest} />
+    components['LinkedInToolbar'] = ({position, _editmode, ...rest}) => <SimpleToolbar
+        position={(_editmode==='true' ? 'static' : position)} {...rest} />
 })
 

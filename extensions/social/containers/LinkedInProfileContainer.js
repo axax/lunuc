@@ -305,7 +305,7 @@ class LinkedInProfileContainer extends React.Component {
         return <div className="linkedin-container">
             {!linkedin || disconnected ? <Button variant="contained" color="primary"
                                                  onClick={this.handelLinkedInConnect}>{_t('social.linkedin.connect')}</Button> :
-                <Row>
+                <Row spacing={32}>
                     <Col md={3}>
 
                         <Typography variant="h5" gutterBottom={true}>{_t('social.linkedin.enhanceCv')}</Typography>

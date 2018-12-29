@@ -31,6 +31,7 @@ class WordContainer extends React.Component {
         }
         this.prepareTypeSetting()
         this.typeContainer = React.createRef()
+
     }
 
 
@@ -60,7 +61,7 @@ class WordContainer extends React.Component {
         })
         const content = (
             <BaseLayout>
-                <Typography variant="h3" gutterBottom>Words</Typography>
+                <Typography variant="h3" component="h1" gutterBottom>Words</Typography>
 
 
                 <Row>
