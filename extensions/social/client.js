@@ -3,7 +3,7 @@ import Hook from 'util/hook'
 import Async from 'client/components/Async'
 
 const LinkedInProfileContainer = (props) => <Async {...props}
-                                                   load={import(/* webpackChunkName: "social" */ './containers/LinkedInProfileContainer')}/>
+                                                                                                      load={import(/* webpackChunkName: "social" */ './containers/LinkedInProfileContainer')}/>
 const Button = (props) => <Async {...props} expose="Button"
                                  load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const SimpleToolbar = (props) => <Async {...props} expose="SimpleToolbar"

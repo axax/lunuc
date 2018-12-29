@@ -1,9 +1,12 @@
 import React from 'react'
 import Hook from 'util/hook'
 import gql from 'graphql-tag'
-import {
-    SimpleDialog
-} from 'ui/admin'
+import Async from 'client/components/Async'
+
+
+const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
+                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+
 
 Hook.on('ApiResponse', ({data}) => {
     if (data.products) {

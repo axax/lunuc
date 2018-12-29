@@ -1,7 +1,12 @@
+import React from 'react'
 import Hook from 'util/hook'
-import LiveSpeechTranslaterContainer from './containers/LiveSpeechTranslaterContainer'
 import config from 'gen/config'
 const {ADMIN_BASE_URL} = config
+import Async from 'client/components/Async'
+
+const LiveSpeechTranslaterContainer = (props) => <Async {...props}
+                                                   load={import(/* webpackChunkName: "livetranslator" */ './containers/LiveSpeechTranslaterContainer')}/>
+
 
 // add routes for this extension
 Hook.on('Routes', ({routes}) => {

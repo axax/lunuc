@@ -4,7 +4,6 @@ import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import { graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
-import {connect} from 'react-redux'
 import BaseLayout from 'client/components/layout/BaseLayout'
 
 

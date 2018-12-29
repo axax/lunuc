@@ -1,7 +1,12 @@
+import React from 'react'
 import Hook from 'util/hook'
-import SearchWhileSpeechContainer from './containers/SearchWhileSpeechContainer'
 import config from 'gen/config'
 const {ADMIN_BASE_URL} = config
+import Async from 'client/components/Async'
+
+const SearchWhileSpeechContainer = (props) => <Async {...props}
+                                                   load={import(/* webpackChunkName: "speechsearch" */ './containers/SearchWhileSpeechContainer')}/>
+
 
 // add routes for this extension
 Hook.on('Routes', ({routes}) => {
