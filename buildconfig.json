@@ -13,10 +13,10 @@
       "active": true
     },
     "livetranslator": {
-      "active": true
+      "active": false
     },
     "speechsearch": {
-      "active": true
+      "active": false
     },
     "social": {
       "active": true
