@@ -38,7 +38,6 @@ class JsonEditor extends React.Component {
         if (json.constructor === Array) {
             const acc = []
             json.forEach((item, idx) => {
-                console.log(key + '.' + idx, item)
                 acc.push(this.renderJsonRec(item, key + '.' + idx))
             })
             return <List component="nav">{acc}</List>

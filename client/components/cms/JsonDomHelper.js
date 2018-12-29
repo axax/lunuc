@@ -14,7 +14,7 @@ const styles = theme => ({
     wrapper: {},
     toolbar: {
         zIndex: 9999,
-        position: 'absolute',
+        position: 'fixed',
         background: theme.palette.grey['200'],
         boxShadow: theme.shadows['1'],
         padding: theme.spacing.unit / 2,
@@ -43,18 +43,30 @@ class JsonDomHelper extends React.Component {
             state.toolbarHovered !== this.state.toolbarHovered
     }
 
-    elemOffset(elem) {
-        if (!elem) elem = this;
+    elemOffset(el) {
+        var xPos = 0
+        var yPos = 0
 
-        var x = elem.offsetLeft;
-        var y = elem.offsetTop;
+        while (el) {
+            if (el.tagName == "BODY") {
+                // deal with browser quirks with body/window/document and page scroll
+                var xScroll = el.scrollLeft || document.documentElement.scrollLeft
+                var yScroll = el.scrollTop || document.documentElement.scrollTop
 
-        while (elem = elem.offsetParent) {
-            x += elem.offsetLeft;
-            y += elem.offsetTop;
+                xPos += (el.offsetLeft - xScroll + el.clientLeft)
+                yPos += (el.offsetTop - yScroll + el.clientTop)
+            } else {
+                // for all other non-BODY elements
+                xPos += (el.offsetLeft - el.scrollLeft + el.clientLeft)
+                yPos += (el.offsetTop - el.scrollTop + el.clientTop)
+            }
+
+            el = el.offsetParent
         }
-
-        return {left: x, top: y};
+        return {
+            left: xPos,
+            top: yPos
+        }
     }
 
     onHelperMouseOver(e) {
@@ -66,7 +78,7 @@ class JsonDomHelper extends React.Component {
     helperTimeout = null
 
     onHelperMouseOut(e) {
-        e.stopPropagation()
+       e.stopPropagation()
         this.helperTimeout = setTimeout(() => {
             this.setState({hovered: false})
         }, 50)
