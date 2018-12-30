@@ -6,6 +6,7 @@ import {speechLanguages, translateLanguages} from '../data/common'
 import GenericResolver from './generic/genericResolver'
 import Cache from 'util/cache'
 import {
+    CAPABILITY_MANAGE_USER_ROLE,
     CAPABILITY_MANAGE_OTHER_USERS
 } from 'util/capabilities'
 
@@ -217,7 +218,9 @@ export const userResolver = (db) => ({
             }
 
             if (role) {
+                await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
                 user.role = ObjectId(role)
+
             }
 
             const result = (await userCollection.findOneAndUpdate({_id: ObjectId(_id)}, {$set: user}, {returnOriginal: false}))
