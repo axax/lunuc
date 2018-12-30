@@ -12,6 +12,7 @@ import MenuIcon from '@material-ui/icons/Menu';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
+import ListItemIcon from '@material-ui/core/ListItemIcon'
 import {withRouter} from 'react-router-dom'
 import config from 'gen/config'
 import {connect} from 'react-redux'
@@ -117,6 +118,11 @@ class ResponsiveDrawer extends React.Component {
                             return <ListItem onClick={this.linkTo.bind(this, item)}
                                              key={i}
                                              button>
+                                    {
+                                        item.icon &&  <ListItemIcon>
+                                            {item.icon}
+                                        </ListItemIcon>
+                                    }
                                 <ListItemText disableTypography
                                               primary={<Typography variant="subtitle1"
                                                                    component="h3"

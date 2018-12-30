@@ -62,7 +62,7 @@ export const createUserRoles = async (db) => {
 
     userRoleCollection.updateOne(
         {name: 'demo'},
-        {$addToSet: {capabilities: {$each: [CAPABILITY_VIEW_APP, CAPABILITY_READ_EVERYTHING]}}},
+        {$addToSet: {capabilities: {$each: [CAPABILITY_VIEW_APP, CAPABILITY_READ_EVERYTHING, CAPABILITY_ACCESS_ADMIN_PAGE]}}},
         {
             upsert: true
         }

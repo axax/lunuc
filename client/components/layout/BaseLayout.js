@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
-import {Button, ResponsiveDrawerLayout, HomeIconButton} from 'ui/admin'
+import {Button, ResponsiveDrawerLayout, HomeIconButton, HomeIcon, BuildIcon, SettingsIcon, AccountCircleIcon, BackupIcon, WebIcon, InsertDriveFileIcon} from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
@@ -18,13 +18,13 @@ const {ADMIN_BASE_URL} = config
 class BaseLayout extends React.Component {
 
     menuItems = [
-        {name: 'Home', to: ADMIN_BASE_URL + '/'},
-        {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true},
-        {name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true},
-        {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true},
-        {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true},
-        {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true},
-        {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true}
+        {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon />},
+        {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon />},
+        {name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true, icon: <WebIcon />},
+        {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon />},
+        {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon />},
+        {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon />},
+        {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon />}
     ]
 
     constructor(props) {

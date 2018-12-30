@@ -5,7 +5,9 @@ import {ApiError, ValidationError} from '../error'
 import {speechLanguages, translateLanguages} from '../data/common'
 import GenericResolver from './generic/genericResolver'
 import Cache from 'util/cache'
-
+import {
+    CAPABILITY_MANAGE_OTHER_USERS
+} from '../data/capabilities'
 
 // deprecrated
 const enhanceUserSettings = (user) => {
@@ -54,7 +56,7 @@ export const userResolver = (db) => ({
         },
         userRoles: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'UserRole', ['name'], {
+            return await GenericResolver.entities(db, context, 'UserRole', ['name', 'capabilities'], {
                 limit,
                 page,
                 offset,
@@ -228,6 +230,19 @@ export const userResolver = (db) => ({
             Cache.set(null, 'User' + _id)
 
             return result.value
+
+        },
+        updateUserRole: async ({_id, name, capabilities}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+
+            return await GenericResolver.updateEnity(db, context, 'UserRole', {
+                _id,
+                name,
+                capabilities
+            })
+
+
+            return {_id, name, capabilities}
 
         },
         updateMe: async (user, {context}) => {

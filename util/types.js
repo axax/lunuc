@@ -1,6 +1,7 @@
 import extensions from 'gen/extensions'
 import Hook from 'util/hook'
 import config from 'gen/config'
+import {CAPABILITIES} from '../api/data/capabilities'
 
 const {LANGUAGES} = config
 
@@ -76,14 +77,14 @@ export const getTypeQueries = (typeName) => {
             if (reference) {
                 t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
 
-                if( name !== 'createdBy') {
+                if (name !== 'createdBy') {
                     // TODO: field name might be different than name
                     query += ' ' + name + '{_id name}'
                 }
             } else {
                 query += ' ' + name
                 if (localized) {
-                    if( name !== 'createdBy') {
+                    if (name !== 'createdBy') {
                         query += ' ' + name + '_localized{' + LANGUAGES.join(' ') + '}'
                     }
                     const x = '$' + name + '_localized: LocalizedStringInput,'
@@ -93,26 +94,26 @@ export const getTypeQueries = (typeName) => {
                 }
             }
 
-            insertParams += '$' + name + ': ' + t + (required ? '!' : '')
-            updateParams += '$' + name + ': ' + t
+            insertParams += '$' + name + ': ' + (multi ? '[' + t + ']' : t) + (required ? '!' : '')
+            updateParams += '$' + name + ': ' + (multi ? '[' + t + ']' : t)
             insertUpdateQuery += name + ': ' + '$' + name
         })
     }
     let selectParamsString = ''
-    if( selectParams ){
-        selectParams.forEach(item=>{
+    if (selectParams) {
+        selectParams.forEach(item => {
             selectParamsString += `,${item.name}:${item.defaultValue}`
         })
     }
-    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable?',$version: String':''}){
-                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable?',version:$version':''}){limit offset total results{${query}}}}`
+    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable ? ',$version: String' : ''}){
+                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable ? ',version:$version' : ''}){limit offset total results{${query}}}}`
 
 
-    result.create = `mutation create${name}(${collectionClonable?',$_version:String':''},${insertParams}){create${name}(${collectionClonable?',_version:$_version':''},${insertUpdateQuery}){${queryMutation}}}`
-    result.update = `mutation update${name}($_id: ID!${collectionClonable?',$_version:String':''},${updateParams}){update${name}(_id:$_id${collectionClonable?',_version:$_version':''},${insertUpdateQuery}){${queryMutation}}}`
-    result.delete = `mutation delete${name}($_id: ID!${collectionClonable?',$_version:String':''}){delete${name}(_id: $_id${collectionClonable?',_version:$_version':''}){${queryMutation}}}`
-    result.deleteMany = `mutation delete${name}s($_id: [ID]${collectionClonable?',$_version:String':''}){delete${name}s(_id: $_id${collectionClonable?',_version:$_version':''}){${queryMutation}}}`
-    result.clone = `mutation clone${name}($_id: ID!${collectionClonable?',$_version:String':''},${updateParams}){clone${name}(_id: $_id${collectionClonable?',_version:$_version':''},${insertUpdateQuery}){${query}}}`
+    result.create = `mutation create${name}(${collectionClonable ? ',$_version:String' : ''},${insertParams}){create${name}(${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
+    result.update = `mutation update${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''},${updateParams}){update${name}(_id:$_id${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
+    result.delete = `mutation delete${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}){delete${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
+    result.deleteMany = `mutation delete${name}s($_id: [ID]${collectionClonable ? ',$_version:String' : ''}){delete${name}s(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
+    result.clone = `mutation clone${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''},${updateParams}){clone${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${query}}}`
 
     typeQueries[typeName] = result
     return result
@@ -145,7 +146,8 @@ export const getFormFields = (type) => {
             required: !!field.required,
             localized: !!field.localized,
             pickerField: field.pickerField,
-            reference: !!field.reference
+            reference: !!field.reference,
+            enum: field.enum
         }
     })
 
@@ -205,16 +207,18 @@ Hook.on('Types', ({types}) => {
 
 
     types.UserRole = {
-        'name': 'UserRole',
-        'noUserRelation': true,
-        'usedBy': ['core'],
-        'fields': [
+        name: 'UserRole',
+        noUserRelation: true,
+        usedBy: ['core'],
+        fields: [
             {
-                'name': 'name'
+                name: 'name'
             },
-            /*{
-                'name': 'capabilities'
-            }*/
+            {
+                name: 'capabilities',
+                multi: true,
+                enum: CAPABILITIES
+            }
         ]
     }
 

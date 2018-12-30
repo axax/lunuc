@@ -46,7 +46,11 @@
         "ExpandLess",
         "ExpandMore",
         "Subject",
-        "Folder"
+        "Folder",
+        "InsertDriveFile",
+        "Build",
+        "Settings",
+        "Backup"
       ],
       "theme":{
         "colors":{

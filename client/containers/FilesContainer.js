@@ -12,7 +12,8 @@ import {
     SimpleList,
     Row,
     Col,
-    FolderIcon
+    FolderIcon,
+    InsertDriveFileIcon
 } from 'ui/admin'
 import Util from 'client/util'
 import ContentEditable from '../components/generic/ContentEditable'
@@ -39,7 +40,7 @@ class FilesContainer extends React.Component {
                 <Typography variant="h3" gutterBottom>Files</Typography>
 
                 <Row spacing={24}>
-                    <Col md={4}>
+                    <Col sm={4}>
                         <Query query={gql(COMMAND_QUERY)}
                                fetchPolicy="cache-and-network"
                                variables={{command: 'ls -l'}}>
@@ -55,7 +56,7 @@ class FilesContainer extends React.Component {
                                     if (fileRow) {
                                         const b = fileRow.split(' ').filter(x => x);
                                         a.push({
-                                            icon: b[0].indexOf('d')===0?<FolderIcon />:false,
+                                            icon: b[0].indexOf('d')===0?<FolderIcon />:<InsertDriveFileIcon />,
                                             selected: false,
                                             primary: b[8],
                                             onClick: () => {
@@ -75,7 +76,7 @@ class FilesContainer extends React.Component {
                         </Query>
 
                     </Col>
-                    <Col md={8}>
+                    <Col sm={8}>
                         {file &&
                         <Query query={gql(COMMAND_QUERY)}
                                fetchPolicy="cache-and-network"

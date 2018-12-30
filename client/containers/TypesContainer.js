@@ -242,10 +242,14 @@ class TypesContainer extends React.Component {
                                     })
                                     dynamic[field.name] = langVar
                                 } else {
-                                    dynamic[field.name] =
-                                        <div className={classes.tableLargeContent}
-                                             onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
-                                             suppressContentEditableWarning contentEditable>{v}</div>
+                                    if (v && v.constructor === Array) {
+                                        dynamic[field.name] = v.map(e => <Chip key={e} label={e}/>)
+                                    } else {
+                                        dynamic[field.name] =
+                                            <div className={classes.tableLargeContent}
+                                                 onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
+                                                 suppressContentEditableWarning contentEditable>{v}</div>
+                                    }
                                 }
 
 
@@ -1071,12 +1075,10 @@ class TypesContainer extends React.Component {
                             ipt2[keyBase] = item[_app_.lang]
                         }
                     }
-                } else if (item && item.constructor === Array) {
+                } else if (item && !formFields[k].enum && item.constructor === Array) {
 
                     if (item.length > 0) {
-                        const {multi} = formFields[k]
-
-                        if (multi) {
+                        if (formFields[k].multi) {
                             ipt2[k] = item.map(i => i._id)
                         } else {
                             ipt2[k] = item[0]._id
@@ -1177,6 +1179,7 @@ class TypesContainer extends React.Component {
             })
 
             const submitData = this.referencesToIds(fieldData)
+
             const callback = ({errors}) => {
                 // server side validation
                 if (errors && errors.length) {

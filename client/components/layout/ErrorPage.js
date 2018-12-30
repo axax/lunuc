@@ -1,15 +1,18 @@
 import React from 'react'
 
-const ErrorPage = () => {
 
-    document.title = '404 Page not found'
-
+class ErrorPage extends React.Component {
 
 
-    const css = document.createElement("style")
-    css.type = "text/css"
-    css.innerHTML =
-        `
+    constructor(props) {
+        super(props)
+        document.title = '404 Page not found'
+
+
+        this.css = document.createElement("style")
+        this.css.type = "text/css"
+        this.css.innerHTML =
+            `
 body{
     background: #33cc99;
     color:#fff;
@@ -189,25 +192,32 @@ hr:after {
 }
 `
 
-    document.body.appendChild(css);
+        document.body.appendChild(this.css)
+    }
 
-    return <div>
-        <div id="clouds">
-            <div className="cloud x1"></div>
-            <div className="cloud x1_5"></div>
-            <div className="cloud x2"></div>
-            <div className="cloud x3"></div>
-            <div className="cloud x4"></div>
-            <div className="cloud x5"></div>
-        </div>
-        <div className='c'>
-            <div className='_404'>404</div>
-            <hr />
+    componentWillUnmount(){
+        document.body.removeChild(this.css)
+    }
+
+    render() {
+        return <div>
+            <div id="clouds">
+                <div className="cloud x1"></div>
+                <div className="cloud x1_5"></div>
+                <div className="cloud x2"></div>
+                <div className="cloud x3"></div>
+                <div className="cloud x4"></div>
+                <div className="cloud x5"></div>
+            </div>
+            <div className='c'>
+                <div className='_404'>404</div>
+                <hr />
                 <div className="_1">THE PAGE</div>
                 <div className="_2">WAS NOT FOUND</div>
                 <a className='btn' href="/">BACK TO MARS</a>
+            </div>
         </div>
-    </div>
+    }
 }
 
 export default ErrorPage

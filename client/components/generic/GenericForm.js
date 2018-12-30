@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {Button, TextField, SimpleSwitch} from 'ui/admin'
+import {Button, TextField, SimpleSwitch, SimpleSelect} from 'ui/admin'
 import FileDrop from '../FileDrop'
 import TypePicker from '../TypePicker'
 import config from 'gen/config'
@@ -145,6 +145,7 @@ class GenericForm extends React.Component {
                 this.props.onChange({name, value, target})
             }
             newState.isValid = this.validate(newState)
+            console.log(newState)
             return newState
         })
     }
@@ -162,15 +163,13 @@ class GenericForm extends React.Component {
             const o = fields[k],
                 value = this.state.fields[k]
 
-            const uitype = o.uitype || 'text'
-
+            const uitype = o.uitype || (o.enum ? 'select' : 'text')
 
             if (uitype === 'editor' || uitype === 'jseditor') {
                 let highlight, json
-                if( uitype === 'jseditor'){
+                if (uitype === 'jseditor') {
                     highlight = 'js'
-                }else
-                if (value) {
+                } else if (value) {
                     // detect type
                     try {
                         json = JSON.stringify(JSON.parse(value), null, 4)
@@ -180,13 +179,13 @@ class GenericForm extends React.Component {
                     }
                 }
                 return <div key={k} className={classes.editor}><ContentEditable highlight={highlight}
-                                                                        onChange={(v) => this.handleInputChange({
-                                                                            target: {
-                                                                                name: k,
-                                                                                value: v
-                                                                            }
-                                                                        })}
-                                                                        setHtml={false}>{json ? json : value}</ContentEditable>
+                                                                                onChange={(v) => this.handleInputChange({
+                                                                                    target: {
+                                                                                        name: k,
+                                                                                        value: v
+                                                                                    }
+                                                                                })}
+                                                                                setHtml={false}>{json ? json : value}</ContentEditable>
                 </div>
 
             }
@@ -203,10 +202,8 @@ class GenericForm extends React.Component {
                                    field={o.pickerField}
                                    type={o.type} placeholder={o.placeholder}/>
             } else if (uitype === 'select') {
-
-                //TODO: implement
+                return <SimpleSelect key={k} name={k} onChange={this.handleInputChange} items={o.enum} multi={o.multi} value={value}/>
             } else if (o.type === 'Boolean') {
-
                 return <SimpleSwitch key={k} label={o.placeholder} name={k}
                                      onChange={this.handleInputChange} checked={value ? true : false}/>
 

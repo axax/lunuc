@@ -77,6 +77,12 @@ export const userSchemaRaw = `
             role: ID
 		): User
 		
+		updateUserRole (
+		    _id: ID!
+			name: String
+			capabilities: [String]
+		): UserRole
+		
     	deleteUser(_id: ID!): User
 
 						

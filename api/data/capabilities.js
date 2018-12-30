@@ -1,5 +1,5 @@
 /*
-Here are all user capabilities listed
+ Here are all user capabilities listed
  */
 
 export const CAPABILITY_VIEW_APP = 'view_app'
@@ -11,3 +11,6 @@ export const CAPABILITY_MANAGE_OTHER_USERS = 'manage_other_users'
 export const CAPABILITY_MANAGE_COLLECTION = 'manage_collection'
 export const CAPABILITY_READ_EVERYTHING = 'read_everything'
 export const CAPABILITY_RUN_COMMAND = 'run_command'
+
+
+export const CAPABILITIES = [CAPABILITY_VIEW_APP, CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_READ_EVERYTHING, CAPABILITY_RUN_COMMAND]
