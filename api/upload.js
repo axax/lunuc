@@ -8,6 +8,9 @@ import config from 'gen/config'
 import zipper from 'zip-local'
 import MimeType from '../util/mime'
 import {execSync} from 'child_process'
+import {
+    CAPABILITY_MANAGE_BACKUPS
+} from 'util/capabilities'
 
 
 const {UPLOAD_DIR} = config
@@ -32,28 +35,35 @@ const beforeUpload = (res, req, upload_dir) => {
 }
 
 
-const authContextOrError = (res, req) => {
+const authContextOrError = async (db, res, req, capability) => {
     // check auth token
     const authContext = auth.decodeToken(req.headers.authorization)
 
-    // TODO implement premission check
     if (!authContext) {
         // no auth
         res.writeHead(401, {'content-type': 'application/json'});
         res.end('{"status":"error","message":"Upload failed. Unauthorized to upload files"}')
         return null
     } else {
+
+        if (capability && !await Util.userHasCapability(db, authContext, capability)) {
+            res.writeHead(401, {'content-type': 'application/json'});
+            res.end('{"status":"error","message":"User has no capability to ' + capability + '"}')
+            return null
+        }
+
+
         return authContext
     }
 }
 
-export const handleUpload = db => (req, res) => {
+export const handleUpload = db => async (req, res) => {
 
     // make sure upload dir exists
     const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
     if (beforeUpload(res, req, upload_dir)) {
 
-        const authContext = authContextOrError(res, req)
+        const authContext = await authContextOrError(db, res, req)
         if (authContext) {
 
             /* Process the uploads */
@@ -129,13 +139,13 @@ export const handleUpload = db => (req, res) => {
     }
 }
 
-export const handleMediaDumpUpload = db => (req, res) => {
+export const handleMediaDumpUpload = db => async (req, res) => {
 
     // make sure upload dir exists
     const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
     if (beforeUpload(res, req, upload_dir)) {
 
-        const authContext = authContextOrError(res, req)
+        const authContext = await authContextOrError(db, res, req, CAPABILITY_MANAGE_BACKUPS)
         if (authContext) {
 
             /* Process the uploads */
@@ -176,10 +186,10 @@ export const handleMediaDumpUpload = db => (req, res) => {
 }
 
 
-export const handleDbDumpUpload = (db, client) => (req, res) => {
+export const handleDbDumpUpload = (db, client) => async (req, res) => {
 
 
-    const authContext = authContextOrError(res, req)
+    const authContext = await authContextOrError(db, res, req, CAPABILITY_MANAGE_BACKUPS)
     if (authContext) {
 
         /* Process the uploads */
@@ -194,7 +204,7 @@ export const handleDbDumpUpload = (db, client) => (req, res) => {
 
             console.log(client.s.url)
             const response = execSync(`mongorestore --uri="${client.s.url}" --gzip --archive="${file.path}"`)
-            console.log('restoreDbDump',response)
+            console.log('restoreDbDump', response)
 
         })
 

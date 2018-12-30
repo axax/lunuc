@@ -11,6 +11,7 @@ import config from 'gen/config'
 import zipper from 'zip-local'
 import nodemailer from 'nodemailer'
 import {
+    CAPABILITY_MANAGE_BACKUPS,
     CAPABILITY_MANAGE_COLLECTION,
     CAPABILITY_RUN_COMMAND
 } from 'util/capabilities'
@@ -186,7 +187,7 @@ export const systemResolver = (db) => ({
     },
     Mutation: {
         createDbDump: async ({type}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
 
             // make sure upload dir exists
             const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/dbdumps/')
@@ -211,7 +212,7 @@ export const systemResolver = (db) => ({
             return {name, createdAt: date, size: (stats.size / 1000) + 'kb'}
         },
         createMediaDump: async ({type}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
 
             // make sure upload dir exists
             const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/mediadumps/')

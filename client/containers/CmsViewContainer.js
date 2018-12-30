@@ -13,6 +13,9 @@ import {getType} from 'util/types'
 import * as CmsActions from 'client/actions/CmsAction'
 import {bindActionCreators} from 'redux'
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from './generic/withKeyValues'
+import {
+    CAPABILITY_MANAGE_CMS_PAGES
+} from 'util/capabilities'
 
 import Async from 'client/components/Async'
 const ErrorPage = (props) => <Async {...props}
@@ -68,7 +71,7 @@ const isPreview = (location) => {
 const isEditMode = (props) => {
     const {user, location, dynamic} = props
 
-    return (user.isAuthenticated && Util.hasCapability(user, 'manage_cms_pages') && !isPreview(location) && !dynamic)
+    return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_PAGES) && !isPreview(location) && !dynamic)
 }
 
 

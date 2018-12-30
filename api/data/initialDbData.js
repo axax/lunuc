@@ -7,6 +7,7 @@ import {
     CAPABILITY_MANAGE_KEYVALUES,
     CAPABILITY_MANAGE_OTHER_USERS,
     CAPABILITY_MANAGE_COLLECTION,
+    CAPABILITY_MANAGE_BACKUPS,
     CAPABILITY_READ_EVERYTHING,
     CAPABILITY_RUN_COMMAND
 } from 'util/capabilities'
@@ -34,7 +35,7 @@ export const createUserRoles = async (db) => {
                 capabilities: {
                     $each: [CAPABILITY_VIEW_APP,
                         CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_CMS_PAGES,
-                        CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_RUN_COMMAND]
+                        CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_BACKUPS, CAPABILITY_RUN_COMMAND]
                 }
             }
         },
@@ -62,7 +63,7 @@ export const createUserRoles = async (db) => {
 
     userRoleCollection.updateOne(
         {name: 'demo'},
-        {$addToSet: {capabilities: {$each: [CAPABILITY_VIEW_APP, CAPABILITY_READ_EVERYTHING, CAPABILITY_ACCESS_ADMIN_PAGE]}}},
+        {$addToSet: {capabilities: {$each: [CAPABILITY_VIEW_APP, CAPABILITY_READ_EVERYTHING, CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_CMS_PAGES]}}},
         {
             upsert: true
         }

@@ -5,7 +5,9 @@ import gql from 'graphql-tag'
 import KeyValueContainer from './KeyValueContainer'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {Button, Typography, TextField, Divider, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
-
+import {
+    CAPABILITY_MANAGE_KEYVALUES
+} from 'util/capabilities'
 
 class UserProfileContainer extends React.Component {
 
@@ -140,7 +142,7 @@ class UserProfileContainer extends React.Component {
 
         let noteElements = []
 
-        let hasManageKeyvalue = me && me.role.capabilities.includes('manage_keyvalues')
+        let hasManageKeyvalue = me && me.role.capabilities.includes(CAPABILITY_MANAGE_KEYVALUES)
 
         if (note) {
             note.forEach(
