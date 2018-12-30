@@ -5,7 +5,7 @@ import Util from '.'
 import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_KEYVALUES
-} from '../data/capabilities'
+} from 'util/capabilities'
 
 const UtilCms = {
     getCmsPage: async (db, context, slug, version) => {

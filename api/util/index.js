@@ -6,7 +6,7 @@ import Cache from 'util/cache'
 import * as os from 'os'
 import {
     CAPABILITY_MANAGE_KEYVALUES
-} from '../data/capabilities'
+} from 'util/capabilities'
 
 const PASSWORD_MIN_LENGTH = 5
 

@@ -13,7 +13,7 @@ import nodemailer from 'nodemailer'
 import {
     CAPABILITY_MANAGE_COLLECTION,
     CAPABILITY_RUN_COMMAND
-} from '../data/capabilities'
+} from 'util/capabilities'
 import Cache from 'util/cache'
 import UtilCms from '../util/cms'
 

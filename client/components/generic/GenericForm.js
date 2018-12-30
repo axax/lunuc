@@ -145,7 +145,6 @@ class GenericForm extends React.Component {
                 this.props.onChange({name, value, target})
             }
             newState.isValid = this.validate(newState)
-            console.log(newState)
             return newState
         })
     }

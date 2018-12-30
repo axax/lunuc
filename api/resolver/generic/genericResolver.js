@@ -7,7 +7,7 @@ import config from 'gen/config'
 import {
     CAPABILITY_MANAGE_TYPES,
     CAPABILITY_MANAGE_OTHER_USERS
-} from '../../data/capabilities'
+} from 'util/capabilities'
 import Hook from 'util/hook'
 
 const {DEFAULT_LANGUAGE} = config

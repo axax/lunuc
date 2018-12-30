@@ -27,7 +27,7 @@ const styles = theme => ({
 class SimpleSelect extends React.Component {
     render() {
         const {onChange, value, items, label, classes, multi} = this.props
-        const name = this.props.name || 'name_' + Math.random()
+        const name = this.props.name || ('name_' + Math.random())
 
         return <FormControl className={classes.formControl}>
             {label && <InputLabel htmlFor={name}>{label}</InputLabel>}

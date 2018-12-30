@@ -4,7 +4,7 @@ import {ObjectId} from 'mongodb'
 import {
     CAPABILITY_MANAGE_TYPES,
     CAPABILITY_MANAGE_KEYVALUES
-} from '../data/capabilities'
+} from 'util/capabilities'
 import Cache from 'util/cache'
 
 export const keyvalueResolver = (db) => ({

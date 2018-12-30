@@ -9,7 +9,7 @@ import {
     CAPABILITY_MANAGE_COLLECTION,
     CAPABILITY_READ_EVERYTHING,
     CAPABILITY_RUN_COMMAND
-} from './capabilities'
+} from 'util/capabilities'
 
 import {ObjectId} from 'mongodb'
 

@@ -7,7 +7,7 @@ import GenericResolver from './generic/genericResolver'
 import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_OTHER_USERS
-} from '../data/capabilities'
+} from 'util/capabilities'
 
 // deprecrated
 const enhanceUserSettings = (user) => {

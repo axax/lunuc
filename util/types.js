@@ -1,7 +1,7 @@
 import extensions from 'gen/extensions'
 import Hook from 'util/hook'
 import config from 'gen/config'
-import {CAPABILITIES} from '../api/data/capabilities'
+import {CAPABILITIES} from 'util/capabilities'
 
 const {LANGUAGES} = config
 
