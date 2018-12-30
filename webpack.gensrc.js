@@ -83,7 +83,7 @@ GenSourceCode.prototype.apply = function (compiler) {
 import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
 `
                             }else {
-                                clientContent += `import '.${EXTENSION_PATH}${file}/client.js'\n`
+                                clientContent += `import ${file} from '.${EXTENSION_PATH}${file}/client.js'\nif(typeof ${file} === "function" && true){\n\t${file}()\n}\n`
                             }
                         }
                         if (fs.existsSync(EXTENSION_PATH + file + '/server.js')) {

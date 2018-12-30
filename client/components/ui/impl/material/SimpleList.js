@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import List from '@material-ui/core/List'
+import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItem from '@material-ui/core/ListItem'
 import ListItemText from '@material-ui/core/ListItemText'
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction'
@@ -30,6 +31,11 @@ class SimpleList extends React.Component {
                     (items && items.length ?
                         items.map((item, i) =>
                             <ListItem key={i} button={!!item.onClick} style={item.style} disabled={item.disabled} onClick={item.onClick}>
+                                {item.icon &&
+                                <ListItemIcon>
+                                    {item.icon}
+                                </ListItemIcon>
+                                }
                                 <ListItemText primary={item.primary} secondary={item.secondary}/>
                                 <ListItemSecondaryAction>
                                     {item.actions}

@@ -45,7 +45,8 @@
         "CloudUpload",
         "ExpandLess",
         "ExpandMore",
-        "Subject"
+        "Subject",
+        "Folder"
       ],
       "theme":{
         "colors":{

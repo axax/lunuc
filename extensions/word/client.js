@@ -6,13 +6,15 @@ import Async from 'client/components/Async'
 
 const WordContainer = (props) => <Async {...props} load={import(/* webpackChunkName: "word" */ './containers/WordContainer')} />
 
-// add routes for this extension
-Hook.on('Routes', ({routes}) => {
-    routes.push({exact: true, path: ADMIN_BASE_URL+'/word/:page*', component: WordContainer})
-})
 
+export default () => {
+    // add routes for this extension
+    Hook.on('Routes', ({routes}) => {
+        routes.push({exact: true, path: ADMIN_BASE_URL + '/word/:page*', component: WordContainer})
+    })
 
-// add entry to main menu
-Hook.on('MenuMenu', ({menuItems}) => {
-    menuItems.push({name: 'Words', to: ADMIN_BASE_URL+'/word', auth: true})
-})
+    // add entry to main menu
+    Hook.on('MenuMenu', ({menuItems}) => {
+        menuItems.push({name: 'Words', to: ADMIN_BASE_URL + '/word', auth: true})
+    })
+}
