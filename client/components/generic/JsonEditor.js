@@ -19,7 +19,7 @@ class JsonEditor extends React.Component {
     constructor(props) {
         super(props)
         try {
-            this.json = JSON.parse(props.children.replace(/\\\\"/g, '\\"'))
+            this.json = JSON.parse(props.children)
         } catch (e) {
             console.log(e)
         }

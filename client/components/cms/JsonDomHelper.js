@@ -1,17 +1,29 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {withStyles} from 'ui/admin'
-import classNames from 'classnames'
 import * as CmsActions from 'client/actions/CmsAction'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import {
     EditIcon
 } from 'ui/admin'
+import classNames from 'classnames'
 
 
 const styles = theme => ({
     wrapper: {},
+    highlighter: {
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        opacity: 0.5,
+        minWidth: '10px',
+        minHeight: '10px',
+        display: 'block',
+        background: 'yellow',
+        border: '1px dashed #000',
+        pointerEvents: 'none'
+    },
     toolbar: {
         zIndex: 9999,
         position: 'fixed',
@@ -27,11 +39,11 @@ const styles = theme => ({
     }
 })
 
-const COMPONENT_WITH_WRAPPER = ['Button', 'Cms']
+const COMPONENT_WITH_WRAPPER = ['Button', 'Cms', 'Divider']
 
 
 class JsonDomHelper extends React.Component {
-    state = {hovered: false, top: 0, left: 0, toolbarHovered: false}
+    state = {hovered: false, top: 0, left: 0, height: 0, width: 0, toolbarHovered: false}
 
     constructor(props) {
         super(props)
@@ -69,19 +81,36 @@ class JsonDomHelper extends React.Component {
         }
     }
 
+    helperTimeoutOut = null
+    helperTimeoutIn = null
+
     onHelperMouseOver(e) {
         e.stopPropagation()
-        clearTimeout(this.helperTimeout)
-        this.setState({hovered: true, ...this.elemOffset(e.target)})
+        clearTimeout(this.helperTimeoutOut)
+        clearTimeout(this.helperTimeoutIn)
+        const stat = {
+            hovered: true,
+            height: e.target.offsetHeight,
+            width: e.target.offsetWidth, ...this.elemOffset(e.target)
+        }
+        this.helperTimeoutIn = setTimeout(() => {
+            this.setState(stat)
+            this.helperTimeoutIn = null
+        }, 50)
+
     }
 
-    helperTimeout = null
 
     onHelperMouseOut(e) {
-       e.stopPropagation()
-        this.helperTimeout = setTimeout(() => {
-            this.setState({hovered: false})
-        }, 50)
+        e.stopPropagation()
+        if (this.helperTimeoutIn) {
+            clearTimeout(this.helperTimeoutIn)
+            this.helperTimeoutIn = null
+        } else {
+            this.helperTimeoutOut = setTimeout(() => {
+                this.setState({hovered: false})
+            }, 50)
+        }
     }
 
 
@@ -117,16 +146,22 @@ class JsonDomHelper extends React.Component {
 
     render() {
         const {classes, _WrappedComponent, _key, _item, _cmsActions, children, ...rest} = this.props
-        let toolbar
-        if (this.state.hovered || this.state.toolbarHovered) {
+        const {hovered, toolbarHovered} = this.state
+        let toolbar, highlighter
+        if (hovered || toolbarHovered) {
             toolbar = <span
                 key={_key + '.toolbar'}
                 onMouseOver={this.onToolbarMouseOver.bind(this)}
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
                 onClick={this.handleEditClick.bind(this)}
                 style={{top: this.state.top, left: this.state.left}}
-                className={classNames(classes.toolbar, this.state.toolbarHovered && classes.toolbarHovered)}><EditIcon
+                className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}><EditIcon
                 size="small"/></span>
+
+            highlighter = <span
+                key={_key + '.highlighter'}
+                style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}
+                className={classes.highlighter}/>
         }
 
         const props = {
@@ -137,11 +172,13 @@ class JsonDomHelper extends React.Component {
         const componentName = _WrappedComponent.name || ''
         if (!children && componentName !== 'Col') {
             // need wrapper
-            return <span className={classes.wrapper} {...props}><_WrappedComponent {...rest}/>
-                {toolbar}</span>
+            return <span
+                className={classes.wrapper} {...props}><_WrappedComponent {...rest}/>
+                {toolbar}{highlighter}</span>
         } else if (componentName.endsWith('$') || COMPONENT_WITH_WRAPPER.indexOf(componentName) >= 0) {
-            return <span className={classes.wrapper} {...props}><_WrappedComponent {...rest}>{children}</_WrappedComponent>
-                {toolbar}</span>
+            return <span
+                className={classes.wrapper} {...props}><_WrappedComponent {...rest}>{children}</_WrappedComponent>
+                {toolbar}{highlighter}</span>
 
         } else {
             let kids = children
@@ -153,9 +190,10 @@ class JsonDomHelper extends React.Component {
                 } else if (children.constructor === Array) {
                     kids.push(...children)
                     kids.push(toolbar)
+                    kids.push(highlighter)
 
                 } else {
-                    kids.push(children, toolbar)
+                    kids.push(children, toolbar, highlighter)
                 }
             }
             return <_WrappedComponent {...props} {...rest}>{kids}</_WrappedComponent>
