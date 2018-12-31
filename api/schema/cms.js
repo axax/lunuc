@@ -8,6 +8,7 @@ export const cmsSchemaRaw = `
         dataResolver: String
         resolvedData: String
         html: String 
+        style: String 
         status: String
         ssr: Boolean,
         subscriptions: [String],
@@ -39,7 +40,7 @@ export const cmsSchemaRaw = `
 			public: Boolean,
 			urlSensitiv: Boolean
 		): CmsPage
-		updateCmsPage(_id: ID!,_version: String, query: String, slug: String, template: String, script: String, dataResolver: String, ssr: Boolean, public: Boolean, urlSensitiv: Boolean): CmsPage	
+		updateCmsPage(_id: ID!,_version: String, query: String, slug: String, template: String, script: String, style: String, dataResolver: String, ssr: Boolean, public: Boolean, urlSensitiv: Boolean): CmsPage	
 		deleteCmsPage(_id: ID!,_version: String): CmsPage
 		cloneCmsPage(_id: ID!,_version: String, slug: String, public: Boolean, urlSensitiv: Boolean): CmsPage
 	}

@@ -36,6 +36,8 @@
         "Home",
         "FileCopy",
         "Web",
+        "Add",
+        "Clear",
         "Edit",
         "Delete",
         "Close",
@@ -50,7 +52,8 @@
         "InsertDriveFile",
         "Build",
         "Settings",
-        "Backup"
+        "Backup",
+        "Chat"
       ],
       "theme":{
         "colors":{

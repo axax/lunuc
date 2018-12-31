@@ -1,15 +1,23 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ReactDOM from 'react-dom'
-import {withStyles, List, ListItem, ListItemText, Collapse, ExpandLessIcon, ExpandMoreIcon, TextField} from 'ui/admin'
+import {
+    withStyles,
+    List,
+    ListItem,
+    ListItemText,
+    Collapse,
+    ExpandLessIcon,
+    ExpandMoreIcon,
+    TextField,
+    AddIconButton,
+    ClearIconButton
+} from 'ui/admin'
 import Util from 'client/util'
 
 const styles = theme => ({
-    editor: {
-        display: 'block',
-        tabSize: 2
-    },
-    block: {}
+    type: {
+        fontWeight: 'bold'
+    }
 })
 
 class JsonEditor extends React.Component {
@@ -58,10 +66,14 @@ class JsonEditor extends React.Component {
             }
 
 
-            return [<ListItem key={key} style={{paddingLeft: 10 * level}} button
+            return [<ListItem onMouseOver={() => {
+                console.log('TODO: implement highlighting')
+            }} key={key} style={{paddingLeft: 10 * level}} button
                               onClick={this.handleClick.bind(this, key)}>
-                <ListItemText>{t}</ListItemText>
-                {!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                <ListItemText classes={{primary: classes.type}}>{t}</ListItemText>
+                <AddIconButton></AddIconButton>
+                <ClearIconButton></ClearIconButton>
+                { json.c && (!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
             </ListItem>,
                 <Collapse key={key + '.colapse'} in={!!this.state.open[key]} timeout="auto" unmountOnExit>
                     {props}

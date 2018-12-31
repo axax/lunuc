@@ -5,8 +5,9 @@ import Async from 'client/components/Async'
 const StockTicker = (props) => <Async {...props} load={import(/* webpackChunkName: "finance" */ './components/StockTicker')} />
 const CurrencyTicker = (props) => <Async {...props} load={import(/* webpackChunkName: "finance" */ './components/CurrencyTicker')} />
 
-
-Hook.on('JsonDom', ({components}) => {
-    components['StockTicker'] = StockTicker
-    components['CurrencyTicker'] = CurrencyTicker
-})
+export default () => {
+    Hook.on('JsonDom', ({components}) => {
+        components['StockTicker'] = StockTicker
+        components['CurrencyTicker'] = CurrencyTicker
+    })
+}

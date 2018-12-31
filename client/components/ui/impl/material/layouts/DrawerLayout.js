@@ -132,7 +132,7 @@ class DrawerLayout extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            open: false,
+            open: this.props.open || false,
             drawerWidth: this.props.drawerWidth || DRAWER_WIDTH_DEFAULT
         }
     }
@@ -147,12 +147,20 @@ class DrawerLayout extends React.Component {
                 window.dispatchEvent(new CustomEvent('resize'))
             }, 20)
         })
+        const {onDrawerOpenClose} = this.props
+        if (onDrawerOpenClose) {
+            onDrawerOpenClose(true)
+        }
     }
 
     mouseDividerPos = false
 
     handleDrawerClose = () => {
         this.setState({open: false})
+        const {onDrawerOpenClose} = this.props
+        if (onDrawerOpenClose) {
+            onDrawerOpenClose(false)
+        }
     }
 
     dividerMouseDown = (e) => {
@@ -242,7 +250,9 @@ DrawerLayout.propTypes = {
     classes: PropTypes.object.isRequired,
     theme: PropTypes.object.isRequired,
     fixedLayout: PropTypes.bool,
+    open: PropTypes.bool,
     onDrawerWidthChange: PropTypes.func,
+    onDrawerOpenClose: PropTypes.func,
     drawerWidth: PropTypes.number
 }
 

@@ -65,14 +65,17 @@ export default (db) => ({
             text: text
         }
 
-        let result = (await chatCollection.updateOne({_id: ObjectId(chatId), users: {$in: [ObjectId(context.id)]}}, {
+        let result = (await chatCollection.findOneAndUpdate({
+            _id: ObjectId(chatId),
+            users: {$in: [ObjectId(context.id)]}
+        }, {
             $push: {
                 messages: newMessage
             }
         }))
 
 
-        if (result.modifiedCount !== 1) {
+        if (result.ok !== 1) {
             throw new Error('Message was not inserted')
         }
 
@@ -89,9 +92,21 @@ export default (db) => ({
             text: newMessage.text,
             status: 'created'
         }
-
         pubsub.publish('messageCreated', {messageCreated: returnMessage})
 
+        // send notification to all users
+        for (const user of result.value.users) {
+            const userId = user.toString()
+            if (userId !== context.id) {
+                pubsub.publish('newNotification', {
+                    userId,
+                    newNotification: {
+                        key: 'chat.message',
+                        message: `Message from ${context.username}: ${newMessage.text}`
+                    }
+                })
+            }
+        }
 
         return returnMessage
     },
@@ -209,7 +224,12 @@ export default (db) => ({
                     _id: '$_id',
                     name: {'$first': '$name'},
                     createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
-                    users: {$addToSet: {_id: {$arrayElemAt: ['$users._id', 0]}, username: {$arrayElemAt: ['$users.username', 0]}}}
+                    users: {
+                        $addToSet: {
+                            _id: {$arrayElemAt: ['$users._id', 0]},
+                            username: {$arrayElemAt: ['$users.username', 0]}
+                        }
+                    }
                 }
             },
             {$sort: {_id: 1}}
@@ -319,7 +339,12 @@ export default (db) => ({
                     _id: '$_id',
                     name: {'$first': '$name'},
                     createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
-                    users: {$addToSet: {_id: {$arrayElemAt: ['$users._id', 0]}, username: {$arrayElemAt: ['$users.username', 0]}}},
+                    users: {
+                        $addToSet: {
+                            _id: {$arrayElemAt: ['$users._id', 0]},
+                            username: {$arrayElemAt: ['$users.username', 0]}
+                        }
+                    },
                     messageCount: {'$first': '$messageCount'},
                     messages: {
                         $addToSet: {
@@ -470,7 +495,12 @@ export default (db) => ({
                     _id: '$_id',
                     name: {'$first': '$name'},
                     createdBy: {'$first': {$arrayElemAt: ['$createdBy', 0]}}, // return as as single doc not an array
-                    users: {$addToSet: {_id: {$arrayElemAt: ['$users._id', 0]}, username: {$arrayElemAt: ['$users.username', 0]}}},
+                    users: {
+                        $addToSet: {
+                            _id: {$arrayElemAt: ['$users._id', 0]},
+                            username: {$arrayElemAt: ['$users.username', 0]}
+                        }
+                    },
                     messageCount: {'$first': '$messageCount'},
                     messages: {
                         $addToSet: {

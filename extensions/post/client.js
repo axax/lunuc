@@ -7,19 +7,19 @@ import Async from 'client/components/Async'
 const PostContainerAsync = (props) => <Async {...props} load={import(/* webpackChunkName: "post" */ './containers/PostContainer')} />
 const PostRenderer = (props) => <Async readOnly={true} {...props} load={import(/* webpackChunkName: "post" */ './components/post/PostEditor')} />
 
+export default () => {
 
-Hook.on('JsonDom', ({components}) => {
-    components['PostRenderer'] = PostRenderer
-})
+    Hook.on('JsonDom', ({components}) => {
+        components['PostRenderer'] = PostRenderer
+    })
 
+    // add routes for this extension
+    Hook.on('Routes', ({routes}) => {
+        routes.push({exact: true, path: ADMIN_BASE_URL + '/post/:id*', component: PostContainerAsync})
+    })
 
-// add routes for this extension
-Hook.on('Routes', ({routes}) => {
-    routes.push({exact: true, path: ADMIN_BASE_URL+'/post/:id*', component: PostContainerAsync})
-})
-
-
-// add entry to main menu
-Hook.on('MenuMenu', ({menuItems}) => {
-    menuItems.push({name: 'Posts', to: ADMIN_BASE_URL+'/post', auth: true})
-})
+    // add entry to main menu
+    Hook.on('MenuMenu', ({menuItems}) => {
+        menuItems.push({name: 'Posts', to: ADMIN_BASE_URL + '/post', auth: true})
+    })
+}

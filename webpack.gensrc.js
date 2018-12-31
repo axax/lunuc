@@ -36,6 +36,8 @@ GenSourceCode.prototype.apply = function (compiler) {
 
         let clientContent = GENSRC_HEADER, serverContent = GENSRC_HEADER, manifestJson = {}
 
+        clientContent += '\nconst settings = (_app_.localSettings && _app_.localSettings.extensions) || {}\n\n'
+
         exteionsion.forEach(file => {
             if (fs.statSync(EXTENSION_PATH + file).isDirectory()) {
                 if (APP_CONFIG.extensions) {
@@ -83,7 +85,7 @@ GenSourceCode.prototype.apply = function (compiler) {
 import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
 `
                             }else {
-                                clientContent += `import ${file} from '.${EXTENSION_PATH}${file}/client.js'\nif(typeof ${file} === "function" && true){\n\t${file}()\n}\n`
+                                clientContent += `import ${file} from '.${EXTENSION_PATH}${file}/client.js'\nif(typeof ${file} === "function" && (!settings['${file}'] || settings['${file}'].enabled)){\n\t${file}()\n}\n`
                             }
                         }
                         if (fs.existsSync(EXTENSION_PATH + file + '/server.js')) {

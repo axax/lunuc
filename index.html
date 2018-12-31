@@ -11,10 +11,15 @@
 <div id="app"></div>
 
 <script>
-    _app_ = {tr:{},trLoaded:false};
+    var ls = null
+    try{
+        ls = JSON.parse(localStorage.getItem('localSettings'))
+    }catch(e){}
+
+    _app_ = {tr: {}, trLoaded: false, localSettings: ls};
     var l = window.location.pathname.split('/')[1];
     if (!l || l.length !== 2) {
-        l = (navigator.language || navigator.userLanguage).substr(0,2);
+        l = (navigator.language || navigator.userLanguage).substr(0, 2);
     } else {
         l = l.toLowerCase();
     }
@@ -24,11 +29,11 @@
 
     _app_.lang = l;
     var s = document.createElement('script');
-    s.onload = function(){
-        _app_.trLoaded=true;
-        if( _app_.trCallback ) _app_.trCallback();
+    s.onload = function () {
+        _app_.trLoaded = true;
+        if (_app_.trCallback) _app_.trCallback();
     }
-    s.setAttribute('src','/' + l + '.tr.js');
+    s.setAttribute('src', '/' + l + '.tr.js');
     document.head.appendChild(s);
 
 </script>

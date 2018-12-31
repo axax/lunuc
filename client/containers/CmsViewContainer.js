@@ -269,6 +269,10 @@ class CmsViewContainer extends React.Component {
         this.handleSettingChange('drawerWidth', newWidth)
     }
 
+    drawerOpenClose = (open) => {
+        this.handleSettingChange('drawerOpen', open)
+    }
+
     shouldComponentUpdate(props, state) {
         // only update if cms page was modified
         return !props.cmsPage ||
@@ -399,6 +403,17 @@ class CmsViewContainer extends React.Component {
                             onChange={this.handleClientScriptChange}
                             onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ScriptEditor>
                     </Expandable>
+
+
+
+                    <Expandable title="Style"
+                                onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
+                                expanded={settings.styleExpanded}>
+
+                    </Expandable>
+
+
+
                     <Expandable title="Settings"
                                 onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
                                 expanded={settings.settingsExpanded}>
@@ -417,7 +432,7 @@ class CmsViewContainer extends React.Component {
                     <Expandable title="Revisions"
                                 onChange={this.handleSettingChange.bind(this, 'revisionsExpanded')}
                                 expanded={settings.revisionsExpanded}>
-
+                        To be implemented
                     </Expandable>
 
 
@@ -446,8 +461,10 @@ class CmsViewContainer extends React.Component {
             </div>
 
             content = <UIProvider><DrawerLayout sidebar={sidebar()}
+                                                open={settings.drawerOpen}
                                                 fixedLayout={settings.fixedLayout}
                                                 drawerWidth={settings.drawerWidth || 800}
+                                                onDrawerOpenClose={this.drawerOpenClose}
                                                 onDrawerWidthChange={this.drawerWidthChange}
                                                 toolbarRight={[
                                                     <SimpleSwitch key="inlineEditorSwitch" color="default"

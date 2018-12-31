@@ -88,28 +88,30 @@ class JsonDomHelper extends React.Component {
         e.stopPropagation()
         clearTimeout(this.helperTimeoutOut)
         clearTimeout(this.helperTimeoutIn)
-        const stat = {
-            hovered: true,
-            height: e.target.offsetHeight,
-            width: e.target.offsetWidth, ...this.elemOffset(e.target)
+
+        if ( !this.state.hovered) {
+            const stat = {
+                hovered: true,
+                height: e.target.offsetHeight,
+                width: e.target.offsetWidth, ...this.elemOffset(e.target)
+            }
+            this.helperTimeoutIn = setTimeout(() => {
+                this.setState(stat)
+            }, 50)
         }
-        this.helperTimeoutIn = setTimeout(() => {
-            this.setState(stat)
-            this.helperTimeoutIn = null
-        }, 50)
 
     }
 
 
     onHelperMouseOut(e) {
         e.stopPropagation()
-        if (this.helperTimeoutIn) {
-            clearTimeout(this.helperTimeoutIn)
-            this.helperTimeoutIn = null
-        } else {
+
+        if (this.state.hovered) {
             this.helperTimeoutOut = setTimeout(() => {
                 this.setState({hovered: false})
             }, 50)
+        }else{
+            clearTimeout(this.helperTimeoutIn)
         }
     }
 

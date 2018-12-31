@@ -11,9 +11,12 @@ class SystemContainer extends React.Component {
 
     constructor(props) {
         super(props)
+
+        const fromStorage = (_app_.localSettings && _app_.localSettings.extensions) || {}
+
         const extensionStates = {}
         Object.keys(extensions).map(k => {
-            extensionStates[k] = {enabled: true}
+            extensionStates[k] = fromStorage[k] || {enabled: true}
         })
         this.state = {extensionStates}
     }
@@ -21,8 +24,13 @@ class SystemContainer extends React.Component {
     setExtensionState(k, e) {
         e.preventDefault()
         e.stopPropagation()
-        console.log(k, e.target.checked)
-        this.setState({extensionStates: {...this.state.extensionStates, [k]: {enabled: !this.state.extensionStates[k].enabled}}})
+        this.setState({extensionStates: {...this.state.extensionStates, [k]: {enabled: !this.state.extensionStates[k].enabled}}}, ()=>{
+            const ls = Object.assign({},_app_.localSettings)
+            ls.extensions = this.state.extensionStates
+            _app_.localSettings = ls
+            localStorage.setItem('localSettings', JSON.stringify(ls))
+            location.reload()
+        })
     }
 
     render() {
@@ -31,6 +39,7 @@ class SystemContainer extends React.Component {
         return <BaseLayout>
             <Typography variant="h3" component="h1" gutterBottom>System</Typography>
             <Typography variant="h4" component="h2" gutterBottom>Extensions</Typography>
+            <Typography variant="subtitle1" gutterBottom>Below are all extensions listed that are currently used with this build. You have the option to disable extensions (if supported by the extension) for your session, but not for other users. In order to deactivate a extension completely you have to do it in the configbuild.</Typography>
 
             <ContentBlock>
             {
