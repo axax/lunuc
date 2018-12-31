@@ -178,9 +178,13 @@ const Util = {
     getComponentByKey(key, obj){
         if (!obj) return
         const keyParts = key.split('.')
+
         // the root is always 0 so remove it
         keyParts.shift()
 
+        if( obj.constructor !== Array ){
+            keyParts.shift()
+        }
         let cur = obj
         for (let i = 0; i < keyParts.length; i++) {
             if (i > 0 && keyParts[i - 1] === '$loop') {

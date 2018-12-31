@@ -32,7 +32,7 @@ class JsonEditor extends React.Component {
     renderJsonRec(json, key, level) {
         const {classes} = this.props
         if (!json) return null
-        if (!key) key = 'root'
+        if (!key) key = '0'
         if (!level) level = 0
 
         if (json.constructor === Array) {
