@@ -268,17 +268,24 @@ Hook.on('Types', ({types}) => {
         usedBy: ['core'],
         fields: [
             {
-                'name': 'slug',
-                'required': true,
-                'clone': '${slug}_copy'
+                name: 'name',
+                label: 'Name'
             },
             {
-                'name': 'public',
-                'type': 'Boolean'
+                name: 'slug',
+                label: 'Slug',
+                required: false,
+                clone: '${slug}_copy'
             },
             {
-                'name': 'urlSensitiv',
-                'type': 'Boolean'
+                name: 'public',
+                label: 'Public',
+                type: 'Boolean'
+            },
+            {
+                name: 'urlSensitiv',
+                label: 'Url sensitiv',
+                type: 'Boolean'
             }
         ]
     }

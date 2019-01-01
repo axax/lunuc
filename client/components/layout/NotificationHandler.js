@@ -2,7 +2,8 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
-import {Snackbar, Button, CloseIconButton} from 'ui/admin'
+import {Snackbar, Button, CloseIconButton, theme} from 'ui/admin'
+import {Link} from 'react-router-dom'
 
 class NotificationHandler extends React.Component {
 
@@ -51,6 +52,20 @@ class NotificationHandler extends React.Component {
         console.log('render NotificationHandler ' + this.notificationStack.length + '/' + this.currentStackPosition)
         if (this.notificationStack.length > this.currentStackPosition) {
             const notification = this.notificationStack[this.currentStackPosition]
+            const actions = [
+                <CloseIconButton
+                    key="close"
+                    aria-label="Close"
+                    color="inherit"
+                    className=""
+                    onClick={this.handleNotificationClose.bind(this)}
+                />,
+            ]
+            if (notification.link) {
+                actions.unshift(
+                    <Link style={{color:theme.palette.secondary.light}} key="link" to={notification.link}>{notification.linkText || notification.link}</Link>)
+            }
+
             return <Snackbar
                 key={notification.key}
                 anchorOrigin={{
@@ -65,15 +80,7 @@ class NotificationHandler extends React.Component {
                     'aria-describedby': 'message-id',
                 }}
                 message={<span id="message-id">{notification.message}</span>}
-                action={[
-                    <CloseIconButton
-                        key="close"
-                        aria-label="Close"
-                        color="inherit"
-                        className=""
-                        onClick={this.handleNotificationClose.bind(this)}
-                    />,
-                ]}
+                action={actions}
             />
         }
 
@@ -91,6 +98,8 @@ const gqlSubscriptionNotification = gql`
   	newNotification{
 			key
 			message
+			link
+			linkText
 		}
   }`
 

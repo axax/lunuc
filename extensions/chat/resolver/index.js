@@ -2,6 +2,7 @@ import Util from 'api/util'
 import {ObjectId} from 'mongodb'
 import {pubsub} from 'api/subscription'
 import {withFilter} from 'graphql-subscriptions'
+import {CHAT_BASE_URL}  from '../constants'
 
 export default (db) => ({
     createChat: async ({name}, {context}) => {
@@ -102,7 +103,9 @@ export default (db) => ({
                     userId,
                     newNotification: {
                         key: 'chat.message',
-                        message: `Message from ${context.username}: ${newMessage.text}`
+                        message: `Message from ${context.username}: ${newMessage.text}`,
+                        link:  `${CHAT_BASE_URL}/${chatId}`,
+                        linkText:  `Goto chat`
                     }
                 })
             }

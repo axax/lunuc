@@ -70,7 +70,10 @@ class JsonEditor extends React.Component {
                 console.log('TODO: implement highlighting')
             }} key={key} style={{paddingLeft: 10 * level}} button
                               onClick={this.handleClick.bind(this, key)}>
-                <ListItemText classes={{primary: classes.type}}>{t}</ListItemText>
+                <ListItemText classes={{primary: classes.type}}>
+                    <span suppressContentEditableWarning={true}
+                          contentEditable>{t}</span>
+                </ListItemText>
                 <AddIconButton></AddIconButton>
                 <ClearIconButton></ClearIconButton>
                 { json.c && (!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
