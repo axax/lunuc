@@ -61,13 +61,24 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
             super(props)
         }
 
-        render() {
-            const {keyValues, keyValueGlobals, kvUser, ...rest} = this.props
+        shouldComponentUpdate(nextProps, nextState){
 
+            const ignoreToCompare = ['deleteKeyValueByKey','setKeyValue','setKeyValueGlobal','loading']
+            for( const k of Object.keys(nextProps)){
+
+                if( !ignoreToCompare.includes(k) && nextProps[k] !== this.props[k]){
+                    return true
+                }
+            }
+            return false
+        }
+
+
+        render() {
+            const {keyValues, keyValueGlobals, kvUser, loading, ...rest} = this.props
             let keyValueMap = {}, keyValueGlobalMap = {}
 
             if (keys) {
-
                 if (!kvUser.isAuthenticated) {
                     // fallback: load keyValues from localstore
                     keyValueMap = getKeyValuesFromLS()
@@ -77,9 +88,19 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                     if (results) {
                         for (const i in results) {
                             const o = results[i]
-                            keyValueMap[o.key] = o.value
+                            try {
+                                keyValueMap[o.key] = JSON.parse(o.value)
+                            } catch (e) {
+                                keyValueMap[o.key] = o.value
+                            }
                         }
                     }
+                } else if (loading) {
+                    // there is nothing in cache
+                    if (!keyValueGlobals) {
+                        return null
+                    }
+
                 }
             }
             if (keyValueGlobals) {
@@ -112,11 +133,10 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         deleteKeyValueByKey: PropTypes.func.isRequired,
     }
 
-    const gqlKeyValueQuery = gql`query{ 
-        keyValues${keys ? '(keys:' + JSON.stringify(keys) + ')' : ''}{limit offset total results{_id key value status createdBy{_id username}} }
-        }`,
+
+    const gqlKeyValueQuery = gql`query{keyValues${keys ? '(keys:' + JSON.stringify(keys) + ')' : ''}{limit offset total results{key value status createdBy{_id username}}}}`,
         gqlKeyValueGlobalsQuery = gql`query{ 
-        keyValueGlobals${keysGlobal ? '(keys:' + JSON.stringify(keysGlobal) + ')' : ''}{limit offset total results{_id key value status createdBy{_id username}} }
+        keyValueGlobals${keysGlobal ? '(keys:' + JSON.stringify(keysGlobal) + ')' : ''}{limit offset total results{key value status} }
         }`,
         gqlKeyValueUpdate = gql`
           mutation setKeyValue($key: String!, $value: String!) {
@@ -127,7 +147,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         gqlKeyValueGlobalUpdate = gql`
           mutation setKeyValueGlobal($key: String!, $value: String!) {
             setKeyValueGlobal(key: $key, value: $value){
-                key value status createdBy{_id username}
+                key value status
             }
           }`,
         gqlKeyValueDelete = gql`
@@ -173,7 +193,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                         })
                     }
                     const valueStr = value.constructor === String ? value : JSON.stringify(value)
-
+                    const user = ownProps.kvUser.userData
                     return mutate({
                         variables: {key, value: valueStr},
                         optimisticResponse: {
@@ -181,8 +201,8 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                             setKeyValue: {
                                 status: 'creating',
                                 createdBy: {
-                                    _id: ownProps.kvUser.userData._id,
-                                    username: ownProps.kvUser.userData.username,
+                                    _id: user._id,
+                                    username: user.username,
                                     __typename: 'UserPublic'
                                 },
                                 key,
@@ -197,7 +217,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                             if (!data.keyValues.results) {
                                 data.keyValues.results = []
                             }
-                            const idx = data.keyValues.results.findIndex(x => x.key === setKeyValue.key)
+                            const idx = data.keyValues.results.findIndex(x => x.key === setKeyValue.key && x.createdBy._id === user._id)
                             if (idx > -1) {
                                 data.keyValues.results[idx].value = setKeyValue.value
                             } else {
@@ -224,14 +244,9 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                             __typename: 'Mutation',
                             setKeyValueGlobal: {
                                 status: 'creating',
-                                createdBy: {
-                                    _id: ownProps.kvUser.userData._id,
-                                    username: ownProps.kvUser.userData.username,
-                                    __typename: 'UserPublic'
-                                },
                                 key,
                                 value: valueStr,
-                                __typename: 'KeyValue'
+                                __typename: 'KeyValueGlobal'
                             }
                         },
                         update: (proxy, {data: {setKeyValueGlobal}}) => {

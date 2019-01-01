@@ -166,7 +166,7 @@ const gqlCreateUser = gql`
 const SignUpContainerWithGql = graphql(gqlCreateUser, {
     options(ownProps) {
         return {
-            fetchPolicy:'network-only',
+            fetchPolicy:'no-cache',
             errorPolicy: 'all'
         }
     }

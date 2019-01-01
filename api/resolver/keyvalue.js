@@ -67,7 +67,7 @@ export const keyvalueResolver = (db) => ({
             match.key = {$in: keys}
         }
         // if user don't have capability to manage keys he can only see the public ones
-        if( !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES) ){
+        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
             match.ispublic = true
         }
 
@@ -131,11 +131,19 @@ export const keyvalueResolver = (db) => ({
         if (deletedResult.deletedCount) {
             return {
                 key,
+                createdBy: {
+                    _id: ObjectId(context.id),
+                    username: context.username
+                },
                 status: 'deleted'
             }
         } else {
             return {
                 key,
+                createdBy: {
+                    _id: ObjectId(context.id),
+                    username: context.username
+                },
                 status: 'error'
             }
         }

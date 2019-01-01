@@ -94,7 +94,7 @@ class TemplateEditor extends React.Component {
             <Tabs
                 value={currentTab}
                 onChange={this.handleTabChange.bind(this)}
-                fullWidth
+                variant="fullWidth"
                 indicatorColor="primary"
                 textColor="primary"
                 classes={{

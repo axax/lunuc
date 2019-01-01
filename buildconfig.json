@@ -16,7 +16,7 @@
       "active": false
     },
     "speechsearch": {
-      "active": false
+      "active": true
     },
     "social": {
       "active": true
@@ -53,7 +53,8 @@
         "Build",
         "Settings",
         "Backup",
-        "Chat"
+        "Chat",
+        "Search"
       ],
       "theme":{
         "colors":{

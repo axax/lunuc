@@ -43,19 +43,19 @@ export function configureMiddleware(store) {
                     if (!state) {
                         errorCount++
                         store.dispatch(addError({
-                            key: 'graphql_error-'+errorCount,
-                            msg: message + (path?' (in operation ' + path.join('/') + ')':'')
+                            key: 'graphql_error-' + errorCount,
+                            msg: message + (path ? ' (in operation ' + path.join('/') + ')' : '')
                         }))
                     }
                 }
             )
         }
-        if (networkError){
-            if( networkError.statusCode === 500){
+        if (networkError) {
+            if (networkError.statusCode === 500) {
                 // this is needed in order to get rid of the loading bar
                 dispatchNetworkSatus()
             }
-            if( errorCount == 0) {
+            if (errorCount == 0) {
                 // this is only shown if not already a graphql_error has dispatched
                 store.dispatch(addError({key: 'api_error', msg: networkError.message}))
             }
@@ -65,7 +65,7 @@ export function configureMiddleware(store) {
     // create a middleware for state handling and to attach the hook
     let loadingCounter = 0
 
-    const dispatchNetworkSatus = () =>{
+    const dispatchNetworkSatus = () => {
         loadingCounter--
         if (loadingCounter === 0) {
             // send loading false when all request are done
@@ -133,9 +133,12 @@ export function configureMiddleware(store) {
             if (o.__typename === 'Token') {
                 // this is the login methode
                 return o.__typename + (o.user ? o.user.username : '')
+            } else if (o.__typename === 'KeyValueGlobal') {
+                return o.__typename + o.key
             } else if (o.__typename === 'KeyValue') {
-                // deprecated -> when selecting keyValue always select _id as well -> key alone is not unique
-                return o.__typename + (o._id ? o._id : o.key)
+                // key alone is not unique -> add user id as well
+                // if user doesnt exit anymore createdBy is null --> us _id in that case
+                return o.__typename + (!o.createdBy ? o._id : o.createdBy._id + o.key)
             } else if (o._id) {
                 return o.__typename + o._id + (o.cacheKey ? o.cacheKey : '')
             }

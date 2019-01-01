@@ -735,7 +735,7 @@ const getSlugVersion = (slug) => {
     return ret
 }
 
-const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){_id key value}}`
+const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){key value createdBy{_id}}}`
 const urlSensitivMap = {}
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {

@@ -6,6 +6,8 @@ import Async from 'client/components/Async'
 
 const SearchWhileSpeechContainer = (props) => <Async {...props}
                                                    load={import(/* webpackChunkName: "speechsearch" */ './containers/SearchWhileSpeechContainer')}/>
+const SearchIcon = (props) => <Async {...props} expose="SearchIcon" load={import(/* webpackChunkName: "chat" */ '../../gensrc/ui/admin')} />
+
 
 export default () => {
 
@@ -17,6 +19,6 @@ export default () => {
 
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
-        menuItems.push({name: 'Search', to: ADMIN_BASE_URL + '/search', auth: true},)
+        menuItems.push({name: 'Search', to: ADMIN_BASE_URL + '/search', auth: true, icon: <SearchIcon />},)
     })
 }

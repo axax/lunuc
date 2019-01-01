@@ -90,7 +90,6 @@ class TypesContainer extends React.Component {
             collectionName: ''
         }
 
-
         // prepare list with types for select box
         Object.keys(this.types).map((k) => {
             const t = this.types[k]
@@ -99,23 +98,24 @@ class TypesContainer extends React.Component {
     }
 
     parseSettings(props) {
-        try {
-            this.settings = JSON.parse(props.keyValueMap.TypesContainerSettings)
-        } catch (e) {
-            this.settings = {}
-        }
+        this.settings = props.keyValueMap.TypesContainerSettings || {}
     }
 
     setSettingsForType(type, settings) {
         this.settings[type] = Object.assign({}, this.settings[type], settings)
+        //TODO: make sure settings are saved
     }
 
-    componentWillUnmount() {
+    saveSettings() {
         const value = JSON.stringify(this.settings)
-        if (value !== this.props.keyValueMap.TypesContainerSettings) {
+        if (value !== JSON.stringify(this.props.keyValueMap.TypesContainerSettings)) {
             console.log('save settings')
             this.props.setKeyValue({key: 'TypesContainerSettings', value})
         }
+    }
+
+    componentWillUnmount() {
+        this.saveSettings()
     }
 
     componentDidMount() {
@@ -134,13 +134,16 @@ class TypesContainer extends React.Component {
     }
 
     UNSAFE_componentWillReceiveProps(props) {
-        const pageParams = this.determinPageParams(props)
-
-        if (this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings) {
+        const change = this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
+        if (change) {
             this.parseSettings(props)
         }
 
-        if (this.props.settings !== props.settings ||
+        const pageParams = this.determinPageParams(props)
+
+
+        if (change ||
+            this.props.settings !== props.settings ||
             this.props.baseFilter !== props.baseFilter ||
             this.pageParams.type !== pageParams.type ||
             this.pageParams.page !== pageParams.page ||
@@ -734,7 +737,10 @@ class TypesContainer extends React.Component {
                     query: gqlQuery,
                     variables
                 }).then(response => {
-                    this.setState({data: response.data[storeKey]})
+                    const o = response.data[storeKey]
+                    if( !this.state.data || JSON.stringify(this.state.data) !== JSON.stringify(o) ) {
+                        this.setState({data: o})
+                    }
                 }).catch(error => {
                     console.log(error.message)
                     this.setState({data: null})
@@ -1040,6 +1046,7 @@ class TypesContainer extends React.Component {
         const v = event.target.value
         if (v !== this.pageParams.type) {
             this.settings.lastType = v
+            this.saveSettings()
             this.props.history.push(`${ADMIN_BASE_URL}/types/${v}`)
         }
     }

@@ -1,7 +1,7 @@
 export const commonSchemaRaw = `
 
     type ListEntry {
-        key: String!
+        value: String!
         name: String
     }
       

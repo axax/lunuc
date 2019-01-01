@@ -21,14 +21,10 @@ class WordContainer extends React.Component {
 
     constructor(props) {
         super(props)
-        try {
-            this.state = JSON.parse(props.keyValueMap.WordContainerState)
-        } catch (e) {
-            this.state = {
+        this.state = props.keyValueMap.WordContainerState || {
                 currentPair: '',
                 currentCategory: ''
             }
-        }
         this.prepareTypeSetting()
         this.typeContainer = React.createRef()
 
@@ -121,9 +117,9 @@ class WordContainer extends React.Component {
         if (currentCategory && wordCategorys.results)
             cat = wordCategorys.results.filter(f => f._id === currentCategory)
 
-        const submitData = Object.assign({}, e, {categories: cat && cat.length?cat[0]._id:null})
+        const submitData = Object.assign({}, e, {categories: cat && cat.length ? cat[0]._id : null})
         extensions.word.options.types[0].fields.forEach((a) => {
-            if ( submitData[a.name]===undefined ) {
+            if (submitData[a.name] === undefined) {
                 submitData[a.name] = null
             }
         })
@@ -135,7 +131,7 @@ class WordContainer extends React.Component {
 
     prepareTypeSetting() {
         const {currentPair} = this.state
-        const settings = {[TYPE]:{columns: {}}}
+        const settings = {[TYPE]: {columns: {}}}
 
         const a = currentPair.split('/'), fromSelected = a[0].trim(), toSelected = (a.length > 1 ? a[1].trim() : '')
 
@@ -194,10 +190,3 @@ const WordContainerWithGql = compose(
 
 
 export default withKeyValues(WordContainerWithGql, ['WordContainerState'])
-
-// add an extra column for Media at the beginning
-Hook.on('TypeTableColumns', ({type, columns}) => {
-    if (type === TYPE) {
-
-    }
-})

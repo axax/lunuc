@@ -6,6 +6,14 @@ export const keyvalueSchemaRaw = `
 		value: String
         createdBy: UserPublic
         status: String
+	}
+	
+    type KeyValueGlobal {
+		_id: ID!
+		key: String!
+		value: String
+        createdBy: UserPublic
+        status: String
         ispublic: Boolean
 	}
     
@@ -16,10 +24,18 @@ export const keyvalueSchemaRaw = `
         total: Int
     }
     
+    type KeyValueGlobalResult {
+        results: [KeyValueGlobal]
+        offset: Int
+        limit: Int
+        total: Int
+    }
+    
     type Query {
-    	keyValues(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String, keys: [String], all: Boolean): KeyValueResult
-    	keyValueGlobals(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String, keys: [String]): KeyValueResult
-    	keyValue(key: String!): KeyValue
+    	keyValues(user: String, limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String, keys: [String], all: Boolean): KeyValueResult
+    	keyValue(user: String, key: String!): KeyValue
+    	
+    	keyValueGlobals(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String, keys: [String]): KeyValueGlobalResult
     }
     
 		
@@ -27,14 +43,13 @@ export const keyvalueSchemaRaw = `
 		createKeyValue(key: String!, value: String, createdBy: ID!): KeyValue	
 		updateKeyValue(_id: ID!, key: String, value: String, createdBy: ID): KeyValue
 		deleteKeyValue(_id: ID!): KeyValue
-		
 		setKeyValue(key: String!, value: String): KeyValue	
-		setKeyValueGlobal(key: String!, value: String): KeyValue	
 		deleteKeyValueByKey(key: String!): KeyValue
 		
-		
-		createKeyValueGlobal(key: String!, value: String, ispublic: Boolean): KeyValue
-		updateKeyValueGlobal(_id: ID!, key: String, value: String, ispublic: Boolean): KeyValue
-		deleteKeyValueGlobal(_id: ID!): KeyValue
+		createKeyValueGlobal(key: String!, value: String, ispublic: Boolean): KeyValueGlobal
+		updateKeyValueGlobal(_id: ID!, key: String, value: String, ispublic: Boolean): KeyValueGlobal
+		deleteKeyValueGlobal(_id: ID!): KeyValueGlobal
+        setKeyValueGlobal(key: String!, value: String): KeyValueGlobal	
+
 	}
 `

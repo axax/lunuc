@@ -1,11 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {withApollo} from 'react-apollo'
+import {withApollo, Query} from 'react-apollo'
 import ApolloClient from 'apollo-client'
-import { graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import BaseLayout from 'client/components/layout/BaseLayout'
-
+import {
+    Typography,
+    SimpleSelect
+} from 'ui/admin'
+import {withKeyValues} from 'client/containers/generic/withKeyValues'
 
 class SearchWhileSpeechContainer extends React.Component {
 
@@ -14,8 +17,9 @@ class SearchWhileSpeechContainer extends React.Component {
 
     constructor(props) {
         super(props)
+
         const rec = window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition
-        if( rec ){
+        if (rec) {
             this.recognition = new ( rec)()
         }
         this.state = {
@@ -25,46 +29,46 @@ class SearchWhileSpeechContainer extends React.Component {
             language: 'de-DE',
             data: []
         }
+    }
 
-
+    static getDerivedStateFromProps(nextProps, prevState) {
+        const language = (nextProps.keyValueMap.SearchWhileSpeechContainerState || {}).language
+        if( language && language !== prevState.language ){
+            return Object.assign({}, prevState, {language})
+        }
+        return prevState
     }
 
     componentDidMount() {
-        this.mounted=true
+        this.mounted = true
         this.createRecorder()
     }
 
     componentWillUnmount() {
-        this.mounted=false
-        if( this.recognition )
+        this.mounted = false
+        if (this.recognition)
             this.recognition.abort()
     }
 
-    componentWillReceiveProps(nextProps) {
-        if (nextProps.me.settings.speechLang.selection && nextProps.me.settings.speechLang.selection.key !== this.state.language) {
-            this.setState({language: nextProps.me.settings.speechLang.selection.key})
-        }
-    }
-
-
 
     search = ({query}) => {
-        if( query === '' )
+        if (query === '')
             return
         const {client} = this.props
         client.query({
             fetchPolicy: 'cache-first',
-            query: gql`query posts($query: String){posts(query:$query){title body searchScore search{headerOne unstyled} _id}}`,
+
+            query: gql`query posts($query:String){posts(query:$query){results{title body searchScore search{headerOne unstyled}_id}}}`,
             variables: {
                 query
             }
         }).then(response => {
 
-            if( response.data && response.data.posts && response.data.posts.length > 0 ) {
+            if (response.data && response.data.posts && response.data.posts.results) {
+
                 this.setState(prevState => ({
-                    searchResults: [...prevState.searchResults, {query, data: response.data}]
+                    searchResults: [...prevState.searchResults, {query, data: response.data.posts.results}]
                 }))
-                console.log(this.state.searchResults)
             }
 
 
@@ -74,7 +78,7 @@ class SearchWhileSpeechContainer extends React.Component {
     }
 
     createRecorder = () => {
-        if( !this.recognition )
+        if (!this.recognition)
             return false
 
         const self = this
@@ -102,8 +106,8 @@ class SearchWhileSpeechContainer extends React.Component {
                     for (const alternativ of result) {
                         console.log(alternativ)
                         if (alternativ.confidence > 0.50) {
-                            self.setState((state) => ({search:alternativ.transcript}))
-                            self.search({query:alternativ.transcript})
+                            self.setState((state) => ({search: alternativ.transcript}))
+                            self.search({query: alternativ.transcript})
                         }
                     }
                 }
@@ -118,10 +122,10 @@ class SearchWhileSpeechContainer extends React.Component {
 
 
     handleRecorder = (start) => {
-        if( !this.recognition )
+        if (!this.recognition)
             return false
 
-        if (start && this.mounted ) {
+        if (start && this.mounted) {
             if (!this.recognition.recognizing) {
                 this.recognition.start()
             }
@@ -143,15 +147,9 @@ class SearchWhileSpeechContainer extends React.Component {
         if (target.type === 'checkbox') {
             this.handleRecorder(value)
         } else if (name === 'language') {
-
-            this.props.updateMe({speechLang: value}).then(() => {
-                console.log('change language to', value)
-
-                if( !this.recognition )
-                    this.recognition.lang = value
-            })
+            this.props.setKeyValue({key: 'SearchWhileSpeechContainerState', value: {language: value}})
         } else if (name === 'search') {
-            this.search({query:value})
+            //this.search({query:value})
 
             ///this.setState((state) => ({recorded: state.recorded.concat(value)}))
 
@@ -160,35 +158,43 @@ class SearchWhileSpeechContainer extends React.Component {
 
 
     render() {
-        if (!this.props.me)
-            return null
-
-        const langs = this.props.me.settings.speechLang.data
 
         let pairs = []
         this.state.searchResults.forEach(
-            (k, i) => k.data.posts.forEach( (k2, i2 ) => pairs.push(<p key={i+'-'+i2}>{k2.title} {k2.search.unstyled}</p>))
+            (k, i) => k.data.forEach((k2, i2) => pairs.push(<p
+                key={i + '-' + i2}>{k2.title} {k2.search.unstyled}</p>))
         )
 
-        return <BaseLayout><h1>Search</h1>
+        return <BaseLayout>
+            <Typography variant="h3" component="h1" gutterBottom>Search</Typography>
 
-            {this.recognition?<div>
-                <select disabled={!this.state.recording} name="language" value={this.state.language}
-                        onChange={this.handleInputChange}>
-                    {langs.map((lang, i) => {
-                        return <option key={i} value={lang.key}>{lang.name}</option>
-                    })}
-                </select>
+            {this.recognition ? <div>
+
+                <Query query={gql`query{speechLanguages{data{value name}}}`}
+                       fetchPolicy="cache-and-network">
+                    {({loading, error, data}) => {
+                        if (loading) return 'Loading...'
+                        if (error) return `Error! ${error.message}`
+                        if (!data.speechLanguages.data) return 'No data'
+
+                        return <SimpleSelect name='language' onChange={this.handleInputChange.bind(this)}
+                                             value={this.state.language} items={data.speechLanguages.data}/>
+                    }}
+                </Query>
+
+
                 <input
                     name="recording"
                     type="checkbox"
                     checked={this.state.recording}
                     onChange={this.handleInputChange}/>
-                Voice Recorder: {this.state.recording ? 'on' : 'off'}</div>:<div>Speech recognition is not supported by this browser. Check <a href="http://caniuse.com/#feat=speech-recognition">Can I use</a> for browser support</div>}
+                Voice Recorder: {this.state.recording ? 'on' : 'off'}</div> :
+                <div>Speech recognition is not supported by this browser. Check <a
+                    href="http://caniuse.com/#feat=speech-recognition">Can I use</a> for browser support</div>}
 
 
             <br />Search <input type="text" name="search" value={this.state.search}
-                                          onChange={this.handleInputChange}/>
+                                onChange={this.handleInputChange}/>
 
             {pairs}
         </BaseLayout>
@@ -198,36 +204,10 @@ class SearchWhileSpeechContainer extends React.Component {
 
 SearchWhileSpeechContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
-    me: PropTypes.object,
-    updateMe: PropTypes.func.isRequired
+    /* To get and set settings */
+    setKeyValue: PropTypes.func.isRequired,
+    keyValueMap: PropTypes.object
 }
 
 
-const SearchWhileSpeechContainerWithGql = compose(
-    graphql(gql`query {me{_id settings{speechLang{selection{key name}data{key name}}}}}`, {
-        options() {
-            return {
-                fetchPolicy: 'cache-and-network'
-            }
-        },
-        props: ({data: {loading, me}}) => ({
-            me,
-            loading
-        })
-    }),
-    graphql(gql`mutation updateMe($speechLang: String!){updateMe(settings: {speechLang:$speechLang}){_id settings{speechLang{selection{key name}}}}}`, {
-        props: ({ownProps, mutate}) => ({
-            updateMe: ({speechLang}) => {
-                return mutate({
-                    variables: {speechLang}
-                })
-            }
-        })
-    })
-)(SearchWhileSpeechContainer)
-
-
-const SearchWhileSpeechContainerWithApollo = withApollo(SearchWhileSpeechContainerWithGql)
-
-
-export default SearchWhileSpeechContainerWithApollo
+export default withKeyValues(withApollo(SearchWhileSpeechContainer), ['SearchWhileSpeechContainerState'])

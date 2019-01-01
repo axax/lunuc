@@ -6,6 +6,8 @@ import Async from 'client/components/Async'
 
 const PostContainerAsync = (props) => <Async {...props} load={import(/* webpackChunkName: "post" */ './containers/PostContainer')} />
 const PostRenderer = (props) => <Async readOnly={true} {...props} load={import(/* webpackChunkName: "post" */ './components/post/PostEditor')} />
+const EditIcon = (props) => <Async {...props} expose="EditIcon" load={import(/* webpackChunkName: "chat" */ '../../gensrc/ui/admin')} />
+
 
 export default () => {
 
@@ -20,6 +22,6 @@ export default () => {
 
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
-        menuItems.push({name: 'Posts', to: ADMIN_BASE_URL + '/post', auth: true})
+        menuItems.push({name: 'Posts', to: ADMIN_BASE_URL + '/post', auth: true, icon: <EditIcon />})
     })
 }

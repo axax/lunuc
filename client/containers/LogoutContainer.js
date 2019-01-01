@@ -19,11 +19,20 @@ class LogoutContainer extends React.Component {
 
     logout = () => {
         const {userActions, client} = this.props
-        localStorage.removeItem('token')
         userActions.setUser(null, false)
-        // clear user data
-        delete client.cache.data.data.ROOT_QUERY.me
-        client.cache.saveToLocalStorage()
+
+        // remove token and clear cache with a little delay in case there are componentWillUnmount events
+        setTimeout(()=>{
+            // clear user data
+            try {
+                // clear cache completely
+                client.resetStore()
+                client.cache.saveToLocalStorage()
+            }catch (e){
+                console.log(e)
+            }
+            localStorage.removeItem('token')
+        },50)
     }
 
     render() {

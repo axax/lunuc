@@ -44,7 +44,7 @@ class LoginContainer extends React.Component {
 
 
         client.query({
-            fetchPolicy: 'network-only',
+            fetchPolicy: 'no-cache',
             query: gql`query login($username:String!,$password:String!){login(username:$username,password:$password){token error user{username email _id role{_id capabilities}}}}`,
             variables: {
                 username: this.state.username,
@@ -56,15 +56,8 @@ class LoginContainer extends React.Component {
             if (response.data && response.data.login) {
 
                 if (!response.data.login.error) {
-
-                    try {
-                        const data = client.readQuery({query: gql(USER_DATA_QUERY)})
-
-                        if( data ){
-                            data.me = response.data.login.user
-                            client.writeQuery({query: gql(USER_DATA_QUERY), data})
-                        }
-                    }catch(e){}
+                    // clear cache completely
+                    client.resetStore()
 
                     localStorage.setItem('token', response.data.login.token)
                     userActions.setUser(response.data.login.user, true)

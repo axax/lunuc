@@ -210,15 +210,15 @@ UserProfileContainer.propTypes = {
     loading: PropTypes.bool
 }
 
-const gqlQuery = gql`query {me{username email _id note{_id value}role{_id name capabilities}}}`
+const gqlQuery = gql`query{me{username email _id note{_id value}role{_id name capabilities}}}`
 
 
 const gqlUpdate = gql`
-  mutation updateMe($username: String){ updateMe(username:$username){_id username}}
+  mutation updateMe($username: String){updateMe(username:$username){_id username}}
 `
 
 const gqlUpdateNote = gql`
-	mutation updateNote($id: ID!, $value: String){ updateNote(value:$value,_id:$id){_id value}}
+	mutation updateNote($id: ID!, $value: String){updateNote(value:$value,_id:$id){_id value}}
 `
 
 

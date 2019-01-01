@@ -25,6 +25,22 @@ const styles = theme => ({
 
 
 class SimpleSelect extends React.Component {
+
+    itemNameByValue(value) {
+
+        for (const item of this.props.items) {
+            if (item.constructor === Object) {
+                if (item.value === value || item.key === value) {
+                    return item.name
+                }
+            } else if (item === value) {
+                return item
+            }
+        }
+        return value
+
+    }
+
     render() {
         const {onChange, value, items, label, classes, multi} = this.props
         const name = this.props.name || ('name_' + Math.random())
@@ -46,13 +62,14 @@ class SimpleSelect extends React.Component {
                             {selected.map(value => (
                                 <Chip key={value} label={value} className={classes.chip}/>
                             ))}
-                        </div> : selected
+                        </div> : this.itemNameByValue(selected)
                 )}
             >
                 {
                     items.map(item => {
                         if (item.constructor === Object) {
-                            return <MenuItem key={item.value} value={item.value}>{item.name}{item.hint &&
+                            return <MenuItem key={item.value}
+                                             value={item.value}>{item.name}{item.hint &&
                             <em>&nbsp;({item.hint})</em>}</MenuItem>
                         } else {
                             return <MenuItem key={item} value={item}>{item}</MenuItem>

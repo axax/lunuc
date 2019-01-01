@@ -62,7 +62,7 @@ export const theme = createMuiTheme({
 })
 
 
-import JssProvider from 'react-jss/lib/JssProvider'
+import {JssProvider} from 'react-jss'
 import {createGenerateClassName} from '@material-ui/core/styles'
 
 const generateClassName = createGenerateClassName({

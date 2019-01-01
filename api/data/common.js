@@ -489,10 +489,10 @@ export const speechLanguages = []
 allAvailableLanguages.forEach(function(item){
     if(item.countryCodes.length > 1){
         item.countryCodes.forEach(function(countryItem){
-            speechLanguages.push({key:countryItem.langCode,name:item.language + ' ('+countryItem.country+')'})
+            speechLanguages.push({value:countryItem.langCode,name:item.language + ' ('+countryItem.country+')'})
         })
     }else{
-        speechLanguages.push({key:item.countryCodes[0].langCode,name:item.language})
+        speechLanguages.push({value:item.countryCodes[0].langCode,name:item.language})
     }
 })
 
@@ -500,7 +500,7 @@ allAvailableLanguages.forEach(function(item){
 
 export const translateLanguages = []
 
-Object.keys(googleTranslateApi).forEach(key => {
-    if( typeof(googleTranslateApi[key]) === 'string')
-        translateLanguages.push({key, name: googleTranslateApi[key]})
+Object.keys(googleTranslateApi).forEach(value => {
+    if( typeof(googleTranslateApi[value]) === 'string')
+        translateLanguages.push({value, name: googleTranslateApi[value]})
 })

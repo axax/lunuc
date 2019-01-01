@@ -33,9 +33,8 @@ class LinkedInProfileContainer extends React.Component {
 
     constructor(props) {
         super(props)
-        const ld = props.keyValueMap && props.keyValueMap.linkedInData
         this.state = {
-            data: ld?JSON.parse(ld):null,
+            data: props.keyValueMap && props.keyValueMap.linkedInData,
             disconnected: false
         }
     }
@@ -43,7 +42,7 @@ class LinkedInProfileContainer extends React.Component {
     componentWillReceiveProps(props){
         const ld = props.keyValueMap && props.keyValueMap.linkedInData
         if( ld ){
-            this.setState({data:JSON.parse(ld)})
+            this.setState({data:ld})
         }
     }
 

@@ -15,9 +15,7 @@ import {COLLECTIONS_QUERY} from '../../constants'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {theme} from 'ui/admin'
 
-const gqlKeyValueGlobalsQuery = `query{ 
-        keyValueGlobals(keys:['TypesSelectedVersions']){results{_id key value status createdBy{_id username}}}
-    }`
+const gqlKeyValueGlobalsQuery = `query{keyValueGlobals(keys:['TypesSelectedVersions']){results{key value status createdBy{_id username}}}}`
 const gqlCollectionsQuery = gql(COLLECTIONS_QUERY)
 
 
