@@ -1,48 +1,34 @@
 {
   "presets": [
-    "env",
-    "react",
-    "stage-0",
-    "babel-polyfill"
+    "@babel/preset-env",
+    "@babel/preset-react"
   ],
   "plugins": [
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-syntax-dynamic-import",
+    "@babel/plugin-proposal-export-default-from",
     [
-      "module-alias",
-      [
-        {
-          "src": "./client",
-          "expose": "client"
-        },
-        {
-          "src": "./util",
-          "expose": "util"
-        },
-        {
-          "src": "./server",
-          "expose": "server"
-        },
-        {
-          "src": "./api",
-          "expose": "api"
-        },
-        {
-          "src": "./gensrc/ui",
-          "expose": "ui"
-        },
-        {
-          "src": "./gensrc",
-          "expose": "gen"
-        },
-        {
-          "src": "./gensrc",
-          "expose": "gensrc"
+      "module-resolver",
+      {
+        "root": [
+          "./"
+        ],
+        "alias": {
+          "client": "./client",
+          "util": "./util",
+          "server": "./server",
+          "api": "./api",
+          "ui": "./gensrc/ui",
+          "gen": "./gensrc",
+          "gensrc": "./gensrc"
         }
-      ]
+      }
     ]
   ],
   "env": {
     "api": {
       "plugins": [
+        "@babel/plugin-transform-runtime",
         "dynamic-import-node",
         [
           "css-modules-transform",
@@ -58,7 +44,6 @@
     },
     "client": {
       "plugins": [
-        "syntax-dynamic-import"
       ]
     }
   }

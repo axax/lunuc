@@ -17,15 +17,19 @@ class UserProfileContainer extends React.Component {
     constructor(props) {
         super(props)
 
-        const {username, note} = props.me || {}
-
         this.state = {
-            username,
             usernameError: '',
             message: '',
             loading: false,
-            note
         }
+    }
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.me && prevState.me !== nextProps.me ) {
+            return Object.assign({}, prevState, {me: nextProps.me, username: nextProps.me.username, note: nextProps.me.note})
+        }
+        // No state update necessary
+        return null
     }
 
     saveNote = (id, value, timeout) => {
@@ -128,16 +132,10 @@ class UserProfileContainer extends React.Component {
             })
     }
 
-
-    UNSAFE_componentWillReceiveProps(nextProps) {
-        if (nextProps.me)
-            this.setState({username: nextProps.me.username, note: nextProps.me.note})
-    }
-
     render() {
         const {me} = this.props
         if (!me) return <BaseLayout />
-
+        console.log('render UserProfileContainer')
         const {username, usernameError, loading, note} = this.state
 
         let noteElements = []

@@ -318,11 +318,11 @@ function gensrcExtension(name, options) {
             resolver += `   ${nameStartLower}s: async ({sort, limit, offset, page, filter}, {context}) => {
         return await GenericResolver.entities(db, context, '${type.name}', [${resolverFields}], {limit, offset, page, filter, sort})
     },
-    create${type.name}: async ({...rest,${refResolvers}}, {context}) => {
+    create${type.name}: async ({${refResolvers}${refResolvers!==''?',':''}...rest}, {context}) => {
         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:{...rest}}})
         return await GenericResolver.createEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
     },
-    update${type.name}: async ({...rest,${refResolvers}}, {context}) => {
+    update${type.name}: async ({${refResolvers}${refResolvers!==''?',':''}...rest}, {context}) => {
         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: {...rest}}})
         return GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
     },

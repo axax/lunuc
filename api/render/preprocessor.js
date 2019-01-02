@@ -1,4 +1,4 @@
-import less from 'less'
+const less = require('less')
 
 module.exports = (data, filename) => {
     return less.render(data)

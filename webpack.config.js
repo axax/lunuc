@@ -81,10 +81,7 @@ const config = {
             {
                 test: /\.js$/,
                 exclude: excludeFunction,
-                loader: 'babel-loader',
-                query: {
-                    presets: ['env', 'react', 'stage-0']
-                }
+                loader: 'babel-loader'
             },
             {
                 test: /\.global\.css$/,

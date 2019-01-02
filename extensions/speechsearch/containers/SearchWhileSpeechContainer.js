@@ -36,7 +36,7 @@ class SearchWhileSpeechContainer extends React.Component {
         if( language && language !== prevState.language ){
             return Object.assign({}, prevState, {language})
         }
-        return prevState
+        return null
     }
 
     componentDidMount() {
@@ -164,6 +164,8 @@ class SearchWhileSpeechContainer extends React.Component {
             (k, i) => k.data.forEach((k2, i2) => pairs.push(<p
                 key={i + '-' + i2}>{k2.title} {k2.search.unstyled}</p>))
         )
+
+        console.log('render SearchWhileSpeechContainer')
 
         return <BaseLayout>
             <Typography variant="h3" component="h1" gutterBottom>Search</Typography>

@@ -162,16 +162,9 @@ class JsonDom extends React.Component {
         if (this.props.scope !== props.scope) {
             this.scope = null
             this.json = null
-            /* if( this.props.scope.params !== props.scope.params ){
-             // set it to undefined. null wouldn't be enough because null can also be a resolved value
-             this.resolvedDataJson = undefined
-
-             console.log('reset scope data res')
-             }*/
         }
         if (this.props.template !== props.template || this.props._props !== props._props) {
             this.resetTemplate()
-            //console.log('reset template')
         }
         if (this.props.script !== props.script) {
             this.resetTemplate()
@@ -200,10 +193,6 @@ class JsonDom extends React.Component {
             this.props.resolvedData !== props.resolvedData
     }
 
-    UNSAFE_componentWillUpdate(props) {
-        this.parseError = null
-    }
-
     componentDidMount() {
         this.runJsEvent('mount')
     }
@@ -213,7 +202,10 @@ class JsonDom extends React.Component {
         this.resetTemplate()
     }
 
-    componentDidUpdate() {
+    // is called after render
+    componentDidUpdate(props) {
+        this.parseError = null
+
         this.runJsEvent('update')
     }
 
@@ -508,8 +500,8 @@ class JsonDom extends React.Component {
         if (str.trim().indexOf('<') === 0) {
             //its html
             str = JSON.stringify({
-                "t": "div",
-                "$c": Util.escapeForJson(str, true)
+                t: 'div',
+                $c: Util.escapeForJson(str, true)
             })
         }else {
             str = str.replace(/\\/g,'\\\\')
@@ -540,7 +532,7 @@ class JsonDom extends React.Component {
                         cb(...args)
                     } catch (e) {
                         console.log(name, e)
-                        hasError = true;
+                        hasError = true
                     }
                 }
             }
