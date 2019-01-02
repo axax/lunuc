@@ -2,7 +2,18 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
-import {Button, ResponsiveDrawerLayout, HomeIconButton, HomeIcon, BuildIcon, SettingsIcon, AccountCircleIcon, BackupIcon, WebIcon, InsertDriveFileIcon} from 'ui/admin'
+import {
+    Button,
+    ResponsiveDrawerLayout,
+    HomeIconButton,
+    HomeIcon,
+    BuildIcon,
+    SettingsIcon,
+    AccountCircleIcon,
+    BackupIcon,
+    WebIcon,
+    InsertDriveFileIcon
+} from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
@@ -37,7 +48,7 @@ class BaseLayout extends React.Component {
     }
 
     render() {
-        const {history, children, isAuthenticated, userActions} = this.props
+        const {history, children, isAuthenticated, username, userActions} = this.props
 
 
         return <UIProvider>
@@ -46,7 +57,8 @@ class BaseLayout extends React.Component {
                                     headerRight={
                                         [
                                             (isAuthenticated ?
-                                                <Button key="logout" color="inherit" size="small" onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/logout'})}>Logout</Button>
+                                                <Button key="logout" color="inherit" size="small"
+                                                        onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/logout'})}>Logout {username}</Button>
 
                                                 : <Button key="login" color="inherit" size="small"
                                                           onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>),
@@ -106,6 +118,7 @@ class BaseLayout extends React.Component {
 
 BaseLayout.propTypes = {
     isAuthenticated: PropTypes.bool,
+    username: PropTypes.string,
     /* User Reducer */
     userActions: PropTypes.object.isRequired
 }
@@ -117,7 +130,8 @@ BaseLayout.propTypes = {
 const mapStateToProps = (store) => {
     const {user} = store
     return {
-        isAuthenticated: user.isAuthenticated
+        isAuthenticated: user.isAuthenticated,
+        username: user.userData ? user.userData.username : ''
     }
 }
 

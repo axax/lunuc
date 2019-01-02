@@ -102,7 +102,7 @@ export CircularProgress from '@material-ui/core/CircularProgress'
 export MenuItem from '@material-ui/core/MenuItem'
 export Paper from '@material-ui/core/Paper'
 export Avatar from '@material-ui/core/Avatar'
-export Stepper, { Step, StepLabel, StepContent } from '@material-ui/core/Stepper'
+export Stepper, {Step, StepLabel, StepContent} from '@material-ui/core/Stepper'
 export Tabs from '@material-ui/core/Tabs'
 export Tab from '@material-ui/core/Tab'
 

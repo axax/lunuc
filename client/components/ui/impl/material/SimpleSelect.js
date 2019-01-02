@@ -42,10 +42,10 @@ class SimpleSelect extends React.Component {
     }
 
     render() {
-        const {onChange, value, items, label, classes, multi} = this.props
+        const {onChange, value, items, label, classes, multi, disabled} = this.props
         const name = this.props.name || ('name_' + Math.random())
 
-        return <FormControl className={classes.formControl}>
+        return <FormControl className={classes.formControl} disabled={disabled}>
             {label && <InputLabel htmlFor={name}>{label}</InputLabel>}
             <Select
                 multiple={multi}
@@ -86,6 +86,7 @@ SimpleSelect.propTypes = {
     onChange: PropTypes.func,
     value: PropTypes.any,
     multi: PropTypes.bool,
+    disabled: PropTypes.bool,
     items: PropTypes.array.isRequired,
     label: PropTypes.string,
     name: PropTypes.string,

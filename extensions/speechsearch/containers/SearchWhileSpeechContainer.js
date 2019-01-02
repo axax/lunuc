@@ -5,10 +5,31 @@ import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {
+    TextField,
     Typography,
-    SimpleSelect
+    SimpleSelect,
+    SimpleSwitch,
+    Card,
+    ContentBlock,
+    Divider,
+    withStyles
 } from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
+
+
+const styles = theme => ({
+    card: {
+        marginBottom: theme.spacing.unit * 2
+    },
+    divider: {
+        marginTop: theme.spacing.unit,
+        marginBottom: theme.spacing.unit
+    },
+    hightlight: {
+        backgroundColor: '#FFF59D'
+    }
+})
+
 
 class SearchWhileSpeechContainer extends React.Component {
 
@@ -26,14 +47,15 @@ class SearchWhileSpeechContainer extends React.Component {
             recording: true,
             searchResults: [],
             search: '',
-            language: 'de-DE',
+            language: 'en-GB',
             data: []
         }
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        const language = (nextProps.keyValueMap.SearchWhileSpeechContainerState || {}).language
-        if( language && language !== prevState.language ){
+        const {language} = nextProps.keyValueMap.SearchWhileSpeechContainerState || {}
+
+        if (language && language !== prevState.language) {
             return Object.assign({}, prevState, {language})
         }
         return null
@@ -67,7 +89,7 @@ class SearchWhileSpeechContainer extends React.Component {
             if (response.data && response.data.posts && response.data.posts.results) {
 
                 this.setState(prevState => ({
-                    searchResults: [...prevState.searchResults, {query, data: response.data.posts.results}]
+                    searchResults: [{query, data: response.data.posts.results}, ...prevState.searchResults]
                 }))
             }
 
@@ -149,56 +171,86 @@ class SearchWhileSpeechContainer extends React.Component {
         } else if (name === 'language') {
             this.props.setKeyValue({key: 'SearchWhileSpeechContainerState', value: {language: value}})
         } else if (name === 'search') {
-            //this.search({query:value})
+            this.search({query: value})
 
             ///this.setState((state) => ({recorded: state.recorded.concat(value)}))
 
         }
     }
 
+    hightlightWords(text, words) {
+        if( !text ) return ''
+        const {classes} = this.props
+
+        const pattern = new RegExp(`(${words.replace(/\s/g, '|')})`, 'gi');
+
+        return text.replace(pattern, match => `<span class=${classes.hightlight}>${match}</span>`);
+    }
+
 
     render() {
-
-        let pairs = []
-        this.state.searchResults.forEach(
-            (k, i) => k.data.forEach((k2, i2) => pairs.push(<p
-                key={i + '-' + i2}>{k2.title} {k2.search.unstyled}</p>))
-        )
+        const {classes} = this.props
 
         console.log('render SearchWhileSpeechContainer')
 
         return <BaseLayout>
             <Typography variant="h3" component="h1" gutterBottom>Search</Typography>
-
-            {this.recognition ? <div>
-
-                <Query query={gql`query{speechLanguages{data{value name}}}`}
-                       fetchPolicy="cache-and-network">
-                    {({loading, error, data}) => {
-                        if (loading) return 'Loading...'
-                        if (error) return `Error! ${error.message}`
-                        if (!data.speechLanguages.data) return 'No data'
-
-                        return <SimpleSelect name='language' onChange={this.handleInputChange.bind(this)}
-                                             value={this.state.language} items={data.speechLanguages.data}/>
-                    }}
-                </Query>
+            <Typography variant="subtitle1" gutterBottom>
+                Search results are displayed continuously as you speak. At the moment only posts are included in the
+                search. Make sure you have posts, otherwise you'll never get results.
+            </Typography>
 
 
-                <input
-                    name="recording"
-                    type="checkbox"
-                    checked={this.state.recording}
-                    onChange={this.handleInputChange}/>
-                Voice Recorder: {this.state.recording ? 'on' : 'off'}</div> :
-                <div>Speech recognition is not supported by this browser. Check <a
-                    href="http://caniuse.com/#feat=speech-recognition">Can I use</a> for browser support</div>}
+            <ContentBlock>
+                {this.recognition ? [
+                    <SimpleSwitch
+                        key="recording"
+                        color="default"
+                        label="Voice recorder"
+                        name="recording"
+                        checked={this.state.recording}
+                        onChange={this.handleInputChange}/>,
+                    <Query key="query" query={gql`query{speechLanguages{data{value name}}}`}
+                           fetchPolicy="cache-and-network">
+                        {({loading, error, data}) => {
+                            if (loading) return 'Loading...'
+                            if (error) return `Error! ${error.message}`
+                            if (!data.speechLanguages.data) return 'No data'
 
+                            return <SimpleSelect disabled={!this.state.recording} name='language'
+                                                 onChange={this.handleInputChange.bind(this)}
+                                                 value={this.state.language} items={data.speechLanguages.data}/>
+                        }}
+                    </Query>
+                ] :
+                    <Typography variant="subtitle1" gutterBottom>Unfortunately speech recognition is not supported by
+                        this browser. Check <a
+                            href="http://caniuse.com/#feat=speech-recognition">Can I use</a> for browser
+                        support</Typography>}
 
-            <br />Search <input type="text" name="search" value={this.state.search}
-                                onChange={this.handleInputChange}/>
+                <TextField fullWidth placeholder="Search expression" name="search" value={this.state.search}
+                           onChange={this.handleInputChange}/>
 
-            {pairs}
+            </ContentBlock>
+            <Typography variant="subtitle2" gutterBottom>Results</Typography>
+
+            {
+                this.state.searchResults.map(
+                    (k, i) => <Card className={classes.card}
+                                    key={i}><Typography color="textSecondary" gutterBottom>
+                        {k.query}
+                    </Typography>
+                        {k.data.map((k2, i2) => [
+                            (i2 > 0 ?
+                                <Divider light className={classes.divider} key={'divider' + i + '-' + i2}/> : null),
+                            <Typography key={'main' + i + '-' + i2} variant="h5">
+                                <span dangerouslySetInnerHTML={{__html:this.hightlightWords(k2.title, k.query)}} />
+                            </Typography>,
+                            <Typography key={'text' + i + '-' + i2}>
+                                <span dangerouslySetInnerHTML={{__html:this.hightlightWords(k2.search.unstyled, k.query)}} />
+                            </Typography>])}</Card>
+                )
+            }
         </BaseLayout>
     }
 }
@@ -206,10 +258,11 @@ class SearchWhileSpeechContainer extends React.Component {
 
 SearchWhileSpeechContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
+    classes: PropTypes.object.isRequired,
     /* To get and set settings */
     setKeyValue: PropTypes.func.isRequired,
     keyValueMap: PropTypes.object
 }
 
 
-export default withKeyValues(withApollo(SearchWhileSpeechContainer), ['SearchWhileSpeechContainerState'])
+export default withKeyValues(withApollo(withStyles(styles, {withTheme: true})(SearchWhileSpeechContainer)), ['SearchWhileSpeechContainerState'])

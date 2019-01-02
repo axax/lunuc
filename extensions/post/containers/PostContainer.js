@@ -132,7 +132,7 @@ class PostContainer extends React.Component {
 
                         <GenericForm ref={(e) => {
                             this.addPostForm = e
-                        }} fields={{title: {value: '', placeholder: 'Titel'}, body: {value: '', type: 'hidden'}}}
+                        }} fields={{title: {value: '', placeholder: 'Titel'}, body: {value: '', uitype: 'hidden'}}}
                                      onValidate={this.handleAddPostValidate} onClick={this.handleAddPostClick}/>
 
                     </Col>
