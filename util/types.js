@@ -95,7 +95,7 @@ export const getTypeQueries = (typeName) => {
             }
 
             insertParams += '$' + name + ': ' + (multi ? '[' + t + ']' : t) + (required ? '!' : '')
-            updateParams += '$' + name + ': ' + (multi ? '[' + t + ']' : t)
+            updateParams += '$' + name + ': ' + (multi && !reference ? '[' + t + ']' : t)
             insertUpdateQuery += name + ': ' + '$' + name
         })
     }

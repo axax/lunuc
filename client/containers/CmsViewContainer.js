@@ -86,8 +86,7 @@ class CmsViewContainer extends React.Component {
     constructor(props) {
         super(props)
 
-
-        this.state = this.propsToState(props)
+        this.state = CmsViewContainer.propsToState(props)
 
         if (!props.dynamic)
             document.title = props.slug
@@ -95,8 +94,16 @@ class CmsViewContainer extends React.Component {
         this.setUpSubsciptions(props)
     }
 
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.cmsPage !== prevState.cmsPage || nextProps.keyValue !== prevState.keyValue) {
+            console.log('CmsViewContainer update state')
 
-    propsToState(props) {
+            return CmsViewContainer.propsToState(nextProps)
+        }
+        return null
+    }
+
+    static propsToState(props) {
         const {template, script, dataResolver, ssr} = props.cmsPage || {}
         let settings = null
         if (props.keyValue) {
@@ -110,6 +117,8 @@ class CmsViewContainer extends React.Component {
             settings = {}
         }
         return {
+            keyValue: props.keyValue,
+            cmsPage: props.cmsPage,
             settings,
             template,
             script,
@@ -117,160 +126,6 @@ class CmsViewContainer extends React.Component {
             ssr,
             public: props.cmsPage && props.cmsPage.public
         }
-    }
-
-
-    setUpSubsciptions(props) {
-        if (!props.cmsPage) return
-
-        const {cmsPage: {subscriptions}, client, slug} = props
-        if (!subscriptions) return
-
-        // remove unsed subscriptions
-        Object.keys(this.registeredSubscriptions).forEach(key => {
-            if (subscriptions.indexOf(key) < 0) {
-                this.registeredSubscriptions[key].unsubscribe()
-                delete this.registeredSubscriptions[key]
-            }
-        })
-
-        const _this = this
-
-        // register new supscriptions
-        subscriptions.forEach(subs => {
-            if (!this.registeredSubscriptions[subs]) {
-
-                const type = getType(subs)
-                if (!type) return
-                let query = '_id'
-                type.fields.map(({name, required, multi, reference, localized}) => {
-
-                    if (reference) {
-                        // todo: field name might be different than name
-                        //query += ' ' + name + '{_id name}'
-                    } else {
-                        if (localized) {
-                            query += ' ' + name + '_localized{' + _app_.lang + '}'
-                        } else {
-                            query += ' ' + name
-                        }
-                    }
-                })
-                const qqlSubscribe = gql`subscription{subscribe${subs}{action data{${query}}}}`
-
-                this.registeredSubscriptions[subs] = client.subscribe({
-                    query: qqlSubscribe,
-                    variables: {}
-                }).subscribe({
-                    next(supscriptionData) {
-                        if (!supscriptionData.data) {
-                            //console.warn('subscription data missing')
-                            return
-                        }
-                        const {data} = supscriptionData.data['subscribe' + subs]
-                        if (data) {
-                            const storeData = client.readQuery({
-                                query: gqlQuery,
-                                variables: _this.props.cmsPageVariables
-                            })
-
-                            // upadate data in resolvedData string
-                            if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
-
-                                const resolvedDataJson = JSON.parse(storeData.cmsPage.resolvedData)
-                                if (resolvedDataJson[subs] && resolvedDataJson[subs].results) {
-                                    const refResults = resolvedDataJson[subs].results
-                                    const idx = refResults.findIndex(o => o._id === data._id)
-                                    if (idx > -1) {
-                                        const noNullData = Util.removeNullValues(data)
-                                        Object.keys(noNullData).map(k => {
-                                            // if there are localized values in the current language
-                                            // set them to the regular field
-                                            if (k.endsWith('_localized')) {
-                                                const v = noNullData[k][_app_.lang]
-                                                if (v) {
-                                                    noNullData[k.substring(0, k.length - 10)] = v
-                                                }
-                                            }
-                                        })
-                                        refResults[idx] = Object.assign({}, refResults[idx], noNullData)
-                                        // back to string data
-                                        const newStoreData = Object.assign({}, storeData)
-                                        newStoreData.cmsPage = Object.assign({}, storeData.cmsPage)
-                                        newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
-                                        client.writeQuery({
-                                            query: gqlQuery,
-                                            variables: _this.props.cmsPageVariables,
-                                            data: newStoreData
-                                        })
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    error(err) {
-                        console.error('err', err)
-                    },
-                })
-            }
-        })
-    }
-
-    saveCmsPage = (value, data, key) => {
-        if (value != data[key]) {
-            console.log('save cms', key)
-
-            const {updateCmsPage} = this.props
-
-            updateCmsPage(
-                Object.assign({}, data, {[key]: value}), key
-            )
-        }
-    }
-
-    handleFlagChange = (key, e, flag) => {
-        this.setState({[key]: flag})
-        this.saveCmsPage(flag, this.props.cmsPage, key)
-    }
-
-
-    handleClientScriptChange = (script) => {
-        clearTimeout(this.setScriptTimeout)
-        this.setScriptTimeout = setTimeout(() => {
-            this.setState({script})
-        }, 500)
-    }
-
-    handleDataResolverChange = (str) => {
-        this.setState({dataResolver: str})
-        clearTimeout(this.dataResolverSaveTimeout)
-        this.dataResolverSaveTimeout = setTimeout(() => {
-            // auto save after some time
-            this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
-        }, 5000)
-    }
-
-    handleTemplateChange = (str) => {
-        this.setState({template: str, templateError: null})
-    }
-
-
-    handleTemplateSaveChange = (json, save) => {
-        const template = JSON.stringify(json, null, 4)
-        if (save) {
-            this.saveCmsPage(template, this.props.cmsPage, 'template')
-        } else {
-            this.setState({template, templateError: null})
-        }
-    }
-
-
-    drawerWidthChange = (newWidth) => {
-        this.handleSettingChange('drawerWidth', newWidth)
-    }
-
-    drawerOpenClose = (open) => {
-        this.handleSettingChange('drawerOpen', open)
     }
 
     shouldComponentUpdate(props, state) {
@@ -292,15 +147,9 @@ class CmsViewContainer extends React.Component {
             this.state.settings.drawerWidth !== state.settings.drawerWidth
     }
 
-    UNSAFE_componentWillReceiveProps(props) {
-        this.setUpSubsciptions(props)
-        // in case props change and differ from inital props
-        if (props.cmsPage) {
-            this.setState(this.propsToState(props))
-        }
-    }
 
     componentDidMount() {
+        this.setUpSubsciptions(this.props)
         window.addEventListener('beforeunload', (e) => {
             // blur on unload to make sure everything gets saved
             document.activeElement.blur()
@@ -515,6 +364,161 @@ class CmsViewContainer extends React.Component {
 
         return content
     }
+
+
+    setUpSubsciptions(props) {
+        if (!props.cmsPage) return
+
+        const {cmsPage: {subscriptions}, client, slug} = props
+        if (!subscriptions) return
+
+        // remove unsed subscriptions
+        Object.keys(this.registeredSubscriptions).forEach(key => {
+            if (subscriptions.indexOf(key) < 0) {
+                this.registeredSubscriptions[key].unsubscribe()
+                delete this.registeredSubscriptions[key]
+            }
+        })
+
+        const _this = this
+
+        // register new supscriptions
+        subscriptions.forEach(subs => {
+            if (!this.registeredSubscriptions[subs]) {
+
+                const type = getType(subs)
+                if (!type) return
+                let query = '_id'
+                type.fields.map(({name, required, multi, reference, localized}) => {
+
+                    if (reference) {
+                        // todo: field name might be different than name
+                        //query += ' ' + name + '{_id name}'
+                    } else {
+                        if (localized) {
+                            query += ' ' + name + '_localized{' + _app_.lang + '}'
+                        } else {
+                            query += ' ' + name
+                        }
+                    }
+                })
+                const qqlSubscribe = gql`subscription{subscribe${subs}{action data{${query}}}}`
+
+                this.registeredSubscriptions[subs] = client.subscribe({
+                    query: qqlSubscribe,
+                    variables: {}
+                }).subscribe({
+                    next(supscriptionData) {
+                        if (!supscriptionData.data) {
+                            //console.warn('subscription data missing')
+                            return
+                        }
+                        const {data} = supscriptionData.data['subscribe' + subs]
+                        if (data) {
+                            const storeData = client.readQuery({
+                                query: gqlQuery,
+                                variables: _this.props.cmsPageVariables
+                            })
+
+                            // upadate data in resolvedData string
+                            if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
+
+                                const resolvedDataJson = JSON.parse(storeData.cmsPage.resolvedData)
+                                if (resolvedDataJson[subs] && resolvedDataJson[subs].results) {
+                                    const refResults = resolvedDataJson[subs].results
+                                    const idx = refResults.findIndex(o => o._id === data._id)
+                                    if (idx > -1) {
+                                        const noNullData = Util.removeNullValues(data)
+                                        Object.keys(noNullData).map(k => {
+                                            // if there are localized values in the current language
+                                            // set them to the regular field
+                                            if (k.endsWith('_localized')) {
+                                                const v = noNullData[k][_app_.lang]
+                                                if (v) {
+                                                    noNullData[k.substring(0, k.length - 10)] = v
+                                                }
+                                            }
+                                        })
+                                        refResults[idx] = Object.assign({}, refResults[idx], noNullData)
+                                        // back to string data
+                                        const newStoreData = Object.assign({}, storeData)
+                                        newStoreData.cmsPage = Object.assign({}, storeData.cmsPage)
+                                        newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
+                                        client.writeQuery({
+                                            query: gqlQuery,
+                                            variables: _this.props.cmsPageVariables,
+                                            data: newStoreData
+                                        })
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    error(err) {
+                        console.error('err', err)
+                    },
+                })
+            }
+        })
+    }
+
+    saveCmsPage = (value, data, key) => {
+        if (value != data[key]) {
+            console.log('save cms', key)
+
+            const {updateCmsPage} = this.props
+
+            updateCmsPage(
+                Object.assign({}, data, {[key]: value}), key
+            )
+        }
+    }
+
+    handleFlagChange = (key, e, flag) => {
+        this.setState({[key]: flag})
+        this.saveCmsPage(flag, this.props.cmsPage, key)
+    }
+
+
+    handleClientScriptChange = (script) => {
+        clearTimeout(this.setScriptTimeout)
+        this.setScriptTimeout = setTimeout(() => {
+            this.setState({script})
+        }, 500)
+    }
+
+    handleDataResolverChange = (str) => {
+        this.setState({dataResolver: str})
+        clearTimeout(this.dataResolverSaveTimeout)
+        this.dataResolverSaveTimeout = setTimeout(() => {
+            // auto save after some time
+            this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
+        }, 5000)
+    }
+
+    handleTemplateChange = (str) => {
+        this.setState({template: str, templateError: null})
+    }
+
+
+    handleTemplateSaveChange = (json, save) => {
+        const template = JSON.stringify(json, null, 4)
+        if (save) {
+            this.saveCmsPage(template, this.props.cmsPage, 'template')
+        } else {
+            this.setState({template, templateError: null})
+        }
+    }
+
+
+    drawerWidthChange = (newWidth) => {
+        this.handleSettingChange('drawerWidth', newWidth)
+    }
+
+    drawerOpenClose = (open) => {
+        this.handleSettingChange('drawerOpen', open)
+    }
+
 
     handleComponentEditChange(cmsComponentEdit, str) {
         if (cmsComponentEdit.key) {

@@ -71,8 +71,19 @@ class JsonEditor extends React.Component {
             }} key={key} style={{paddingLeft: 10 * level}} button
                               onClick={this.handleClick.bind(this, key)}>
                 <ListItemText classes={{primary: classes.type}}>
-                    <span suppressContentEditableWarning={true}
-                          contentEditable>{t}</span>
+                    <span
+                        onClick={e => {
+                            e.stopPropagation()
+                            return false
+                        }}
+                        onKeyUp={e => {
+                            this.setChildComponent(key, e.target.innerText.trim(), 't')
+                        }
+                        }
+                        onBlur={e => {
+                        }}
+                        suppressContentEditableWarning={true}
+                        contentEditable>{t}</span>
                 </ListItemText>
                 <AddIconButton></AddIconButton>
                 <ClearIconButton></ClearIconButton>
@@ -95,10 +106,10 @@ class JsonEditor extends React.Component {
         }
     }
 
-    setChildComponent(key, value) {
+    setChildComponent(key, value, prop) {
         const o = Util.getComponentByKey(key, this.json)
         if (o) {
-            o.c = value
+            o[prop || 'c'] = value
             this.props.onChange(JSON.stringify(this.json, null, 4))
             this.forceUpdate()
         }

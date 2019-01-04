@@ -33,7 +33,7 @@ class UserDataContainer extends React.PureComponent {
         if (!prevState.loaded) {
             return Object.assign({}, prevState, {loading: true})
         }
-        return prevState
+        return null
     }
 
     render() {
