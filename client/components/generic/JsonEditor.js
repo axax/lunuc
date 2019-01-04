@@ -19,6 +19,7 @@ const styles = theme => ({
         fontWeight: 'bold'
     }
 })
+import JsonDom from '../JsonDom'
 
 class JsonEditor extends React.Component {
 
@@ -31,7 +32,7 @@ class JsonEditor extends React.Component {
         } catch (e) {
             console.log(e)
         }
-
+//console.log(JsonDom.components)
         this.state = {
             open: {}
         }

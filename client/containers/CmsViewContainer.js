@@ -16,8 +16,8 @@ import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from './generic/wit
 import {
     CAPABILITY_MANAGE_CMS_PAGES
 } from 'util/capabilities'
-
 import Async from 'client/components/Async'
+
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "misc" */ '../components/layout/ErrorPage')}/>
 
@@ -45,10 +45,9 @@ const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
 const Divider = (props) => <Async {...props} expose="Divider"
                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const UIProvider = (props) => <Async {...props} expose="UIProvider"
-                                  load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                     load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const ErrorHandler = (props) => <Async {...props}
                                        load={import(/* webpackChunkName: "admin" */ '../components/layout/ErrorHandler')}/>
-
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
 const gqlQuery = gql`query cmsPage($slug: String!,$query:String,$nosession: String, $version: String){ cmsPage(slug: $slug,query: $query, nosession: $nosession, version: $version){cacheKey slug urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
@@ -254,13 +253,11 @@ class CmsViewContainer extends React.Component {
                     </Expandable>
 
 
-
                     <Expandable title="Style"
                                 onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
                                 expanded={settings.styleExpanded}>
 
                     </Expandable>
-
 
 
                     <Expandable title="Settings"

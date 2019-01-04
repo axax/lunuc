@@ -20,7 +20,7 @@ export default () => {
     })
 
 
-    Hook.on('JsonDom', ({components, props}) => {
+    Hook.on('JsonDom', ({components}) => {
         components['Login'] = Login
     })
 }

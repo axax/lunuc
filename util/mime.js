@@ -22,7 +22,7 @@ const MIME_TYPES = {
 
 const MimeType = {
     detectByFileName: function (fileName) {
-        const ext = path.extname(fileName).split('.')[1]
+        const ext = path.extname(fileName).split('.')[1].toLowerCase()
         return this.detectByExtension(ext)
     },
     detectByExtension: function (ext) {

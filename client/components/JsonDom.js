@@ -1,55 +1,70 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {SimpleMenu, DrawerLayout, Button, Divider, Col, Row, SimpleToolbar, Card, DeleteIconButton} from 'ui'
 import Hook from 'util/hook'
-import CmsViewContainer from '../containers/CmsViewContainer'
-import {Link} from 'react-router-dom'
 import _t from 'util/i18n'
 import Util from 'client/util'
 import Async from 'client/components/Async'
+import CmsViewContainer from 'client/containers/CmsViewContainer'
 import {getKeyValueFromLS} from '../containers/generic/withKeyValues'
-
-
-const ContentEditable = (props) => <Async {...props}
-                                          load={import(/* webpackChunkName: "admin" */ '../components/generic/ContentEditable')}/>
+import {
+    SimpleMenu as UiSimpleMenu,
+    Button as UiButton,
+    Divider as UiDivider,
+    Col as UiCol,
+    Row as UiRow,
+    SimpleToolbar as UiSimpleToolbar,
+    Card as UiCard
+} from 'ui'
+import {Link} from 'react-router-dom'
+import JsonDomInput from './JsonDomInput'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ '../components/cms/JsonDomHelper')}/>
 
+const ContentEditable = (props) => <Async {...props}
+                                          load={import(/* webpackChunkName: "admin" */ '../components/generic/ContentEditable')}/>
 
 const FileDrop = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "admin" */ '../components/FileDrop')}/>
+
+const Print = (props) => <Async {...props}
+                                load={import(/* webpackChunkName: "admin" */ '../components/Print')}/>
 
 
 const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change', 'Submit']
 
 class JsonDom extends React.Component {
 
-    components = {
+    static components = {
         'FileDrop': FileDrop,
+        'Print': Print,
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
-        'SimpleMenu': SimpleMenu,
+        'SimpleMenu': UiSimpleMenu,
         'Link': Link,
-        'Cms': ({props, ...rest}) => <CmsViewContainer _props={props} _parentRef={this} dynamic={true} {...rest}/>,
-        'SimpleToolbar': ({position, ...rest}) => <SimpleToolbar
-            position={(this.props.editMode ? 'static' : position)} {...rest} />,
-        'Button': Button,
-        'Divider': Divider,
-        'Card': Card,
-        'Col': Col,
-        'Row': Row,
-        'h1$': ({id, children, ...rest}) => <h1 id={id} {...rest}><ContentEditable
-            onChange={(v) => this.emitChange(id, v)}
-            onBlur={(v) => this.emitChange(id, v, true)}>{children}</ContentEditable></h1>,
-        'h2$': ({id, children, ...rest}) => <h2 id={id} {...rest}><ContentEditable
-            onChange={(v) => this.emitChange(id, v)}
-            onBlur={(v) => this.emitChange(id, v, true)}>{children}</ContentEditable></h2>,
-        'p$': ({id, children, ...rest}) => <p id={id} {...rest}><ContentEditable
-            onChange={(v) => this.emitChange(id, v)}
-            onBlur={(v) => this.emitChange(id, v, true)}>{children}</ContentEditable></p>
+        'Cms': ({props, _this, ...rest}) => <CmsViewContainer _props={props} _parentRef={_this}
+                                                              dynamic={true} {...rest}/>,
+        'SimpleToolbar': ({_this, position, ...rest}) => <UiSimpleToolbar
+            position={(_this.props.editMode ? 'static' : position)} {...rest} />,
+        'Button': UiButton,
+        'Divider': UiDivider,
+        'Card': UiCard,
+        'Col': UiCol,
+        'Row': UiRow,
+        'h1$': ({_this, id, children, ...rest}) => <h1 id={id} {...rest}><ContentEditable
+            onChange={(v) => _this.emitChange(id, v)}
+            onBlur={(v) => _this.emitChange(id, v, true)}>{children}</ContentEditable></h1>,
+        'h2$': ({_this, id, children, ...rest}) => <h2 id={id} {...rest}><ContentEditable
+            onChange={(v) => _this.emitChange(id, v)}
+            onBlur={(v) => _this.emitChange(id, v, true)}>{children}</ContentEditable></h2>,
+        'p$': ({_this, id, children, ...rest}) => <p id={id} {...rest}><ContentEditable
+            onChange={(v) => _this.emitChange(id, v)}
+            onBlur={(v) => _this.emitChange(id, v, true)}>{children}</ContentEditable></p>
     }
+    static hock = true
 
+    resolvedDataJson = undefined
+    extendedComponents = {}
     json = null
     jsonRaw = null
     scope = null
@@ -139,14 +154,17 @@ class JsonDom extends React.Component {
 
     }
 
-    resolvedDataJson = undefined
 
     constructor(props) {
         super(props)
         this.state = {hasReactError: false, bindings: {}}
 
         /* HOOK */
-        Hook.call('JsonDom', this)
+        if (JsonDom.hock) {
+            // call only once if JsonDom is used somewhere
+            JsonDom.hock = false
+            Hook.call('JsonDom', JsonDom)
+        }
 
         this.addParentRef(props)
     }
@@ -158,20 +176,7 @@ class JsonDom extends React.Component {
 
     UNSAFE_componentWillReceiveProps(props) {
 
-        this.addParentRef(props)
-        if (this.props.scope !== props.scope) {
-            this.scope = null
-            this.json = null
-        }
-        if (this.props.template !== props.template || this.props._props !== props._props) {
-            this.resetTemplate()
-        }
-        if (this.props.script !== props.script) {
-            this.resetTemplate()
-            this.scriptResult = null
-            this.jsOnStack = {}
-            this.runScript = true
-        }
+
         if (this.props.resolvedData !== props.resolvedData) {
             this.resolvedDataJson = undefined
             this.json = null
@@ -181,16 +186,40 @@ class JsonDom extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        if (state.hasReactError) return true
 
-        if (!props.template || !props.scope) return true
-        return props.children !== this.props.children ||
+        const update = state.hasReactError ||
+            !props.template || !props.scope ||
+            props.children !== this.props.children ||
             this.props.template !== props.template ||
             this.props._props !== props._props ||
             this.props.scope !== props.scope ||
             this.props.script !== props.script ||
             this.props.inlineEditor !== props.inlineEditor ||
             this.props.resolvedData !== props.resolvedData
+
+        if (update) {
+            // do some stuff before update
+            this.parseError = null
+            this.addParentRef(props)
+
+            if (this.props.scope !== props.scope) {
+                this.scope = null
+                this.json = null
+            }
+            if (this.props.template !== props.template || this.props._props !== props._props) {
+                this.resetTemplate()
+            }
+            if (this.props.script !== props.script) {
+                this.resetTemplate()
+                this.scriptResult = null
+                this.jsOnStack = {}
+                this.runScript = true
+            }
+
+        }
+
+        return update
+
     }
 
     componentDidMount() {
@@ -204,8 +233,6 @@ class JsonDom extends React.Component {
 
     // is called after render
     componentDidUpdate(props) {
-        this.parseError = null
-
         this.runJsEvent('update')
     }
 
@@ -311,10 +338,13 @@ class JsonDom extends React.Component {
             }
             // extend type
             if (x && x.n) {
-                const comp = this.components[x.t]
-                if (comp) {
-                    this.components[x.n] = (props) => {
-                        return comp({...x.p, ...props})
+                const extComp = this.extendedComponents[x.t]
+                if (!extComp) {
+                    const comp = JsonDom.components[x.t]
+                    if (comp) {
+                        this.extendedComponents[x.n] = (props) => {
+                            return comp({...x.p, ...props})
+                        }
                     }
                 }
             }
@@ -432,8 +462,13 @@ class JsonDom extends React.Component {
                 if (t === 'Cms') {
                     cmsProps = {location: this.props.history.location}
                 }
-                let eleType = this.components[_t] || _t
-                const eleProps = {id: key, key, _editmode: this.props.editMode.toString(), ...cmsProps, ..._p}
+                let eleType = JsonDom.components[_t] || this.extendedComponents[_t] || _t
+                const eleProps = {
+                    _this: this,
+                    id: key,
+                    key,
+                    _editmode: this.props.editMode.toString(), ...cmsProps, ..._p
+                }
                 if (this.props.editMode && this.props.inlineEditor) {
                     const _item = Util.getComponentByKey(key, this.getJsonRaw(this.props))
                     if (_item) {
@@ -503,8 +538,8 @@ class JsonDom extends React.Component {
                 t: 'div',
                 $c: Util.escapeForJson(str, true)
             })
-        }else {
-            str = str.replace(/\\/g,'\\\\')
+        } else {
+            str = str.replace(/\\/g, '\\\\')
         }
         try {
             const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const parent = this.parent;const _i = this.tryCatch;return `' + str + '`;')
@@ -667,50 +702,3 @@ JsonDom.propTypes = {
 }
 
 export default JsonDom
-
-
-/* Wrapper for input so we are able to pass a value prop  */
-class JsonDomInput extends React.Component {
-    state = {value: ''}
-
-    constructor(props) {
-        super(props)
-        this.state = {
-            value: props.value
-        }
-    }
-
-    shouldComponentUpdate(props, state) {
-        return state.value !== this.state.value
-    }
-
-    UNSAFE_componentWillReceiveProps(props) {
-        this.setState({value: props.value || ''})
-    }
-
-    valueChange = (e) => {
-        const {onChange} = this.props
-        this.setState({value: e.target.value})
-        if (onChange) {
-            onChange(e)
-        }
-    }
-
-    render() {
-        const {value, onChange, textarea, ...rest} = this.props
-        if (textarea) {
-            return <textarea onChange={this.valueChange.bind(this)} value={this.state.value} {...rest} />
-        } else {
-            return <input onChange={this.valueChange.bind(this)} value={this.state.value} {...rest} />
-        }
-    }
-
-}
-
-
-JsonDomInput.propTypes = {
-    value: PropTypes.string,
-    onChange: PropTypes.func,
-    textarea: PropTypes.bool
-}
-
