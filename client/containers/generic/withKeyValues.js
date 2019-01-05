@@ -53,20 +53,25 @@ export const setKeyValueToLS = (key, value, server) => {
 // This function takes a component...
 export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
-
-
     // ...and returns another component...
     class WithKeyValues extends React.Component {
+
+
+        keyValuesLast = false
+        keyValueGlobalsLast = false
+        keyValueMap = null
+        keyValueGlobalMap = null
+
         constructor(props) {
             super(props)
         }
 
-        shouldComponentUpdate(nextProps, nextState){
+        shouldComponentUpdate(nextProps, nextState) {
 
-            const ignoreToCompare = ['deleteKeyValueByKey','setKeyValue','setKeyValueGlobal','loading']
-            for( const k of Object.keys(nextProps)){
+            const ignoreToCompare = ['deleteKeyValueByKey', 'setKeyValue', 'setKeyValueGlobal', 'loading']
+            for (const k of Object.keys(nextProps)) {
 
-                if( !ignoreToCompare.includes(k) && nextProps[k] !== this.props[k]){
+                if (!ignoreToCompare.includes(k) && nextProps[k] !== this.props[k]) {
                     return true
                 }
             }
@@ -76,22 +81,26 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
         render() {
             const {keyValues, keyValueGlobals, kvUser, loading, ...rest} = this.props
-            let keyValueMap = {}, keyValueGlobalMap = {}
+
 
             if (keys) {
                 if (!kvUser.isAuthenticated) {
                     // fallback: load keyValues from localstore
-                    keyValueMap = getKeyValuesFromLS()
+                    this.keyValueMap = getKeyValuesFromLS()
                 } else if (keyValues) {
-                    // create a keyvalue map
-                    const {results} = keyValues
-                    if (results) {
-                        for (const i in results) {
-                            const o = results[i]
-                            try {
-                                keyValueMap[o.key] = JSON.parse(o.value)
-                            } catch (e) {
-                                keyValueMap[o.key] = o.value
+                    if (keyValues !== this.keyValuesLast) {
+                        this.keyValuesLast = keyValues
+                        this.keyValueMap = {}
+                        // create a keyvalue map
+                        const {results} = keyValues
+                        if (results) {
+                            for (const i in results) {
+                                const o = results[i]
+                                try {
+                                    this.keyValueMap[o.key] = JSON.parse(o.value)
+                                } catch (e) {
+                                    this.keyValueMap[o.key] = o.value
+                                }
                             }
                         }
                     }
@@ -103,23 +112,26 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
                 }
             }
-            if (keyValueGlobals) {
+
+
+            if (keyValueGlobals && keyValueGlobals !== this.keyValueGlobalsLast) {
                 const {results} = keyValueGlobals
+                this.keyValueGlobalsLast = keyValueGlobals
                 if (results) {
                     for (const i in results) {
                         const o = results[i]
                         try {
-                            keyValueGlobalMap[o.key] = JSON.parse(o.value)
+                            this.keyValueGlobalMap[o.key] = JSON.parse(o.value)
                         } catch (e) {
-                            keyValueGlobalMap[o.key] = o.value
+                            this.keyValueGlobalMap[o.key] = o.value
                         }
                     }
                 }
             }
             // ... and renders the wrapped component with the fresh data!
             // Notice that we pass through any additional props
-            return <WrappedComponent keyValues={keyValues} keyValueMap={keyValueMap}
-                                     keyValueGlobalMap={keyValueGlobalMap} {...rest} />
+            return <WrappedComponent keyValues={keyValues} keyValueMap={this.keyValueMap}
+                                     keyValueGlobalMap={this.keyValueGlobalMap} {...rest} />
         }
     }
 

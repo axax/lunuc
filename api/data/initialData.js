@@ -12,8 +12,15 @@ import {
     CAPABILITY_READ_EVERYTHING,
     CAPABILITY_RUN_COMMAND
 } from 'util/capabilities'
-
 import {ObjectId} from 'mongodb'
+import path from 'path'
+import config from 'gen/config'
+import fs from 'fs'
+import zipper from 'zip-local'
+
+
+const {UPLOAD_DIR} = config
+
 
 // https://github.com/apollographql/apollo-server/issues/1633
 ObjectId.prototype.valueOf = function () {
@@ -24,6 +31,23 @@ export const createAllInitialData = async (db) => {
     console.log('Inserting data...')
     await createUserRoles(db)
     await createUsers(db)
+    createUploads()
+}
+
+
+export const createUploads = () => {
+    const upload_dir = path.join(__dirname, '../../' + UPLOAD_DIR)
+
+    fs.readdir(upload_dir, (err, files) => {
+        if (!err && files) {
+            const filterdFiles = files.filter(e => !e === '.DS_Store')
+            if (filterdFiles.length === 0) {
+                console.log('Create upload files...')
+                zipper.sync.unzip(path.join(__dirname, './uploads.gz')).save(upload_dir)
+            }
+        }
+    })
+
 }
 
 

@@ -33,13 +33,15 @@ const styles = {
     printArea: {
         backgroundColor: '#fff',
         fontFamily: '\'Roboto\', sans-serif',
-        padding: '2rem'
+        padding: '2rem',
+        height: '100%'
     },
     printAreaInner: {
         '& img': {
             maxWidth: '100%'
         }
     },
+    scaled: {},
     cloneArea: {
         width: '1020px' /* this is the paper size */
     },
@@ -61,7 +63,7 @@ const styles = {
     },
     invisible: {
         visibility: 'hidden !important',
-        '*': {
+        '& *': {
             visibility: 'hidden !important'
         }
     }
@@ -77,16 +79,16 @@ class Print extends React.PureComponent {
     }
 
     render() {
-        const {classes, children} = this.props
+        const {classes, children, style} = this.props
         return <div className={classes.root}>
             <button className={classes.button} onClick={this.createPdf.bind(this)}>Create PDF</button>
             <div className={classes.overlay}></div>
-            <div className={classes.cloneArea}></div>
             <div className={classes.wrapper}>
-                <div className={classes.printArea}>
+                <div className={classes.printArea} style={style}>
                     <div className={classes.printAreaInner}>{children}</div>
                 </div>
             </div>
+            <div className={classes.cloneArea}></div>
         </div>
 
     }
@@ -102,7 +104,7 @@ class Print extends React.PureComponent {
             pageHeight = 1430 * enlargeFac,
             pageWidth = 1020 * enlargeFac,
             ol = $(`.${classes.overlay}`)[0],
-            pa = $(`.${classes.printArea}:not(.cv-scaled)`)[0].cloneNode(true),
+            pa = $(`.${classes.printArea}:not(.${classes.scaled})`)[0].cloneNode(true),
             pai = $(`.${classes.printAreaInner}`, pa)[0],
             pdfContent = [],
             cpc = $(`.${classes.cloneArea}`)[0]
@@ -113,7 +115,7 @@ class Print extends React.PureComponent {
             transform: 'scale(' + enlargeFac + ',' + enlargeFac + ')',
             overflow: 'hidden'
         })
-        pa.className += ' cv-scaled'
+        pa.className += ` ${classes.scaled}`
 
         cpc.appendChild(pa)
 

@@ -98,7 +98,7 @@ class TypesContainer extends React.Component {
     }
 
     parseSettings(props) {
-        this.settings = props.keyValueMap.TypesContainerSettings || {}
+        this.settings = Object.assign({}, props.keyValueMap.TypesContainerSettings)
     }
 
     setSettingsForType(type, settings) {
@@ -738,7 +738,7 @@ class TypesContainer extends React.Component {
                     variables
                 }).then(response => {
                     const o = response.data[storeKey]
-                    if( !this.state.data || JSON.stringify(this.state.data) !== JSON.stringify(o) ) {
+                    if (!this.state.data || JSON.stringify(this.state.data) !== JSON.stringify(o)) {
                         this.setState({data: o})
                     }
                 }).catch(error => {
@@ -1005,6 +1005,7 @@ class TypesContainer extends React.Component {
 
     runFilter(f) {
         const {type, limit, sort, version} = this.pageParams
+        this.setSettingsForType(type, {filter: f})
         this.goTo(type, 1, limit, sort, f, version)
     }
 

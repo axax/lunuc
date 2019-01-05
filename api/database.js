@@ -1,5 +1,5 @@
 import {MongoClient} from 'mongodb'
-import {createAllInitialData} from './data/initialDbData'
+import {createAllInitialData} from './data/initialData'
 import {createAllIndexes} from './index/indexes'
 import ClientUtil from 'client/util'
 
