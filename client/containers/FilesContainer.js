@@ -21,7 +21,6 @@ import {Query} from 'react-apollo'
 import {COMMAND_QUERY} from '../constants'
 
 
-
 class FilesContainer extends React.Component {
 
 
@@ -29,12 +28,13 @@ class FilesContainer extends React.Component {
         super(props)
 
         this.state = {
-            file: false
+            file: false,
+            dir: '.'
         }
     }
 
     render() {
-        const {file} = this.state
+        const {file, dir} = this.state
         return (
             <BaseLayout>
                 <Typography variant="h3" gutterBottom>Files</Typography>
@@ -43,7 +43,7 @@ class FilesContainer extends React.Component {
                     <Col sm={4}>
                         <Query query={gql(COMMAND_QUERY)}
                                fetchPolicy="cache-and-network"
-                               variables={{command: 'ls -l'}}>
+                               variables={{command: 'ls -l ' + dir}}>
                             {({loading, error, data}) => {
                                 if (loading) return 'Loading...'
                                 if (error) return `Error! ${error.message}`
@@ -56,11 +56,16 @@ class FilesContainer extends React.Component {
                                     if (fileRow) {
                                         const b = fileRow.split(' ').filter(x => x);
                                         a.push({
-                                            icon: b[0].indexOf('d')===0?<FolderIcon />:<InsertDriveFileIcon />,
+                                            icon: b[0].indexOf('d') === 0 ? <FolderIcon /> : <InsertDriveFileIcon />,
                                             selected: false,
                                             primary: b[8],
                                             onClick: () => {
-                                                this.setState({file:b[8]})
+                                                if (b[0].indexOf('d') === 0) {
+                                                    //change dir
+                                                    this.setState({dir: dir + '/' + b[8]})
+                                                } else {
+                                                    this.setState({file: b[8]})
+                                                }
                                             },
                                             secondary: Util.formatBytes(b[4])/*,
                                              actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
@@ -69,6 +74,17 @@ class FilesContainer extends React.Component {
                                     }
                                     return a
                                 }, [])
+
+                                if (dir.indexOf('/') > 0) {
+                                    listItems.unshift({
+                                        icon: <FolderIcon />,
+                                        selected: false,
+                                        primary: '..',
+                                        onClick: () => {
+                                            this.setState({dir: dir.substring(0,dir.lastIndexOf('/'))})
+                                        }
+                                    })
+                                }
 
                                 return <SimpleList items={listItems}
                                                    count={listItems.length}/>
@@ -80,7 +96,7 @@ class FilesContainer extends React.Component {
                         {file &&
                         <Query query={gql(COMMAND_QUERY)}
                                fetchPolicy="cache-and-network"
-                               variables={{command: 'less '+file}}>
+                               variables={{command: 'less ' + dir + '/' + file}}>
                             {({loading, error, data}) => {
                                 if (loading) return 'Loading...'
                                 if (error) return `Error! ${error.message}`

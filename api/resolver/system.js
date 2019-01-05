@@ -20,10 +20,21 @@ import UtilCms from '../util/cms'
 
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
+const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ']
+
 export const systemResolver = (db) => ({
     Query: {
         run: async ({command}, {context}) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            let performCheck = true
+
+            for (const c of SKIP_CAPABILITY_CHECK){
+                if( command.indexOf(c) === 0){
+                    performCheck = false
+                }
+            }
+            if( performCheck ) {
+                await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            }
 
             if (!command) {
                 throw new Error('No command to execute.')
