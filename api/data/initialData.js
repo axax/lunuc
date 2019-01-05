@@ -37,16 +37,17 @@ export const createAllInitialData = async (db) => {
 
 export const createUploads = () => {
     const upload_dir = path.join(__dirname, '../../' + UPLOAD_DIR)
-
-    fs.readdir(upload_dir, (err, files) => {
-        if (!err && files) {
-            const filterdFiles = files.filter(e => !e === '.DS_Store')
-            if (filterdFiles.length === 0) {
-                console.log('Create upload files...')
-                zipper.sync.unzip(path.join(__dirname, './uploads.gz')).save(upload_dir)
+    if (Util.ensureDirectoryExistence(upload_dir)) {
+        fs.readdir(upload_dir, (err, files) => {
+            if (!err && files) {
+                const filterdFiles = files.filter(e => !e === '.DS_Store')
+                if (filterdFiles.length === 0) {
+                    console.log('Create upload files...')
+                    zipper.sync.unzip(path.join(__dirname, './uploads.gz')).save(upload_dir)
+                }
             }
-        }
-    })
+        })
+    }
 
 }
 
