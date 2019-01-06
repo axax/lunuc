@@ -86,8 +86,16 @@ class JsonEditor extends React.Component {
                         suppressContentEditableWarning={true}
                         contentEditable>{t}</span>
                 </ListItemText>
-                <AddIconButton></AddIconButton>
-                <ClearIconButton></ClearIconButton>
+                <AddIconButton onClick={e => {
+                    e.stopPropagation()
+                    this.addComponent(key)
+                    return false
+                }}></AddIconButton>
+                <ClearIconButton onClick={e => {
+                    e.stopPropagation()
+                    this.addComponent(key)
+                    return false
+                }}></ClearIconButton>
                 { json.c && (!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
             </ListItem>,
                 <Collapse key={key + '.colapse'} in={!!this.state.open[key]} timeout="auto" unmountOnExit>
@@ -113,6 +121,24 @@ class JsonEditor extends React.Component {
             o[prop || 'c'] = value
             this.props.onChange(JSON.stringify(this.json, null, 4))
             this.forceUpdate()
+        }
+    }
+
+
+    addComponent(key) {
+        const o = Util.getComponentByKey(key, this.json)
+        if (o) {
+            let c = o['c']
+            if (!c) {
+                c = []
+            } else if (c.constructor !== Array) {
+                c = [c]
+            }
+            c.push({'c': 'new component'})
+            o.c = c
+            this.props.onBlur(JSON.stringify(this.json, null, 4))
+            this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
+
         }
     }
 

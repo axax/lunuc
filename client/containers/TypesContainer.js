@@ -367,12 +367,9 @@ class TypesContainer extends React.Component {
                                          label="Select version to edit"
                                          value={version}
                                          onChange={(e) => {
-
                                              const {type, page, limit, sort, filter} = this.pageParams
                                              this.goTo(type, page, limit, sort, filter, e.target.value)
                                              this.setSettingsForType(type, {version: e.target.value})
-
-                                             //this.setState({selectedVersion:e.target.value})
                                          }}
                                          items={items}
                                      />
@@ -718,6 +715,7 @@ class TypesContainer extends React.Component {
                 const storeKey = this.getStoreKey(type),
                     variables = {limit, page, sort, version, filter: this.extendFilter(filter)},
                     gqlQuery = gql(queries.query)
+                let hasStoreError = false
                 if (cacheFirst) {
                     try {
                         const storeData = client.readQuery({
@@ -729,6 +727,7 @@ class TypesContainer extends React.Component {
                             this.setState({data: storeData[storeKey]})
                         }
                     } catch (e) {
+                        hasStoreError = true
                     }
                 }
                 client.query({
@@ -738,7 +737,7 @@ class TypesContainer extends React.Component {
                     variables
                 }).then(response => {
                     const o = response.data[storeKey]
-                    if (!this.state.data || JSON.stringify(this.state.data) !== JSON.stringify(o)) {
+                    if (!this.state.data || hasStoreError || JSON.stringify(this.state.data) !== JSON.stringify(o)) {
                         this.setState({data: o})
                     }
                 }).catch(error => {

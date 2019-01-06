@@ -59,8 +59,8 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
         keyValuesLast = false
         keyValueGlobalsLast = false
-        keyValueMap = null
-        keyValueGlobalMap = null
+        keyValueMap = {}
+        keyValueGlobalMap = {}
 
         constructor(props) {
             super(props)
@@ -113,10 +113,10 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                 }
             }
 
-
             if (keyValueGlobals && keyValueGlobals !== this.keyValueGlobalsLast) {
                 const {results} = keyValueGlobals
                 this.keyValueGlobalsLast = keyValueGlobals
+                this.keyValueGlobalMap = {}
                 if (results) {
                     for (const i in results) {
                         const o = results[i]
