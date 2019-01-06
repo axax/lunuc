@@ -93,7 +93,7 @@ class JsonEditor extends React.Component {
                 }}></AddIconButton>
                 <ClearIconButton onClick={e => {
                     e.stopPropagation()
-                    this.addComponent(key)
+                    this.removeComponent(key)
                     return false
                 }}></ClearIconButton>
                 { json.c && (!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
@@ -136,6 +136,26 @@ class JsonEditor extends React.Component {
             }
             c.push({'c': 'new component'})
             o.c = c
+            this.props.onBlur(JSON.stringify(this.json, null, 4))
+            this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
+
+        }
+    }
+
+
+    removeComponent(key) {
+        const parentKey = key.substring(0,key.lastIndexOf('.'))
+        const parent = Util.getComponentByKey(parentKey, this.json), child = Util.getComponentByKey(key, this.json)
+        if (parent && child) {
+            let c = parent['c']
+            if (!c) {
+                return
+            } else if (c.constructor !== Array) {
+                c = ''
+            }else{
+                c.splice( c.indexOf(child), 1 );
+            }
+            parent.c = c
             this.props.onBlur(JSON.stringify(this.json, null, 4))
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
 
