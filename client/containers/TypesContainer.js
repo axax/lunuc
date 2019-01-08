@@ -492,6 +492,7 @@ class TypesContainer extends React.Component {
                                  primaryButton={false}
                                  fields={{
                                      term: {
+                                         uitype: 'search',
                                          value: filter,
                                          fullWidth: true,
                                          placeholder: 'Filter expression (for specifc fields use field=term)'
