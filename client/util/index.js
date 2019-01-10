@@ -182,7 +182,7 @@ const Util = {
         // the root is always 0 so remove it
         keyParts.shift()
 
-        if( obj.constructor !== Array ){
+        if (obj.constructor !== Array) {
             keyParts.shift()
         }
         let cur = obj
@@ -209,6 +209,13 @@ const Util = {
             sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
             i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    },
+    hightlight(text, query, cls) {
+        if (!text) return ''
+
+        const pattern = new RegExp(`(${query.replace(/\s/g, '|')})`, 'gi');
+
+        return text.replace(pattern, match => `<span class='${cls || ''}'>${match}</span>`);
     }
 }
 export default Util

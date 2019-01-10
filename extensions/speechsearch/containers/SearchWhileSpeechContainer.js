@@ -15,7 +15,7 @@ import {
     withStyles
 } from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
-
+import Util from 'client/util'
 
 const styles = theme => ({
     card: {
@@ -178,16 +178,6 @@ class SearchWhileSpeechContainer extends React.Component {
         }
     }
 
-    hightlightWords(text, words) {
-        if( !text ) return ''
-        const {classes} = this.props
-
-        const pattern = new RegExp(`(${words.replace(/\s/g, '|')})`, 'gi');
-
-        return text.replace(pattern, match => `<span class=${classes.hightlight}>${match}</span>`);
-    }
-
-
     render() {
         const {classes} = this.props
 
@@ -244,10 +234,10 @@ class SearchWhileSpeechContainer extends React.Component {
                             (i2 > 0 ?
                                 <Divider light className={classes.divider} key={'divider' + i + '-' + i2}/> : null),
                             <Typography key={'main' + i + '-' + i2} variant="h5">
-                                <span dangerouslySetInnerHTML={{__html:this.hightlightWords(k2.title, k.query)}} />
+                                <span dangerouslySetInnerHTML={{__html:Util.hightlight(k2.title, k.query, classes.hightlight)}} />
                             </Typography>,
                             <Typography key={'text' + i + '-' + i2}>
-                                <span dangerouslySetInnerHTML={{__html:this.hightlightWords(k2.search.unstyled, k.query)}} />
+                                <span dangerouslySetInnerHTML={{__html:Util.hightlight(k2.search.unstyled, k.query, classes.hightlight)}} />
                             </Typography>])}</Card>
                 )
             }
