@@ -36,8 +36,8 @@ const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change', 'Submit']
 class JsonDom extends React.Component {
 
     static components = {
-        'FileDrop': FileDrop,
-        'Print': Print,
+        'FileDrop': {component: FileDrop, label: 'File Drop'},
+        'Print': {component: Print, label: 'Printable area'},
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'SimpleMenu': UiSimpleMenu,
@@ -463,6 +463,9 @@ class JsonDom extends React.Component {
                     cmsProps = {location: this.props.history.location}
                 }
                 let eleType = JsonDom.components[_t] || this.extendedComponents[_t] || _t
+                if (eleType.constructor === Object) {
+                    eleType = eleType.component
+                }
                 const eleProps = {
                     _this: this,
                     id: key,

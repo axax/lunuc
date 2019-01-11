@@ -10,19 +10,21 @@ import IconButton from '@material-ui/core/IconButton'
 class SimpleMenu extends React.Component {
     state = {
         anchorEl: null,
-    };
+    }
 
     handleClick = event => {
+        event.stopPropagation()
         this.setState({anchorEl: event.currentTarget})
-    };
+        return false
+    }
 
     handleClose = () => {
         this.setState({anchorEl: null})
-    };
+    }
 
     render() {
         const {anchorEl} = this.state
-        const {style, items, label, mini, color, fab} = this.props
+        const {style, items, label, mini, color, fab, onClick} = this.props
         return (
             <div style={style}>
                 {
@@ -68,9 +70,9 @@ class SimpleMenu extends React.Component {
                     onClose={this.handleClose}
                 >
                     {items.map((item, i) => {
-                        return <MenuItem onClick={() => {
+                        return <MenuItem onClick={(e) => {
                             this.handleClose();
-                            item.onClick()
+                            item.onClick(e)
                         }} key={i}>{item.name}</MenuItem>
                     })}
 

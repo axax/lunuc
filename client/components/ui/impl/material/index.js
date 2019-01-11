@@ -116,6 +116,7 @@ export SimpleSwitch from './SimpleSwitch'
 export SimpleButton from './SimpleButton'
 export SimpleList from './SimpleList'
 export SimpleToolbar from './SimpleToolbar'
+export SimpleAutosuggest from './SimpleAutosuggest'
 
 export ContentBlock from './ContentBlock'
 
