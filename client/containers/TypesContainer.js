@@ -213,7 +213,16 @@ class TypesContainer extends React.Component {
                                         if (field.type === 'Media') {
                                             dynamic[field.name] = getImageTag(v._id, {height: 40})
                                         } else {
-                                            dynamic[field.name] = v.name
+                                            if( field.fields ) {
+                                                let str = ''
+                                                field.fields.forEach(f=>{
+                                                    if( str ) str += ', '
+                                                    str += v[f]
+                                                })
+                                                dynamic[field.name] = str
+                                            }else{
+                                                dynamic[field.name] = v.name
+                                            }
                                         }
                                     }
                                 }
@@ -260,8 +269,8 @@ class TypesContainer extends React.Component {
                         }
                     })
 
-                    if (columnsMap['user']) {
-                        dynamic.user = (item.createdBy ? item.createdBy.username : '???')
+                    if (columnsMap['_user']) {
+                        dynamic._user = (item.createdBy ? item.createdBy.username : '???')
                     }
                     if (columnsMap['date']) {
                         dynamic.date = Util.formattedDateFromObjectId(item._id)
@@ -402,9 +411,15 @@ class TypesContainer extends React.Component {
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
-        if (!this.types[type]) return <BaseLayout><Typography variant="subtitle1" color="error">Type {type} does not
-            exist.
-            Types can be specified in an extension.</Typography></BaseLayout>
+        if (!this.types[type]){
+            return <BaseLayout><Typography variant="subtitle1" color="error">Type {type} does not
+                exist.
+                Types can be specified in an extension. Please select another type.</Typography><SimpleSelect
+                value={type}
+                onChange={this.handleTypeChange}
+                items={this.typesToSelect}
+            /></BaseLayout>
+        }
 
 
         let viewSettingDialogProps, editDialogProps, manageColDialogProps
@@ -637,7 +652,7 @@ class TypesContainer extends React.Component {
         if (!typeDefinition.noUserRelation) {
             this.typeColumns[type].push({
                 title: 'User',
-                id: 'user'
+                id: '_user'
             })
         }
         this.typeColumns[type].push(

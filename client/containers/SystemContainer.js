@@ -35,7 +35,6 @@ class SystemContainer extends React.Component {
 
     render() {
         const {extensionStates} = this.state
-
         return <BaseLayout>
             <Typography variant="h3" component="h1" gutterBottom>System</Typography>
             <Typography variant="h4" component="h2" gutterBottom>Extensions</Typography>

@@ -1,0 +1,26 @@
+{
+  "types": [
+    {
+      "name": "UserStats",
+      "noUserRelation": true,
+      "fields": [
+        {
+          "name": "ip"
+        },
+        {
+          "name": "agent"
+        },
+        {
+          "name": "operation"
+        },
+        {
+          "name": "user",
+          "type": "User",
+          "fields": [
+            "username"
+          ]
+        }
+      ]
+    }
+  ]
+}

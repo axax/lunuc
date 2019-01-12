@@ -56,7 +56,7 @@ Hook.on('schema', ({schemas}) => {
 
 
 // Hook when db is ready
-Hook.on('dbready', ({db}) => {
+Hook.on('appready', ({db}) => {
     registerCronJobs(db)
 })
 

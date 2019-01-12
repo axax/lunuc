@@ -26,6 +26,9 @@
     },
     "cronjob": {
       "active": true
+    },
+    "userstats": {
+      "active": true
     }
   },
   "ui": [

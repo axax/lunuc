@@ -37,11 +37,11 @@ class LiveSpeechTranslaterContainer extends React.Component {
         this.handleRecorder(false)
     }
 
-    componentWillReceiveProps(nextProps) {
+    //componentWillReceiveProps(nextProps) {
        // if ( nextProps.speechLanguages && nextProps.me.settings.speechLang.selection.key !== this.state.language) {
            // this.setState({language: nextProps.me.settings.speechLang.selection.key,languageTo: nextProps.me.settings.translateLang.selection.key})
        // }
-    }
+    //}
 
 
     translate = ({text,toIso,fromIso}) => {

@@ -15,6 +15,7 @@ export const resolver = (db) => {
     //db.collection('DynamicTypes')
     //TODO implement logic for dynamictypes???
 
+
     // default core resolvers
     const resolvers =deepMerge({},
         commonResolver(db),

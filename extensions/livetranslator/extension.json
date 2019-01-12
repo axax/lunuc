@@ -1,4 +1,7 @@
 {
   "name": "Live speech translator",
-  "description": ""
+  "description": "",
+  "dependencies": [
+    "word"
+  ]
 }

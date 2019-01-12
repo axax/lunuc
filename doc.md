@@ -82,6 +82,14 @@ Hook.on('Routes', ({routes}) => {
 | TypeCreateEditDialog      |  type, props  | Here you can change the behavior of the dialog which is shown when you create or edit data of type  |   
 
 
+
+**Server hooks**
+ 
+| Hook        | Params           |  Description           | 
+| ------------- |-------------| -------------|
+| appready      |  db, app  | Is called as soon as connection and db is ready  |   
+| appexit      |    |Is called on precess exit  |  
+
 ## Content Management
 ### Data Resolver
 It is a simple json structure to select data on the server. The json is never exposed to the client. Only the resolved data are sent to the client.

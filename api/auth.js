@@ -56,8 +56,6 @@ export const auth = {
 	initialize: (app, db) => {
 
 
-		// creates the body object on the request
-		app.use(bodyParser.json())
 
 
 		app.use((req, res, next) => {
@@ -74,6 +72,9 @@ export const auth = {
 		})
 
 
+        // we do login via graphql for now
+        // creates the body object on the request
+        /*app.use(bodyParser.json())
 		app.post('/login', async (req, res) => {
 			const {username, password} = req.body
 
@@ -86,7 +87,7 @@ export const auth = {
 			}
 
 
-		})
+		})*/
 
 	}
 }

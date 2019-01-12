@@ -247,7 +247,7 @@ function gensrcExtension(name, options) {
         options.types.forEach((type) => {
             const nameStartLower = type.name.charAt(0).toLowerCase() + type.name.slice(1)
             schema += 'type ' + type.name + '{\n'
-            schema += '\t_id: ID!\n\tcreatedBy: UserPublic!\n\tstatus: String\n'
+            schema += '\t_id: ID!'+(!type.noUserRelation?'\n\tcreatedBy: UserPublic!':'')+'\n\tstatus: String\n'
 
             let mutationFields = '', resolverFields = '', refResolvers = '', refResolversObjectId = ''
 

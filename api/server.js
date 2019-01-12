@@ -2,7 +2,7 @@ import 'gen/extensions-server'
 import express from 'express'
 import {buildSchema} from 'graphql'
 import graphqlHTTP from 'express-graphql'
-import  { ApolloServer, gql } from 'apollo-server-express'
+import  {ApolloServer, gql} from 'apollo-server-express'
 import {createServer} from 'http'
 import {SubscriptionServer} from 'subscriptions-transport-ws'
 import {execute, subscribe} from 'graphql'
@@ -14,8 +14,21 @@ import {formatError} from './error'
 import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload} from './upload'
 import Hook from 'util/hook'
 
-
 const PORT = (process.env.PORT || 3000)
+
+
+
+process.on('SIGINT', () => {
+    console.log('Caught interrupt signal. Exit process')
+    process.exit()
+
+})
+
+process.on( 'exit', () => {
+    Hook.call('appexit')
+})
+
+
 
 export const start = (done) => {
 
@@ -26,10 +39,10 @@ export const start = (done) => {
             reject(err)
         } else {
 
-            Hook.call('dbready', {db})
-
             // Initialize http api
             const app = express()
+
+
 
             // delay response
             /*app.use(function (req, res, next) {
@@ -38,6 +51,9 @@ export const start = (done) => {
 
             // Authentication
             auth.initialize(app, db)
+
+            // order is important
+            Hook.call('appready', {db, app})
 
             // upload db dump
             app.use('/graphql/upload/dbdump', handleDbDumpUpload(db, client))
@@ -52,18 +68,18 @@ export const start = (done) => {
 
             // ApolloServer
             // Construct a schema, using GraphQL schema language
-           /* const typeDefs = gql(schemaString)
-            const apolloServer = new ApolloServer({ typeDefs, resolvers })
-            apolloServer.applyMiddleware({ app, path: '/graphql2' });*/
+            /* const typeDefs = gql(schemaString)
+             const apolloServer = new ApolloServer({ typeDefs, resolvers })
+             apolloServer.applyMiddleware({ app, path: '/graphql2' });*/
 
 
             // Graphql-Express
-            const schema =  buildSchema(schemaString)
+            const schema = buildSchema(schemaString)
             let rootValue = {}
-            Object.keys(resolvers).forEach(key=>{
-                if( key === 'Query' || key === 'Mutation' || key === 'Subscription' ){
+            Object.keys(resolvers).forEach(key => {
+                if (key === 'Query' || key === 'Mutation' || key === 'Subscription') {
                     rootValue = {...rootValue, ...resolvers[key]}
-                }else{
+                } else {
                     rootValue[key] = resolvers[key]
                 }
             })
@@ -77,6 +93,7 @@ export const start = (done) => {
                     graphiql: true,
                     formatError: formatError,
                     extensions({document, variables, operationName, result}) {
+                        //UserStats.addData(req, {operationName})
                     }
                 })(req, res, next).catch((e) => {
                     res.writeHead(500, {'content-type': 'application/json'})

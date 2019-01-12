@@ -63,7 +63,7 @@ export const getTypeQueries = (typeName) => {
     let insertParams = '', insertUpdateQuery = '', updateParams = ''
 
     if (fields) {
-        fields.map(({name, type, required, multi, reference, localized}) => {
+        fields.map(({name, type, required, multi, reference, localized, ...rest}) => {
 
             if (insertParams !== '') {
                 insertParams += ', '
@@ -78,8 +78,14 @@ export const getTypeQueries = (typeName) => {
                 t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
 
                 if (name !== 'createdBy') {
-                    // TODO: field name might be different than name
-                    query += ' ' + name + '{_id name}'
+                    query += ' ' + name + '{_id'
+                    if (rest.fields) {
+                        query += ' ' + rest.fields.join(' ')
+                    } else {
+                        // assuming there is a name field
+                        query += ' name'
+                    }
+                    query += '}'
                 }
             } else {
                 query += ' ' + name
@@ -223,10 +229,10 @@ Hook.on('Types', ({types}) => {
     }
 
     types.User = {
-        'name': 'User',
-        'noUserRelation': true,
-        'usedBy': ['core'],
-        'fields': [
+        name: 'User',
+        noUserRelation: true,
+        usedBy: ['core'],
+        fields: [
             {
                 'name': 'username',
                 'required': true

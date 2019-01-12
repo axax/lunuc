@@ -112,6 +112,11 @@ class SimpleAutosuggest extends React.Component {
     handleChange = name => (event, {newValue}) => {
         this.setState({
             [name]: newValue
+        }, () => {
+            const {onChange} = this.props
+            if (onChange) {
+                onChange(event, newValue)
+            }
         })
     }
 
@@ -119,7 +124,8 @@ class SimpleAutosuggest extends React.Component {
         const {classes} = this.props
         const pattern = new RegExp(`(${query.replace(/\s/g, '|')})`, 'gi')
         return <MenuItem selected={isHighlighted} component="div">
-            <span dangerouslySetInnerHTML={{__html: Util.hightlight(`${suggestion.key} (${suggestion.label})`, query, classes.hightlight)}}/>
+            <span
+                dangerouslySetInnerHTML={{__html: Util.hightlight(`${suggestion.key} (${suggestion.label})`, query, classes.hightlight)}}/>
         </MenuItem>
     }
 
@@ -171,7 +177,8 @@ SimpleAutosuggest.propTypes = {
     placeholder: PropTypes.string,
     value: PropTypes.string,
     items: PropTypes.array.isRequired,
-    onClick: PropTypes.func
+    onClick: PropTypes.func,
+    onChange: PropTypes.func
 }
 
 export default withStyles(styles)(SimpleAutosuggest)

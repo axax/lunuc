@@ -32,7 +32,6 @@ const GenericResolver = {
         const startTime = new Date()
         const typeDefinition = getType(typeName) || {}
 
-        //Util.checkIfUserIsLoggedIn(context)
         let {limit, offset, page, match, filter, sort, projectResult, version} = options
 
         const collectionName = await buildCollectionName(db, context, typeName, version)
@@ -230,6 +229,7 @@ const GenericResolver = {
             }
             group.modifiedAt = {'$first': '$modifiedAt'}
         }
+
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
         let a = (await collection.aggregate([
@@ -279,7 +279,6 @@ const GenericResolver = {
             }
         }
         a[0].aggregateTime = new Date() - startTimeAggregate
-
 
         // TODO: remove with mongo 3.6 and use pipeline inside lookup instead
         if (tempLocalizedMapRemoveWithMongo36.length && a[0].results) {

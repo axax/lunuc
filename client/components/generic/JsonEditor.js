@@ -118,7 +118,11 @@ class JsonEditor extends React.Component {
                 }]}/>
                 <ListItemText classes={{primary: classes.type}}>
 
-                    <SimpleAutosuggest placeholder="Enter component type" value={t} onClick={e => {
+                    <SimpleAutosuggest placeholder="Enter component type" value={t}
+                                       onBlur={(e, v) => {
+                                           console.log(v)
+                                       }
+                                       } onClick={e => {
                         e.stopPropagation()
                         return false
                     }} items={JsonEditor.components}/>
@@ -129,7 +133,8 @@ class JsonEditor extends React.Component {
                     {props}
                     {this.renderJsonRec(json.c, newkey, newlevel)}
 
-                </Collapse>]
+                </Collapse>
+            ]
         } else {
             return <ListItem style={{paddingLeft: 10 * level + 10}} key={key + '.c'}><ListItemText>
                 <TextField placeholder="Enter some content" fullWidth value={json} onChange={e => {
