@@ -19,12 +19,27 @@ const PORT = (process.env.PORT || 3000)
 
 process.on('SIGINT', () => {
     console.log('Caught interrupt signal. Exit process')
-    process.exit()
 
+
+
+    if ('undefined' != typeof( Hook.hooks['appexit'] ) && Hook.hooks['appexit'].length) {
+        let c = Hook.hooks['appexit'].length
+        for (var i = 0; i < Hook.hooks['appexit'].length; ++i) {
+            const promise = Hook.hooks['appexit'][i]()
+            promise.then(()=>{
+                c--
+                if( c=== 0) {
+                    process.exit()
+                }
+            })
+        }
+    }else {
+        process.exit()
+    }
 })
 
-process.on('exit', () => {
-    Hook.call('appexit')
+process.on('exit', async () => {
+    console.log('Goodbye')
 })
 
 

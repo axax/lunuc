@@ -8,12 +8,19 @@ export default function (db) {
             return (req.headers['x-forwarded-for'] || '').split(',')[0]
                 || req.connection.remoteAddress
         },
-        commit = (db, readyToCommit) => {
-            const bulk = db.collection('UserStats').initializeUnorderedBulkOp()
-            readyToCommit.forEach(o => {
-                bulk.insert(o)
-            })
-            bulk.execute()
+        commit = async (db, readyToCommit) => {
+            if (readyToCommit.length) {
+                const bulk = await db.collection('UserStats').initializeUnorderedBulkOp()
+
+                //Remove in standard for loop
+                for (let i = 0; i < readyToCommit.length; i++) {
+                    var item = readyToCommit[i];
+                    bulk.insert(item)
+                    readyToCommit.splice(i, 1)
+                    i--
+                }
+                await bulk.execute()
+            }
 
         }
 
@@ -39,24 +46,23 @@ export default function (db) {
                 })
             }
             res.on('finish', () => {
-                if( body ){
+                if (body) {
                     userData.requestBody = body
                 }
                 readyToCommit.push(userData)
                 delete cache[req.userStatsId]
             })
 
-            if (readyToCommit.length > 1) {
+            if (readyToCommit.length > 10) {
                 // commit
                 commit(db, readyToCommit)
-
-                readyToCommit = []
             }
 
             next()
         },
-        exit: () => {
+        exit: async () => {
             console.log('commit unsafed data')
+            await commit(db, readyToCommit)
         },
         addData: (req, data) => {
             if (cache[req.userStatsId]) {

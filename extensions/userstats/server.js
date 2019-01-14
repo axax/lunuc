@@ -24,6 +24,6 @@ Hook.on('appready', ({db, app}) => {
 })
 
 // Hook when db is ready
-Hook.on('appexit', () => {
-    userStats.exit()
+Hook.on('appexit', async () => {
+    await userStats.exit()
 })
