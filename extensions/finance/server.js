@@ -3,15 +3,11 @@ import schema from './schema/'
 import resolver from './resolver/'
 import StockTicker from './components/StockTicker'
 import CurrencyTicker from './components/CurrencyTicker'
+import {deepMergeToFirst} from 'util/deepMerge'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
-    const newResolvers = resolver(db)
-
-    // add new resolvers
-    for (const n in newResolvers) {
-        resolvers[n] = newResolvers[n]
-    }
+    deepMergeToFirst(resolvers, resolver(db))
 })
 
 // Hook to add mongodb schema

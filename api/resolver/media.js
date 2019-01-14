@@ -9,38 +9,42 @@ const {UPLOAD_DIR} = config
 
 
 export const mediaResolver = (db) => ({
-    medias: async ({limit, offset, page, sort, filter}, {context}) => {
-        Util.checkIfUserIsLoggedIn(context)
-        return await GenericResolver.entities(db, context, 'Media', ['name', 'mimeType', 'src'], {
-            limit,
-            offset,
-            page, sort, filter
-        })
-    },
-    createMedia: async ({name, src, mimeType}, {context}) => {
-        Util.checkIfUserIsLoggedIn(context)
-
-        return await GenericResolver.createEnity(db, context, 'Media', {
-            name,
-            src,
-            mimeType
-        })
-    },
-    updateMedia: async ({_id, ...rest}, {context}) => {
-        Util.checkIfUserIsLoggedIn(context)
-        const result = await GenericResolver.updateEnity(db, context, 'Media', {_id, ...rest})
-        return result
-    },
-    deleteMedia: async ({_id}, {context}) => {
-        Util.checkIfUserIsLoggedIn(context)
-        const res = await GenericResolver.deleteEnity(db, context, 'Media', {_id})
-        if (res.status === 'deleted') {
-            // delete file
-            const fileName = path.join(__dirname, '../../' + UPLOAD_DIR + '/' + _id)
-            console.log('delete file '+fileName)
-            fs.unlinkSync(fileName)
+    Query: {
+        medias: async ({limit, offset, page, sort, filter}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+            return await GenericResolver.entities(db, context, 'Media', ['name', 'mimeType', 'src'], {
+                limit,
+                offset,
+                page, sort, filter
+            })
         }
-        return res
+    },
+    Mutation: {
+        createMedia: async ({name, src, mimeType}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+
+            return await GenericResolver.createEnity(db, context, 'Media', {
+                name,
+                src,
+                mimeType
+            })
+        },
+        updateMedia: async ({_id, ...rest}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+            const result = await GenericResolver.updateEnity(db, context, 'Media', {_id, ...rest})
+            return result
+        },
+        deleteMedia: async ({_id}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+            const res = await GenericResolver.deleteEnity(db, context, 'Media', {_id})
+            if (res.status === 'deleted') {
+                // delete file
+                const fileName = path.join(__dirname, '../../' + UPLOAD_DIR + '/' + _id)
+                console.log('delete file ' + fileName)
+                fs.unlinkSync(fileName)
+            }
+            return res
+        }
     }
 })
 

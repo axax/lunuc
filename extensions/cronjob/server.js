@@ -5,6 +5,7 @@ import schema from './schema'
 import resolver from './resolver'
 import cron from 'node-cron'
 import cronjobUtil from './cronjobUtil'
+import {deepMergeToFirst} from 'util/deepMerge'
 
 let registeredCronJobs = []
 
@@ -40,12 +41,7 @@ const unregisterCronJobs = (db) => {
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
-    const newResolvers = {...resolverGen(db), ...resolver(db)}
-
-    // add new resolvers
-    for (const n in newResolvers) {
-        resolvers[n] = newResolvers[n]
-    }
+    deepMergeToFirst(resolvers, resolver(db), resolverGen(db))
 })
 
 // Hook to add mongodb schema

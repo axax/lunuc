@@ -2,17 +2,14 @@ import schema from './gensrc/schema'
 import resolver from './gensrc/resolver'
 import createUserStats from './userStats'
 import Hook from 'util/hook'
+import {deepMergeToFirst} from 'util/deepMerge'
 
 
 let userStats
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
-    const newResolvers = resolver(db)
-    // add new resolvers
-    for (const n in newResolvers) {
-        resolvers[n] = newResolvers[n]
-    }
+    deepMergeToFirst(resolvers, resolver(db))
 })
 
 // Hook to add mongodb schema

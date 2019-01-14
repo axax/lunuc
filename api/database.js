@@ -54,7 +54,7 @@ export const dbConnection = (cb) => {
                 if (err) {
                     console.error(err.message, MONGO_URL)
                 } else {
-                    console.log(`Connection to db ${MONGO_URL} established.`)
+                    console.log(`Connection to db ${MONGO_URL} established. 🚀`)
                     const parts = urlParts[0].split('/')
                     const db = client.db(parts[parts.length - 1])
 

@@ -8,10 +8,15 @@
           "name": "ip"
         },
         {
+          "name": "url"
+        },
+        {
           "name": "agent"
         },
         {
-          "name": "operation"
+          "name": "requestBody",
+          "label": "Request body",
+          "uitype": "editor"
         },
         {
           "name": "user",

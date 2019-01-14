@@ -17,17 +17,15 @@ import Hook from 'util/hook'
 const PORT = (process.env.PORT || 3000)
 
 
-
 process.on('SIGINT', () => {
     console.log('Caught interrupt signal. Exit process')
     process.exit()
 
 })
 
-process.on( 'exit', () => {
+process.on('exit', () => {
     Hook.call('appexit')
 })
-
 
 
 export const start = (done) => {
@@ -41,7 +39,6 @@ export const start = (done) => {
 
             // Initialize http api
             const app = express()
-
 
 
             // delay response
@@ -68,10 +65,13 @@ export const start = (done) => {
 
             // ApolloServer
             // Construct a schema, using GraphQL schema language
-            /* const typeDefs = gql(schemaString)
-             const apolloServer = new ApolloServer({ typeDefs, resolvers })
-             apolloServer.applyMiddleware({ app, path: '/graphql2' });*/
-
+            /*const typeDefs = gql(schemaString)
+            const apolloServer = new ApolloServer({
+                typeDefs, resolvers, formatError,
+                context: ({req, res}) => {
+                }
+            })
+            apolloServer.applyMiddleware({app, path: '/graphql2'})*/
 
             // Graphql-Express
             const schema = buildSchema(schemaString)
@@ -91,7 +91,7 @@ export const start = (done) => {
                     schema,
                     rootValue,
                     graphiql: true,
-                    formatError: formatError,
+                    formatError,
                     extensions({document, variables, operationName, result}) {
                         //UserStats.addData(req, {operationName})
                     }

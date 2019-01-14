@@ -3,20 +3,11 @@ import schema from './schema/'
 import resolver from './resolver/'
 import genSchema from './gensrc/schema'
 import genResolver from './gensrc/resolver'
+import {deepMergeToFirst} from 'util/deepMerge'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
-    const newResolvers = resolver(db)
-
-    for (const n in newResolvers) {
-        resolvers[n] = newResolvers[n]
-    }
-
-    const newGenResolvers = genResolver(db)
-
-    for (const n in newGenResolvers) {
-        resolvers[n] = newGenResolvers[n]
-    }
+    deepMergeToFirst(resolvers, resolver(db), genResolver(db))
 })
 
 // Hook to add mongodb schema

@@ -80,11 +80,11 @@ GenSourceCode.prototype.apply = function (compiler) {
                          }*/
 
                         if (fs.existsSync(EXTENSION_PATH + file + '/client.js')) {
-                            if( manifestJson[file].lazyLoad ){
+                            if (manifestJson[file].lazyLoad) {
                                 clientContent += `//load lazy
 import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
 `
-                            }else {
+                            } else {
                                 clientContent += `import ${file} from '.${EXTENSION_PATH}${file}/client.js'\nif(typeof ${file} === "function" && (!settings['${file}'] || settings['${file}'].enabled)){\n\t${file}()\n}\n`
                             }
                         }
@@ -118,8 +118,8 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         })
 
         /* generate config */
-        const o ={DEV_MODE}
-        let configContent = `${GENSRC_HEADER}export default ${JSON.stringify(Object.assign({},APP_CONFIG.options,o))}\n`
+        const o = {DEV_MODE}
+        let configContent = `${GENSRC_HEADER}export default ${JSON.stringify(Object.assign({}, APP_CONFIG.options, o))}\n`
         fs.writeFile(GENSRC_PATH + "/config.js", configContent, function (err) {
             if (err) {
                 return console.log(err)
@@ -179,7 +179,6 @@ function gensrcUi() {
 
             let uiContentIconsHooks = ''
             let uiContentIcons = `import React from 'react'\nimport Hook from 'util/hook'\n`
-
 
 
             //let uiContent = `${GENSRC_HEADER}import(/* webpackChunkName: "admin" */ '${ui.name?'../':''}../../client/components/ui/impl/${ui.impl || 'material'}/index')`
@@ -244,15 +243,18 @@ function gensrcExtension(name, options) {
         let schema = GENSRC_HEADER + 'export default `\n'
         let resolver = GENSRC_HEADER + `import {ObjectId} from 'mongodb'\nimport {pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
         resolver += `import GenericResolver from 'api/resolver/generic/genericResolver'\n\nexport default db => ({\n`
+        let resolverQuery = '\tQuery: {\n'
+        let resolverMutation = '\tMutation: {\n'
+        let resolverSubscription = '\tSubscription: {\n'
         options.types.forEach((type) => {
             const nameStartLower = type.name.charAt(0).toLowerCase() + type.name.slice(1)
             schema += 'type ' + type.name + '{\n'
-            schema += '\t_id: ID!'+(!type.noUserRelation?'\n\tcreatedBy: UserPublic!':'')+'\n\tstatus: String\n'
+            schema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy: UserPublic!' : '') + '\n\tstatus: String\n'
 
             let mutationFields = '', resolverFields = '', refResolvers = '', refResolversObjectId = ''
 
             type.fields.forEach((field) => {
-                if( field.name.trim().toLowerCase().endsWith('_localized')) {
+                if (field.name.trim().toLowerCase().endsWith('_localized')) {
                     throw Error('A filed name is not allowed to end with the string _localized. This is reserved for localized fields')
                 }
 
@@ -283,10 +285,10 @@ function gensrcExtension(name, options) {
                 schema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
 
 
-                if( field.localized && !field.multi){ // no support for multi yet
+                if (field.localized && !field.multi) { // no support for multi yet
                     schema += '\t' + field.name + '_localized: LocalizedString\n'
-                    resolverFields += ',\''+field.name+'_localized\''
-                    mutationFields += ','+field.name+'_localized: LocalizedStringInput'
+                    resolverFields += ',\'' + field.name + '_localized\''
+                    mutationFields += ',' + field.name + '_localized: LocalizedStringInput'
                 }
             })
 
@@ -315,38 +317,39 @@ function gensrcExtension(name, options) {
             schema += '    subscribe' + type.name + ': ' + type.name + 'SubscribeResult\n'
             schema += '}\n\n'
 
-            resolver += `   ${nameStartLower}s: async ({sort, limit, offset, page, filter}, {context}) => {
-        return await GenericResolver.entities(db, context, '${type.name}', [${resolverFields}], {limit, offset, page, filter, sort})
-    },
-    create${type.name}: async ({${refResolvers}${refResolvers!==''?',':''}...rest}, {context}) => {
-        pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:{...rest}}})
-        return await GenericResolver.createEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
-    },
-    update${type.name}: async ({${refResolvers}${refResolvers!==''?',':''}...rest}, {context}) => {
-        pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: {...rest}}})
-        return GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
-    },
-    delete${type.name}: async ({_id}, {context}) => {
-         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {_id}}})
-        return GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
-    },
-    delete${type.name}s: async ({_id}, {context}) => {
-         pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {_id}}})
-        return GenericResolver.deleteEnities(db, context, '${type.name}', {_id})
-    },
-    subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),
-		(payload, context) => {
-            if( payload ) {
-                //return payload.userId === context.id
-                return true
+            resolverQuery += `      ${nameStartLower}s: async ({sort, limit, offset, page, filter}, {context}) => {
+            return await GenericResolver.entities(db, context, '${type.name}', [${resolverFields}], {limit, offset, page, filter, sort})
+        },\n`
+
+            resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {
+            pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:{...rest}}})
+            return await GenericResolver.createEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
+        },
+        update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {
+            pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: {...rest}}})
+            return GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
+        },
+        delete${type.name}: async ({_id}, {context}) => {
+             pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {_id}}})
+            return GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
+        },
+        delete${type.name}s: async ({_id}, {context}) => {
+             pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {_id}}})
+            return GenericResolver.deleteEnities(db, context, '${type.name}', {_id})
+        },\n`
+                resolverSubscription += `       subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),
+            (payload, context) => {
+                if( payload ) {
+                    //return payload.userId === context.id
+                    return true
+                }
             }
-		}
-	),\n`
+        ),\n`
 
 
         })
         schema += '`\n'
-        resolver += `})`
+        resolver += resolverQuery + '\t},\n' + resolverMutation + '\t},\n' + resolverSubscription + `\t}\n})`
 
         fs.writeFile(gendir + "/schema.js", schema, function (err) {
             if (err) {

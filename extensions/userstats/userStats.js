@@ -23,17 +23,25 @@ export default function (db) {
 
             const {context, headers} = req
 
-            const userData = {ip: clientAddress(req), agent: headers['user-agent']}
+            const userData = {ip: clientAddress(req), agent: headers['user-agent'], url: req.originalUrl}
 
-            if( context ){
+            if (context) {
                 const {id} = context
                 userData.user = ObjectId(id)
             }
 
             req.userStatsId = counter
             cache[counter] = userData
-
+            let body = ''
+            if (headers['content-type'] === 'application/json') {
+                req.on('data', chunk => {
+                    body += chunk.toString()
+                })
+            }
             res.on('finish', () => {
+                if( body ){
+                    userData.requestBody = body
+                }
                 readyToCommit.push(userData)
                 delete cache[req.userStatsId]
             })
