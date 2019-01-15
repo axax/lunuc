@@ -47,6 +47,7 @@ GenSourceCode.prototype.apply = function (compiler) {
 
                         if (fs.existsSync(EXTENSION_PATH + file + '/extension.json')) {
                             manifestJson[file] = JSON.parse(fs.readFileSync(EXTENSION_PATH + file + '/extension.json', 'utf8'));
+                            //TODO: implement dependency check
                         } else {
                             manifestJson[file] = {name: file}
                         }
@@ -229,10 +230,10 @@ export const ${icon}IconButton = ({...rest}) => {
 function gensrcExtension(name, options) {
     if (!options) return
 
+
     const gendir = EXTENSION_PATH + name + '/' + GENSRC_PATH
     try {
         deleteFolderRecursive(path.resolve(__dirname, gendir))
-        fs.mkdirSync(gendir)
     } catch (err) {
         if (err.code !== 'EEXIST') throw err
     }
@@ -246,82 +247,88 @@ function gensrcExtension(name, options) {
         let resolverQuery = '\tQuery: {\n'
         let resolverMutation = '\tMutation: {\n'
         let resolverSubscription = '\tSubscription: {\n'
+        let hasSource = false
         options.types.forEach((type) => {
-            const nameStartLower = type.name.charAt(0).toLowerCase() + type.name.slice(1)
-            schema += 'type ' + type.name + '{\n'
-            schema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy: UserPublic!' : '') + '\n\tstatus: String\n'
 
-            let mutationFields = '', resolverFields = '', refResolvers = '', refResolversObjectId = ''
+            if (type.gensrc === false) {
+                console.log('gensrc for type ' + type.name + ' was explicitly set to false')
+            } else {
+                hasSource = true
+                const nameStartLower = type.name.charAt(0).toLowerCase() + type.name.slice(1)
+                schema += 'type ' + type.name + '{\n'
+                schema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy: UserPublic!' : '') + '\n\tstatus: String\n'
 
-            type.fields.forEach((field) => {
-                if (field.name.trim().toLowerCase().endsWith('_localized')) {
-                    throw Error('A filed name is not allowed to end with the string _localized. This is reserved for localized fields')
-                }
+                let mutationFields = '', resolverFields = '', refResolvers = '', refResolversObjectId = ''
 
-                const type = (field.type || 'String')
-                let isRef = false
-
-
-                if (COMMON_MONGO_TYPES.indexOf(type) < 0) {
-                    // it might be a reference so we only need to store the ID
-                    isRef = true
-                    if (refResolvers !== '') refResolvers += ','
-                    if (refResolversObjectId !== '') refResolversObjectId += ','
-                    refResolvers += field.name
-                    if (field.multi) {
-                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id) => {o.push(ObjectId(id)); return o},[]):' + field.name + ')'
-
-                    } else {
-                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + 'ObjectId(' + field.name + '):' + field.name + ')'
+                type.fields.forEach((field) => {
+                    if (field.name.trim().toLowerCase().endsWith('_localized')) {
+                        throw Error('A filed name is not allowed to end with the string _localized. This is reserved for localized fields')
                     }
-                }
 
-                if (mutationFields !== '') mutationFields += ','
-                if (resolverFields !== '') resolverFields += ','
-
-                mutationFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
-                resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
-
-                schema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
+                    const type = (field.type || 'String')
+                    let isRef = false
 
 
-                if (field.localized && !field.multi) { // no support for multi yet
-                    schema += '\t' + field.name + '_localized: LocalizedString\n'
-                    resolverFields += ',\'' + field.name + '_localized\''
-                    mutationFields += ',' + field.name + '_localized: LocalizedStringInput'
-                }
-            })
+                    if (COMMON_MONGO_TYPES.indexOf(type) < 0) {
+                        // it might be a reference so we only need to store the ID
+                        isRef = true
+                        if (refResolvers !== '') refResolvers += ','
+                        if (refResolversObjectId !== '') refResolversObjectId += ','
+                        refResolvers += field.name
+                        if (field.multi) {
+                            refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id) => {o.push(ObjectId(id)); return o},[]):' + field.name + ')'
 
-            schema += '}\n\n'
+                        } else {
+                            refResolversObjectId += field.name + ':' + '(' + field.name + '?' + 'ObjectId(' + field.name + '):' + field.name + ')'
+                        }
+                    }
 
+                    if (mutationFields !== '') mutationFields += ','
+                    if (resolverFields !== '') resolverFields += ','
 
-            schema += 'type ' + type.name + 'Result {\n\tresults: [' + type.name + ']\n\toffset: Int\n\tlimit: Int\n\ttotal: Int\n}\n\n'
+                    mutationFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
+                    resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
 
-            // Maybe it is better to return only a Status instead of the whole type when create, update or delete is performed
-            schema += 'type ' + type.name + 'Status {\n\t_id: ID!\n\tstatus: String\n}\n\n'
-
-            schema += 'type Query {\n\t' + nameStartLower + 's(sort: String, limit: Int=10, offset: Int=0, page: Int=0, filter: String): ' + type.name + 'Result\n}\n\n'
-
-
-            schema += 'type Mutation {\n'
-            schema += '\tcreate' + type.name + ' (' + mutationFields + '):' + type.name + 'Status\n'
-            schema += '\tupdate' + type.name + ' (_id: ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + 'Status\n'
-            schema += '\tdelete' + type.name + ' (_id: ID!):' + type.name + 'Status\n'
-            schema += '\tdelete' + type.name + 's (_id: [ID]):[' + type.name + 'Status]\n'
-            schema += '}\n\n'
-
-            schema += 'type ' + type.name + 'SubscribeResult {\n\tdata:' + type.name + '\n\taction: String\n}\n\n'
+                    schema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
 
 
-            schema += 'type Subscription {\n'
-            schema += '    subscribe' + type.name + ': ' + type.name + 'SubscribeResult\n'
-            schema += '}\n\n'
+                    if (field.localized && !field.multi) { // no support for multi yet
+                        schema += '\t' + field.name + '_localized: LocalizedString\n'
+                        resolverFields += ',\'' + field.name + '_localized\''
+                        mutationFields += ',' + field.name + '_localized: LocalizedStringInput'
+                    }
+                })
 
-            resolverQuery += `      ${nameStartLower}s: async ({sort, limit, offset, page, filter}, {context}) => {
+                schema += '}\n\n'
+
+
+                schema += 'type ' + type.name + 'Result {\n\tresults: [' + type.name + ']\n\toffset: Int\n\tlimit: Int\n\ttotal: Int\n}\n\n'
+
+                // Maybe it is better to return only a Status instead of the whole type when create, update or delete is performed
+                schema += 'type ' + type.name + 'Status {\n\t_id: ID!\n\tstatus: String\n}\n\n'
+
+                schema += 'type Query {\n\t' + nameStartLower + 's(sort: String, limit: Int=10, offset: Int=0, page: Int=0, filter: String): ' + type.name + 'Result\n}\n\n'
+
+
+                schema += 'type Mutation {\n'
+                schema += '\tcreate' + type.name + ' (' + mutationFields + '):' + type.name + 'Status\n'
+                schema += '\tupdate' + type.name + ' (_id: ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + 'Status\n'
+                schema += '\tdelete' + type.name + ' (_id: ID!):' + type.name + 'Status\n'
+                schema += '\tdelete' + type.name + 's (_id: [ID]):[' + type.name + 'Status]\n'
+                schema += '}\n\n'
+
+                schema += 'type ' + type.name + 'SubscribeResult {\n\tdata:' + type.name + '\n\taction: String\n}\n\n'
+
+
+                schema += 'type Subscription {\n'
+                schema += '    subscribe' + type.name + ': ' + type.name + 'SubscribeResult\n'
+                schema += '}\n\n'
+
+                resolverQuery += `      ${nameStartLower}s: async ({sort, limit, offset, page, filter}, {context}) => {
             return await GenericResolver.entities(db, context, '${type.name}', [${resolverFields}], {limit, offset, page, filter, sort})
         },\n`
 
-            resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {
+                resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {
             pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:{...rest}}})
             return await GenericResolver.createEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
         },
@@ -345,22 +352,29 @@ function gensrcExtension(name, options) {
                 }
             }
         ),\n`
-
+            }
 
         })
         schema += '`\n'
         resolver += resolverQuery + '\t},\n' + resolverMutation + '\t},\n' + resolverSubscription + `\t}\n})`
 
-        fs.writeFile(gendir + "/schema.js", schema, function (err) {
-            if (err) {
-                console.log(err)
+        if (hasSource) {
+            try {
+                fs.mkdirSync(gendir)
+            } catch (err) {
+                if (err.code !== 'EEXIST') throw err
             }
-        })
-        fs.writeFile(gendir + "/resolver.js", resolver, function (err) {
-            if (err) {
-                console.log(err)
-            }
-        })
+            fs.writeFile(gendir + "/schema.js", schema, function (err) {
+                if (err) {
+                    console.log(err)
+                }
+            })
+            fs.writeFile(gendir + "/resolver.js", resolver, function (err) {
+                if (err) {
+                    console.log(err)
+                }
+            })
+        }
 
 
     }

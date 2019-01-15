@@ -5,6 +5,7 @@ import ApolloClient from 'apollo-client'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import BaseLayout from 'client/components/layout/BaseLayout'
+import {withKeyValues} from 'client/containers/generic/withKeyValues'
 
 
 class LiveSpeechTranslaterContainer extends React.Component {
@@ -15,7 +16,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
     constructor(props) {
         super(props)
         const rec = window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition
-        if( rec ){
+        if (rec) {
             this.recognition = new ( rec)()
         }
         this.state = {
@@ -27,24 +28,27 @@ class LiveSpeechTranslaterContainer extends React.Component {
         }
     }
 
+    static getDerivedStateFromProps(nextProps, prevState) {
+        const {language, langaugeTo} = nextProps.keyValueMap.LiveSpeechTranslaterContainerState || {}
+        if ((language && language !== prevState.language) || (langaugeTo && langaugeTo !== prevState.langaugeTo)) {
+            console.log(Object.assign({}, prevState, {language, langaugeTo}))
+            return Object.assign({}, prevState, {language, langaugeTo})
+        }
+        return null
+    }
+
+
     componentDidMount() {
-        this.mounted=true
+        this.mounted = true
         this.createRecorder()
     }
 
     componentWillUnmount() {
-        this.mounted=false
+        this.mounted = false
         this.handleRecorder(false)
     }
 
-    //componentWillReceiveProps(nextProps) {
-       // if ( nextProps.speechLanguages && nextProps.me.settings.speechLang.selection.key !== this.state.language) {
-           // this.setState({language: nextProps.me.settings.speechLang.selection.key,languageTo: nextProps.me.settings.translateLang.selection.key})
-       // }
-    //}
-
-
-    translate = ({text,toIso,fromIso}) => {
+    translate = ({text, toIso, fromIso}) => {
         const {client} = this.props
         return client.query({
             fetchPolicy: 'cache-first',
@@ -58,7 +62,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
     }
 
     createRecorder = () => {
-        if( !this.recognition )
+        if (!this.recognition)
             return false
 
         const self = this
@@ -68,7 +72,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
         this.recognition.continuous = false
         this.recognition.recognizing = false // this is a custom flag to determin wheater recognition is running
 
-        var isSpeacking=false, utterance=false
+        var isSpeacking = false, utterance = false
 
         this.recognition.onstart = function () {
             this.recognizing = true
@@ -90,15 +94,19 @@ class LiveSpeechTranslaterContainer extends React.Component {
                         console.log(alternativ)
                         if (alternativ.confidence > 0.50) {
 
-                            self.translate({text:alternativ.transcript,toIso:self.state.languageTo,fromIso:self.state.language.substr(0,2)}).then(response => {
-                                isSpeacking=true
+                            self.translate({
+                                text: alternativ.transcript,
+                                toIso: self.state.languageTo,
+                                fromIso: self.state.language.substr(0, 2)
+                            }).then(response => {
+                                isSpeacking = true
                                 self.handleRecorder(false)
 
                                 utterance = new SpeechSynthesisUtterance(response.data.translate.text)
                                 utterance.lang = response.data.translate.toIso
 
-                                utterance.onend = function(event) {
-                                    isSpeacking=false
+                                utterance.onend = function (event) {
+                                    isSpeacking = false
                                     self.handleRecorder(self.state.recording)
                                 }
 
@@ -106,8 +114,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
                                 window.speechSynthesis.speak(utterance)
 
 
-
-                                self.setState((state) => ({recorded: state.recorded.concat(alternativ.transcript+' = '+response.data.translate.text)}))
+                                self.setState((state) => ({recorded: state.recorded.concat(alternativ.transcript + ' = ' + response.data.translate.text)}))
 
                             }).catch(error => {
                                 console.log(error)
@@ -120,9 +127,9 @@ class LiveSpeechTranslaterContainer extends React.Component {
             }
         }
         this.recognition.onend = function (e) {
-            console.log('recording ended',e)
+            console.log('recording ended', e)
             this.recognizing = false
-            if( !isSpeacking ) {
+            if (!isSpeacking) {
                 self.handleRecorder(self.state.recording)
             }
         }
@@ -131,7 +138,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
 
     handleRecorder = (start) => {
-        if( !this.recognition )
+        if (!this.recognition)
             return false
 
         if (start && this.mounted) {
@@ -151,13 +158,14 @@ class LiveSpeechTranslaterContainer extends React.Component {
         const name = target.name
         this.setState({
             [target.name]: value
-        },() => {
+        }, () => {
             if (target.type === 'checkbox') {
                 this.handleRecorder(value)
             } else if (name === 'language' || name === 'languageTo') {
-               /* this.props.updateMe({speechLang: this.state.language, translateLang: this.state.languageTo}).then(() => {
-                    this.recognition.lang = this.state.language
-                })*/
+                this.props.setKeyValue({
+                    key: 'LiveSpeechTranslaterContainerState',
+                    value: {langauge: this.state.language, languageTo: this.state.languageTo}
+                })
             }
         })
 
@@ -170,8 +178,9 @@ class LiveSpeechTranslaterContainer extends React.Component {
         if (!speechLanguages && !translateLanguages) {
             return <BaseLayout><h1>No languages available</h1></BaseLayout>
         }
-        if( !this.recognition ){
-            return <BaseLayout><h1>Translate</h1>Speech recognition is not supported by this browser. Check <a href="http://caniuse.com/#feat=speech-recognition">Can I use</a> for browser support</BaseLayout>
+        if (!this.recognition) {
+            return <BaseLayout><h1>Translate</h1>Speech recognition is not supported by this browser. Check <a
+                href="http://caniuse.com/#feat=speech-recognition">Can I use</a> for browser support</BaseLayout>
         }
 
 
@@ -186,15 +195,15 @@ class LiveSpeechTranslaterContainer extends React.Component {
             <select disabled={!this.state.recording} name="language" value={this.state.language}
                     onChange={this.handleInputChange}>
                 {speechLanguages.data.map((lang, i) => {
-                    return <option key={i} value={lang.key}>{lang.name}</option>
+                    return <option key={i} value={lang.value}>{lang.name}</option>
                 })}
             </select>
             to
             <select disabled={!this.state.recording} name="languageTo" value={this.state.languageTo}
                     onChange={this.handleInputChange}>
                 {translateLanguages.data.map((lang, i) => {
-                    if( lang.key==='auto') return null
-                    return <option key={i} value={lang.key}>{lang.name}</option>
+                    if (lang.key === 'auto') return null
+                    return <option key={i} value={lang.value}>{lang.name}</option>
                 })}
             </select>
             <input
@@ -204,7 +213,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
                 onChange={this.handleInputChange}/>
             Voice Recorder: {this.state.recording ? 'on' : 'off'}
 
-            <input type="number" />
+            <input type="number"/>
 
 
             {pairs}
@@ -216,11 +225,14 @@ class LiveSpeechTranslaterContainer extends React.Component {
 LiveSpeechTranslaterContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     speechLanguages: PropTypes.object,
+    /* To get and set settings */
+    setKeyValue: PropTypes.func.isRequired,
+    keyValueMap: PropTypes.object
 }
 
 
 const LiveSpeechTranslaterContainerWithGql = compose(
-    graphql(gql`query {speechLanguages{data{key name}} translateLanguages{data{key name}}}`, {
+    graphql(gql`query {speechLanguages{data{value name}} translateLanguages{data{value name}}}`, {
         options() {
             return {
                 fetchPolicy: 'cache-and-network'
@@ -233,20 +245,11 @@ const LiveSpeechTranslaterContainerWithGql = compose(
                 loading
             }
         }
-    }),
-    /*graphql(gql`mutation updateMe($speechLang: String!,$translateLang: String!){updateMe(settings: {speechLang:$speechLang, translateLang:$translateLang}){_id settings{speechLang{selection{key name}}translateLang{selection{key name}}}}}`, {
-        props: ({ownProps, mutate}) => ({
-            updateMe: ({speechLang,translateLang}) => {
-                return mutate({
-                    variables: {speechLang,translateLang}
-                })
-            }
-        })
-    })*/
+    })
 )(LiveSpeechTranslaterContainer)
 
 
 const LiveSpeechTranslaterContainerWithApollo = withApollo(LiveSpeechTranslaterContainerWithGql)
 
 
-export default LiveSpeechTranslaterContainerWithApollo
+export default withKeyValues(LiveSpeechTranslaterContainerWithApollo, ['LiveSpeechTranslaterContainerState'])

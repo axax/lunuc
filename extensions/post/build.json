@@ -1,0 +1,18 @@
+{
+  "types": [
+    {
+      "name": "Post",
+      "gensrc": false,
+      "fields": [
+        {
+          "name": "title",
+          "required": true
+        },
+        {
+          "name": "body",
+          "uitype": "editor"
+        }
+      ]
+    }
+  ]
+}
