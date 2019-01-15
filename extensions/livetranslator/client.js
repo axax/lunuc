@@ -6,6 +6,8 @@ import Async from 'client/components/Async'
 
 const LiveSpeechTranslaterContainer = (props) => <Async {...props}
                                                    load={import(/* webpackChunkName: "livetranslator" */ './containers/LiveSpeechTranslaterContainer')}/>
+const TranslateIcon = (props) => <Async {...props} expose="TranslateIcon" load={import(/* webpackChunkName: "livetranslator" */ '../../gensrc/ui/admin')} />
+
 export default () => {
 
     // add routes for this extension
@@ -15,6 +17,6 @@ export default () => {
 
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
-        menuItems.push({name: 'Translate', to: ADMIN_BASE_URL + '/translate', auth: true})
+        menuItems.push({name: 'Translate', to: ADMIN_BASE_URL + '/translate', auth: true, icon: <TranslateIcon />})
     })
 }

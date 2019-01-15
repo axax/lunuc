@@ -57,7 +57,8 @@
         "Settings",
         "Backup",
         "Chat",
-        "Search"
+        "Search",
+        "Translate"
       ],
       "theme":{
         "colors":{

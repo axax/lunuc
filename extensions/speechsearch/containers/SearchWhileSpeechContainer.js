@@ -48,7 +48,8 @@ class SearchWhileSpeechContainer extends React.Component {
             searchResults: [],
             search: '',
             language: 'en-GB',
-            data: []
+            data: [],
+            maxResults: 10
         }
     }
 
@@ -87,10 +88,15 @@ class SearchWhileSpeechContainer extends React.Component {
         }).then(response => {
 
             if (response.data && response.data.posts && response.data.posts.results) {
+                const searchResults = [{query, data: response.data.posts.results}, ...this.state.searchResults]
 
-                this.setState(prevState => ({
-                    searchResults: [{query, data: response.data.posts.results}, ...prevState.searchResults]
-                }))
+                if (searchResults.length > this.state.maxResults) {
+                    searchResults.splice(this.state.maxResults)
+                }
+
+                this.setState({
+                    searchResults
+                })
             }
 
 
@@ -158,6 +164,7 @@ class SearchWhileSpeechContainer extends React.Component {
     }
 
 
+    searchTimeout = 0
     handleInputChange = (e) => {
         const target = e.target
         const value = target.type === 'checkbox' ? target.checked : target.value
@@ -171,7 +178,11 @@ class SearchWhileSpeechContainer extends React.Component {
         } else if (name === 'language') {
             this.props.setKeyValue({key: 'SearchWhileSpeechContainerState', value: {language: value}})
         } else if (name === 'search') {
-            this.search({query: value})
+            clearTimeout(this.searchTimeout)
+            this.searchTimeout = setTimeout(() => {
+                this.search({query: value})
+            }, 500)
+
 
             ///this.setState((state) => ({recorded: state.recorded.concat(value)}))
 
@@ -234,10 +245,12 @@ class SearchWhileSpeechContainer extends React.Component {
                             (i2 > 0 ?
                                 <Divider light className={classes.divider} key={'divider' + i + '-' + i2}/> : null),
                             <Typography key={'main' + i + '-' + i2} variant="h5">
-                                <span dangerouslySetInnerHTML={{__html:Util.hightlight(k2.title, k.query, classes.hightlight)}} />
+                                <span
+                                    dangerouslySetInnerHTML={{__html: Util.hightlight(k2.title, k.query, classes.hightlight)}}/>
                             </Typography>,
                             <Typography key={'text' + i + '-' + i2}>
-                                <span dangerouslySetInnerHTML={{__html:Util.hightlight(k2.search.unstyled, k.query, classes.hightlight)}} />
+                                <span
+                                    dangerouslySetInnerHTML={{__html: Util.hightlight(k2.search.unstyled, k.query, classes.hightlight)}}/>
                             </Typography>])}</Card>
                 )
             }
