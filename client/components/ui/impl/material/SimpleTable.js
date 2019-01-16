@@ -103,7 +103,7 @@ class SimpleTable extends React.Component {
 
                                         {column.sortable ?
                                             <Tooltip
-                                                title="Sort"
+                                                title={'Sort '+column.id}
                                                 placement={column.numeric ? 'bottom-end' : 'bottom-start'}
                                                 enterDelay={300}
                                             >

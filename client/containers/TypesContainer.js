@@ -213,14 +213,14 @@ class TypesContainer extends React.Component {
                                         if (field.type === 'Media') {
                                             dynamic[field.name] = getImageTag(v._id, {height: 40})
                                         } else {
-                                            if( field.fields ) {
+                                            if (field.fields) {
                                                 let str = ''
-                                                field.fields.forEach(f=>{
-                                                    if( str ) str += ', '
+                                                field.fields.forEach(f => {
+                                                    if (str) str += ', '
                                                     str += v[f]
                                                 })
                                                 dynamic[field.name] = str
-                                            }else{
+                                            } else {
                                                 dynamic[field.name] = v.name
                                             }
                                         }
@@ -273,7 +273,7 @@ class TypesContainer extends React.Component {
                         dynamic._user = (item.createdBy ? item.createdBy.username : '???')
                     }
                     if (columnsMap['date']) {
-                        dynamic.date = Util.formattedDateFromObjectId(item._id)
+                        dynamic.date = <span><span>{Util.formattedDateFromObjectId(item._id)}</span><br /><small>{item._id}</small></span>
                     }
                     if (columnsMap['action']) {
                         dynamic.action = [
@@ -411,7 +411,7 @@ class TypesContainer extends React.Component {
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
-        if (!this.types[type]){
+        if (!this.types[type]) {
             return <BaseLayout><Typography variant="subtitle1" color="error">Type {type} does not
                 exist.
                 Types can be specified in an extension. Please select another type.</Typography><SimpleSelect
@@ -657,7 +657,7 @@ class TypesContainer extends React.Component {
         }
         this.typeColumns[type].push(
             {
-                title: 'Created at',
+                title: 'Created at / id',
                 id: 'date',
                 sortid: '_id',
                 sortable: true
@@ -1033,9 +1033,8 @@ class TypesContainer extends React.Component {
         } else {
             this.handleFilterTimeout = setTimeout(() => {
                 this.runFilter(value)
-            }, 500)
+            }, 750)
         }
-
     }
 
     handelFilterKeyDown = (e, value) => {
