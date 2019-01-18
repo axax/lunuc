@@ -14,9 +14,9 @@ const {DEFAULT_LANGUAGE} = config
 
 const buildCollectionName = async (db, context, typeName, version) => {
 
-    if( !version ) {
+    if (!version) {
         const values = await Util.keyValueGlobalMap(db, context, ['TypesSelectedVersions'])
-        if( values && values['TypesSelectedVersions'] ) {
+        if (values && values['TypesSelectedVersions']) {
             version = values['TypesSelectedVersions'][typeName]
         }
     }
@@ -80,8 +80,6 @@ const GenericResolver = {
         const lookups = []
         const afterSort = []
         const fields = getFormFields(typeName)
-
-
         const addLookup = (type, fieldName, multi) => {
 
             const lookup = {
@@ -102,26 +100,36 @@ const GenericResolver = {
             }
         }
 
-        const addFilterToMatch = (filterPart, filterKey, data) => {
-
+        const addFilterToMatch = (filterPart, filterKey, data ,obj) => {
+            if( !obj ) obj = match
             if (!filterPart || filterPart.operator === 'or') {
-                if (!match.$or) {
-                    match.$or = []
+                if (!obj.$or) {
+                    obj.$or = []
                 }
-                match.$or.push({[filterKey]: data})
+                obj.$or.push({[filterKey]: data})
             } else {
-                match[filterKey] = data
+                obj[filterKey] = data
             }
 
         }
 
         const addFilter = (value, isRef, localized) => {
             if (filter) {
-                const filterKey = value + (localized ? '_localized.' + context.lang : '')
+
                 const filterPart = parsedFilter.parts[value]
+                const filterKey = value + (localized ? '_localized.' + context.lang : '')
+
                 if (filterPart) {
                     if (isRef) {
-                        addFilterToMatch(filterPart, filterKey, ObjectId(filterPart.value))
+                        if (filterPart.value) {
+                            if (ObjectId.isValid(filterPart.value)) {
+                                // match by id
+                                addFilterToMatch(filterPart, filterKey, ObjectId(filterPart.value))
+                            } else {
+                                // match by resolved name
+                                //addFilterToMatch(filterPart, filterKey, filterPart.value, matchAfter)
+                            }
+                        }
                     } else {
                         if (filterPart.constructor === Array) {
                             filterPart.forEach(e => {
@@ -230,6 +238,7 @@ const GenericResolver = {
             group.modifiedAt = {'$first': '$modifiedAt'}
         }
 
+
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
         let a = (await collection.aggregate([
@@ -281,6 +290,7 @@ const GenericResolver = {
         a[0].aggregateTime = new Date() - startTimeAggregate
 
         // TODO: remove with mongo 3.6 and use pipeline inside lookup instead
+        //console.log(tempLocalizedMapRemoveWithMongo36)
         if (tempLocalizedMapRemoveWithMongo36.length && a[0].results) {
             a[0].results.forEach(record => {
                 tempLocalizedMapRemoveWithMongo36.forEach(item => {
@@ -509,7 +519,7 @@ const GenericResolver = {
             status: 'updated'
         }
 
-        Hook.call('typeUpdated_'+typeName, {result: returnValue, db})
+        Hook.call('typeUpdated_' + typeName, {result: returnValue, db})
 
         return returnValue
     },

@@ -5,8 +5,17 @@ const Util = {
         }
         return str
     },
-    escapeForJson: (str, removeBreaks) => {
+    escapeForJson: (str) => {
         if (!str) return ''
+
+        return str.replace(/[\\]/g, '\\\\')
+            .replace(/[\"]/g, '\\\"')
+            .replace(/[\/]/g, '\\/')
+            .replace(/[\b]/g, '\\b')
+            .replace(/[\f]/g, '\\f')
+            .replace(/[\n]/g, '\\n')
+            .replace(/[\r]/g, '\\r')
+            .replace(/[\t]/g, '\\t');
 
         let replace = '(?:\r\n|\r|\n'
         if (removeBreaks) {

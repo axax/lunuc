@@ -255,14 +255,14 @@ Hook.on('Types', ({types}) => {
 
 
     types.Media = {
-        'name': 'Media',
-        'usedBy': ['core'],
-        'fields': [
+        name: 'Media',
+        usedBy: ['core'],
+        fields: [
             {
-                'name': 'name'
+                name: 'name'
             },
             {
-                'name': 'mimeType'
+                name: 'mimeType'
             }
         ]
     }

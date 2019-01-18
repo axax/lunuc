@@ -119,7 +119,6 @@ class ContentEditable extends React.Component {
                 document.execCommand('insertHTML', false, tabChar)
             }
         } else if (e.metaKey || e.ctrlKey) {
-
             if (e.key === 'z' || e.key === 'Z') {
                 // TODO: implement undo history
                 e.preventDefault()
@@ -162,7 +161,7 @@ class ContentEditable extends React.Component {
 
         const {highlight} = this.props
         if (highlight) {
-            const ignoreKeys = ["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Meta", "Control"] // arrows
+            const ignoreKeys = ["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Control"] // arrows --> don't ignore Meta
             if (ignoreKeys.indexOf(e.key) < 0) {
                 this.highlightDelay(e.target)
             }

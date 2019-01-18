@@ -17,11 +17,13 @@ class JsonDomInput extends React.Component {
         if (nextProps.value !== prevState.valueOri) {
             return {value: nextProps.value, valueOri: nextProps.value}
         }
-        return null
+        // it is importent to return the prevState here
+        // otherwise it won't refresh when property like style or placeholder change
+        return prevState
     }
 
     shouldComponentUpdate(props, state) {
-        return state.value !== this.state.value
+        return state !== this.state
     }
 
     valueChange = (e) => {

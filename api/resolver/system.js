@@ -27,12 +27,12 @@ export const systemResolver = (db) => ({
         run: async ({command}, {context}) => {
             let performCheck = true
 
-            for (const c of SKIP_CAPABILITY_CHECK){
-                if( command.indexOf(c) === 0){
+            for (const c of SKIP_CAPABILITY_CHECK) {
+                if (command.indexOf(c) === 0) {
                     performCheck = false
                 }
             }
-            if( performCheck ) {
+            if (performCheck) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
             }
 
@@ -51,9 +51,13 @@ export const systemResolver = (db) => ({
         sendMail: async ({recipient, subject, body, slug}, {context}) => {
             //Util.checkIfUserIsLoggedIn(context)
             const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
-            const mailSettings = JSON.parse(values.MailSettings)
-            let html
 
+            const mailSettings = values.MailSettings
+            if (!mailSettings) {
+                throw new Error(`Mail settings are missing. Please add MailSettings as a global value`)
+            }
+
+            let html
             if (slug) {
                 let cmsPages = await UtilCms.getCmsPage(db, context, slug)
                 if (!cmsPages.results) {
@@ -298,6 +302,12 @@ export const systemResolver = (db) => ({
             Cache.clearStartWith('system-collections')
 
             return {status: 'success', collection: {name}}
+        },
+        collectionAggregate: async ({collection, json}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+
+            let a = await (db.collection(collection).aggregate(JSON.parse(json)).toArray())
+            return {result: JSON.stringify(a[0])}
         }
     }
 })

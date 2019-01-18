@@ -340,8 +340,11 @@ class JsonDom extends React.Component {
             if (x && x.n) {
                 const extComp = this.extendedComponents[x.t]
                 if (!extComp) {
-                    const comp = JsonDom.components[x.t]
+                    let comp = JsonDom.components[x.t]
                     if (comp) {
+                        if( comp.constructor === Object){
+                            comp = comp.component
+                        }
                         this.extendedComponents[x.n] = (props) => {
                             return comp({...x.p, ...props})
                         }
@@ -539,17 +542,20 @@ class JsonDom extends React.Component {
             //its html
             str = JSON.stringify({
                 t: 'div',
-                $c: Util.escapeForJson(str, true)
+                $c: Util.escapeForJson(str)
             })
         } else {
+            //Escape double time
             str = str.replace(/\\/g, '\\\\')
         }
+
         try {
             const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const parent = this.parent;const _i = this.tryCatch;return `' + str + '`;')
             //.replace(/(\r\n|\n|\r)/g,"");
             return tpl.call({
                 data,
                 parent: this.props._parentRef,
+                escape: Util.escapeForJson,
                 tryCatch: Util.tryCatch.bind(data)
             }).replace(/\t/g, '\\t')
         } catch (e) {

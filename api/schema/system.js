@@ -62,6 +62,11 @@ export const systemSchemaRaw = `
         total: Int
     }
         
+        
+    type CollectionAggregateResult {
+        result: String
+    }
+        
     type Query {
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!): RunResult
@@ -70,6 +75,7 @@ export const systemSchemaRaw = `
     	mediaDumps: MediaDumpResult  
     	ping: PingResult
     	collections (filter: String): CollectionResult
+    	collectionAggregate (collection: String!, json: String!): CollectionAggregateResult
     }
     
       

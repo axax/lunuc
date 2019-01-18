@@ -30,8 +30,9 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         const {language, langaugeTo} = nextProps.keyValueMap.LiveSpeechTranslaterContainerState || {}
+        console.log(Object.assign({}, prevState, {language, langaugeTo}))
+
         if ((language && language !== prevState.language) || (langaugeTo && langaugeTo !== prevState.langaugeTo)) {
-            console.log(Object.assign({}, prevState, {language, langaugeTo}))
             return Object.assign({}, prevState, {language, langaugeTo})
         }
         return null

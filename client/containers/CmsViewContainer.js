@@ -554,6 +554,7 @@ class CmsViewContainer extends React.Component {
         } else {
             value = any
         }
+        console.log(key,any)
         this.setState({settings: Object.assign({}, this.state.settings, {[key]: value})}, this.saveSettings)
     }
 

@@ -176,7 +176,7 @@ class DrawerLayout extends React.Component {
 
     dividerMouseUp = (e) => {
         const {onDrawerWidthChange} = this.props
-        if (onDrawerWidthChange) {
+        if (onDrawerWidthChange && this.props.drawerWidth !== this.state.drawerWidth) {
             onDrawerWidthChange(this.state.drawerWidth)
         }
         this.mouseDividerPos = false
