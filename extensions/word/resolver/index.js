@@ -1,4 +1,7 @@
-import translate from 'google-translate-api'
+import {Translate} from '@google-cloud/translate'
+
+const GOOGLE_API_KEY = 'AIzaSyCGrDAmX6xhoBXMGbi0c3bQ8_0nxr2DbZo';
+
 
 export default db => ({
     Query: {
@@ -6,8 +9,14 @@ export default db => ({
             if (!toIso) {
                 toIso = 'en'
             }
-            const res = (await translate(text, {to: toIso, from: fromIso}))
-            return {text: res.text, fromIso: res.from.language.iso, toIso}
+            const translator = new Translate({
+                key: GOOGLE_API_KEY,
+            })
+
+
+            let [translation] = await translator.translate(text, toIso)
+
+            return {text: translation, fromIso, toIso}
         }
     }
 })
