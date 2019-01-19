@@ -151,7 +151,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
             }
 
             this.setState((state) => ({
-                speaking: this.state.enabledSpeech,
+                speaking: this.state.autoSpeech,
                 recorded
             }))
 
@@ -211,7 +211,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
                 if (value) {
                     this.translateTimeout = setTimeout(() => {
                         this.translate(value)
-                    }, 1000)
+                    }, 500)
                 }
             }
         })
@@ -268,6 +268,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
             <ContentBlock>
                 <TextField
+                    type="search"
                     helperText={this.state.speaking ? 'Speaking...' : ''}
                     disabled={this.state.recording && !!this.recognition} fullWidth
                     placeholder="Input" name="text" value={this.state.text}
