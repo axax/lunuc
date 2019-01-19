@@ -45,7 +45,6 @@ class LiveSpeechTranslaterContainer extends React.Component {
         if( settings && prevState.settings !== settings ) {
             const language = settings.language || prevState.language
             const languageTo = settings.languageTo || prevState.languageTo
-
             if (language && languageTo) {
                 console.log('LiveSpeechTranslaterContainer renew state')
                 return Object.assign({}, prevState, {language, languageTo, settings})
@@ -95,7 +94,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
                 if (result.isFinal) {
 
                     for (const alternativ of result) {
-                        console.log(alternativ)
+                        //console.log(alternativ)
                         if (alternativ.confidence > 0.50) {
 
                             self.translate(alternativ.transcript)
@@ -127,9 +126,19 @@ class LiveSpeechTranslaterContainer extends React.Component {
             utterance.lang = response.data.translate.toIso
 
             utterance.onend = (event) => {
-                this.setState({speaking: false})
-                this.handleRecorder(this.state.recording)
+                this.setState({speaking: false}, () => {
+                    this.handleRecorder(this.state.recording)
+                })
             }
+
+            setTimeout(()=>{
+                // if still speaking after 10s-> there is something wrong
+                if( this.state.speaking){
+                    this.setState({speaking: false}, () => {
+                        this.handleRecorder(this.state.recording)
+                    })
+                }
+            },10000)
 
             //msg.pitch = 2
             window.speechSynthesis.speak(utterance)
@@ -184,7 +193,6 @@ class LiveSpeechTranslaterContainer extends React.Component {
         const target = e.target
         const value = target.type === 'checkbox' ? target.checked : target.value
         const name = target.name
-
         this.setState({
             [target.name]: value
         }, () => {
@@ -193,8 +201,11 @@ class LiveSpeechTranslaterContainer extends React.Component {
             } else if (name === 'language' || name === 'languageTo') {
                this.props.setKeyValue({
                     key: 'LiveSpeechTranslaterContainerState',
-                    value: {langauge: this.state.language, languageTo: this.state.languageTo}
+                    value: {language: this.state.language, languageTo: this.state.languageTo}
                 })
+                if( name === 'langauge'){
+                    this.createRecorder()
+                }
             } else if( name === 'text'){
 
                 clearTimeout(this.translateTimeout)
@@ -256,6 +267,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
             <ContentBlock>
                 <TextField
+                    helperText={this.state.speaking ? 'Speaking...': ''}
                     disabled={this.state.recording && !!this.recognition} fullWidth
                     placeholder="Input" name="text" value={this.state.text}
                     onChange={this.handleInputChange}/>
