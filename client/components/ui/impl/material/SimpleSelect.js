@@ -6,6 +6,7 @@ import Select from '@material-ui/core/Select'
 import MenuItem from '@material-ui/core/MenuItem'
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
+import FormHelperText from '@material-ui/core/FormHelperText';
 import {withStyles} from '@material-ui/core/styles';
 
 
@@ -42,7 +43,7 @@ class SimpleSelect extends React.Component {
     }
 
     render() {
-        const {onChange, value, items, label, classes, multi, disabled} = this.props
+        const {onChange, value, items, label, classes, multi, disabled, hint} = this.props
         const name = this.props.name || ('name_' + Math.random())
 
         return <FormControl className={classes.formControl} disabled={disabled}>
@@ -77,6 +78,7 @@ class SimpleSelect extends React.Component {
                     })
                 }
             </Select>
+            {hint && <FormHelperText>{hint}</FormHelperText>}
         </FormControl>
     }
 }
@@ -90,6 +92,7 @@ SimpleSelect.propTypes = {
     items: PropTypes.array.isRequired,
     label: PropTypes.string,
     name: PropTypes.string,
+    hint: PropTypes.string,
     classes: PropTypes.object.isRequired
 }
 
