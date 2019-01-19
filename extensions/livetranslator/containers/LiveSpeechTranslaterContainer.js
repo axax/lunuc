@@ -42,7 +42,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         const settings = nextProps.keyValueMap.LiveSpeechTranslaterContainerState
-        if( settings && prevState.settings !== settings ) {
+        if (settings && prevState.settings !== settings) {
             const language = settings.language || prevState.language
             const languageTo = settings.languageTo || prevState.languageTo
             if (language && languageTo) {
@@ -131,14 +131,14 @@ class LiveSpeechTranslaterContainer extends React.Component {
                 })
             }
 
-            setTimeout(()=>{
+            setTimeout(() => {
                 // if still speaking after 10s-> there is something wrong
-                if( this.state.speaking){
+                if (this.state.speaking) {
                     this.setState({speaking: false}, () => {
                         this.handleRecorder(this.state.recording)
                     })
                 }
-            },10000)
+            }, 10000)
 
             //msg.pitch = 2
             window.speechSynthesis.speak(utterance)
@@ -150,7 +150,6 @@ class LiveSpeechTranslaterContainer extends React.Component {
             }
 
             this.setState((state) => ({
-                text,
                 speaking: true,
                 recorded
             }))
@@ -199,19 +198,20 @@ class LiveSpeechTranslaterContainer extends React.Component {
             if (target.type === 'checkbox') {
                 this.handleRecorder(value)
             } else if (name === 'language' || name === 'languageTo') {
-               this.props.setKeyValue({
+                this.props.setKeyValue({
                     key: 'LiveSpeechTranslaterContainerState',
                     value: {language: this.state.language, languageTo: this.state.languageTo}
                 })
-                if( name === 'langauge'){
+                if (name === 'langauge') {
                     this.createRecorder()
                 }
-            } else if( name === 'text'){
-
+            } else if (name === 'text') {
                 clearTimeout(this.translateTimeout)
-                this.translateTimeout = setTimeout(() => {
-                    this.translate(value)
-                }, 500)
+                if( value ) {
+                    this.translateTimeout = setTimeout(() => {
+                        this.translate(value)
+                    }, 1000)
+                }
             }
         })
 
@@ -267,9 +267,14 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
             <ContentBlock>
                 <TextField
-                    helperText={this.state.speaking ? 'Speaking...': ''}
+                    helperText={this.state.speaking ? 'Speaking...' : ''}
                     disabled={this.state.recording && !!this.recognition} fullWidth
                     placeholder="Input" name="text" value={this.state.text}
+                    onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                            this.translate(this.state.text)
+                        }
+                    }}
                     onChange={this.handleInputChange}/>
 
             </ContentBlock>
@@ -290,7 +295,7 @@ LiveSpeechTranslaterContainer.propTypes = {
 
 
 const LiveSpeechTranslaterContainerWithGql = compose(
-    graphql(gql`query {speechLanguages{data{value name}} translateLanguages{data{value name}}}`, {
+    graphql(gql`query{speechLanguages{data{value name}}translateLanguages{data{value name}}}`, {
         options() {
             return {
                 fetchPolicy: 'cache-and-network'
