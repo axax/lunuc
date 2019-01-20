@@ -58,7 +58,8 @@
         "Backup",
         "Chat",
         "Search",
-        "Translate"
+        "Translate",
+        "VolumeUp"
       ],
       "theme":{
         "colors":{

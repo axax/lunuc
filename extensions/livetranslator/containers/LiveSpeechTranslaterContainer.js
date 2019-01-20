@@ -14,7 +14,8 @@ import {
     SimpleSwitch,
     Card,
     ContentBlock,
-    Divider
+    Divider,
+    VolumeUpIconButton
 } from 'ui/admin'
 
 class LiveSpeechTranslaterContainer extends React.Component {
@@ -65,11 +66,6 @@ class LiveSpeechTranslaterContainer extends React.Component {
     createRecorder = () => {
         if (!this.recognition)
             return false
-
-        const utterance = new SpeechSynthesisUtterance('')
-        utterance.lang ='en'
-        window.speechSynthesis.speak(utterance)
-
 
         const self = this
         this.recognition.lang = this.state.language
@@ -125,40 +121,21 @@ class LiveSpeechTranslaterContainer extends React.Component {
         }).then(response => {
 
             if (this.state.autoSpeech) {
-                this.handleRecorder(false)
 
-                const utterance = new SpeechSynthesisUtterance(response.data.translate.text)
-                utterance.lang = response.data.translate.toIso
-
-                utterance.onend = (event) => {
-                    this.setState({speaking: false}, () => {
-                        this.handleRecorder(this.state.recording)
-                    })
-                }
-
-                setTimeout(() => {
-                    // if still speaking after 10s-> there is something wrong
-                    if (this.state.speaking) {
-                        this.setState({speaking: false}, () => {
-                            this.handleRecorder(this.state.recording)
-                        })
-                    }
-                }, 10000)
-
-                //msg.pitch = 2
-                window.speechSynthesis.speak(utterance)
+                this.speak(response.data.translate.text, response.data.translate.toIso)
 
             }
-            const recorded = [{from: text, to: response.data.translate.text}, ...this.state.recorded]
+            const recorded = [{
+                from: text,
+                to: response.data.translate.text,
+                lang: response.data.translate.toIso
+            }, ...this.state.recorded]
 
             if (recorded.length > this.state.maxResults) {
                 recorded.splice(this.state.maxResults)
             }
 
-            this.setState((state) => ({
-                speaking: this.state.autoSpeech,
-                recorded
-            }))
+            this.setState({recorded})
 
         }).catch(error => {
             console.log(error)
@@ -166,11 +143,46 @@ class LiveSpeechTranslaterContainer extends React.Component {
     }
 
 
+    speak = (text, lang) => {
+        this.handleRecorder(false)
+
+        this.setState({speaking: true})
+
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang = lang
+
+        utterance.onend = () => {
+            this.setState({speaking: false}, () => {
+                this.handleRecorder(this.state.recording)
+            })
+        }
+
+        utterance.onerror = (e) => {
+            console.log("error in SpeechSynthesisUtterance", e)
+            this.setState({speaking: false}, () => {
+                this.handleRecorder(this.state.recording)
+            })
+        }
+
+        setTimeout(() => {
+            // if still speaking after 10s-> there is something wrong
+            if (this.state.speaking) {
+                this.setState({speaking: false}, () => {
+                    this.handleRecorder(this.state.recording)
+                })
+            }
+        }, 10000)
+
+        //msg.pitch = 2
+        window.speechSynthesis.speak(utterance)
+    }
+
+
     translateRequest = ({text, toIso, fromIso}) => {
         const {client} = this.props
         return client.query({
             fetchPolicy: 'cache-first',
-            query: gql`query translate($text: String!, $toIso: String!, $fromIso: String){translate(text: $text, toIso: $toIso, fromIso: $fromIso ){text fromIso toIso }}`,
+            query: gql`query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}`,
             variables: {
                 text,
                 toIso,
@@ -244,10 +256,10 @@ class LiveSpeechTranslaterContainer extends React.Component {
             <ContentBlock>
 
 
-                <SimpleSelect hint="Language to translate from"
-                              name='language'
-                              onChange={this.handleInputChange}
-                              value={this.state.language} items={speechLanguages.data}/>
+                {this.recognition && <SimpleSelect hint="Language for speech recognition"
+                                                   name='language'
+                                                   onChange={this.handleInputChange}
+                                                   value={this.state.language} items={speechLanguages.data}/>}
 
                 <SimpleSelect hint="Language to translate to"
                               name='languageTo'
@@ -274,7 +286,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
             <ContentBlock>
                 <TextField
                     type="search"
-                    helperText={this.state.speaking ? 'Speaking...' : ''}
+                    helperText={this.state.speaking ? 'Speaking...' : 'Enter a word or sentence that you wish to translate'}
                     disabled={this.state.recording && !!this.recognition} fullWidth
                     placeholder="Input" name="text" value={this.state.text}
                     onKeyPress={(e) => {
@@ -296,7 +308,9 @@ class LiveSpeechTranslaterContainer extends React.Component {
                         <Divider style={{margin: '5px 0'}} light/>
 
                         <Typography variant="h5">
-                            {k.to}
+                            <VolumeUpIconButton onClick={()=>{
+                                this.speak(k.to, k.lang)
+                            }}/>{k.to}
                         </Typography>
                     </Card>
                 )
