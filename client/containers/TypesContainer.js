@@ -125,7 +125,6 @@ class TypesContainer extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        // maybe this can be optimized even more
         return this.state !== state ||
             this.state.selectedrows !== state.selectedrows ||
             this.props.location !== props.location ||
@@ -140,6 +139,10 @@ class TypesContainer extends React.Component {
         }
 
         const pageParams = this.determinPageParams(props)
+
+        if( this.props.settings !== props.settings ){
+            this._lastData = null
+        }
 
 
         if (change ||
@@ -612,7 +615,6 @@ class TypesContainer extends React.Component {
 
     handleViewSettingChange(e, type) {
         const target = e.target, value = target.checked, name = target.name
-
         this.settings = deepMerge(this.settings, {[type]: {columns: {[name]: value}}})
         // force rerendering
         this._lastData = null

@@ -66,6 +66,11 @@ class LiveSpeechTranslaterContainer extends React.Component {
         if (!this.recognition)
             return false
 
+        const utterance = new SpeechSynthesisUtterance('')
+        utterance.lang ='en'
+        window.speechSynthesis.speak(utterance)
+
+
         const self = this
         this.recognition.lang = this.state.language
         this.recognition.interimResults = false
