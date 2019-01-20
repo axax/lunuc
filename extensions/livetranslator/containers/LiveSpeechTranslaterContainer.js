@@ -15,6 +15,7 @@ import {
     Card,
     ContentBlock,
     Divider,
+    VolumeUpIcon,
     VolumeUpIconButton
 } from 'ui/admin'
 
@@ -244,7 +245,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
         }
 
         return <BaseLayout>
-            <Typography variant="h3" component="h1" gutterBottom>Translate</Typography>
+            <Typography variant="h3" component="h1" gutterBottom>Translate {this.state.speaking && <VolumeUpIcon />}</Typography>
 
 
             {!this.recognition &&
