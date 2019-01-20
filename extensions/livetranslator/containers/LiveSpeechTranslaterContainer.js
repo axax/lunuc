@@ -225,12 +225,12 @@ class LiveSpeechTranslaterContainer extends React.Component {
                     this.createRecorder()
                 }
             } else if (name === 'text') {
-                clearTimeout(this.translateTimeout)
+                /*clearTimeout(this.translateTimeout)
                 if (value) {
                     this.translateTimeout = setTimeout(() => {
                         this.translate(value)
                     }, 500)
-                }
+                }*/
             }
         })
 
@@ -293,6 +293,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
                     onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                             this.translate(this.state.text)
+                            this.setState({text:''})
                         }
                     }}
                     onChange={this.handleInputChange}/>

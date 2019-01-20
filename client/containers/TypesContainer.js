@@ -279,6 +279,7 @@ class TypesContainer extends React.Component {
                         dynamic.date = <span><span>{Util.formattedDateFromObjectId(item._id)}</span><br /><small>{item._id}</small></span>
                     }
                     if (columnsMap['action']) {
+
                         dynamic.action = [
                             <Tooltip key="deleteBtn" placement="top" title="Delete entry">
                                 <DeleteIconButton disabled={(item.status == 'deleting' || item.status == 'updating')}
@@ -442,7 +443,8 @@ class TypesContainer extends React.Component {
 
                     {columns &&
                     columns.map(c => {
-                        return <div key={c.id}><SimpleSwitch label={c.label || c.title} name={c.id}
+                        return <div key={c.id}><SimpleSwitch disabled={!!this.props.settings}
+                                                             label={c.label || c.title} name={c.id}
                                                              onChange={(e) => {
                                                                  this.handleViewSettingChange.bind(this)(e, type)
                                                              }}
