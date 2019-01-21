@@ -24,33 +24,447 @@ const buildCollectionName = async (db, context, typeName, version) => {
     return typeName + (version && version !== 'default' ? '_' + version : '')
 }
 
+
+//TODO create a class for building the aggregate class
+class AggregationBuilder {
+
+    constructor(type, fields, options) {
+        this.type = type
+        this.fields = fields
+        this.options = options
+    }
+
+    getLimit() {
+        let {limit} = this.options
+        return limit ? limit : 10
+    }
+
+    getOffset() {
+        let {offset, page} = this.options
+
+        if (!offset) {
+
+            if (page) {
+                return (page - 1) * this.getLimit()
+            } else {
+                return 0
+            }
+        }
+
+        return offset
+    }
+
+    getPage() {
+        let {page} = this.options
+
+        if (!page) {
+            return 1
+        }
+
+        return page
+    }
+
+    getSort() {
+        let {sort} = this.options
+        if (!sort) {
+            return {_id: -1}
+        } else {
+            if (sort.constructor === String) {
+                // sort looks like "field1 asc, field2 desc"
+                return sort.split(',').reduce((acc, val) => {
+                    const a = val.split(' ')
+                    return {...acc, [a[0]]: (a.length > 1 && a[1].toLowerCase() == "desc" ? -1 : 1)}
+                }, {})
+            }
+        }
+        return sort
+    }
+
+
+    // Mongodb joins
+    createAndAddLookup({type, fieldName, multi, lookups}) {
+        const match = {
+            $expr: {
+                [multi ? '$in' : '$eq']: ['$_id', '$$' + fieldName]
+            }
+        }
+        /* let hasFilter = false
+         const parsedFilter = this.getParsedFilter()
+         if (parsedFilter) {
+         const filterPart = parsedFilter.parts[fieldName]
+         if (filterPart) {
+         hasFilter = true
+         match.$expr = {$and: [{$eq: ['$_id', ObjectId(filterPart.value)]}, match.$expr]}
+         }
+         }*/
+
+        /* with pipeline */
+        const lookup = {
+            $lookup: {
+                from: type,
+                as: fieldName,
+                let: {
+                    [fieldName]: '$' + fieldName
+                },
+                pipeline: [
+                    {
+                        $match: match
+                    }
+                ]
+            }
+        }
+
+        lookups.push(lookup)
+        /*if (hasFilter) {
+         lookups.push({
+         $match: {
+         $expr: {['$' + fieldName]: {$exists: true, $not: {$size: 0}}}
+         }
+         })
+         }*/
+        return {lookup}
+    }
+
+    createGroup(fieldName, multi) {
+        return {'$first': multi ? '$' + fieldName : {$arrayElemAt: ['$' + fieldName, 0]}}
+    }
+
+
+    getParsedFilter() {
+        if (!this._parsedFilter) {
+            const {filter} = this.options
+            if (filter) {
+                this._parsedFilter = ClientUtil.parseFilter(filter)
+            }
+        }
+        return this._parsedFilter
+    }
+
+    // filter where clause
+    createAndAddFilterToMatch({fieldName, reference, localized, match}) {
+        const parsedFilter = this.getParsedFilter()
+        if (parsedFilter) {
+            const {lang} = this.options
+            const filterPart = parsedFilter.parts[fieldName]
+            const filterKey = fieldName + (localized ? '_localized.' + lang : '')
+            if (filterPart) {
+                if (reference) {
+                    if (filterPart.value) {
+                        if (ObjectId.isValid(filterPart.value)) {
+                            // match by id
+                            this.addFilterToMatch({
+                                filterKey,
+                                filterValue: ObjectId(filterPart.value),
+                                filterOptions: filterPart,
+                                match
+                            })
+                        }
+
+                    }
+                } else {
+                    if (filterPart.constructor === Array) {
+                        filterPart.forEach(e => {
+                            this.addFilterToMatch({
+                                filterKey,
+                                filterValue: {'$regex': e.value, '$options': 'i'},
+                                filterOptions: e,
+                                match
+                            })
+                        })
+                    } else {
+                        this.addFilterToMatch({
+                            filterKey,
+                            filterValue: {
+                                '$regex': filterPart.value,
+                                '$options': 'i'
+                            }, filterOptions: filterPart, match
+                        })
+                    }
+                }
+            }
+
+
+            if (!reference) {
+                parsedFilter.rest.forEach(e => {
+                    this.addFilterToMatch({
+                        filterKey,
+                        filterValue: {'$regex': e.value, '$options': 'i'},
+                        filterOptions: e,
+                        match
+                    })
+                })
+            }
+        }
+    }
+
+
+    addFilterToMatch({filterKey, filterValue, filterOptions, match}) {
+        if (!filterOptions || filterOptions.operator === 'or') {
+            if (!match.$or) {
+                match.$or = []
+            }
+            match.$or.push({[filterKey]: filterValue})
+        } else {
+            match[filterKey] = filterValue
+        }
+    }
+
+    query() {
+        const typeDefinition = getType(this.type) || {}
+
+        const {projectResult, lang} = this.options
+
+        // limit and offset
+        const limit = this.getLimit(),
+            offset = this.getOffset(),
+            page = this.getPage(),
+            sort = this.getSort(),
+            typeFields = getFormFields(this.type),
+            parsedFilter = this.getParsedFilter()
+
+        let rootMatch = Object.assign({}, this.options.match),
+            match = {},
+            groups = {},
+            lookups = [],
+            projectResultData = {},
+            hasMatchInReference = false
+
+
+        // if there is filter like _id=12323213
+        if (parsedFilter && parsedFilter.parts._id) {
+            // if there is a filter on _id
+            // handle it here
+            this.addFilterToMatch({
+                filterKey: '_id',
+                filterValue: ObjectId(parsedFilter.parts._id.value),
+                filterOptions: parsedFilter.parts._id,
+                rootMatch
+            })
+        }
+
+
+        this.fields.forEach((field, i) => {
+            if (field.constructor === Object) {
+                // if a value is in this format {'categories':['name']}
+                // we expect that the field categories is a reference to another type
+                // so we create a lookup for this type
+
+                const fieldNames = Object.keys(field)
+                if (fieldNames.length > 0) {
+
+                    // there should be only one attribute
+                    const fieldName = fieldNames[0]
+
+                    //check if this field is a reference
+                    if (typeFields && typeFields[fieldName]) {
+                        const typeField = typeFields[fieldName]
+
+                        // create lookup and group value for pipeline
+                        const {lookup} = this.createAndAddLookup({
+                            type: typeField.type,
+                            fieldName,
+                            multi: typeField.multi,
+                            lookups
+                        })
+                        const group = this.createGroup(fieldName, typeField.multi)
+
+                        // get fields of the referenced type
+                        const lookupFields = getFormFields(typeField.type)
+
+                        // projection
+                        const projectPipeline = {}
+
+                        field[fieldName].forEach(item => {
+                            projectResultData[fieldName + '.' + item] = 1
+                            if (lookupFields[item] && lookupFields[item].localized) {
+                                projectPipeline[item + '_localized.' + lang] = 1
+
+                                // project localized field in current language
+                                projectPipeline[item] = '$' + item + '_localized.' + lang
+                                //projectResultData[key + '.' + item + '_localized.' + lang] = 1
+                            } else {
+                                projectPipeline[item] = 1
+                            }
+
+                            if (fieldName !== '_id') {
+                                hasMatchInReference = true
+                                this.createAndAddFilterToMatch({
+                                    fieldName: fieldName + '.' + item,
+                                    reference: false,
+                                    localized: false,
+                                    match
+                                })
+                            }
+
+                        })
+
+                        lookup.$lookup.pipeline.push({$project: projectPipeline})
+
+                        // add group
+                        groups[fieldName] = group
+
+                        this.createAndAddFilterToMatch({
+                            fieldName,
+                            reference: true,
+                            localized: false,
+                            match: rootMatch
+                        })
+
+                    }
+
+                }
+
+            } else if (field.indexOf('$') > 0) {
+                // this is a reference
+                // for instance image$Media --> field image is a reference to the type Media
+                const part = field.split('$')
+                const fieldName = part[0]
+                let type = part[1], multi = false
+                if (type.startsWith('[')) {
+                    multi = true
+                    type = type.substring(1, type.length - 1)
+                }
+
+                this.createAndAddLookup({type, fieldName, multi, lookups})
+                groups[fieldName] = this.createGroup(fieldName, multi)
+                this.createAndAddFilterToMatch({fieldName, reference: true, localized: false, match})
+                projectResultData[fieldName] = 1
+
+            } else {
+                // regular field
+                if (field !== '_id') {
+                    if (typeFields && typeFields[field] && typeFields[field].localized) {
+                        groups[field] = {'$first': '$' + field + '_localized.' + lang}
+                        this.createAndAddFilterToMatch({
+                            fieldName: field,
+                            reference: false,
+                            localized: true,
+                            match
+                        })
+                    } else {
+                        groups[field] = {'$first': '$' + field}
+                        this.createAndAddFilterToMatch({
+                            fieldName: field,
+                            reference: false,
+                            localized: false,
+                            match
+                        })
+                    }
+                }
+                projectResultData[field] = 1
+
+            }
+        })
+
+        if (!projectResult) {
+            // also return extra fields
+            if (!typeDefinition.noUserRelation) {
+
+                this.createAndAddLookup({type: 'User', fieldName: 'createdBy', multi: false, lookups})
+                groups.createdBy = this.createGroup('createdBy', false)
+            }
+            groups.modifiedAt = {'$first': '$modifiedAt'}
+        }
+
+
+        // compose result
+        const result = []
+
+
+        if (Object.keys(rootMatch).length > 0) {
+
+            if (!hasMatchInReference) {
+                result.push({
+                    $match: {...rootMatch, ...match}
+                })
+            } else {
+                result.push({
+                    $match: rootMatch
+                })
+            }
+        } else if (!hasMatchInReference) {
+            result.push({
+                $match: match
+            })
+        }
+
+        if (lookups.length > 0) {
+            for (const lookup of lookups) {
+                result.push(lookup)
+            }
+        }
+
+        // Group back to arrays
+        result.push(
+            {
+                $group: {
+                    _id: '$_id',
+                    ...groups
+                }
+            })
+
+        // second match
+        if (hasMatchInReference) {
+            result.push({
+                $match: match
+            })
+        }
+
+        // add sort
+        result.push({$sort: sort})
+
+        // project
+        if (projectResult) {
+            // also remove id if it is not explicitly set
+            if (!projectResultData._id) {
+                projectResultData._id = 0
+            }
+            result.push({$project: projectResultData})
+        }
+
+        //pagination
+        //TODO maybe it is better to use facet for pagination
+        result.push({
+            $group: {
+                _id: null,
+                // get a count of every result that matches until now
+                total: {$sum: 1},
+                // keep our results for the next operation
+                results: {$push: '$$ROOT'}
+            }
+        })
+
+        // and finally trim the results to within the range given by start/endRow
+        result.push({
+            $project: {
+                total: 1,
+                results: {$slice: ['$results', offset, limit]}
+            }
+        })
+
+        // return offset and limit
+        result.push({
+            $addFields: {limit, offset, page}
+        })
+
+        return result
+
+    }
+
+}
+
 const GenericResolver = {
     entities: async (db, context, typeName, data, options) => {
         if (!context.lang) {
             throw new Error('lang on context is missing')
         }
         const startTime = new Date()
-        const typeDefinition = getType(typeName) || {}
 
-        let {limit, offset, page, match, filter, sort, projectResult, version} = options
+        let {match, version, ...otherOptions} = options
 
         const collectionName = await buildCollectionName(db, context, typeName, version)
-        if (!limit) {
-            limit = 10
-        }
-        if (!offset) {
 
-            if (page) {
-                offset = (page - 1) * limit
-            } else {
-                offset = 0
-            }
-        }
-        if (!page) {
-            page = 1
-        }
-
-        // default match
+        // Default match
         if (!match) {
             // if not specific match is defined, only select items that belong to the current user
             if (Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
@@ -63,247 +477,28 @@ const GenericResolver = {
             }
         }
 
+        const aggregationBuilder = new AggregationBuilder(typeName, data, {match, lang: context.lang, ...otherOptions})
 
-        if (!sort) {
-            sort = {_id: -1}
-        } else {
-            if (sort.constructor === String) {
-                // sort looks like "field1 asc, field2 desc"
-                sort = sort.split(',').reduce((acc, val) => {
-                    const a = val.split(' ')
-                    return {...acc, [a[0]]: (a.length > 1 && a[1].toLowerCase() == "desc" ? -1 : 1)}
-                }, {})
-            }
-        }
-        const parsedFilter = ClientUtil.parseFilter(filter)
-        const group = {}
-        const lookups = []
-        const afterSort = []
-        const fields = getFormFields(typeName)
-        const addLookup = (type, fieldName, multi) => {
+        const aggregationQuery = aggregationBuilder.query()
 
-            const lookup = {
-                $lookup: {
-                    from: type,
-                    localField: fieldName,
-                    foreignField: '_id',
-                    as: fieldName
-                }
-            }
-
-            lookups.push(lookup)
-
-            if (multi) {
-                group[fieldName] = {'$first': '$' + fieldName}
-            } else {
-                group[fieldName] = {'$first': {$arrayElemAt: ['$' + fieldName, 0]}}
-            }
-        }
-
-        const addFilterToMatch = (filterPart, filterKey, data ,obj) => {
-            if( !obj ) obj = match
-            if (!filterPart || filterPart.operator === 'or') {
-                if (!obj.$or) {
-                    obj.$or = []
-                }
-                obj.$or.push({[filterKey]: data})
-            } else {
-                obj[filterKey] = data
-            }
-
-        }
-
-        const addFilter = (value, isRef, localized) => {
-            if (filter) {
-
-                const filterPart = parsedFilter.parts[value]
-                const filterKey = value + (localized ? '_localized.' + context.lang : '')
-
-                if (filterPart) {
-                    if (isRef) {
-                        if (filterPart.value) {
-                            if (ObjectId.isValid(filterPart.value)) {
-                                // match by id
-                                addFilterToMatch(filterPart, filterKey, ObjectId(filterPart.value))
-                            } else {
-                                // match by resolved name
-                                //addFilterToMatch(filterPart, filterKey, filterPart.value, matchAfter)
-                            }
-                        }
-                    } else {
-                        if (filterPart.constructor === Array) {
-                            filterPart.forEach(e => {
-                                addFilterToMatch(e, filterKey, {'$regex': e.value, '$options': 'i'})
-                            })
-                        } else {
-                            addFilterToMatch(filterPart, filterKey, {'$regex': filterPart.value, '$options': 'i'})
-                        }
-                    }
-                }
-                parsedFilter.rest.forEach(e => {
-                    addFilterToMatch(e, filterKey, {'$regex': e.value, '$options': 'i'})
-                })
-            }
-        }
-
-        const projectResultData = {}
-        const tempLocalizedMapRemoveWithMongo36 = []
-
-        data.forEach((value, i) => {
-            if (value.constructor === Object) {
-                // if a value is in this format {'categories':['name']}
-                // we expect that the field categories is a reference to another type
-                // so we create a lookup for this type
-                const keys = Object.keys(value)
-                if (keys.length > 0) {
-                    // there should be only one attribute
-                    const key = keys[0]
-                    //check if this field is a reference
-                    if (fields && fields[key]) {
-                        const field = fields[keys[0]]
-                        addLookup(field.type, key, field.multi, value[key])
-
-
-                        const lookupFields = getFormFields(field.type)
-                        value[key].forEach(item => {
-                            projectResultData[key + '.' + item] = 1
-
-                            // TODO: remove with mongo 3.6 and use pipeline inside lookup instead
-                            if (lookupFields[item] && lookupFields[item].localized) {
-                                tempLocalizedMapRemoveWithMongo36.push({field: key, lookupField: item})
-                                projectResultData[key + '.' + item + '_localized.' + context.lang] = 1
-                            }
-                        })
-                        addFilter(keys[0], true)
-
-                    }
-
-                }
-
-            } else if (value.indexOf('$') > 0) {
-                // this is a reference
-                // for instance image$Media --> field image is a reference to the type Media
-                const part = value.split('$')
-                const fieldName = part[0]
-                let type = part[1], multi = false
-                if (type.startsWith('[')) {
-                    multi = true
-                    type = type.substring(1, type.length - 1)
-                }
-                addLookup(type, fieldName, multi)
-                addFilter(fieldName, true)
-                projectResultData[fieldName] = 1
-
-            } else {
-                // regular field
-                if (value !== '_id') {
-                    if (fields && fields[value] && fields[value].localized) {
-                        group[value] = {'$first': '$' + value + '_localized.' + context.lang}
-                        addFilter(value, false, true)
-                    } else {
-                        group[value] = {'$first': '$' + value}
-                        addFilter(value)
-                    }
-                }
-                projectResultData[value] = 1
-
-            }
-        })
-        if (parsedFilter && parsedFilter.parts._id) {
-            // if there is a filter on _id
-            // handle it here
-            addFilterToMatch(parsedFilter.parts._id, '_id', ObjectId(parsedFilter.parts._id.value))
-            //match._id =ObjectId(parsedFilter.parts._id.value)
-        }
-
-        if (projectResult) {
-            // also remove id if it is not wanted
-            if (!projectResultData._id) {
-                projectResultData._id = 0
-            }
-            afterSort.push({$project: projectResultData})
-        } else {
-            // also return extra fields
-            if (!typeDefinition.noUserRelation) {
-                lookups.push({
-                    $lookup: {
-                        from: 'User',
-                        localField: 'createdBy',
-                        foreignField: '_id',
-                        as: 'createdBy'
-                    }
-                })
-                group.createdBy = {'$first': {$arrayElemAt: ['$createdBy', 0]}} // return as as single doc not an array
-            }
-            group.modifiedAt = {'$first': '$modifiedAt'}
-        }
-
+        console.log(JSON.stringify(aggregationQuery, null, 4))
 
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
-        let a = (await collection.aggregate([
-            {
-                $match: match
-            },
-            ...lookups,
-            // Group back to arrays
-            {
-                $group: {
-                    _id: '$_id',
-                    ...group
-                }
-            },
-            {$sort: sort},
-            ...afterSort,
-            {
-                //TODO maybe it is better to use facet for pagination
-                $group: {
-                    _id: null,
-                    // get a count of every result that matches until now
-                    total: {$sum: 1},
-                    // keep our results for the next operation
-                    results: {$push: '$$ROOT'}
-                }
-            },
-            // and finally trim the results to within the range given by start/endRow
-            {
-                $project: {
-                    total: 1,
-                    results: {$slice: ['$results', offset, limit]}
-                }
-            },
-            // return offset and limit
-            {
-                $addFields: {limit, offset, page}
-            }
-        ]).toArray())
+        let a = (await collection.aggregate(aggregationQuery).toArray())
         if (a.length === 0) {
             return {
                 aggregateTime: new Date() - startTimeAggregate,
-                page,
-                limit,
-                offset,
+                page: aggregationBuilder.getPage(),
+                limit: aggregationBuilder.getLimit(),
+                offset: aggregationBuilder.getOffset(),
                 total: 0,
                 results: null
             }
         }
+
         a[0].aggregateTime = new Date() - startTimeAggregate
 
-        // TODO: remove with mongo 3.6 and use pipeline inside lookup instead
-        //console.log(tempLocalizedMapRemoveWithMongo36)
-        if (tempLocalizedMapRemoveWithMongo36.length && a[0].results) {
-            a[0].results.forEach(record => {
-                tempLocalizedMapRemoveWithMongo36.forEach(item => {
-                    if (record[item.field].constructor === Array) {
-                        record[item.field].forEach(subItem => {
-                            subItem[item.lookupField] = subItem[item.lookupField + '_localized'][context.lang]
-                        })
-                    } else {
-                        record[item.field][item.lookupField] = record[item.field][item.lookupField + '_localized'][context.lang]
-                    }
-                })
-            })
-        }
         console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${a[0].aggregateTime}ms total time ${new Date() - startTime}ms`)
         return a[0]
     },

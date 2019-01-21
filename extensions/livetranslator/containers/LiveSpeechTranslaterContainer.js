@@ -22,6 +22,7 @@ import {
 class LiveSpeechTranslaterContainer extends React.Component {
 
     recognition = false
+    mounted = false
 
     constructor(props) {
         super(props)
@@ -57,10 +58,12 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
 
     componentDidMount() {
+        this.mounted = true
         this.createRecorder()
     }
 
     componentWillUnmount() {
+        this.mounted = false
         this.handleRecorder(false)
     }
 
@@ -196,7 +199,7 @@ class LiveSpeechTranslaterContainer extends React.Component {
         if (!this.recognition)
             return false
 
-        if (start) {
+        if (start && this.mounted) {
             if (!this.recognition.recognizing) {
                 this.recognition.start()
             }
