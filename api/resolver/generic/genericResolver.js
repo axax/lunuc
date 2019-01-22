@@ -25,7 +25,6 @@ const buildCollectionName = async (db, context, typeName, version) => {
 }
 
 
-//TODO create a class for building the aggregate class
 class AggregationBuilder {
 
     constructor(type, fields, options) {
@@ -82,46 +81,45 @@ class AggregationBuilder {
 
 
     // Mongodb joins
-    createAndAddLookup({type, fieldName, multi, lookups}) {
-        const match = {
-            $expr: {
-                [multi ? '$in' : '$eq']: ['$_id', '$$' + fieldName]
-            }
-        }
-        /* let hasFilter = false
-         const parsedFilter = this.getParsedFilter()
-         if (parsedFilter) {
-         const filterPart = parsedFilter.parts[fieldName]
-         if (filterPart) {
-         hasFilter = true
-         match.$expr = {$and: [{$eq: ['$_id', ObjectId(filterPart.value)]}, match.$expr]}
-         }
-         }*/
+    createAndAddLookup({type, fieldName, multi, lookups, usePipeline}) {
+
+
+        let lookup
 
         /* with pipeline */
-        const lookup = {
-            $lookup: {
-                from: type,
-                as: fieldName,
-                let: {
-                    [fieldName]: '$' + fieldName
-                },
-                pipeline: [
-                    {
-                        $match: match
-                    }
-                ]
+        if (usePipeline) {
+            lookup = {
+                $lookup: {
+                    from: type,
+                    as: fieldName,
+                    let: {
+                        [fieldName]: '$' + fieldName
+                    },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    [multi ? '$in' : '$eq']: ['$_id', '$$' + fieldName]
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        } else {
+
+            // without pipeline
+            lookup = {
+                $lookup: {
+                    from: type,
+                    localField: fieldName,
+                    foreignField: '_id',
+                    as: fieldName
+                }
             }
         }
 
         lookups.push(lookup)
-        /*if (hasFilter) {
-         lookups.push({
-         $match: {
-         $expr: {['$' + fieldName]: {$exists: true, $not: {$size: 0}}}
-         }
-         })
-         }*/
         return {lookup}
     }
 
@@ -259,24 +257,18 @@ class AggregationBuilder {
                     if (typeFields && typeFields[fieldName]) {
                         const typeField = typeFields[fieldName]
 
-                        // create lookup and group value for pipeline
-                        const {lookup} = this.createAndAddLookup({
-                            type: typeField.type,
-                            fieldName,
-                            multi: typeField.multi,
-                            lookups
-                        })
-                        const group = this.createGroup(fieldName, typeField.multi)
-
                         // get fields of the referenced type
                         const lookupFields = getFormFields(typeField.type)
 
                         // projection
-                        const projectPipeline = {}
+                        let projectPipeline = {},
+                        hasLocalized = false
+
 
                         field[fieldName].forEach(item => {
                             projectResultData[fieldName + '.' + item] = 1
                             if (lookupFields[item] && lookupFields[item].localized) {
+                                hasLocalized =true
                                 projectPipeline[item + '_localized.' + lang] = 1
 
                                 // project localized field in current language
@@ -295,13 +287,24 @@ class AggregationBuilder {
                                     match
                                 })
                             }
-
                         })
 
-                        lookup.$lookup.pipeline.push({$project: projectPipeline})
+                        // create lookup and group value for pipeline
+                        const {lookup} = this.createAndAddLookup({
+                            type: typeField.type,
+                            fieldName,
+                            multi: typeField.multi,
+                            lookups,
+                            usePipeline: hasLocalized
+                        })
+
+
+                        if (lookup.$lookup.pipeline) {
+                            lookup.$lookup.pipeline.push({$project: projectPipeline})
+                        }
 
                         // add group
-                        groups[fieldName] = group
+                        groups[fieldName] = this.createGroup(fieldName, typeField.multi)
 
                         this.createAndAddFilterToMatch({
                             fieldName,
@@ -325,7 +328,37 @@ class AggregationBuilder {
                     type = type.substring(1, type.length - 1)
                 }
 
+
+                const refTypeDefinition = getType(type) || {}
+
+                if (refTypeDefinition.fields) {
+                    for (const refField of refTypeDefinition.fields) {
+                        if (!refField.reference) {
+                            hasMatchInReference = true
+                            this.createAndAddFilterToMatch({
+                                fieldName: fieldName + '.' + refField.name,
+                                reference: false,
+                                localized: false,
+                                match
+                            })
+                        }
+                    }
+                }
+
+
+                if (multi) {
+                    // if multi it has to be an array
+                    // this is an anditional filter to remove non array values. it is not needed if database is consistent
+                    // without this filter you might get the error: $in requires an array as a second argument
+                    /*this.addFilterToMatch({
+                     filterKey:fieldName+'.0',
+                     filterValue: { '$exists': true },
+                     match: rootMatch
+                     })*/
+                }
                 this.createAndAddLookup({type, fieldName, multi, lookups})
+
+
                 groups[fieldName] = this.createGroup(fieldName, multi)
                 this.createAndAddFilterToMatch({fieldName, reference: true, localized: false, match})
                 projectResultData[fieldName] = 1
@@ -370,7 +403,7 @@ class AggregationBuilder {
         // compose result
         const result = []
 
-
+        const hasMatch = Object.keys(match).length > 0
         if (Object.keys(rootMatch).length > 0) {
 
             if (!hasMatchInReference) {
@@ -382,7 +415,7 @@ class AggregationBuilder {
                     $match: rootMatch
                 })
             }
-        } else if (!hasMatchInReference) {
+        } else if (hasMatch && !hasMatchInReference) {
             result.push({
                 $match: match
             })
@@ -404,7 +437,7 @@ class AggregationBuilder {
             })
 
         // second match
-        if (hasMatchInReference) {
+        if (hasMatch && hasMatchInReference) {
             result.push({
                 $match: match
             })
@@ -471,6 +504,8 @@ const GenericResolver = {
                 match = {}
 
             } else {
+                const typeDefinition = getType(typeName) || {}
+
                 if (!typeDefinition.noUserRelation) {
                     match = {createdBy: ObjectId(context.id)}
                 }
@@ -481,7 +516,7 @@ const GenericResolver = {
 
         const aggregationQuery = aggregationBuilder.query()
 
-        console.log(JSON.stringify(aggregationQuery, null, 4))
+        //console.log(JSON.stringify(aggregationQuery, null, 4))
 
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
