@@ -145,7 +145,9 @@ class AggregationBuilder {
             const {lang} = this.options
             const filterPart = parsedFilter.parts[fieldName]
             const filterKey = fieldName + (localized ? '_localized.' + lang : '')
+
             if (filterPart) {
+
                 if (reference) {
                     if (filterPart.value) {
                         if (ObjectId.isValid(filterPart.value)) {
@@ -360,7 +362,7 @@ class AggregationBuilder {
 
 
                 groups[fieldName] = this.createGroup(fieldName, multi)
-                this.createAndAddFilterToMatch({fieldName, reference: true, localized: false, match})
+                this.createAndAddFilterToMatch({fieldName, reference: true, localized: false, match: rootMatch})
                 projectResultData[fieldName] = 1
 
             } else {

@@ -17,8 +17,10 @@ import {
 } from 'ui/admin'
 import Util from 'client/util'
 import ContentEditable from '../components/generic/ContentEditable'
-import {Query} from 'react-apollo'
+import {Query, withApollo} from 'react-apollo'
 import {COMMAND_QUERY} from '../constants'
+import PropTypes from 'prop-types'
+import ApolloClient from 'apollo-client'
 
 
 class FilesContainer extends React.Component {
@@ -81,7 +83,7 @@ class FilesContainer extends React.Component {
                                         selected: false,
                                         primary: '..',
                                         onClick: () => {
-                                            this.setState({dir: dir.substring(0,dir.lastIndexOf('/'))})
+                                            this.setState({dir: dir.substring(0, dir.lastIndexOf('/'))})
                                         }
                                     })
                                 }
@@ -101,8 +103,10 @@ class FilesContainer extends React.Component {
                                 if (loading) return 'Loading...'
                                 if (error) return `Error! ${error.message}`
                                 if (!data.run) return `No data`
-
-                                return <ContentEditable setHtml={false} children={data.run.response}/>
+                                const ext = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2)
+                                return <ContentEditable onChange={c => {
+                                    this.fileChange(dir + '/'+file, c)
+                                }} highlight={ext} setHtml={false} children={data.run.response}/>
                             }}
                         </Query>
                         }
@@ -111,9 +115,26 @@ class FilesContainer extends React.Component {
             </BaseLayout>
         )
     }
+
+    fileChange(file, content) {
+
+        this.props.client.query({
+            fetchPolicy: 'no-cache',
+            query: gql(COMMAND_QUERY),
+            variables: {command: 'less ' + file}
+
+        }).then(response => {
+            console.log(response)
+
+        })
+
+        console.log(file, content)
+    }
 }
 
 
-FilesContainer.propTypes = {}
+FilesContainer.propTypes = {
+    client: PropTypes.instanceOf(ApolloClient).isRequired,
+}
 
-export default FilesContainer
+export default withApollo(FilesContainer)

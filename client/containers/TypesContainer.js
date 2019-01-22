@@ -140,7 +140,7 @@ class TypesContainer extends React.Component {
 
         const pageParams = this.determinPageParams(props)
 
-        if( this.props.settings !== props.settings ){
+        if (this.props.settings !== props.settings) {
             this._lastData = null
         }
 
@@ -513,7 +513,7 @@ class TypesContainer extends React.Component {
                                  fields={{
                                      term: {
                                          uitype: 'search',
-                                         value: filter,
+                                         value: this._changingFilter || filter,
                                          fullWidth: true,
                                          placeholder: 'Filter expression (for specifc fields use field=term)'
                                      }
@@ -1030,8 +1030,8 @@ class TypesContainer extends React.Component {
 
     handleFilterTimeout = null
     handleFilter = ({value}, immediate) => {
+        this._changingFilter = value
         clearTimeout(this.handleFilterTimeout)
-
         if (immediate) {
             this.runFilter(value)
         } else {
@@ -1066,6 +1066,7 @@ class TypesContainer extends React.Component {
         if (v !== this.pageParams.type) {
             this.settings.lastType = v
             this.saveSettings()
+            this._changingFilter=false
             this.props.history.push(`${ADMIN_BASE_URL}/types/${v}`)
         }
     }

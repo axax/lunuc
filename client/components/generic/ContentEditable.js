@@ -196,6 +196,8 @@ class ContentEditable extends React.Component {
                 res = this.highlightHtml(str)
             } else if (highlight === 'js') {
                 res = this.highlightJs(str)
+            } else{
+                return str
             }
             console.info(`highlight ${highlight} for in ${new Date() - startTime}ms`)
             return res

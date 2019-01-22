@@ -150,11 +150,17 @@ const Util = {
                 } else {
                     const q = i.split(/=|:/)
                     if (q.length > 1) {
-                        if (parts[q[0]]) {
-                            parts[q[0]] = [parts[q[0]]]
-                            parts[q[0]].push({value: q[1], operator})
+
+                        let key = q[0]
+                        if (key.endsWith('._id')) {
+                            // user._id=id is equivalent to juser user=id
+                            key = key.substring(0, key.length - 4)
+                        }
+                        if (parts[key]) {
+                            parts[key] = [parts[key]]
+                            parts[key].push({value: q[1], operator})
                         } else {
-                            parts[q[0]] = {value: q[1], operator}
+                            parts[key] = {value: q[1], operator}
                         }
 
                     } else {
