@@ -1,5 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import {connect} from 'react-redux'
+import {bindActionCreators} from 'redux'
+import * as Actions from 'client/actions/NotificationAction'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {Snackbar, Button, CloseIconButton, theme} from 'ui/admin'
@@ -42,7 +45,10 @@ class NotificationHandler extends React.Component {
     }
 
     addToNotificationStack(props) {
-        const {newNotification} = props
+        const {newNotification, notification} = props
+        if (notification && this.notificationStack.indexOf(notification) < 0) {
+            this.notificationStack.push(notification)
+        }
         if (newNotification && this.notificationStack.indexOf(newNotification) < 0) {
             this.notificationStack.push(newNotification)
         }
@@ -65,7 +71,6 @@ class NotificationHandler extends React.Component {
                 actions.unshift(
                     <Link style={{color:theme.palette.secondary.light}} key="link" to={notification.link}>{notification.linkText || notification.link}</Link>)
             }
-
             return <Snackbar
                 key={notification.key}
                 anchorOrigin={{
@@ -91,6 +96,7 @@ class NotificationHandler extends React.Component {
 
 NotificationHandler.propTypes = {
     newNotification: PropTypes.object,
+    newNotification: PropTypes.object
 }
 
 const gqlSubscriptionNotification = gql`
@@ -116,4 +122,29 @@ const NotificationHandlerWithGql = compose(graphql(gqlSubscriptionNotification, 
 (NotificationHandler)
 
 
-export default NotificationHandlerWithGql
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = (state) => {
+    const {notification} = state
+    return {
+        notification: notification
+    }
+}
+
+/**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => ({
+    actions: bindActionCreators(Actions, dispatch)
+})
+
+
+/**
+ * Connect the component to
+ * the Redux store.
+ */
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(NotificationHandlerWithGql)

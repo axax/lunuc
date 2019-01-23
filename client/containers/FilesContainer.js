@@ -1,4 +1,6 @@
 import React from 'react'
+import {bindActionCreators} from 'redux'
+import {connect} from 'react-redux'
 import gql from 'graphql-tag'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {
@@ -21,7 +23,7 @@ import {Query, withApollo} from 'react-apollo'
 import {COMMAND_QUERY} from '../constants'
 import PropTypes from 'prop-types'
 import ApolloClient from 'apollo-client'
-
+import * as NotificationAction from 'client/actions/NotificationAction'
 
 class FilesContainer extends React.Component {
 
@@ -116,25 +118,49 @@ class FilesContainer extends React.Component {
         )
     }
 
+
     fileChange(file, content) {
+        clearTimeout(this._fileChange)
+        this._fileChange = setTimeout(()=>{
+            this.props.client.query({
+                fetchPolicy: 'no-cache',
+                query: gql(COMMAND_QUERY),
+                variables: {command: `echo "${Util.escapeDoubleQuotes(content)}" > "${file}"`}
 
-        this.props.client.query({
-            fetchPolicy: 'no-cache',
-            query: gql(COMMAND_QUERY),
-            variables: {command: 'less ' + file}
-
-        }).then(response => {
-            console.log(response)
-
-        })
-
-        console.log(file, content)
+            }).then(response => {
+                this.props.notificationAction.addNotification({key:'fileChange',message: `File "${file}" saved`})
+            })
+        },1500)
     }
 }
 
 
 FilesContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
+    notificationAction: PropTypes.object.isRequired
 }
 
-export default withApollo(FilesContainer)
+
+
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = () => {
+    return {}
+}
+
+/**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => ({
+    notificationAction: bindActionCreators(NotificationAction, dispatch)
+})
+
+/**
+ * Connect the component to
+ * the Redux store.
+ */
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(withApollo(FilesContainer))
