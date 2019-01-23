@@ -125,7 +125,7 @@ class FilesContainer extends React.Component {
             this.props.client.query({
                 fetchPolicy: 'no-cache',
                 query: gql(COMMAND_QUERY),
-                variables: {command: `echo "${Util.escapeDoubleQuotes(content)}" > "${file}"`}
+                variables: {command: `echo "${Util.escapeDoubleQuotes(content.replace(/\$/g, '\\$').replace(/`/g, '\\`'))}" > "${file}"`}
 
             }).then(response => {
                 this.props.notificationAction.addNotification({key:'fileChange',message: `File "${file}" saved`})

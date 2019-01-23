@@ -96,7 +96,7 @@ class NotificationHandler extends React.Component {
 
 NotificationHandler.propTypes = {
     newNotification: PropTypes.object,
-    newNotification: PropTypes.object
+    notification: PropTypes.object
 }
 
 const gqlSubscriptionNotification = gql`
@@ -127,6 +127,8 @@ const NotificationHandlerWithGql = compose(graphql(gqlSubscriptionNotification, 
  */
 const mapStateToProps = (state) => {
     const {notification} = state
+    // clear notification
+    state.notification = null
     return {
         notification: notification
     }
