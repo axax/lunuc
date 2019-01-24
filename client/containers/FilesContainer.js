@@ -33,61 +33,108 @@ class FilesContainer extends React.Component {
 
         this.state = {
             file: false,
-            dir: '.'
+            dir: '.',
+            searchText: ''
         }
     }
 
     render() {
-        const {file, dir} = this.state
+        const {file, dir, searchText} = this.state
+
+        let command = 'ls -l ' + dir
+
+        if( searchText ){
+            command = `find ${dir} -size -1M -type f -name '*.*' ! -path "./node_modules/*" ! -path "./bower_components/*" -exec grep -ril "${searchText}" {} \\;`
+
+        }
+
+
         return (
             <BaseLayout>
                 <Typography variant="h3" gutterBottom>Files</Typography>
 
                 <Row spacing={24}>
                     <Col sm={4}>
+                        <TextField
+                            type="search"
+                            helperText={'Search for file content'}
+                            disabled={false} fullWidth
+                            placeholder="Search"
+                            name="searchText"
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    console.log(e)
+                                    this.setState({searchText:e.target.value})
+                                }
+                            }}/>
+
                         <Query query={gql(COMMAND_QUERY)}
                                fetchPolicy="cache-and-network"
-                               variables={{command: 'ls -l ' + dir}}>
+                               variables={{command}}>
                             {({loading, error, data}) => {
-                                if (loading) return 'Loading...'
+                                if (loading) {
+                                    this._loading =true
+                                    return 'Loading...'
+                                }
+
+                                this._loading =false
                                 if (error) return `Error! ${error.message}`
                                 if (!data.run) return `No data`
 
                                 const rows = data.run.response.split('\n')
-                                rows.shift()
-
-                                const listItems = rows.reduce((a, fileRow) => {
-                                    if (fileRow) {
-                                        const b = fileRow.split(' ').filter(x => x);
-                                        a.push({
-                                            icon: b[0].indexOf('d') === 0 ? <FolderIcon /> : <InsertDriveFileIcon />,
-                                            selected: false,
-                                            primary: b[8],
-                                            onClick: () => {
-                                                if (b[0].indexOf('d') === 0) {
-                                                    //change dir
-                                                    this.setState({dir: dir + '/' + b[8]})
-                                                } else {
-                                                    this.setState({file: b[8]})
+                                let listItems = []
+                                if( searchText ){
+                                    listItems = rows.reduce((a, fileRow) => {
+                                        if (fileRow) {
+                                            const b = fileRow.split(' ').filter(x => x);
+                                            a.push({
+                                                icon: <InsertDriveFileIcon />,
+                                                selected: false,
+                                                primary: fileRow,
+                                                onClick: () => {
+                                                    this.setState({file: fileRow})
                                                 }
-                                            },
-                                            secondary: Util.formatBytes(b[4])/*,
-                                             actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
-                                             disabled: ['creating', 'deleting'].indexOf(post.status) > -1*/
+                                            })
+                                        }
+                                        return a
+                                    }, [])
+                                }else {
+                                    rows.shift()
+
+                                    listItems = rows.reduce((a, fileRow) => {
+                                        if (fileRow) {
+                                            const b = fileRow.split(' ').filter(x => x);
+                                            a.push({
+                                                icon: b[0].indexOf('d') === 0 ? <FolderIcon /> :
+                                                    <InsertDriveFileIcon />,
+                                                selected: false,
+                                                primary: b[8],
+                                                onClick: () => {
+                                                    if (b[0].indexOf('d') === 0) {
+                                                        //change dir
+                                                        this.setState({dir: dir + '/' + b[8]})
+                                                    } else {
+                                                        this.setState({file: b[8]})
+                                                    }
+                                                },
+                                                secondary: Util.formatBytes(b[4])/*,
+                                                 actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
+                                                 disabled: ['creating', 'deleting'].indexOf(post.status) > -1*/
+                                            })
+                                        }
+                                        return a
+                                    }, [])
+
+                                    if (dir.indexOf('/') > 0) {
+                                        listItems.unshift({
+                                            icon: <FolderIcon />,
+                                            selected: false,
+                                            primary: '..',
+                                            onClick: () => {
+                                                this.setState({dir: dir.substring(0, dir.lastIndexOf('/'))})
+                                            }
                                         })
                                     }
-                                    return a
-                                }, [])
-
-                                if (dir.indexOf('/') > 0) {
-                                    listItems.unshift({
-                                        icon: <FolderIcon />,
-                                        selected: false,
-                                        primary: '..',
-                                        onClick: () => {
-                                            this.setState({dir: dir.substring(0, dir.lastIndexOf('/'))})
-                                        }
-                                    })
                                 }
 
                                 return <SimpleList items={listItems}
@@ -116,6 +163,17 @@ class FilesContainer extends React.Component {
                 </Row>
             </BaseLayout>
         )
+    }
+
+    handleInputChange = (e) => {
+        const target = e.target
+        const value = target.type === 'checkbox' ? target.checked : target.value
+        const name = target.name
+        this.setState({
+            [target.name]: value
+        }, () => {
+
+        })
     }
 
 
