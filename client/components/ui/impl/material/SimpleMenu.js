@@ -4,6 +4,8 @@ import Button from '@material-ui/core/Button'
 import Fab from '@material-ui/core/Fab'
 import Menu from '@material-ui/core/Menu'
 import MenuItem from '@material-ui/core/MenuItem'
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemText from '@material-ui/core/ListItemText';
 import MoreVertIcon from '@material-ui/icons/MoreVert'
 import IconButton from '@material-ui/core/IconButton'
 
@@ -31,26 +33,26 @@ class SimpleMenu extends React.Component {
                     label !== undefined || fab !== undefined ?
                         fab ?
                             <Fab aria-label="Simple menu"
-                                 size={mini?'small':'medium'}
+                                 size={mini ? 'small' : 'medium'}
                                  color={color}
                                  aria-owns={anchorEl ? 'simple-menu' : null}
                                  aria-haspopup="true"
                                  onClick={this.handleClick}>
                                 {label ? label : <MoreVertIcon /> }
                             </Fab>
-                                :
-                        <Button
-                            aria-label="Simple menu"
-                            variant='flat'
-                            size={mini?'small':'medium'}
-                            color={color}
-                            aria-owns={anchorEl ? 'simple-menu' : null}
-                            aria-haspopup="true"
-                            onClick={this.handleClick}
-                        >
-                            {label ? label : <MoreVertIcon /> }
+                            :
+                            <Button
+                                aria-label="Simple menu"
+                                variant='flat'
+                                size={mini ? 'small' : 'medium'}
+                                color={color}
+                                aria-owns={anchorEl ? 'simple-menu' : null}
+                                aria-haspopup="true"
+                                onClick={this.handleClick}
+                            >
+                                {label ? label : <MoreVertIcon /> }
 
-                        </Button>
+                            </Button>
                         :
                         <IconButton
                             aria-label="Simple menu"
@@ -73,7 +75,16 @@ class SimpleMenu extends React.Component {
                         return <MenuItem onClick={(e) => {
                             this.handleClose();
                             item.onClick(e)
-                        }} key={i}>{item.name}</MenuItem>
+                        }} key={i}>
+                            {item.icon &&
+                            <ListItemIcon>
+                                {item.icon}
+                            </ListItemIcon>
+                            }
+                            <ListItemText>
+                                {item.name}
+                            </ListItemText>
+                        </MenuItem>
                     })}
 
                 </Menu>

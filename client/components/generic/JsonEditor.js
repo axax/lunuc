@@ -26,15 +26,9 @@ import JsonDom from '../JsonDom'
 class JsonEditor extends React.Component {
 
     static components = null
-    json = null
 
     constructor(props) {
         super(props)
-        try {
-            this.json = JSON.parse(props.children)
-        } catch (e) {
-            console.log(e)
-        }
 
         if (!JsonEditor.components) {
             JsonEditor.components = Object.keys(JsonDom.components).map((key) => {
@@ -51,10 +45,32 @@ class JsonEditor extends React.Component {
             console.log('JsonEditor components created')
         }
 
-//console.log(JsonDom.components)
         this.state = {
+            dataOri: props.children,
             open: {}
         }
+
+        try {
+            this.state.json = JSON.parse(props.children)
+        } catch (e) {
+            console.log(e)
+        }
+
+    }
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+
+        if (nextProps.children !== prevState.dataOri) {
+            try {
+                return {
+                    dataOri: nextProps.children,
+                    json: JSON.parse(nextProps.children)
+                }
+            } catch (e) {
+                console.log(e)
+            }
+        }
+        return null
     }
 
     renderJsonRec(json, key, level) {
@@ -70,7 +86,34 @@ class JsonEditor extends React.Component {
             })
             return <List component="nav">{acc}</List>
         } else if (json.constructor === Object) {
-            const t = (json.t || 'div')
+
+            let newkey = key, newlevel = level
+            if (json.c && json.c.constructor === Object) {
+                newkey += '.0'
+                newlevel++
+            }
+
+            let specialType, actions
+            if( json.$loop ){
+                json = json.$loop
+                specialType = '$loop'
+                newkey += '.$loop.0'
+                newlevel++
+            }else{
+                actions = [{
+                    name: 'Add child component', onClick: e => {
+                        this.addComponent(key)
+                        return this.stopPropagation(e)
+                    }
+                }, {
+                    name: 'Remove this component', onClick: e => {
+                        this.removeComponent(key)
+                        return this.stopPropagation(e)
+                    }
+                }]
+            }
+
+            const t = (specialType || json.t || 'div')
             const props = []
             Object.keys(json).forEach(k => {
                 if (k !== 't' && k !== 'c') {
@@ -79,11 +122,6 @@ class JsonEditor extends React.Component {
                 }
             })
 
-            let newkey = key, newlevel = level
-            if (json.c && json.c.constructor === Object) {
-                newkey += '.0'
-                newlevel++
-            }
 
             /* <span
              onClick={e => {
@@ -103,29 +141,17 @@ class JsonEditor extends React.Component {
             }} key={key} style={{paddingLeft: 10 * level}} button
                               onClick={this.handleClick.bind(this, key)}>
 
-                <SimpleMenu mini fab color="secondary" items={[{
-                    name: 'Add child component', onClick: e => {
-                        e.stopPropagation()
-                        this.addComponent(key)
-                        return false
-                    }
-                }, {
-                    name: 'Remove this component', onClick: e => {
-                        e.stopPropagation()
-                        this.removeComponent(key)
-                        return false
-                    }
-                }]}/>
+                {actions && <SimpleMenu mini color="secondary" items={actions}/>}
                 <ListItemText classes={{primary: classes.type}}>
 
+                    {specialType ? t :
                     <SimpleAutosuggest placeholder="Enter component type" value={t}
-                                       onBlur={(e, v) => {
-                                           console.log(v)
+                                       onChange={(e, v) => {
+                                           this.setChildComponent(key, v, 't')
                                        }
-                                       } onClick={e => {
-                        e.stopPropagation()
-                        return false
-                    }} items={JsonEditor.components}/>
+                                       }
+                                       onBlur={this.handleBlur.bind(this)}
+                                       onClick={this.stopPropagation} items={JsonEditor.components}/>}
                 </ListItemText>
                 { json.c !== undefined && (!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
             </ListItem>,
@@ -140,25 +166,38 @@ class JsonEditor extends React.Component {
                 <TextField placeholder="Enter some content" fullWidth value={json} onChange={e => {
                     this.setChildComponent(key, e.target.value)
                 }
-                } onBlur={e => {
-                    this.props.onBlur(JSON.stringify(this.json, null, 4))
-                }}/>
+                } onBlur={this.handleBlur.bind(this)}/>
             </ListItemText></ListItem>
         }
     }
 
     setChildComponent(key, value, prop) {
-        const o = Util.getComponentByKey(key, this.json)
+        const o = Util.getComponentByKey(key, this.state.json)
+        console.log(key, o)
+        console.log(this.state.json,value)
         if (o) {
             o[prop || 'c'] = value
-            this.props.onChange(JSON.stringify(this.json, null, 4))
+            this.props.onChange(JSON.stringify(this.state.json, null, 4))
             this.forceUpdate()
+        }
+    }
+
+    stopPropagation(e) {
+        e.stopPropagation()
+        return false
+    }
+
+
+    handleBlur() {
+        const {onBlur} = this.props
+        if (onBlur) {
+            //onBlur(JSON.stringify(this.state.json, null, 4))
         }
     }
 
 
     addComponent(key) {
-        const o = Util.getComponentByKey(key, this.json)
+        const o = Util.getComponentByKey(key, this.state.json)
         if (o) {
             let c = o['c']
             if (!c) {
@@ -170,7 +209,7 @@ class JsonEditor extends React.Component {
             }
             c.push({'c': 'new component'})
             o.c = c
-            this.props.onBlur(JSON.stringify(this.json, null, 4))
+            this.props.onBlur(JSON.stringify(this.state.json, null, 4))
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
 
         }
@@ -179,7 +218,8 @@ class JsonEditor extends React.Component {
 
     removeComponent(key) {
         const parentKey = key.substring(0, key.lastIndexOf('.'))
-        const parent = Util.getComponentByKey(parentKey, this.json), child = Util.getComponentByKey(key, this.json)
+        const parent = Util.getComponentByKey(parentKey, this.state.json),
+            child = Util.getComponentByKey(key, this.state.json)
         if (parent && child) {
             let c = parent['c']
             if (!c) {
@@ -195,7 +235,7 @@ class JsonEditor extends React.Component {
             }
 
             parent.c = c
-            this.props.onBlur(JSON.stringify(this.json, null, 4))
+            this.props.onBlur(JSON.stringify(this.state.json, null, 4))
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
 
         }
@@ -206,7 +246,7 @@ class JsonEditor extends React.Component {
     }
 
     render() {
-        return this.renderJsonRec(this.json)
+        return this.renderJsonRec(this.state.json)
     }
 
     shouldComponentUpdate(nextProps, nextState) {

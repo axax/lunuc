@@ -1,32 +1,52 @@
 import React from 'react'
 import ContentEditable from '../generic/ContentEditable'
-import {SimpleMenu} from 'ui/admin'
+import {SimpleMenu, BuildIcon} from 'ui/admin'
 
 class DataResolverEditor extends React.Component {
 
     render() {
         const {...rest} = this.props
-
         return <div style={{position: 'relative'}}>
             <SimpleMenu key="dataResolverMenu" mini fab color="secondary"
                         style={{position: 'absolute', bottom: '-8px', right: '-8px'}}
-                        items={[{name: 'Prettify', onClick: this.prettify.bind(this)}]}/>
-            <ContentEditable key="dataResolverEditor" highlight="json" {...rest}/>
+                        items={[{name: 'Prettify', onClick: this.prettify.bind(this)}, {
+                            name: 'Create example',
+                            icon: <BuildIcon />,
+                            onClick: this.createExample.bind(this)
+                        }]}/>
+            <ContentEditable key="dataResolverEditor" l="dataResolverEditor" highlight="json" {...rest}/>
         </div>
     }
 
     prettify() {
-        const {onChange, children} = this.props
+        const {onBlur, children} = this.props
         if (children.trim() === '') return
 
         try {
             const j = eval('(' + children + ')');
             if (j.constructor === Array) {
-                onChange(JSON.stringify(j, null, 2))
+                onBlur(JSON.stringify(j, null, 2))
             }
         } catch (e) {
             console.error(e)
         }
+    }
+
+    createExample() {
+        const {onBlur} = this.props
+
+
+        onBlur(JSON.stringify([
+            {
+                "t": "$Word",
+                "d": [
+                    "de",
+                    "en"
+                ],
+                "l": 20,
+                "o": 0
+            }
+        ], null, 2))
     }
 }
 

@@ -135,7 +135,7 @@ class SimpleAutosuggest extends React.Component {
     }
 
     render() {
-        const {classes, placeholder, onClick} = this.props;
+        const {classes, placeholder, onClick, onBlur} = this.props;
         const autosuggestProps = {
             renderInputComponent,
             suggestions: this.state.suggestions,
@@ -154,7 +154,8 @@ class SimpleAutosuggest extends React.Component {
                     helperText: this.helperText(),
                     value: this.state.single,
                     onChange: this.handleChange('single'),
-                    onClick
+                    onClick,
+                    onBlur
                 }}
                 theme={{
                     container: classes.container,
@@ -178,6 +179,7 @@ SimpleAutosuggest.propTypes = {
     value: PropTypes.string,
     items: PropTypes.array.isRequired,
     onClick: PropTypes.func,
+    onBlur: PropTypes.func,
     onChange: PropTypes.func
 }
 

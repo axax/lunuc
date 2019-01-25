@@ -50,7 +50,7 @@ const ErrorHandler = (props) => <Async {...props}
                                        load={import(/* webpackChunkName: "admin" */ '../components/layout/ErrorHandler')}/>
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug: String!,$query:String,$nosession: String, $version: String){ cmsPage(slug: $slug,query: $query, nosession: $nosession, version: $version){cacheKey slug urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username}}}`
+const gqlQuery = gql`query cmsPage($slug: String!,$query:String,$nosession: String, $version: String){ cmsPage(slug: $slug,query: $query, nosession: $nosession, version: $version){cacheKey slug urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
 
 const editorStyle = {
@@ -85,7 +85,7 @@ class CmsViewContainer extends React.Component {
     constructor(props) {
         super(props)
 
-        this.state = CmsViewContainer.propsToState(props)
+        this.state = CmsViewContainer.propsToState(props, null)
 
         if (!props.dynamic)
             document.title = props.slug
@@ -94,7 +94,7 @@ class CmsViewContainer extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.cmsPage !== prevState.cmsPage || nextProps.keyValue !== prevState.keyValue) {
+        if ((nextProps.cmsPage !== prevState.cmsPage && nextProps.cmsPage.status !== 'updating') || nextProps.keyValue !== prevState.keyValue) {
             console.log('CmsViewContainer update state')
 
             return CmsViewContainer.propsToState(nextProps)
@@ -102,8 +102,9 @@ class CmsViewContainer extends React.Component {
         return null
     }
 
-    static propsToState(props) {
-        const {template, script, dataResolver, ssr} = props.cmsPage || {}
+    static propsToState(props, state) {
+        const {template, script, dataResolver, ssr, status} = props.cmsPage || {}
+
         let settings = null
         if (props.keyValue) {
             // TODO optimize so JSON.parse is only called once
@@ -115,7 +116,8 @@ class CmsViewContainer extends React.Component {
         } else {
             settings = {}
         }
-        return {
+
+        const result = {
             keyValue: props.keyValue,
             cmsPage: props.cmsPage,
             settings,
@@ -125,6 +127,13 @@ class CmsViewContainer extends React.Component {
             ssr,
             public: props.cmsPage && props.cmsPage.public
         }
+        if ( state && ['updating', 'updated'].indexOf(status) >= 0) {
+            // take value from state if there is any because it might be more up to date
+            result.template = state.template
+            result.script = state.script
+            result.dataResolver = state.dataResolver
+        }
+        return result
     }
 
     shouldComponentUpdate(props, state) {
@@ -143,6 +152,7 @@ class CmsViewContainer extends React.Component {
             (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script)) ||
             this.state.settings.fixedLayout !== state.settings.fixedLayout ||
             this.state.settings.inlineEditor !== state.settings.inlineEditor ||
+            this.state.settings.templateTab !== state.settings.templateTab ||
             this.state.settings.drawerWidth !== state.settings.drawerWidth
     }
 
@@ -554,7 +564,6 @@ class CmsViewContainer extends React.Component {
         } else {
             value = any
         }
-        console.log(key,any)
         this.setState({settings: Object.assign({}, this.state.settings, {[key]: value})}, this.saveSettings)
     }
 
@@ -854,7 +863,8 @@ const CmsViewContainerWithGql = compose(
                             data.cmsPage = {
                                 _id,
                                 [key]: updateCmsPage[key], ...rest,
-                                modifiedAt: updateCmsPage.modifiedAt
+                                modifiedAt: updateCmsPage.modifiedAt,
+                                status: updateCmsPage.status
                             }
 
                             // update resolvedData

@@ -234,21 +234,21 @@ Hook.on('Types', ({types}) => {
         usedBy: ['core'],
         fields: [
             {
-                'name': 'username',
-                'required': true
+                name: 'username',
+                required: true
             },
             {
-                'name': 'email',
-                'required': true
+                name: 'email',
+                required: true
             },
             {
-                'name': 'password',
-                'required': true
+                name: 'password',
+                required: true
             },
             {
-                'name': 'role',
-                'type': 'UserRole',
-                'reference': true
+                name: 'role',
+                type: 'UserRole',
+                reference: true
             }
         ]
     }

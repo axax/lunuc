@@ -44,8 +44,23 @@ class ContentEditable extends React.Component {
 
     constructor(props) {
         super(props)
-        this.lastText['onChange'] = this.lastText['onBlur'] = props.children
+        this.state = {
+            dataOri: props.children,
+            data: props.children,
+            hasFocus: false
+        }
+    }
 
+    static getDerivedStateFromProps(nextProps, prevState) {
+
+        if (nextProps.children !== prevState.dataOri) {
+            console.log('ContentEditable update state')
+            return {
+                dataOri: nextProps.children,
+                data: nextProps.children
+            }
+        }
+        return null
     }
 
     componentDidMount() {
@@ -54,35 +69,51 @@ class ContentEditable extends React.Component {
     }
 
     render() {
-        const {classes, style, children, setHtml, highlight, className} = this.props
+        const {classes, style, setHtml, highlight, className} = this.props
+        const {data} = this.state
         const props = {
             className: classNames(classes.editor, className),
             style,
             onKeyDown: this.handleKeyDown.bind(this),
             onKeyUp: this.handleKeyUp.bind(this),
-            onInput: this.emitChange.bind(this, 'onChange'),
-            onBlur: this.emitChange.bind(this, 'onBlur'),
+            onInput: this.handleInput.bind(this),
+            onBlur: this.handleBlur.bind(this),
+            onFocus: this.handleFocus.bind(this),
             contentEditable: true,
             suppressContentEditableWarning: true
         }
         if (setHtml || highlight) {
-            return <span {...props} dangerouslySetInnerHTML={{__html: this.highlight(children)}}/>
+            return <span {...props} dangerouslySetInnerHTML={{__html: this.highlight(data)}}/>
         } else {
-            return <span {...props}>{children}</span>
+            return <span {...props}>{data}</span>
         }
     }
 
-    shouldComponentUpdate(nextProps) {
-        return nextProps.children !== ReactDOM.findDOMNode(this).innerText
+    shouldComponentUpdate(nextProps, nextState) {
+        const {highlight} = nextProps
+
+        if (nextState.hasFocus) {
+            if (highlight) {
+                this.highlightDelay(ReactDOM.findDOMNode(this))
+            }
+        } else if (nextState.data !== this.state.data) {
+            // only update if it doesn't have the focus and data changed
+            return true
+        }
+
+        // never update we handle it manualy because of delayed highlighting
+        return false
     }
 
     componentDidUpdate() {
-        const {children, highlight} = this.props
-        if (children !== ReactDOM.findDOMNode(this).innerText) {
-            if (highlight) {
-                ReactDOM.findDOMNode(this).innerHtml = this.highlight(children)
+        const {setHtml, highlight} = this.props
+        const {data} = this.state
+
+        if (data !== ReactDOM.findDOMNode(this).innerText) {
+            if (setHtml || highlight) {
+                ReactDOM.findDOMNode(this).innerHtml = this.highlight(data)
             } else {
-                ReactDOM.findDOMNode(this).innerText = children
+                ReactDOM.findDOMNode(this).innerText = data
             }
         }
     }
@@ -182,7 +213,7 @@ class ContentEditable extends React.Component {
             }
             t.innerHTML = this.highlight(t.innerText)
             restore()
-        }, 1000)
+        }, 500)
     }
 
     highlight(str) {
@@ -196,7 +227,7 @@ class ContentEditable extends React.Component {
                 res = this.highlightHtml(str)
             } else if (highlight === 'js') {
                 res = this.highlightJs(str)
-            } else{
+            } else {
                 return str
             }
             console.info(`highlight ${highlight} for in ${new Date() - startTime}ms`)
@@ -412,12 +443,35 @@ class ContentEditable extends React.Component {
         }
     }
 
-    emitChange(prop) {
-        var text = ReactDOM.findDOMNode(this).innerText
-        if (this.props[prop] && text !== this.lastText[prop]) {
-            this.props[prop](text)
+    handleInput(e) {
+        const data = e.target.innerText
+        if (data !== this.state.data) {
+            this.setState({
+                data
+            }, () => {
+                const {onChange} = this.props
+                if (onChange) {
+                    onChange(data)
+                }
+            })
         }
-        this.lastText[prop] = text
+    }
+
+    handleBlur(e) {
+        this.setState({
+            hasFocus: false
+        })
+        const {onBlur} = this.props
+        if( onBlur ) {
+            const data = e.target.innerText
+            onBlur(data)
+        }
+    }
+
+    handleFocus(e) {
+        this.setState({
+            hasFocus: true
+        })
     }
 }
 
