@@ -33,7 +33,7 @@
         _app_.trLoaded = true;
         if (_app_.trCallback) _app_.trCallback();
     }
-    s.setAttribute('src', '/' + l + '.tr.js');
+    s.setAttribute('src', '/' + l + '.tr.js?v=${BUILD_NUMBER}');
     document.head.appendChild(s);
 
 </script>
