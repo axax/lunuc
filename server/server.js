@@ -126,10 +126,10 @@ const app = http.createServer(function (req, res) {
                         }
                     })
                 } else {
-                    const headers = {'Cache-Control': 'public, max-age=604800', 'content-type': MimeType.detectByExtension('html')}
+                    const headers = {'Cache-Control': 'public, max-age=60', 'content-type': MimeType.detectByExtension('html')}
 
                     // send index.html
-                    const indexfile = path.join(BUILD_DIR, '/../index.html')
+                    const indexfile = path.join(BUILD_DIR, '/index.html')
                     res.writeHead(200, headers)
 
                     const fileStream = fs.createReadStream(indexfile)

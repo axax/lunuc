@@ -12,12 +12,12 @@ const GenSourceCode = require('./webpack.gensrc')
 const WebpackI18nPlugin = require("./webpack.i18n");
 
 
-const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1
-
+const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1,
+    BUILD_NUMBER = new Date().getTime()
 
 /*---------------------------------------------------
  Define which directories are included from the build based on the config file
-  ---------------------------------------------------*/
+ ---------------------------------------------------*/
 
 
 const EXCLUDE_FROM_BUILD = [
@@ -93,7 +93,7 @@ const config = {
             },
             {
                 test: /^(?:(?!\.global).)*\.css$/,
-                use: ['style-loader','css-loader']
+                use: ['style-loader', 'css-loader']
             },
             {
                 test: /\.global\.less$/,
@@ -106,7 +106,7 @@ const config = {
             },
             {
                 test: /^(?:(?!\.global).)*\.less$/,
-                use: ['style-loader','css-loader', 'less-loader']
+                use: ['style-loader', 'css-loader', 'less-loader']
             }
         ]
     },
@@ -171,6 +171,15 @@ if (DEV_MODE) {
     const CopyWebpackPlugin = require('copy-webpack-plugin')
     config.plugins.push(
         new CopyWebpackPlugin([
+            {
+                from: 'index.html', to: 'index.html',
+                transform (content, path) {
+                    const obj = {BUILD_NUMBER}
+                    const result = new Function('const {' + Object.keys(obj).join(',') + '} = this.obj;return `' + content + '`').call({obj})
+
+                    return result
+                }
+            },
             {from: 'serviceworker.js', to: 'serviceworker.js'},
             {from: 'manifest.json', to: 'manifest.json'},
             {from: 'favicon.ico', to: 'favicon.ico'}
@@ -179,15 +188,15 @@ if (DEV_MODE) {
 
 
     config.optimization.minimizer.push(
-            new UglifyJSPlugin({
-                uglifyOptions: {
-                    compress: {
-                        drop_console: true
-                    }
+        new UglifyJSPlugin({
+            uglifyOptions: {
+                compress: {
+                    drop_console: true
                 }
-            }))
+            }
+        }))
 
-   /* const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+    /* const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
      config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'

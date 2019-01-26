@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="manifest" href="/manifest.json">
-    <link href="/style.css" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json?v=${BUILD_NUMBER}">
+    <link href="/style.css?v=${BUILD_NUMBER}" rel="stylesheet">
 </head>
 <body>
 <div id="app"></div>
@@ -37,7 +37,7 @@
     document.head.appendChild(s);
 
 </script>
-<script src="/main.bundle.js"></script>
+<script src="/main.bundle.js?v=${BUILD_NUMBER}"></script>
 <!--
 <script src="/vendor.bundle.js"></script>
 -->
