@@ -57,7 +57,7 @@ class SimpleTable extends React.Component {
     }
 
     render() {
-        const {title, actions, header, classes, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, columns, dataSource, footer} = this.props
+        const {title, actions, header, classes, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
 
         // TODO implement header when items are selected
         const numSelected = 0
@@ -105,7 +105,7 @@ class SimpleTable extends React.Component {
 
                                         {column.sortable ?
                                             <Tooltip
-                                                title={'Sort '+column.id}
+                                                title={'Sort ' + column.id}
                                                 placement={column.numeric ? 'bottom-end' : 'bottom-start'}
                                                 enterDelay={300}
                                             >
@@ -127,7 +127,11 @@ class SimpleTable extends React.Component {
                     <TableBody>
                         {dataSource.map((entry, i) => {
                             return (
-                                <TableRow hover key={i}>
+                                <TableRow hover onClick={(e) => {
+                                    if (onRowClick) {
+                                        onRowClick(e, i)
+                                    }
+                                }} key={i}>
                                     { columns ?
                                         // use columns if available to have the same order
                                         columns.map(col => (
@@ -178,6 +182,7 @@ SimpleTable.propTypes = {
     orderBy: PropTypes.string, // field name
     onChangePage: PropTypes.func,
     onChangeRowsPerPage: PropTypes.func,
+    onRowClick: PropTypes.func,
     onSort: PropTypes.func,
     columns: PropTypes.array,
     dataSource: PropTypes.array,

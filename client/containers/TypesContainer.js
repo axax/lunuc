@@ -4,10 +4,10 @@ import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import {
-    FileCopyIconButton,
-    WebIconButton,
-    DeleteIconButton,
-    EditIconButton,
+    FileCopyIcon,
+    WebIcon,
+    DeleteIcon,
+    EditIcon,
     Checkbox,
     Chip,
     Typography,
@@ -22,6 +22,7 @@ import {
     Col,
     Tooltip,
     SimpleSwitch,
+    SimpleMenu
 } from 'ui/admin'
 import FileDrop from 'client/components/FileDrop'
 import {withApollo, Query} from 'react-apollo'
@@ -280,29 +281,34 @@ class TypesContainer extends React.Component {
                     }
                     if (columnsMap['action']) {
 
-                        dynamic.action = [
-                            <Tooltip key="deleteBtn" placement="top" title="Delete entry">
-                                <DeleteIconButton disabled={(item.status == 'deleting' || item.status == 'updating')}
-                                                  onClick={this.handleDeleteDataClick.bind(this, item)}/>
-                            </Tooltip>,
-                            <Tooltip key="editBtn" placement="top" title="Edit entry">
-                                <EditIconButton
-                                    disabled={(item.status == 'deleting' || item.status == 'updating')}
-                                    onClick={this.handleEditDataClick.bind(this, item)}/>
-                            </Tooltip>
-                        ]
+                        const entryActions = [{
+                            name: 'Delete entry',
+                            disabled: (item.status == 'deleting' || item.status == 'updating'),
+                            onClick: this.handleDeleteDataClick.bind(this, item),
+                            icon: <DeleteIcon />
+                        }, {
+                            name: 'Edit entry',
+                            disabled: (item.status == 'deleting' || item.status == 'updating'),
+                            onClick: this.handleEditDataClick.bind(this, item),
+                            icon: <EditIcon />
+                        }]
 
                         if (this.types[type].entryClonable) {
-                            dynamic.action.push(<Tooltip key="copyBtn" placement="top" title="Clone entry">
-                                <FileCopyIconButton
-                                    disabled={(item.status == 'deleting' || item.status == 'updating')}
-                                    onClick={this.handleCopyClick.bind(this, item, fields)}/>
-                            </Tooltip>)
+                            entryActions.push(
+                                {
+                                    name: 'Clone entry',
+                                    disabled: (item.status == 'deleting' || item.status == 'updating'),
+                                    onClick: this.handleCopyClick.bind(this, item, fields),
+                                    icon: <FileCopyIcon />
+                                })
                         }
+                        Hook.call('TypeTableEntryAction', {type, actions: entryActions, item, container: this})
+
+                        dynamic.action = <SimpleMenu mini items={entryActions}/>
+
                     }
                     dataSource.push(dynamic)
                 })
-
             }
             const asort = sort.split(' ')
 
@@ -344,7 +350,11 @@ class TypesContainer extends React.Component {
                 })
             }
             this._renderedTable =
-                <SimpleTable key="typeTable" title={type} dataSource={dataSource} columns={columnsFiltered}
+                <SimpleTable key="typeTable"
+                             title={type}
+                             onRowClick={this.handleRowClick.bind(this)}
+                             dataSource={dataSource}
+                             columns={columnsFiltered}
                              count={data.total}
                              rowsPerPage={limit} page={page}
                              orderBy={asort[0]}
@@ -569,6 +579,15 @@ class TypesContainer extends React.Component {
             return s.columns[id] === undefined || s.columns[id]
         }
         return true
+    }
+
+
+    handleRowClick(event, index) {
+        const {type} = this.pageParams
+        const {data} = this.state
+
+        const item = data.results[index]
+        Hook.call('TypeTableEntryClick', {type, event, item, container: this})
     }
 
 
@@ -1066,7 +1085,7 @@ class TypesContainer extends React.Component {
         if (v !== this.pageParams.type) {
             this.settings.lastType = v
             this.saveSettings()
-            this._changingFilter=false
+            this._changingFilter = false
             this.props.history.push(`${ADMIN_BASE_URL}/types/${v}`)
         }
     }
@@ -1321,16 +1340,36 @@ Hook.on('TypeTable', ({type, dataSource, data, container}) => {
         })
     } else if (type === 'CmsPage') {
         dataSource.forEach((d, i) => {
-            if (d.action) {
-
-                d.action.push(<Tooltip key="viewBtn" placement="top" title="View page">
-                    <WebIconButton onClick={() => {
-                        const {version} = container.pageParams
-                        container.props.history.push('/' + (version && version !== 'default' ? '@' + version + '/' : '') + data.results[i].slug)
-                    }}/>
-                </Tooltip>)
+            if (d.slug) {
+                d.slug = <span style={{
+                    cursor: 'pointer',
+                    color: '#663366',
+                    textDecoration: 'underline'
+                }}>{data.results[i].slug}</span>
             }
         })
+    }
+})
+
+// add an entry actions
+Hook.on('TypeTableEntryAction', ({type, actions, item, container}) => {
+    if (type === 'CmsPage') {
+        actions.push({
+            name: 'View cms page',
+            onClick: () => {
+                const {version} = container.pageParams
+                container.props.history.push('/' + (version && version !== 'default' ? '@' + version + '/' : '') + item.slug)
+            },
+            icon: <WebIcon />
+        })
+    }
+})
+
+// add a click event
+Hook.on('TypeTableEntryClick', ({type, item, container}) => {
+    if (type === 'CmsPage') {
+        const {version} = container.pageParams
+        container.props.history.push('/' + (version && version !== 'default' ? '@' + version + '/' : '') + item.slug)
     }
 })
 

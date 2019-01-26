@@ -14,14 +14,16 @@ class SimpleMenu extends React.Component {
         anchorEl: null,
     }
 
-    handleClick = event => {
-        event.stopPropagation()
-        this.setState({anchorEl: event.currentTarget})
+    handleClick = e => {
+        e.stopPropagation()
+        this.setState({anchorEl: e.currentTarget})
         return false
     }
 
-    handleClose = () => {
+    handleClose = e => {
+        e.stopPropagation()
         this.setState({anchorEl: null})
+        return false
     }
 
     render() {
@@ -72,9 +74,9 @@ class SimpleMenu extends React.Component {
                     onClose={this.handleClose}
                 >
                     {items.map((item, i) => {
-                        return <MenuItem onClick={(e) => {
-                            this.handleClose();
+                        return <MenuItem disabled={item.disabled} onClick={(e) => {
                             item.onClick(e)
+                            this.handleClose(e)
                         }} key={i}>
                             {item.icon &&
                             <ListItemIcon>
