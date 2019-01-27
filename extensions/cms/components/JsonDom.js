@@ -523,6 +523,11 @@ class JsonDom extends React.Component {
     getJsonRaw(props) {
         if (this.jsonRaw) return this.jsonRaw
         const {template} = props
+
+        if( template.trim().startsWith('<')){
+            console.warn("Not supported for html content")
+            return null
+        }
         try {
             /*
              jsonRaw is the unmodified json for editing
@@ -538,7 +543,7 @@ class JsonDom extends React.Component {
 
     renderString(str, data) {
 
-        if (str.trim().indexOf('<') === 0) {
+        if (str.trim().startsWith('<')) {
             //its html
             str = JSON.stringify({
                 t: 'div',

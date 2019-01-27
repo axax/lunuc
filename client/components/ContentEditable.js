@@ -47,7 +47,8 @@ class ContentEditable extends React.Component {
         this.state = {
             dataOri: props.children,
             data: props.children,
-            hasFocus: false
+            hasFocus: false,
+            inputHasChanged: false
         }
     }
 
@@ -92,7 +93,7 @@ class ContentEditable extends React.Component {
     shouldComponentUpdate(nextProps, nextState) {
         const {highlight} = nextProps
 
-        if (nextState.hasFocus) {
+        if (nextState.hasFocus && nextState.inputHasChanged) {
             if (highlight) {
                 this.highlightDelay(ReactDOM.findDOMNode(this))
             }
@@ -108,7 +109,6 @@ class ContentEditable extends React.Component {
     componentDidUpdate() {
         const {setHtml, highlight} = this.props
         const {data} = this.state
-
         if (data !== ReactDOM.findDOMNode(this).innerText) {
             if (setHtml || highlight) {
                 ReactDOM.findDOMNode(this).innerHtml = this.highlight(data)
@@ -447,7 +447,8 @@ class ContentEditable extends React.Component {
         const data = e.target.innerText
         if (data !== this.state.data) {
             this.setState({
-                data
+                data,
+                inputHasChanged: true
             }, () => {
                 const {onChange} = this.props
                 if (onChange) {
@@ -461,16 +462,19 @@ class ContentEditable extends React.Component {
         this.setState({
             hasFocus: false
         })
-        const {onBlur} = this.props
-        if( onBlur ) {
-            const data = e.target.innerText
-            onBlur(data)
+        if( this.state.inputHasChanged ) {
+            const {onBlur} = this.props
+            if (onBlur) {
+                const data = e.target.innerText
+                onBlur(data)
+            }
         }
     }
 
     handleFocus(e) {
         this.setState({
-            hasFocus: true
+            hasFocus: true,
+            inputHasChanged: false
         })
     }
 }

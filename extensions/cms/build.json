@@ -5,6 +5,7 @@
       "genResolver": false,
       "collectionClonable": true,
       "entryClonable": true,
+      "mutationResult":"CmsPage",
       "fields": [
         {
           "name": "name",

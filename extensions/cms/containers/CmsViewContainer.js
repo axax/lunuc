@@ -127,7 +127,7 @@ class CmsViewContainer extends React.Component {
             ssr,
             public: props.cmsPage && props.cmsPage.public
         }
-        if ( state && ['updating', 'updated'].indexOf(status) >= 0) {
+        if (state && ['updating', 'updated'].indexOf(status) >= 0) {
             // take value from state if there is any because it might be more up to date
             result.template = state.template
             result.script = state.script
@@ -238,8 +238,8 @@ class CmsViewContainer extends React.Component {
                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
                             style={editorStyle}
-                            onChange={this.handleDataResolverChange}
-                            onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'dataResolver')}>{dataResolver}</DataResolverEditor>
+                            onChange={this.handleDataResolverChange.bind(this, 'change')}
+                            onBlur={this.handleDataResolverChange.bind(this, 'blur')}>{dataResolver}</DataResolverEditor>
                     </Expandable>
 
                     <Expandable title="Template"
@@ -249,8 +249,8 @@ class CmsViewContainer extends React.Component {
                             style={editorStyle}
                             tab={settings.templateTab}
                             onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
-                            onChange={this.handleTemplateChange}
-                            onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'template')}>{template}</TemplateEditor>
+                            onChange={this.handleTemplateChange.bind(this, 'change')}
+                            onBlur={this.handleTemplateChange.bind(this, 'blur')}>{template}</TemplateEditor>
                     </Expandable>
 
                     <Expandable title="Script"
@@ -258,8 +258,8 @@ class CmsViewContainer extends React.Component {
                                 expanded={settings.scriptExpanded}>
                         <ScriptEditor
                             style={editorStyle}
-                            onChange={this.handleClientScriptChange}
-                            onBlur={v => this.saveCmsPage.bind(this)(v, cmsPage, 'script')}>{script}</ScriptEditor>
+                            onChange={this.handleClientScriptChange.bind(this, 'change')}
+                            onBlur={this.handleClientScriptChange.bind(this, 'blur')}>{script}</ScriptEditor>
                     </Expandable>
 
 
@@ -470,7 +470,8 @@ class CmsViewContainer extends React.Component {
     }
 
     saveCmsPage = (value, data, key) => {
-        if (value != data[key]) {
+        if (value !== data[key]) {
+
             console.log('save cms', key)
 
             const {updateCmsPage} = this.props
@@ -487,24 +488,37 @@ class CmsViewContainer extends React.Component {
     }
 
 
-    handleClientScriptChange = (script) => {
+    handleClientScriptChange = (type, script) => {
         clearTimeout(this.setScriptTimeout)
-        this.setScriptTimeout = setTimeout(() => {
-            this.setState({script})
-        }, 500)
+
+        if (type === 'blur') {
+            this.saveCmsPage(script, this.props.cmsPage, 'script')
+        } else {
+            this.setScriptTimeout = setTimeout(() => {
+                this.setState({script})
+            }, 500)
+        }
     }
 
-    handleDataResolverChange = (str) => {
+    handleDataResolverChange = (type, str) => {
         this.setState({dataResolver: str})
+
         clearTimeout(this.dataResolverSaveTimeout)
-        this.dataResolverSaveTimeout = setTimeout(() => {
-            // auto save after some time
+        if (type == 'blur') {
             this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
-        }, 5000)
+        } else {
+            this.dataResolverSaveTimeout = setTimeout(() => {
+                // auto save after some time
+                this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
+            }, 5000)
+        }
     }
 
-    handleTemplateChange = (str) => {
+    handleTemplateChange = (type, str) => {
         this.setState({template: str, templateError: null})
+        if (type === 'blur') {
+            this.saveCmsPage(str, this.props.cmsPage, 'template')
+        }
     }
 
 
@@ -537,9 +551,12 @@ class CmsViewContainer extends React.Component {
                     delete item[key]
                 }
                 // set property of new object to existing reference
-                Object.assign(item, JSON.parse(str))
-
-                this.handleTemplateSaveChange(json)
+                try {
+                    Object.assign(item, JSON.parse(str))
+                    this.handleTemplateSaveChange(json)
+                }catch(e){
+                    console.log('Error in json',e)
+                }
             }
         }
     }

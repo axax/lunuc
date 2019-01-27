@@ -315,17 +315,22 @@ function gensrcExtension(name, options) {
 
             typeSchema += 'type ' + type.name + 'Result {\n\tresults: [' + type.name + ']\n\toffset: Int\n\tlimit: Int\n\ttotal: Int\n}\n\n'
 
-            // Maybe it is better to return only a Status instead of the whole type when create, update or delete is performed
-            typeSchema += 'type ' + type.name + 'Status {\n\t_id: ID!\n\tstatus: String\n}\n\n'
+            let mutationResult = type.mutationResult
+            if( !mutationResult ) {
+                mutationResult = type.name + 'Status'
+                // if a mutationResult is set we return that otherwise we return a simple Status object
 
+                // Maybe it is better to return only a Status instead of the whole type when create, update or delete is performed
+                typeSchema += 'type ' + mutationResult + '{\n\t_id: ID!\n\tstatus: String\n}\n\n'
+            }
             typeSchema += 'type Query {\n\t' + nameStartLower + 's(sort: String, limit: Int=10, offset: Int=0, page: Int=0, filter: String' + (type.collectionClonable ? ', _version: String' : '') + '): ' + type.name + 'Result\n}\n\n'
 
 
             typeSchema += 'type Mutation {\n'
-            typeSchema += '\tcreate' + type.name + ' (' + mutationFields + '):' + type.name + 'Status\n'
-            typeSchema += '\tupdate' + type.name + ' (_id: ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + 'Status\n'
-            typeSchema += '\tdelete' + type.name + ' (_id: ID!' + (type.collectionClonable ? ', _version: String' : '') + '):' + type.name + 'Status\n'
-            typeSchema += '\tdelete' + type.name + 's (_id: [ID]' + (type.collectionClonable ? ', _version: String' : '') + '):[' + type.name + 'Status]\n'
+            typeSchema += '\tcreate' + type.name + ' (' + mutationFields + '):' + mutationResult + '\n'
+            typeSchema += '\tupdate' + type.name + ' (_id: ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + mutationResult + '\n'
+            typeSchema += '\tdelete' + type.name + ' (_id: ID!' + (type.collectionClonable ? ', _version: String' : '') + '):' + mutationResult + '\n'
+            typeSchema += '\tdelete' + type.name + 's (_id: [ID]' + (type.collectionClonable ? ', _version: String' : '') + '):[' + mutationResult + ']\n'
             if (type.collectionClonable) {
                 typeSchema += '\tclone' + type.name + ' (_id: ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + '\n'
             }

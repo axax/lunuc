@@ -130,7 +130,6 @@ export default db => ({
             Util.checkIfUserIsLoggedIn(context)
 
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
-
             // if dataResolver has changed resolveData and return it
             if (rest.dataResolver) {
                 const scope = createScopeForDataResolver(query)
