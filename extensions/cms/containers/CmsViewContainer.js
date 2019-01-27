@@ -835,7 +835,7 @@ const CmsViewContainerWithGql = compose(
     graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$dataResolver:String,$ssr:Boolean,$public:Boolean){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr,public:$public){slug template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key) => {
-                const variables = {_id, [key]: rest[key]}
+                const variables = {_id, [key]: rest[key], slug: ownProps.slug}
                 const {_version} = getSlugVersion(ownProps.slug)
                 if (_version) {
                     variables._version = _version

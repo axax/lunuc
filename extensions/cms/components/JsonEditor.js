@@ -173,8 +173,6 @@ class JsonEditor extends React.Component {
 
     setChildComponent(key, value, prop) {
         const o = Util.getComponentByKey(key, this.state.json)
-        console.log(key, o)
-        console.log(this.state.json,value)
         if (o) {
             o[prop || 'c'] = value
             this.props.onChange(JSON.stringify(this.state.json, null, 4))
@@ -191,7 +189,7 @@ class JsonEditor extends React.Component {
     handleBlur() {
         const {onBlur} = this.props
         if (onBlur) {
-            //onBlur(JSON.stringify(this.state.json, null, 4))
+            onBlur(JSON.stringify(this.state.json, null, 4))
         }
     }
 

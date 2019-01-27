@@ -10,10 +10,11 @@ import {
 const UtilCms = {
     getCmsPage: async (db, context, slug, _version) => {
         const userIsLoggedIn = Util.isUserLoggedIn(context)
-        const cacheKey = 'cmsPage' + slug + userIsLoggedIn
+        const cacheKey = 'cmsPage-' + _version + '-' + slug
+
         let cmsPages
         if (!userIsLoggedIn) {
-            // get page from cache
+            // get page from cache if user is not loggedin
             cmsPages = Cache.get(cacheKey)
         }
         if (!cmsPages) {
@@ -33,7 +34,7 @@ const UtilCms = {
             if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
 
                 // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
-                console.log(cmsPages.results[0].template)
+                //console.log(cmsPages.results[0].template)
                 try {
                     cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
                 } catch (e) {

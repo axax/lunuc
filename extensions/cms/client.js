@@ -55,6 +55,7 @@ export default () => {
             dataSource.forEach((d, i) => {
                 if (d.slug) {
                     d.slug = <span style={{
+                        fontWeight:'bold',
                         cursor: 'pointer',
                         color: '#663366',
                         textDecoration: 'underline'

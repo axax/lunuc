@@ -80,6 +80,7 @@ class ContentEditable extends React.Component {
             onInput: this.handleInput.bind(this),
             onBlur: this.handleBlur.bind(this),
             onFocus: this.handleFocus.bind(this),
+            onPaste: this.handlePaste.bind(this),
             contentEditable: true,
             suppressContentEditableWarning: true
         }
@@ -118,9 +119,20 @@ class ContentEditable extends React.Component {
         }
     }
 
+    handlePaste(e) {
+        // Stop data actually being pasted into div
+        e.stopPropagation()
+        e.preventDefault()
+
+        // Get pasted data via clipboard API
+        const clipboardData = e.clipboardData || window.clipboardData
+        const pastedData = clipboardData.getData('Text')
+        document.execCommand('insertText', false, pastedData)
+    }
 
     handleKeyDown(e) {
         const {highlight} = this.props
+        console.log(e.metaKey)
         if (e.key === "Enter") {
             e.preventDefault()
             document.execCommand('insertHTML', false, '\n')
@@ -169,6 +181,7 @@ class ContentEditable extends React.Component {
                 }
 
             } else if ((e.key === 'y' || e.key === 'Y')) {
+                // TODO: implement reundo history
 
             }
         }
@@ -185,14 +198,9 @@ class ContentEditable extends React.Component {
     }
 
     handleKeyUp(e) {
-        if (e.getModifierState("Control") || e.key === "Shift") {
-            // ignore if Control is pressed
-            return
-        }
-
         const {highlight} = this.props
         if (highlight) {
-            const ignoreKeys = ["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Control"] // arrows --> don't ignore Meta
+            const ignoreKeys = ['Shift', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'End', 'Home', 'PageUp', 'PageDown', 'Control', 'Meta'] // arrows --> don't ignore Meta
             if (ignoreKeys.indexOf(e.key) < 0) {
                 this.highlightDelay(e.target)
             }
@@ -462,7 +470,7 @@ class ContentEditable extends React.Component {
         this.setState({
             hasFocus: false
         })
-        if( this.state.inputHasChanged ) {
+        if (this.state.inputHasChanged) {
             const {onBlur} = this.props
             if (onBlur) {
                 const data = e.target.innerText

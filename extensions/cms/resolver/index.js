@@ -8,6 +8,7 @@ import UtilCms from '../util'
 import {UIProvider} from 'ui'
 import {pubsub} from 'api/subscription'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT} from '../constants'
+import Cache from 'util/cache'
 
 const createScopeForDataResolver = function (query) {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
@@ -128,6 +129,10 @@ export default db => ({
         },
         updateCmsPage: async ({_id, query, ...rest}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
+
+            // clear cache
+            const cacheKey = 'cmsPage-' + rest._version + '-' + rest.slug
+            Cache.remove(cacheKey)
 
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
             // if dataResolver has changed resolveData and return it
