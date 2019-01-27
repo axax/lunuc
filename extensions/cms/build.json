@@ -1,0 +1,93 @@
+{
+  "types": [
+    {
+      "name": "CmsPage",
+      "genResolver": false,
+      "collectionClonable": true,
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "name",
+          "label": "Name"
+        },
+        {
+          "name": "slug",
+          "label": "Slug",
+          "required": false,
+          "clone": "${slug}_copy"
+        },
+        {
+          "name": "public",
+          "label": "Public",
+          "type": "Boolean"
+        },
+        {
+          "name": "urlSensitiv",
+          "label": "Url sensitiv",
+          "type": "Boolean"
+        },
+        {
+          "name": "template",
+          "hidden": true
+        },
+        {
+          "name": "script",
+          "hidden": true
+        },
+        {
+          "name": "dataResolver",
+          "hidden": true
+        },
+        {
+          "name": "resolvedData",
+          "hidden": true
+        },
+        {
+          "name": "html",
+          "hidden": true
+        },
+        {
+          "name": "style",
+          "type": "CmsStyle",
+          "multi": true,
+          "hidden": true
+        },
+        {
+          "name": "ssr",
+          "hidden": true,
+          "type": "Boolean"
+        },
+        {
+          "name": "subscriptions",
+          "hidden": true,
+          "multi": true
+        },
+        {
+          "name": "online",
+          "hidden": true,
+          "type": "Boolean"
+        },
+        {
+          "name": "modifiedAt",
+          "hidden": true,
+          "type": "Float"
+        },
+        {
+          "name": "cacheKey",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "name": "CmsStyle",
+      "collectionClonable": false,
+      "entryClonable": false,
+      "fields": [
+        {
+          "name": "name",
+          "label": "Name"
+        }
+      ]
+    }
+  ]
+}

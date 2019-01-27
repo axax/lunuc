@@ -21,7 +21,7 @@ const styles = theme => ({
         fontWeight: 'bold'
     }
 })
-import JsonDom from '../JsonDom'
+import JsonDom from './JsonDom'
 
 class JsonEditor extends React.Component {
 

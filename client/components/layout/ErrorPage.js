@@ -4,9 +4,21 @@ import React from 'react'
 class ErrorPage extends React.Component {
 
 
+    getErrorStatus(props) {
+
+        return {
+            code: props.code || '404',
+            message: props.message || 'Page not found',
+            background: props.background || '#33cc99'
+        }
+
+    }
+
     constructor(props) {
         super(props)
-        document.title = '404 Page not found'
+
+        const {code, message, background} = this.getErrorStatus(props)
+        document.title = `${code} ${message}`
 
 
         this.css = document.createElement("style")
@@ -14,7 +26,7 @@ class ErrorPage extends React.Component {
         this.css.innerHTML =
             `
 body{
-    background: #33cc99;
+    background: ${background};
     color:#fff;
     font-family: 'Open Sans', sans-serif;
     max-height:700px;
@@ -42,12 +54,14 @@ body{
     letter-spacing: 12px;
     font-size: 4em;
     line-height: 80%;
+    margin: 20px 0;
 }
 ._2{
     text-align:center;
     display:block;
     position: relative;
     font-size: 20px;
+    margin: 20px 0;
 }
 .text{
     font-size: 70px;
@@ -195,11 +209,14 @@ hr:after {
         document.body.appendChild(this.css)
     }
 
-    componentWillUnmount(){
+    componentWillUnmount() {
         document.body.removeChild(this.css)
     }
 
     render() {
+
+        const {code, message} = this.getErrorStatus(this.props)
+
         return <div>
             <div id="clouds">
                 <div className="cloud x1"></div>
@@ -210,11 +227,11 @@ hr:after {
                 <div className="cloud x5"></div>
             </div>
             <div className='c'>
-                <div className='_404'>404</div>
+                <div className='_404'>{code}</div>
                 <hr />
-                <div className="_1">THE PAGE</div>
-                <div className="_2">WAS NOT FOUND</div>
-                <a className='btn' href="/">BACK TO MARS</a>
+                <div className="_1">{message.toUpperCase()}</div>
+                <div className="_2">WE ARE SORRY</div>
+                <a className='btn' href="/">GO BACK</a>
             </div>
         </div>
     }

@@ -1,5 +1,5 @@
 import React from 'react'
-import ContentEditable from '../generic/ContentEditable'
+import ContentEditable from 'client/components/ContentEditable'
 
 class ScriptEditor extends React.Component {
     render(){

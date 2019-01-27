@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ContentEditable from '../generic/ContentEditable'
-import JsonEditor from '../generic/JsonEditor'
+import ContentEditable from 'client/components/ContentEditable'
+import JsonEditor from './JsonEditor'
 import {SimpleMenu, Tabs, Tab, CodeIcon, WebIcon, SubjectIcon, withStyles} from 'ui/admin'
 
 

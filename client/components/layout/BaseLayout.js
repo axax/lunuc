@@ -11,7 +11,6 @@ import {
     SettingsIcon,
     AccountCircleIcon,
     BackupIcon,
-    WebIcon,
     InsertDriveFileIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
@@ -31,7 +30,6 @@ class BaseLayout extends React.Component {
     menuItems = [
         {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon />},
         {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon />},
-        {name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true, icon: <WebIcon />},
         {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon />},
         {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon />},
         {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon />},

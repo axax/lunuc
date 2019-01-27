@@ -12,16 +12,16 @@ import Hook from 'util/hook'
 
 const {DEFAULT_LANGUAGE} = config
 
-const buildCollectionName = async (db, context, typeName, version) => {
+const buildCollectionName = async (db, context, typeName, _version) => {
 
-    if (!version) {
+    if (!_version) {
         const values = await Util.keyValueGlobalMap(db, context, ['TypesSelectedVersions'])
         if (values && values['TypesSelectedVersions']) {
-            version = values['TypesSelectedVersions'][typeName]
+            _version = values['TypesSelectedVersions'][typeName]
         }
     }
 
-    return typeName + (version && version !== 'default' ? '_' + version : '')
+    return typeName + (_version && _version !== 'default' ? '_' + _version : '')
 }
 
 
@@ -495,9 +495,9 @@ const GenericResolver = {
         }
         const startTime = new Date()
 
-        let {match, version, ...otherOptions} = options
+        let {match, _version, ...otherOptions} = options
 
-        const collectionName = await buildCollectionName(db, context, typeName, version)
+        const collectionName = await buildCollectionName(db, context, typeName, _version)
 
         // Default match
         if (!match) {

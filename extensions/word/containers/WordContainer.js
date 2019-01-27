@@ -9,7 +9,7 @@ import {
     SimpleSelect,
     Typography
 } from 'ui/admin'
-import GenericForm from 'client/components/generic/GenericForm'
+import GenericForm from 'client/components/GenericForm'
 import extensions from 'gen/extensions'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'

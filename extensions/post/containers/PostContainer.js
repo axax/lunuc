@@ -6,7 +6,7 @@ import {connect} from 'react-redux'
 import PostEditor from '../components/post/PostEditor'
 import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import GenericForm from 'client/components/generic/GenericForm'
+import GenericForm from 'client/components/GenericForm'
 import {Row, Col, Typography, SimpleList, DeleteIconButton, SimpleDialog} from 'ui/admin'
 import config from 'gen/config'
 const {ADMIN_BASE_URL, DEFAULT_RESULT_LIMIT} = config

@@ -1,12 +1,11 @@
 import extensions from 'gen/extensions'
 import Hook from 'util/hook'
 import config from 'gen/config'
-import {CAPABILITIES} from 'util/capabilities'
+import {getAllCapabilites} from 'util/capabilities'
 
 const {LANGUAGES} = config
 
 const types = {}, typeQueries = {}, typeFormFields = {}
-
 
 export const getTypes = () => {
 
@@ -111,8 +110,8 @@ export const getTypeQueries = (typeName) => {
             selectParamsString += `,${item.name}:${item.defaultValue}`
         })
     }
-    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable ? ',$version: String' : ''}){
-                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable ? ',version:$version' : ''}){limit offset total results{${query}}}}`
+    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable ? ',$_version: String' : ''}){
+                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable ? ',_version:$_version' : ''}){limit offset total results{${query}}}}`
 
 
     result.create = `mutation create${name}(${collectionClonable ? ',$_version:String' : ''},${insertParams}){create${name}(${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
@@ -223,7 +222,7 @@ Hook.on('Types', ({types}) => {
             {
                 name: 'capabilities',
                 multi: true,
-                enum: CAPABILITIES
+                enum: getAllCapabilites()
             }
         ]
     }
@@ -263,35 +262,6 @@ Hook.on('Types', ({types}) => {
             },
             {
                 name: 'mimeType'
-            }
-        ]
-    }
-
-    types.CmsPage = {
-        name: 'CmsPage',
-        collectionClonable: true,
-        entryClonable: true,
-        usedBy: ['core'],
-        fields: [
-            {
-                name: 'name',
-                label: 'Name'
-            },
-            {
-                name: 'slug',
-                label: 'Slug',
-                required: false,
-                clone: '${slug}_copy'
-            },
-            {
-                name: 'public',
-                label: 'Public',
-                type: 'Boolean'
-            },
-            {
-                name: 'urlSensitiv',
-                label: 'Url sensitiv',
-                type: 'Boolean'
             }
         ]
     }

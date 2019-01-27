@@ -25,7 +25,7 @@ process.on('SIGINT', () => {
     if ('undefined' != typeof( Hook.hooks['appexit'] ) && Hook.hooks['appexit'].length) {
         let c = Hook.hooks['appexit'].length
         for (var i = 0; i < Hook.hooks['appexit'].length; ++i) {
-            const promise = Hook.hooks['appexit'][i]()
+            const promise = Hook.hooks['appexit'][i].callback()
             promise.then(()=>{
                 c--
                 if( c=== 0) {

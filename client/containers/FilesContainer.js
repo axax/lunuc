@@ -18,7 +18,7 @@ import {
     InsertDriveFileIcon
 } from 'ui/admin'
 import Util from 'client/util'
-import ContentEditable from '../components/generic/ContentEditable'
+import ContentEditable from 'client/components/ContentEditable'
 import {Query, withApollo} from 'react-apollo'
 import {COMMAND_QUERY} from '../constants'
 import PropTypes from 'prop-types'

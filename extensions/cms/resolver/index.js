@@ -1,89 +1,23 @@
-import GenericResolver from './generic/genericResolver'
+import GenericResolver from 'api/resolver/generic/genericResolver'
 import ReactDOMServer from 'react-dom/server'
-import JsonDom from 'client/components/JsonDom'
+import JsonDom from '../components/JsonDom'
 import React from 'react'
-import Util from '../util'
+import Util from 'api/util'
 import ClientUtil from 'client/util'
-import UtilCms from '../util/cms'
+import UtilCms from '../util'
 import {UIProvider} from 'ui'
-import {pubsub} from '../subscription'
+import {pubsub} from 'api/subscription'
+import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT} from '../constants'
 
-const defaultDataResolver = `[
-  {
-    "t": "$Word",
-    "d": [
-      "en",
-      "de",
-      "it",
-      {
-        "categories": [
-          "name",
-          "_id"
-        ]
-      }
-    ],
-    "l": 20,
-    "o": 0
-  }
-]`
-
-
-const defaultTemplate = `[
-    {
-        "t": "div",
-        "p": {},
-        "c": [
-            {
-                "t": "h1$",
-                "c": "Words"
-            },
-            {
-                "t": "Row",
-                "c": [
-                    {
-                        "$loop": {
-                            "s": "x",
-                            "$d": "data.Word.results",
-                            "c": [
-                                {
-                                    "t": "Col",
-                                    "p": {
-                                        "md": 3
-                                    },
-                                    "c": [
-                                        {
-                                            "t": "p",
-                                            "c": "$.x{de} = $.x{en}"
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-]`
-
-const defaultScript = `// 1. access scope data
-// scope.page.slug
-// scope.data
-// 2. handle events
-// on('click',(payload)=>{console.log})
-
-`
-
-
-let createScopeForDataResolver = function (query) {
+const createScopeForDataResolver = function (query) {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
     const scope = {params: queryParams}
     return scope
 }
 
-export const cmsResolver = (db) => ({
+export default db => ({
     Query: {
-        cmsPages: async ({limit, page, offset, filter, sort, version}, {context}) => {
+        cmsPages: async ({limit, page, offset, filter, sort, _version}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
             return await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug', 'name', 'urlSensitiv'], {
                 limit,
@@ -91,14 +25,14 @@ export const cmsResolver = (db) => ({
                 offset,
                 filter,
                 sort,
-                version
+                _version
             })
         },
-        cmsPage: async ({slug, query, nosession, version}, {context}) => {
+        cmsPage: async ({slug, query, nosession, _version}, {context}) => {
             // TODO: Not just check if user is logged in but also check what role he has
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
-            let cmsPages = await UtilCms.getCmsPage(db, context, slug, version)
+            let cmsPages = await UtilCms.getCmsPage(db, context, slug, _version)
 
             if (!cmsPages.results) {
                 throw new Error('Cms page doesn\'t exist')
@@ -127,7 +61,7 @@ export const cmsResolver = (db) => ({
             }
             console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
-            const apolloCacheKey = (version && version !== 'default' ? version : '') + (query ? query : '')
+            const apolloCacheKey = (_version && _version !== 'default' ? _version : '') + (query ? query : '')
 
             if (userIsLoggedIn) {
                 // return all data
@@ -141,7 +75,7 @@ export const cmsResolver = (db) => ({
                     dataResolver,
                     ssr,
                     public: ispublic, // if public the content is visible to everyone
-                    online: version === 'default',  // if true it is the active version that is online
+                    online: _version === 'default',  // if true it is the active _version that is online
                     resolvedData: JSON.stringify(resolvedData),
                     html,
                     subscriptions,
@@ -164,7 +98,7 @@ export const cmsResolver = (db) => ({
                     createdBy,
                     ssr,
                     public: ispublic,
-                    online: version === 'default',
+                    online: _version === 'default',
                     slug,
                     template,
                     script,
@@ -187,9 +121,9 @@ export const cmsResolver = (db) => ({
             return await GenericResolver.createEnity(db, context, 'CmsPage', {
                 slug,
                 ...rest,
-                dataResolver: defaultDataResolver,
-                template: defaultTemplate,
-                script: defaultScript
+                dataResolver: DEFAULT_DATA_RESOLVER,
+                template: DEFAULT_TEMPLATE,
+                script: DEFAULT_SCRIPT
             })
         },
         updateCmsPage: async ({_id, query, ...rest}, {context}) => {

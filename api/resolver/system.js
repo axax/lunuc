@@ -1,8 +1,3 @@
-import ReactDOMServer from 'react-dom/server'
-import JsonDom from 'client/components/JsonDom'
-import React from 'react'
-import {UIProvider} from 'ui'
-
 import Util from '../util'
 import {execSync} from 'child_process'
 import path from 'path'
@@ -16,7 +11,7 @@ import {
     CAPABILITY_RUN_COMMAND
 } from 'util/capabilities'
 import Cache from 'util/cache'
-import UtilCms from '../util/cms'
+import Hook from 'util/hook'
 
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
@@ -58,35 +53,8 @@ export const systemResolver = (db) => ({
             }
 
             let html
-            if (slug) {
-                let cmsPages = await UtilCms.getCmsPage(db, context, slug)
-                if (!cmsPages.results) {
-                    throw new Error(`Template ${slug} doesn't exist`)
-                }
-                let scopeContext
-                try {
-                    scopeContext = JSON.parse(body)
-                } catch (e) {
-                    throw new Error(`Error in body: ${e.message}`)
-                    scopeContext = {}
-                }
-
-                const scope = {context: scopeContext, page: {slug}}
-
-                const {template, script, dataResolver} = cmsPages.results[0]
-                const {resolvedData} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope)
-                try {
-                    global._app_ = {lang: context.lang}
-                    html = ReactDOMServer.renderToString(<UIProvider>
-                        <JsonDom template={template}
-                                 script={script}
-                                 resolvedData={JSON.stringify(resolvedData)}
-                                 editMode={false}
-                                 scope={JSON.stringify(scope)}/>
-                    </UIProvider>)
-                } catch (e) {
-                    throw new Error(`Error in template: ${e.message}`)
-                }
+            if (slug && 'undefined' != typeof( Hook.hooks['cmsTemplateRenderer'] ) && Hook.hooks['cmsTemplateRenderer'].length) {
+                html = await Hook.hooks['cmsTemplateRenderer'][0].callback({context, db, recipient, subject, body, slug})
             } else {
                 html = body
             }

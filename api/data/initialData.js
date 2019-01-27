@@ -3,7 +3,6 @@ import {
     CAPABILITY_VIEW_APP,
     CAPABILITY_ACCESS_ADMIN_PAGE,
     CAPABILITY_MANAGE_TYPES,
-    CAPABILITY_MANAGE_CMS_PAGES,
     CAPABILITY_MANAGE_KEYVALUES,
     CAPABILITY_MANAGE_OTHER_USERS,
     CAPABILITY_MANAGE_COLLECTION,
@@ -17,6 +16,7 @@ import path from 'path'
 import config from 'gen/config'
 import fs from 'fs'
 import zipper from 'zip-local'
+import Hook from 'util/hook'
 
 
 const {UPLOAD_DIR} = config
@@ -53,48 +53,47 @@ export const createUploads = () => {
 
 
 export const createUserRoles = async (db) => {
-    const userRoleCollection = db.collection('UserRole')
-    userRoleCollection.updateOne(
-        {name: 'administrator'},
+
+    const userRoles = [
         {
-            $addToSet: {
-                capabilities: {
-                    $each: [CAPABILITY_VIEW_APP, CAPABILITY_MANAGE_USER_ROLE,
-                        CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_CMS_PAGES,
-                        CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_BACKUPS, CAPABILITY_RUN_COMMAND]
-                }
-            }
+            name: 'administrator',
+            capabilities: [CAPABILITY_VIEW_APP, CAPABILITY_MANAGE_USER_ROLE,
+                CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES,
+                CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION, CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_BACKUPS, CAPABILITY_RUN_COMMAND]
         },
         {
-            upsert: true
-        }
-    )
-
-    userRoleCollection.updateOne(
-        {name: 'contributor'},
-        {$addToSet: {capabilities: {$each: [CAPABILITY_VIEW_APP, CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES, CAPABILITY_MANAGE_CMS_PAGES]}}},
+            name: 'contributor',
+            capabilities: [CAPABILITY_VIEW_APP, CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES]
+        },
         {
-            upsert: true
-        }
-    )
-
-    userRoleCollection.updateOne(
-        {name: 'subscriber'},
-        {$addToSet: {capabilities: {$each: [CAPABILITY_VIEW_APP]}}},
+            name: 'subscriber',
+            capabilities: [CAPABILITY_VIEW_APP]
+        },
         {
-            upsert: true
+            name: 'demo',
+            capabilities: [CAPABILITY_VIEW_APP, CAPABILITY_READ_EVERYTHING, CAPABILITY_ACCESS_ADMIN_PAGE]
         }
-    )
+    ]
 
+    Hook.call('createUserRoles', {userRoles, db})
 
-    userRoleCollection.updateOne(
-        {name: 'demo'},
-        {$addToSet: {capabilities: {$each: [CAPABILITY_VIEW_APP, CAPABILITY_READ_EVERYTHING, CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_CMS_PAGES]}}},
-        {
-            upsert: true
-        }
-    )
+    const userRoleCollection = db.collection('UserRole')
 
+    userRoles.forEach(userRole => {
+        userRoleCollection.updateOne(
+            {name: userRole.name},
+            {
+                $addToSet: {
+                    capabilities: {
+                        $each: userRole.capabilities
+                    }
+                }
+            },
+            {
+                upsert: true
+            }
+        )
+    })
 }
 
 export const createUsers = async (db) => {

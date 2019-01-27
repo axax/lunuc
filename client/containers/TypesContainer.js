@@ -5,7 +5,6 @@ import BaseLayout from '../components/layout/BaseLayout'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import {
     FileCopyIcon,
-    WebIcon,
     DeleteIcon,
     EditIcon,
     Checkbox,
@@ -29,7 +28,7 @@ import {withApollo, Query} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
 import Util from 'client/util'
-import GenericForm from 'client/components/generic/GenericForm'
+import GenericForm from 'client/components/GenericForm'
 import config from 'gen/config'
 import Hook from 'util/hook'
 import {getTypes, getTypeQueries, getFormFields} from 'util/types'
@@ -151,7 +150,7 @@ class TypesContainer extends React.Component {
             this.props.baseFilter !== props.baseFilter ||
             this.pageParams.type !== pageParams.type ||
             this.pageParams.page !== pageParams.page ||
-            this.pageParams.version !== pageParams.version ||
+            this.pageParams._version !== pageParams._version ||
             this.pageParams.limit !== pageParams.limit ||
             this.pageParams.sort !== pageParams.sort ||
             this.pageParams.filter !== pageParams.filter) {
@@ -174,7 +173,7 @@ class TypesContainer extends React.Component {
             this._lastData = data
             this._lastSelectedRows = selectedrows
 
-            const {type, page, limit, sort, version} = this.pageParams
+            const {type, page, limit, sort, _version} = this.pageParams
             const fields = this.types[type].fields, dataSource = []
 
             const columnsFiltered = [], columnsMap = {}
@@ -343,9 +342,6 @@ class TypesContainer extends React.Component {
                 actions.push({
                     name: 'Manage versions', onClick: () => {
                         this.setState({manageColDialog: true})
-
-
-                        //TODO implement
                     }
                 })
             }
@@ -388,11 +384,11 @@ class TypesContainer extends React.Component {
                                      items.unshift({value: 'default', name: 'Default'})
                                      return <SimpleSelect
                                          label="Select version to edit"
-                                         value={version}
+                                         value={_version}
                                          onChange={(e) => {
                                              const {type, page, limit, sort, filter} = this.pageParams
                                              this.goTo(type, page, limit, sort, filter, e.target.value)
-                                             this.setSettingsForType(type, {version: e.target.value})
+                                             this.setSettingsForType(type, {_version: e.target.value})
                                          }}
                                          items={items}
                                      />
@@ -691,7 +687,7 @@ class TypesContainer extends React.Component {
             })
 
         /* HOOK */
-        Hook.call('TypeTableColumns', {type, version: this.pageParams.version, columns: this.typeColumns[type]})
+        Hook.call('TypeTableColumns', {type, _version: this.pageParams._version, columns: this.typeColumns[type]})
 
         return this.typeColumns[type]
     }
@@ -719,7 +715,7 @@ class TypesContainer extends React.Component {
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',
             filter: f || typeSettings.filter || '',
-            version: v || typeSettings.version || 'default'
+            _version: v || typeSettings._version || 'default'
         }
         result.type = type
         return result
@@ -744,7 +740,7 @@ class TypesContainer extends React.Component {
         return filter + (this.baseFilter ? (filter ? ' && ' : '') + this.baseFilter : '')
     }
 
-    getData({type, page, limit, sort, filter, version}, cacheFirst) {
+    getData({type, page, limit, sort, filter, _version}, cacheFirst) {
         const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
@@ -752,7 +748,7 @@ class TypesContainer extends React.Component {
             if (queries) {
 
                 const storeKey = this.getStoreKey(type),
-                    variables = {limit, page, sort, version, filter: this.extendFilter(filter)},
+                    variables = {limit, page, sort, _version, filter: this.extendFilter(filter)},
                     gqlQuery = gql(queries.query)
                 let hasStoreError = false
                 if (cacheFirst) {
@@ -788,14 +784,14 @@ class TypesContainer extends React.Component {
         }
     }
 
-    createData({type, page, limit, sort, filter, version}, input, optimisticInput) {
+    createData({type, page, limit, sort, filter, _version}, input, optimisticInput) {
         const {client, user} = this.props
         if (type) {
             const queries = getTypeQueries(type)
             return client.mutate({
                 mutation: gql(queries.create),
                 variables: {
-                    _version: version,
+                    _version,
                     ...input
                 },
                 update: (store, {data}) => {
@@ -813,7 +809,7 @@ class TypesContainer extends React.Component {
                         storeKey = this.getStoreKey(type)
                     const extendedFilter = this.extendFilter(filter)
 
-                    const variables = {page, limit, sort, version, filter: extendedFilter}
+                    const variables = {page, limit, sort, _version, filter: extendedFilter}
 
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
@@ -842,14 +838,14 @@ class TypesContainer extends React.Component {
         }
     }
 
-    updateData({type, page, limit, sort, filter, version}, changedData, optimisticData) {
+    updateData({type, page, limit, sort, filter, _version}, changedData, optimisticData) {
         const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
             return client.mutate({
                 mutation: gql(queries.update),
                 /* only send what has changed*/
-                variables: {_version: version, ...changedData},
+                variables: {_version, ...changedData},
                 update: (store, {data}) => {
                     const gqlQuery = gql(queries.query),
                         storeKey = this.getStoreKey(type),
@@ -857,7 +853,7 @@ class TypesContainer extends React.Component {
 
                     const extendedFilter = this.extendFilter(filter)
 
-                    const variables = {page, limit, sort, version, filter: extendedFilter}
+                    const variables = {page, limit, sort, _version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
@@ -890,7 +886,7 @@ class TypesContainer extends React.Component {
     }
 
 
-    deleteData({type, page, limit, sort, filter, version}, ids) {
+    deleteData({type, page, limit, sort, filter, _version}, ids) {
         const {client} = this.props
 
         if (type && ids.length > 0) {
@@ -900,14 +896,14 @@ class TypesContainer extends React.Component {
             client.mutate({
                 mutation: gql(ids.length > 1 ? queries.deleteMany : queries.delete),
                 variables: {
-                    _version: version,
+                    _version,
                     _id: ids.length > 1 ? ids : ids[0]
                 },
                 update: (store, {data}) => {
                     const gqlQuery = gql(queries.query)
                     const extendedFilter = this.extendFilter(filter)
 
-                    const variables = {page, limit, sort, version, filter: extendedFilter}
+                    const variables = {page, limit, sort, _version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,
@@ -944,7 +940,7 @@ class TypesContainer extends React.Component {
     }
 
 
-    cloneData({type, page, limit, sort, filter, version}, clonable) {
+    cloneData({type, page, limit, sort, filter, _version}, clonable) {
         const {client, user} = this.props
 
         if (type) {
@@ -954,7 +950,7 @@ class TypesContainer extends React.Component {
 
             client.mutate({
                 mutation: gql(queries.clone),
-                variables: {_version: version, ...clonable},
+                variables: {_version, ...clonable},
                 update: (store, {data}) => {
                     const freshData = {
                         ...data['clone' + type],
@@ -969,7 +965,7 @@ class TypesContainer extends React.Component {
                         storeKey = this.getStoreKey(type)
 
                     const extendedFilter = this.extendFilter(filter)
-                    const variables = {page, limit, sort, version, filter: extendedFilter}
+                    const variables = {page, limit, sort, _version, filter: extendedFilter}
 
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
@@ -1035,16 +1031,16 @@ class TypesContainer extends React.Component {
         }
     }
 
-    goTo(type, page, limit, sort, filter, version) {
+    goTo(type, page, limit, sort, filter, _version) {
         const {baseUrl, fixType} = this.props
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type + '/'}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${version}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type + '/'}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}`)
     }
 
 
     runFilter(f) {
-        const {type, limit, sort, version} = this.pageParams
+        const {type, limit, sort, _version} = this.pageParams
         this.setSettingsForType(type, {filter: f})
-        this.goTo(type, 1, limit, sort, f, version)
+        this.goTo(type, 1, limit, sort, f, _version)
     }
 
     handleFilterTimeout = null
@@ -1068,7 +1064,7 @@ class TypesContainer extends React.Component {
     }
 
     handleSortChange = (orderBy) => {
-        const {type, limit, sort, filter, version} = this.pageParams
+        const {type, limit, sort, filter, _version} = this.pageParams
         const aSort = sort.split(' ')
         let orderDirection = 'desc'
         if (aSort.length > 1 && orderBy === aSort[0] && orderDirection === aSort[1]) {
@@ -1076,7 +1072,7 @@ class TypesContainer extends React.Component {
         }
         const newSort = `${orderBy} ${orderDirection}`
         this.setSettingsForType(type, {sort: newSort})
-        this.goTo(type, 1, limit, newSort, filter, version)
+        this.goTo(type, 1, limit, newSort, filter, _version)
     }
 
 
@@ -1091,14 +1087,14 @@ class TypesContainer extends React.Component {
     }
 
     handleChangePage = (page) => {
-        const {type, limit, sort, filter, version} = this.pageParams
-        this.goTo(type, page, limit, sort, filter, version)
+        const {type, limit, sort, filter, _version} = this.pageParams
+        this.goTo(type, page, limit, sort, filter, _version)
     }
 
 
     handleChangeRowsPerPage = (limit) => {
-        const {type, sort, filter, version} = this.pageParams
-        this.goTo(type, 1, limit, sort, filter, version)
+        const {type, sort, filter, _version} = this.pageParams
+        this.goTo(type, 1, limit, sort, filter, _version)
     }
 
 
@@ -1338,40 +1334,9 @@ Hook.on('TypeTable', ({type, dataSource, data, container}) => {
                 }
             </a>
         })
-    } else if (type === 'CmsPage') {
-        dataSource.forEach((d, i) => {
-            if (d.slug) {
-                d.slug = <span style={{
-                    cursor: 'pointer',
-                    color: '#663366',
-                    textDecoration: 'underline'
-                }}>{data.results[i].slug}</span>
-            }
-        })
     }
 })
 
-// add an entry actions
-Hook.on('TypeTableEntryAction', ({type, actions, item, container}) => {
-    if (type === 'CmsPage') {
-        actions.push({
-            name: 'View cms page',
-            onClick: () => {
-                const {version} = container.pageParams
-                container.props.history.push('/' + (version && version !== 'default' ? '@' + version + '/' : '') + item.slug)
-            },
-            icon: <WebIcon />
-        })
-    }
-})
-
-// add a click event
-Hook.on('TypeTableEntryClick', ({type, item, container}) => {
-    if (type === 'CmsPage') {
-        const {version} = container.pageParams
-        container.props.history.push('/' + (version && version !== 'default' ? '@' + version + '/' : '') + item.slug)
-    }
-})
 
 // add some extra data to the table
 Hook.on('TypeCreateEditDialog', function ({type, props, dataToEdit}) {

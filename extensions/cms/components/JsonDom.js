@@ -4,8 +4,8 @@ import Hook from 'util/hook'
 import _t from 'util/i18n'
 import Util from 'client/util'
 import Async from 'client/components/Async'
-import CmsViewContainer from 'client/containers/CmsViewContainer'
-import {getKeyValueFromLS} from '../containers/generic/withKeyValues'
+import CmsViewContainer from '../containers/CmsViewContainer'
+import {getKeyValueFromLS} from 'client/containers/generic/withKeyValues'
 import {
     SimpleMenu as UiSimpleMenu,
     Button as UiButton,
@@ -19,16 +19,16 @@ import {Link} from 'react-router-dom'
 import JsonDomInput from './JsonDomInput'
 
 const JsonDomHelper = (props) => <Async {...props}
-                                        load={import(/* webpackChunkName: "admin" */ '../components/cms/JsonDomHelper')}/>
+                                        load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
 
 const ContentEditable = (props) => <Async {...props}
-                                          load={import(/* webpackChunkName: "admin" */ '../components/generic/ContentEditable')}/>
+                                          load={import(/* webpackChunkName: "admin" */ '../../../client/components/ContentEditable')}/>
 
 const FileDrop = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "admin" */ '../components/FileDrop')}/>
+                                   load={import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
 
 const Print = (props) => <Async {...props}
-                                load={import(/* webpackChunkName: "admin" */ '../components/Print')}/>
+                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
 
 
 const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change', 'Submit']
@@ -342,7 +342,7 @@ class JsonDom extends React.Component {
                 if (!extComp) {
                     let comp = JsonDom.components[x.t]
                     if (comp) {
-                        if( comp.constructor === Object){
+                        if (comp.constructor === Object) {
                             comp = comp.component
                         }
                         this.extendedComponents[x.n] = (props) => {

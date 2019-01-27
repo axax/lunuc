@@ -1,14 +1,14 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
 import {ObjectId} from 'mongodb'
-import Hook from '../../util/hook'
-import Util from '.'
+import Hook from 'util/hook'
+import Util from 'api/util'
 import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_KEYVALUES
 } from 'util/capabilities'
 
 const UtilCms = {
-    getCmsPage: async (db, context, slug, version) => {
+    getCmsPage: async (db, context, slug, _version) => {
         const userIsLoggedIn = Util.isUserLoggedIn(context)
         const cacheKey = 'cmsPage' + slug + userIsLoggedIn
         let cmsPages
@@ -26,7 +26,7 @@ const UtilCms = {
             }
             cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {
                 match,
-                version
+                _version
             })
 
             // minify template if no user is logged in

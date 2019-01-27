@@ -2,7 +2,8 @@
   "types": [
     {
       "name": "Post",
-      "gensrc": false,
+      "genResolver": false,
+      "genSchema": false,
       "fields": [
         {
           "name": "title",

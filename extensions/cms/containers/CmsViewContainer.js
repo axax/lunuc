@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
-import JsonDom from 'client/components/JsonDom'
+import JsonDom from '../components/JsonDom'
 import {withRouter} from 'react-router-dom'
 import config from 'gen/config'
 import {withApollo} from 'react-apollo'
@@ -12,45 +12,45 @@ import Util from 'client/util'
 import {getType} from 'util/types'
 import * as CmsActions from 'client/actions/CmsAction'
 import {bindActionCreators} from 'redux'
-import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from './generic/withKeyValues'
+import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/containers/generic/withKeyValues'
 import {
     CAPABILITY_MANAGE_CMS_PAGES
-} from 'util/capabilities'
+} from '../constants'
 import Async from 'client/components/Async'
 
 const ErrorPage = (props) => <Async {...props}
-                                    load={import(/* webpackChunkName: "misc" */ '../components/layout/ErrorPage')}/>
+                                    load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorPage')}/>
 
 // admin pack
 const Expandable = (props) => <Async {...props}
-                                     load={import(/* webpackChunkName: "admin" */ '../components/cms/Expandable')}/>
+                                     load={import(/* webpackChunkName: "admin" */ '../../../client/components/Expandable')}/>
 const DataResolverEditor = (props) => <Async {...props}
-                                             load={import(/* webpackChunkName: "admin" */ '../components/cms/DataResolverEditor')}/>
+                                             load={import(/* webpackChunkName: "admin" */ '../components/DataResolverEditor')}/>
 const TemplateEditor = (props) => <Async {...props}
-                                         load={import(/* webpackChunkName: "admin" */ '../components/cms/TemplateEditor')}/>
+                                         load={import(/* webpackChunkName: "admin" */ '../components/TemplateEditor')}/>
 const ScriptEditor = (props) => <Async {...props}
-                                       load={import(/* webpackChunkName: "admin" */ '../components/cms/ScriptEditor')}/>
+                                       load={import(/* webpackChunkName: "admin" */ '../components/ScriptEditor')}/>
 const DrawerLayout = (props) => <Async {...props} expose="DrawerLayout"
-                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const MenuList = (props) => <Async {...props} expose="MenuList"
-                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                   load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const Button = (props) => <Async {...props} expose="Button"
-                                 load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                 load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const MenuListItem = (props) => <Async {...props} expose="MenuListItem"
-                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch"
-                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
-                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const Divider = (props) => <Async {...props} expose="Divider"
-                                  load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                  load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const UIProvider = (props) => <Async {...props} expose="UIProvider"
-                                     load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                     load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const ErrorHandler = (props) => <Async {...props}
-                                       load={import(/* webpackChunkName: "admin" */ '../components/layout/ErrorHandler')}/>
+                                       load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorHandler')}/>
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug: String!,$query:String,$nosession: String, $version: String){ cmsPage(slug: $slug,query: $query, nosession: $nosession, version: $version){cacheKey slug urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
+const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,nosession:$nosession,_version:$_version){cacheKey slug urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
 
 const editorStyle = {
@@ -94,7 +94,7 @@ class CmsViewContainer extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if ((nextProps.cmsPage !== prevState.cmsPage && nextProps.cmsPage.status !== 'updating') || nextProps.keyValue !== prevState.keyValue) {
+        if ((nextProps.cmsPage !== prevState.cmsPage && (nextProps.cmsPage && nextProps.cmsPage.status !== 'updating')) || nextProps.keyValue !== prevState.keyValue) {
             console.log('CmsViewContainer update state')
 
             return CmsViewContainer.propsToState(nextProps)
@@ -737,7 +737,7 @@ const getSlugVersion = (slug) => {
     if (slug.indexOf('@') === 0) {
         const pos = slug.indexOf('/')
         ret.slug = pos >= 0 ? slug.substring(pos + 1) : ''
-        ret.version = pos >= 0 ? slug.substring(1, pos) : slug.substring(1)
+        ret._version = pos >= 0 ? slug.substring(1, pos) : slug.substring(1)
 
     } else {
         ret.slug = slug
@@ -783,16 +783,14 @@ const CmsViewContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`query cmsPages($filter: String,$version:String){cmsPages(filter:$filter,version:$version){results{slug}}}`, {
+    graphql(gql`query cmsPages($filter:String,$_version:String){cmsPages(filter:$filter,_version:$_version){results{slug}}}`, {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {
-            const {slug, version} = getSlugVersion(ownProps.slug),
+            const {slug, _version} = getSlugVersion(ownProps.slug),
                 variables = {
+                    _version,
                     filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`
                 }
-            if (version) {
-                variables.version = version
-            }
             return {
                 variables,
                 fetchPolicy: 'network-only'
@@ -821,9 +819,9 @@ const CmsViewContainerWithGql = compose(
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key) => {
                 const variables = {_id, [key]: rest[key]}
-                const {version} = getSlugVersion(ownProps.slug)
-                if (version) {
-                    variables._version = version
+                const {_version} = getSlugVersion(ownProps.slug)
+                if (_version) {
+                    variables._version = _version
                 }
 
                 return mutate({

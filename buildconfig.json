@@ -1,5 +1,8 @@
 {
   "extensions": {
+    "cms": {
+      "active": true
+    },
     "chat": {
       "active": true
     },

@@ -2,7 +2,6 @@ import {commonResolver} from './common'
 import {userResolver} from './user'
 import {notificationResolver} from './notification'
 import {keyvalueResolver} from './keyvalue'
-import {cmsResolver} from './cms'
 import {systemResolver} from './system'
 import {mediaResolver} from './media'
 
@@ -22,7 +21,6 @@ export const resolver = (db) => {
         userResolver(db),
         notificationResolver(db),
         keyvalueResolver(db),
-        cmsResolver(db),
         systemResolver(db),
         mediaResolver(db)
     )
