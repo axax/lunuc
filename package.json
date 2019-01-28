@@ -1,6 +1,6 @@
 {
   "name": "lunuc",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "This is just another full-stack setup",
   "main": "index.js",
   "repository": "git://github.com/axax/lunuc.git",
