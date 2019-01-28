@@ -254,16 +254,16 @@ function gensrcExtension(name, options) {
         let schema = GENSRC_HEADER + 'export default `\n'
         let resolver = GENSRC_HEADER + `import {ObjectId} from 'mongodb'\nimport {pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
         resolver += `import GenericResolver from 'api/resolver/generic/genericResolver'\n\nexport default db => ({\n`
-        let resolverQuery = '\tQuery: {\n'
-        let resolverMutation = '\tMutation: {\n'
-        let resolverSubscription = '\tSubscription: {\n'
+        let resolverQuery = '\tQuery:{\n'
+        let resolverMutation = '\tMutation:{\n'
+        let resolverSubscription = '\tSubscription:{\n'
         let hasResolver = false, hasSchema = false
         options.types.forEach((type) => {
 
             const nameStartLower = type.name.charAt(0).toLowerCase() + type.name.slice(1)
 
             let typeSchema = 'type ' + type.name + '{\n'
-            typeSchema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy: UserPublic!' : '') + '\n\tstatus: String\n'
+            typeSchema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy:UserPublic!' : '') + '\n\tstatus: String\n'
 
             let mutationFields = '', resolverFields = '', refResolvers = '', refResolversObjectId = ''
 
@@ -283,7 +283,7 @@ function gensrcExtension(name, options) {
                     if (refResolversObjectId !== '') refResolversObjectId += ','
                     refResolvers += field.name
                     if (field.multi) {
-                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id) => {o.push(ObjectId(id)); return o},[]):' + field.name + ')'
+                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):' + field.name + ')'
 
                     } else {
                         refResolversObjectId += field.name + ':' + '(' + field.name + '?' + 'ObjectId(' + field.name + '):' + field.name + ')'
@@ -313,7 +313,7 @@ function gensrcExtension(name, options) {
             typeSchema += '}\n\n'
 
 
-            typeSchema += 'type ' + type.name + 'Result {\n\tresults: [' + type.name + ']\n\toffset: Int\n\tlimit: Int\n\ttotal: Int\n}\n\n'
+            typeSchema += 'type ' + type.name + 'Result{\n\tresults:[' + type.name + ']\n\toffset:Int\n\tlimit:Int\n\ttotal:Int\n}\n\n'
 
             let mutationResult = type.mutationResult
             if( !mutationResult ) {
@@ -321,25 +321,25 @@ function gensrcExtension(name, options) {
                 // if a mutationResult is set we return that otherwise we return a simple Status object
 
                 // Maybe it is better to return only a Status instead of the whole type when create, update or delete is performed
-                typeSchema += 'type ' + mutationResult + '{\n\t_id: ID!\n\tstatus: String\n}\n\n'
+                typeSchema += 'type ' + mutationResult + '{\n\t_id:ID!\n\tstatus:String\n}\n\n'
             }
-            typeSchema += 'type Query {\n\t' + nameStartLower + 's(sort: String, limit: Int=10, offset: Int=0, page: Int=0, filter: String' + (type.collectionClonable ? ', _version: String' : '') + '): ' + type.name + 'Result\n}\n\n'
+            typeSchema += 'type Query{\n\t' + nameStartLower + 's(sort:String,limit:Int=10,offset:Int=0,page:Int=0,filter:String' + (type.collectionClonable ? ',_version:String' : '') + '): ' + type.name + 'Result\n}\n\n'
 
 
-            typeSchema += 'type Mutation {\n'
+            typeSchema += 'type Mutation{\n'
             typeSchema += '\tcreate' + type.name + ' (' + mutationFields + '):' + mutationResult + '\n'
-            typeSchema += '\tupdate' + type.name + ' (_id: ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + mutationResult + '\n'
-            typeSchema += '\tdelete' + type.name + ' (_id: ID!' + (type.collectionClonable ? ', _version: String' : '') + '):' + mutationResult + '\n'
-            typeSchema += '\tdelete' + type.name + 's (_id: [ID]' + (type.collectionClonable ? ', _version: String' : '') + '):[' + mutationResult + ']\n'
+            typeSchema += '\tupdate' + type.name + ' (_id:ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + mutationResult + '\n'
+            typeSchema += '\tdelete' + type.name + ' (_id:ID!' + (type.collectionClonable ? ',_version:String' : '') + '):' + mutationResult + '\n'
+            typeSchema += '\tdelete' + type.name + 's (_id:[ID]' + (type.collectionClonable ? ',_version:String' : '') + '):[' + mutationResult + ']\n'
             if (type.collectionClonable) {
-                typeSchema += '\tclone' + type.name + ' (_id: ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + '\n'
+                typeSchema += '\tclone' + type.name + ' (_id:ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + '\n'
             }
             typeSchema += '}\n\n'
 
-            typeSchema += 'type ' + type.name + 'SubscribeResult {\n\tdata:' + type.name + '\n\taction: String\n}\n\n'
+            typeSchema += 'type ' + type.name + 'SubscribeResult {\n\tdata:' + type.name + '\n\taction:String\n}\n\n'
 
 
-            typeSchema += 'type Subscription {\n'
+            typeSchema += 'type Subscription{\n'
             typeSchema += '    subscribe' + type.name + ': ' + type.name + 'SubscribeResult\n'
             typeSchema += '}\n\n'
 

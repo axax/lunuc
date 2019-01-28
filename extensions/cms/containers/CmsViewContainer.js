@@ -367,7 +367,7 @@ class CmsViewContainer extends React.Component {
             </DrawerLayout></UIProvider>
         }
 
-        console.info(`render ${this.constructor.name} for ${cmsPage.slug} in ${new Date() - startTime}ms`)
+        console.info(`render ${this.constructor.name} for ${cmsPage.slug} in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime()-_app_.start.getTime()}ms`)
 
         return content
     }

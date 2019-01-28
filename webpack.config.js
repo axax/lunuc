@@ -192,11 +192,17 @@ if (DEV_MODE) {
             uglifyOptions: {
                 compress: {
                     drop_console: true
+                },
+                output: {
+                    comments: false,
+                    semicolons: true,
+                    shebang: true,
+                    beautify:false
                 }
             }
         }))
 
-    /* const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+    /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
      config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'

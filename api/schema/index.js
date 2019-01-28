@@ -1,4 +1,4 @@
-import { mergeStrings } from 'gql-merge'
+import { mergeTypes } from 'merge-graphql-schemas';
 import Hook from '../../util/hook'
 
 import gensrcSchemaRaw from 'gensrc/schema'
@@ -13,4 +13,4 @@ const schemas = [gensrcSchemaRaw,commonSchemaRaw,keyvalueSchemaRaw,userSchemaRaw
 
 Hook.call('schema', {schemas})
 
-export const schemaString = mergeStrings(schemas)
+export const schemaString = mergeTypes(schemas)

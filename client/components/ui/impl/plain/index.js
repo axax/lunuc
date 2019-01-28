@@ -2,8 +2,9 @@ import './style/index.global.less'
 
 import React from 'react'
 import Pagination from './Pagination'
-import injectSheet, {ThemeProvider} from 'react-jss'
 
+/* JSS increases bundle size drastically */
+/*import injectSheet, {ThemeProvider} from 'react-jss'
 export const withStyles = injectSheet
 
 const styles = theme => ({
@@ -24,6 +25,18 @@ const theme = {
 export const UIProvider = ({children}) => {
     return <ThemeProvider theme={theme}>{children}</ThemeProvider>
 }
+ */
+const styles = {}
+const injectSheet = (e)=> {
+    return function(a){
+        return a
+    }
+}
+export const UIProvider = ({children}) => {
+    return children
+}
+export const withStyles = injectSheet
+
 
 
 export const Button = injectSheet(styles)(({classes, ...rest}) => {

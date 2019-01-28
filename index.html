@@ -8,7 +8,7 @@
     <link href="/style.css?v=${BUILD_NUMBER}" rel="stylesheet">
 </head>
 <body>
-<div id="app"></div>
+<div id="app">loading...</div>
 
 <script>
     var ls = null
@@ -16,7 +16,7 @@
         ls = JSON.parse(localStorage.getItem('localSettings'))
     }catch(e){}
 
-    _app_ = {tr: {}, trLoaded: false, localSettings: ls};
+    _app_ = {tr: {}, trLoaded: false, localSettings: ls, start: new Date()};
     var l = window.location.pathname.split('/')[1];
     if (!l || l.length !== 2) {
         l = (navigator.language || navigator.userLanguage).substr(0, 2);
@@ -35,7 +35,6 @@
     }
     s.setAttribute('src', '/' + l + '.tr.js?v=${BUILD_NUMBER}');
     document.head.appendChild(s);
-
 </script>
 <script src="/main.bundle.js?v=${BUILD_NUMBER}"></script>
 <!--
