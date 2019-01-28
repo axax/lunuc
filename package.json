@@ -70,6 +70,7 @@
     "bcrypt": "^3.0.3",
     "body-parser": "^1.18.3",
     "classnames": "^2.2.6",
+    "compression": "^1.7.3",
     "draft-js": "^0.10.5",
     "draft-js-drag-n-drop-plugin": "^2.0.3",
     "draft-js-focus-plugin": "^2.2.0",

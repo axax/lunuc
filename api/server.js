@@ -13,6 +13,7 @@ import {auth} from './auth'
 import {formatError} from './error'
 import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload} from './upload'
 import Hook from 'util/hook'
+import compression from 'compression'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -55,6 +56,7 @@ export const start = (done) => {
             // Initialize http api
             const app = express()
 
+            app.use(compression())
 
             // delay response
             /*app.use(function (req, res, next) {
