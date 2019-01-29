@@ -11,9 +11,9 @@ const CompressionPlugin = require("compression-webpack-plugin")
 const GenSourceCode = require('./webpack.gensrc')
 const WebpackI18nPlugin = require("./webpack.i18n");
 
-
+const date = new Date()
 const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1,
-    BUILD_NUMBER = new Date().getTime()
+    BUILD_NUMBER = `${date.getYear()}${date.getMonth()}${date.getDay()}.${Math.ceil((date-new Date().setHours(0,0,0,0))/8641)}`
 
 /*---------------------------------------------------
  Define which directories are included from the build based on the config file
@@ -32,6 +32,17 @@ const EXCLUDE_FROM_BUILD = [
 const INCLUDE_IN_BUILD = []
 
 const APP_CONFIG = require('./buildconfig.json')
+const PACKAGE_JSON = require('./package.json')
+
+
+const APP_VALUES = {
+    DEV_MODE,
+    BUILD_NUMBER,
+    APP_NAME: PACKAGE_JSON.name,
+    APP_VERSION: PACKAGE_JSON.version,
+    APP_DESCRIPTION: PACKAGE_JSON.description,
+    APP_COLOR: '#2196f3'
+}
 
 if (APP_CONFIG.extensions) {
     for (const extensionName in APP_CONFIG.extensions) {
@@ -64,6 +75,13 @@ const excludeFunction = (path) => {
         }
     }
     return false
+}
+
+
+const replacePlaceholders = (content, path) => {
+
+    const result = new Function('const {' + Object.keys(APP_VALUES).join(',') + '} = this.obj;return `' + content + '`').call({APP_VALUES})
+    return result
 }
 
 
@@ -111,7 +129,7 @@ const config = {
         ]
     },
     plugins: [
-        new GenSourceCode(), /* Generate some source code based on the buildconfig.json file */
+        new GenSourceCode(APP_VALUES), /* Generate some source code based on the buildconfig.json file */
         new MiniCssExtractPlugin({
             filename: 'style.css',
             allChunks: true
@@ -168,13 +186,6 @@ if (DEV_MODE) {
         })
     )
 
-    const replacePlaceholders = (content, path) => {
-        const obj = {BUILD_NUMBER}
-        const result = new Function('const {' + Object.keys(obj).join(',') + '} = this.obj;return `' + content + '`').call({obj})
-
-        return result
-    }
-
     const CopyWebpackPlugin = require('copy-webpack-plugin')
     config.plugins.push(
         new CopyWebpackPlugin([
@@ -186,8 +197,10 @@ if (DEV_MODE) {
                 from: 'serviceworker.js', to: 'serviceworker.js',
                 transform: replacePlaceholders
             },
-            {from: 'manifest.json', to: 'manifest.json',
-                transform: replacePlaceholders},
+            {
+                from: 'manifest.json', to: 'manifest.json',
+                transform: replacePlaceholders
+            },
             {from: 'favicon.ico', to: 'favicon.ico'},
             {from: 'favicon-192x192.png', to: 'favicon-192x192.png'},
             {from: 'favicon-512x512.png', to: 'favicon-512x512.png'}

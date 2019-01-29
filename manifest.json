@@ -1,6 +1,6 @@
 {
-  "short_name": "Lunuc",
-  "name": "Lunuc framework",
+  "short_name": "${APP_NAME}",
+  "name": "${APP_NAME}",
   "icons": [
     {
       "src": "favicon-192x192.png",
@@ -14,8 +14,8 @@
     }
   ],
   "start_url": "/",
-  "background_color": "#2196f3",
+  "background_color": "${APP_COLOR}",
   "display": "standalone",
   "scope": "/",
-  "theme_color": "#2196f3"
+  "theme_color": "${APP_COLOR}"
 }

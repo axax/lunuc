@@ -22,7 +22,7 @@ import config from 'gen/config'
 import * as UserActions from 'client/actions/UserAction'
 import {UIProvider} from 'ui/admin'
 
-const {ADMIN_BASE_URL} = config
+const {ADMIN_BASE_URL, APP_NAME} = config
 
 
 class BaseLayout extends React.Component {
@@ -46,11 +46,11 @@ class BaseLayout extends React.Component {
     }
 
     render() {
-        const {history, children, isAuthenticated, username, userActions} = this.props
+        const {history, children, isAuthenticated, username} = this.props
 
 
         return <UIProvider>
-            <ResponsiveDrawerLayout title="lunuc"
+            <ResponsiveDrawerLayout title={APP_NAME}
                                     menuItems={this.menuItems}
                                     headerRight={
                                         [

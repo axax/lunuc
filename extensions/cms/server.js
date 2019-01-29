@@ -3,7 +3,6 @@ import ReactDOMServer from 'react-dom/server'
 import {UIProvider} from 'ui'
 import JsonDom from './components/JsonDom'
 import genSchema from './gensrc/schema'
-import genResolver from './gensrc/resolver'
 import schema from './schema'
 import resolver from './resolver'
 import Hook from 'util/hook'
@@ -15,7 +14,7 @@ import UtilCms from './util'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
-    deepMergeToFirst(resolvers, resolver(db), genResolver(db))
+    deepMergeToFirst(resolvers, resolver(db))
 })
 
 // Hook to add mongodb schema

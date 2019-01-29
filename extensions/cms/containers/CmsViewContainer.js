@@ -30,6 +30,8 @@ const TemplateEditor = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../components/TemplateEditor')}/>
 const ScriptEditor = (props) => <Async {...props}
                                        load={import(/* webpackChunkName: "admin" */ '../components/ScriptEditor')}/>
+const ResourceEditor = (props) => <Async {...props}
+                                       load={import(/* webpackChunkName: "admin" */ '../components/ResourceEditor')}/>
 const DrawerLayout = (props) => <Async {...props} expose="DrawerLayout"
                                        load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const MenuList = (props) => <Async {...props} expose="MenuList"
@@ -270,10 +272,11 @@ class CmsViewContainer extends React.Component {
                     </Expandable>
 
 
-                    <Expandable title="Style"
-                                onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
-                                expanded={settings.styleExpanded}>
+                    <Expandable title="Resources"
+                                onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
+                                expanded={settings.resourceExpanded}>
 
+                        <ResourceEditor></ResourceEditor>
                     </Expandable>
 
 

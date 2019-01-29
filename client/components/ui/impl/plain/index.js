@@ -28,28 +28,21 @@ export const UIProvider = ({children}) => {
  */
 const styles = {}
 const injectSheet = (e)=> {
-    return function(a){
-        return a
+    return (f)=>{
+        return function(p){
+            return f({classes:{},...p})
+        }
     }
 }
 export const UIProvider = ({children}) => {
-    return children
+    return <div className="UIProvider">{children}</div>
 }
 export const withStyles = injectSheet
 
-
-
 export const Button = injectSheet(styles)(({classes, ...rest}) => {
+    console.log(rest)
     return <button className={classes.button} {...rest} />
 })
-
-// IconButton
-export const DeleteIconButton = ({...rest}) => {
-    // map type to color
-    return <button{...rest} >
-        Delete
-    </button>
-}
 
 
 // input
@@ -177,7 +170,10 @@ export const SimpleDialog = ({children, onClose, actions, title, open, ...rest})
 
 
 // drawer layout
-export {default as DrawerLayout} from './DrawerLayout'
+export {default as DrawerLayout} from './layouts/DrawerLayout'
+export {default as ResponsiveDrawerLayout} from './layouts/DrawerLayout'
+
+
 // simple menu
 export {default as SimpleMenu} from './SimpleMenu'
 
@@ -194,9 +190,9 @@ export const MenuList = ({children, ...rest}) => {
     </ul>
 }
 
-export const MenuListItem = ({primary, button, ...rest}) => {
+export const MenuListItem = ({primary, children, button, ...rest}) => {
     return <li {...rest}>
-        <span>{primary}</span>
+        <span>{children || primary}</span>
     </li>
 }
 
@@ -247,9 +243,10 @@ export const Chip = ({label, ...rest}) => {
     return <div className="Chip" {...rest}>{label}</div>
 }
 
-export const Typography = ({gutterBottom, component, type, ...rest}) => {
-    const TagName = component || (type && type.indexOf('display') > -1 ? 'h1' : 'p')
-    return <TagName className={'Typography Typography__' + type} {...rest} />
+export const Typography = ({gutterBottom, component, variant, ...rest}) => {
+    const TagName = component || (variant && variant.indexOf('display') > -1 ? 'h1' : 'p')
+    console.log(rest)
+    return <TagName className={'Typography Typography__' + variant} {...rest} />
 }
 
 

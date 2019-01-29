@@ -18,7 +18,7 @@ const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../client/components/layout/ErrorPage')}/>
 
 
-//export default () => {
+export default () => {
 
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
@@ -86,4 +86,4 @@ const ErrorPage = (props) => <Async {...props}
             container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug)
         }
     })
-//}
+}

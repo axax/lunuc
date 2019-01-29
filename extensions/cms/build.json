@@ -48,8 +48,8 @@
           "hidden": true
         },
         {
-          "name": "style",
-          "type": "CmsStyle",
+          "name": "resources",
+          "type": "CmsResource",
           "multi": true,
           "hidden": true
         },
@@ -80,9 +80,8 @@
       ]
     },
     {
-      "name": "CmsStyle",
-      "collectionClonable": false,
-      "entryClonable": false,
+      "name": "CmsResource",
+      "genResolver": false,
       "fields": [
         {
           "name": "name",
