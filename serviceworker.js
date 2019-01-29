@@ -7,10 +7,10 @@ const RUNTIME = 'runtime';
 // A list of local resources we always want to be cached.
 const PRECACHE_URLS = [
     './', // Alias for index.html
-    'style.css',
-    'main.bundle.js',
-    'de.tr.js',
-    'en.tr.js'
+    'style.css?v=${BUILD_NUMBER}',
+    'main.bundle.js?v=${BUILD_NUMBER}',
+    'de.tr.js?v=${BUILD_NUMBER}',
+    'en.tr.js?v=${BUILD_NUMBER}'
 ];
 
 
@@ -42,15 +42,15 @@ self.addEventListener('activate', event => {
 // from the network before returning it to the page.
 self.addEventListener('fetch', event => {
     // Skip cross-origin requests, like those for Google Analytics.
-    if (event.request.url.startsWith(self.location.origin)) {
+    if (event.request.url.startsWith(self.location.origin) && event.request.method == 'GET') {
         event.respondWith(
             caches.match(event.request).then(cachedResponse => {
                 if (cachedResponse) {
                     return cachedResponse;
                 }
-
                 return caches.open(RUNTIME).then(cache => {
                     return fetch(event.request).then(response => {
+                        console.log(event)
                         // Put a copy of the response in the runtime cache.
                         return cache.put(event.request, response.clone()).then(() => {
                             return response;

@@ -72,8 +72,8 @@ const config = {
     target: 'web',
     output: {
         path: path.resolve(__dirname, 'build'),
-        filename: '[name].bundle.js?v='+BUILD_NUMBER,
-        chunkFilename: '[name].bundle.js?v='+BUILD_NUMBER,
+        filename: '[name].bundle.js?v=' + BUILD_NUMBER,
+        chunkFilename: '[name].bundle.js?v=' + BUILD_NUMBER,
         publicPath: '/'
     },
     module: {
@@ -168,20 +168,26 @@ if (DEV_MODE) {
         })
     )
 
+    const replacePlaceholders = (content, path) => {
+        const obj = {BUILD_NUMBER}
+        const result = new Function('const {' + Object.keys(obj).join(',') + '} = this.obj;return `' + content + '`').call({obj})
+
+        return result
+    }
+
     const CopyWebpackPlugin = require('copy-webpack-plugin')
     config.plugins.push(
         new CopyWebpackPlugin([
             {
                 from: 'index.html', to: 'index.html',
-                transform (content, path) {
-                    const obj = {BUILD_NUMBER}
-                    const result = new Function('const {' + Object.keys(obj).join(',') + '} = this.obj;return `' + content + '`').call({obj})
-
-                    return result
-                }
+                transform: replacePlaceholders
             },
-            {from: 'serviceworker.js', to: 'serviceworker.js'},
-            {from: 'manifest.json', to: 'manifest.json'},
+            {
+                from: 'serviceworker.js', to: 'serviceworker.js',
+                transform: replacePlaceholders
+            },
+            {from: 'manifest.json', to: 'manifest.json',
+                transform: replacePlaceholders},
             {from: 'favicon.ico', to: 'favicon.ico'},
             {from: 'favicon-192x192.png', to: 'favicon-192x192.png'},
             {from: 'favicon-512x512.png', to: 'favicon-512x512.png'}
@@ -199,7 +205,7 @@ if (DEV_MODE) {
                     comments: false,
                     semicolons: true,
                     shebang: true,
-                    beautify:false
+                    beautify: false
                 }
             }
         }))
