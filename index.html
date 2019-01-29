@@ -8,10 +8,25 @@
     <meta name="theme-color" content="${APP_COLOR}">
     <link rel="manifest" href="/manifest.json?v=${BUILD_NUMBER}">
     <link async href="/style.css?v=${BUILD_NUMBER}" rel="stylesheet">
+    <style>
+        #l {
+            height: 4px;
+            left:-100%;
+            width: 100%;
+            position: fixed;
+            background: #2980b9;
+            animation: l 1.3s linear infinite;
+            animation-delay: 0.5s;
+        }
+        @keyframes l {
+            from {left: -100%;}
+            to {left: 100%;}
+        }
+    </style>
 </head>
 <body>
-<div id="app">loading...</div>
-
+<div id="l"></div>
+<div id="app"></div>
 <script>
     var ls = null
     try{
@@ -38,6 +53,6 @@
     s.setAttribute('src', '/' + l + '.tr.js?v=${BUILD_NUMBER}');
     document.head.appendChild(s);
 </script>
-<script async src="/main.bundle.js?v=${BUILD_NUMBER}"></script>
+<script onload="document.getElementById('l').style.display='none'" async src="/main.bundle.js?v=${BUILD_NUMBER}"></script>
 </body>
 </html>

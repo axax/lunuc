@@ -180,12 +180,6 @@ if (DEV_MODE) {
     config.mode = 'production'
 
 
-    config.plugins.push(
-        new CompressionPlugin({
-            minRatio: 0.8
-        })
-    )
-
     const CopyWebpackPlugin = require('copy-webpack-plugin')
     config.plugins.push(
         new CopyWebpackPlugin([
@@ -206,6 +200,12 @@ if (DEV_MODE) {
             {from: 'favicon-192x192.png', to: 'favicon-192x192.png'},
             {from: 'favicon-512x512.png', to: 'favicon-512x512.png'}
         ])
+    )
+
+    config.plugins.push(
+        new CompressionPlugin({
+            minRatio: 0.95
+        })
     )
 
 
