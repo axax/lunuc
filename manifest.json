@@ -1,6 +1,6 @@
 {
   "short_name": "Lunuc",
-  "name": "Lunuc",
+  "name": "Lunuc framework",
   "icons": [
     {
       "src": "launcher-icon-1x.png",
@@ -18,5 +18,9 @@
       "sizes": "192x192"
     }
   ],
-  "start_url": "/"
+  "start_url": "/",
+  "background_color": "#2196f3",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#2196f3"
 }
