@@ -17,11 +17,8 @@ import compression from 'compression'
 
 const PORT = (process.env.PORT || 3000)
 
-
 process.on('SIGINT', () => {
     console.log('Caught interrupt signal. Exit process')
-
-
 
     if ('undefined' != typeof( Hook.hooks['appexit'] ) && Hook.hooks['appexit'].length) {
         let c = Hook.hooks['appexit'].length
@@ -39,9 +36,9 @@ process.on('SIGINT', () => {
     }
 })
 
-process.on('exit', async () => {
+/*process.on('exit', async () => {
     console.log('Goodbye')
-})
+})*/
 
 
 export const start = (done) => {
@@ -50,7 +47,7 @@ export const start = (done) => {
     dbConnection((err, db, client) => dbPreparation(db, () => {
 
         if (!db) {
-            reject(err)
+            console.error(err)
         } else {
 
             // Initialize http api
