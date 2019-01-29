@@ -32,7 +32,7 @@ proxy.on('error', function (err, req, res) {
 
 // Initialize http api
 const app = http.createServer(function (req, res) {
-        if (!config.DEV_MODE && req.headers.host !== 'localhost:' + PORT && !req.secure) {
+        if (!config.DEV_MODE && req.headers.host !== 'localhost:' + PORT && req.headers['x-forwarded-proto'] !== 'https') {
             console.log('Redirect to https' + req.headers.host)
             res.writeHead(301, {"Location": "https://" + req.headers.host + req.url});
             res.end();
