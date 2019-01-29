@@ -16,6 +16,7 @@ const MIME_TYPES = {
     'mp3': 'audio/mpeg',
     'gz': 'application/gzip',
     'zip': 'application/zip',
+    'svg': 'image/svg+xml'
 }
 
 
@@ -26,7 +27,10 @@ const MimeType = {
         return this.detectByExtension(ext)
     },
     detectByExtension: function (ext) {
-        return MIME_TYPES[ext]
+        if( MIME_TYPES[ext] ) {
+            return MIME_TYPES[ext]
+        }
+        return 'application/octet-stream'
     }
 }
 

@@ -18,9 +18,7 @@ const BUILD_DIR = path.join(__dirname, '../build')
 //
 // Setup our server to proxy standard HTTP requests
 //
-const proxy = new httpProxy.createProxyServer({
-    secure: true
-})
+const proxy = new httpProxy.createProxyServer()
 
 //
 // Listen for the `error` event on `proxy`.
@@ -33,8 +31,8 @@ proxy.on('error', function (err, req, res) {
 const app = http.createServer(function (req, res) {
         if (!config.DEV_MODE && req.headers.host !== 'localhost:' + PORT && req.headers['x-forwarded-proto'] !== 'https') {
             console.log('Redirect to https' + req.headers.host)
-            res.writeHead(301, {"Location": "https://" + req.headers.host + req.url});
-            res.end();
+            res.writeHead(301, {"Location": "https://" + req.headers.host + req.url})
+            res.end()
         }
 
         const uri = url.parse(req.url).pathname
