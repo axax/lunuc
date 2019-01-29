@@ -80,7 +80,7 @@ const excludeFunction = (path) => {
 
 const replacePlaceholders = (content, path) => {
 
-    const result = new Function('const {' + Object.keys(APP_VALUES).join(',') + '} = this.obj;return `' + content + '`').call({APP_VALUES})
+    const result = new Function('const {' + Object.keys(APP_VALUES).join(',') + '} = this.obj;return `' + content + '`').call(APP_VALUES)
     return result
 }
 
