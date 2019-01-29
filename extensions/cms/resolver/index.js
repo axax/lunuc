@@ -40,7 +40,7 @@ export default db => ({
             }
             const scope = {...createScopeForDataResolver(query), page: {slug}}
 
-            const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt, urlSensitiv} = cmsPages.results[0]
+            const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt, urlSensitiv, name} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
             const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope, nosession)
             let html
@@ -71,6 +71,7 @@ export default db => ({
                     modifiedAt,
                     createdBy,
                     slug,
+                    name,
                     template,
                     script,
                     dataResolver,
@@ -101,6 +102,7 @@ export default db => ({
                     public: ispublic,
                     online: _version === 'default',
                     slug,
+                    name,
                     template,
                     script,
                     html,

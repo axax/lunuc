@@ -25,7 +25,7 @@ const UtilCms = {
             } else {
                 match = {slug}
             }
-            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {
+            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'dataResolver', 'ssr', 'public', 'urlSensitiv'], {
                 match,
                 _version
             })

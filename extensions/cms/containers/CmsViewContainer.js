@@ -50,7 +50,7 @@ const ErrorHandler = (props) => <Async {...props}
                                        load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorHandler')}/>
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,nosession:$nosession,_version:$_version){cacheKey slug urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
+const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,nosession:$nosession,_version:$_version){cacheKey slug name urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
 
 const editorStyle = {
@@ -87,7 +87,7 @@ class CmsViewContainer extends React.Component {
 
         this.state = CmsViewContainer.propsToState(props, null)
 
-        if (!props.dynamic)
+        if (!props.dynamic && props.slug)
             document.title = props.slug
 
         this.setUpSubsciptions(props)
@@ -185,7 +185,14 @@ class CmsViewContainer extends React.Component {
                 return <ErrorPage />
             }
             return null
+        } else {
+            // set page title
+            // TODO: make tile localized
+            if (!dynamic && cmsPage.name)
+                document.title = cmsPage.name
         }
+
+
         const editMode = isEditMode(this.props)
 
         if (cmsPage.ssr && !editMode) {
@@ -367,7 +374,7 @@ class CmsViewContainer extends React.Component {
             </DrawerLayout></UIProvider>
         }
 
-        console.info(`render ${this.constructor.name} for ${cmsPage.slug} in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime()-_app_.start.getTime()}ms`)
+        console.info(`render ${this.constructor.name} for ${cmsPage.slug} in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
 
         return content
     }
@@ -554,8 +561,8 @@ class CmsViewContainer extends React.Component {
                 try {
                     Object.assign(item, JSON.parse(str))
                     this.handleTemplateSaveChange(json)
-                }catch(e){
-                    console.log('Error in json',e)
+                } catch (e) {
+                    console.log('Error in json', e)
                 }
             }
         }
