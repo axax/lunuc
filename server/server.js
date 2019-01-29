@@ -22,7 +22,6 @@ const proxy = new httpProxy.createProxyServer({
     secure: true
 })
 
-
 //
 // Listen for the `error` event on `proxy`.
 proxy.on('error', function (err, req, res) {
