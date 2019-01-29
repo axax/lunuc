@@ -26,8 +26,9 @@
 </head>
 <body>
 <div id="l"></div>
-<div id="app"></div>
+<div id="app">Javascript is not supported</div>
 <script>
+    document.getElementById('app').innerHTML=''
     var ls = null
     try{
         ls = JSON.parse(localStorage.getItem('localSettings'))
