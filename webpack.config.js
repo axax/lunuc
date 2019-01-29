@@ -182,7 +182,8 @@ if (DEV_MODE) {
             },
             {from: 'serviceworker.js', to: 'serviceworker.js'},
             {from: 'manifest.json', to: 'manifest.json'},
-            {from: 'favicon.ico', to: 'favicon.ico'}
+            {from: 'favicon.ico', to: 'favicon.ico'},
+            {from: 'favicon.svg', to: 'favicon.svg'}
         ])
     )
 

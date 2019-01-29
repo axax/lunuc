@@ -18,7 +18,9 @@ const BUILD_DIR = path.join(__dirname, '../build')
 //
 // Setup our server to proxy standard HTTP requests
 //
-const proxy = new httpProxy.createProxyServer()
+const proxy = new httpProxy.createProxyServer({
+    secure: true
+})
 
 
 //
@@ -30,6 +32,10 @@ proxy.on('error', function (err, req, res) {
 
 // Initialize http api
 const app = http.createServer(function (req, res) {
+
+    if(!req.secure){
+       // res.redirect("https://" + req.headers.host + req.url)
+    }
 
         const uri = url.parse(req.url).pathname
         if (uri.startsWith('/graphql') ) {
@@ -150,5 +156,5 @@ app.on('upgrade', function (req, socket, head) {
 
 // Start server
 app.listen(PORT, () => console.log(
-    `Listening at http://localhost:${PORT}`
+    `Listening at localhost:${PORT}`
 ))
