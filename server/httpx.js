@@ -12,13 +12,13 @@ exports.createServer = (opts, handler) => {
 
             // Determine if this is an HTTP(s) request
             let byte = buffer[0];
-
             let protocol;
             if (byte === 22) {
                 protocol = 'https';
             } else if (32 < byte && byte < 127) {
                 protocol = 'http';
             }
+            console.log(byte, protocol)
 
             let proxy = server[protocol];
             if (proxy) {

@@ -18,10 +18,7 @@ const BUILD_DIR = path.join(__dirname, '../build')
 
 const options = {
     key: fs.readFileSync(path.join(__dirname, './server.key')),
-    cert: fs.readFileSync(path.join(__dirname, './server.cert')),
-    spdy: {
-        protocols: ['h2', 'spdy/3.1','http/1.1']
-    }
+    cert: fs.readFileSync(path.join(__dirname, './server.cert'))
 }
 // Initialize http api
 const app = httpx.createServer(options, function (req, res) {
