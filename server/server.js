@@ -1,5 +1,5 @@
-import httpProxy from 'http-proxy'
-import http from 'http'
+import proxy from 'http2-proxy'
+import httpx from './httpx'
 import url from 'url'
 import path from 'path'
 import fs from 'fs'
@@ -15,20 +15,16 @@ const API_PORT = (process.env.API_PORT || 3000)
 // Build dir
 const BUILD_DIR = path.join(__dirname, '../build')
 
-//
-// Setup our server to proxy standard HTTP requests
-//
-const proxy = new httpProxy.createProxyServer()
 
-//
-// Listen for the `error` event on `proxy`.
-proxy.on('error', function (err, req, res) {
-    // error handling
-    //console.log(err)
-})
-
+const options = {
+    key: fs.readFileSync(path.join(__dirname, './server.key')),
+    cert: fs.readFileSync(path.join(__dirname, './server.cert')),
+    spdy: {
+        protocols: ['h2', 'spdy/3.1','http/1.1']
+    }
+}
 // Initialize http api
-const app = http.createServer(function (req, res) {
+const app = httpx.createServer(options, function (req, res) {
     if (!config.DEV_MODE && req.headers.host !== 'localhost:' + PORT && req.headers['x-forwarded-proto'] !== 'https') {
         console.log('Redirect to https' + req.headers.host)
         res.writeHead(301, {"Location": "https://" + req.headers.host + req.url})
@@ -38,7 +34,12 @@ const app = http.createServer(function (req, res) {
     const uri = url.parse(req.url).pathname
     if (uri.startsWith('/graphql')) {
         // there is also /graphql/upload
-        proxy.web(req, res, {target: `http://localhost:${API_PORT}${uri}`})
+        return proxy.web(req, res, {
+            hostname: 'localhost',
+            port: API_PORT,
+            path: uri
+        })
+
     } else {
 
         if (uri.startsWith(BACKUP_URL + '/')) {
@@ -147,13 +148,19 @@ let sendFile = function (req, res, headerExtra, filename) {
     }
 }
 
+const webSocket = function (req, socket, head) {
+    proxy.ws(req, socket, head, {
+        hostname: 'localhost',
+        port: API_PORT,
+        path: '/ws'})
+}
+
 //
 // Listen to the `upgrade` event and proxy the
 // WebSocket requests as well.
 //
-app.on('upgrade', function (req, socket, head) {
-    proxy.ws(req, socket, head, {target: `ws://localhost:${API_PORT}/ws`, ws: true})
-})
+app.http.on('upgrade', webSocket)
+app.https.on('upgrade', webSocket)
 
 // Start server
 app.listen(PORT, () => console.log(

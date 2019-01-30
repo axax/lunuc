@@ -86,7 +86,7 @@
     "graphql": "^14.1.1",
     "graphql-subscriptions": "^1.0.0",
     "graphql-tag": "^2.10.1",
-    "http-proxy": "^1.17.0",
+    "http2-proxy": "^4.2.15",
     "jsonwebtoken": "^8.4.0",
     "merge-graphql-schemas": "^1.5.8",
     "mongodb": "^3.1.13",
@@ -105,6 +105,7 @@
     "react-test-renderer": "^16.7.0",
     "redux": "^4.0.1",
     "request-promise": "^4.2.2",
+    "spdy": "^4.0.0",
     "subscriptions-transport-ws": "^0.9.15",
     "zip-local": "^0.3.4"
   },
