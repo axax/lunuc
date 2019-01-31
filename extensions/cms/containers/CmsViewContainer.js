@@ -31,7 +31,7 @@ const TemplateEditor = (props) => <Async {...props}
 const ScriptEditor = (props) => <Async {...props}
                                        load={import(/* webpackChunkName: "admin" */ '../components/ScriptEditor')}/>
 const ResourceEditor = (props) => <Async {...props}
-                                       load={import(/* webpackChunkName: "admin" */ '../components/ResourceEditor')}/>
+                                         load={import(/* webpackChunkName: "admin" */ '../components/ResourceEditor')}/>
 const DrawerLayout = (props) => <Async {...props} expose="DrawerLayout"
                                        load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const MenuList = (props) => <Async {...props} expose="MenuList"
@@ -52,7 +52,7 @@ const ErrorHandler = (props) => <Async {...props}
                                        load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorHandler')}/>
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,nosession:$nosession,_version:$_version){cacheKey slug name urlSensitiv template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
+const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,nosession:$nosession,_version:$_version){cacheKey slug name urlSensitiv template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
 
 const editorStyle = {
@@ -105,7 +105,7 @@ class CmsViewContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, dataResolver, ssr, status} = props.cmsPage || {}
+        const {template, script, resources, dataResolver, ssr, status} = props.cmsPage || {}
 
         let settings = null
         if (props.keyValue) {
@@ -124,6 +124,7 @@ class CmsViewContainer extends React.Component {
             cmsPage: props.cmsPage,
             settings,
             template,
+            resources,
             script,
             dataResolver,
             ssr,
@@ -134,6 +135,7 @@ class CmsViewContainer extends React.Component {
             result.template = state.template
             result.script = state.script
             result.dataResolver = state.dataResolver
+            result.resources = state.resources
         }
         return result
     }
@@ -180,7 +182,7 @@ class CmsViewContainer extends React.Component {
 
     render() {
         const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _props, id, loading, className, children, user, dynamic, client} = this.props
-        let {template, script, dataResolver, settings} = this.state
+        let {template, resources, script, dataResolver, settings} = this.state
         if (!cmsPage) {
             if (!loading) {
                 console.warn('cmsPage missing')
@@ -201,6 +203,23 @@ class CmsViewContainer extends React.Component {
             // it was already rendered on the server side
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
+
+        if (!dynamic && resources) {
+            try {
+                const a = JSON.parse(resources)
+                for(let i = 0; i< a.length; i++){
+                    const r = a[i], ext = r.substring(r.lastIndexOf('.')+1)
+                    if( ext.indexOf('css')===0){
+                        Util.addStyle(r)
+                    }else if( ext.indexOf('js') ){
+                        Util.addScript(r)
+                    }
+                }
+            } catch (e) {
+                console.error('Error in resources', e)
+            }
+        }
+
         const scope = {
             page: {slug: cmsPage.slug},
             user,
@@ -276,7 +295,8 @@ class CmsViewContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
                                 expanded={settings.resourceExpanded}>
 
-                        <ResourceEditor></ResourceEditor>
+                        <ResourceEditor resources={resources}
+                                        onChange={this.handleResourceChange.bind(this)}></ResourceEditor>
                     </Expandable>
 
 
@@ -529,6 +549,12 @@ class CmsViewContainer extends React.Component {
         if (type === 'blur') {
             this.saveCmsPage(str, this.props.cmsPage, 'template')
         }
+    }
+
+    handleResourceChange = (str) => {
+        console.log(str)
+        this.setState({resources: str})
+        this.saveCmsPage(str, this.props.cmsPage, 'resources')
     }
 
 
@@ -842,7 +868,7 @@ const CmsViewContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$dataResolver:String,$ssr:Boolean,$public:Boolean){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug: $slug,script:$script,dataResolver:$dataResolver,ssr:$ssr,public:$public){slug template script dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public){slug template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key) => {
                 const variables = {_id, [key]: rest[key], slug: ownProps.slug}

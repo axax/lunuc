@@ -11,7 +11,22 @@ const styles = theme => ({
     editor: {
         display: 'block',
         tabSize: 2,
-        whiteSpace: 'pre'
+        whiteSpace: 'pre',
+        counterReset: 'line',
+        '& line': {
+            counterIncrement: 'line',
+            position:'relative',
+            paddingLeft: '30px',
+            '&:before': {
+                position: 'absolute',
+                left:0,
+                display:'block',
+                width: '20px',
+                color:'#c1c1c1',
+                textAlign: 'right',
+                content: 'counter(line)'
+            }
+        }
     },
     highlight1: {
         color: '#1e0a91',
@@ -247,11 +262,14 @@ class ContentEditable extends React.Component {
     highlightJson(str) {
         const {classes} = this.props
 
-        let inDQuote = false, res = ''
+        let inDQuote = false, res = '<line>'
 
         for (let i = 0; i < str.length; i++) {
             const c = str[i]
-            if (c === '<') {
+            if( c=== '\n'){
+                //new line
+                res += c + '</line><line>'
+            }else if (c === '<') {
                 // escape html tag in json
                 res += '&lt;'
             } else if (c === '>') {
@@ -274,6 +292,7 @@ class ContentEditable extends React.Component {
                 res += c
             }
         }
+        res += '</line>'
         return res
     }
 

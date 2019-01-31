@@ -18,7 +18,6 @@ exports.createServer = (opts, handler) => {
             } else if (32 < byte && byte < 127) {
                 protocol = 'http';
             }
-            console.log(byte, protocol)
 
             let proxy = server[protocol];
             if (proxy) {

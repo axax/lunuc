@@ -40,7 +40,7 @@ export default db => ({
             }
             const scope = {...createScopeForDataResolver(query), page: {slug}}
 
-            const {_id, createdBy, template, script, dataResolver, ssr, modifiedAt, urlSensitiv, name} = cmsPages.results[0]
+            const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
             const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope, nosession)
             let html
@@ -74,6 +74,7 @@ export default db => ({
                     name,
                     template,
                     script,
+                    resources,
                     dataResolver,
                     ssr,
                     public: ispublic, // if public the content is visible to everyone
@@ -105,6 +106,7 @@ export default db => ({
                     name,
                     template,
                     script,
+                    resources,
                     html,
                     resolvedData: JSON.stringify(resolvedData),
                     subscriptions,
@@ -135,7 +137,6 @@ export default db => ({
             // clear cache
             const cacheKey = 'cmsPage-' + rest._version + '-' + rest.slug
             Cache.remove(cacheKey)
-
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
             // if dataResolver has changed resolveData and return it
             if (rest.dataResolver) {
