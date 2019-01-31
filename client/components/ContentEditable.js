@@ -12,17 +12,22 @@ const styles = theme => ({
         display: 'block',
         tabSize: 2,
         whiteSpace: 'pre',
+        outline: 'none'
+    },
+    editorLines: {
         counterReset: 'line',
+        paddingLeft: '50px !important',
         '& line': {
             counterIncrement: 'line',
-            position:'relative',
-            paddingLeft: '30px',
+            position: 'relative',
             '&:before': {
                 position: 'absolute',
-                left:0,
-                display:'block',
-                width: '20px',
-                color:'#c1c1c1',
+                background: '#f1f1f1',
+                paddingRight: '3px',
+                left: '-50px',
+                display: 'block',
+                width: '30px',
+                color: '#c1c1c1',
                 textAlign: 'right',
                 content: 'counter(line)'
             }
@@ -71,6 +76,7 @@ class ContentEditable extends React.Component {
 
         if (nextProps.children !== prevState.dataOri) {
             console.log('ContentEditable update state')
+
             return {
                 dataOri: nextProps.children,
                 data: nextProps.children
@@ -85,10 +91,10 @@ class ContentEditable extends React.Component {
     }
 
     render() {
-        const {classes, style, setHtml, highlight, className} = this.props
+        const {classes, style, highlight, lines, className} = this.props
         const {data} = this.state
         const props = {
-            className: classNames(classes.editor, className),
+            className: classNames(classes.editor,lines && classes.editorLines, className),
             style,
             onKeyDown: this.handleKeyDown.bind(this),
             onKeyUp: this.handleKeyUp.bind(this),
@@ -99,7 +105,7 @@ class ContentEditable extends React.Component {
             contentEditable: true,
             suppressContentEditableWarning: true
         }
-        if (setHtml || highlight) {
+        if (highlight) {
             return <span {...props} dangerouslySetInnerHTML={{__html: this.highlight(data)}}/>
         } else {
             return <span {...props}>{data}</span>
@@ -111,7 +117,7 @@ class ContentEditable extends React.Component {
 
         if (nextState.hasFocus && nextState.inputHasChanged) {
             if (highlight) {
-                this.highlightDelay(ReactDOM.findDOMNode(this))
+                //this.highlightDelay(ReactDOM.findDOMNode(this))
             }
         } else if (nextState.data !== this.state.data) {
             // only update if it doesn't have the focus and data changed
@@ -123,10 +129,10 @@ class ContentEditable extends React.Component {
     }
 
     componentDidUpdate() {
-        const {setHtml, highlight} = this.props
+        const {highlight} = this.props
         const {data} = this.state
         if (data !== ReactDOM.findDOMNode(this).innerText) {
-            if (setHtml || highlight) {
+            if (highlight) {
                 ReactDOM.findDOMNode(this).innerHtml = this.highlight(data)
             } else {
                 ReactDOM.findDOMNode(this).innerText = data
@@ -147,7 +153,6 @@ class ContentEditable extends React.Component {
 
     handleKeyDown(e) {
         const {highlight} = this.props
-        console.log(e.metaKey)
         if (e.key === "Enter") {
             e.preventDefault()
             document.execCommand('insertHTML', false, '\n')
@@ -217,27 +222,38 @@ class ContentEditable extends React.Component {
         if (highlight) {
             const ignoreKeys = ['Shift', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'End', 'Home', 'PageUp', 'PageDown', 'Control', 'Meta'] // arrows --> don't ignore Meta
             if (ignoreKeys.indexOf(e.key) < 0) {
-                this.highlightDelay(e.target)
+                if (['Backspace', 'Enter'].indexOf(e.key)>=0) {
+                    this.highlightImmediate(e.target)
+                } else {
+                    this.highlightDelayed(e.target)
+                }
             }
         }
     }
 
-    highlightDelay(t) {
+    highlightDelayed(t) {
         clearTimeout(this.highlightTimeout)
         this.highlightTimeout = setTimeout(() => {
-            const restore = this.saveCaretPosition(t, 0)
-            if (this.historyPointer > 0) {
-                this.changeHistory.splice(0, this.historyPointer)
-            }
-            this.changeHistory.unshift(t.innerText)
-            this.historyPointer = 0
-            if (this.changeHistory.length > 100) {
-                this.changeHistory.splice(0, 100)
-            }
-            t.innerHTML = this.highlight(t.innerText)
-            restore()
+            this.highlightImmediate(t)
         }, 500)
     }
+
+
+    highlightImmediate(t) {
+        clearTimeout(this.highlightTimeout)
+        const restore = this.saveCaretPosition(t, 0)
+        if (this.historyPointer > 0) {
+            this.changeHistory.splice(0, this.historyPointer)
+        }
+        this.changeHistory.unshift(t.innerText)
+        this.historyPointer = 0
+        if (this.changeHistory.length > 100) {
+            this.changeHistory.splice(0, 100)
+        }
+        t.innerHTML = this.highlight(t.innerText)
+        restore()
+    }
+
 
     highlight(str) {
         if (str) {
@@ -251,13 +267,29 @@ class ContentEditable extends React.Component {
             } else if (highlight === 'js') {
                 res = this.highlightJs(str)
             } else {
-                return str
+                res = this.highlightText(str)
             }
             console.info(`highlight ${highlight} for in ${new Date() - startTime}ms`)
             return res
         }
         return str
     }
+
+    highlightText(str) {
+        let res = '<line>'
+        for (let i = 0; i < str.length; i++) {
+            const c = str[i]
+            if (c === '\n') {
+                //new line
+                res += c + '</line><line>'
+            }else{
+                res += c
+            }
+        }
+        res += '</line>'
+        return res
+    }
+
 
     highlightJson(str) {
         const {classes} = this.props
@@ -266,10 +298,10 @@ class ContentEditable extends React.Component {
 
         for (let i = 0; i < str.length; i++) {
             const c = str[i]
-            if( c=== '\n'){
+            if (c === '\n') {
                 //new line
                 res += c + '</line><line>'
-            }else if (c === '<') {
+            } else if (c === '<') {
                 // escape html tag in json
                 res += '&lt;'
             } else if (c === '>') {
@@ -300,11 +332,16 @@ class ContentEditable extends React.Component {
     highlightHtml(str) {
         const {classes} = this.props
 
-        let inDQuote = false, res = '', inTag = false, inComment = false, inScript = false, inScriptLiteral = false
+        let inDQuote = false, res = '<line>', inTag = false, inComment = false, inScript = false,
+            inScriptLiteral = false
 
         for (let i = 0; i < str.length; i++) {
             const c = str[i]
-            if (inScript && c === '`') {
+
+            if (c === '\n') {
+                //new line
+                res += c + '</line><line>'
+            } else if (inScript && c === '`') {
                 inScriptLiteral = !inScriptLiteral
                 if (inScriptLiteral) {
                     res += '<span class="' + classes.italic + '">' + c
@@ -354,6 +391,7 @@ class ContentEditable extends React.Component {
                 res += c
             }
         }
+        res += '</line>'
         return res
     }
 
@@ -361,7 +399,7 @@ class ContentEditable extends React.Component {
         const {classes} = this.props
 
         let inDQuote = false, inSQuote = false, inLitQuote = false, inComment = false, inCommentMulti = false,
-            keyword = '', res = ''
+            keyword = '', res = '<line>'
 
         for (let i = 0; i < str.length; i++) {
             let c = str[i]
@@ -371,7 +409,11 @@ class ContentEditable extends React.Component {
                 c = '&gt;'
             }
 
-            if (inComment) {
+
+            if (c === '\n') {
+                //new line
+                res += c + '</line><line>'
+            } else if (inComment) {
                 res += c
                 if ((!inCommentMulti && c === '\n') || (inCommentMulti && c === '/' && str[i - 1] === '*')) {
                     res += '</span>'
@@ -436,39 +478,60 @@ class ContentEditable extends React.Component {
                 res += c
             }
         }
+
+        res += '</line>'
         return res
     }
 
 
-    saveCaretPosition(ctx, offset) {
-        const sel = window.getSelection(), range = sel.getRangeAt(0)
-        range.setStart(ctx, 0)
-        const len = range.toString().length + offset
+    saveCaretPosition(containerEl, offset) {
+        var doc = containerEl.ownerDocument, win = doc.defaultView
+        var range = win.getSelection().getRangeAt(0)
+        var preSelectionRange = range.cloneRange()
+        preSelectionRange.selectNodeContents(containerEl)
+        preSelectionRange.setEnd(range.startContainer, range.startOffset)
+        var start = preSelectionRange.toString().length
+
+        const savedSel = {
+            start: start,
+            end: start + range.toString().length
+        }
+
         return () => {
-            const pos = this.getTextNodeAtPosition(ctx, len), range = new Range()
-            sel.removeAllRanges()
-            range.setStart(pos.node, pos.position)
-            sel.addRange(range)
-        }
-    }
 
+            var doc = containerEl.ownerDocument, win = doc.defaultView
+            var charIndex = 0, range = doc.createRange()
+            range.setStart(containerEl, 0)
+            range.collapse(true)
+            var nodeStack = [containerEl], node, foundStart = false, stop = false
 
-    getTextNodeAtPosition(root, index) {
-        let lastNode = null
-        const treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, function next(elem) {
-            if (index > elem.textContent.length) {
-                index -= elem.textContent.length
-                lastNode = elem
-                return NodeFilter.FILTER_REJECT
+            while (!stop && (node = nodeStack.pop())) {
+                if (node.nodeType == 3) {
+                    var nextCharIndex = charIndex + node.length
+                    if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
+                        range.setStart(node, savedSel.start - charIndex)
+                        foundStart = true
+                    }
+                    if (foundStart && savedSel.end >= charIndex && savedSel.end <= nextCharIndex) {
+                        range.setEnd(node, savedSel.end - charIndex)
+                        stop = true
+                    }
+                    charIndex = nextCharIndex
+                } else {
+                    var i = node.childNodes.length
+                    while (i--) {
+                        nodeStack.push(node.childNodes[i])
+                    }
+                }
             }
-            return NodeFilter.FILTER_ACCEPT
-        })
-        var c = treeWalker.nextNode()
-        return {
-            node: c ? c : root,
-            position: c ? index : 0
+
+            var sel = win.getSelection()
+            sel.removeAllRanges()
+            sel.addRange(range)
+
         }
     }
+
 
     handleInput(e) {
         const data = e.target.innerText
@@ -508,9 +571,9 @@ class ContentEditable extends React.Component {
 
 ContentEditable.propTypes = {
     style: PropTypes.object,
+    lines: PropTypes.bool,
     onBlur: PropTypes.func,
     onChange: PropTypes.func,
-    setHtml: PropTypes.bool,
     classes: PropTypes.object.isRequired,
     highlight: PropTypes.string
 }

@@ -5,7 +5,7 @@ class ScriptEditor extends React.Component {
     render(){
         const {...rest} = this.props
 
-        return <ContentEditable highlight="js" {...rest}/>
+        return <ContentEditable lines highlight="js" {...rest}/>
     }
 }
 

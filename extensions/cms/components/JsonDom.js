@@ -224,11 +224,16 @@ class JsonDom extends React.Component {
 
     componentDidMount() {
         this.runJsEvent('mount')
+        this.unlisten = this.props.history.listen((location, action) => {
+
+            //this.runJsEvent('routechange')
+        })
     }
 
     componentWillUnmount() {
         this.runJsEvent('unmount')
         this.resetTemplate()
+        this.unlisten()
     }
 
     // is called after render

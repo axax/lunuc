@@ -86,7 +86,7 @@ class TemplateEditor extends React.Component {
     render() {
         const {tab, classes, scope, ...rest} = this.props
         if (rest.children.trim().indexOf('<') === 0) {
-            return <ContentEditable highlight="html" setHtml={false} {...rest}/>
+            return <ContentEditable lines highlight="html" {...rest}/>
         }
 
         const currentTab = (!scope && this.state.tab === 2 ? 0 : this.state.tab)
@@ -111,7 +111,7 @@ class TemplateEditor extends React.Component {
 
                 <SimpleMenu mini fab color="secondary" style={{position: 'absolute', bottom: '-8px', right: '-8px'}}
                             items={[{name: 'Prettify', onClick: this.prettify.bind(this)}]}/>
-                <ContentEditable highlight="json" setHtml={false} {...rest}/>
+                <ContentEditable lines highlight="json" {...rest}/>
 
             </TabContainer>}
             {currentTab === 1 && <TabContainer>

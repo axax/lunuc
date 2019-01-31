@@ -59,7 +59,6 @@ const editorStyle = {
     padding: '10px',
     minHeight: 200,
     overflow: 'auto',
-    whiteSpace: 'pre',
     wordWrap: 'normal',
     fontFamily: 'monospace'
 }
@@ -204,6 +203,7 @@ class CmsViewContainer extends React.Component {
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
 
+        //TODO remove all added resources here
         if (!dynamic && resources) {
             try {
                 const a = JSON.parse(resources)

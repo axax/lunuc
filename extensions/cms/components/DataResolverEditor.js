@@ -14,7 +14,7 @@ class DataResolverEditor extends React.Component {
                             icon: <BuildIcon />,
                             onClick: this.createExample.bind(this)
                         }]}/>
-            <ContentEditable key="dataResolverEditor" l="dataResolverEditor" highlight="json" {...rest}/>
+            <ContentEditable key="dataResolverEditor" lines highlight="json" {...rest}/>
         </div>
     }
 

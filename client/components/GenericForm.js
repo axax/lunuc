@@ -177,14 +177,13 @@ class GenericForm extends React.Component {
 
                     }
                 }
-                return <div key={k} className={classes.editor}><ContentEditable highlight={highlight}
+                return <div key={k} className={classes.editor}><ContentEditable lines highlight={highlight}
                                                                                 onChange={(v) => this.handleInputChange({
                                                                                     target: {
                                                                                         name: k,
                                                                                         value: v
                                                                                     }
-                                                                                })}
-                                                                                setHtml={false}>{json ? json : value}</ContentEditable>
+                                                                                })}>{json ? json : value}</ContentEditable>
                 </div>
 
             }

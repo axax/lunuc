@@ -153,9 +153,9 @@ class FilesContainer extends React.Component {
                                 if (error) return `Error! ${error.message}`
                                 if (!data.run) return `No data`
                                 const ext = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2)
-                                return <ContentEditable onChange={c => {
+                                return <ContentEditable lines onChange={c => {
                                     this.fileChange(dir + '/'+file, c)
-                                }} highlight={ext} setHtml={false} children={data.run.response}/>
+                                }} highlight={ext} children={data.run.response}/>
                             }}
                         </Query>
                         }
