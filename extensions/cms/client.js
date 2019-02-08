@@ -47,7 +47,7 @@ export default () => {
                 return <ErrorPage/>
             }
         })
-    },99)
+    }, 99)
 
     // add some extra data to the table
     Hook.on('TypeTable', ({type, dataSource, data}) => {
@@ -55,7 +55,7 @@ export default () => {
             dataSource.forEach((d, i) => {
                 if (d.slug) {
                     d.slug = <span style={{
-                        fontWeight:'bold',
+                        fontWeight: 'bold',
                         cursor: 'pointer',
                         color: '#663366',
                         textDecoration: 'underline'
@@ -72,7 +72,7 @@ export default () => {
                 name: 'View cms page',
                 onClick: () => {
                     const {_version} = container.pageParams
-                    container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug)
+                    container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug : ''))
                 },
                 icon: <WebIcon />
             })
@@ -83,7 +83,7 @@ export default () => {
     Hook.on('TypeTableEntryClick', ({type, item, container}) => {
         if (type === 'CmsPage') {
             const {_version} = container.pageParams
-            container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug)
+            container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug : ''))
         }
     })
 }

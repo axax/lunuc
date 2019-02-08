@@ -53,7 +53,6 @@ export const createUploads = () => {
 
 
 export const createUserRoles = async (db) => {
-
     const userRoles = [
         {
             name: 'administrator',
@@ -77,10 +76,10 @@ export const createUserRoles = async (db) => {
 
     Hook.call('createUserRoles', {userRoles, db})
 
-    const userRoleCollection = db.collection('UserRole')
+    const userRoleCollection = await db.collection('UserRole')
 
-    userRoles.forEach(userRole => {
-        userRoleCollection.updateOne(
+    for(const userRole of userRoles ){
+        await userRoleCollection.updateOne(
             {name: userRole.name},
             {
                 $addToSet: {
@@ -93,11 +92,13 @@ export const createUserRoles = async (db) => {
                 upsert: true
             }
         )
-    })
+    }
 }
 
 export const createUsers = async (db) => {
 
+
+    console.log('Create users...')
     const userCollection = db.collection('User')
 
     if (userCollection.countDocuments()) {

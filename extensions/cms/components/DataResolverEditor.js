@@ -1,5 +1,5 @@
 import React from 'react'
-import ContentEditable from 'client/components/ContentEditable'
+import CodeEditor from 'client/components/CodeEditor'
 import {SimpleMenu, BuildIcon} from 'ui/admin'
 
 class DataResolverEditor extends React.Component {
@@ -8,24 +8,24 @@ class DataResolverEditor extends React.Component {
         const {...rest} = this.props
         return <div style={{position: 'relative'}}>
             <SimpleMenu key="dataResolverMenu" mini fab color="secondary"
-                        style={{position: 'absolute', bottom: '-8px', right: '-8px'}}
+                        style={{zIndex:99,position: 'absolute', bottom: '-8px', right: '-8px'}}
                         items={[{name: 'Prettify', onClick: this.prettify.bind(this)}, {
                             name: 'Create example',
                             icon: <BuildIcon />,
                             onClick: this.createExample.bind(this)
                         }]}/>
-            <ContentEditable key="dataResolverEditor" lines highlight="json" {...rest}/>
+            <CodeEditor lineNumbers type="json" {...rest}/>
         </div>
     }
 
     prettify() {
-        const {onBlur, children} = this.props
+        const {onChange, children} = this.props
         if (children.trim() === '') return
 
         try {
             const j = eval('(' + children + ')');
             if (j.constructor === Array) {
-                onBlur(JSON.stringify(j, null, 2))
+                onChange(JSON.stringify(j, null, 2))
             }
         } catch (e) {
             console.error(e)
@@ -33,10 +33,10 @@ class DataResolverEditor extends React.Component {
     }
 
     createExample() {
-        const {onBlur} = this.props
+        const {onChange} = this.props
 
 
-        onBlur(JSON.stringify([
+        onChange(JSON.stringify([
             {
                 "t": "$Word",
                 "d": [

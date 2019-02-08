@@ -43,7 +43,7 @@ class FilesContainer extends React.Component {
 
         let command = 'ls -l ' + dir
 
-        if( searchText ){
+        if (searchText) {
             command = `find ${dir} -size -1M -type f -name '*.*' ! -path "./node_modules/*" ! -path "./bower_components/*" -exec grep -ril "${searchText}" {} \\;`
 
         }
@@ -64,7 +64,7 @@ class FilesContainer extends React.Component {
                             onKeyPress={(e) => {
                                 if (e.key === 'Enter') {
                                     console.log(e)
-                                    this.setState({searchText:e.target.value})
+                                    this.setState({searchText: e.target.value})
                                 }
                             }}/>
 
@@ -73,17 +73,17 @@ class FilesContainer extends React.Component {
                                variables={{command}}>
                             {({loading, error, data}) => {
                                 if (loading) {
-                                    this._loading =true
+                                    this._loading = true
                                     return 'Loading...'
                                 }
 
-                                this._loading =false
+                                this._loading = false
                                 if (error) return `Error! ${error.message}`
                                 if (!data.run) return `No data`
 
                                 const rows = data.run.response.split('\n')
                                 let listItems = []
-                                if( searchText ){
+                                if (searchText) {
                                     listItems = rows.reduce((a, fileRow) => {
                                         if (fileRow) {
                                             const b = fileRow.split(' ').filter(x => x);
@@ -98,7 +98,7 @@ class FilesContainer extends React.Component {
                                         }
                                         return a
                                     }, [])
-                                }else {
+                                } else {
                                     rows.shift()
 
                                     listItems = rows.reduce((a, fileRow) => {
@@ -154,8 +154,8 @@ class FilesContainer extends React.Component {
                                 if (!data.run) return `No data`
                                 const ext = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2)
                                 return <ContentEditable lines onChange={c => {
-                                    this.fileChange(dir + '/'+file, c)
-                                }} highlight={ext} children={data.run.response}/>
+                                    this.fileChange(dir + '/' + file, c)
+                                }} highlight={ext || 'text' } children={data.run.response}/>
                             }}
                         </Query>
                         }
@@ -179,16 +179,16 @@ class FilesContainer extends React.Component {
 
     fileChange(file, content) {
         clearTimeout(this._fileChange)
-        this._fileChange = setTimeout(()=>{
+        this._fileChange = setTimeout(() => {
             this.props.client.query({
                 fetchPolicy: 'no-cache',
                 query: gql(COMMAND_QUERY),
-                variables: {command: `echo "${Util.escapeDoubleQuotes(content.replace(/\$/g, '\\$').replace(/`/g, '\\`'))}" > "${file}"`}
+                variables: {command: `printf %s "${Util.escapeDoubleQuotes(content.replace(/\$/g, '\\$').replace(/`/g, '\\`'))}" > "${file}"`}
 
             }).then(response => {
-                this.props.notificationAction.addNotification({key:'fileChange',message: `File "${file}" saved`})
+                this.props.notificationAction.addNotification({key: 'fileChange', message: `File "${file}" saved`})
             })
-        },1500)
+        }, 1500)
     }
 }
 
@@ -197,7 +197,6 @@ FilesContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     notificationAction: PropTypes.object.isRequired
 }
-
 
 
 /**

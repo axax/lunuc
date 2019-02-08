@@ -559,7 +559,6 @@ const GenericResolver = {
             createdBy = context.id
             username = context.id
         }
-
         const collection = db.collection(collectionName)
         const insertResult = await collection.insertOne({
             ...data,

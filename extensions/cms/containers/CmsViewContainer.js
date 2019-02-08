@@ -79,9 +79,7 @@ class CmsViewContainer extends React.Component {
     oriTitle = document.title
 
     dataResolverSaveTimeout = 0
-    setScriptTimeout = 0
     registeredSubscriptions = {}
-
 
     constructor(props) {
         super(props)
@@ -162,21 +160,39 @@ class CmsViewContainer extends React.Component {
 
     componentDidMount() {
         this.setUpSubsciptions(this.props)
-        window.addEventListener('beforeunload', (e) => {
-            // blur on unload to make sure everything gets saved
-            document.activeElement.blur()
-        })
+        this._handleWindowClose = this.handleWindowClose.bind(this)
+        window.addEventListener('beforeunload', this._handleWindowClose)
     }
 
     componentWillUnmount() {
         if (!this.props.dynamic)
             document.title = this.oriTitle
 
+        window.removeEventListener('beforeunload', this._handleWindowClose);
+
         // remove all subscriptions
         Object.keys(this.registeredSubscriptions).forEach(key => {
             this.registeredSubscriptions[key].unsubscribe()
             delete this.registeredSubscriptions[key]
         })
+    }
+
+    handleWindowClose() {
+        // blur on unload to make sure everything gets saved
+        document.activeElement.blur()
+
+        // clear timeouts
+        clearTimeout(this._scriptTimeout)
+        if (this._autoSaveScriptTimeout) {
+            this._autoSaveScript()
+        }
+
+        if (this._autoSaveTemplateTimeout) {
+            this._autoSaveTemplate()
+        }
+        if (this._autoSaveDataResolverTimeout) {
+            this._autoSaveDataResolver()
+        }
     }
 
     render() {
@@ -207,11 +223,11 @@ class CmsViewContainer extends React.Component {
         if (!dynamic && resources) {
             try {
                 const a = JSON.parse(resources)
-                for(let i = 0; i< a.length; i++){
-                    const r = a[i], ext = r.substring(r.lastIndexOf('.')+1)
-                    if( ext.indexOf('css')===0){
+                for (let i = 0; i < a.length; i++) {
+                    const r = a[i], ext = r.substring(r.lastIndexOf('.') + 1)
+                    if (ext.indexOf('css') === 0) {
                         Util.addStyle(r)
-                    }else if( ext.indexOf('js') ){
+                    } else if (ext.indexOf('js')) {
                         Util.addScript(r)
                     }
                 }
@@ -266,28 +282,28 @@ class CmsViewContainer extends React.Component {
                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
                             style={editorStyle}
-                            onChange={this.handleDataResolverChange.bind(this, 'change')}
-                            onBlur={this.handleDataResolverChange.bind(this, 'blur')}>{dataResolver}</DataResolverEditor>
+                            onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
                     </Expandable>
 
                     <Expandable title="Template"
                                 onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
                                 expanded={settings.templateExpanded}>
                         <TemplateEditor
-                            style={editorStyle}
                             tab={settings.templateTab}
-                            onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
-                            onChange={this.handleTemplateChange.bind(this, 'change')}
-                            onBlur={this.handleTemplateChange.bind(this, 'blur')}>{template}</TemplateEditor>
+                            onTabChange={(tab) => {
+                                if (this._autoSaveTemplate) {
+                                    this._autoSaveTemplate()
+                                }
+                                this.handleSettingChange('templateTab', tab)
+                            }}
+                            onChange={this.handleTemplateChange.bind(this)}>{template}</TemplateEditor>
                     </Expandable>
 
                     <Expandable title="Script"
                                 onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
                                 expanded={settings.scriptExpanded}>
                         <ScriptEditor
-                            style={editorStyle}
-                            onChange={this.handleClientScriptChange.bind(this, 'change')}
-                            onBlur={this.handleClientScriptChange.bind(this, 'blur')}>{script}</ScriptEditor>
+                            onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
                     </Expandable>
 
 
@@ -374,21 +390,20 @@ class CmsViewContainer extends React.Component {
                 <ErrorHandler />
 
                 <SimpleDialog open={!!cmsComponentEdit.key} onClose={this.handleComponentEditClose.bind(this)}
-                              actions={[{key: 'cancel', label: 'Cancel'}, {
-                                  key: 'save',
-                                  label: 'Save',
+                              actions={[{
+                                  key: 'ok',
+                                  label: 'Ok',
                                   type: 'primary'
                               }]}
                               title="Edit Component">
 
                     <TemplateEditor
                         scope={cmsComponentEdit.scope}
-                        style={editorStyle}
                         tab={settings.templateTab}
                         onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
-                        onChange={this.handleComponentEditChange.bind(this, cmsComponentEdit)}
-                        onBlur={() => {
-                        }}>{JSON.stringify(cmsComponentEdit.component, null, 4)}</TemplateEditor>
+                        onChange={this.handleComponentEditChange.bind(this, cmsComponentEdit)}>
+                        {cmsComponentEdit.stringified}
+                    </TemplateEditor>
 
 
                 </SimpleDialog>
@@ -518,41 +533,54 @@ class CmsViewContainer extends React.Component {
     }
 
 
-    handleClientScriptChange = (type, script) => {
-        clearTimeout(this.setScriptTimeout)
+    handleClientScriptChange = (script) => {
+        clearTimeout(this._scriptTimeout)
+        this._scriptTimeout = setTimeout(() => {
+            this.setState({script})
+        }, 500)
 
-        if (type === 'blur') {
+        this._autoSaveScript = () => {
+            clearTimeout(this._autoSaveScriptTimeout)
+            this._autoSaveScriptTimeout = 0
             this.saveCmsPage(script, this.props.cmsPage, 'script')
-        } else {
-            this.setScriptTimeout = setTimeout(() => {
-                this.setState({script})
-            }, 500)
         }
+
+        clearTimeout(this._autoSaveScriptTimeout)
+        this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 10000)
+
     }
 
-    handleDataResolverChange = (type, str) => {
+    handleDataResolverChange = (str) => {
         this.setState({dataResolver: str})
-
-        clearTimeout(this.dataResolverSaveTimeout)
-        if (type == 'blur') {
+        this._autoSaveDataResolver = () => {
+            clearTimeout(this._autoSaveDataResolverTimeout)
+            this._autoSaveDataResolverTimeout = 0
             this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
-        } else {
-            this.dataResolverSaveTimeout = setTimeout(() => {
-                // auto save after some time
-                this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
-            }, 5000)
         }
+
+        clearTimeout(this._autoSaveDataResolverTimeout)
+        this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, 1000)
     }
 
-    handleTemplateChange = (type, str) => {
+    handleTemplateChange = (str, instantSave) => {
         this.setState({template: str, templateError: null})
-        if (type === 'blur') {
+        this._autoSaveTemplate = () => {
+            clearTimeout(this._autoSaveTemplateTimeout)
+            this._autoSaveTemplateTimeout = 0
+            this._autoSaveTemplate = null
             this.saveCmsPage(str, this.props.cmsPage, 'template')
         }
+
+        clearTimeout(this._autoSaveTemplateTimeout)
+        if (instantSave) {
+            this._autoSaveTemplate()
+        } else {
+            this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 10000)
+        }
+
     }
 
     handleResourceChange = (str) => {
-        console.log(str)
         this.setState({resources: str})
         this.saveCmsPage(str, this.props.cmsPage, 'resources')
     }
@@ -579,6 +607,7 @@ class CmsViewContainer extends React.Component {
 
     handleComponentEditChange(cmsComponentEdit, str) {
         if (cmsComponentEdit.key) {
+            cmsComponentEdit.stringified = str
             const json = JSON.parse(this.state.template)
             let item = Util.getComponentByKey(cmsComponentEdit.key, json);
             if (item) {
@@ -599,9 +628,7 @@ class CmsViewContainer extends React.Component {
 
     handleComponentEditClose(e) {
         const {_cmsActions, cmsComponentEdit} = this.props
-        if (e.key === 'save') {
-            this.saveCmsPage(this.state.template, this.props.cmsPage, 'template')
-        }
+        this.saveCmsPage(this.state.template, this.props.cmsPage, 'template')
         _cmsActions.editCmsComponent(null, cmsComponentEdit.component, cmsComponentEdit.scope)
     }
 
@@ -766,7 +793,7 @@ CmsViewContainer.propTypes = {
     cmsComponentEdit: PropTypes.object,
     keyValue: PropTypes.object,
     updateCmsPage: PropTypes.func.isRequired,
-    slug: PropTypes.string,
+    slug: PropTypes.string.isRequired,
     user: PropTypes.object.isRequired,
     /* with Router */
     history: PropTypes.object.isRequired,
@@ -937,6 +964,9 @@ const CmsViewContainerWithGql = compose(
  * Map the state to props.
  */
 const mapStateToProps = (store) => {
+    if (store.cms.edit.key) {
+        store.cms.edit.stringified = JSON.stringify(store.cms.edit.component, null, 4)
+    }
     return {
         cmsComponentEdit: store.cms.edit,
         user: store.user

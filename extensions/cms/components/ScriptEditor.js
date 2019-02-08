@@ -1,11 +1,11 @@
 import React from 'react'
-import ContentEditable from 'client/components/ContentEditable'
+import CodeEditor from 'client/components/CodeEditor'
 
 class ScriptEditor extends React.Component {
     render(){
         const {...rest} = this.props
 
-        return <ContentEditable lines highlight="js" {...rest}/>
+        return <CodeEditor lineNumbers type="js" {...rest}/>
     }
 }
 

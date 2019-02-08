@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ContentEditable from 'client/components/ContentEditable'
+import CodeEditor from 'client/components/CodeEditor'
 import JsonEditor from './JsonEditor'
 import {SimpleMenu, Tabs, Tab, CodeIcon, WebIcon, SubjectIcon, withStyles} from 'ui/admin'
 
@@ -85,9 +85,9 @@ class TemplateEditor extends React.Component {
 
     render() {
         const {tab, classes, scope, ...rest} = this.props
-        if (rest.children.trim().indexOf('<') === 0) {
-            return <ContentEditable lines highlight="html" {...rest}/>
-        }
+        if( !rest.children ) return null
+
+        const type = rest.children.trim().indexOf('<') === 0 ? 'html' : 'json'
 
         const currentTab = (!scope && this.state.tab === 2 ? 0 : this.state.tab)
         return <div style={{position: 'relative'}}>
@@ -103,22 +103,24 @@ class TemplateEditor extends React.Component {
                 }}
             >
                 <Tab icon={<CodeIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>
-                <Tab icon={<WebIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>
+                {type==='json' && <Tab icon={<WebIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
                 {scope &&
                 <Tab icon={<SubjectIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
             </Tabs>
             {currentTab === 0 && <TabContainer>
 
-                <SimpleMenu mini fab color="secondary" style={{position: 'absolute', bottom: '-8px', right: '-8px'}}
-                            items={[{name: 'Prettify', onClick: this.prettify.bind(this)}]}/>
-                <ContentEditable lines highlight="json" {...rest}/>
+                {type==='json' && <SimpleMenu mini fab color="secondary" style={{zIndex:999,position: 'absolute', bottom: '-8px', right: '-8px'}}
+                            items={[{name: 'Prettify', onClick: this.prettify.bind(this)}]}/>}
+                <CodeEditor lineNumbers type={type} {...rest}/>
 
             </TabContainer>}
             {currentTab === 1 && <TabContainer>
                 <JsonEditor {...rest}/>
             </TabContainer>}
             {scope && currentTab === 2 && <TabContainer>
-                <pre>{JSON.stringify(scope, null, 4)}</pre>
+                <CodeEditor lineNumbers type="json" readOnly>
+                {JSON.stringify(scope, null, 4)}
+                </CodeEditor>
             </TabContainer>}
 
         </div>

@@ -187,9 +187,9 @@ class JsonEditor extends React.Component {
 
 
     handleBlur() {
-        const {onBlur} = this.props
-        if (onBlur) {
-            onBlur(JSON.stringify(this.state.json, null, 4))
+        const {onChange} = this.props
+        if (onChange) {
+            onChange(JSON.stringify(this.state.json, null, 4),true)
         }
     }
 
@@ -207,7 +207,7 @@ class JsonEditor extends React.Component {
             }
             c.push({'c': 'new component'})
             o.c = c
-            this.props.onBlur(JSON.stringify(this.state.json, null, 4))
+            this.props.onChange(JSON.stringify(this.state.json, null, 4), true)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
 
         }
@@ -233,7 +233,7 @@ class JsonEditor extends React.Component {
             }
 
             parent.c = c
-            this.props.onBlur(JSON.stringify(this.state.json, null, 4))
+            this.props.onChange(JSON.stringify(this.state.json, null, 4), true)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
 
         }
@@ -256,7 +256,6 @@ class JsonEditor extends React.Component {
 JsonEditor.propTypes = {
     style: PropTypes.object,
     onChange: PropTypes.func,
-    onBlur: PropTypes.func,
     classes: PropTypes.object.isRequired,
 }
 
