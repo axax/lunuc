@@ -253,7 +253,11 @@ Here is an example of a scope object:
 * beforeRender => is called before template is rendered
 * change => input change
 * click => simple click event
-* unmount => when page is unmounted
+* mount => JsonDom is mounted
+* unmount => JsonDom is unmounted
+* update => Is called after JsonDom gets updated
+* refreshScope => when the scope changed
+* reset => gets called when the current template is either removed or reset
   
 ```javascript
 

@@ -88,7 +88,6 @@ class TemplateEditor extends React.Component {
         if( !rest.children ) return null
 
         const type = rest.children.trim().indexOf('<') === 0 ? 'html' : 'json'
-
         const currentTab = (!scope && this.state.tab === 2 ? 0 : this.state.tab)
         return <div style={{position: 'relative'}}>
             <Tabs
@@ -135,13 +134,12 @@ class TemplateEditor extends React.Component {
     }
 
     prettify() {
-        const {onBlur, children} = this.props
+        const {onChange, children} = this.props
         if (children.trim() === '') return
-
         try {
             const j = eval('(' + children + ')');
             if (j.constructor === Array || j.constructor === Object) {
-                onBlur(JSON.stringify(j, null, 2))
+                onChange(JSON.stringify(j, null, 4), true)
             }
         } catch (e) {
             console.error(e)

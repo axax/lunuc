@@ -148,7 +148,6 @@ class JsonDom extends React.Component {
         nodeToRefresh.json = null
         if (!noScript) {
             nodeToRefresh.runScript = true
-            nodeToRefresh.jsOnStack = {}
         }
         nodeToRefresh.forceUpdate()
 
@@ -202,17 +201,19 @@ class JsonDom extends React.Component {
             this.parseError = null
             this.addParentRef(props)
 
+            const scriptChanged = this.props.script !== props.script
+
+            if (this.props.template !== props.template || this.props._props !== props._props || scriptChanged) {
+                this.resetTemplate()
+            }
+
             if (this.props.scope !== props.scope) {
                 this.scope = null
                 this.json = null
             }
-            if (this.props.template !== props.template || this.props._props !== props._props) {
-                this.resetTemplate()
-            }
-            if (this.props.script !== props.script) {
-                this.resetTemplate()
+
+            if (scriptChanged) {
                 this.scriptResult = null
-                this.jsOnStack = {}
                 this.runScript = true
             }
 
@@ -224,16 +225,11 @@ class JsonDom extends React.Component {
 
     componentDidMount() {
         this.runJsEvent('mount')
-        this.unlisten = this.props.history.listen((location, action) => {
-
-            //this.runJsEvent('routechange')
-        })
     }
 
     componentWillUnmount() {
         this.runJsEvent('unmount')
         this.resetTemplate()
-        this.unlisten()
     }
 
     // is called after render
@@ -529,7 +525,7 @@ class JsonDom extends React.Component {
         if (this.jsonRaw) return this.jsonRaw
         const {template} = props
 
-        if( template.trim().startsWith('<')){
+        if (template.trim().startsWith('<')) {
             console.warn("Not supported for html content")
             return null
         }
@@ -635,6 +631,7 @@ class JsonDom extends React.Component {
             this.runScript = false
 
             try {
+                this.jsOnStack = {}
                 this.scriptResult = new Function(`
                 let scope = arguments[0]
                 const {on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[1]

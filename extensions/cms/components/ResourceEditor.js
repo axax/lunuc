@@ -8,7 +8,9 @@ import {
     ListItem,
     TextField,
     ListItemSecondaryAction,
-    DeleteIconButton
+    DeleteIconButton,
+    EditIconButton,
+    SimpleDialog
 } from 'ui/admin'
 
 const styles = theme => ({
@@ -42,7 +44,7 @@ class ResourceEditor extends React.Component {
         if (resources !== prevState.resources) {
             try {
                 let resourcesArray = JSON.parse(resources)
-                if( !resourcesArray ) resourcesArray = []
+                if (!resourcesArray) resourcesArray = []
                 return Object.assign({}, prevState, {resources, resourcesArray})
             } catch (e) {
             }
@@ -59,9 +61,11 @@ class ResourceEditor extends React.Component {
             <List dense={true}>
                 {resourcesArray.map((item, i) => {
                     return <ListItem key={'resource-' + i}>
-                        <TextField value={item} onBlur={this.handleBlur.bind(this, i)} onChange={this.handleChange.bind(this, i)} className={classes.textfield}
+                        <TextField value={item} onBlur={this.handleBlur.bind(this, i)}
+                                   onChange={this.handleChange.bind(this, i)} className={classes.textfield}
                                    placeholder="Enter a url"/>
                         <ListItemSecondaryAction>
+                            <EditIconButton onClick={this.handleRemoveClick.bind(this, i)}/>
                             <DeleteIconButton onClick={this.handleRemoveClick.bind(this, i)}/>
                         </ListItemSecondaryAction>
                     </ListItem>
@@ -76,8 +80,23 @@ class ResourceEditor extends React.Component {
                 className={classes.fab}>
                 <AddIcon />
             </Fab>
+            <SimpleDialog open={false} onClose={this.handleDialogClose}
+                          actions={[{
+                              key: 'ok',
+                              label: 'Ok',
+                              type: 'primary'
+                          }]}
+                          title="Edit Component">
+
+               xxxx
+
+            </SimpleDialog>
         </div>
 
+
+    }
+
+    handleDialogClose(){
 
     }
 
@@ -91,7 +110,7 @@ class ResourceEditor extends React.Component {
     handleChange(i, e) {
         const resourcesArray = this.state.resourcesArray
         resourcesArray[i] = e.target.value
-        this.setState({resourcesArray}, this.emitChange.bind(this,true))
+        this.setState({resourcesArray}, this.emitChange.bind(this, true))
     }
 
     handleBlur(i, e) {
@@ -111,7 +130,7 @@ class ResourceEditor extends React.Component {
         if (onChange) {
             clearTimeout(this.emitChangeTimeout)
             const data = JSON.stringify(this.state.resourcesArray)
-            if( data !== resources) {
+            if (data !== resources) {
                 if (delayed) {
                     this.emitChangeTimeout = setTimeout(() => {
                         onChange(data)
