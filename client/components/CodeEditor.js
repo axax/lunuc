@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {UnControlled as CodeMirror} from 'react-codemirror2'
 import './codemirror/javascript'
+import 'codemirror/mode/htmlmixed/htmlmixed'
 import 'codemirror/addon/hint/javascript-hint'
 import 'codemirror/addon/hint/show-hint'
 import 'codemirror/lib/codemirror.css'
@@ -54,9 +55,11 @@ class CodeEditor extends React.Component {
 
         if (['js', 'javascript', 'json'].indexOf(type) >= 0) {
             options.mode.name = 'javascript'
-            if( type === 'json' ){
+            if (type === 'json') {
                 options.mode.json = true
             }
+        }else if( type === 'html'){
+            options.mode.name = 'htmlmixed'
         }else{
             options.mode.name = type
         }

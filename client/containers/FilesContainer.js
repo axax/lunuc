@@ -18,7 +18,7 @@ import {
     InsertDriveFileIcon
 } from 'ui/admin'
 import Util from 'client/util'
-import ContentEditable from 'client/components/ContentEditable'
+import CodeEditor from 'client/components/CodeEditor'
 import {Query, withApollo} from 'react-apollo'
 import {COMMAND_QUERY} from '../constants'
 import PropTypes from 'prop-types'
@@ -153,9 +153,10 @@ class FilesContainer extends React.Component {
                                 if (error) return `Error! ${error.message}`
                                 if (!data.run) return `No data`
                                 const ext = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2)
-                                return <ContentEditable lines onChange={c => {
+
+                                return <CodeEditor lineNumbers onChange={c => {
                                     this.fileChange(dir + '/' + file, c)
-                                }} highlight={ext || 'text' } children={data.run.response}/>
+                                }} type={ext || 'text' } children={data.run.response}/>
                             }}
                         </Query>
                         }

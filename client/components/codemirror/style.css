@@ -1,3 +1,6 @@
+.CodeMirror{
+    height: auto;
+}
 .cm-s-default .cm-custom {
     color: #f4c242;
     font-weight: bold;
