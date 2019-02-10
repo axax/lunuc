@@ -10,7 +10,7 @@
         mod(CodeMirror);
 })(function (CodeMirror) {
     "use strict";
-    CodeMirror.defineMode("javascript", function (config, parserConfig) {
+    CodeMirror.defineMode("customJs", function (config, parserConfig) {
         var indentUnit = config.indentUnit;
         var statementIndent = parserConfig.statementIndent;
         var jsonldMode = parserConfig.jsonld;
@@ -34,7 +34,6 @@
                 customKeywordObj[customKeyword] = {type: "keyword a", style: "custom"};
             }
             /* end custom part */
-
             return {...customKeywordObj,
                 "if": kw("if"), "while": A, "with": A, "else": B, "do": B, "try": B, "finally": B,
                 "return": D, "break": D, "continue": D, "new": kw("new"), "delete": C, "void": C, "throw": C,

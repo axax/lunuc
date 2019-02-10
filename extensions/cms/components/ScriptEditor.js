@@ -5,7 +5,7 @@ class ScriptEditor extends React.Component {
     render(){
         const {...rest} = this.props
 
-        return <CodeEditor lineNumbers type="js" {...rest}/>
+        return <CodeEditor lineNumbers type="customJs" {...rest}/>
     }
 }
 

@@ -55,14 +55,23 @@ class CodeEditor extends React.Component {
 
         if (['js', 'javascript', 'json'].indexOf(type) >= 0) {
             options.mode.name = 'javascript'
-            if (type === 'json') {
-                options.mode.json = true
-            }
         }else if( type === 'html'){
             options.mode.name = 'htmlmixed'
         }else{
             options.mode.name = type
         }
+
+        if (type === 'json') {
+            options.mode.json = true
+            options.indentWithTabs = false
+            // repalce tabs with spaces
+            options.extraKeys = {
+                Tab: (cm) => cm.execCommand('indentMore'),
+                'Shift-Tab': (cm) => cm.execCommand('indentLess')
+            }
+        }
+
+        console.log(options)
         console.log('render CodeEditor')
         return <CodeMirror
             value={this._data}
