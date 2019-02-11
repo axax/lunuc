@@ -574,7 +574,7 @@ const GenericResolver = {
 
                 } else if (item.constructor === Array) {
                     o[k] = item.reduce((a, _id) => {
-                        a.push({_id});
+                        a.push({_id})
                         return a
                     }, [])
                 } else if (item.constructor === ObjectId) {
