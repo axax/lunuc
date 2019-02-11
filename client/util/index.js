@@ -181,6 +181,16 @@ const Util = {
         link.href = url
         document.head.appendChild(link)
     },
+    addRawStyle(style, id){
+        var css = document.getElementById(id)
+        if( !css ){
+            css = document.createElement('style')
+            css.type = 'text/css'
+            css.id = id
+        }
+        css.innerHTML = style
+        document.getElementsByTagName('head')[0].appendChild(css)
+    },
     addScript(url) {
         const script = document.createElement('script')
         script.src = url

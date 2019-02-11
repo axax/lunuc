@@ -634,7 +634,7 @@ class JsonDom extends React.Component {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
                 let scope = arguments[0]
-                const {on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[1]
+                const {setStyle, on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[1]
                 const history= arguments[2]
                 const parent= arguments[3]
                 on('refreshscope',(newScope)=>{
@@ -645,6 +645,7 @@ class JsonDom extends React.Component {
                     clientQuery,
                     setKeyValue,
                     getKeyValueFromLS,
+                    setStyle: (c) => Util.addRawStyle(c, 'jsonDom-' + scope.page.slug),
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,
