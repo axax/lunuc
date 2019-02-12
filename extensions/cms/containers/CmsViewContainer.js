@@ -160,7 +160,7 @@ class CmsViewContainer extends React.Component {
 
     componentDidMount() {
         this.setUpSubsciptions(this.props)
-        this._handleWindowClose = this.handleWindowClose.bind(this)
+        this._handleWindowClose = this.saveUnsafedChanges.bind(this)
         window.addEventListener('beforeunload', this._handleWindowClose)
     }
 
@@ -177,7 +177,7 @@ class CmsViewContainer extends React.Component {
         })
     }
 
-    handleWindowClose() {
+    saveUnsafedChanges() {
         // blur on unload to make sure everything gets saved
         document.activeElement.blur()
 

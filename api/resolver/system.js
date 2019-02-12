@@ -15,7 +15,7 @@ import Hook from 'util/hook'
 
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
-const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ']
+const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ', 'pwd', 'ls']
 
 export const systemResolver = (db) => ({
     Query: {
@@ -54,7 +54,14 @@ export const systemResolver = (db) => ({
 
             let html
             if (slug && 'undefined' != typeof( Hook.hooks['cmsTemplateRenderer'] ) && Hook.hooks['cmsTemplateRenderer'].length) {
-                html = await Hook.hooks['cmsTemplateRenderer'][0].callback({context, db, recipient, subject, body, slug})
+                html = await Hook.hooks['cmsTemplateRenderer'][0].callback({
+                    context,
+                    db,
+                    recipient,
+                    subject,
+                    body,
+                    slug
+                })
             } else {
                 html = body
             }

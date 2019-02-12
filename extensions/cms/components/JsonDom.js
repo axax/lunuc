@@ -246,6 +246,11 @@ class JsonDom extends React.Component {
 
     resetTemplate() {
         this.runJsEvent('reset')
+        // remove style added by setStyle
+        const ele = document.getElementById('jsonDom-' + this.scope.page.slug)
+        if( ele ){
+            ele.parentNode.removeChild(ele)
+        }
         this.json = null
         this.jsonRaw = null
         this.componentRefs = {}
