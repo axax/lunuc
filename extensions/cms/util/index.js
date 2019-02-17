@@ -110,6 +110,12 @@ const UtilCms = {
                             if (!segment.ignoreError)
                                 throw e
                         }
+                    }  else if (segment.subscription) {
+                        if( segment.subscription.constructor === String){
+                            subscriptions.push(segment.subscription)
+                        }else{
+                            subscriptions.push(JSON.stringify(segment.subscription))
+                        }
                     } else if (segment.system) {
                         const system = Util.systemProperties()
                         resolvedData._meta.system = segment.key || 'system'

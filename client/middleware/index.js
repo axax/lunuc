@@ -40,6 +40,7 @@ export function configureMiddleware(store) {
         if (graphQLErrors) {
             graphQLErrors.map(({message, locations, path, state}) => {
                     // don't handle errors with a state.
+                console.log(state)
                     if (!state) {
                         errorCount++
                         store.dispatch(addError({

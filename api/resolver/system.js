@@ -1,5 +1,5 @@
 import Util from '../util'
-import {execSync} from 'child_process'
+import {execSync, exec} from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import config from 'gen/config'
@@ -12,6 +12,8 @@ import {
 } from 'util/capabilities'
 import Cache from 'util/cache'
 import Hook from 'util/hook'
+import {pubsub} from 'api/subscription'
+import {withFilter} from 'graphql-subscriptions'
 
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
@@ -38,6 +40,29 @@ export const systemResolver = (db) => ({
             const options = {
                 encoding: 'utf8'
             }
+
+            exec(command, (err, stdout, stderr) => {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+
+                pubsub.publish('subscribeRun', {
+                    userId:context.id,
+                    subscribeRun: {
+                        key: 'command.response',
+                        message: stdout
+                    }
+                })
+            })
+
+            pubsub.publish('subscribeRun', {
+                userId:context.id,
+                subscribeRun: {
+                    key: 'command.response',
+                    message: 'xxxx'
+                }
+            })
 
             const response = execSync(command, options)
 
@@ -284,5 +309,16 @@ export const systemResolver = (db) => ({
             let a = await (db.collection(collection).aggregate(JSON.parse(json)).toArray())
             return {result: JSON.stringify(a[0])}
         }
+    },
+    Subscription:{
+        subscribeRun: withFilter(() => pubsub.asyncIterator('subscribeRun'),
+            (payload, context) => {
+            console.log(payload)
+                if( payload ) {
+                    //return payload.userId === context.id
+                    return true
+                }
+            }
+        )
     }
 })

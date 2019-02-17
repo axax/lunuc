@@ -438,23 +438,38 @@ class CmsViewContainer extends React.Component {
         subscriptions.forEach(subs => {
             if (!this.registeredSubscriptions[subs]) {
 
-                const type = getType(subs)
-                if (!type) return
-                let query = '_id'
-                type.fields.map(({name, required, multi, reference, localized}) => {
+                let query = '', subscriptionName = ''
+                if( subs.indexOf('{')===0){
+                    const obj = JSON.parse(subs)
+                    console.log(obj)
+                    subscriptionName  = Object.keys(obj)[0]
+                    query  = `${obj[subscriptionName]}`
 
-                    if (reference) {
-                        // todo: field name might be different than name
-                        //query += ' ' + name + '{_id name}'
-                    } else {
-                        if (localized) {
-                            query += ' ' + name + '_localized{' + _app_.lang + '}'
-                        } else {
-                            query += ' ' + name
-                        }
+                }else {
+                    const type = getType(subs)
+                    subscriptionName = `subscribe${subs}`
+                    if (type) {
+                        query += 'action data{_id'
+                        type.fields.map(({name, required, multi, reference, localized}) => {
+
+                            if (reference) {
+                                // todo: field name might be different than name
+                                //query += ' ' + name + '{_id name}'
+                            } else {
+                                if (localized) {
+                                    query += ' ' + name + '_localized{' + _app_.lang + '}'
+                                } else {
+                                    query += ' ' + name
+                                }
+                            }
+                        })
+                        query += '}'
                     }
-                })
-                const qqlSubscribe = gql`subscription{subscribe${subs}{action data{${query}}}}`
+                }
+
+                if( !query ) return
+
+                const qqlSubscribe = gql`subscription{${subscriptionName}{${query}}}`
 
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,

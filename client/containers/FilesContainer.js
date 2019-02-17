@@ -147,7 +147,7 @@ class FilesContainer extends React.Component {
                         {file &&
                         <Query query={gql(COMMAND_QUERY)}
                                fetchPolicy="cache-and-network"
-                               variables={{command: 'less ' + dir + '/' + file}}>
+                               variables={{command: 'less -f -L ' + dir + '/' + file}}>
                             {({loading, error, data}) => {
                                 if (loading) return 'Loading...'
                                 if (error) return `Error! ${error.message}`

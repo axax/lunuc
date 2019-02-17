@@ -85,4 +85,13 @@ export const systemSchemaRaw = `
     	cloneCollection(type: String!, name: String): CloneCollectionResult
     	deleteCollection(name: String!): DeleteCollectionResult
     }
+    
+    type RunSubscribeResult {
+        data:RunResult
+        action:String
+    }
+
+    type Subscription{
+        subscribeRun: RunSubscribeResult
+    }
 `
