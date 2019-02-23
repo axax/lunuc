@@ -260,6 +260,7 @@ class CmsViewContainer extends React.Component {
                                  scope={JSON.stringify(scope)}
                                  history={history}
                                  setKeyValue={this.setKeyValue.bind(this)}
+                                 subscriptionCallback={cb => {this._subscriptionCallback = cb}}
                                  onChange={this.handleTemplateSaveChange}>{children}</JsonDom>
         let content
 
@@ -438,14 +439,14 @@ class CmsViewContainer extends React.Component {
         subscriptions.forEach(subs => {
             if (!this.registeredSubscriptions[subs]) {
 
-                let query = '', subscriptionName = ''
+                let query = '', subscriptionName = '', isTypeSubscription = false
                 if( subs.indexOf('{')===0){
                     const obj = JSON.parse(subs)
-                    console.log(obj)
                     subscriptionName  = Object.keys(obj)[0]
                     query  = `${obj[subscriptionName]}`
 
                 }else {
+                    isTypeSubscription = true
                     const type = getType(subs)
                     subscriptionName = `subscribe${subs}`
                     if (type) {
@@ -476,6 +477,13 @@ class CmsViewContainer extends React.Component {
                     variables: {}
                 }).subscribe({
                     next(supscriptionData) {
+
+                        if( !isTypeSubscription ){
+                            // this kind of subscription is handle by the JsonDom Script
+                            _this._subscriptionCallback(supscriptionData)
+                            return
+                        }
+
                         if (!supscriptionData.data) {
                             //console.warn('subscription data missing')
                             return

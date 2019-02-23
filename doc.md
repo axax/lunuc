@@ -258,6 +258,7 @@ Here is an example of a scope object:
 * unmount => JsonDom is unmounted
 * update => Is called after JsonDom gets updated
 * refreshScope => when the scope changed
+* subscription => on subscription event
 * reset => gets called when the current template is either removed or reset
   
 ```javascript

@@ -156,6 +156,9 @@ class JsonDom extends React.Component {
 
     constructor(props) {
         super(props)
+        if( props.subscriptionCallback ){
+            props.subscriptionCallback(this.onSubscription.bind(this))
+        }
         this.state = {hasReactError: false, bindings: {}}
 
         /* HOOK */
@@ -266,6 +269,10 @@ class JsonDom extends React.Component {
             }
             //this.jsRefresh(null, true)
         })
+    }
+
+    onSubscription(data){
+        this.runJsEvent('subscription', data)
     }
 
     emitChange(id, v, save) {
@@ -702,6 +709,7 @@ class JsonDom extends React.Component {
 }
 
 JsonDom.propTypes = {
+    subscriptionCallback: PropTypes.func,
     clientQuery: PropTypes.func,
     className: PropTypes.string,
     template: PropTypes.string,

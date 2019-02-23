@@ -1,5 +1,5 @@
 import Util from '../util'
-import {execSync, exec} from 'child_process'
+import {execSync, spawn} from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import config from 'gen/config'
@@ -17,16 +17,37 @@ import {withFilter} from 'graphql-subscriptions'
 
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
-const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ', 'pwd', 'ls']
+const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ', 'pwd', 'ls', 'ping']
+const ENDOFCOMMAND = '__ENDOFCOMMAND__\n'
+
+const execs = {}
+
+const killExec = (id) => {
+    if (execs[id]) {
+        //execs[id].kill('SIGINT')
+        if (execs[id].exitCode === null) {
+            process.kill(-execs[id].pid, 'SIGKILL');
+        }
+        delete execs[id]
+    }
+}
 
 export const systemResolver = (db) => ({
     Query: {
-        run: async ({command}, {context}) => {
-            let performCheck = true
+        killRun: async ({id}, {context}) => {
+            killExec(id)
+            return {id}
+        },
+        run: async ({command, id, sync}, {context}) => {
+            let performCheck = true, response = ''
 
-            for (const c of SKIP_CAPABILITY_CHECK) {
-                if (command.indexOf(c) === 0) {
-                    performCheck = false
+            const currentId = id || (context.id + String((new Date()).getTime()))
+
+            if (command.indexOf('&') < 0 && command.indexOf('>') < 0) {
+                for (const c of SKIP_CAPABILITY_CHECK) {
+                    if (command.indexOf(c) === 0) {
+                        performCheck = false
+                    }
                 }
             }
             if (performCheck) {
@@ -37,36 +58,71 @@ export const systemResolver = (db) => ({
                 throw new Error('No command to execute.')
             }
 
-            const options = {
-                encoding: 'utf8'
+            if (sync) {
+                response = execSync(command, {encoding: 'utf8'})
+            } else {
+                /*execs[id] = spawn(command, options, (err, stdout, stderr) => {
+                 console.log(stdout)
+                 pubsub.publish('subscribeRun', {
+                 userId: context.id,
+                 subscribeRun: {response: stdout, error: stderr, id}
+                 })
+                 })*/
+                if (!execs[currentId] || execs[currentId].exitCode !== null) {
+                    execs[currentId] = spawn('bash', [], {detached: true});
+
+
+                    execs[currentId].stdout.on('data', (data) => {
+                        let str = data.toString('utf8')
+                        const isEnd = (str.indexOf(ENDOFCOMMAND) === str.length - ENDOFCOMMAND.length)
+                        if (isEnd) {
+                            str = str.substring(0, str.length - ENDOFCOMMAND.length)
+                        }
+
+                        pubsub.publish('subscribeRun', {
+                            userId: context.id,
+                            subscribeRun: {event: isEnd ? 'end' : 'data', response: str, id: currentId}
+                        })
+                    })
+
+                    execs[currentId].stderr.on('data', (data) => {
+                        pubsub.publish('subscribeRun', {
+                            userId: context.id,
+                            subscribeRun: {event: 'error', error: data.toString('utf8'), id: currentId}
+                        })
+                    })
+
+                    execs[currentId].on('close', (code) => {
+                        pubsub.publish('subscribeRun', {
+                            userId: context.id,
+                            subscribeRun: {event: 'close', id: currentId}
+                        })
+                    })
+                    execs[currentId].on('error', (error) => {
+                        pubsub.publish('subscribeRun', {
+                            userId: context.id,
+                            subscribeRun: {event: 'error', error, id: currentId}
+                        })
+                    })
+                }
+                execs[currentId].stdin.write(`${command} && echo ${ENDOFCOMMAND}`)
+
+                clearTimeout(execs[currentId].execTimeout)
+                execs[currentId].execTimeout = setTimeout(function () {
+                    killExec(currentId)
+                    pubsub.publish('subscribeRun', {
+                        userId: context.id,
+                        subscribeRun: {
+                            event: 'error',
+                            error: 'Execution timeout reached. Console has been reseted',
+                            id: currentId
+                        }
+                    })
+                }, 60000)
             }
 
-            exec(command, (err, stdout, stderr) => {
-                if (err) {
-                    console.error(err);
-                    return;
-                }
 
-                pubsub.publish('subscribeRun', {
-                    userId:context.id,
-                    subscribeRun: {
-                        key: 'command.response',
-                        message: stdout
-                    }
-                })
-            })
-
-            pubsub.publish('subscribeRun', {
-                userId:context.id,
-                subscribeRun: {
-                    key: 'command.response',
-                    message: 'xxxx'
-                }
-            })
-
-            const response = execSync(command, options)
-
-            return {response}
+            return {response, id: currentId}
         },
         sendMail: async ({recipient, subject, body, slug}, {context}) => {
             //Util.checkIfUserIsLoggedIn(context)
@@ -310,13 +366,11 @@ export const systemResolver = (db) => ({
             return {result: JSON.stringify(a[0])}
         }
     },
-    Subscription:{
+    Subscription: {
         subscribeRun: withFilter(() => pubsub.asyncIterator('subscribeRun'),
             (payload, context) => {
-            console.log(payload)
-                if( payload ) {
-                    //return payload.userId === context.id
-                    return true
+                if (payload) {
+                    return payload.userId === context.id
                 }
             }
         )

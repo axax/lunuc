@@ -1,6 +1,9 @@
 export const systemSchemaRaw = `
     type RunResult { 
         response: String
+        error: String
+        event: String
+        id: String
     }
     
     type MailResult { 
@@ -69,7 +72,8 @@ export const systemSchemaRaw = `
         
     type Query {
         brokenReferences(type: String!, field: String): BrokenReferencesResult
-    	run(command: String!): RunResult
+    	run(command: String!, id: String, sync: Boolean): RunResult
+    	killRun(id: String!): RunResult
     	sendMail(recipient: String!, subject: String, body: String, slug: String): MailResult
     	dbDumps: DbDumpResult   
     	mediaDumps: MediaDumpResult  
@@ -86,12 +90,7 @@ export const systemSchemaRaw = `
     	deleteCollection(name: String!): DeleteCollectionResult
     }
     
-    type RunSubscribeResult {
-        data:RunResult
-        action:String
-    }
-
     type Subscription{
-        subscribeRun: RunSubscribeResult
+        subscribeRun: RunResult
     }
 `

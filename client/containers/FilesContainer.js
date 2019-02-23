@@ -70,7 +70,7 @@ class FilesContainer extends React.Component {
 
                         <Query query={gql(COMMAND_QUERY)}
                                fetchPolicy="cache-and-network"
-                               variables={{command}}>
+                               variables={{sync: true, command}}>
                             {({loading, error, data}) => {
                                 if (loading) {
                                     this._loading = true
@@ -147,7 +147,7 @@ class FilesContainer extends React.Component {
                         {file &&
                         <Query query={gql(COMMAND_QUERY)}
                                fetchPolicy="cache-and-network"
-                               variables={{command: 'less -f -L ' + dir + '/' + file}}>
+                               variables={{sync: true, command: 'less -f -L ' + dir + '/' + file}}>
                             {({loading, error, data}) => {
                                 if (loading) return 'Loading...'
                                 if (error) return `Error! ${error.message}`
@@ -184,7 +184,10 @@ class FilesContainer extends React.Component {
             this.props.client.query({
                 fetchPolicy: 'no-cache',
                 query: gql(COMMAND_QUERY),
-                variables: {command: `printf %s "${Util.escapeDoubleQuotes(content.replace(/\$/g, '\\$').replace(/`/g, '\\`'))}" > "${file}"`}
+                variables: {
+                    sync: true,
+                    command: `printf %s "${Util.escapeDoubleQuotes(content.replace(/\$/g, '\\$').replace(/`/g, '\\`'))}" > "${file}"`
+                }
 
             }).then(response => {
                 this.props.notificationAction.addNotification({key: 'fileChange', message: `File "${file}" saved`})
