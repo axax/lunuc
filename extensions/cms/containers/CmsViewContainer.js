@@ -138,6 +138,12 @@ class CmsViewContainer extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
+
+        if( props.cmsPage && this.props.cmsPage && props.cmsPage.subscriptions !== this.props.cmsPage.subscriptions ){
+            console.log('renew subscriptions')
+            this.removeSubscriptions()
+            this.setUpSubsciptions(props)
+        }
         // only update if cms page was modified
         return !props.cmsPage ||
             !this.props.cmsPage ||
@@ -168,13 +174,9 @@ class CmsViewContainer extends React.Component {
         if (!this.props.dynamic)
             document.title = this.oriTitle
 
-        window.removeEventListener('beforeunload', this._handleWindowClose);
+        window.removeEventListener('beforeunload', this._handleWindowClose)
 
-        // remove all subscriptions
-        Object.keys(this.registeredSubscriptions).forEach(key => {
-            this.registeredSubscriptions[key].unsubscribe()
-            delete this.registeredSubscriptions[key]
-        })
+        this.removeSubscriptions()
     }
 
     saveUnsafedChanges() {
@@ -260,7 +262,9 @@ class CmsViewContainer extends React.Component {
                                  scope={JSON.stringify(scope)}
                                  history={history}
                                  setKeyValue={this.setKeyValue.bind(this)}
-                                 subscriptionCallback={cb => {this._subscriptionCallback = cb}}
+                                 subscriptionCallback={cb => {
+                                     this._subscriptionCallback = cb
+                                 }}
                                  onChange={this.handleTemplateSaveChange}>{children}</JsonDom>
         let content
 
@@ -419,6 +423,15 @@ class CmsViewContainer extends React.Component {
     }
 
 
+    removeSubscriptions() {
+        // remove all subscriptions
+        Object.keys(this.registeredSubscriptions).forEach(key => {
+            this.registeredSubscriptions[key].unsubscribe()
+            delete this.registeredSubscriptions[key]
+        })
+    }
+
+
     setUpSubsciptions(props) {
         if (!props.cmsPage) return
 
@@ -440,12 +453,12 @@ class CmsViewContainer extends React.Component {
             if (!this.registeredSubscriptions[subs]) {
 
                 let query = '', subscriptionName = '', isTypeSubscription = false
-                if( subs.indexOf('{')===0){
+                if (subs.indexOf('{') === 0) {
                     const obj = JSON.parse(subs)
-                    subscriptionName  = Object.keys(obj)[0]
-                    query  = `${obj[subscriptionName]}`
+                    subscriptionName = Object.keys(obj)[0]
+                    query = `${obj[subscriptionName]}`
 
-                }else {
+                } else {
                     isTypeSubscription = true
                     const type = getType(subs)
                     subscriptionName = `subscribe${subs}`
@@ -468,17 +481,17 @@ class CmsViewContainer extends React.Component {
                     }
                 }
 
-                if( !query ) return
+                console.log(query)
+                if (!query) return
 
                 const qqlSubscribe = gql`subscription{${subscriptionName}{${query}}}`
-
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,
                     variables: {}
                 }).subscribe({
                     next(supscriptionData) {
 
-                        if( !isTypeSubscription ){
+                        if (!isTypeSubscription) {
                             // this kind of subscription is handle by the JsonDom Script
                             _this._subscriptionCallback(supscriptionData)
                             return
