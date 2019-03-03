@@ -47,7 +47,7 @@ class LinkedInProfileContainer extends React.Component {
     }
 
     handelLinkedInConnect = () => {
-        const linkedInRedirectUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}${this.props.location.pathname}`,
+        const linkedInRedirectUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port?':'+window.location.port:''}${this.props.location.pathname}`,
             linkedInBase = 'https://www.linkedin.com/oauth/v2/authorization?response_type=code',
             linkedInClientId = '772exdl15hhf0d',
             linkedInState = Math.random().toString(36).substr(2),
