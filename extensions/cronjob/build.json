@@ -2,6 +2,7 @@
   "types": [
     {
       "name": "CronJob",
+      "entryClonable": true,
       "fields": [
         {
           "name": "name",
