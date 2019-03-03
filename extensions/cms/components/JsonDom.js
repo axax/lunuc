@@ -62,6 +62,7 @@ class JsonDom extends React.Component {
             onBlur={(v) => _this.emitChange(id, v, true)}>{children}</ContentEditable></p>
     }
     static hock = true
+    static instanceCounter = 0
 
     resolvedDataJson = undefined
     extendedComponents = {}
@@ -156,7 +157,9 @@ class JsonDom extends React.Component {
 
     constructor(props) {
         super(props)
-        if( props.subscriptionCallback ){
+        JsonDom.instanceCounter++
+        this.instanceId = JsonDom.instanceCounter
+        if (props.subscriptionCallback) {
             props.subscriptionCallback(this.onSubscription.bind(this))
         }
         this.state = {hasReactError: false, bindings: {}}
@@ -208,6 +211,9 @@ class JsonDom extends React.Component {
 
             if (this.props.template !== props.template || this.props._props !== props._props || scriptChanged) {
                 this.resetTemplate()
+                if (scriptChanged || this.runScript) {
+                    this.removeStyle()
+                }
             }
 
             if (this.props.scope !== props.scope) {
@@ -233,6 +239,7 @@ class JsonDom extends React.Component {
     componentWillUnmount() {
         this.runJsEvent('unmount')
         this.resetTemplate()
+        this.removeStyle()
     }
 
     // is called after render
@@ -249,14 +256,17 @@ class JsonDom extends React.Component {
 
     resetTemplate() {
         this.runJsEvent('reset')
-        // remove style added by setStyle
-        const ele = document.getElementById('jsonDom-' + this.scope.page.slug)
-        if( ele ){
-            ele.parentNode.removeChild(ele)
-        }
         this.json = null
         this.jsonRaw = null
         this.componentRefs = {}
+    }
+
+    removeStyle() {
+        // remove style added by setStyle
+        const ele = document.getElementById('jsonDom-' + this.instanceId)
+        if (ele) {
+            ele.parentNode.removeChild(ele)
+        }
     }
 
     handleBindingChange(cb, e) {
@@ -271,7 +281,7 @@ class JsonDom extends React.Component {
         })
     }
 
-    onSubscription(data){
+    onSubscription(data) {
         this.runJsEvent('subscription', data)
     }
 
@@ -657,7 +667,7 @@ class JsonDom extends React.Component {
                     clientQuery,
                     setKeyValue,
                     getKeyValueFromLS,
-                    setStyle: (c) => Util.addRawStyle(c, 'jsonDom-' + scope.page.slug),
+                    setStyle: (c) => Util.addRawStyle(c, 'jsonDom-' + this.instanceId),
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,

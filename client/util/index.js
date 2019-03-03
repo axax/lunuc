@@ -43,7 +43,10 @@ const Util = {
         return token ? `JWT ${token}` : null
     },
     dateFromObjectId: (objectId) => {
-        if (objectId.indexOf('#') === 0) {
+        if( !objectId ){
+            return ''
+        }
+        if ( objectId.indexOf('#') === 0) {
             // this is only a tmp id / timestemp
             return parseInt(objectId.substring(1))
         }

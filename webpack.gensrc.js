@@ -341,7 +341,7 @@ function gensrcExtension(name, options) {
             typeSchema += '\tupdate' + type.name + ' (_id:ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + mutationResult + '\n'
             typeSchema += '\tdelete' + type.name + ' (_id:ID!' + (type.collectionClonable ? ',_version:String' : '') + '):' + mutationResult + '\n'
             typeSchema += '\tdelete' + type.name + 's (_id:[ID]' + (type.collectionClonable ? ',_version:String' : '') + '):[' + mutationResult + ']\n'
-            if (type.collectionClonable) {
+            if (type.entryClonable) {
                 typeSchema += '\tclone' + type.name + ' (_id:ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + '\n'
             }
             typeSchema += '}\n\n'
@@ -394,6 +394,12 @@ function gensrcExtension(name, options) {
                 }
             }
         ),\n`
+
+                if (type.entryClonable) {
+                    resolverMutation += `       clone${type.name}: async (data, {context}) => {
+            return GenericResolver.cloneEntity(db, context, '${type.name}', data)
+        },\n`
+                }
             }
 
 

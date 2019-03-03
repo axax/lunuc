@@ -174,6 +174,7 @@ class CmsViewContainer extends React.Component {
         if (!this.props.dynamic)
             document.title = this.oriTitle
 
+        this.saveUnsafedChanges()
         window.removeEventListener('beforeunload', this._handleWindowClose)
 
         this.removeSubscriptions()
