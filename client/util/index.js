@@ -43,10 +43,10 @@ const Util = {
         return token ? `JWT ${token}` : null
     },
     dateFromObjectId: (objectId) => {
-        if( !objectId ){
+        if (!objectId) {
             return ''
         }
-        if ( objectId.indexOf('#') === 0) {
+        if (objectId.indexOf('#') === 0) {
             // this is only a tmp id / timestemp
             return parseInt(objectId.substring(1))
         }
@@ -186,7 +186,7 @@ const Util = {
     },
     addRawStyle(style, id){
         var css = document.getElementById(id)
-        if( !css ){
+        if (!css) {
             css = document.createElement('style')
             css.type = 'text/css'
             css.id = id
@@ -194,9 +194,17 @@ const Util = {
         css.innerHTML = style
         document.getElementsByTagName('head')[0].appendChild(css)
     },
-    addScript(url) {
+    addScript(url, className) {
         const script = document.createElement('script')
         script.src = url
+        script.async = true
+        script.defer = true
+        script.onload = () => {
+            script.setAttribute('loaded', true)
+        }
+        if (className) {
+            script.className = className
+        }
         document.head.appendChild(script)
     },
     hasCapability(user, capa){

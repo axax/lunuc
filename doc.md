@@ -256,7 +256,8 @@ Here is an example of a scope object:
 * click => simple click event
 * mount => JsonDom is mounted
 * unmount => JsonDom is unmounted
-* update => Is called after JsonDom gets updated
+* update => Is called after JsonDom is updated
+* ready => Is called after JsonDom is updated and all resources are loaded
 * refreshScope => when the scope changed
 * subscription => on subscription event
 * reset => gets called when the current template is either removed or reset

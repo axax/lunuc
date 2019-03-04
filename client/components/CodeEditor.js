@@ -71,7 +71,6 @@ class CodeEditor extends React.Component {
             }
         }
 
-        console.log(options)
         console.log('render CodeEditor')
         return <CodeMirror
             value={this._data}

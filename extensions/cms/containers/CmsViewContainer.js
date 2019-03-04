@@ -90,6 +90,7 @@ class CmsViewContainer extends React.Component {
             document.title = props.slug
 
         this.setUpSubsciptions(props)
+        this.addResources(props, this.state)
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -139,10 +140,15 @@ class CmsViewContainer extends React.Component {
 
     shouldComponentUpdate(props, state) {
 
-        if( props.cmsPage && this.props.cmsPage && props.cmsPage.subscriptions !== this.props.cmsPage.subscriptions ){
+        if (props.cmsPage && this.props.cmsPage && props.cmsPage.subscriptions !== this.props.cmsPage.subscriptions) {
             console.log('renew subscriptions')
             this.removeSubscriptions()
             this.setUpSubsciptions(props)
+        }
+
+        if (this.state.resources !== state.resources) {
+            console.log('refresh resources')
+            this.addResources(props, state)
         }
         // only update if cms page was modified
         return !props.cmsPage ||
@@ -161,6 +167,30 @@ class CmsViewContainer extends React.Component {
             this.state.settings.inlineEditor !== state.settings.inlineEditor ||
             this.state.settings.templateTab !== state.settings.templateTab ||
             this.state.settings.drawerWidth !== state.settings.drawerWidth
+    }
+
+    addResources(props, state) {
+        const {dynamic} = props
+        let {resources} = state
+
+        //TODO remove all added resources here
+        if (!dynamic && resources) {
+            try {
+                const a = JSON.parse(resources)
+                for (let i = 0; i < a.length; i++) {
+                    const r = a[i], ext = r.substring(r.lastIndexOf('.') + 1)
+                    if (ext.indexOf('css') === 0) {
+                        Util.addStyle(r)
+                    } else if (ext.indexOf('js') === 0) {
+                        console.log(r)
+                        Util.addScript(r, 'cms-script')
+                    }
+                }
+            } catch (e) {
+                console.error('Error in resources', e)
+            }
+        }
+
     }
 
 
@@ -221,24 +251,6 @@ class CmsViewContainer extends React.Component {
             // it was already rendered on the server side
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
-
-        //TODO remove all added resources here
-        if (!dynamic && resources) {
-            try {
-                const a = JSON.parse(resources)
-                for (let i = 0; i < a.length; i++) {
-                    const r = a[i], ext = r.substring(r.lastIndexOf('.') + 1)
-                    if (ext.indexOf('css') === 0) {
-                        Util.addStyle(r)
-                    } else if (ext.indexOf('js')) {
-                        Util.addScript(r)
-                    }
-                }
-            } catch (e) {
-                console.error('Error in resources', e)
-            }
-        }
-
         const scope = {
             page: {slug: cmsPage.slug},
             user,

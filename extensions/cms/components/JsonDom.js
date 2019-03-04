@@ -245,6 +245,26 @@ class JsonDom extends React.Component {
     // is called after render
     componentDidUpdate(props) {
         this.runJsEvent('update')
+        // check if all scripts are loaded
+        let allloaded = true, counter = 0
+        const scripts = document.querySelectorAll('script.cms-script')
+        if (scripts) {
+            scripts.forEach(script => {
+                if (!script.getAttribute('loaded')) {
+                    allloaded = false
+                    counter++
+                    script.onload = () => {
+                        counter--
+                        if (counter === 0) {
+                            this.runJsEvent('ready')
+                        }
+                    }
+                }
+            })
+        }
+        if (allloaded) {
+            this.runJsEvent('ready')
+        }
     }
 
     addParentRef(props) {
