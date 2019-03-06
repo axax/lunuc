@@ -226,6 +226,10 @@ class JsonDom extends React.Component {
                 this.runScript = true
             }
 
+            if( this.props.resources !== props.resources){
+                this.checkResources()
+            }
+
         }
 
         return update
@@ -234,6 +238,7 @@ class JsonDom extends React.Component {
 
     componentDidMount() {
         this.runJsEvent('mount')
+        this.checkResources()
     }
 
     componentWillUnmount() {
@@ -245,9 +250,13 @@ class JsonDom extends React.Component {
     // is called after render
     componentDidUpdate(props) {
         this.runJsEvent('update')
+    }
+
+    checkResources(){
         // check if all scripts are loaded
         let allloaded = true, counter = 0
         const scripts = document.querySelectorAll('script.cms-script')
+
         if (scripts) {
             scripts.forEach(script => {
                 if (!script.getAttribute('loaded')) {
@@ -256,14 +265,14 @@ class JsonDom extends React.Component {
                     script.onload = () => {
                         counter--
                         if (counter === 0) {
-                            this.runJsEvent('ready')
+                            this.runJsEvent('resourcesready')
                         }
                     }
                 }
             })
         }
         if (allloaded) {
-            this.runJsEvent('ready')
+            this.runJsEvent('resourcesready')
         }
     }
 
@@ -434,13 +443,14 @@ class JsonDom extends React.Component {
                         if (loopChild.constructor !== Object) {
                             loopChild = {data: loopChild}
                         }
-                        const tpl = new Function('const {' + Object.keys(loopChild).join(',') + '} = this.' + s + ';return `' + cStr + '`;')
+                        const tpl = new Function('const {' + Object.keys(loopChild).join(',') + '} = this.' + s + ';const Util = this.Util;return `' + cStr + '`;')
                         // back to json
                         loopChild._index = childIdx
                         // remove tabs and parse
                         const json = JSON.parse(tpl.call({
                             [s]: loopChild,
                             scope: this.scope,
+                            Util: Util,
                             escape: Util.escapeForJson,
                             tryCatch: Util.tryCatch,
                             _t
@@ -744,6 +754,7 @@ JsonDom.propTypes = {
     className: PropTypes.string,
     template: PropTypes.string,
     resolvedData: PropTypes.string,
+    resources: PropTypes.string,
     script: PropTypes.string,
     scope: PropTypes.string,
     setKeyValue: PropTypes.func,

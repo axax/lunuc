@@ -64,10 +64,11 @@ const UtilCms = {
                             resolvedData[k] = segment.data[k]
                         })
                     } else if (segment.t) {
-                        const {t, f, l, o, p, d} = segment
+                        const {t, f, l, o, p, d, s} = segment
                         /*
                          f = filter for the query
                          t = type
+                         s = sort
                          d = the data / fields you want to access
                          l = limit of results
                          o = offset
@@ -94,6 +95,7 @@ const UtilCms = {
                             filter: f,
                             limit: l,
                             page: p,
+                            sort: s,
                             offset: o,
                             match,
                             projectResult: true

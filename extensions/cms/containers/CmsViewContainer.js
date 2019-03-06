@@ -182,7 +182,6 @@ class CmsViewContainer extends React.Component {
                     if (ext.indexOf('css') === 0) {
                         Util.addStyle(r)
                     } else if (ext.indexOf('js') === 0) {
-                        console.log(r)
                         Util.addScript(r, 'cms-script')
                     }
                 }
@@ -270,6 +269,7 @@ class CmsViewContainer extends React.Component {
                                  template={template}
                                  script={script}
                                  resolvedData={cmsPage.resolvedData}
+                                 resources={cmsPage.resources}
                                  editMode={editMode}
                                  inlineEditor={!!settings.inlineEditor}
                                  scope={JSON.stringify(scope)}
@@ -608,7 +608,7 @@ class CmsViewContainer extends React.Component {
         }
 
         clearTimeout(this._autoSaveDataResolverTimeout)
-        this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, 1000)
+        this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, 2000)
     }
 
     handleTemplateChange = (str, instantSave) => {

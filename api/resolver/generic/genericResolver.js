@@ -481,7 +481,6 @@ class AggregationBuilder {
         result.push({
             $addFields: {limit, offset, page}
         })
-
         return result
 
     }
