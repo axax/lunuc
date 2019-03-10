@@ -101,7 +101,12 @@ class Bot {
             const lang = this.languages[i],
                 intend = this.bestClassifierIntend(lang, text),
                 context = this.getConversationContext(lang, text)
-            this.result[lang] = {intend, context, answer: this.findAnswer(lang, intend, context)}
+            this.result[lang] = {
+                intend: intend.label,
+                intendValue: intend.value,
+                context,
+                answer: this.findAnswer(lang, intend.label, context)
+            }
         }
     }
 
@@ -142,7 +147,8 @@ class Bot {
                 const result = new Function('const {' + Object.keys(context).join(',') + '} = this.context;return `' + text + '`').call({context})
 
                 return result
-            }catch(e){}
+            } catch (e) {
+            }
         }
         return text
     }
@@ -180,9 +186,10 @@ class Bot {
             const result = classifier.getClassifications(text)
             console.log(result)
             if (result.length && result[0].value > this.threshold) {
-                return result[0].label
+                return result[0]
             }
         }
+        return {label: '', value: 0}
     }
 
     async handleOn(key, api) {
@@ -226,10 +233,10 @@ class Bot {
     }
 
     on(keys, cb) {
-        if( keys.constructor !== Array){
+        if (keys.constructor !== Array) {
             keys = [keys]
         }
-        keys.forEach(key=> {
+        keys.forEach(key => {
             if (!this.ons[key]) {
                 this.ons[key] = []
             }
