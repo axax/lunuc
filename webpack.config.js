@@ -1,7 +1,6 @@
 const path = require('path')
 const fs = require('fs');
 const glob = require('glob')
-const merge = require("merge")
 const webpack = require('webpack')
 
 // webpack plugins
