@@ -32,6 +32,9 @@
     },
     "userstats": {
       "active": true
+    },
+    "bot": {
+      "active": true
     }
   },
   "ui": [

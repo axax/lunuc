@@ -1,22 +1,28 @@
 const Hook = {
     hooks: {},
     hooksOrder: {},
-    on: function (name, callback, order) {
-        if ('undefined' == typeof( Hook.hooks[name] )) {
-            Hook.hooks[name] = []
+    on: function (names, callback, order) {
+        if( names.constructor !== Array ){
+            names = [names]
         }
-        if( !order ){
-            order = 1
-        }
+        names.forEach(name => {
 
-        for (let i = 0; i < Hook.hooks[name].length; i++) {
-            const hook = Hook.hooks[name][i]
-            if (hook.order > order) {
-                Hook.hooks[name].splice(i, 0, {callback, order})
-                return
+            if ('undefined' == typeof( Hook.hooks[name] )) {
+                Hook.hooks[name] = []
             }
-        }
-        Hook.hooks[name].push({callback, order})
+            if (!order) {
+                order = 1
+            }
+
+            for (let i = 0; i < Hook.hooks[name].length; i++) {
+                const hook = Hook.hooks[name][i]
+                if (hook.order > order) {
+                    Hook.hooks[name].splice(i, 0, {callback, order})
+                    return
+                }
+            }
+            Hook.hooks[name].push({callback, order})
+        })
 
     },
     call: function (name, args, thisRef) {

@@ -1,0 +1,48 @@
+{
+  "types": [
+    {
+      "name": "Bot",
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "name",
+          "required": true,
+          "clone": "${name}_copy"
+        },
+        {
+          "name": "telegramToken"
+        },
+        {
+          "name": "languages"
+        },
+        {
+          "name": "active",
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "BotCommand",
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "name",
+          "required": true,
+          "clone": "${name}_copy"
+        },
+        {
+          "name": "script",
+          "uitype": "jseditor"
+        },
+        {
+          "name": "active",
+          "type": "Boolean"
+        },
+        {
+          "name": "bot",
+          "type": "Bot"
+        }
+      ]
+    }
+  ]
+}

@@ -264,13 +264,13 @@ class AggregationBuilder {
 
                         // projection
                         let projectPipeline = {},
-                        hasLocalized = false
+                            hasLocalized = false
 
 
                         field[fieldName].forEach(item => {
                             projectResultData[fieldName + '.' + item] = 1
                             if (lookupFields[item] && lookupFields[item].localized) {
-                                hasLocalized =true
+                                hasLocalized = true
                                 projectPipeline[item + '_localized.' + lang] = 1
 
                                 // project localized field in current language
@@ -775,11 +775,11 @@ const GenericResolver = {
         delete clone._id
 
         const insertResult = await collection.insertOne(clone)
-
         if (insertResult.insertedCount) {
             const doc = insertResult.ops[0]
 
-            return {
+
+            const result = {
                 ...clone,
                 _id: doc._id,
                 status: 'created',
@@ -788,6 +788,20 @@ const GenericResolver = {
                     username: context.username
                 }
             }
+            //check if this field is a reference
+            const fields = getFormFields(typeName)
+
+            if (fields) {
+                Object.keys(result).forEach(field => {
+                    if (fields[field] && fields[field].reference) {
+                        // is a reference
+                        // TODO also resolve fields of subtype
+                        result[field] = {_id: result[field]}
+                    }
+                })
+            }
+
+            return result
         }
     },
 }

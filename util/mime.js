@@ -8,6 +8,7 @@ const MIME_TYPES = {
     'html': 'text/html',
     'jpeg': 'image/jpeg',
     'jpg': 'image/jpeg',
+    'gif': 'image/gif',
     'png': 'image/png',
     'ico': 'image/x-icon',
     'js': 'text/javascript',

@@ -56,6 +56,10 @@ const styles = theme => ({
         overflowY: 'auto',
         maxWidth: 600,
         maxHeight: 200
+    },
+    script:{
+        fontFamily: '"Courier 10 Pitch", Courier, monospace',
+        fontSize: '85%'
     }
 })
 
@@ -237,6 +241,12 @@ class TypesContainer extends React.Component {
                                 dynamic[field.name] =
                                     <img style={{height: '40px'}}
                                          src={v}/>
+                            } else if (field.uitype === 'jseditor') {
+                                if( v.length > 50 ) {
+                                    dynamic[field.name] = <span className={classes.script}>{v.substring(0, 20) + '...' + v.substring(v.length-20)}</span>
+                                }else{
+                                    dynamic[field.name] = <span className={classes.script}>{v}</span>
+                                }
                             } else if (field.uitype === 'datetime') {
                                 dynamic[field.name] = Util.formattedDatetime(v)
                             } else {
@@ -464,6 +474,8 @@ class TypesContainer extends React.Component {
         if (createEditDialog !== undefined) {
             editDialogProps = {
                 title: type,
+                fullWidth:true,
+                maxWidth: 'xl',
                 open: this.state.createEditDialog,
                 onClose: this.handleCreateEditData,
                 actions: [{key: 'cancel', label: 'Cancel'}, {
