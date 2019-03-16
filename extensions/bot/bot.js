@@ -1,7 +1,37 @@
 import natural from 'natural'
 import Telegraf from 'telegraf'
 
+class BotConnector {
+    _ons = {}
+    message = {text: ''}
 
+    constructor(message) {
+        this.message.text = message
+    }
+
+    reply(text) {
+        if (this._ons['text']) {
+            this._ons['text'].forEach(cb => {
+                cb(text)
+            })
+        }
+    }
+
+    replyWithHTML(html) {
+        if (this._ons['text']) {
+            this._ons['text'].forEach(cb => {
+                cb(html)
+            })
+        }
+    }
+
+    on(event, cb) {
+        if (!this._ons[event]) {
+            this._ons[event] = []
+        }
+        this._ons[event].push(cb)
+    }
+}
 class Bot {
 
     static CONTEXTSTART = '__contextstart__'
@@ -14,7 +44,19 @@ class Bot {
     telegramBot = false
     result = {}
     stopwords = {
-        de: ['ist', 'der', 'die', 'das', 'es']
+        de: []
+    }
+    umlautMap = {
+        'ü': 'u',
+        'Ü': 'U',
+        'ä': 'a',
+        'Ä': 'A',
+        'ö': 'o',
+        'Ö': 'O',
+        'é': 'e',
+        'è': 'e',
+        'à': 'a',
+        'ß': 'ss',
     }
 
     constructor(data) {
@@ -28,7 +70,7 @@ class Bot {
             const lang = this.languages[i]
             this.classifier[lang] = new natural.LogisticRegressionClassifier()
             this.answers[lang] = {}
-            this.classifier[lang].withContext = []
+            this.classifier[lang].withContext = {}
         }
 
         if (data.telegramToken) {
@@ -85,22 +127,34 @@ class Bot {
 
             Object.keys(this.ons).forEach(key => {
                 this.telegramBot.on(key, ctx => {
-                    if (ctx.message && ctx.message.text) {
-                        this.createNlpResult(ctx.message.text)
-                    }
-                    this.handleOn(key, ctx)
+                    this.communicate(key, ctx)
                 })
             })
             this.telegramBot.launch()
         }
     }
 
+    communicate(key, ctx) {
+        if (ctx.message && ctx.message.text) {
+            this.createNlpResult(ctx.message.text)
+        }
+        this.handleOn(key, ctx)
+    }
+
+
     createNlpResult(text) {
         this.result = {}
         for (let i = 0; i < this.languages.length; i++) {
             const lang = this.languages[i],
-                intend = this.bestClassifierIntend(lang, text),
-                context = this.getConversationContext(lang, text)
+                intend = this.bestClassifierIntend(lang, text)
+
+            let context = {}
+
+            if (intend.value) {
+                context = this.getConversationContext(lang, intend.label, text)
+            }
+
+
             this.result[lang] = {
                 intend: intend.label,
                 intendValue: intend.value,
@@ -110,31 +164,66 @@ class Bot {
         }
     }
 
-    getConversationContext(lang, text) {
-        let finalContext = {}
-        if (this.classifier[lang].withContext.length) {
+    getConversationContext(lang, key, text) {
+        let finalContext = {}, bestDistance = 0
+        const cls = this.classifier[lang]
+        if (cls.withContext[key] && cls.withContext[key].length) {
             const textTokens = this.tokenizeAndStem(lang, text)
-            this.classifier[lang].withContext.forEach(expr => {
-
+            cls.withContext[key].forEach(expr => {
                 const exprTokens = this.tokenizeAndStem(lang, expr)
-                if (textTokens.length === exprTokens.length) {
-                    let tmpContext = {}
-                    for (let i = 0; i < textTokens.length; i++) {
-                        if (textTokens[i] === exprTokens[i]) {
-                            continue
-                        } else if (exprTokens[i].startsWith(Bot.CONTEXTSTART) && exprTokens[i].endsWith(Bot.CONTEXTEND)) {
-                            let key = exprTokens[i].substring(Bot.CONTEXTSTART.length, exprTokens[i].length - Bot.CONTEXTEND.length)
-                            tmpContext[key] = textTokens[i]
+
+                if (textTokens.stemmed.length >= exprTokens.stemmed.length) {
+                    let tmpContext = {}, totalDistance = 0, count = 0, currentKey, exprIdx = 0
+                    for (let i = 0; i < textTokens.stemmed.length; i++) {
+                        let pushit = false
+                        if (exprTokens.stemmed[exprIdx].startsWith(Bot.CONTEXTSTART) && exprTokens.stemmed[exprIdx].endsWith(Bot.CONTEXTEND)) {
+                            currentKey = exprTokens.stemmed[exprIdx].substring(Bot.CONTEXTSTART.length, exprTokens.stemmed[exprIdx].length - Bot.CONTEXTEND.length)
+                            if (!tmpContext[currentKey + 'List']) {
+                                tmpContext[currentKey + 'List'] = []
+                                tmpContext[currentKey + 'StemmedList'] = []
+                            }
+                            pushit = true
                         } else {
-                            tmpContext = {}
-                            break
+                            const distance = natural.JaroWinklerDistance(textTokens.stemmed[i], exprTokens.stemmed[exprIdx])
+                            //console.log(textTokens.stemmed[i], distance)
+                            if (distance < 0.65 && currentKey) {
+                                // it is probably a part of the context
+                                pushit = true
+                                exprIdx--
+                            } else {
+                                totalDistance += distance
+                                count++
+                            }
                         }
 
+                        if (pushit) {
+                            tmpContext[currentKey + 'List'].push(textTokens.original[i])
+                            tmpContext[currentKey + 'StemmedList'].push(textTokens.stemmed[i])
+                        }
+
+                        exprIdx++
+                        if (exprIdx >= exprTokens.stemmed.length) {
+                            exprIdx = exprTokens.stemmed.length - 1
+                        }
                     }
-                    finalContext = {...finalContext, ...tmpContext}
+                    const avgDistance = totalDistance / count
+
+                    if (avgDistance > 0.9 && avgDistance > bestDistance) {
+                        bestDistance = avgDistance
+                        if (tmpContext[currentKey + 'List']) {
+                            tmpContext[currentKey] = tmpContext[currentKey + 'List'].join(' ')
+                            tmpContext[currentKey + 'Stemmed'] = tmpContext[currentKey + 'StemmedList'].join(' ')
+                        }
+                        finalContext = tmpContext
+                    }
+
+                    //  console.log(textTokens.stemmed, exprTokens.stemmed)
+                    //console.log(avgDistance)
+                    //  console.log('distance', totalDistance / count)
                 }
             })
         }
+
         return finalContext
     }
 
@@ -154,23 +243,28 @@ class Bot {
     }
 
     tokenizeAndStem(lang, text) {
-        var tokenizer = new natural.RegexpTokenizer({pattern: /[^A-Za-zА-Яа-я0-9_]+/});
+        var tokenizer = new natural.RegexpTokenizer({pattern: new RegExp('[^A-Za-zА-Яа-я0-9_' + Object.keys(this.umlautMap).join() + ']+')});
 
-        var stemmedTokens = []
-        var lowercaseText = text.toLowerCase()
-        var tokens = tokenizer.tokenize(lowercaseText)
+        var finalTokens = {stemmed: [], original: []}
+        var tokens = tokenizer.tokenize(text)
 
 
         tokens.forEach(token => {
-            if (token.startsWith(Bot.CONTEXTSTART) === 0 && token.endsWith(Bot.CONTEXTEND)) {
-                stemmedTokens.push(token)
-            } else if (this.stopwords[lang].indexOf(token) == -1)
-                stemmedTokens.push(natural.PorterStemmer.stem(token))
+            const tokenLowerCase = token.replace(new RegExp('[' + Object.keys(this.umlautMap).join('|') + ']', "g"),
+                (a) => this.umlautMap[a]
+            ).toLowerCase()
+
+            if (tokenLowerCase.startsWith(Bot.CONTEXTSTART) === 0 && tokenLowerCase.endsWith(Bot.CONTEXTEND)) {
+                finalTokens.stemmed.push(tokenLowerCase)
+                finalTokens.original.push(token)
+            } else if (this.stopwords[lang].indexOf(tokenLowerCase) == -1) {
+                finalTokens.stemmed.push(natural.LancasterStemmer.stem(tokenLowerCase))
+                finalTokens.original.push(token)
+            }
         })
-
-        return stemmedTokens
-
+        return finalTokens
     }
+
 
     findAnswer(lang, key, context) {
         if (key && this.answers[lang] && this.answers[lang][key]) {
@@ -184,7 +278,7 @@ class Bot {
         const classifier = this.classifier[lang]
         if (classifier.docs.length) {
             const result = classifier.getClassifications(text)
-            console.log(result)
+            //console.log(result)
             if (result.length && result[0].value > this.threshold) {
                 return result[0]
             }
@@ -193,11 +287,14 @@ class Bot {
     }
 
     async handleOn(key, api) {
+        console.log(key)
         const arr = this.ons[key]
-        for (let i = 0; i < arr.length; i++) {
-            const res = await arr[i]({api, ...this.result})
-            if (res) {
-                return res
+        if( arr ) {
+            for (let i = 0; i < arr.length; i++) {
+                const res = await arr[i]({api, ...this.result})
+                if (res) {
+                    return res
+                }
             }
         }
     }
@@ -213,9 +310,16 @@ class Bot {
             expressions = [expressions]
         }
         expressions.forEach(expr => {
-            this.classifier[lang].addDocument(expr, key)
+            const cls = this.classifier[lang]
             if (expr.indexOf('${') >= 0 && expr.indexOf('}') >= 0) {
-                this.classifier[lang].withContext.push(expr.replace(/\${/g, Bot.CONTEXTSTART).replace(/}/g, Bot.CONTEXTEND))
+                if (!cls.withContext[key]) {
+                    cls.withContext[key] = []
+                }
+                cls.withContext[key].push(expr.replace(/\${/g, Bot.CONTEXTSTART).replace(/}/g, Bot.CONTEXTEND))
+                this.classifier[lang].addDocument(expr.replace(/\$\{[A-z0-9_]*?\}/g, ''), key)
+            } else {
+
+                this.classifier[lang].addDocument(expr, key)
             }
         })
     }
@@ -246,4 +350,57 @@ class Bot {
 
 }
 
-export default Bot
+
+let registeredBots = {}
+
+const registerBots = async (db) => {
+    const bots = (await db.collection('Bot').find({active: true}).toArray())
+
+
+    bots.forEach(async botData => {
+            const bot = new Bot(botData)
+
+            await bot.loadCommands(db)
+
+            bot.start()
+
+            registeredBots[botData._id] = bot
+
+
+            /*
+             bot.start((ctx) => ctx.reply('Welcome!'))
+             bot.help((ctx) => ctx.reply('Send me a sticker'))
+             bot.on('sticker', (ctx) => ctx.reply('👍'))
+             bot.hears('hi', (ctx) => ctx.reply('Hey there'))
+             bot.hears(/rahel/i, (ctx) => ctx.reply('Ach Rahel ist die beste 😍🥰😘'))
+             bot.hears(/salo/i, (ctx) => ctx.reply('Meinst du mit salo Salomè?'))
+             bot.launch()*/
+            // console.log(botCommand)
+            /* let match = true
+             if (cronJob.execfilter) {
+             match = cronjobUtil.execFilter(cronJob.execfilter)
+             }
+
+             if (match) {
+
+             registeredBots.push(cron.schedule(cronJob.expression, () => {
+
+             const context = {lang: 'en', id: cronJob.createdBy, username: 'unknown'}
+             cronjobUtil.runScript({cronjobId: cronJob._id, script: cronJob.script, context, db})
+
+             }))
+             }*/
+        }
+    )
+}
+
+
+const unregisterBots = (db) => {
+    Object.keys(registeredBots).forEach(id => {
+        registeredBots[id].destroy()
+    })
+
+    registeredBots = {}
+}
+
+export {BotConnector, unregisterBots, registerBots, registeredBots}

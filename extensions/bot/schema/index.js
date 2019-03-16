@@ -1,10 +1,16 @@
 export default `
 
-    type TelegramResult {
+    type BotMessageResult {
         response: String
+        id: String
+        event: String
     }
     
     type Query {
-    	sendTelegramMessage(message: String!): TelegramResult
+    	sendBotMessage(message: String!, botId: String!, id: String): BotMessageResult
+    }
+    
+    type Subscription{
+        subscribeBotMessage: BotMessageResult
     }
 `
