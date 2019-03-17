@@ -4,23 +4,36 @@ import Telegraf from 'telegraf'
 class BotConnector {
     _ons = {}
     message = {text: ''}
+    messageCount = 0
 
     constructor(message) {
         this.message.text = message
     }
 
     reply(text) {
+        this.messageCount++
         if (this._ons['text']) {
             this._ons['text'].forEach(cb => {
-                cb(text)
+                cb(text, this.messageCount)
             })
         }
+        return {message_id: this.messageCount}
     }
 
     replyWithHTML(html) {
+        this.messageCount++
         if (this._ons['text']) {
             this._ons['text'].forEach(cb => {
-                cb(html)
+                cb(html, this.messageCount)
+            })
+        }
+        return {message_id: this.messageCount}
+    }
+
+    deleteMessage(id) {
+        if (this._ons['deleteMessage']) {
+            this._ons['deleteMessage'].forEach(cb => {
+                cb(id)
             })
         }
     }
@@ -289,7 +302,7 @@ class Bot {
     async handleOn(key, api) {
         console.log(key)
         const arr = this.ons[key]
-        if( arr ) {
+        if (arr) {
             for (let i = 0; i < arr.length; i++) {
                 const res = await arr[i]({api, ...this.result})
                 if (res) {

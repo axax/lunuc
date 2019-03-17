@@ -6,16 +6,22 @@ import {registeredBots, BotConnector} from '../bot'
 export default db => ({
     Query: {
         sendBotMessage: async ({message, botId, id}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
+           // Util.checkIfUserIsLoggedIn(context)
 
             if (registeredBots[botId]) {
                 const currentId = id || (context.id + String((new Date()).getTime()))
 
                 const ctx = new BotConnector(message)
-                ctx.on('text', (text) => {
+                ctx.on('text', (text, id) => {
                     pubsub.publish('subscribeBotMessage', {
                         userId: context.id,
-                        subscribeBotMessage: {response: text, id: currentId, event: 'end'}
+                        subscribeBotMessage: {response: text, id: currentId, message_id: id, event: 'newMessage'}
+                    })
+                })
+                ctx.on('deleteMessage', (id) => {
+                    pubsub.publish('subscribeBotMessage', {
+                        userId: context.id,
+                        subscribeBotMessage: {message_id: id, id: currentId, event: 'deleteMessage'}
                     })
                 })
 
