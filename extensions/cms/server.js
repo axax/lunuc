@@ -62,7 +62,7 @@ Hook.on('cmsTemplateRenderer',async ({db, context, body, slug}) => {
     const scope = {context: scopeContext, page: {slug}}
 
     const {template, script, dataResolver} = cmsPages.results[0]
-    const {resolvedData} = await UtilCms.resolveData(db, context, dataResolver.trim(), scope)
+    const {resolvedData} = await UtilCms.resolveData(db, context, dataResolver?dataResolver.trim():'', scope)
     try {
         global._app_ = {lang: context.lang}
         return ReactDOMServer.renderToString(<UIProvider>
