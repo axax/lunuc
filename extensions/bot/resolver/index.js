@@ -1,4 +1,3 @@
-import Util from 'api/util'
 import {pubsub} from 'api/subscription'
 import {withFilter} from 'graphql-subscriptions'
 import {registeredBots, BotConnector} from '../bot'
