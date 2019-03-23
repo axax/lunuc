@@ -595,7 +595,7 @@ class CmsViewContainer extends React.Component {
         }
 
         clearTimeout(this._autoSaveScriptTimeout)
-        this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 10000)
+        this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
 
     }
 
@@ -608,7 +608,7 @@ class CmsViewContainer extends React.Component {
         }
 
         clearTimeout(this._autoSaveDataResolverTimeout)
-        this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, 2000)
+        this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, 5000)
     }
 
     handleTemplateChange = (str, instantSave) => {
@@ -624,7 +624,7 @@ class CmsViewContainer extends React.Component {
         if (instantSave) {
             this._autoSaveTemplate()
         } else {
-            this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 10000)
+            this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 5000)
         }
 
     }
@@ -952,7 +952,6 @@ const CmsViewContainerWithGql = compose(
                 if (_version) {
                     variables._version = _version
                 }
-
                 return mutate({
                     variables,
                     optimisticResponse: {

@@ -690,18 +690,16 @@ const GenericResolver = {
 
         // we create also a dataSet with dot notation format for partial update
         const dataSetDotNotation = {}
-
-        // clone object but without _id and undefined property
-        // keep null values to remove references
+        // clone object but without _id, _version and undefined property
+        // null is when a refrence has been removed
         const dataSet = Object.keys(data).reduce((o, k) => {
-            if (k !== '_id' && k !== '_version' && data[k] !== undefined) {
+            if (k !== '_id' && k !== '_version' && data[k] !== undefined ) {
 
                 if (fields && fields[k] && fields[k].localized) {
                     // is field localized
                     if (!o[k + '_localized'])
                         o[k + '_localized'] = {}
                     o[k + '_localized'][context.lang] = data[k]
-                    dataSetDotNotation[k + '_localized.' + e] = data[k][e]
                 } else if (k.endsWith('_localized')) {
                     // if a localized object {_localized:{de:'',en:''}} gets passed
                     // convert it to the format _localized.de='' and _localized.en=''

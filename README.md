@@ -137,9 +137,9 @@ Feedback, issues, etc. are more than welcome!
 #### force all packages to update to latest version
 `npm i -g npm-check-updates`
 
-check with `ncu -u` 
+check with `ncu` 
 
-update with `ncu -a`
+update with `ncu -u `
 
 ### Rebuild bcrypt
 `npm rebuild bcrypt --update-binary`

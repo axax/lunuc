@@ -3,7 +3,11 @@ class BotConnector {
     message = {text: ''}
     messageCount = 0
 
-    constructor(message) {
+    constructor() {
+
+    }
+
+    setMessage(message) {
         this.message.text = message
     }
 

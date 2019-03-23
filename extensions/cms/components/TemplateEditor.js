@@ -85,9 +85,8 @@ class TemplateEditor extends React.Component {
 
     render() {
         const {tab, classes, scope, ...rest} = this.props
-        if( !rest.children ) return null
 
-        const type = rest.children.trim().indexOf('<') === 0 ? 'html' : 'json'
+        const type = (rest.children && rest.children.trim().indexOf('<') === 0 )? 'html' : 'json'
         const currentTab = (!scope && this.state.tab === 2 ? 0 : this.state.tab)
         return <div style={{position: 'relative'}}>
             <Tabs

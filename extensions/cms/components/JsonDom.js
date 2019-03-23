@@ -524,7 +524,7 @@ class JsonDom extends React.Component {
                 }
                 const eleProps = {
                     _this: this,
-                    id: key,
+                    id: 'JD'+key.replace(/\./g,'_'),
                     key,
                     _editmode: this.props.editMode.toString(), ...cmsProps, ..._p
                 }

@@ -1,4 +1,3 @@
-
 import natural from 'natural'
 
 
@@ -9,43 +8,58 @@ class Stemmer {
 
     stopwords = []
     charsToKeep = {}
+    synonym = {}
+    cache = {}
 
-    constructor(stopwords, charsToKeep){
-        if( stopwords )
+    constructor(stopwords, charsToKeep, synonym) {
+        if (stopwords)
             this.stopwords = stopwords
-        if(charsToKeep )
+        if (charsToKeep)
             this.charsToKeep = charsToKeep
+        if (synonym)
+            this.synonym = synonym
     }
-
 
 
     tokenizeAndStem(text, keepStops) {
-        return this.tokenizeAndStemFull(text,keepStops).stemmed
+        const result = this.tokenizeAndStemFull(text, keepStops)
+        return keepStops ? result.stemmed : result.stemmedCleaned
     }
 
-    tokenizeAndStemFull(text, keepStops) {
+    tokenizeAndStemFull(text, cache) {
+        if (this.cache[text]) {
+            return this.cache[text]
+        }
         var tokenizer = new natural.RegexpTokenizer({pattern: new RegExp('[^A-Za-zА-Яа-я0-9_' + Object.keys(this.charsToKeep).join() + ']+')});
 
-        var finalTokens = {stemmed: [], original: []}
+        var finalTokens = {stemmed: [], original: [], stemmedCleaned: []}
         var tokens = tokenizer.tokenize(text)
 
 
         tokens.forEach(token => {
-            const tokenLowerCase = token.replace(new RegExp('[' + Object.keys(this.charsToKeep).join('|') + ']', "g"),
+            let tokenLowerCase = token.replace(new RegExp('[' + Object.keys(this.charsToKeep).join('|') + ']', "g"),
                 (a) => this.charsToKeep[a]
             ).toLowerCase()
+            if (this.synonym[tokenLowerCase]) {
+                tokenLowerCase = this.synonym[tokenLowerCase]
+            }
             if (tokenLowerCase.startsWith(Stemmer.CONTEXTSTART) === 0 && tokenLowerCase.endsWith(Stemmer.CONTEXTEND)) {
                 finalTokens.stemmed.push(tokenLowerCase)
                 finalTokens.original.push(token)
-            } else if (keepStops || this.stopwords.indexOf(tokenLowerCase) == -1) {
-                finalTokens.stemmed.push(natural.LancasterStemmer.stem(tokenLowerCase))
+            } else {
+                const stemmed = natural.LancasterStemmer.stem(tokenLowerCase)
+                finalTokens.stemmed.push(stemmed)
                 finalTokens.original.push(token)
+                if (this.stopwords.indexOf(tokenLowerCase) == -1) {
+                    finalTokens.stemmedCleaned.push(stemmed)
+                }
             }
         })
-        //console.log(finalTokens)
+        if (cache) {
+            this.cache[text] = finalTokens
+        }
         return finalTokens
     }
-
 
 
 }

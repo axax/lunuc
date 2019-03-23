@@ -1,30 +1,39 @@
 import {pubsub} from 'api/subscription'
 import {withFilter} from 'graphql-subscriptions'
-import {registeredBots, BotConnector} from '../bot'
+import {registeredBots} from '../bot'
+import BotConnector from '../classes/BotConnector'
+
+// TODO: clean up unsed connectors
+const botConnectors = {}
 
 export default db => ({
     Query: {
         sendBotMessage: async ({message, botId, id}, {context}) => {
-           // Util.checkIfUserIsLoggedIn(context)
+            // Util.checkIfUserIsLoggedIn(context)
 
             if (registeredBots[botId]) {
                 const currentId = id || (context.id + String((new Date()).getTime()))
 
-                const ctx = new BotConnector(message)
-                ctx.on('text', (text, id) => {
-                    pubsub.publish('subscribeBotMessage', {
-                        userId: context.id,
-                        subscribeBotMessage: {response: text, id: currentId, message_id: id, event: 'newMessage'}
-                    })
-                })
-                ctx.on('deleteMessage', (id) => {
-                    pubsub.publish('subscribeBotMessage', {
-                        userId: context.id,
-                        subscribeBotMessage: {message_id: id, id: currentId, event: 'deleteMessage'}
-                    })
-                })
+                if (!botConnectors[currentId]) {
+                    const ctx = new BotConnector()
+                    botConnectors[currentId] = ctx
 
-                registeredBots[botId].communicate('text', ctx)
+                    ctx.on('text', (text, message_id) => {
+                        pubsub.publish('subscribeBotMessage', {
+                            userId: context.id,
+                            subscribeBotMessage: {response: text, id: currentId, message_id, event: 'newMessage'}
+                        })
+                    })
+                    ctx.on('deleteMessage', (message_id) => {
+                        pubsub.publish('subscribeBotMessage', {
+                            userId: context.id,
+                            subscribeBotMessage: {message_id, id: currentId, event: 'deleteMessage'}
+                        })
+                    })
+
+                }
+                botConnectors[currentId].setMessage(message)
+                registeredBots[botId].communicate('text', botConnectors[currentId])
 
 
                 return {id: currentId}

@@ -57,7 +57,7 @@ const styles = theme => ({
         maxWidth: 600,
         maxHeight: 200
     },
-    script:{
+    script: {
         fontFamily: '"Courier 10 Pitch", Courier, monospace',
         fontSize: '85%'
     }
@@ -242,9 +242,10 @@ class TypesContainer extends React.Component {
                                     <img style={{height: '40px'}}
                                          src={v}/>
                             } else if (field.uitype === 'jseditor') {
-                                if( v.length > 50 ) {
-                                    dynamic[field.name] = <span className={classes.script}>{v.substring(0, 20) + '...' + v.substring(v.length-20)}</span>
-                                }else{
+                                if (v.length > 50) {
+                                    dynamic[field.name] = <span
+                                        className={classes.script}>{v.substring(0, 20) + '...' + v.substring(v.length - 20)}</span>
+                                } else {
                                     dynamic[field.name] = <span className={classes.script}>{v}</span>
                                 }
                             } else if (field.uitype === 'datetime') {
@@ -474,7 +475,7 @@ class TypesContainer extends React.Component {
         if (createEditDialog !== undefined) {
             editDialogProps = {
                 title: type,
-                fullWidth:true,
+                fullWidth: true,
                 maxWidth: 'xl',
                 open: this.state.createEditDialog,
                 onClose: this.handleCreateEditData,
@@ -1111,7 +1112,6 @@ class TypesContainer extends React.Component {
 
 
     referencesToIds = (input) => {
-
         const formFields = getFormFields(this.pageParams.type)
         // make sure if it is a reference only id gets passed as imput to craeteData
         const ipt2 = {}
@@ -1138,7 +1138,7 @@ class TypesContainer extends React.Component {
                             ipt2[k] = item[0]._id
                         }
                     } else {
-                        ipt2[k] = null
+                        ipt2[k] = []
                     }
                 } else if (item && item.constructor === Object) {
                     ipt2[k] = item._id
@@ -1227,8 +1227,9 @@ class TypesContainer extends React.Component {
             // convert array to single value for not multivalue references
             Object.keys(formFields).forEach(key => {
                 const field = formFields[key]
-                if (field.reference && !field.multi && fieldData[key] && fieldData[key].length) {
-                    fieldData[key] = fieldData[key][0]
+                if (field.reference && !field.multi && fieldData[key]) {
+
+                    fieldData[key] = fieldData[key].length > 0 ? fieldData[key][0] : null
                 }
             })
 

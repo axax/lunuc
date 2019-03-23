@@ -1,5 +1,15 @@
 export const userSchemaRaw = `
 
+
+	type UserGroup {
+		_id: ID!
+		status: String
+        modifiedAt: Float
+        name: String!
+        role: UserRole!
+    }
+    
+    
 	type UserRole {
 		_id: ID!
 		status: String
