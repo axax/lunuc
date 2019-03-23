@@ -36,13 +36,11 @@ const UtilCms = {
             } else {
                 match = {slug: slugMatch}
             }
-            console.log(match)
             cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv'], {
                 match,
                 _version
             })
 
-            console.log(cmsPages)
 
             // minify template if no user is logged in
             if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
