@@ -18,6 +18,11 @@
           "clone": "${slug}_copy"
         },
         {
+          "name": "hostRule",
+          "label": "Host rule",
+          "required": false
+        },
+        {
           "name": "public",
           "label": "Public",
           "type": "Boolean"

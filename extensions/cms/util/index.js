@@ -24,7 +24,7 @@ const UtilCms = {
                 host = headers.host.split(':')[0]
             }
         }
-
+        host='www.onyou.ch'
 
         const cacheKey = 'cmsPage-' + _version + '-' + slug + (host ? '-' + host : '')
 
@@ -36,25 +36,32 @@ const UtilCms = {
         if (!cmsPages) {
 
 
-            let match, slugMatch
+            let match, hostRule
 
             if (host) {
-                slugMatch = {$regex: `^${slug}($|;)|;${host.replace(/\./g, '\\.')}=${slug}($|;)`, $options: 'i'}
-            } else {
-                slugMatch = slug
+                hostRule = {$regex: `(^|;)${host.replace(/\./g, '\\.')}=${slug}($|;)`, $options: 'i'}
             }
+
             // slugMatch.$regex = 'test|'+slug
             if (!userIsLoggedIn) {
                 // if no user only match public entries
-                match = {$and: [{slug: slugMatch}, {public: true}]}
+                if (hostRule) {
+                    match = {$and: [{$or: [{hostRule},{slug}]}, {public: true}]}
+                } else {
+                    match = {$and: [{slug}, {public: true}]}
+                }
             } else {
-                match = {slug: slugMatch}
+                if (hostRule) {
+                    match = {$or: [{hostRule},{slug}]}
+                } else {
+                    match = {slug}
+                }
             }
+
             cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv'], {
                 match,
                 _version
             })
-
 
             // minify template if no user is logged in
             if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
