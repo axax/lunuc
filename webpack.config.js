@@ -12,7 +12,7 @@ const WebpackI18nPlugin = require("./webpack.i18n");
 
 const date = new Date()
 const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1,
-    BUILD_NUMBER = `${date.getYear()}${date.getMonth()}${date.getDay()}.${Math.ceil((date-new Date().setHours(0,0,0,0))/8641)}`
+    BUILD_NUMBER = `${date.getYear() - 100}${date.getMonth() + 1}${date.getDate()}.${Math.ceil((date - new Date().setHours(0, 0, 0, 0)) / 8641)}`
 
 /*---------------------------------------------------
  Define which directories are included from the build based on the config file
