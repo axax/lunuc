@@ -24,6 +24,7 @@ const UtilCms = {
 
             if( headers ) {
                 const host = headers.host.split(':')[0]
+                console.log(host)
                 slugMatch = { $regex: `^${slug}($|;)|;${host.replace(/\./g,'\\.')}=${slug}($|;)`, $options: 'i' }
             }else{
                 slugMatch = slug
