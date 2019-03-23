@@ -33,7 +33,7 @@
     "api:local": "export MONGO_URL=mongodb://localhost:27018;export BABEL_ENV=api;PORT=3000 nodemon ./api/index.js --watch api --watch extensions --ignore 'gensrc/*'",
     "start": "echo \"Start api and client concurrently\" && npm run api & npm run client",
     "start:dev": "echo \"Start api and client in dev mode concurrently\" && npm run api:dev & npm run client:dev",
-    "heroku-prebuild": "npm install",
+    "heroku-prebuild": "npm install -f",
     "heroku-postbuild": "npm run build"
   },
   "keywords": [
