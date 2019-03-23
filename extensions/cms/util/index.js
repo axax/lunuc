@@ -23,7 +23,19 @@ const UtilCms = {
             let match, slugMatch
 
             if( headers ) {
-                const host = headers.host.split(':')[0]
+
+                let host
+                if( headers.forwarded) {
+                    const match = forwarded.match(/(?<=(^|; )host=).*(?=(;|$))/)
+                    if( match ){
+                        host = match[0].split(':')[0]
+                    }
+                }
+
+                if( !host ){
+                    host = headers.host.split(':')[0]
+                }
+
                 console.log(host)
                 slugMatch = { $regex: `^${slug}($|;)|;${host.replace(/\./g,'\\.')}=${slug}($|;)`, $options: 'i' }
             }else{

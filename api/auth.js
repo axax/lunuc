@@ -59,7 +59,6 @@ export const auth = {
 
 
 		app.use((req, res, next) => {
-console.log(req.hostname, req.headers)
 			const token = req.headers[AUTH_HEADER], lang = req.headers[CONTENT_LANGUAGE_HEADER]
 
             // now if auth is needed we can check if the context is available
