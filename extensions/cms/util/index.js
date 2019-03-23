@@ -10,7 +10,23 @@ import {
 const UtilCms = {
     getCmsPage: async ({db, context, slug, _version, headers}) => {
         const userIsLoggedIn = Util.isUserLoggedIn(context)
-        const cacheKey = 'cmsPage-' + _version + '-' + slug
+        let host
+        if (headers) {
+            if (headers.forwarded) {
+                // if request comes from proxy server
+                const match = headers.forwarded.match(/(?<=(^|; )host=).*(?=(;|$))/)
+                if (match) {
+                    host = match[0].split(':')[0]
+                }
+            }
+
+            if (!host) {
+                host = headers.host.split(':')[0]
+            }
+        }
+
+
+        const cacheKey = 'cmsPage-' + _version + '-' + slug + (host ? '-' + host : '')
 
         let cmsPages
         if (!userIsLoggedIn) {
@@ -22,26 +38,12 @@ const UtilCms = {
 
             let match, slugMatch
 
-            if( headers ) {
-
-                let host
-                if( headers.forwarded) {
-                    const match = headers.forwarded.match(/(?<=(^|; )host=).*(?=(;|$))/)
-                    if( match ){
-                        host = match[0].split(':')[0]
-                    }
-                }
-
-                if( !host ){
-                    host = headers.host.split(':')[0]
-                }
-
-                console.log(host)
-                slugMatch = { $regex: `^${slug}($|;)|;${host.replace(/\./g,'\\.')}=${slug}($|;)`, $options: 'i' }
-            }else{
+            if (host) {
+                slugMatch = {$regex: `^${slug}($|;)|;${host.replace(/\./g, '\\.')}=${slug}($|;)`, $options: 'i'}
+            } else {
                 slugMatch = slug
             }
-           // slugMatch.$regex = 'test|'+slug
+            // slugMatch.$regex = 'test|'+slug
             if (!userIsLoggedIn) {
                 // if no user only match public entries
                 match = {$and: [{slug: slugMatch}, {public: true}]}
@@ -136,10 +138,10 @@ const UtilCms = {
                             if (!segment.ignoreError)
                                 throw e
                         }
-                    }  else if (segment.subscription) {
-                        if( segment.subscription.constructor === String){
+                    } else if (segment.subscription) {
+                        if (segment.subscription.constructor === String) {
                             subscriptions.push(segment.subscription)
-                        }else{
+                        } else {
                             subscriptions.push(JSON.stringify(segment.subscription))
                         }
                     } else if (segment.system) {
