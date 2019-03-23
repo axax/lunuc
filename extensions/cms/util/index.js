@@ -26,7 +26,7 @@ const UtilCms = {
 
                 let host
                 if( headers.forwarded) {
-                    const match = forwarded.match(/(?<=(^|; )host=).*(?=(;|$))/)
+                    const match = headers.forwarded.match(/(?<=(^|; )host=).*(?=(;|$))/)
                     if( match ){
                         host = match[0].split(':')[0]
                     }
