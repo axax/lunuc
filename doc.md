@@ -285,3 +285,8 @@ on('click',(payload, e)=>{
 [local].tr.json
 
 _tr()
+
+
+### Config environment vars
+
+APP_FORCE_HTTPS=true 

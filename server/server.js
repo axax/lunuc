@@ -23,9 +23,11 @@ const options = {
 // Initialize http api
 const app = httpx.createServer(options, function (req, res) {
     if (!config.DEV_MODE && req.headers.host !== 'localhost:' + PORT && req.headers['x-forwarded-proto'] !== 'https') {
-        console.log('Redirect to https' + req.headers.host)
-        res.writeHead(301, {"Location": "https://" + req.headers.host + req.url})
-        res.end()
+        if( process.env.APP_FORCE_HTTPS ) {
+            console.log('Redirect to https' + req.headers.host)
+            res.writeHead(301, {"Location": "https://" + req.headers.host + req.url})
+            res.end()
+        }
     }
 
     const uri = url.parse(req.url).pathname
