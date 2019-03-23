@@ -158,6 +158,8 @@ class Bot {
                         if (pushit) {
                             tmpContext[currentKey + 'List'].push(textTokens.original[i])
                             tmpContext[currentKey + 'StemmedList'].push(textTokens.stemmed[i])
+                            tmpContext[currentKey] = tmpContext[currentKey + 'List'].join(' ')
+                            tmpContext[currentKey + 'Stemmed'] = tmpContext[currentKey + 'StemmedList'].join(' ')
                         }
 
                         exprIdx++
@@ -169,13 +171,8 @@ class Bot {
 
                     if (avgDistance > 0.9 && avgDistance > bestDistance) {
                         bestDistance = avgDistance
-                        if (tmpContext[currentKey + 'List']) {
-                            tmpContext[currentKey] = tmpContext[currentKey + 'List'].join(' ')
-                            tmpContext[currentKey + 'Stemmed'] = tmpContext[currentKey + 'StemmedList'].join(' ')
-                        }
                         finalContext = tmpContext
                     }
-
                     //  console.log(textTokens.stemmed, exprTokens.stemmed)
                     //console.log(avgDistance)
                     //  console.log('distance', totalDistance / count)
@@ -214,7 +211,6 @@ class Bot {
         const classifier = this.classifier[lang]
         if (classifier.docs.length) {
             const result = classifier.getClassifications(text)
-            console.log(text, result)
             if (result.length && result[0].value > this.threshold) {
                 return result[0]
             }

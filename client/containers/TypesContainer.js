@@ -1138,7 +1138,7 @@ class TypesContainer extends React.Component {
                             ipt2[k] = item[0]._id
                         }
                     } else {
-                        ipt2[k] = []
+                        ipt2[k] = null
                     }
                 } else if (item && item.constructor === Object) {
                     ipt2[k] = item._id
@@ -1222,14 +1222,14 @@ class TypesContainer extends React.Component {
             }
 
             const fieldData = Object.assign({}, this.createEditForm.state.fields)
+
             const formFields = getFormFields(this.pageParams.type)
 
             // convert array to single value for not multivalue references
             Object.keys(formFields).forEach(key => {
                 const field = formFields[key]
-                if (field.reference && !field.multi && fieldData[key]) {
-
-                    fieldData[key] = fieldData[key].length > 0 ? fieldData[key][0] : null
+                if (field.reference && !field.multi && fieldData[key] && fieldData[key].length) {
+                    fieldData[key] = fieldData[key][0]
                 }
             })
 
