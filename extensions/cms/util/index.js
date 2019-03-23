@@ -24,7 +24,6 @@ const UtilCms = {
                 host = headers.host.split(':')[0]
             }
         }
-        host='www.onyou.ch'
 
         const cacheKey = 'cmsPage-' + _version + '-' + slug + (host ? '-' + host : '')
 
