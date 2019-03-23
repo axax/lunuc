@@ -18,7 +18,7 @@ const createScopeForDataResolver = function (query) {
 
 export default db => ({
     Query: {
-        cmsPages: async ({limit, page, offset, filter, sort, _version}, {context}) => {
+        cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
             return await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug', 'name', 'urlSensitiv'], {
                 limit,
@@ -29,11 +29,11 @@ export default db => ({
                 _version
             })
         },
-        cmsPage: async ({slug, query, nosession, _version}, {context}) => {
+        cmsPage: async ({slug, query, nosession, _version}, {context, headers}) => {
             // TODO: Not just check if user is logged in but also check what role he has
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
-            let cmsPages = await UtilCms.getCmsPage(db, context, slug, _version)
+            let cmsPages = await UtilCms.getCmsPage({db, context, slug, _version, headers})
 
             if (!cmsPages.results) {
                 throw new Error('Cms page doesn\'t exist')

@@ -72,7 +72,7 @@ export default () => {
                 name: 'View cms page',
                 onClick: () => {
                     const {_version} = container.pageParams
-                    container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug : ''))
+                    container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug.split(';')[0] : ''))
                 },
                 icon: <WebIcon />
             })
@@ -83,7 +83,7 @@ export default () => {
     Hook.on('TypeTableEntryClick', ({type, item, container}) => {
         if (type === 'CmsPage') {
             const {_version} = container.pageParams
-            container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug : ''))
+            container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug.split(';')[0] : ''))
         }
     })
 }

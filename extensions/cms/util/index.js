@@ -8,7 +8,7 @@ import {
 } from 'util/capabilities'
 
 const UtilCms = {
-    getCmsPage: async (db, context, slug, _version) => {
+    getCmsPage: async ({db, context, slug, _version, headers}) => {
         const userIsLoggedIn = Util.isUserLoggedIn(context)
         const cacheKey = 'cmsPage-' + _version + '-' + slug
 
@@ -18,17 +18,30 @@ const UtilCms = {
             cmsPages = Cache.get(cacheKey)
         }
         if (!cmsPages) {
-            let match
+
+
+            let match, slugMatch
+
+            if( headers ) {
+                const host = headers.host.split(':')[0]
+                slugMatch = { $regex: `^${slug}($|;)|;${host.replace(/\./g,'\\.')}=${slug}($|;)`, $options: 'i' }
+            }else{
+                slugMatch = slug
+            }
+           // slugMatch.$regex = 'test|'+slug
             if (!userIsLoggedIn) {
                 // if no user only match public entries
-                match = {$and: [{slug}, {public: true}]}
+                match = {$and: [{slug: slugMatch}, {public: true}]}
             } else {
-                match = {slug}
+                match = {slug: slugMatch}
             }
+            console.log(match)
             cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv'], {
                 match,
                 _version
             })
+
+            console.log(cmsPages)
 
             // minify template if no user is logged in
             if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
