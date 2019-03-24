@@ -14,6 +14,7 @@ class Bot {
     exactMatch = {}
     telegramBot = false
     result = {}
+    telegramChatIds = [437556760,  -297061732, -356386664]
 
     synonym = {
         de: {velo: 'fahrrad'},
@@ -62,6 +63,7 @@ class Bot {
 
 
     destroy() {
+        clearInterval(this.interval)
         if (this.telegramBot) {
             this.telegramBot.stop()
         }
@@ -79,12 +81,30 @@ class Bot {
 
             Object.keys(this.ons).forEach(key => {
                 this.telegramBot.on(key, ctx => {
+                    this.addTelegramChat(ctx)
                     this.communicate(key, ctx)
                 })
             })
+            /*this.telegramBot.start((ctx) => {
+             this.addTelegramChat(ctx)
+             ctx.reply('Welcome')
+             })*/
             this.telegramBot.launch()
         }
+
+        this.interval = setInterval(this.checkStatus.bind(this), 10000)
     }
+
+    addTelegramChat(ctx) {
+        if (!this.telegramChatIds[ctx.chat.id]) {
+            this.telegramChatIds.push(ctx.chat.id)
+        }
+    }
+
+    checkStatus() {
+        this.handleOn('checkStatus')
+    }
+
 
     communicate(key, ctx) {
         if (ctx.message && ctx.message.text) {
@@ -269,7 +289,7 @@ class Bot {
         const arr = this.ons[key]
         if (arr) {
             for (let i = 0; i < arr.length; i++) {
-                const res = await arr[i]({api, ...this.result})
+                const res = await arr[i]({api, ...this.result, bot: this, telegram: this.telegramBot.telegram})
                 if (res) {
                     return res
                 }

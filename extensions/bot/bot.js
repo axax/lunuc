@@ -47,6 +47,7 @@ const registerBots = async (db) => {
 const unregisterBots = (db) => {
     Object.keys(registeredBots).forEach(id => {
         registeredBots[id].destroy()
+        delete registeredBots[id]
     })
 
     registeredBots = {}
