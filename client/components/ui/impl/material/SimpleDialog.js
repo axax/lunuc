@@ -35,7 +35,7 @@ export const SimpleDialog = withMobileDialog()(({classes,children, onClose, acti
             <DialogActions>
                 {actions.map((action, i) => {
                     return (
-                        <Button key={i} onClick={() => {
+                        <Button autoFocus={action.autoFocus} key={i} onClick={() => {
                             onClose(action)
                         }} color={action.type}>
                             {action.label}

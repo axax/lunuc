@@ -51,15 +51,15 @@ class JsonDom extends React.Component {
         'Card': UiCard,
         'Col': UiCol,
         'Row': UiRow,
-        'h1$': ({_this, id, children, ...rest}) => <h1 id={id} {...rest}><ContentEditable
-            onChange={(v) => _this.emitChange(id, v)}
-            onBlur={(v) => _this.emitChange(id, v, true)}>{children}</ContentEditable></h1>,
-        'h2$': ({_this, id, children, ...rest}) => <h2 id={id} {...rest}><ContentEditable
-            onChange={(v) => _this.emitChange(id, v)}
-            onBlur={(v) => _this.emitChange(id, v, true)}>{children}</ContentEditable></h2>,
-        'p$': ({_this, id, children, ...rest}) => <p id={id} {...rest}><ContentEditable
-            onChange={(v) => _this.emitChange(id, v)}
-            onBlur={(v) => _this.emitChange(id, v, true)}>{children}</ContentEditable></p>
+        'h1$': ({_this, children, ...rest}) => <h1 {...rest}><ContentEditable
+            onChange={(v) => _this.emitChange(rest._key, v)}
+            onBlur={(v) => _this.emitChange(rest._key, v, true)}>{children}</ContentEditable></h1>,
+        'h2$': ({_this, children, ...rest}) => <h2 {...rest}><ContentEditable
+            onChange={(v) => _this.emitChange(rest._key, v)}
+            onBlur={(v) => _this.emitChange(rest._key, v, true)}>{children}</ContentEditable></h2>,
+        'p$': ({_this, children, ...rest}) => <p {...rest}><ContentEditable
+            onChange={(v) => _this.emitChange(rest._key, v)}
+            onBlur={(v) => _this.emitChange(rest._key, v, true)}>{children}</ContentEditable></p>
     }
     static hock = true
     static instanceCounter = 0
@@ -226,7 +226,7 @@ class JsonDom extends React.Component {
                 this.runScript = true
             }
 
-            if( this.props.resources !== props.resources){
+            if (this.props.resources !== props.resources) {
                 this.checkResources()
             }
 
@@ -252,7 +252,7 @@ class JsonDom extends React.Component {
         this.runJsEvent('update')
     }
 
-    checkResources(){
+    checkResources() {
         // check if all scripts are loaded
         let allloaded = true, counter = 0
         const scripts = document.querySelectorAll('script.cms-script')
@@ -314,27 +314,19 @@ class JsonDom extends React.Component {
         this.runJsEvent('subscription', data)
     }
 
-    emitChange(id, v, save) {
+    emitChange(key, value, save) {
         const {onChange} = this.props
 
         if (!onChange)
             return
 
-        var jsonClone = this.getJsonRaw(this.props)
-        const ids = id.split('.')
-        ids.shift()
+        const jsonClone = this.getJsonRaw(this.props)
 
-        let cur = jsonClone
-        ids.forEach((i) => {
-            if (cur.c) {
-                cur = cur.c[i]
-            } else {
-                cur = cur[i]
-            }
-        })
-        cur.c = v
-
-        onChange(jsonClone, save)
+        const o = Util.getComponentByKey(key, jsonClone)
+        if (o && o.c && o.c.constructor === String) {
+            o.c = value
+            onChange(jsonClone, save)
+        }
     }
 
 
@@ -524,8 +516,9 @@ class JsonDom extends React.Component {
                 }
                 const eleProps = {
                     _this: this,
-                    id: 'JD'+key.replace(/\./g,'_'),
+                    id: key,
                     key,
+                    _key: key,
                     _editmode: this.props.editMode.toString(), ...cmsProps, ..._p
                 }
                 if (this.props.editMode && this.props.inlineEditor) {

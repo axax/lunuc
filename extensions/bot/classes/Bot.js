@@ -5,19 +5,18 @@ import stopwords_en from 'natural/lib/natural/util/stopwords'
 
 class Bot {
 
-    threshold = 0.8
+    minAccuracy = 0.7
     ons = {}
     stemmer = {}
     classifier = {}
     answers = {}
-    withContext = {}
-    exactMatch = {}
+    expressions = {}
     telegramBot = false
     result = {}
-    telegramChatIds = [437556760,  -297061732, -356386664]
+    telegramChatIds = [] //[437556760,  -297061732, -356386664]
 
     synonym = {
-        de: {velo: 'fahrrad'},
+        de: {velo: 'fahrrad', 'roboter': 'bot'},
         en: {u: 'you'}
     }
     stopwords = {
@@ -50,8 +49,7 @@ class Bot {
             this.stemmer[lang] = new Stemmer(this.stopwords[lang], this.charsToKeep[lang], this.synonym[lang])
             this.classifier[lang] = new natural.LogisticRegressionClassifier(this.stemmer[lang])
             this.answers[lang] = {}
-            this.withContext[lang] = {}
-            this.exactMatch[lang] = {}
+            this.expressions[lang] = []
         }
 
         if (data.telegramToken) {
@@ -60,7 +58,6 @@ class Bot {
             })
         }
     }
-
 
     destroy() {
         clearInterval(this.interval)
@@ -115,92 +112,199 @@ class Bot {
 
 
     createResult(text) {
+        let bestMatch = {key: '', lang: '', context: {}}, highestAccuracy = 0
         this.result = {}
         for (let i = 0; i < this.languages.length; i++) {
 
-            let intend
             const lang = this.languages[i]
             const textTokens = this.stemmer[lang].tokenizeAndStemFull(text)
 
-            const extactMatch = this.getExactMatch(lang, textTokens)
-            if (extactMatch) {
-                intend = {label: extactMatch, value: 1}
-            } else {
-                intend = this.findBestClassificationMatch(lang, text)
+            // 1. check if there is a match
+            let match = this.findBestMatch(lang, textTokens)
+
+            // 2. add answer if there is a match
+            if (match.key) {
+                match.answer = this.findAnswer(lang, match.key, match.context)
             }
 
-            let context = {}
-
-            if (intend.value) {
-                context = this.extractContext(lang, intend.label, textTokens)
-            }
-
-
-            this.result[lang] = {
-                intend: intend.label,
-                intendValue: intend.value,
-                context,
-                answer: this.findAnswer(lang, intend.label, context)
+            if (match.accuracy > highestAccuracy) {
+                highestAccuracy = match.accuracy
+                bestMatch = match
             }
         }
+        this.result.bestMatch = bestMatch
     }
 
-    extractContext(lang, key, textTokens) {
-        let finalContext = {}, bestDistance = 0
 
-        if (this.withContext[lang][key] && this.withContext[lang][key].length) {
-            this.withContext[lang][key].forEach(exprTokens => {
-
-                if (textTokens.stemmed.length >= exprTokens.stemmed.length) {
-                    let tmpContext = {}, totalDistance = 0, count = 0, currentKey, exprIdx = 0
-                    for (let i = 0; i < textTokens.stemmed.length; i++) {
-                        let pushit = false
-                        if (exprTokens.stemmed[exprIdx].startsWith(Stemmer.CONTEXTSTART) && exprTokens.stemmed[exprIdx].endsWith(Stemmer.CONTEXTEND)) {
-                            currentKey = exprTokens.stemmed[exprIdx].substring(Stemmer.CONTEXTSTART.length, exprTokens.stemmed[exprIdx].length - Stemmer.CONTEXTEND.length)
-                            if (!tmpContext[currentKey + 'List']) {
-                                tmpContext[currentKey + 'List'] = []
-                                tmpContext[currentKey + 'StemmedList'] = []
-                            }
-                            pushit = true
-                        } else {
-                            const distance = natural.JaroWinklerDistance(textTokens.stemmed[i], exprTokens.stemmed[exprIdx])
-                            //console.log(textTokens.stemmed[i], distance)
-                            if (distance < 0.65 && currentKey) {
-                                // it is probably a part of the context
-                                pushit = true
-                                exprIdx--
-                            } else {
-                                totalDistance += distance
-                                count++
-                            }
-                        }
-
-                        if (pushit) {
-                            tmpContext[currentKey + 'List'].push(textTokens.original[i])
-                            tmpContext[currentKey + 'StemmedList'].push(textTokens.stemmed[i])
-                            tmpContext[currentKey] = tmpContext[currentKey + 'List'].join(' ')
-                            tmpContext[currentKey + 'Stemmed'] = tmpContext[currentKey + 'StemmedList'].join(' ')
-                        }
-
-                        exprIdx++
-                        if (exprIdx >= exprTokens.stemmed.length) {
-                            exprIdx = exprTokens.stemmed.length - 1
-                        }
+    findBestClassificationMatch(lang, text) {
+        const classifier = this.classifier[lang]
+        if (classifier.docs.length) {
+            const result = classifier.getClassifications(text)
+            if (result.length > 0) {
+                for (const match of result) {
+                    if (match.value > this.threshold) {
+                        /* const opts = this.expressionOptions[match.label]
+                         if (opts) {
+                         const tokens = this.stemmer[lang].tokenizeAndStem(expr)
+                         if (exprTokens.length > opts.maxWords) {
+                         continue
+                         }
+                         }*/
+                        return result[0]
+                    } else {
+                        break
                     }
-                    const avgDistance = totalDistance / count
-
-                    if (avgDistance > 0.9 && avgDistance > bestDistance) {
-                        bestDistance = avgDistance
-                        finalContext = tmpContext
-                    }
-                    //  console.log(textTokens.stemmed, exprTokens.stemmed)
-                    //console.log(avgDistance)
-                    //  console.log('distance', totalDistance / count)
                 }
-            })
+            }
+        }
+        return {label: '', value: 0}
+    }
+
+
+    findBestMatch(lang, tokens) {
+        const expressions = this.expressions[lang]
+        let highestAccuracy = 0, bestMatch
+        if (expressions.length > 0) {
+            for (const expression of expressions) {
+                const options = expression.options
+                let match = {key: expression.key, lang}
+
+                if (expression.tokens.hasContext) {
+                    const x = this.matchExpressionWithContext(expression.tokens, tokens)
+                    match.accuracy = x.accuracy
+                    match.context = x.context
+                } else {
+                    match.accuracy = this.compareTwoStrings(tokens.stemmedWithoutContext.join(''), expression.match)
+                }
+
+                if (match.accuracy > 0) {
+
+                    if (options && options.minAccuracy) {
+                        // if it is not accurate enough skip it
+                        if (options.minAccuracy > match.accuracy) {
+                            continue
+                        }
+                    } else if (this.minAccuracy > match.accuracy) {
+                        continue
+                    }
+
+                    if (match.accuracy > highestAccuracy) {
+                        highestAccuracy = match.accuracy
+                        bestMatch = match
+                        if (highestAccuracy === 1) {
+                            break
+                        }
+                    }
+                }
+            }
         }
 
-        return finalContext
+        if (bestMatch) {
+            return bestMatch
+        }
+
+        return {key: '', accuracy: 0, lang}
+    }
+
+
+    matchExpressionWithContext(exprTokens, textTokens) {
+        let result = {accuracy: 0, context: {}}
+
+        if (textTokens.stemmed.length >= exprTokens.stemmed.length) {
+            let tmpContext = {}, totalAccuracy = 0, count = 0, currentKey, exprIdx = 0
+            for (let i = 0; i < textTokens.stemmed.length; i++) {
+                let pushit = false
+                if (exprTokens.stemmed[exprIdx].startsWith(Stemmer.CONTEXTSTART) && exprTokens.stemmed[exprIdx].endsWith(Stemmer.CONTEXTEND)) {
+                    currentKey = exprTokens.stemmed[exprIdx].substring(Stemmer.CONTEXTSTART.length, exprTokens.stemmed[exprIdx].length - Stemmer.CONTEXTEND.length)
+                    if (!tmpContext[currentKey + 'List']) {
+                        tmpContext[currentKey + 'List'] = []
+                        tmpContext[currentKey + 'StemmedList'] = []
+                    }
+                    pushit = true
+                } else {
+                    const accuracy = natural.JaroWinklerDistance(textTokens.stemmed[i], exprTokens.stemmed[exprIdx])
+
+                    if (accuracy < 0.65 && currentKey) {
+                        // it is probably a part of the context
+                        pushit = true
+                        exprIdx--
+                    } else {
+                        totalAccuracy += accuracy
+                        count++
+                    }
+
+                }
+
+                if (pushit) {
+                    tmpContext[currentKey + 'List'].push(textTokens.original[i])
+                    tmpContext[currentKey + 'StemmedList'].push(textTokens.stemmed[i])
+                    tmpContext[currentKey] = tmpContext[currentKey + 'List'].join(' ')
+                    tmpContext[currentKey + 'Stemmed'] = tmpContext[currentKey + 'StemmedList'].join(' ')
+                }
+
+                exprIdx++
+                if (exprIdx >= exprTokens.stemmed.length) {
+                    exprIdx = exprTokens.stemmed.length - 1
+                }
+            }
+            result.accuracy = totalAccuracy / count
+            result.context = tmpContext
+        }
+        return result
+    }
+
+    compareTwoStrings(first, second) {
+        if (!first.length && !second.length) return 1                   // if both are empty strings
+        if (!first.length || !second.length) return 0                   // if only one is empty string
+        if (first === second) return 1       							 // identical
+        if (first.length === 1 && second.length === 1) return 0         // both are 1-letter strings
+        if (first.length < 2 || second.length < 2) return 0			 // if either is a 1-letter string
+
+        let firstBigrams = new Map()
+        for (let i = 0; i < first.length - 1; i++) {
+            const bigram = first.substr(i, 2)
+            const count = firstBigrams.has(bigram) ? firstBigrams.get(bigram) + 1 : 1
+
+            firstBigrams.set(bigram, count)
+        }
+
+        let intersectionSize = 0;
+        for (let i = 0; i < second.length - 1; i++) {
+            const bigram = second.substr(i, 2)
+            const count = firstBigrams.has(bigram) ? firstBigrams.get(bigram) : 0
+
+            if (count > 0) {
+                firstBigrams.set(bigram, count - 1)
+                intersectionSize++
+            }
+        }
+
+        return (2.0 * intersectionSize) / (first.length + second.length - 2)
+    }
+
+    addExpression(lang, expressions, key, options) {
+        if (expressions.constructor !== Array) {
+            expressions = [expressions]
+        }
+        expressions.forEach(expr => {
+            const tokens = this.stemmer[lang].tokenizeAndStemFull(expr)
+
+            if (tokens.stemmedWithoutContext.length > 0) {
+                this.expressions[lang].push({key, tokens, match: tokens.stemmedWithoutContext.join(''), options})
+            }
+        })
+    }
+
+    addAnswer(lang, answers, key) {
+        if (answers.constructor !== Array) {
+            answers = [answers]
+        }
+        answers.forEach(answer => {
+            if (!this.answers[lang][key]) {
+                this.answers[lang][key] = []
+            }
+            this.answers[lang][key].push(answer)
+        })
     }
 
 
@@ -227,69 +331,13 @@ class Bot {
         }
     }
 
-    findBestClassificationMatch(lang, text) {
-        const classifier = this.classifier[lang]
-        if (classifier.docs.length) {
-            const result = classifier.getClassifications(text)
-            if (result.length && result[0].value > this.threshold) {
-                return result[0]
-            }
-        }
-        return {label: '', value: 0}
-
-    }
-
-    getExactMatch(lang, textTokens) {
-        return this.exactMatch[lang][textTokens.stemmed.join('')]
-    }
-
-
-    addExpression(lang, expressions, key) {
-        if (expressions.constructor !== Array) {
-            expressions = [expressions]
-        }
-        expressions.forEach(expr => {
-            const cls = this.classifier[lang]
-
-
-            if (expr.indexOf('${') >= 0 && expr.indexOf('}') >= 0) {
-                if (!this.withContext[lang][key]) {
-                    this.withContext[lang][key] = []
-                }
-                const exprTokens = this.stemmer[lang].tokenizeAndStemFull(expr.replace(/\${/g, Stemmer.CONTEXTSTART).replace(/}/g, Stemmer.CONTEXTEND), true)
-
-                this.withContext[lang][key].push(exprTokens)
-                this.classifier[lang].addDocument(expr.replace(/\$\{[A-z0-9_]*?\}/g, ''), key)
-            } else {
-                const exprTokens = this.stemmer[lang].tokenizeAndStemFull(expr, true)
-
-                const match = exprTokens.stemmed.join('')
-
-                this.exactMatch[lang][match] = key
-
-                this.classifier[lang].addDocument(expr, key)
-            }
-        })
-    }
-
-    addAnswer(lang, answers, key) {
-        if (answers.constructor !== Array) {
-            answers = [answers]
-        }
-        answers.forEach(answer => {
-            if (!this.answers[lang][key]) {
-                this.answers[lang][key] = []
-            }
-            this.answers[lang][key].push(answer)
-        })
-    }
-
 
     async handleOn(key, api) {
         const arr = this.ons[key]
         if (arr) {
             for (let i = 0; i < arr.length; i++) {
-                const res = await arr[i]({api, ...this.result, bot: this, telegram: this.telegramBot.telegram})
+                const res = await
+                    arr[i]({api, ...this.result, bot: this, telegram: this.telegramBot.telegram})
                 if (res) {
                     return res
                 }
@@ -310,13 +358,14 @@ class Bot {
     }
 
     async loadCommands(db) {
-        const botCommands = (await db.collection('BotCommand').find({bot: this.data._id, active: true}).toArray())
+        const botCommands = (await
+                db.collection('BotCommand').find({bot: this.data._id, active: true}).toArray()
+        )
 
 
         botCommands.forEach(async botCommand => {
 
             if (botCommand.script) {
-                //console.log(botCommand.script)
                 const tpl = new Function(`
                  (async () => {
                     try {
@@ -329,7 +378,7 @@ class Bot {
                         const require = this.require;
                         ${botCommand.script}
                     } catch(e) {
-                        console.log(e);
+                        console.log('Error in ${botCommand.name}', e);
                     }
                 })();
                 `)

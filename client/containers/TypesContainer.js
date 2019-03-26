@@ -212,7 +212,13 @@ class TypesContainer extends React.Component {
                                                 return s
                                             }, [])
                                         } else {
-                                            dynamic[field.name] = v.reduce((s, i) => s + (s !== '' ? ', ' : '') + i.name, '')
+                                            dynamic[field.name] = v.reduce((s, i) => {
+                                                if (i) {
+                                                    return s + (s !== '' ? ', ' : '') + i.name
+                                                } else {
+                                                    return 'Broken reference?'
+                                                }
+                                            }, '')
                                         }
 
 
@@ -356,6 +362,9 @@ class TypesContainer extends React.Component {
                     }
                 })
             }
+
+            Hook.call('TypeTableAction', {type, actions})
+
             this._renderedTable =
                 <SimpleTable key="typeTable"
                              title={type}
@@ -1350,6 +1359,20 @@ Hook.on('TypeTable', ({type, dataSource, data, container}) => {
     }
 })
 
+
+// add some extra data to the table
+Hook.on('TypeTableAction', function ({type, actions}) {
+    if (type === 'Media') {
+
+        actions.unshift({
+            name: 'Upload new Media', onClick: () => {
+                setTimeout(() => {
+                    this.setState({createEditDialog: true})
+                }, 300)
+            }
+        })
+    }
+})
 
 // add some extra data to the table
 Hook.on('TypeCreateEditDialog', function ({type, props, dataToEdit}) {

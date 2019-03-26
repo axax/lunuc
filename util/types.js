@@ -254,6 +254,7 @@ Hook.on('Types', ({types}) => {
 
 
     types.Media = {
+        description: 'Media can either be an internal or an external source.',
         name: 'Media',
         usedBy: ['core'],
         fields: [
@@ -261,7 +262,27 @@ Hook.on('Types', ({types}) => {
                 name: 'name'
             },
             {
+                name: 'src',
+                label: 'External Source'
+            },
+            {
+                name: 'group',
+                type: 'MediaGroup',
+                multi: true,
+                reference: true
+            },
+            {
                 name: 'mimeType'
+            }
+        ]
+    }
+
+    types.MediaGroup = {
+        name: 'MediaGroup',
+        usedBy: ['core'],
+        fields: [
+            {
+                name: 'name'
             }
         ]
     }

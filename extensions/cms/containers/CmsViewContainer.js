@@ -571,7 +571,7 @@ class CmsViewContainer extends React.Component {
             const {updateCmsPage} = this.props
 
             updateCmsPage(
-                Object.assign({}, data, {[key]: value}), key, ()=>{
+                Object.assign({}, data, {[key]: value}), key, () => {
                     console.log('done')
                 }
             )
@@ -949,8 +949,10 @@ const CmsViewContainerWithGql = compose(
     graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public){slug template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key, cb) => {
-                const variables = {_id, [key]: rest[key], slug: ownProps.slug}
-                const {_version} = getSlugVersion(ownProps.slug)
+                const {_version, slug} = getSlugVersion(ownProps.slug)
+
+                const variables = {_id, [key]: rest[key], slug}
+
                 if (_version) {
                     variables._version = _version
                 }
@@ -1002,7 +1004,7 @@ const CmsViewContainerWithGql = compose(
                             }
                             store.writeQuery({query: gqlQuery, variables, data})
                         }
-                        if( cb ){
+                        if (cb) {
                             cb()
                         }
                     }

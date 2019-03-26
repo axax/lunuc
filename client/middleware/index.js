@@ -52,6 +52,11 @@ export function configureMiddleware(store) {
             )
         }
         if (networkError) {
+            // hide loader
+            store.dispatch(setNetworkStatus({
+                networkStatus: {loading: false}
+            }))
+
             if (networkError.statusCode === 500) {
                 // this is needed in order to get rid of the loading bar
                 dispatchNetworkSatus()
