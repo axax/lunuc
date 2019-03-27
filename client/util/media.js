@@ -2,12 +2,12 @@ import React from 'react'
 import config from 'gen/config'
 const {UPLOAD_URL} = config
 
-const getImageSrc = (id,props) => {
-    return  UPLOAD_URL + '/' + id
+const getImageSrc = (item) => {
+    return item.src ? item.src : UPLOAD_URL + '/' + item._id
 }
 
-export const getImageTag = (id,props) => {
-    return  <img src={getImageSrc(id,props)} {...props}/>
+export const getImageTag = (item, props) => {
+    return <img src={getImageSrc(item)} {...props}/>
 }
 
 export {getImageSrc}

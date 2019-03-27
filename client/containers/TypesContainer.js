@@ -4,6 +4,7 @@ import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
 import ManageCollectionClones from '../components/types/ManageCollectionClones'
 import {
+    withStyles,
     FileCopyIcon,
     DeleteIcon,
     EditIcon,
@@ -34,7 +35,6 @@ import Hook from 'util/hook'
 import {getTypes, getTypeQueries, getFormFields} from 'util/types'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
-import {withStyles} from '@material-ui/core/styles'
 import {deepMerge}  from 'util/deepMerge'
 const {ADMIN_BASE_URL, UPLOAD_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
 import {COLLECTIONS_QUERY} from '../constants'
@@ -89,6 +89,7 @@ class TypesContainer extends React.Component {
             confirmCloneColDialog: undefined,
             dataToDelete: null,
             createEditDialog: undefined,
+            createEditDialogParams: null,
             dataToEdit: null,
             data: null,
             collectionName: ''
@@ -208,7 +209,7 @@ class TypesContainer extends React.Component {
                                     if (v.constructor === Array) {
                                         if (field.type === 'Media') {
                                             dynamic[field.name] = v.reduce((s, i) => {
-                                                s.push(getImageTag(i._id, {key: i._id, height: 40}))
+                                                s.push(getImageTag(i, {key: i._id, height: 40}))
                                                 return s
                                             }, [])
                                         } else {
@@ -224,7 +225,7 @@ class TypesContainer extends React.Component {
 
                                     } else {
                                         if (field.type === 'Media') {
-                                            dynamic[field.name] = getImageTag(v._id, {height: 40})
+                                            dynamic[field.name] = getImageTag(v, {height: 40})
                                         } else {
                                             if (field.fields) {
                                                 let str = ''
@@ -363,7 +364,7 @@ class TypesContainer extends React.Component {
                 })
             }
 
-            Hook.call('TypeTableAction', {type, actions})
+            Hook.call('TypeTableAction', {type, actions}, this)
 
             this._renderedTable =
                 <SimpleTable key="typeTable"
@@ -1221,7 +1222,7 @@ class TypesContainer extends React.Component {
     handleCreateEditData = (action) => {
 
         const closeModal = () => {
-            this.setState({createEditDialog: false, dataToEdit: null})
+            this.setState({createEditDialog: false, createEditDialogParams: null, dataToEdit: null})
         }
 
         if (action && action.key === 'save') {
@@ -1346,10 +1347,10 @@ Hook.on('TypeTable', ({type, dataSource, data, container}) => {
             const item = data.results[i]
             const mimeType = item.mimeType ? item.mimeType.split('/') : ['file']
 
-            d.data = <a target="_blank" rel="noopener noreferrer" href={UPLOAD_URL + '/' + item._id}>
+            d.data = <a target="_blank" rel="noopener noreferrer" href={item.src || (UPLOAD_URL + '/' + item._id)}>
                 {
                     (mimeType[0] === 'image' ?
-                            <img height="40" src={UPLOAD_URL + '/' + item._id}/>
+                            <img height="40" src={item.src || (UPLOAD_URL + '/' + item._id)}/>
                             :
                             <div className="file-icon" data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
                     )
@@ -1367,7 +1368,7 @@ Hook.on('TypeTableAction', function ({type, actions}) {
         actions.unshift({
             name: 'Upload new Media', onClick: () => {
                 setTimeout(() => {
-                    this.setState({createEditDialog: true})
+                    this.setState({createEditDialog: true, createEditDialogParams: 'upload'})
                 }, 300)
             }
         })
@@ -1376,12 +1377,12 @@ Hook.on('TypeTableAction', function ({type, actions}) {
 
 // add some extra data to the table
 Hook.on('TypeCreateEditDialog', function ({type, props, dataToEdit}) {
-    if (type === 'Media' && !dataToEdit) {
+    if (type === 'Media' && !dataToEdit && this.state.createEditDialogParams === 'upload') {
         // remove save button
         props.actions.splice(1, 1)
         props.children =
             <FileDrop multi={false} accept="*/*" uploadTo="/graphql/upload" resizeImages={true} onSuccess={r => {
-                this.setState({createEditDialog: false})
+                this.setState({createEditDialog: false, createEditDialogParams: null})
 
                 this.getData(this.pageParams, false)
                 // TODO: but it directly into the store instead of reload

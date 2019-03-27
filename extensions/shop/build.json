@@ -2,6 +2,7 @@
   "types": [
     {
       "name": "Product",
+      "collectionClonable": true,
       "fields": [
         {
           "name": "name",
@@ -22,7 +23,11 @@
         },
         {
           "name": "image",
-          "type": "Media"
+          "type": "Media",
+          "fields": [
+            "name",
+            "src"
+          ]
         },
         {
           "name": "categories",
@@ -33,6 +38,7 @@
     },
     {
       "name": "ProductCategory",
+      "collectionClonable": true,
       "fields": [
         {
           "name": "name",
@@ -41,7 +47,8 @@
         },
         {
           "name": "parentCategory",
-          "type": "ProductCategory"
+          "type": "ProductCategory",
+          "multi": true
         }
       ]
     }

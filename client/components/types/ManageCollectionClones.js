@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {
     DeleteIconButton,
+    BackupIconButton,
     DoneIconButton,
     SimpleList,
     SimpleDialog,
@@ -22,7 +23,8 @@ const gqlCollectionsQuery = gql(COLLECTIONS_QUERY)
 class ManageCollectionClones extends React.PureComponent {
     state = {
         showConfirmDeletion: false,
-        dataToDelete: null
+        dataToDelete: null,
+        setAsDefault: null
     }
 
     /*static getDerivedStateFromProps(nextProps, prevState) {
@@ -86,6 +88,8 @@ class ManageCollectionClones extends React.PureComponent {
                         primary: name,
                         secondary: Util.formattedDatetime(date),
                         actions: [<Tooltip title="Deploy version" key="select"><DoneIconButton
+                            onClick={this.handleSelectClick.bind(this, item)}/></Tooltip>,
+                            <Tooltip title="Set as default" key="setdefault"><BackupIconButton
                             onClick={this.handleSelectClick.bind(this, item)}/></Tooltip>,
                             <DeleteIconButton key="delete" onClick={this.handleDeleteClick.bind(this, item)}/>],
                     })

@@ -190,6 +190,7 @@ class GenericForm extends React.Component {
             if (uitype === 'image') {
                 return <FileDrop key={k}/>
             } else if (uitype === 'type_picker') {
+
                 return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
                                    error={!!this.state.fieldErrors[k]}
                                    helperText={this.state.fieldErrors[k]}
@@ -197,7 +198,8 @@ class GenericForm extends React.Component {
                                    name={k}
                                    label={o.label}
                                    multi={o.multi}
-                                   field={o.pickerField}
+                                   pickerField={o.pickerField}
+                                   fields={o.fields}
                                    type={o.type} placeholder={o.placeholder}/>
             } else if (uitype === 'select') {
                 return <SimpleSelect key={k} name={k} onChange={this.handleInputChange} items={o.enum} multi={o.multi} value={value}/>

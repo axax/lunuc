@@ -77,6 +77,7 @@ export const getTypeQueries = (typeName) => {
                 t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
 
                 if (name !== 'createdBy') {
+
                     query += ' ' + name + '{_id'
                     if (rest.fields) {
                         query += ' ' + rest.fields.join(' ')
@@ -151,6 +152,7 @@ export const getFormFields = (type) => {
             required: !!field.required,
             localized: !!field.localized,
             pickerField: field.pickerField,
+            fields: field.fields,
             reference: !!field.reference,
             enum: field.enum
         }

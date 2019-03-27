@@ -39,7 +39,7 @@ class TypePicker extends React.Component {
         const {classes, placeholder, multi, error, helperText} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
-        const field = this.props.field || 'name'
+        const field = this.props.pickerField || 'name'
 
         return <div className={classes.root}>
 
@@ -51,7 +51,7 @@ class TypePicker extends React.Component {
 
             { value.map((v, i) =>
                 <Chip key={i} label={v[field]} onDelete={this.handleRemovePick.bind(this, i)}
-                      avatar={v.__typename === 'Media' ? <Avatar src={getImageSrc(v._id, {height: 30})}/> : null}/>)
+                      avatar={v.__typename === 'Media' ? <Avatar src={getImageSrc(v, {height: 30})}/> : null}/>)
             }
 
             <Paper className={classes.suggestions} square>
@@ -65,7 +65,7 @@ class TypePicker extends React.Component {
                         style={{
                             fontWeight: selIdx === idx ? 500 : 400,
                         }}
-                    >{item.__typename === 'Media' ? getImageTag(item._id, {height: 30}) : ''} {item[field]}
+                    >{item.__typename === 'Media' ? getImageTag(item, {height: 30}) : ''} {item[field]}
                     </MenuItem>
                 )}
 
@@ -78,13 +78,13 @@ class TypePicker extends React.Component {
     handleRemovePick(idx) {
         const value = this.state.value.slice(0)
         value.splice(idx, 1)
+
         this.props.onChange({target: {value, name: this.props.name}})
     }
 
     handlePick(idx) {
-        const field = this.props.field || 'name'
         const value = (this.state.value ? this.state.value.slice(0) : []), item = this.state.data.results[idx]
-        value.push({_id: item._id, [field]: item[field], __typename: this.props.type})
+        value.push({__typename: this.props.type, ...item})
         this.props.onChange({target: {value, name: this.props.name}})
         this.setState({textValue: '', hastFocus: false, data: null})
 
@@ -122,14 +122,18 @@ class TypePicker extends React.Component {
     }
 
     getData(filter) {
-        const {client, type, field} = this.props
+        const {client, type, fields} = this.props
         if (type) {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
 
+            let queryFields = 'name'
+            if( fields ){
+                queryFields = fields.join(' ')
+            }
             const variables = {filter},
                 gqlQuery = gql`query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){
-                ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id ${field || 'name'}}}}`
+                ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id ${queryFields}}}}`
 
             try {
                 const storeData = client.readQuery({
@@ -160,12 +164,13 @@ class TypePicker extends React.Component {
 
 TypePicker.propTypes = {
     value: PropTypes.array,
+    fields: PropTypes.array,
     placeholder: PropTypes.string,
     error: PropTypes.bool,
     helperText: PropTypes.string,
     multi: PropTypes.bool,
     name: PropTypes.string.isRequired,
-    field: PropTypes.string,
+    pickerField: PropTypes.string,
     type: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,
     client: PropTypes.instanceOf(ApolloClient).isRequired,

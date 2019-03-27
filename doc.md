@@ -80,6 +80,7 @@ Hook.on('Routes', ({routes}) => {
 | TypeTableColumns      |  type, columns  | After the creation of the columns for the type table  |   
 | Types      |  types  | Add or remove a type from the type list  |   
 | TypeCreateEditDialog      |  type, props  | Here you can change the behavior of the dialog which is shown when you create or edit data of type  |   
+| ExtensionSystemInfo      |  extension  | Here you can add extension info which are shown in the system menu |   
 
 
 

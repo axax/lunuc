@@ -18,7 +18,6 @@ import fs from 'fs'
 import zipper from 'zip-local'
 import Hook from 'util/hook'
 
-
 const {UPLOAD_DIR} = config
 
 
@@ -33,6 +32,7 @@ export const createAllInitialData = async (db) => {
     await createUsers(db)
     createUploads()
 }
+
 
 
 export const createUploads = () => {
@@ -78,7 +78,7 @@ export const createUserRoles = async (db) => {
 
     const userRoleCollection = await db.collection('UserRole')
 
-    for(const userRole of userRoles ){
+    for (const userRole of userRoles) {
         await userRoleCollection.updateOne(
             {name: userRole.name},
             {

@@ -182,12 +182,12 @@ import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails'
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 
-export const ExpansionPanel = ({heading, children, ...rest}) => {
+export const ExpansionPanel = ({className, heading, children, ...rest}) => {
     return <MaterialExpansionPanel {...rest}>
-        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+        <ExpansionPanelSummary className={className && className.heading} expandIcon={<ExpandMoreIcon />}>
             {heading}
         </ExpansionPanelSummary>
-        <ExpansionPanelDetails>
+        <ExpansionPanelDetails className={className && className.detail}>
             {children}
         </ExpansionPanelDetails>
     </MaterialExpansionPanel>

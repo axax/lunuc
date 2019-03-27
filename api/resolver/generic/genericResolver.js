@@ -1,14 +1,13 @@
 import Util from '../../util'
-//import Types form
 import {ObjectId} from 'mongodb'
 import {getFormFields, getType} from 'util/types'
-import ClientUtil from 'client/util'
 import config from 'gen/config'
 import {
     CAPABILITY_MANAGE_TYPES,
     CAPABILITY_MANAGE_OTHER_USERS
 } from 'util/capabilities'
 import Hook from 'util/hook'
+import AggregationBuilder from './AggregationBuilder'
 
 const {DEFAULT_LANGUAGE} = config
 
@@ -25,783 +24,328 @@ const buildCollectionName = async (db, context, typeName, _version) => {
 }
 
 
-class AggregationBuilder {
-
-    constructor(type, fields, options) {
-        this.type = type
-        this.fields = fields
-        this.options = options
-    }
-
-    getLimit() {
-        let {limit} = this.options
-        return limit ? limit : 10
-    }
-
-    getOffset() {
-        let {offset, page} = this.options
-
-        if (!offset) {
-
-            if (page) {
-                return (page - 1) * this.getLimit()
-            } else {
-                return 0
+const
+    GenericResolver = {
+        entities: async (db, context, typeName, data, options) => {
+            if (!context.lang) {
+                throw new Error('lang on context is missing')
             }
-        }
+            const startTime = new Date()
 
-        return offset
-    }
+            let {match, _version, ...otherOptions} = options
 
-    getPage() {
-        let {page} = this.options
+            const collectionName = await buildCollectionName(db, context, typeName, _version)
 
-        if (!page) {
-            return 1
-        }
+            // Default match
+            if (!match) {
+                // if not specific match is defined, only select items that belong to the current user
+                if (Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
+                    match = {}
 
-        return page
-    }
+                } else {
+                    const typeDefinition = getType(typeName) || {}
 
-    getSort() {
-        let {sort} = this.options
-        if (!sort) {
-            return {_id: -1}
-        } else {
-            if (sort.constructor === String) {
-                // sort looks like "field1 asc, field2 desc"
-                return sort.split(',').reduce((acc, val) => {
-                    const a = val.split(' ')
-                    return {...acc, [a[0]]: (a.length > 1 && a[1].toLowerCase() == "desc" ? -1 : 1)}
+                    if (!typeDefinition.noUserRelation) {
+                        match = {createdBy: ObjectId(context.id)}
+                    }
+                }
+            }
+
+            const aggregationBuilder = new AggregationBuilder(typeName, data, {
+                match,
+                lang: context.lang, ...otherOptions
+            })
+
+            const aggregationQuery = aggregationBuilder.query()
+
+            //console.log(JSON.stringify(aggregationQuery, null, 4))
+
+            const collection = db.collection(collectionName)
+            const startTimeAggregate = new Date()
+            let a = (await collection.aggregate(aggregationQuery).toArray())
+            if (a.length === 0) {
+                return {
+                    aggregateTime: new Date() - startTimeAggregate,
+                    page: aggregationBuilder.getPage(),
+                    limit: aggregationBuilder.getLimit(),
+                    offset: aggregationBuilder.getOffset(),
+                    total: 0,
+                    results: null
+                }
+            }
+
+
+            a[0].aggregateTime = new Date() - startTimeAggregate
+
+            console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${a[0].aggregateTime}ms total time ${new Date() - startTime}ms`)
+            return a[0]
+        },
+        createEnity: async (db, context, typeName, {_version, ...data}) => {
+            Util.checkIfUserIsLoggedIn(context)
+
+            if (!context.lang) {
+                throw new Error('lang on context is missing')
+            }
+
+            const collectionName = await buildCollectionName(db, context, typeName, _version)
+
+            let createdBy, username
+            if (data.createdBy && data.createdBy !== context.id) {
+                await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+                createdBy = data.createdBy
+
+                // TODO: resolve username
+                username = data.createdBy
+            } else {
+                createdBy = context.id
+                username = context.id
+            }
+            const collection = db.collection(collectionName)
+            const insertResult = await collection.insertOne({
+                ...data,
+                createdBy: ObjectId(createdBy)
+            })
+
+            if (insertResult.insertedCount) {
+                const doc = insertResult.ops[0]
+
+                const newData = Object.keys(data).reduce((o, k) => {
+                    const item = data[k]
+                    if (item === null || item === undefined) {
+
+                    } else if (item.constructor === Array) {
+                        o[k] = item.reduce((a, _id) => {
+                            a.push({_id})
+                            return a
+                        }, [])
+                    } else if (item.constructor === ObjectId) {
+                        o[k] = {_id: item}
+                    } else {
+                        o[k] = item
+                    }
+                    return o
                 }, {})
-            }
-        }
-        return sort
-    }
 
-
-    // Mongodb joins
-    createAndAddLookup({type, fieldName, multi, lookups, usePipeline}) {
-
-
-        let lookup
-
-        /* with pipeline */
-        if (usePipeline) {
-            lookup = {
-                $lookup: {
-                    from: type,
-                    as: fieldName,
-                    let: {
-                        [fieldName]: '$' + fieldName
+                return {
+                    _id: doc._id,
+                    status: 'created',
+                    createdBy: {
+                        _id: ObjectId(createdBy),
+                        username
                     },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    [multi ? '$in' : '$eq']: ['$_id', '$$' + fieldName]
-                                }
-                            }
-                        }
-                    ]
+                    ...newData
                 }
             }
-        } else {
+        },
+        deleteEnity: async (db, context, typeName, {_version, ...data}) => {
 
-            // without pipeline
-            lookup = {
-                $lookup: {
-                    from: type,
-                    localField: fieldName,
-                    foreignField: '_id',
-                    as: fieldName
-                }
-            }
-        }
+            Util.checkIfUserIsLoggedIn(context)
 
-        lookups.push(lookup)
-        return {lookup}
-    }
-
-    createGroup(fieldName, multi) {
-        return {'$first': multi ? '$' + fieldName : {$arrayElemAt: ['$' + fieldName, 0]}}
-    }
-
-
-    getParsedFilter() {
-        if (!this._parsedFilter) {
-            const {filter} = this.options
-            if (filter) {
-                this._parsedFilter = ClientUtil.parseFilter(filter)
-            }
-        }
-        return this._parsedFilter
-    }
-
-    // filter where clause
-    createAndAddFilterToMatch({fieldName, reference, localized, match}) {
-        const parsedFilter = this.getParsedFilter()
-        if (parsedFilter) {
-            const {lang} = this.options
-            const filterPart = parsedFilter.parts[fieldName]
-            const filterKey = fieldName + (localized ? '_localized.' + lang : '')
-
-            if (filterPart) {
-
-                if (reference) {
-                    if (filterPart.value) {
-                        if (ObjectId.isValid(filterPart.value)) {
-                            // match by id
-                            this.addFilterToMatch({
-                                filterKey,
-                                filterValue: ObjectId(filterPart.value),
-                                filterOptions: filterPart,
-                                match
-                            })
-                        }
-
-                    }
-                } else {
-                    if (filterPart.constructor === Array) {
-                        filterPart.forEach(e => {
-                            this.addFilterToMatch({
-                                filterKey,
-                                filterValue: {'$regex': e.value, '$options': 'i'},
-                                filterOptions: e,
-                                match
-                            })
-                        })
-                    } else {
-                        this.addFilterToMatch({
-                            filterKey,
-                            filterValue: {
-                                '$regex': filterPart.value,
-                                '$options': 'i'
-                            }, filterOptions: filterPart, match
-                        })
-                    }
-                }
+            if (!data._id) {
+                throw new Error('Id is missing')
             }
 
+            const collectionName = await buildCollectionName(db, context, typeName, _version)
 
-            if (!reference) {
-                parsedFilter.rest.forEach(e => {
-                    this.addFilterToMatch({
-                        filterKey,
-                        filterValue: {'$regex': e.value, '$options': 'i'},
-                        filterOptions: e,
-                        match
-                    })
-                })
+
+            const options = {
+                _id: ObjectId(data._id)
             }
-        }
-    }
-
-
-    addFilterToMatch({filterKey, filterValue, filterOptions, match}) {
-        if (!filterOptions || filterOptions.operator === 'or') {
-            if (!match.$or) {
-                match.$or = []
+            if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+                options.createdBy = ObjectId(context.id)
             }
-            match.$or.push({[filterKey]: filterValue})
-        } else {
-            match[filterKey] = filterValue
-        }
-    }
 
-    query() {
-        const typeDefinition = getType(this.type) || {}
+            const collection = db.collection(collectionName)
 
-        const {projectResult, lang} = this.options
+            const deletedResult = await collection.deleteOne(options)
 
-        // limit and offset
-        const limit = this.getLimit(),
-            offset = this.getOffset(),
-            page = this.getPage(),
-            sort = this.getSort(),
-            typeFields = getFormFields(this.type),
-            parsedFilter = this.getParsedFilter()
-
-        let rootMatch = Object.assign({}, this.options.match),
-            match = {},
-            groups = {},
-            lookups = [],
-            projectResultData = {},
-            hasMatchInReference = false
-
-
-        // if there is filter like _id=12323213
-        if (parsedFilter && parsedFilter.parts._id) {
-            // if there is a filter on _id
-            // handle it here
-            this.addFilterToMatch({
-                filterKey: '_id',
-                filterValue: ObjectId(parsedFilter.parts._id.value),
-                filterOptions: parsedFilter.parts._id,
-                rootMatch
-            })
-        }
-
-
-        this.fields.forEach((field, i) => {
-            if (field.constructor === Object) {
-                // if a value is in this format {'categories':['name']}
-                // we expect that the field categories is a reference to another type
-                // so we create a lookup for this type
-
-                const fieldNames = Object.keys(field)
-                if (fieldNames.length > 0) {
-
-                    // there should be only one attribute
-                    const fieldName = fieldNames[0]
-
-                    //check if this field is a reference
-                    if (typeFields && typeFields[fieldName]) {
-                        const typeField = typeFields[fieldName]
-
-                        // get fields of the referenced type
-                        const lookupFields = getFormFields(typeField.type)
-
-                        // projection
-                        let projectPipeline = {},
-                            hasLocalized = false
-
-
-                        field[fieldName].forEach(item => {
-                            projectResultData[fieldName + '.' + item] = 1
-                            if (lookupFields[item] && lookupFields[item].localized) {
-                                hasLocalized = true
-                                projectPipeline[item + '_localized.' + lang] = 1
-
-                                // project localized field in current language
-                                projectPipeline[item] = '$' + item + '_localized.' + lang
-                                //projectResultData[key + '.' + item + '_localized.' + lang] = 1
-                            } else {
-                                projectPipeline[item] = 1
-                            }
-
-                            if (fieldName !== '_id') {
-                                hasMatchInReference = true
-                                this.createAndAddFilterToMatch({
-                                    fieldName: fieldName + '.' + item,
-                                    reference: false,
-                                    localized: false,
-                                    match
-                                })
-                            }
-                        })
-
-                        // create lookup and group value for pipeline
-                        const {lookup} = this.createAndAddLookup({
-                            type: typeField.type,
-                            fieldName,
-                            multi: typeField.multi,
-                            lookups,
-                            usePipeline: hasLocalized
-                        })
-
-
-                        if (lookup.$lookup.pipeline) {
-                            lookup.$lookup.pipeline.push({$project: projectPipeline})
-                        }
-
-                        // add group
-                        groups[fieldName] = this.createGroup(fieldName, typeField.multi)
-
-                        this.createAndAddFilterToMatch({
-                            fieldName,
-                            reference: true,
-                            localized: false,
-                            match: rootMatch
-                        })
-
-                    }
-
+            if (deletedResult.deletedCount > 0) {
+                return {
+                    _id: data._id,
+                    status: 'deleted'
                 }
-
-            } else if (field.indexOf('$') > 0) {
-                // this is a reference
-                // for instance image$Media --> field image is a reference to the type Media
-                const part = field.split('$')
-                const fieldName = part[0]
-                let type = part[1], multi = false
-                if (type.startsWith('[')) {
-                    multi = true
-                    type = type.substring(1, type.length - 1)
-                }
-
-
-                const refTypeDefinition = getType(type) || {}
-
-                if (refTypeDefinition.fields) {
-                    for (const refField of refTypeDefinition.fields) {
-                        if (!refField.reference) {
-                            hasMatchInReference = true
-                            this.createAndAddFilterToMatch({
-                                fieldName: fieldName + '.' + refField.name,
-                                reference: false,
-                                localized: false,
-                                match
-                            })
-                        }
-                    }
-                }
-
-
-                if (multi) {
-                    // if multi it has to be an array
-                    // this is an anditional filter to remove non array values. it is not needed if database is consistent
-                    // without this filter you might get the error: $in requires an array as a second argument
-                    /*this.addFilterToMatch({
-                     filterKey:fieldName+'.0',
-                     filterValue: { '$exists': true },
-                     match: rootMatch
-                     })*/
-                }
-                this.createAndAddLookup({type, fieldName, multi, lookups})
-
-
-                groups[fieldName] = this.createGroup(fieldName, multi)
-                this.createAndAddFilterToMatch({fieldName, reference: true, localized: false, match: rootMatch})
-                projectResultData[fieldName] = 1
-
             } else {
-                // regular field
-                if (field !== '_id') {
-                    if (typeFields && typeFields[field] && typeFields[field].localized) {
-                        groups[field] = {'$first': '$' + field + '_localized.' + lang}
-                        this.createAndAddFilterToMatch({
-                            fieldName: field,
-                            reference: false,
-                            localized: true,
-                            match
-                        })
-                    } else {
-                        groups[field] = {'$first': '$' + field}
-                        this.createAndAddFilterToMatch({
-                            fieldName: field,
-                            reference: false,
-                            localized: false,
-                            match
-                        })
-                    }
-                }
-                projectResultData[field] = 1
-
+                throw new Error('Error deleting entry. You might not have premissions to manage other users')
             }
-        })
+        },
+        deleteEnities: async (db, context, typeName, {_version, ...data}) => {
 
-        if (!projectResult) {
-            // also return extra fields
-            if (!typeDefinition.noUserRelation) {
+            Util.checkIfUserIsLoggedIn(context)
 
-                this.createAndAddLookup({type: 'User', fieldName: 'createdBy', multi: false, lookups})
-                groups.createdBy = this.createGroup('createdBy', false)
+            if (data._id.constructor !== Array || !data._id.length) {
+                throw new Error('Id is missing')
             }
-            groups.modifiedAt = {'$first': '$modifiedAt'}
-        }
+
+            const collectionName = await buildCollectionName(db, context, typeName, _version)
 
 
-        // compose result
-        const result = []
-
-        const hasMatch = Object.keys(match).length > 0
-        if (Object.keys(rootMatch).length > 0) {
-
-            if (!hasMatchInReference) {
+            const $in = []
+            const result = []
+            data._id.forEach(id => {
+                $in.push(ObjectId(id))
                 result.push({
-                    $match: {...rootMatch, ...match}
+                    _id: id,
+                    status: 'deleted'
                 })
+            })
+
+            const options = {
+                _id: {$in}
+            }
+
+            if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+                options.createdBy = ObjectId(context.id)
+            }
+
+            const collection = db.collection(collectionName)
+
+            const deletedResult = await collection.deleteMany(options)
+
+            if (deletedResult.deletedCount > 0) {
+                return result
             } else {
-                result.push({
-                    $match: rootMatch
-                })
+                throw new Error('Error deleting entries. You might not have premissions to manage other users')
             }
-        } else if (hasMatch && !hasMatchInReference) {
-            result.push({
-                $match: match
-            })
-        }
+        },
+        updateEnity: async (db, context, typeName, {_version, ...data}, options) => {
 
-        if (lookups.length > 0) {
-            for (const lookup of lookups) {
-                result.push(lookup)
+            Util.checkIfUserIsLoggedIn(context)
+
+            if (!data._id) {
+                throw new Error('Id is missing')
             }
-        }
 
-        // Group back to arrays
-        result.push(
-            {
-                $group: {
-                    _id: '$_id',
-                    ...groups
-                }
-            })
+            const collectionName = await buildCollectionName(db, context, typeName, _version)
 
-        // second match
-        if (hasMatch && hasMatchInReference) {
-            result.push({
-                $match: match
-            })
-        }
-
-        // add sort
-        result.push({$sort: sort})
-
-        // project
-        if (projectResult) {
-            // also remove id if it is not explicitly set
-            if (!projectResultData._id) {
-                projectResultData._id = 0
+            const params = {
+                _id: ObjectId(data._id)
             }
-            result.push({$project: projectResultData})
-        }
-
-        //pagination
-        //TODO maybe it is better to use facet for pagination
-        result.push({
-            $group: {
-                _id: null,
-                // get a count of every result that matches until now
-                total: {$sum: 1},
-                // keep our results for the next operation
-                results: {$push: '$$ROOT'}
+            if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+                params.createdBy = ObjectId(context.id)
             }
-        })
 
-        // and finally trim the results to within the range given by start/endRow
-        result.push({
-            $project: {
-                total: 1,
-                results: {$slice: ['$results', offset, limit]}
-            }
-        })
+            const collection = db.collection(collectionName)
 
-        // return offset and limit
-        result.push({
-            $addFields: {limit, offset, page}
-        })
-        return result
+            //check if this field is a reference
+            const fields = getFormFields(typeName)
 
-    }
 
-}
+            // we create also a dataSet with dot notation format for partial update
+            const dataSetDotNotation = {}
+            // clone object but without _id, _version and undefined property
+            // null is when a refrence has been removed
+            const dataSet = Object.keys(data).reduce((o, k) => {
+                if (k !== '_id' && k !== '_version' && data[k] !== undefined) {
 
-const GenericResolver = {
-    entities: async (db, context, typeName, data, options) => {
-        if (!context.lang) {
-            throw new Error('lang on context is missing')
-        }
-        const startTime = new Date()
+                    if (fields && fields[k] && fields[k].localized) {
+                        // is field localized
+                        if (!o[k + '_localized'])
+                            o[k + '_localized'] = {}
+                        o[k + '_localized'][context.lang] = data[k]
+                    } else if (k.endsWith('_localized')) {
+                        // if a localized object {_localized:{de:'',en:''}} gets passed
+                        // convert it to the format _localized.de='' and _localized.en=''
+                        if (data[k]) {
 
-        let {match, _version, ...otherOptions} = options
+                            Object.keys(data[k]).map(e => {
+                                if (!o[k])
+                                    o[k] = {}
+                                o[k][e] = data[k][e]
+                                dataSetDotNotation[k + '.' + e] = data[k][e]
+                            })
+                        }
 
-        const collectionName = await buildCollectionName(db, context, typeName, _version)
-
-        // Default match
-        if (!match) {
-            // if not specific match is defined, only select items that belong to the current user
-            if (Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
-                match = {}
-
-            } else {
-                const typeDefinition = getType(typeName) || {}
-
-                if (!typeDefinition.noUserRelation) {
-                    match = {createdBy: ObjectId(context.id)}
-                }
-            }
-        }
-
-        const aggregationBuilder = new AggregationBuilder(typeName, data, {match, lang: context.lang, ...otherOptions})
-
-        const aggregationQuery = aggregationBuilder.query()
-
-        //console.log(JSON.stringify(aggregationQuery, null, 4))
-
-        const collection = db.collection(collectionName)
-        const startTimeAggregate = new Date()
-        let a = (await collection.aggregate(aggregationQuery).toArray())
-        if (a.length === 0) {
-            return {
-                aggregateTime: new Date() - startTimeAggregate,
-                page: aggregationBuilder.getPage(),
-                limit: aggregationBuilder.getLimit(),
-                offset: aggregationBuilder.getOffset(),
-                total: 0,
-                results: null
-            }
-        }
-
-        a[0].aggregateTime = new Date() - startTimeAggregate
-
-        console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${a[0].aggregateTime}ms total time ${new Date() - startTime}ms`)
-        return a[0]
-    },
-    createEnity: async (db, context, typeName, {_version, ...data}) => {
-        Util.checkIfUserIsLoggedIn(context)
-
-        if (!context.lang) {
-            throw new Error('lang on context is missing')
-        }
-
-        const collectionName = await buildCollectionName(db, context, typeName, _version)
-
-        let createdBy, username
-        if (data.createdBy && data.createdBy !== context.id) {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
-            createdBy = data.createdBy
-
-            // TODO: resolve username
-            username = data.createdBy
-        } else {
-            createdBy = context.id
-            username = context.id
-        }
-        const collection = db.collection(collectionName)
-        const insertResult = await collection.insertOne({
-            ...data,
-            createdBy: ObjectId(createdBy)
-        })
-
-        if (insertResult.insertedCount) {
-            const doc = insertResult.ops[0]
-
-            const newData = Object.keys(data).reduce((o, k) => {
-                const item = data[k]
-                if (item === null || item === undefined) {
-
-                } else if (item.constructor === Array) {
-                    o[k] = item.reduce((a, _id) => {
-                        a.push({_id})
-                        return a
-                    }, [])
-                } else if (item.constructor === ObjectId) {
-                    o[k] = {_id: item}
-                } else {
-                    o[k] = item
+                    } else {
+                        o[k] = data[k]
+                        dataSetDotNotation[k] = data[k]
+                    }
                 }
                 return o
             }, {})
 
-            return {
-                _id: doc._id,
-                status: 'created',
-                createdBy: {
-                    _id: ObjectId(createdBy),
-                    username
-                },
-                ...newData
-            }
-        }
-    },
-    deleteEnity: async (db, context, typeName, {_version, ...data}) => {
-
-        Util.checkIfUserIsLoggedIn(context)
-
-        if (!data._id) {
-            throw new Error('Id is missing')
-        }
-
-        const collectionName = await buildCollectionName(db, context, typeName, _version)
-
-
-        const options = {
-            _id: ObjectId(data._id)
-        }
-        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            options.createdBy = ObjectId(context.id)
-        }
-
-        const collection = db.collection(collectionName)
-
-        const deletedResult = await collection.deleteOne(options)
-
-        if (deletedResult.deletedCount > 0) {
-            return {
-                _id: data._id,
-                status: 'deleted'
-            }
-        } else {
-            throw new Error('Error deleting entry. You might not have premissions to manage other users')
-        }
-    },
-    deleteEnities: async (db, context, typeName, {_version, ...data}) => {
-
-        Util.checkIfUserIsLoggedIn(context)
-
-        if (data._id.constructor !== Array || !data._id.length) {
-            throw new Error('Id is missing')
-        }
-
-        const collectionName = await buildCollectionName(db, context, typeName, _version)
-
-
-        const $in = []
-        const result = []
-        data._id.forEach(id => {
-            $in.push(ObjectId(id))
-            result.push({
-                _id: id,
-                status: 'deleted'
-            })
-        })
-
-        const options = {
-            _id: {$in}
-        }
-
-        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            options.createdBy = ObjectId(context.id)
-        }
-
-        const collection = db.collection(collectionName)
-
-        const deletedResult = await collection.deleteMany(options)
-
-        if (deletedResult.deletedCount > 0) {
-            return result
-        } else {
-            throw new Error('Error deleting entries. You might not have premissions to manage other users')
-        }
-    },
-    updateEnity: async (db, context, typeName, {_version, ...data}, options) => {
-
-        Util.checkIfUserIsLoggedIn(context)
-
-        if (!data._id) {
-            throw new Error('Id is missing')
-        }
-
-        const collectionName = await buildCollectionName(db, context, typeName, _version)
-
-        const params = {
-            _id: ObjectId(data._id)
-        }
-        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            params.createdBy = ObjectId(context.id)
-        }
-
-        const collection = db.collection(collectionName)
-
-        //check if this field is a reference
-        const fields = getFormFields(typeName)
-
-
-        // we create also a dataSet with dot notation format for partial update
-        const dataSetDotNotation = {}
-        // clone object but without _id, _version and undefined property
-        // null is when a refrence has been removed
-        const dataSet = Object.keys(data).reduce((o, k) => {
-            if (k !== '_id' && k !== '_version' && data[k] !== undefined ) {
-
-                if (fields && fields[k] && fields[k].localized) {
-                    // is field localized
-                    if (!o[k + '_localized'])
-                        o[k + '_localized'] = {}
-                    o[k + '_localized'][context.lang] = data[k]
-                } else if (k.endsWith('_localized')) {
-                    // if a localized object {_localized:{de:'',en:''}} gets passed
-                    // convert it to the format _localized.de='' and _localized.en=''
-                    if (data[k]) {
-
-                        Object.keys(data[k]).map(e => {
-                            if (!o[k])
-                                o[k] = {}
-                            o[k][e] = data[k][e]
-                            dataSetDotNotation[k + '.' + e] = data[k][e]
-                        })
-                    }
-
-                } else {
-                    o[k] = data[k]
-                    dataSetDotNotation[k] = data[k]
-                }
-            }
-            return o
-        }, {})
-
-        // set timestamp
-        dataSet.modifiedAt = dataSetDotNotation.modifiedAt = new Date().getTime()
-        // try with dot notation for partial update
-        let result = (await collection.findOneAndUpdate(params, {
-            $set: dataSetDotNotation
-        }, {returnOriginal: false}))
-
-        if (result.ok !== 1) {
-            // if it fails try again without dot notation
-            result = (await collection.findOneAndUpdate(params, {
-                $set: dataSet
+            // set timestamp
+            dataSet.modifiedAt = dataSetDotNotation.modifiedAt = new Date().getTime()
+            // try with dot notation for partial update
+            let result = (await collection.findOneAndUpdate(params, {
+                $set: dataSetDotNotation
             }, {returnOriginal: false}))
-        }
-        if (result.ok !== 1 || !result.lastErrorObject.updatedExisting) {
-            throw new Error(collectionName + ' could not be changed. You might not have premissions to manage other users')
-        }
-        const returnValue = {
-            ...data,
-            modifiedAt: dataSet.modifiedAt,
-            createdBy: {
-                _id: ObjectId(context.id),
-                username: context.username
-            },
-            status: 'updated'
-        }
 
-        Hook.call('typeUpdated_' + typeName, {result: returnValue, db})
-
-        return returnValue
-    },
-    cloneEntity: async (db, context, typeName, {_id, _version, ...rest}) => {
-
-        Util.checkIfUserIsLoggedIn(context)
-
-        const collectionName = await buildCollectionName(db, context, typeName, _version)
-        const collection = db.collection(collectionName)
-
-        if (!_id) {
-            throw new Error('Id is missing')
-        }
-
-        const entry = await collection.findOne({_id: ObjectId(_id)})
-
-        if (!entry) {
-            throw new Error('entry with id ' + _id + ' does not exist')
-        }
-
-        const clone = Object.assign({}, entry, {createdBy: ObjectId(context.id)}, rest)
-
-        delete clone._id
-
-        const insertResult = await collection.insertOne(clone)
-        if (insertResult.insertedCount) {
-            const doc = insertResult.ops[0]
-
-
-            const result = {
-                ...clone,
-                _id: doc._id,
-                status: 'created',
+            if (result.ok !== 1) {
+                // if it fails try again without dot notation
+                result = (await collection.findOneAndUpdate(params, {
+                    $set: dataSet
+                }, {returnOriginal: false}))
+            }
+            if (result.ok !== 1 || !result.lastErrorObject.updatedExisting) {
+                throw new Error(collectionName + ' could not be changed. You might not have premissions to manage other users')
+            }
+            const returnValue = {
+                ...data,
+                modifiedAt: dataSet.modifiedAt,
                 createdBy: {
                     _id: ObjectId(context.id),
                     username: context.username
-                }
+                },
+                status: 'updated'
             }
-            //check if this field is a reference
-            const fields = getFormFields(typeName)
 
-            if (fields) {
-                Object.keys(result).forEach(field => {
-                    if (fields[field] && fields[field].reference) {
-                        // is a reference
-                        // TODO also resolve fields of subtype
-                        result[field] = {_id: result[field]}
+            Hook.call('typeUpdated_' + typeName, {result: returnValue, db})
+
+            return returnValue
+        },
+        cloneEntity: async (db, context, typeName, {_id, _version, ...rest}) => {
+
+            Util.checkIfUserIsLoggedIn(context)
+
+            const collectionName = await buildCollectionName(db, context, typeName, _version)
+            const collection = db.collection(collectionName)
+
+            if (!_id) {
+                throw new Error('Id is missing')
+            }
+
+            const entry = await collection.findOne({_id: ObjectId(_id)})
+
+            if (!entry) {
+                throw new Error('entry with id ' + _id + ' does not exist')
+            }
+
+            const clone = Object.assign({}, entry, {createdBy: ObjectId(context.id)}, rest)
+
+            delete clone._id
+
+            const insertResult = await collection.insertOne(clone)
+            if (insertResult.insertedCount) {
+                const doc = insertResult.ops[0]
+
+
+                const result = {
+                    ...clone,
+                    _id: doc._id,
+                    status: 'created',
+                    createdBy: {
+                        _id: ObjectId(context.id),
+                        username: context.username
                     }
-                })
+                }
+                //check if this field is a reference
+                const fields = getFormFields(typeName)
+
+                if (fields) {
+                    Object.keys(result).forEach(field => {
+                        if (fields[field] && fields[field].reference) {
+                            // is a reference
+                            // TODO also resolve fields of subtype
+                            result[field] = {_id: result[field]}
+                        }
+                    })
+                }
+
+                return result
             }
+        },
+    }
 
-            return result
-        }
-    },
-}
-
-export default GenericResolver
+export
+default
+GenericResolver

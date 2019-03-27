@@ -129,6 +129,8 @@ export const start = (done) => {
                 }
             })
 
+            server.setTimeout(10 * 60 * 1000)
+
             // attach index reference to server
             server._db = db
 
