@@ -58,8 +58,9 @@ const
 
             const aggregationQuery = aggregationBuilder.query()
 
-            //console.log(JSON.stringify(aggregationQuery, null, 4))
-
+          //  if( typeName.indexOf("Product")>=0) {
+                console.log(JSON.stringify(aggregationQuery, null, 4))
+          //  }
             const collection = db.collection(collectionName)
             const startTimeAggregate = new Date()
             let a = (await collection.aggregate(aggregationQuery).toArray())
@@ -74,7 +75,11 @@ const
                 }
             }
 
-
+            if( a[0].meta.length ) {
+                a[0].total = a[0].meta[0].count
+            }else{
+                a[0].total = 0
+            }
             a[0].aggregateTime = new Date() - startTimeAggregate
 
             console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${a[0].aggregateTime}ms total time ${new Date() - startTime}ms`)

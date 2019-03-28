@@ -27,6 +27,9 @@ Hook.on('index', ({db}) => {
 
     const categoryCollection = db.collection('ProductCategory')
 
+
+    categoryCollection.createIndex( { parentCategory: 1 }, { unique: false } )
+
     for (const lang of LANGUAGES) {
         categoryCollection.createIndex( { ['name_localized.'+lang]: 1 }, { unique: false } )
     }

@@ -198,8 +198,8 @@ class GenericForm extends React.Component {
                                    name={k}
                                    label={o.label}
                                    multi={o.multi}
-                                   pickerField={o.pickerField}
-                                   fields={o.fields}
+                                   field={o.pickerField}
+
                                    type={o.type} placeholder={o.placeholder}/>
             } else if (uitype === 'select') {
                 return <SimpleSelect key={k} name={k} onChange={this.handleInputChange} items={o.enum} multi={o.multi} value={value}/>

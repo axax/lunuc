@@ -153,7 +153,11 @@ export default class AggregationBuilder {
 
     // filter where clause
     createAndAddFilterToMatch({fieldName, reference, localized, match}) {
+        if( fieldName.endsWith('_localized')){
+            return
+        }
         const parsedFilter = this.getParsedFilter()
+        console.log(parsedFilter)
         if (parsedFilter) {
             const {lang} = this.options
             const filterPart = parsedFilter.parts[fieldName]
@@ -171,6 +175,8 @@ export default class AggregationBuilder {
                                 filterOptions: filterPart,
                                 match
                             })
+                        } else {
+                            this.searchHint = 'it has to be a valid id'
                         }
 
                     }
@@ -254,7 +260,6 @@ export default class AggregationBuilder {
                 rootMatch
             })
         }
-
 
         this.fields.forEach((field, i) => {
             if (field.constructor === Object) {
@@ -344,18 +349,21 @@ export default class AggregationBuilder {
                 }
 
 
-                const refTypeDefinition = getType(type) || {}
-
-                if (refTypeDefinition.fields) {
-                    for (const refField of refTypeDefinition.fields) {
-                        if (!refField.reference) {
-                            hasMatchInReference = true
-                            this.createAndAddFilterToMatch({
-                                fieldName: fieldName + '.' + refField.name,
-                                reference: false,
-                                localized: false,
-                                match
-                            })
+                // search in all fields of reference
+                // very poor performance
+                if ( !multi) {
+                    const refTypeDefinition = getType(type) || {}
+                    if (refTypeDefinition.fields) {
+                        for (const refField of refTypeDefinition.fields) {
+                            if (!refField.reference && !refField.multi) {
+                                hasMatchInReference = true
+                                this.createAndAddFilterToMatch({
+                                    fieldName: fieldName + '.' + refField.name,
+                                    reference: false,
+                                    localized: false,
+                                    match
+                                })
+                            }
                         }
                     }
                 }
@@ -371,6 +379,8 @@ export default class AggregationBuilder {
                      match: rootMatch
                      })*/
                 }
+
+                // use pipeline here is a lot slower because lookup pipeline doesn't use index --> hopfully this will be solved in a future mongodb release
                 this.createAndAddLookup({type, fieldName, multi, lookups, usePipeline: true})
 
 
@@ -416,10 +426,11 @@ export default class AggregationBuilder {
 
 
         // compose result
-        let result = []
+        let result = [], resultFacet = []
 
         const hasMatch = Object.keys(match).length > 0
-        let canUseLimitSkip = !hasMatch
+        const doMatchAfterLookup = (hasMatch && hasMatchInReference)
+
 
         if (Object.keys(rootMatch).length > 0) {
             if (!hasMatchInReference) {
@@ -437,19 +448,28 @@ export default class AggregationBuilder {
             })
         }
 
-        if (canUseLimitSkip) {
-            result.push({$skip: offset})
-            result.push({$limit: limit})
+        // add sort
+        result.push({$sort: sort})
+
+
+        let tmpResult
+        if (doMatchAfterLookup) {
+            tmpResult = result
+        } else {
+            tmpResult = resultFacet
         }
+
+        resultFacet.push({$skip: offset})
+        resultFacet.push({$limit: limit})
 
         if (lookups.length > 0) {
             for (const lookup of lookups) {
-                result.push(lookup)
+                tmpResult.push(lookup)
             }
         }
 
         // Group back to arrays
-        result.push(
+        tmpResult.push(
             {
                 $group: {
                     _id: '$_id',
@@ -458,14 +478,15 @@ export default class AggregationBuilder {
             })
 
         // second match
-        if (hasMatch && hasMatchInReference) {
-            result.push({
+        if (doMatchAfterLookup) {
+            tmpResult.push({
                 $match: match
             })
         }
 
-        // add sort
-        result.push({$sort: sort})
+        // sort again within the result
+        resultFacet.push({$sort: sort})
+
 
         // project
         if (projectResult) {
@@ -473,63 +494,25 @@ export default class AggregationBuilder {
             if (!projectResultData._id) {
                 projectResultData._id = 0
             }
-            result.push({$project: projectResultData})
+            resultFacet.push({$project: projectResultData})
         }
 
-        //pagination
-        //TODO maybe it is better to use facet for pagination
-        result.push({
-            $group: {
-                _id: null,
-                // get a count of every result that matches until now
-                total: {$sum: 1},
-                // keep our results for the next operation
-                results: {$push: '$$ROOT'}
-            }
-        })
 
-        // and finally trim the results to within the range given by start/endRow
-        if (!canUseLimitSkip) {
-            result.push({
-                $project: {
-                    total: 1,
-                    results: {$slice: ['$results', offset, limit]}
+        //wrap in a facet
+        result.push(
+            {
+                $facet: {
+                    meta: [
+                        {$count: 'count'}
+                    ],
+                    results: resultFacet
                 }
             })
-        }
 
         // return offset and limit
         result.push({
-            $addFields: {limit, offset, page}
+            $addFields: {limit, offset, page, searchHint: this.searchHint}
         })
-
-
-        if (canUseLimitSkip) {
-            //wrap in a facet
-            result = [
-                {
-                    $facet: {
-                        totalCount: [
-                            {$count: "value"}
-                        ],
-                        pipelineResults: result
-                    }
-                },
-                {
-                    $unwind: "$pipelineResults"
-                },
-                {
-                    $unwind: "$totalCount"
-                },
-                {
-                    $replaceRoot: {
-                        newRoot: {
-                            $mergeObjects: ["$pipelineResults", {total: "$totalCount.value"}]
-                        }
-                    }
-                }
-            ]
-        }
 
 
         return result

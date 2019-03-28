@@ -14,7 +14,7 @@ const readCsv = async (db) => {
 
 
     const json = csv2json(fileContents.toString(), ',')
-    const productCategoryCollection = await db.collection('ProductCategory_1553687341378_Flipkart')
+    const productCategoryCollection = await db.collection('ProductCategory')
 
     //productCategoryCollection.createIndex( { "name_localized.en": 1 }, { unique: true } )
 
