@@ -52,7 +52,7 @@ const GenericResolver = {
 
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
             match,
-            includeCount: true,
+            includeCount: false,
             lang: context.lang, ...otherOptions
         })
 
