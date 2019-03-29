@@ -49,7 +49,7 @@ const readCsv = async (db, context) => {
             }
 
             if (images && images.length) {
-                productData.image_src = images[0]
+                productData.image_src = images[images.length-1]
             }
 
 

@@ -43,15 +43,22 @@ export default class AggregationBuilder {
     }
 
     getSort() {
-        let {sort} = this.options
+        let {sort, lang} = this.options
         if (!sort) {
             return {_id: -1}
         } else {
             if (sort.constructor === String) {
+
+                const typeFields = getFormFields(this.type)
+
                 // sort looks like "field1 asc, field2 desc"
                 return sort.split(',').reduce((acc, val) => {
                     const a = val.split(' ')
-                    return {...acc, [a[0]]: (a.length > 1 && a[1].toLowerCase() == "desc" ? -1 : 1)}
+                    let fieldName = a[0]
+                    if (fieldName.indexOf('.') < 0 && typeFields[fieldName] && typeFields[fieldName].localized) {
+                        fieldName += '.' + lang
+                    }
+                    return {...acc, [fieldName]: (a.length > 1 && a[1].toLowerCase() == "desc" ? -1 : 1)}
                 }, {})
             }
         }
@@ -165,9 +172,9 @@ export default class AggregationBuilder {
                         multi,
                         match
                     })
-                    if( added ) {
+                    if (added) {
                         hasAtLeastOneMatch = true
-                    }else{
+                    } else {
                         //TODO add debugging infos for search. this here is only a test
                         this.searchHint = error
                     }
@@ -182,7 +189,7 @@ export default class AggregationBuilder {
                                 multi,
                                 match
                             })
-                            if( added ) {
+                            if (added) {
                                 hasAtLeastOneMatch = true
                             }
                         })
@@ -195,7 +202,7 @@ export default class AggregationBuilder {
                             multi,
                             match
                         })
-                        if( added ) {
+                        if (added) {
                             hasAtLeastOneMatch = true
                         }
                     }
@@ -214,7 +221,7 @@ export default class AggregationBuilder {
                         multi,
                         match
                     })
-                    if( added ) {
+                    if (added) {
                         hasAtLeastOneMatch = true
                     }
                 })
@@ -363,7 +370,6 @@ export default class AggregationBuilder {
 
     query() {
         const typeDefinition = getType(this.type) || {}
-
         const {projectResult, lang} = this.options
 
         // limit and offset
@@ -440,6 +446,8 @@ export default class AggregationBuilder {
                             }
 
                             if (!refFieldDefinition.reference) {
+                                // these filters are slow
+                                // probably it is better to do multiple queries instead
                                 if (this.createAndAddFilterToMatch({
                                         name: fieldName + '.' + refFieldName,
                                         reference: false,
@@ -514,7 +522,7 @@ export default class AggregationBuilder {
 
 
         // compose result
-        let result = [], resultFacet = []
+        let dataQuery = [], dataFacetQuery = []
 
         const hasMatch = Object.keys(match).length > 0
         const doMatchAfterLookup = (hasMatch && hasMatchInReference)
@@ -522,42 +530,41 @@ export default class AggregationBuilder {
 
         if (Object.keys(rootMatch).length > 0) {
             if (!hasMatchInReference) {
-                result.push({
+                dataQuery.push({
                     $match: {...rootMatch, ...match}
                 })
             } else {
-                result.push({
+                dataQuery.push({
                     $match: rootMatch
                 })
             }
         } else if (hasMatch && !hasMatchInReference) {
-            result.push({
+            dataQuery.push({
                 $match: match
             })
         }
 
-        // add sort
-        result.push({$sort: sort})
 
-
-        let tmpResult
+        let tempQuery
         if (doMatchAfterLookup) {
-            tmpResult = result
+            tempQuery = dataQuery
+
+            // add sort
+            dataFacetQuery.push({$sort: sort})
+            dataFacetQuery.push({$skip: offset})
+            dataFacetQuery.push({$limit: limit})
         } else {
-            tmpResult = resultFacet
+            tempQuery = dataFacetQuery
         }
 
-        resultFacet.push({$skip: offset})
-        resultFacet.push({$limit: limit})
 
         if (lookups.length > 0) {
             for (const lookup of lookups) {
-                tmpResult.push(lookup)
+                tempQuery.push(lookup)
             }
         }
-
         // Group back to arrays
-        tmpResult.push(
+        tempQuery.push(
             {
                 $group: {
                     _id: '$_id',
@@ -567,13 +574,27 @@ export default class AggregationBuilder {
 
         // second match
         if (doMatchAfterLookup) {
-            tmpResult.push({
+            dataQuery.push({
                 $match: match
             })
         }
 
+        const countQuery = dataQuery.slice(0)
+        countQuery.push({
+            "$count": "count"
+        })
+
+
+        if (!doMatchAfterLookup) {
+            // add sort
+            // it is much faster when skip limit is outside of facet
+            dataQuery.push({$sort: sort})
+            dataQuery.push({$skip: offset})
+            dataQuery.push({$limit: limit})
+        }
+
         // sort again within the result
-        resultFacet.push({$sort: sort})
+        dataFacetQuery.push({$sort: sort})
 
 
         // project
@@ -582,28 +603,28 @@ export default class AggregationBuilder {
             if (!projectResultData._id) {
                 projectResultData._id = 0
             }
-            resultFacet.push({$project: projectResultData})
+            dataFacetQuery.push({$project: projectResultData})
         }
 
 
         //wrap in a facet
-        result.push(
+        dataQuery.push(
             {
                 $facet: {
-                    meta: [
-                        {$count: 'count'}
-                    ],
-                    results: resultFacet
+                    /*    meta: [
+                     {$count: 'count'}
+                     ],*/
+                    results: dataFacetQuery
                 }
             })
 
         // return offset and limit
-        result.push({
+        dataQuery.push({
             $addFields: {limit, offset, page, searchHint: this.searchHint}
         })
 
 
-        return result
+        return {dataQuery, countQuery}
 
     }
 

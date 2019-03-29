@@ -55,15 +55,20 @@ const GenericResolver = {
             lang: context.lang, ...otherOptions
         })
 
-        const aggregationQuery = aggregationBuilder.query()
+        const {dataQuery, countQuery} = aggregationBuilder.query()
 
-      /* if( typeName.indexOf("ProductC")>=0) {
+       /*if( typeName.indexOf("Product")>=0) {
         console.log(JSON.stringify(aggregationQuery, null, 4))
         }*/
+
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
-        let a = (await collection.aggregate(aggregationQuery).toArray())
-        if (a.length === 0) {
+
+
+        const results = await collection.aggregate(dataQuery,{allowDiskUse:true}).toArray()
+
+        let result
+        if (results.length === 0) {
             return {
                 aggregateTime: new Date() - startTimeAggregate,
                 page: aggregationBuilder.getPage(),
@@ -72,16 +77,19 @@ const GenericResolver = {
                 total: 0,
                 results: null
             }
+        }else {
+            result = results[0]
         }
 
-        if (a[0].meta.length) {
-            a[0].total = a[0].meta[0].count
-        } else {
-            a[0].total = 0
+        /* we do an extra query here because it is faster than using count in a facet */
+        const countResults = await collection.aggregate(countQuery,{allowDiskUse:true}).toArray()
+        if( countResults.length > 0){
+            result.total = countResults[0].count
         }
-        a[0].aggregateTime = new Date() - startTimeAggregate
-        console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${a[0].aggregateTime}ms total time ${new Date() - startTime}ms`)
-        return a[0]
+
+        result.aggregateTime = new Date() - startTimeAggregate
+        console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${result.aggregateTime}ms total time ${new Date() - startTime}ms`)
+        return result
     },
     createEnity: async (db, context, typeName, {_version, ...data}) => {
         Util.checkIfUserIsLoggedIn(context)

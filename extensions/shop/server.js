@@ -18,26 +18,3 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
     schemas.push(schemaGen)
 })
-
-
-// Hook to create mongodb index
-Hook.on('index', ({db}) => {
-
-    console.log('Creating indexes for shop...')
-
-    const categoryCollection = db.collection('ProductCategory')
-
-
-    categoryCollection.createIndex( { parentCategory: 1 }, { unique: false } )
-
-    for (const lang of LANGUAGES) {
-        categoryCollection.createIndex( { ['name_localized.'+lang]: 1 }, { unique: false } )
-    }
-
-
-    // field slug hast to be unique
-    /* const cmsPageCollection = db.collection('CmsPage')
-     cmsPageCollection.createIndex({slug: 1}, {unique: true})*/
-
-
-})

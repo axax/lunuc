@@ -7,16 +7,19 @@
         {
           "name": "name",
           "required": true,
-          "localized": true
+          "localized": true,
+          "index": "text"
         },
         {
           "name": "description",
-          "localized": true
+          "localized": true,
+          "index": "text"
         },
         {
           "name": "price",
           "uitype": "number",
-          "type": "Float"
+          "type": "Float",
+          "index": 1
         },
         {
           "name": "visible",
@@ -36,7 +39,8 @@
         {
           "name": "categories",
           "type": "ProductCategory",
-          "multi": true
+          "multi": true,
+          "index": 1
         }
       ]
     },
@@ -47,12 +51,14 @@
         {
           "name": "name",
           "required": true,
-          "localized": true
+          "localized": true,
+          "index": "text"
         },
         {
           "name": "parentCategory",
           "type": "ProductCategory",
-          "multi": true
+          "multi": true,
+          "index": 1
         }
       ]
     }

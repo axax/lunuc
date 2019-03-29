@@ -362,7 +362,7 @@ export const systemResolver = (db) => ({
         collectionAggregate: async ({collection, json}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
 
-            let a = await (db.collection(collection).aggregate(JSON.parse(json)).toArray())
+            let a = await (db.collection(collection).aggregate(JSON.parse(json),{allowDiskUse:true}).toArray())
             return {result: JSON.stringify(a[0])}
         }
     },
