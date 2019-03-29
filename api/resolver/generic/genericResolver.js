@@ -52,20 +52,21 @@ const GenericResolver = {
 
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
             match,
+            includeCount: true,
             lang: context.lang, ...otherOptions
         })
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
 
-       /*if( typeName.indexOf("Product")>=0) {
-        console.log(JSON.stringify(aggregationQuery, null, 4))
+       /* if (typeName.indexOf("Product") >= 0) {
+            console.log(JSON.stringify(dataQuery, null, 4))
         }*/
 
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
 
-        const results = await collection.aggregate(dataQuery,{allowDiskUse:true}).toArray()
+        const results = await collection.aggregate(dataQuery, {allowDiskUse: true}).toArray()
 
         let result
         if (results.length === 0) {
@@ -77,16 +78,21 @@ const GenericResolver = {
                 total: 0,
                 results: null
             }
-        }else {
+        } else {
             result = results[0]
         }
 
-        /* we do an extra query here because it is faster than using count in a facet */
-        const countResults = await collection.aggregate(countQuery,{allowDiskUse:true}).toArray()
-        if( countResults.length > 0){
-            result.total = countResults[0].count
-        }
+        if (result.meta && result.meta.length) {
+            result.total = result.meta[0].count
+        } else {
+            const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()
+            if (countResults.length > 0) {
+                result.total = countResults[0].count
+            }else{
+                result.total = 0
+            }
 
+        }
         result.aggregateTime = new Date() - startTimeAggregate
         console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${result.aggregateTime}ms total time ${new Date() - startTime}ms`)
         return result
@@ -245,15 +251,15 @@ const GenericResolver = {
         // null is when a refrence has been removed
         const dataSet = Object.keys(data).reduce((o, k) => {
             if (k !== '_id' && k !== '_version' && data[k] !== undefined) {
-                if( data[k].constructor === Object){
+                if (data[k].constructor === Object) {
 
                     // rewrite to dot notation for partial update
-                    Object.keys(data[k]).forEach(key=>{
-                        o[k+'.'+key]=data[k][key]
+                    Object.keys(data[k]).forEach(key => {
+                        o[k + '.' + key] = data[k][key]
                     })
 
 
-                }else {
+                } else {
                     o[k] = data[k]
                 }
             }

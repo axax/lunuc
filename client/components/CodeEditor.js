@@ -91,7 +91,8 @@ CodeEditor.propTypes = {
     lineNumbers: PropTypes.bool,
     readOnly: PropTypes.bool,
     onChange: PropTypes.func,
-    type: PropTypes.string
+    type: PropTypes.string,
+    children: PropTypes.string
 }
 
 

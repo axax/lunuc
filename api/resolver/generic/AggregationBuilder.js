@@ -370,7 +370,7 @@ export default class AggregationBuilder {
 
     query() {
         const typeDefinition = getType(this.type) || {}
-        const {projectResult, lang} = this.options
+        const {projectResult, lang, includeCount} = this.options
 
         // limit and offset
         const limit = this.getLimit(),
@@ -555,6 +555,12 @@ export default class AggregationBuilder {
             dataFacetQuery.push({$limit: limit})
         } else {
             tempQuery = dataFacetQuery
+
+            if (includeCount) {
+                dataFacetQuery.push({$sort: sort})
+                dataFacetQuery.push({$skip: offset})
+                dataFacetQuery.push({$limit: limit})
+            }
         }
 
 
@@ -588,9 +594,11 @@ export default class AggregationBuilder {
         if (!doMatchAfterLookup) {
             // add sort
             // it is much faster when skip limit is outside of facet
-            dataQuery.push({$sort: sort})
-            dataQuery.push({$skip: offset})
-            dataQuery.push({$limit: limit})
+            if (!includeCount) {
+                dataQuery.push({$sort: sort})
+                dataQuery.push({$skip: offset})
+                dataQuery.push({$limit: limit})
+            }
         }
 
         // sort again within the result
@@ -606,17 +614,20 @@ export default class AggregationBuilder {
             dataFacetQuery.push({$project: projectResultData})
         }
 
+        const facet = {
+            $facet: {
+                results: dataFacetQuery
+            }
+        }
+
+        if (includeCount) {
+            facet.$facet.meta = [
+                {$count: 'count'}
+            ]
+        }
 
         //wrap in a facet
-        dataQuery.push(
-            {
-                $facet: {
-                    /*    meta: [
-                     {$count: 'count'}
-                     ],*/
-                    results: dataFacetQuery
-                }
-            })
+        dataQuery.push(facet)
 
         // return offset and limit
         dataQuery.push({

@@ -1,4 +1,4 @@
-import { mergeTypes } from 'merge-graphql-schemas';
+import { mergeTypes } from 'merge-graphql-schemas'
 import Hook from '../../util/hook'
 
 import gensrcSchemaRaw from 'gensrc/schema'

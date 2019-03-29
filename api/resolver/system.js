@@ -26,7 +26,7 @@ const killExec = (id) => {
     if (execs[id]) {
         //execs[id].kill('SIGINT')
         if (execs[id].exitCode === null) {
-            process.kill(-execs[id].pid, 'SIGKILL');
+            process.kill(-execs[id].pid, 'SIGKILL')
         }
         delete execs[id]
     }
@@ -69,7 +69,7 @@ export const systemResolver = (db) => ({
                  })
                  })*/
                 if (!execs[currentId] || execs[currentId].exitCode !== null) {
-                    execs[currentId] = spawn('bash', [], {detached: true});
+                    execs[currentId] = spawn('bash', [], {detached: true})
 
 
                     execs[currentId].stdout.on('data', (data) => {
@@ -130,7 +130,7 @@ export const systemResolver = (db) => ({
 
             const mailSettings = values.MailSettings
             if (!mailSettings) {
-                throw new Error(`Mail settings are missing. Please add MailSettings as a global value`)
+                throw new Error('Mail settings are missing. Please add MailSettings as a global value')
             }
 
             let html

@@ -31,7 +31,7 @@
       "active": true
     },
     "userstats": {
-      "active": true
+      "active": false
     },
     "bot": {
       "active": true
