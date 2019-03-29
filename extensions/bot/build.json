@@ -44,7 +44,8 @@
         },
         {
           "name": "bot",
-          "type": "Bot"
+          "type": "Bot",
+          "pickerField": "name"
         }
       ]
     }

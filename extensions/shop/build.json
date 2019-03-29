@@ -15,7 +15,8 @@
         },
         {
           "name": "price",
-          "uitype": "numeric"
+          "uitype": "number",
+          "type": "Float"
         },
         {
           "name": "visible",

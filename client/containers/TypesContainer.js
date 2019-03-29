@@ -32,7 +32,7 @@ import Util from 'client/util'
 import GenericForm from 'client/components/GenericForm'
 import config from 'gen/config'
 import Hook from 'util/hook'
-import {getTypes, getTypeQueries, getFormFields} from 'util/types'
+import {getTypes, getTypeQueries, getFormFields, typeDataToLabel} from 'util/types'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {deepMerge}  from 'util/deepMerge'
@@ -215,7 +215,7 @@ class TypesContainer extends React.Component {
                                         } else {
                                             dynamic[field.name] = v.reduce((s, i) => {
                                                 if (i) {
-                                                    return s + (s !== '' ? ', ' : '') + i.name
+                                                    return s + (s !== '' ? ', ' : '') + typeDataToLabel(i, field.pickerField)
                                                 } else {
                                                     return 'Broken reference?'
                                                 }
@@ -235,7 +235,7 @@ class TypesContainer extends React.Component {
                                                 })
                                                 dynamic[field.name] = str
                                             } else {
-                                                dynamic[field.name] = v.name
+                                                dynamic[field.name] = typeDataToLabel(v, field.pickerField)
                                             }
                                         }
                                     }
@@ -257,19 +257,19 @@ class TypesContainer extends React.Component {
                                 }
                             } else if (field.uitype === 'datetime') {
                                 dynamic[field.name] = Util.formattedDatetime(v)
+                            } else if (field.uitype === 'password') {
+                                dynamic[field.name] = '••••••'
                             } else {
                                 if (field.localized) {
-                                    const localizedNames = item[field.name + '_localized'],
-                                        langVar = []
+                                    const langVar = []
 
                                     LANGUAGES.map(lang => {
-
                                         langVar.push(<div key={lang} className={classes.tableContent}>
                                         <span
                                             className={classes.textLight}>{lang}:</span> <span
-                                            onBlur={e => this.handleDataChange.bind(this)(e, item, field.name + '_localized.' + lang)}
+                                            onBlur={e => this.handleDataChange.bind(this)(e, item, field.name + '.' + lang)}
                                             suppressContentEditableWarning
-                                            contentEditable>{localizedNames && localizedNames[lang]}</span>
+                                            contentEditable>{v && v[lang]}</span>
                                             <br />
                                         </div>)
                                     })
@@ -749,12 +749,10 @@ class TypesContainer extends React.Component {
     }
 
     enhanceOptimisticData(o) {
+        const formFields = getFormFields(this.pageParams.type)
         for (let k in o) {
-            if (o[k] && k.endsWith('_localized')) {
+            if (o[k] && formFields[k] && formFields[k].localized) {
                 o[k].__typename = 'LocalizedString'
-                LANGUAGES.forEach(l => {
-                    if (!o[k][l]) o[k][l] = ''
-                })
             }
         }
     }
@@ -1129,20 +1127,16 @@ class TypesContainer extends React.Component {
             const item = input[k]
 
             if (item !== undefined) {
-                if (k.endsWith('_localized')) {
+                const fieldInfo = formFields[k]
+                if (fieldInfo.localized) {
                     ipt2[k] = item
                     if (item) {
                         delete ipt2[k].__typename //= 'LocalizedStringInput'
-                        // set default language for validation as it might be required
-                        const keyBase = k.substring(0, k.length - 10)
-                        if (!ipt2[keyBase]) {
-                            ipt2[keyBase] = item[_app_.lang]
-                        }
                     }
-                } else if (item && !formFields[k].enum && item.constructor === Array) {
+                } else if (item && !fieldInfo.enum && item.constructor === Array) {
 
                     if (item.length > 0) {
-                        if (formFields[k].multi) {
+                        if (fieldInfo.multi) {
                             ipt2[k] = item.map(i => i._id)
                         } else {
                             ipt2[k] = item[0]._id
@@ -1150,7 +1144,7 @@ class TypesContainer extends React.Component {
                     } else {
                         ipt2[k] = null
                     }
-                } else if (item && item.constructor === Object) {
+                } else if (item && item.constructor === Object && fieldInfo.reference) {
                     ipt2[k] = item._id
                 } else {
                     ipt2[k] = item
@@ -1232,8 +1226,8 @@ class TypesContainer extends React.Component {
             }
 
             const fieldData = Object.assign({}, this.createEditForm.state.fields)
-
             const formFields = getFormFields(this.pageParams.type)
+
 
             // convert array to single value for not multivalue references
             Object.keys(formFields).forEach(key => {

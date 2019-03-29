@@ -146,30 +146,39 @@ const Util = {
 
         if (filter) {
             let operator = 'or'
-            filter.split(' ').forEach(i => {
+            filter.split(/ +(?=(?:(?:[^"]*"){2})*[^"]*$)/g).forEach(i => {
 
                 if (i === '&&') {
                     operator = 'and'
                 } else {
-                    const q = i.split(/=|:/)
-                    if (q.length > 1) {
+                    const comparator = i.match(/==|>=|<=|!=|=|>|<|:/)
+                    if (comparator) {
 
-                        let key = q[0]
+                        let key = i.substring(0, comparator.index)
+                        let value = i.substring(comparator.index + comparator[0].length)
+
+                        if (value.length > 1 && value.endsWith('"') && value.startsWith('"')) {
+                            value = value.substring(1, value.length - 1)
+                        }
+
                         if (key.endsWith('._id')) {
                             // user._id=id is equivalent to juser user=id
                             key = key.substring(0, key.length - 4)
                         }
                         if (parts[key]) {
                             parts[key] = [parts[key]]
-                            parts[key].push({value: q[1], operator})
+                            parts[key].push({value, operator, comparator: comparator[0]})
                         } else {
-                            parts[key] = {value: q[1], operator}
+                            parts[key] = {value, operator, comparator: comparator[0]}
                         }
 
                     } else {
-                        rest.push({value: q[0], operator})
+                        if (i.length > 1 && i.endsWith('"') && i.startsWith('"')) {
+                            i = i.substring(1, i.length - 1)
+                        }
+                        rest.push({value: i, operator, comparator: '='})
                         if (restString !== '') restString += ' '
-                        restString += (operator === 'and' ? ' and ' : '') + q[0]
+                        restString += (operator === 'and' ? ' and ' : '') + i
                     }
                     operator = 'or'
                 }

@@ -70,7 +70,7 @@ export const getTypeQueries = (typeName) => {
                 insertUpdateQuery += ', '
             }
 
-            let t = type || 'String'
+            let t = localized ? 'LocalizedStringInput' : ( type || 'String')
 
 
             if (reference) {
@@ -82,21 +82,15 @@ export const getTypeQueries = (typeName) => {
                     if (rest.fields) {
                         query += ' ' + rest.fields.join(' ')
                     } else {
-                        // assuming there is a name field
-                        query += ' name'
+                        query += queryStatemantForType(type)
                     }
                     query += '}'
                 }
             } else {
-                query += ' ' + name
                 if (localized) {
-                    if (name !== 'createdBy') {
-                        query += ' ' + name + '_localized{' + LANGUAGES.join(' ') + '}'
-                    }
-                    const x = '$' + name + '_localized: LocalizedStringInput,'
-                    insertParams += x
-                    updateParams += x
-                    insertUpdateQuery += name + '_localized: ' + '$' + name + '_localized,'
+                    query += ' ' + name + '{' + LANGUAGES.join(' ') + '}'
+                } else {
+                    query += ' ' + name
                 }
             }
 
@@ -123,6 +117,63 @@ export const getTypeQueries = (typeName) => {
 
     typeQueries[typeName] = result
     return result
+}
+
+
+export const typeDataToLabel = (item, pickerField) => {
+    let label = []
+
+    let pickers = []
+
+    if (pickerField) {
+        pickers.push(pickerField)
+    } else {
+        for (const key of Object.keys(item)) {
+            if (['_id', 'createdBy', '__typename'].indexOf(key) < 0) {
+                pickers.push(key)
+                break
+            }
+        }
+    }
+
+    pickers.forEach(key => {
+        if (item[key]) {
+            if (item[key].constructor === Object) {
+                if (item[key][_app_.lang]) {
+                    label.push(item[key][_app_.lang])
+                }
+            } else {
+                label.push(item[key])
+            }
+        }
+    })
+    return label.join(' ')
+}
+
+export const queryStatemantForType = (type) => {
+    let query = ''
+    const typeDate = getType(type)
+    if (typeDate && typeDate.fields) {
+
+        for (let i = 0; i < typeDate.fields.length; i++) {
+            const field = typeDate.fields[i]
+            if (field.reference) {
+                continue
+            }
+            query += ' ' + field.name
+            if (field.localized) {
+                query += '{'
+                LANGUAGES.forEach(lang => {
+                    query += ' ' + lang
+                })
+                query += '}'
+            }
+        }
+    } else {
+        // assuming there is a name field
+        query += ' name'
+    }
+    return query
 }
 
 
@@ -154,7 +205,8 @@ export const getFormFields = (type) => {
             pickerField: field.pickerField,
             fields: field.fields,
             reference: !!field.reference,
-            enum: field.enum
+            enum: field.enum,
+            name: field.name
         }
     })
 
@@ -244,12 +296,14 @@ Hook.on('Types', ({types}) => {
             },
             {
                 name: 'password',
-                required: true
+                required: true,
+                uitype: 'password'
             },
             {
                 name: 'role',
                 type: 'UserRole',
-                reference: true
+                reference: true,
+                fields: ['name']
             }
         ]
     }

@@ -5,6 +5,7 @@ import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
 import {getImageTag, getImageSrc} from 'client/util/media'
+import {typeDataToLabel, queryStatemantForType} from 'util/types'
 
 const styles = {
     root: {
@@ -36,10 +37,9 @@ class TypePicker extends React.Component {
 
     render() {
         console.log('render TypePicker')
-        const {classes, placeholder, multi, error, helperText} = this.props
+        const {classes, placeholder, multi, error, helperText, pickerField} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
-        const field = this.props.pickerField || 'name'
 
         return <div className={classes.root}>
 
@@ -50,7 +50,7 @@ class TypePicker extends React.Component {
                        onBlur={this.handleBlur.bind(this)} placeholder={placeholder}/> }
 
             { value.map((v, i) =>
-                <Chip key={i} label={v[field]} onDelete={this.handleRemovePick.bind(this, i)}
+                <Chip key={i} label={typeDataToLabel(v, pickerField)} onDelete={this.handleRemovePick.bind(this, i)}
                       avatar={v.__typename === 'Media' ? <Avatar src={getImageSrc(v, {height: 30})}/> : null}/>)
             }
 
@@ -65,7 +65,7 @@ class TypePicker extends React.Component {
                         style={{
                             fontWeight: selIdx === idx ? 500 : 400,
                         }}
-                    >{item.__typename === 'Media' ? getImageTag(item, {height: 30}) : ''} {item[field]}
+                    >{item.__typename === 'Media' ? getImageTag(item, {height: 30}) : ''} {typeDataToLabel(item, pickerField)}
                     </MenuItem>
                 )}
 
@@ -122,14 +122,19 @@ class TypePicker extends React.Component {
     }
 
     getData(filter) {
-        const {client, type, fields} = this.props
+        const {client, type, fields, pickerField} = this.props
         if (type) {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
 
-            let queryFields = 'name'
-            if( fields ){
+
+            let queryFields
+            if (pickerField) {
+                queryFields = pickerField
+            } else if (fields) {
                 queryFields = fields.join(' ')
+            } else {
+                queryFields = queryStatemantForType(type)
             }
             const variables = {filter},
                 gqlQuery = gql`query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){

@@ -275,12 +275,14 @@ function gensrcExtension(name, options) {
             let typeSchema = 'type ' + type.name + '{\n'
             typeSchema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy:UserPublic!' : '') + '\n\tstatus: String\n'
 
-            let mutationFields = '', resolverFields = '', refResolvers = '', refResolversObjectId = ''
+            let insertFields = '', updateFields = '', resolverFields = '', refResolvers = '', refResolversObjectId = ''
 
             type.fields.forEach((field) => {
-                if (field.name.trim().toLowerCase().endsWith('_localized')) {
-                    throw Error('A filed name is not allowed to end with the string _localized. This is reserved for localized fields')
+
+                if (field.name.trim().toLowerCase()==='createdBy') {
+                    throw Error('A filed name is not allowed. createdBy is a reserved field name')
                 }
+
 
                 const type = (field.type || 'String')
                 let isRef = false
@@ -300,24 +302,27 @@ function gensrcExtension(name, options) {
                     }
                 }
 
-                if (mutationFields !== '') mutationFields += ','
+                if (insertFields !== '') insertFields += ','
+                if (updateFields !== '') updateFields += ','
                 if (resolverFields !== '') resolverFields += ','
-
-                mutationFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
-                resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
-
-                typeSchema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
 
 
                 if (field.localized && !field.multi) { // no support for multi yet
-                    typeSchema += '\t' + field.name + '_localized: LocalizedString\n'
-                    resolverFields += ',\'' + field.name + '_localized\''
-                    mutationFields += ',' + field.name + '_localized: LocalizedStringInput'
+                    typeSchema += '\t' + field.name + ': LocalizedString\n'
+                    resolverFields += '\'' + field.name + '\''
+                    insertFields +=  field.name + ': LocalizedStringInput' + (field.required ? '!' : '')
+                    updateFields +=  field.name + ': LocalizedStringInput'
+                }else{
+                    typeSchema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
+                    resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
+                    insertFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.required ? '!':'') + (field.multi ? ']' : '')
+                    updateFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
                 }
             })
 
             if (type.collectionClonable) {
-                mutationFields += ',_version:String'
+                insertFields += ',_version:String'
+                updateFields += ',_version:String'
             }
 
             typeSchema += '}\n\n'
@@ -337,12 +342,12 @@ function gensrcExtension(name, options) {
 
 
             typeSchema += 'type Mutation{\n'
-            typeSchema += '\tcreate' + type.name + ' (' + mutationFields + '):' + mutationResult + '\n'
-            typeSchema += '\tupdate' + type.name + ' (_id:ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + mutationResult + '\n'
+            typeSchema += '\tcreate' + type.name + ' (' + insertFields + '):' + mutationResult + '\n'
+            typeSchema += '\tupdate' + type.name + ' (_id:ID!' + (updateFields.length > 0 ? ',' : '') + updateFields + '):' + mutationResult + '\n'
             typeSchema += '\tdelete' + type.name + ' (_id:ID!' + (type.collectionClonable ? ',_version:String' : '') + '):' + mutationResult + '\n'
             typeSchema += '\tdelete' + type.name + 's (_id:[ID]' + (type.collectionClonable ? ',_version:String' : '') + '):[' + mutationResult + ']\n'
             if (type.entryClonable) {
-                typeSchema += '\tclone' + type.name + ' (_id:ID!' + (mutationFields.length > 0 ? ',' : '') + mutationFields + '):' + type.name + '\n'
+                typeSchema += '\tclone' + type.name + ' (_id:ID!' + (insertFields.length > 0 ? ',' : '') + insertFields + '):' + type.name + '\n'
             }
             typeSchema += '}\n\n'
 

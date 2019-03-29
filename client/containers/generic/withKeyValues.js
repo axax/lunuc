@@ -230,7 +230,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                             if (!data.keyValues.results) {
                                 data.keyValues.results = []
                             }
-                            const idx = data.keyValues.results.findIndex(x => x.key === setKeyValue.key && x.createdBy._id === user._id)
+                            const idx = data.keyValues.results.findIndex(x => x.key === setKeyValue.key && x.createdBy && x.createdBy._id === user._id)
                             if (idx > -1) {
                                 data.keyValues.results[idx].value = setKeyValue.value
                             } else {

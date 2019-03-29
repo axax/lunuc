@@ -8,7 +8,7 @@ import {csv2json} from 'api/util/csv'
 const {LANGUAGES} = config
 
 
-const readCsv = async (db) => {
+const readCsv = async (db, context) => {
     console.log('Read csv...')
     var fileContents = fs.readFileSync(path.join(__dirname, '../data/flipkart_com-ecommerce_sample.csv'));
 
@@ -16,10 +16,7 @@ const readCsv = async (db) => {
     const json = csv2json(fileContents.toString(), ',')
     const productCategoryCollection = await db.collection('ProductCategory')
 
-    //productCategoryCollection.createIndex( { "name_localized.en": 1 }, { unique: true } )
-
     const categoriesLevelMap = {}
-
     let countProducts = 0, countCategories = 0
     const dateToInsert = {}
     for (const row of json) {
@@ -36,11 +33,10 @@ const readCsv = async (db) => {
                     if (!dateToInsert[level]) {
                         dateToInsert[level] = []
                     }
-                    const data = {name_localized: {}, createdBy: ObjectId('590effdab75b10094f8543b8')}
-
+                    const data = {name: {}, createdBy: ObjectId(context.id)}
 
                     for (const lang of LANGUAGES) {
-                        data.name_localized[lang] = cat + (lang !== LANGUAGES[0] ? ' [' + lang + ']' : '')
+                        data.name[lang] = cat + (lang !== LANGUAGES[0] ? ' [' + lang + ']' : '')
                     }
                     dateToInsert[level].push(data)
                     categoriesLevelMap[level + '-' + cat] = data
@@ -70,7 +66,7 @@ const readCsv = async (db) => {
             // set parent ids
             const idMap = {}
             for (const data of catByLevel) {
-                idMap[data.name_localized[LANGUAGES[0]]] = data._id
+                idMap[data.name[LANGUAGES[0]]] = data._id
             }
 
             for (const data of dateToInsert[nextLevel]) {
@@ -107,7 +103,7 @@ export default db => ({
         shopImportSampleData: async ({}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            readCsv(db)
+            readCsv(db, context)
 
             return {status: 'complete'}
         }

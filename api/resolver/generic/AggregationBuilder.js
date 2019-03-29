@@ -1,6 +1,7 @@
 import ClientUtil from 'client/util'
 import {getFormFields, getType} from 'util/types'
 import {ObjectId} from 'mongodb'
+import config from 'gen/config'
 
 
 export default class AggregationBuilder {
@@ -58,8 +59,19 @@ export default class AggregationBuilder {
     }
 
 
+    getParsedFilter() {
+        if (!this._parsedFilter) {
+            const {filter} = this.options
+            if (filter) {
+                this._parsedFilter = ClientUtil.parseFilter(filter)
+            }
+        }
+        return this._parsedFilter
+    }
+
+
     // Mongodb joins
-    createAndAddLookup({type, fieldName, multi, lookups, usePipeline}) {
+    createAndAddLookup({type, name, multi}, lookups, {usePipeline}) {
 
 
         let lookup
@@ -72,22 +84,22 @@ export default class AggregationBuilder {
                 $expr.$in = ['$_id',
                     {
                         $cond: {
-                            if: {$isArray: '$$' + fieldName},
-                            then: '$$' + fieldName,
-                            else: ['$$' + fieldName]
+                            if: {$isArray: '$$' + name},
+                            then: '$$' + name,
+                            else: ['$$' + name]
                         }
                     }]
             } else {
-                $expr.$eq = ['$_id', '$$' + fieldName]
+                $expr.$eq = ['$_id', '$$' + name]
             }
 
 
             lookup = {
                 $lookup: {
                     from: type,
-                    as: fieldName,
+                    as: name,
                     let: {
-                        [fieldName]: '$' + fieldName
+                        [name]: '$' + name
                     },
                     pipeline: [
                         {
@@ -98,36 +110,15 @@ export default class AggregationBuilder {
                     ]
                 }
             }
-
-            /* Map localized fields to current language */
-            const typeData = getType(type)
-
-            if (typeData && typeData.fields) {
-
-                const {lang} = this.options
-                const $group = {_id: '$_id'}
-
-                for (const field of typeData.fields) {
-                    if (field.localized) {
-                        $group[field.name] = {$first: '$' + field.name + '_localized.' + lang}
-                    } else {
-                        $group[field.name] = {$first: '$' + field.name}
-                    }
-                }
-                lookup.$lookup.pipeline.push({
-                    $group
-                })
-            }
-
         } else {
 
             // without pipeline
             lookup = {
                 $lookup: {
                     from: type,
-                    localField: fieldName,
+                    localField: name,
                     foreignField: '_id',
-                    as: fieldName
+                    as: name
                 }
             }
         }
@@ -136,43 +127,45 @@ export default class AggregationBuilder {
         return {lookup}
     }
 
-    createGroup(fieldName, multi) {
-        return {'$first': multi ? '$' + fieldName : {$arrayElemAt: ['$' + fieldName, 0]}}
+    createGroup({name, multi}) {
+        return {'$first': multi ? '$' + name : {$arrayElemAt: ['$' + name, 0]}}
     }
 
-
-    getParsedFilter() {
-        if (!this._parsedFilter) {
-            const {filter} = this.options
-            if (filter) {
-                this._parsedFilter = ClientUtil.parseFilter(filter)
-            }
-        }
-        return this._parsedFilter
-    }
 
     // filter where clause
-    createAndAddFilterToMatch({fieldName, reference, localized, match}) {
-        if( fieldName.endsWith('_localized')){
-            return
+    createAndAddFilterToMatch({name, reference, type, multi, localized}, match, {exact}) {
+        let hasMatch = false
+        if (localized) {
+            config.LANGUAGES.forEach(lang => {
+                if (this.createAndAddFilterToMatch({name: name + '.' + lang, reference}, match, {})) {
+                    hasMatch = true
+                }
+            })
+            return hasMatch
         }
+
         const parsedFilter = this.getParsedFilter()
-        console.log(parsedFilter)
+
         if (parsedFilter) {
-            const {lang} = this.options
-            const filterPart = parsedFilter.parts[fieldName]
-            const filterKey = fieldName + (localized ? '_localized.' + lang : '')
+            let filterPart = parsedFilter.parts[name]
 
+            if (!filterPart && !exact) {
+                filterPart = parsedFilter.parts[name.split('.')[0]]
+            }
+
+            // explicit search for this field
             if (filterPart) {
-
                 if (reference) {
                     if (filterPart.value) {
                         if (ObjectId.isValid(filterPart.value)) {
                             // match by id
+                            hasMatch = true
                             this.addFilterToMatch({
-                                filterKey,
+                                filterKey: name,
                                 filterValue: ObjectId(filterPart.value),
                                 filterOptions: filterPart,
+                                type: 'ID',
+                                multi,
                                 match
                             })
                         } else {
@@ -183,50 +176,147 @@ export default class AggregationBuilder {
                 } else {
                     if (filterPart.constructor === Array) {
                         filterPart.forEach(e => {
+                            hasMatch = true
                             this.addFilterToMatch({
-                                filterKey,
-                                filterValue: {'$regex': e.value, '$options': 'i'},
+                                filterKey: name,
+                                filterValue: e.value,
                                 filterOptions: e,
+                                type,
+                                multi,
                                 match
                             })
                         })
                     } else {
+                        hasMatch = true
                         this.addFilterToMatch({
-                            filterKey,
-                            filterValue: {
-                                '$regex': filterPart.value,
-                                '$options': 'i'
-                            }, filterOptions: filterPart, match
+                            filterKey: name,
+                            filterValue: filterPart.value,
+                            filterOptions: filterPart,
+                            type,
+                            multi,
+                            match
                         })
                     }
                 }
             }
 
 
-            if (!reference) {
+            if (!exact && !reference && ['Boolean'].indexOf(type) < 0) {
                 parsedFilter.rest.forEach(e => {
+                    hasMatch = true
                     this.addFilterToMatch({
-                        filterKey,
-                        filterValue: {'$regex': e.value, '$options': 'i'},
+                        filterKey: name,
+                        filterValue: e.value,
                         filterOptions: e,
+                        type,
+                        multi,
                         match
                     })
                 })
             }
         }
+        return hasMatch
     }
 
 
-    addFilterToMatch({filterKey, filterValue, filterOptions, match}) {
+    addFilterToMatch({filterKey, filterValue, type, multi, filterOptions, match}) {
+
+        let comparator = '$regex' // default comparator
+        const comparatorMap = {
+            ':': '$regex',
+            '=': '$regex',
+            '==': '$eq',
+            '>': '$gt',
+            '>=': '$gte',
+            '<': '$lt',
+            '>=': '$lte',
+            '!=': '$ne'
+        }
+        if (filterOptions && filterOptions.comparator && comparatorMap[filterOptions.comparator]) {
+            comparator = comparatorMap[filterOptions.comparator]
+        }
+
+        if (type && ['Boolean', 'ID'].indexOf(type) >= 0 && comparator === '$regex') {
+            comparator = '$eq'
+        }
+
+        if (comparator === '$eq' && multi) {
+            comparator = '$in'
+            filterValue = [filterValue]
+        }
+
+        let matchExpression
+
+        if (['$gt', '$gte', '$lt', '$lte'].indexOf(comparator) >= 0) {
+            matchExpression = {[comparator]: parseFloat(filterValue)}
+        } else {
+            matchExpression = {[comparator]: filterValue}
+        }
+
+
+        if (comparator === '$regex') {
+            matchExpression.$options = 'i'
+        }
+
+
         if (!filterOptions || filterOptions.operator === 'or') {
             if (!match.$or) {
                 match.$or = []
             }
-            match.$or.push({[filterKey]: filterValue})
+            match.$or.push({[filterKey]: matchExpression})
         } else {
-            match[filterKey] = filterValue
+            match[filterKey] = matchExpression
         }
     }
+
+
+    getFieldDefinition(fieldData, type) {
+        const typeFields = getFormFields(type)
+
+        let fieldDefinition = {}
+
+        if (fieldData.constructor === Object) {
+            // if a value is in this format {'categories':['name']}
+            // we expect that the field categories is a reference to another type
+            // so we create a lookup for this type
+            const fieldNames = Object.keys(fieldData)
+            if (fieldNames.length > 0) {
+
+                // there should be only one attribute
+                fieldDefinition.name = fieldNames[0]
+
+                fieldDefinition.fields = fieldData[fieldDefinition.name]
+            }
+
+        } else if (fieldData.indexOf('$') > 0) {
+            // this is a reference
+            // for instance image$Media --> field image is a reference to the type Media
+            const part = fieldData.split('$')
+            fieldDefinition.name = part[0]
+            if (part[1].startsWith('[')) {
+                fieldDefinition.multi = true
+                fieldDefinition.type = part[1].substring(1, part[1].length - 1)
+            } else {
+                fieldDefinition.multi = false
+                fieldDefinition.type = part[1]
+            }
+        } else {
+            if( fieldData.endsWith('.localized')) {
+                fieldDefinition.projectLocal = true
+                fieldDefinition.name = fieldData.split('.')[0]
+            }else{
+                fieldDefinition.name = fieldData
+            }
+        }
+
+        // extend it with default definition
+        if (typeFields[fieldDefinition.name]) {
+            fieldDefinition = {...typeFields[fieldDefinition.name], ...fieldDefinition}
+        }
+        return fieldDefinition
+
+    }
+
 
     query() {
         const typeDefinition = getType(this.type) || {}
@@ -257,119 +347,69 @@ export default class AggregationBuilder {
                 filterKey: '_id',
                 filterValue: ObjectId(parsedFilter.parts._id.value),
                 filterOptions: parsedFilter.parts._id,
-                rootMatch
+                type: 'ID',
+                match: rootMatch
             })
         }
 
         this.fields.forEach((field, i) => {
-            if (field.constructor === Object) {
-                // if a value is in this format {'categories':['name']}
-                // we expect that the field categories is a reference to another type
-                // so we create a lookup for this type
+            const fieldDefinition = this.getFieldDefinition(field, this.type)
+            const fieldName = fieldDefinition.name
+            if (fieldDefinition.reference) {
 
-                const fieldNames = Object.keys(field)
-                if (fieldNames.length > 0) {
-
-                    // there should be only one attribute
-                    const fieldName = fieldNames[0]
-
-                    //check if this field is a reference
-                    if (typeFields && typeFields[fieldName]) {
-                        const typeField = typeFields[fieldName]
-
-                        // get fields of the referenced type
-                        const lookupFields = getFormFields(typeField.type)
-
-                        // projection
-                        let projectPipeline = {},
-                            hasLocalized = false
+                // search in a ref field
+                // poor performance
+                let refFields = fieldDefinition.fields, projectPipeline = {}, usePipeline = false
 
 
-                        field[fieldName].forEach(item => {
-                            projectResultData[fieldName + '.' + item] = 1
-                            if (lookupFields[item] && lookupFields[item].localized) {
-                                hasLocalized = true
-                                projectPipeline[item + '_localized.' + lang] = 1
+                if (!refFields) {
+                    projectResultData[fieldName] = 1
+                    const refFieldDefinitions = getFormFields(fieldDefinition.type)
+                    refFields = Object.keys(refFieldDefinitions)
+                }
 
+                if (refFields) {
+
+                    for (const refField of refFields) {
+
+                        const refFieldDefinition = this.getFieldDefinition(refField, fieldDefinition.type)
+                        const refFieldName = refFieldDefinition.name
+
+                        if (fieldDefinition.fields) {
+                            projectResultData[fieldName + '.' + refFieldName] = 1
+                        }
+
+                        if (refFieldDefinition) {
+
+                            let localProjected = false
+                            if (refFieldDefinition.fields) {
+                                usePipeline = true
+                                for (const subRefField of refFieldDefinition.fields) {
+                                    projectPipeline[refFieldName + '.' + subRefField] = 1
+                                }
+                            } else if (refFieldDefinition.localized && refFieldDefinition.projectLocal) {
+                                usePipeline = true
+                                localProjected = true
                                 // project localized field in current language
-                                projectPipeline[item] = '$' + item + '_localized.' + lang
-                                //projectResultData[key + '.' + item + '_localized.' + lang] = 1
+                                projectPipeline[refFieldName] = '$' + refFieldName + '.' + lang
                             } else {
-                                projectPipeline[item] = 1
+                                projectPipeline[refFieldName] = 1
                             }
 
-                            if (fieldName !== '_id') {
-                                hasMatchInReference = true
-                                this.createAndAddFilterToMatch({
-                                    fieldName: fieldName + '.' + item,
-                                    reference: false,
-                                    localized: false,
-                                    match
-                                })
-                            }
-                        })
-
-                        // create lookup and group value for pipeline
-                        const {lookup} = this.createAndAddLookup({
-                            type: typeField.type,
-                            fieldName,
-                            multi: typeField.multi,
-                            lookups,
-                            usePipeline: hasLocalized
-                        })
-
-
-                        if (lookup.$lookup.pipeline) {
-                            lookup.$lookup.pipeline.push({$project: projectPipeline})
-                        }
-
-                        // add group
-                        groups[fieldName] = this.createGroup(fieldName, typeField.multi)
-
-                        this.createAndAddFilterToMatch({
-                            fieldName,
-                            reference: true,
-                            localized: false,
-                            match: rootMatch
-                        })
-
-                    }
-
-                }
-
-            } else if (field.indexOf('$') > 0) {
-                // this is a reference
-                // for instance image$Media --> field image is a reference to the type Media
-                const part = field.split('$')
-                const fieldName = part[0]
-                let type = part[1], multi = false
-                if (type.startsWith('[')) {
-                    multi = true
-                    type = type.substring(1, type.length - 1)
-                }
-
-
-                // search in all fields of reference
-                // very poor performance
-                if ( !multi) {
-                    const refTypeDefinition = getType(type) || {}
-                    if (refTypeDefinition.fields) {
-                        for (const refField of refTypeDefinition.fields) {
-                            if (!refField.reference && !refField.multi) {
-                                hasMatchInReference = true
-                                this.createAndAddFilterToMatch({
-                                    fieldName: fieldName + '.' + refField.name,
-                                    reference: false,
-                                    localized: false,
-                                    match
-                                })
+                            if (!refFieldDefinition.reference) {
+                                if (this.createAndAddFilterToMatch({
+                                        name: fieldName + '.' + refFieldName,
+                                        reference: false,
+                                        localized: refFieldDefinition.localized && !localProjected
+                                    }, match, {exact: true})) {
+                                    hasMatchInReference = true
+                                }
                             }
                         }
                     }
                 }
 
-
-                if (multi) {
+                if (fieldDefinition.multi) {
                     // if multi it has to be an array
                     // this is an anditional filter to remove non array values. it is not needed if database is consistent
                     // without this filter you might get the error: $in requires an array as a second argument
@@ -380,37 +420,41 @@ export default class AggregationBuilder {
                      })*/
                 }
 
-                // use pipeline here is a lot slower because lookup pipeline doesn't use index --> hopfully this will be solved in a future mongodb release
-                this.createAndAddLookup({type, fieldName, multi, lookups, usePipeline: true})
 
+                const {lookup} = this.createAndAddLookup(fieldDefinition, lookups, {usePipeline})
 
-                groups[fieldName] = this.createGroup(fieldName, multi)
-                this.createAndAddFilterToMatch({fieldName, reference: true, localized: false, match: rootMatch})
-                projectResultData[fieldName] = 1
+                if (lookup.$lookup.pipeline) {
+                    lookup.$lookup.pipeline.push({$project: projectPipeline})
+                }
+
+                groups[fieldName] = this.createGroup(fieldDefinition)
+                this.createAndAddFilterToMatch(fieldDefinition, hasMatchInReference ? match : rootMatch, {})
 
             } else {
                 // regular field
-                if (field !== '_id') {
-                    if (typeFields && typeFields[field] && typeFields[field].localized) {
-                        groups[field] = {'$first': '$' + field + '_localized.' + lang}
-                        this.createAndAddFilterToMatch({
-                            fieldName: field,
-                            reference: false,
-                            localized: true,
-                            match
-                        })
+                if (fieldName !== '_id') {
+
+
+                    groups[fieldName] = {'$first': '$' + fieldName}
+                    if (typeFields[fieldName]) {
+                        this.createAndAddFilterToMatch(fieldDefinition, match, {})
+                    }
+
+
+                }
+                if (fieldDefinition.fields) {
+                    for (const subField of fieldDefinition.fields) {
+                        projectResultData[fieldName + '.' + subField] = 1
+                    }
+                } else {
+
+                    if (fieldDefinition.localized && fieldDefinition.projectLocal) {
+                        // project localized field in current language
+                        projectResultData[fieldName] = '$' + fieldName + '.' + lang
                     } else {
-                        groups[field] = {'$first': '$' + field}
-                        this.createAndAddFilterToMatch({
-                            fieldName: field,
-                            reference: false,
-                            localized: false,
-                            match
-                        })
+                        projectResultData[fieldName] = 1
                     }
                 }
-                projectResultData[field] = 1
-
             }
         })
 
@@ -418,8 +462,8 @@ export default class AggregationBuilder {
             // also return extra fields
             if (!typeDefinition.noUserRelation) {
 
-                this.createAndAddLookup({type: 'User', fieldName: 'createdBy', multi: false, lookups})
-                groups.createdBy = this.createGroup('createdBy', false)
+                this.createAndAddLookup({type: 'User', name: 'createdBy', multi: false}, lookups, {})
+                groups.createdBy = this.createGroup({name: 'createdBy', multi: false})
             }
             groups.modifiedAt = {'$first': '$modifiedAt'}
         }

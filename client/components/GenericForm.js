@@ -73,9 +73,8 @@ class GenericForm extends React.Component {
                 } else {
                     if (field.localized) {
                         config.LANGUAGES.forEach(lang => {
-                            const newKey = k + '_localized'
-                            if (!theState.fields[newKey] || !theState.fields[newKey][lang]) {
-                                fieldErrors[newKey + '.' + lang] = _t('GenericForm.validation.required')
+                            if (!theState.fields[k] || !theState.fields[k][lang] || !theState.fields[k][lang].trim() === '') {
+                                fieldErrors[k + '.' + lang] = _t('GenericForm.validation.required')
                             }
                         })
                     } else {
@@ -104,18 +103,18 @@ class GenericForm extends React.Component {
         const initalState = {fields: {}, fieldErrors: {}, isValid: true}
         Object.keys(props.fields).map(k => {
             const item = props.fields[k]
-            let v
-            if (props.values) {
-                v = props.values[k]
-            } else {
-                // value must be null instead of undefined
-                v = item.value === undefined ? null : item.value
-            }
-            initalState.fields[k] = v
+            let fieldValue
             if (item.localized) {
-                v = props.values ? props.values[k + '_localized'] : null
-                initalState.fields[k + '_localized'] = v ? Object.assign({}, v) : null
+                fieldValue = props.values && props.values[k] ? Object.assign({}, props.values[k]) : null
+            } else {
+                if (props.values) {
+                    fieldValue = props.values[k]
+                } else {
+                    // value must be null instead of undefined
+                    fieldValue = item.value === undefined ? null : item.value
+                }
             }
+            initalState.fields[k] = fieldValue
         })
         return initalState
     }
@@ -127,9 +126,15 @@ class GenericForm extends React.Component {
 
 
     handleInputChange = (e) => {
+
+        const {fields} = this.props
+
         const target = e.target
-        const value = target.type === 'checkbox' ? target.checked : target.value
+        let value = target.type === 'checkbox' ? target.checked : target.value
         const name = target.name
+        if( fields[name] && fields[name].type==="Float" ){
+            value = parseFloat(value)
+        }
         this.setState((prevState) => {
             const newState = Object.assign({}, {fields: {}}, prevState)
             const path = name.split('.')
@@ -198,11 +203,12 @@ class GenericForm extends React.Component {
                                    name={k}
                                    label={o.label}
                                    multi={o.multi}
-                                   field={o.pickerField}
-
+                                   pickerField={o.pickerField}
+                                   fields={o.fields}
                                    type={o.type} placeholder={o.placeholder}/>
             } else if (uitype === 'select') {
-                return <SimpleSelect key={k} name={k} onChange={this.handleInputChange} items={o.enum} multi={o.multi} value={value}/>
+                return <SimpleSelect key={k} name={k} onChange={this.handleInputChange} items={o.enum} multi={o.multi}
+                                     value={value}/>
             } else if (o.type === 'Boolean') {
                 return <SimpleSwitch key={k} label={o.placeholder} name={k}
                                      onChange={this.handleInputChange} checked={value ? true : false}/>
@@ -211,8 +217,7 @@ class GenericForm extends React.Component {
                 if (o.localized) {
 
                     return config.LANGUAGES.reduce((a, l) => {
-                        const valueLocalized = this.state.fields[k + '_localized']
-                        const fieldName = k + '_localized.' + l
+                        const fieldName = k + '.' + l
                         a.push(<TextField key={fieldName}
                                           error={!!this.state.fieldErrors[fieldName]}
                                           helperText={this.state.fieldErrors[fieldName]}
@@ -220,10 +225,10 @@ class GenericForm extends React.Component {
                                           fullWidth={o.fullWidth}
                                           type={uitype}
                                           placeholder={o.placeholder + ' [' + l + ']'}
-                                          value={(valueLocalized && valueLocalized[l] ? valueLocalized[l] : '')}
+                                          value={(value && value[l] ? value[l] : '')}
                                           name={fieldName}
                                           onKeyDown={(e) => {
-                                              onKeyDown && onKeyDown(e, valueLocalized[l])
+                                              onKeyDown && onKeyDown(e, value[l])
                                           }}
                                           onChange={this.handleInputChange}/>)
                         return a

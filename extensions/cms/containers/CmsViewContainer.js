@@ -484,7 +484,7 @@ class CmsViewContainer extends React.Component {
                                 //query += ' ' + name + '{_id name}'
                             } else {
                                 if (localized) {
-                                    query += ' ' + name + '_localized{' + _app_.lang + '}'
+                                    query += ' ' + name + '{' + _app_.lang + '}'
                                 } else {
                                     query += ' ' + name
                                 }
@@ -533,12 +533,12 @@ class CmsViewContainer extends React.Component {
                                         Object.keys(noNullData).map(k => {
                                             // if there are localized values in the current language
                                             // set them to the regular field
-                                            if (k.endsWith('_localized')) {
+                                            /*if (k.endsWith('_localized')) {
                                                 const v = noNullData[k][_app_.lang]
                                                 if (v) {
                                                     noNullData[k.substring(0, k.length - 10)] = v
                                                 }
-                                            }
+                                            }*/
                                         })
                                         refResults[idx] = Object.assign({}, refResults[idx], noNullData)
                                         // back to string data
