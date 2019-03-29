@@ -57,7 +57,7 @@ const GenericResolver = {
 
         const aggregationQuery = aggregationBuilder.query()
 
-       /* if( typeName.indexOf("Product")>=0) {
+      /* if( typeName.indexOf("ProductC")>=0) {
         console.log(JSON.stringify(aggregationQuery, null, 4))
         }*/
         const collection = db.collection(collectionName)

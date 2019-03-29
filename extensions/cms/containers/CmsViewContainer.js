@@ -765,7 +765,7 @@ class CmsViewContainer extends React.Component {
         }
         const {client, user, cmsPage} = this.props
         const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
-        const kvk = resolvedDataJson._meta.keyValueKey
+        const kvk = resolvedDataJson._meta && resolvedDataJson._meta.keyValueKey
         if (kvk) {
             if (!resolvedDataJson[kvk]) {
                 resolvedDataJson[kvk] = {}

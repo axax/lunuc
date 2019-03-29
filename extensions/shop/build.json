@@ -31,6 +31,9 @@
           ]
         },
         {
+          "name": "image_src"
+        },
+        {
           "name": "categories",
           "type": "ProductCategory",
           "multi": true

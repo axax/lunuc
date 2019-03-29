@@ -5,7 +5,7 @@ import config from 'gen/config'
 import fs from 'fs'
 import {csv2json} from 'api/util/csv'
 
-const {LANGUAGES} = config
+const {LANGUAGES, DEFAULT_LANGUAGE} = config
 
 
 const readCsv = async (db, context) => {
@@ -15,14 +15,44 @@ const readCsv = async (db, context) => {
 
     const json = csv2json(fileContents.toString(), ',')
     const productCategoryCollection = await db.collection('ProductCategory')
+    const productCollection = await db.collection('Product')
 
     const categoriesLevelMap = {}
     let countProducts = 0, countCategories = 0
-    const dateToInsert = {}
+    const categoriesToInsert = {}, productsToInsert = [], createdBy = ObjectId(context.id)
     for (const row of json) {
+
         const cats = JSON.parse(row.product_category_tree)[0].split('>>')
+
         if (cats.length > 1) {
+
             countProducts++
+
+            const productData = {
+                description: {},
+                name: {},
+                categories: [],
+                createdBy,
+                visible:true,
+                price: parseFloat(row.retail_price)
+            }
+
+            for (const lang of LANGUAGES) {
+                productData.name[lang] = row.product_name + (lang !== DEFAULT_LANGUAGE ? ' [' + lang + ']' : '')
+                productData.description[lang] = row.description + (lang !== DEFAULT_LANGUAGE ? ' [' + lang + ']' : '')
+            }
+
+            let images
+            try {
+                images = JSON.parse(row.image)
+            } catch (e) {
+            }
+
+            if (images && images.length) {
+                productData.image_src = images[0]
+            }
+
+
             for (let level = 0; level < cats.length; level++) {
 
                 const cat = cats[level].trim()
@@ -30,16 +60,20 @@ const readCsv = async (db, context) => {
                 if (!categoriesLevelMap[level + '-' + cat]) {
                     countCategories++
 
-                    if (!dateToInsert[level]) {
-                        dateToInsert[level] = []
+                    if (!categoriesToInsert[level]) {
+                        categoriesToInsert[level] = []
                     }
-                    const data = {name: {}, createdBy: ObjectId(context.id)}
+                    const data = {name: {}, createdBy}
 
                     for (const lang of LANGUAGES) {
-                        data.name[lang] = cat + (lang !== LANGUAGES[0] ? ' [' + lang + ']' : '')
+                        data.name[lang] = cat + (lang !== DEFAULT_LANGUAGE ? ' [' + lang + ']' : '')
                     }
-                    dateToInsert[level].push(data)
+                    categoriesToInsert[level].push(data)
                     categoriesLevelMap[level + '-' + cat] = data
+                }
+
+                if (productData.categories.indexOf(level + '-' + cat) < 0) {
+                    productData.categories.push(level + '-' + cat)
                 }
 
                 if (level > 0) {
@@ -51,42 +85,54 @@ const readCsv = async (db, context) => {
                         categoriesLevelMap[level + '-' + cat].parentCategory.push(pcat)
                     }
                 }
-
-
             }
+
+            productsToInsert.push(productData)
         }
     }
 
-    Object.keys(dateToInsert).forEach(level => {
-        const catByLevel = dateToInsert[level]
+    Object.keys(categoriesToInsert).forEach(level => {
+        const catByLevel = categoriesToInsert[level]
         productCategoryCollection.insertMany(catByLevel)
 
         const nextLevel = parseInt(level) + 1
-        if (dateToInsert[nextLevel]) {
+        if (categoriesToInsert[nextLevel]) {
             // set parent ids
             const idMap = {}
             for (const data of catByLevel) {
-                idMap[data.name[LANGUAGES[0]]] = data._id
+                idMap[data.name[DEFAULT_LANGUAGE]] = data._id
             }
 
-            for (const data of dateToInsert[nextLevel]) {
+            for (const data of categoriesToInsert[nextLevel]) {
                 if (data.parentCategory) {
                     const pIds = []
-                    for(const pCat of data.parentCategory){
-                        if( idMap[pCat] ){
+                    for (const pCat of data.parentCategory) {
+                        if (idMap[pCat]) {
                             pIds.push(idMap[pCat])
                         }
                     }
                     data.parentCategory = pIds
                 }
-               // console.log(dateToInsert[nextLevel])
+                // console.log(dateToInsert[nextLevel])
             }
         }
 
-       // console.log(catByLevel)
+        // console.log(catByLevel)
         return
     })
 
+    // replace category names with ids
+    for (const product of productsToInsert) {
+        const catIds = []
+        for (const cat of product.categories) {
+            if (categoriesLevelMap[cat]) {
+                catIds.push(categoriesLevelMap[cat]._id)
+            }
+        }
+        product.categories = catIds
+    }
+
+    productCollection.insertMany(productsToInsert)
 
     //console.log(dateToInsert,countCategories)
     /*

@@ -134,14 +134,14 @@ export default class AggregationBuilder {
 
     // filter where clause
     createAndAddFilterToMatch({name, reference, type, multi, localized}, match, {exact}) {
-        let hasMatch = false
+        let hasAtLeastOneMatch = false
         if (localized) {
             config.LANGUAGES.forEach(lang => {
-                if (this.createAndAddFilterToMatch({name: name + '.' + lang, reference}, match, {})) {
-                    hasMatch = true
+                if (this.createAndAddFilterToMatch({name: name + '.' + lang, reference}, match, {exact})) {
+                    hasAtLeastOneMatch = true
                 }
             })
-            return hasMatch
+            return hasAtLeastOneMatch
         }
 
         const parsedFilter = this.getParsedFilter()
@@ -156,28 +156,25 @@ export default class AggregationBuilder {
             // explicit search for this field
             if (filterPart) {
                 if (reference) {
-                    if (filterPart.value) {
-                        if (ObjectId.isValid(filterPart.value)) {
-                            // match by id
-                            hasMatch = true
-                            this.addFilterToMatch({
-                                filterKey: name,
-                                filterValue: ObjectId(filterPart.value),
-                                filterOptions: filterPart,
-                                type: 'ID',
-                                multi,
-                                match
-                            })
-                        } else {
-                            this.searchHint = 'it has to be a valid id'
-                        }
-
+                    hasAtLeastOneMatch = true
+                    const {added, error} = this.addFilterToMatch({
+                        filterKey: name,
+                        filterValue: filterPart.value,
+                        filterOptions: filterPart,
+                        type: 'ID',
+                        multi,
+                        match
+                    })
+                    if( added ) {
+                        hasAtLeastOneMatch = true
+                    }else{
+                        //TODO add debugging infos for search. this here is only a test
+                        this.searchHint = error
                     }
                 } else {
                     if (filterPart.constructor === Array) {
                         filterPart.forEach(e => {
-                            hasMatch = true
-                            this.addFilterToMatch({
+                            const {added} = this.addFilterToMatch({
                                 filterKey: name,
                                 filterValue: e.value,
                                 filterOptions: e,
@@ -185,10 +182,12 @@ export default class AggregationBuilder {
                                 multi,
                                 match
                             })
+                            if( added ) {
+                                hasAtLeastOneMatch = true
+                            }
                         })
                     } else {
-                        hasMatch = true
-                        this.addFilterToMatch({
+                        const {added} = this.addFilterToMatch({
                             filterKey: name,
                             filterValue: filterPart.value,
                             filterOptions: filterPart,
@@ -196,6 +195,9 @@ export default class AggregationBuilder {
                             multi,
                             match
                         })
+                        if( added ) {
+                            hasAtLeastOneMatch = true
+                        }
                     }
                 }
             }
@@ -203,8 +205,8 @@ export default class AggregationBuilder {
 
             if (!exact && !reference && ['Boolean'].indexOf(type) < 0) {
                 parsedFilter.rest.forEach(e => {
-                    hasMatch = true
-                    this.addFilterToMatch({
+                    hasAtLeastOneMatch = true
+                    const {added} = this.addFilterToMatch({
                         filterKey: name,
                         filterValue: e.value,
                         filterOptions: e,
@@ -212,10 +214,13 @@ export default class AggregationBuilder {
                         multi,
                         match
                     })
+                    if( added ) {
+                        hasAtLeastOneMatch = true
+                    }
                 })
             }
         }
-        return hasMatch
+        return hasAtLeastOneMatch
     }
 
 
@@ -240,10 +245,47 @@ export default class AggregationBuilder {
             comparator = '$eq'
         }
 
+
+        if (type === 'ID') {
+
+            if (filterValue) {
+                if (ObjectId.isValid(filterValue)) {
+                    // match by id
+                    filterValue = ObjectId(filterValue)
+                } else {
+                    return {added: false, error: 'Search for ID. But ID is not valid'}
+                }
+            } else {
+
+                if (!match.$or) {
+                    match.$or = []
+                }
+                match.$or.push({
+                    // Check about no Company key
+                    [filterKey]: {
+                        $exists: false,
+                    },
+                })
+                match.$or.push({
+                    // Check about no Company key
+                    [filterKey]: null,
+                })
+                match.$or.push({
+                    // Check about no Company key
+                    [filterKey]: {
+                        $size: 0
+                    },
+                })
+                return {added: true}
+            }
+        }
+
+
         if (comparator === '$eq' && multi) {
             comparator = '$in'
             filterValue = [filterValue]
         }
+
 
         let matchExpression
 
@@ -267,6 +309,7 @@ export default class AggregationBuilder {
         } else {
             match[filterKey] = matchExpression
         }
+        return {added: true}
     }
 
 
@@ -301,10 +344,10 @@ export default class AggregationBuilder {
                 fieldDefinition.type = part[1]
             }
         } else {
-            if( fieldData.endsWith('.localized')) {
+            if (fieldData.endsWith('.localized')) {
                 fieldDefinition.projectLocal = true
                 fieldDefinition.name = fieldData.split('.')[0]
-            }else{
+            } else {
                 fieldDefinition.name = fieldData
             }
         }
@@ -408,6 +451,7 @@ export default class AggregationBuilder {
                         }
                     }
                 }
+
 
                 if (fieldDefinition.multi) {
                     // if multi it has to be an array

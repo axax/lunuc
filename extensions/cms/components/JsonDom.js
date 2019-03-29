@@ -31,7 +31,7 @@ const Print = (props) => <Async {...props}
                                 load={import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
 
 
-const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'Change', 'Submit']
+const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit']
 
 class JsonDom extends React.Component {
 
