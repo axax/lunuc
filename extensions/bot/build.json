@@ -16,6 +16,13 @@
           "name": "languages"
         },
         {
+          "name": "settings"
+        },
+        {
+          "name": "execfilter",
+          "label": "Execution filter"
+        },
+        {
           "name": "active",
           "type": "Boolean"
         }

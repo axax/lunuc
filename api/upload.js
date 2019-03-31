@@ -203,7 +203,8 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
         form.on('file', function (field, file) {
 
             console.log(client.s.url)
-            const response = execSync(`mongorestore --uri="${client.s.url}" --gzip --archive="${file.path}"`)
+            // --drop --> drops collections before
+            const response = execSync(`mongorestore --uri="${client.s.url}" --drop --gzip --archive="${file.path}"`)
             console.log('restoreDbDump', response)
 
         })

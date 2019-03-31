@@ -17,4 +17,9 @@ export default () => {
     Hook.on('MenuMenu', ({menuItems}) => {
         menuItems.push({name: 'Chats', to: CHAT_BASE_URL, auth: true, icon: <ChatIcon />})
     })
+
+
+    Hook.on('JsonDom', ({components}) => {
+        components['ChatContainer'] = ChatContainer
+    })
 }

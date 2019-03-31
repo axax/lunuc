@@ -13,7 +13,8 @@ class Bot {
     expressions = {}
     telegramBot = false
     result = {}
-    telegramChatIds = [] //[437556760,  -297061732, -356386664]
+    settings = {telegramChatIds: []}//[437556760,  -297061732, -356386664]
+    db = null
 
     synonym = {
         de: {velo: 'fahrrad', 'roboter': 'bot'},
@@ -38,8 +39,15 @@ class Bot {
         }
     }
 
-    constructor(data) {
+    constructor(data, db) {
         this.data = data
+        try {
+            const settings = JSON.parse(data.settings)
+            this.settings = settings
+        } catch (e) {
+            console.warn(`Bot settings invalid ${data.settings}`, e)
+        }
+        this.db = db
         this.languages = data.languages.split(',')
         if (this.languages.length === 0) {
             this.languages.push('en')
@@ -93,9 +101,14 @@ class Bot {
     }
 
     addTelegramChat(ctx) {
-        if (!this.telegramChatIds[ctx.chat.id]) {
-            this.telegramChatIds.push(ctx.chat.id)
+        if (this.settings.telegramChatIds.indexOf(ctx.chat.id) < 0) {
+            this.settings.telegramChatIds.push(ctx.chat.id)
+            this.saveSettings()
         }
+    }
+
+    saveSettings() {
+        this.db.collection('Bot').updateOne({_id: this.data._id}, {$set: {settings: JSON.stringify(this.settings)}})
     }
 
     checkStatus() {
@@ -359,12 +372,10 @@ class Bot {
 
     async loadCommands(db) {
         const botCommands = (await
-                db.collection('BotCommand').find({bot: this.data._id, active: true}).toArray()
+                db.collection('BotCommand').find({bot: this.data._id, active: true}).sort({order: 1}).toArray()
         )
 
-
         botCommands.forEach(async botCommand => {
-
             if (botCommand.script) {
                 const tpl = new Function(`
                  (async () => {

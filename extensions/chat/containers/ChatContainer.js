@@ -101,7 +101,7 @@ class ChatContainer extends React.Component {
 
     render() {
         const {chatsWithMessages, users, loading, match} = this.props
-        const selectedChatId = match.params.id
+        const selectedChatId = match && match.params && match.params.id
 
         if (!chatsWithMessages) {
             if (loading)

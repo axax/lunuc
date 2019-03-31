@@ -162,49 +162,30 @@ export default class AggregationBuilder {
 
             // explicit search for this field
             if (filterPart) {
-                if (reference) {
-                    hasAtLeastOneMatch = true
+
+                let filterPartArray
+                if (filterPart.constructor !== Array) {
+                    filterPartArray = [filterPart]
+                }else{
+                    filterPartArray = filterPart
+                }
+
+
+                for(const filterPartOfArray of filterPartArray){
                     const {added, error} = this.addFilterToMatch({
                         filterKey: name,
-                        filterValue: filterPart.value,
-                        filterOptions: filterPart,
-                        type: 'ID',
+                        filterValue: filterPartOfArray.value,
+                        filterOptions: filterPartOfArray,
+                        type: reference?'ID':type,
                         multi,
                         match
                     })
+
                     if (added) {
                         hasAtLeastOneMatch = true
                     } else {
                         //TODO add debugging infos for search. this here is only a test
                         this.searchHint = error
-                    }
-                } else {
-                    if (filterPart.constructor === Array) {
-                        filterPart.forEach(e => {
-                            const {added} = this.addFilterToMatch({
-                                filterKey: name,
-                                filterValue: e.value,
-                                filterOptions: e,
-                                type,
-                                multi,
-                                match
-                            })
-                            if (added) {
-                                hasAtLeastOneMatch = true
-                            }
-                        })
-                    } else {
-                        const {added} = this.addFilterToMatch({
-                            filterKey: name,
-                            filterValue: filterPart.value,
-                            filterOptions: filterPart,
-                            type,
-                            multi,
-                            match
-                        })
-                        if (added) {
-                            hasAtLeastOneMatch = true
-                        }
                     }
                 }
             }
@@ -252,11 +233,23 @@ export default class AggregationBuilder {
             comparator = '$eq'
         }
 
-
         if (type === 'ID') {
 
             if (filterValue) {
-                if (ObjectId.isValid(filterValue)) {
+
+                if( filterValue.startsWith('[') && filterValue.endsWith(']') ){
+                    filterValue = filterValue.substring(1,filterValue.length-1).split(',')
+                    const ids = []
+                    for( const id of filterValue){
+                        if (ObjectId.isValid(id)){
+                            ids.push(ObjectId(id))
+                        }else{
+                            return {added: false, error: 'Search for IDs. But not all ids are valid'}
+                        }
+                    }
+                    filterValue = ids
+                    comparator = '$in'
+                }else if (ObjectId.isValid(filterValue)) {
                     // match by id
                     filterValue = ObjectId(filterValue)
                 } else {
@@ -288,7 +281,7 @@ export default class AggregationBuilder {
         }
 
 
-        if (comparator === '$eq' && multi) {
+        if (comparator === '$eq' && multi && filterValue.constructor !== Array) {
             comparator = '$in'
             filterValue = [filterValue]
         }
@@ -306,7 +299,6 @@ export default class AggregationBuilder {
         if (comparator === '$regex') {
             matchExpression.$options = 'i'
         }
-
 
         if (!filterOptions || filterOptions.operator === 'or') {
             if (!match.$or) {

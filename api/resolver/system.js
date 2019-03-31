@@ -188,7 +188,7 @@ export const systemResolver = (db) => ({
             // make sure upload dir exists
             const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/dbdumps/')
             if (!Util.ensureDirectoryExistence(backup_dir)) {
-                throw new Error(`Backup folder coud not be created -> ${backup_dir}`)
+                throw new Error(`Backup folder could not be created -> ${backup_dir}`)
             }
 
             const files = []

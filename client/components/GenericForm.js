@@ -132,8 +132,14 @@ class GenericForm extends React.Component {
         const target = e.target
         let value = target.type === 'checkbox' ? target.checked : target.value
         const name = target.name
-        if( fields[name] && fields[name].type==="Float" ){
-            value = parseFloat(value)
+        if( fields[name] ){
+            if( fields[name].type==="Float" )
+            {
+                value = parseFloat(value)
+            }else if( fields[name].type==="Int" ){
+
+                value = parseInt(value)
+            }
         }
         this.setState((prevState) => {
             const newState = Object.assign({}, {fields: {}}, prevState)

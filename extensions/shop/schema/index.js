@@ -2,6 +2,7 @@ export default `
 
     type ShopImportSampleDataResult {
         status: String
+        message: String
     }
     
     type Query {

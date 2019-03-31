@@ -116,9 +116,6 @@ const readCsv = async (db, context) => {
                 // console.log(dateToInsert[nextLevel])
             }
         }
-
-        // console.log(catByLevel)
-        return
     })
 
     // replace category names with ids
@@ -134,12 +131,7 @@ const readCsv = async (db, context) => {
 
     productCollection.insertMany(productsToInsert)
 
-    //console.log(dateToInsert,countCategories)
-    /*
-     const result = productCategoryCollection.insertMany(dateToInsert)
-
-     console.log(dateToInsert, count)*/
-
+    return {countCategories, countProducts}
 
 }
 
@@ -149,9 +141,9 @@ export default db => ({
         shopImportSampleData: async ({}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            readCsv(db, context)
+            const {countCategories, countProducts} = await readCsv(db, context)
 
-            return {status: 'complete'}
+            return {status: 'complete', message: `${countProducts} products and ${countCategories} categories has been imported.`}
         }
     }
 })

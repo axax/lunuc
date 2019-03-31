@@ -32,12 +32,12 @@ class System extends React.Component {
     startImport() {
         this.props.client.query({
             fetchPolicy: 'no-cache',
-            query: gql(`{shopImportSampleData{status}}`)
+            query: gql(`{shopImportSampleData{status message}}`)
 
         }).then(response => {
             this.props.notificationAction.addNotification({
                 key: 'shopDataImportate',
-                message: `Sample data has been imported`
+                message: response.data.shopImportSampleData.message
             })
         })
     }
