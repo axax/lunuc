@@ -32,7 +32,7 @@ import Util from 'client/util'
 import GenericForm from 'client/components/GenericForm'
 import config from 'gen/config'
 import Hook from 'util/hook'
-import {getTypes, getTypeQueries, getFormFields, typeDataToLabel} from 'util/types'
+import {checkFieldType, getTypes, getTypeQueries, getFormFields, typeDataToLabel} from 'util/types'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {deepMerge}  from 'util/deepMerge'
@@ -1164,11 +1164,7 @@ class TypesContainer extends React.Component {
             value = event.target.innerText.trim()
         }
 
-        if (field.type === 'Float') {
-            value = parseFloat(value)
-        } else if (field.type === 'Int') {
-            value = parseInt(value)
-        }
+        value = checkFieldType(value, field)
 
         const parts = key.split('.')
         if (parts.length === 2) {

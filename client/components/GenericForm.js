@@ -7,6 +7,7 @@ import config from 'gen/config'
 import _t from 'util/i18n'
 import ContentEditable from './ContentEditable'
 import {withStyles} from 'ui/admin'
+import {checkFieldType} from 'util/types'
 
 
 const styles = theme => ({
@@ -132,13 +133,8 @@ class GenericForm extends React.Component {
         const target = e.target
         let value = target.type === 'checkbox' ? target.checked : target.value
         const name = target.name
-        if( fields[name] ){
-            if( fields[name].type==='Float' )
-            {
-                value = parseFloat(value)
-            }else if( fields[name].type==='Int' ){
-                value = parseInt(value)
-            }
+        if (fields[name]) {
+            value = checkFieldType(value, fields[name])
         }
         this.setState((prevState) => {
             const newState = Object.assign({}, {fields: {}}, prevState)

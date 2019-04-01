@@ -251,7 +251,7 @@ const GenericResolver = {
         // null is when a refrence has been removed
         const dataSet = Object.keys(data).reduce((o, k) => {
             if (k !== '_id' && k !== '_version' && data[k] !== undefined) {
-                if (data[k].constructor === Object) {
+                if (data[k] && data[k].constructor === Object) {
 
                     // rewrite to dot notation for partial update
                     Object.keys(data[k]).forEach(key => {

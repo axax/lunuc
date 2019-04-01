@@ -213,6 +213,23 @@ export const getFormFields = (type) => {
     return typeFormFields[type]
 }
 
+export const checkFieldType = (value, field) => {
+
+    if (field.type === 'Float') {
+        value = parseFloat(value)
+        if (isNaN(value)) {
+            value = null
+        }
+    } else if (field.type === 'Int') {
+        value = parseInt(value)
+        if (isNaN(value)) {
+            value = null
+        }
+    }
+
+    return value
+}
+
 
 /* Register manually created types */
 
