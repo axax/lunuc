@@ -133,11 +133,10 @@ class GenericForm extends React.Component {
         let value = target.type === 'checkbox' ? target.checked : target.value
         const name = target.name
         if( fields[name] ){
-            if( fields[name].type==="Float" )
+            if( fields[name].type==='Float' )
             {
                 value = parseFloat(value)
-            }else if( fields[name].type==="Int" ){
-
+            }else if( fields[name].type==='Int' ){
                 value = parseInt(value)
             }
         }

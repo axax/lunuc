@@ -242,7 +242,7 @@ class TypesContainer extends React.Component {
                                 }
                             } else if (field.type === 'Boolean') {
                                 dynamic[field.name] = <Switch name={field.name}
-                                                              onChange={e => this.handleDataChange.bind(this)(e, item, field.name)}
+                                                              onChange={e => this.handleDataChange.bind(this)(e, item, field)}
                                                               checked={!!v}/>
                             } else if (field.uitype === 'image') {
                                 dynamic[field.name] =
@@ -267,7 +267,7 @@ class TypesContainer extends React.Component {
                                         langVar.push(<div key={lang} className={classes.tableContent}>
                                         <span
                                             className={classes.textLight}>{lang}:</span> <span
-                                            onBlur={e => this.handleDataChange.bind(this)(e, item, field.name + '.' + lang)}
+                                            onBlur={e => this.handleDataChange.bind(this)(e, item, field, lang)}
                                             suppressContentEditableWarning
                                             contentEditable>{v && v[lang]}</span>
                                             <br />
@@ -280,7 +280,7 @@ class TypesContainer extends React.Component {
                                     } else {
                                         dynamic[field.name] =
                                             <div className={classes.tableLargeContent}
-                                                 onBlur={e => this.handleDataChange.bind(this)(e, item, field.name)}
+                                                 onBlur={e => this.handleDataChange.bind(this)(e, item, field)}
                                                  suppressContentEditableWarning contentEditable>{v}</div>
                                     }
                                 }
@@ -1154,13 +1154,20 @@ class TypesContainer extends React.Component {
         return ipt2
     }
 
-    handleDataChange = (event, data, key) => {
+    handleDataChange = (event, data, field, lang) => {
+        let key = field.name + (lang ? '.' + lang : '')
         let value
 
         if (event.target.type === 'checkbox') {
             value = event.target.checked
         } else {
             value = event.target.innerText.trim()
+        }
+
+        if (field.type === 'Float') {
+            value = parseFloat(value)
+        } else if (field.type === 'Int') {
+            value = parseInt(value)
         }
 
         const parts = key.split('.')

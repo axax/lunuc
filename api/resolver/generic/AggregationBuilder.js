@@ -281,7 +281,7 @@ export default class AggregationBuilder {
         }
 
 
-        if (comparator === '$eq' && multi && filterValue.constructor !== Array) {
+        if (comparator === '$eq' && multi && filterValue && filterValue.constructor !== Array) {
             comparator = '$in'
             filterValue = [filterValue]
         }

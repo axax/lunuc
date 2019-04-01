@@ -330,6 +330,7 @@ class Bot {
 
                 return result
             } catch (e) {
+                console.log(e)
             }
         }
         return text
