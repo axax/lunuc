@@ -7,6 +7,7 @@ class Bot {
 
     minAccuracy = 0.7
     ons = {}
+    context = {}
     stemmer = {}
     classifier = {}
     answers = {}
@@ -320,17 +321,21 @@ class Bot {
         })
     }
 
+    addContext(context) {
+        this.context = {...this.context, ...context}
+    }
 
     enhanceAnswerWithContext(text, context) {
-
-        if (context && Object.keys(context).length > 0 && text.indexOf('${') >= 0 && text.indexOf('}') > 0) {
+        const allContext = {...this.context, ...context}
+        if (allContext && Object.keys(allContext).length > 0 && text.indexOf('${') >= 0 && text.indexOf('}') > 0) {
 
             try {
-                const result = new Function('const {' + Object.keys(context).join(',') + '} = this.context;return `' + text + '`').call({context})
+                const result = new Function('const {' + Object.keys(allContext).join(',') + '} = this.context;return `' + text + '`').call({context:allContext})
 
                 return result
             } catch (e) {
                 console.log(e)
+                console.log(text, allContext)
             }
         }
         return text
@@ -386,6 +391,7 @@ class Bot {
                         const addExpression = this.context.addExpression.bind(this.context);
                         const addAnswer = this.context.addAnswer.bind(this.context);
                         const findAnswer = this.context.findAnswer.bind(this.context);
+                        const addContext = this.context.addContext.bind(this.context);
                         const natural = this.context.natural
                         const require = this.require;
                         ${botCommand.script}
