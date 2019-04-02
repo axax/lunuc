@@ -28,7 +28,7 @@
             var operator = kw("operator"), atom = {type: "atom", style: "atom"};
 
             /* custom part */
-            const customKeywords = ['setStyle', 'clientQuery', 'on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent', 'getComponent', 'getKeyValueFromLS', 'setKeyValue']
+            const customKeywords = ['setStyle', 'clientQuery', 'on', 'Util', 'scope', 'history', 'refresh', 'getLocal', 'setLocal', 'parent', 'root', 'getComponent', 'getKeyValueFromLS', 'setKeyValue']
             const customKeywordObj = {}
             for (const customKeyword of customKeywords) {
                 customKeywordObj[customKeyword] = {type: "atom", style: "custom"};

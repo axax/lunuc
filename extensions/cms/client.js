@@ -7,6 +7,7 @@ import {
 } from './constants'
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
+import {Link} from 'react-router-dom'
 
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
@@ -50,16 +51,18 @@ export default () => {
     }, 99)
 
     // add some extra data to the table
-    Hook.on('TypeTable', ({type, dataSource, data}) => {
+    Hook.on('TypeTable', ({type, dataSource, data, container}) => {
         if (type === 'CmsPage') {
             dataSource.forEach((d, i) => {
                 if (d.slug) {
-                    d.slug = <span style={{
+                    const {_version} = container.pageParams
+                    const item = data.results[i]
+                    d.slug = <Link to={'/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug}><span style={{
                         fontWeight: 'bold',
                         cursor: 'pointer',
                         color: '#663366',
                         textDecoration: 'underline'
-                    }}>{data.results[i].slug}</span>
+                    }}>{item.slug}</span></Link>
                 }
             })
         }
@@ -72,7 +75,7 @@ export default () => {
                 name: 'View cms page',
                 onClick: () => {
                     const {_version} = container.pageParams
-                    container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug.split(';')[0] : ''))
+                    container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug)
                 },
                 icon: <WebIcon />
             })
@@ -80,10 +83,10 @@ export default () => {
     })
 
     // add a click event
-    Hook.on('TypeTableEntryClick', ({type, item, container}) => {
+    /*Hook.on('TypeTableEntryClick', ({type, item, container}) => {
         if (type === 'CmsPage') {
             const {_version} = container.pageParams
             container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug.split(';')[0] : ''))
         }
-    })
+    })*/
 }

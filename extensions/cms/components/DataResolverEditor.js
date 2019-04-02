@@ -46,7 +46,7 @@ class DataResolverEditor extends React.Component {
                 "l": 20,
                 "o": 0
             }
-        ], null, 2))
+        ], null, 2), true)
     }
 }
 

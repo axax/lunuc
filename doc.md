@@ -164,6 +164,7 @@ In this example the type FileDrop is extended under the name ImageDrop. Now the 
 
 * this => is the current JsonDom
 * parent => reference to the parent JsonDom
+* root => reference to the root parent JsonDom
 * clientQuery => for direct communication with the backend
 * setStyle => set a css style for this page. Will automatically be removed when page is released
 * scope => Object with properties related to the current template

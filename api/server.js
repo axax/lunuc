@@ -56,8 +56,8 @@ export const start = (done) => {
             app.use(compression())
 
             // delay response
-            /*app.use(function (req, res, next) {
-             setTimeout(next, 1000)
+           /* app.use(function (req, res, next) {
+             setTimeout(next, 5000)
              })*/
 
             // Authentication

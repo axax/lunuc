@@ -147,12 +147,12 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {classes, _WrappedComponent, _key, _item, _cmsActions, children, ...rest} = this.props
+        const {classes, _WrappedComponent, _item, _cmsActions, children, ...rest} = this.props
         const {hovered, toolbarHovered} = this.state
         let toolbar, highlighter
         if (hovered || toolbarHovered) {
             toolbar = <span
-                key={_key + '.toolbar'}
+                key={rest._key + '.toolbar'}
                 onMouseOver={this.onToolbarMouseOver.bind(this)}
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
                 onClick={this.handleEditClick.bind(this)}
@@ -161,7 +161,7 @@ class JsonDomHelper extends React.Component {
                 size="small"/></span>
 
             highlighter = <span
-                key={_key + '.highlighter'}
+                key={rest._key + '.highlighter'}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}
                 className={classes.highlighter}/>
         }

@@ -35,7 +35,7 @@ export default db => ({
             const startTime = (new Date()).getTime()
             let cmsPages = await UtilCms.getCmsPage({db, context, slug, _version, headers})
 
-            if (!cmsPages.results) {
+            if (!cmsPages.results || cmsPages.results.length === 0) {
                 throw new Error('Cms page doesn\'t exist')
             }
             const scope = {...createScopeForDataResolver(query), page: {slug}}
@@ -121,8 +121,8 @@ export default db => ({
     Mutation: {
         createCmsPage: async ({slug, ...rest}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            if( !slug ) slug = ''
-            slug = encodeURIComponent(slug.trim())
+            if (!slug) slug = ''
+            slug = encodeURI(slug.trim())
 
             return await GenericResolver.createEnity(db, context, 'CmsPage', {
                 slug,

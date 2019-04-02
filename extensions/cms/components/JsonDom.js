@@ -321,7 +321,6 @@ class JsonDom extends React.Component {
             return
 
         const jsonClone = this.getJsonRaw(this.props)
-
         const o = Util.getComponentByKey(key, jsonClone)
         if (o && o.c && o.c.constructor === String) {
             o.c = value
@@ -525,7 +524,6 @@ class JsonDom extends React.Component {
                     const _item = Util.getComponentByKey(key, this.getJsonRaw(this.props))
                     if (_item) {
                         eleProps._WrappedComponent = eleType
-                        eleProps._key = key
                         eleProps._item = _item
                         eleProps._scope = this.scope
                         eleType = JsonDomHelper
@@ -675,17 +673,22 @@ class JsonDom extends React.Component {
         if (this.runScript) {
             this.runScript = false
 
+            // find root parent
+            let root = this
+            while (root.props._parentRef){
+                root = root.props._parentRef
+            }
+
             try {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
-                let scope = arguments[0]
-                const {setStyle, on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[1]
-                const history= arguments[2]
-                const parent= arguments[3]
+                let scope = arguments[0].scope
+                const {parent, root, history, setStyle, on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
                 on('refreshscope',(newScope)=>{
                     scope = newScope
                 })
-                ${script}`).call(this, scope, {
+                ${script}`).call(this, {
+                    scope,
                     on: this.jsOn,
                     clientQuery,
                     setKeyValue,
@@ -696,8 +699,10 @@ class JsonDom extends React.Component {
                     refresh: this.jsRefresh,
                     getComponent: this.jsGetComponent,
                     Util,
-                    _t
-                }, history, this.props._parentRef)
+                    _t,
+                    history,
+                    root,
+                    parent: this.props._parentRef})
             } catch (e) {
                 jsError = e.message
             }

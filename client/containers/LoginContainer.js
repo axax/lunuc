@@ -72,10 +72,11 @@ class LoginContainer extends React.Component {
     }
 
     render() {
+        const {signupLink, location} = this.props
         let from
 
-        if (this.props.location && this.props.location.state) {
-            from = this.props.location.state.from
+        if (location && location.state) {
+            from = location.state.from
         }
 
         if (!from) {
@@ -145,7 +146,7 @@ class LoginContainer extends React.Component {
                                                   showProgress={loading}
                                                   onClick={this.login.bind(this)}>Login</SimpleButton>
                                 </div>
-                                <Typography>Don&apos;t have an account? <Link to={config.ADMIN_BASE_URL + '/signup'}>Sign
+                                <Typography>Don&apos;t have an account? <Link to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign
                                     up</Link></Typography>
                             </form>
                         </Card>
@@ -162,6 +163,7 @@ class LoginContainer extends React.Component {
 LoginContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     location: PropTypes.object,
+    signupLink: PropTypes.string,
     /* UserReducer */
     userActions: PropTypes.object.isRequired,
     errorHandlerAction: PropTypes.object.isRequired

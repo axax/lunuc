@@ -18,6 +18,7 @@ import {
 } from '../constants'
 import Async from 'client/components/Async'
 
+
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorPage')}/>
 
@@ -77,8 +78,6 @@ const isEditMode = (props) => {
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
-
-    dataResolverSaveTimeout = 0
     registeredSubscriptions = {}
 
     constructor(props) {
@@ -97,7 +96,7 @@ class CmsViewContainer extends React.Component {
         if ((nextProps.cmsPage !== prevState.cmsPage && (nextProps.cmsPage && nextProps.cmsPage.status !== 'updating')) || nextProps.keyValue !== prevState.keyValue) {
             console.log('CmsViewContainer update state')
 
-            return CmsViewContainer.propsToState(nextProps)
+            return CmsViewContainer.propsToState(nextProps, prevState)
         }
         return null
     }
@@ -197,6 +196,9 @@ class CmsViewContainer extends React.Component {
         this.setUpSubsciptions(this.props)
         this._handleWindowClose = this.saveUnsafedChanges.bind(this)
         window.addEventListener('beforeunload', this._handleWindowClose)
+        this.props.history.listen((location, action) => {
+            this.saveUnsafedChanges()
+        })
     }
 
     componentWillUnmount() {
@@ -225,6 +227,7 @@ class CmsViewContainer extends React.Component {
         if (this._autoSaveDataResolverTimeout) {
             this._autoSaveDataResolver()
         }
+        return true
     }
 
     render() {
@@ -235,8 +238,10 @@ class CmsViewContainer extends React.Component {
                 console.warn('cmsPage missing')
                 return <ErrorPage />
             }
+            //document.getElementById('l').style.display='block'
             return null
         } else {
+            //document.getElementById('l').style.display='none'
             // set page title
             // TODO: make tile localized
             if (!dynamic && cmsPage.name)
@@ -285,6 +290,7 @@ class CmsViewContainer extends React.Component {
             content = jsonDom
         } else {
             const sidebar = () => <div>
+
                 <MenuList>
                     <MenuListItem onClick={e => {
                         const win = window.open(location.pathname + '?preview=true', '_blank')
@@ -494,7 +500,6 @@ class CmsViewContainer extends React.Component {
                     }
                 }
 
-                console.log(query)
                 if (!query) return
 
                 const qqlSubscribe = gql`subscription{${subscriptionName}{${query}}}`
@@ -534,11 +539,11 @@ class CmsViewContainer extends React.Component {
                                             // if there are localized values in the current language
                                             // set them to the regular field
                                             /*if (k.endsWith('_localized')) {
-                                                const v = noNullData[k][_app_.lang]
-                                                if (v) {
-                                                    noNullData[k.substring(0, k.length - 10)] = v
-                                                }
-                                            }*/
+                                             const v = noNullData[k][_app_.lang]
+                                             if (v) {
+                                             noNullData[k.substring(0, k.length - 10)] = v
+                                             }
+                                             }*/
                                         })
                                         refResults[idx] = Object.assign({}, refResults[idx], noNullData)
                                         // back to string data
@@ -601,7 +606,7 @@ class CmsViewContainer extends React.Component {
 
     }
 
-    handleDataResolverChange = (str) => {
+    handleDataResolverChange = (str, instantSave) => {
         this.setState({dataResolver: str})
         this._autoSaveDataResolver = () => {
             clearTimeout(this._autoSaveDataResolverTimeout)
@@ -610,7 +615,11 @@ class CmsViewContainer extends React.Component {
         }
 
         clearTimeout(this._autoSaveDataResolverTimeout)
-        this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, 5000)
+        if (instantSave) {
+            this._autoSaveDataResolver()
+        } else {
+            this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, 5000)
+        }
     }
 
     handleTemplateChange = (str, instantSave) => {

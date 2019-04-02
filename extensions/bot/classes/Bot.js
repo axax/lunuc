@@ -126,6 +126,7 @@ class Bot {
 
 
     createResult(text) {
+        const startTime = new Date()
         let bestMatch = {key: '', lang: '', context: {}}, highestAccuracy = 0
         this.result = {}
         for (let i = 0; i < this.languages.length; i++) {
@@ -146,6 +147,7 @@ class Bot {
                 bestMatch = match
             }
         }
+        console.log(`Time to createResult ${new Date() - startTime}ms`)
         this.result.bestMatch = bestMatch
     }
 
@@ -330,7 +332,7 @@ class Bot {
         if (allContext && Object.keys(allContext).length > 0 && text.indexOf('${') >= 0 && text.indexOf('}') > 0) {
 
             try {
-                const result = new Function('const {' + Object.keys(allContext).join(',') + '} = this.context;return `' + text + '`').call({context:allContext})
+                const result = new Function('const {' + Object.keys(allContext).join(',') + '} = this.context;return `' + text + '`').call({context: allContext})
 
                 return result
             } catch (e) {
@@ -386,13 +388,13 @@ class Bot {
                 const tpl = new Function(`
                  (async () => {
                     try {
-                        const context = this.context
-                        const on = this.context.on.bind(this.context);
-                        const addExpression = this.context.addExpression.bind(this.context);
-                        const addAnswer = this.context.addAnswer.bind(this.context);
-                        const findAnswer = this.context.findAnswer.bind(this.context);
-                        const addContext = this.context.addContext.bind(this.context);
-                        const natural = this.context.natural
+                        const bot = this.bot
+                        const on = this.bot.on.bind(this.bot);
+                        const addExpression = this.bot.addExpression.bind(this.bot);
+                        const addAnswer = this.bot.addAnswer.bind(this.bot);
+                        const findAnswer = this.bot.findAnswer.bind(this.bot);
+                        const addContext = this.bot.addContext.bind(this.bot);
+                        const natural = this.bot.natural
                         const require = this.require;
                         ${botCommand.script}
                     } catch(e) {
@@ -402,7 +404,7 @@ class Bot {
                 `)
 
                 const result = await tpl.call({
-                    context: this,
+                    bot: this,
                     require,
                 })
             }

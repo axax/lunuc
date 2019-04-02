@@ -37,7 +37,7 @@ Hook.on('index', ({db}) => {
 // Hook to add or modify user roles
 Hook.on('createUserRoles', ({userRoles}) => {
     userRoles.forEach(userRole => {
-        if (['administrator', 'contributor', 'demo'].indexOf(userRole.name)>=0) {
+        if (['administrator', 'contributor', 'demo'].indexOf(userRole.name) >= 0) {
             console.log(`Add capability "${CAPABILITY_MANAGE_CMS_PAGES}" for user role "${userRole.name}"`)
             userRole.capabilities.push(CAPABILITY_MANAGE_CMS_PAGES)
         }
@@ -45,7 +45,7 @@ Hook.on('createUserRoles', ({userRoles}) => {
 })
 
 
-Hook.on('cmsTemplateRenderer',async ({db, context, body, slug}) => {
+Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
 
     let cmsPages = await UtilCms.getCmsPage({db, context, slug})
     if (!cmsPages.results) {
@@ -62,7 +62,7 @@ Hook.on('cmsTemplateRenderer',async ({db, context, body, slug}) => {
     const scope = {context: scopeContext, page: {slug}}
 
     const {template, script, dataResolver} = cmsPages.results[0]
-    const {resolvedData} = await UtilCms.resolveData(db, context, dataResolver?dataResolver.trim():'', scope)
+    const {resolvedData} = await UtilCms.resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope)
     try {
         global._app_ = {lang: context.lang}
         return ReactDOMServer.renderToString(<UIProvider>

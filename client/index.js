@@ -25,7 +25,7 @@ if (_app_.trLoaded) {
 }
 
 
-/* Register serviceworker only on production */
+/* Register serviceworker only on production. only works with https */
 if ('serviceWorker' in navigator) {
     console.log('Service Worker is supported')
 
