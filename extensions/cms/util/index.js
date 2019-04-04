@@ -2,6 +2,7 @@ import GenericResolver from 'api/resolver/generic/genericResolver'
 import {ObjectId} from 'mongodb'
 import Hook from 'util/hook'
 import Util from 'api/util'
+import {getHostFromHeaders} from 'util/host'
 import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_KEYVALUES
@@ -10,7 +11,7 @@ import {
 const UtilCms = {
     getCmsPage: async ({db, context, slug, _version, headers}) => {
         const userIsLoggedIn = Util.isUserLoggedIn(context)
-        const host = Util.getHostFromHeaders(headers)
+        const host = getHostFromHeaders(headers)
 
         const cacheKey = 'cmsPage-' + _version + '-' + slug + (host ? '-' + host : '')
 
