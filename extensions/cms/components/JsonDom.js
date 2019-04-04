@@ -212,7 +212,7 @@ class JsonDom extends React.Component {
             if (this.props.template !== props.template || this.props._props !== props._props || scriptChanged) {
                 this.resetTemplate()
                 if (scriptChanged || this.runScript) {
-                    this.removeStyle()
+                    this.removeAddedDomElements()
                 }
             }
 
@@ -244,7 +244,7 @@ class JsonDom extends React.Component {
     componentWillUnmount() {
         this.runJsEvent('unmount')
         this.resetTemplate()
-        this.removeStyle()
+        this.removeAddedDomElements()
     }
 
     // is called after render
@@ -290,10 +290,10 @@ class JsonDom extends React.Component {
         this.componentRefs = {}
     }
 
-    removeStyle() {
-        // remove style added by setStyle
-        const ele = document.getElementById('jsonDom-' + this.instanceId)
-        if (ele) {
+    removeAddedDomElements() {
+        const addedElements = document.querySelectorAll('.jsonDom-' + this.instanceId)
+
+        for (const ele of addedElements) {
             ele.parentNode.removeChild(ele)
         }
     }
@@ -598,7 +598,6 @@ class JsonDom extends React.Component {
             str = str.replace(/\\/g, '\\\\')
         }
         try {
-            console.log(Object.keys(data).join(','))
             const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const _i = this.tryCatch;return `' + str + '`;')
             //.replace(/(\r\n|\n|\r)/g,"");
             return tpl.call({
@@ -684,7 +683,7 @@ class JsonDom extends React.Component {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
                 let scope = arguments[0].scope
-                const {parent, root, history, setStyle, on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
+                const {parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
                 on('refreshscope',(newScope)=>{
                     scope = newScope
                 })
@@ -694,7 +693,8 @@ class JsonDom extends React.Component {
                     clientQuery,
                     setKeyValue,
                     getKeyValueFromLS,
-                    setStyle: (c) => Util.addRawStyle(c, 'jsonDom-' + this.instanceId),
+                    setStyle: (innerHTML) => Util.createAndAddTag('style','head',{innerHTML,className: 'jsonDom-'+ this.instanceId}),
+                    addMetaTag: (name, content) => Util.createAndAddTag('meta','head',{name, content, className: 'jsonDom-'+ this.instanceId}),
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,

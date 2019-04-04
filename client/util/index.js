@@ -186,35 +186,22 @@ const Util = {
         }
         return {parts, rest, restString}
     },
-    addStyle(url) {
-        const link = document.createElement('link')
-        link.type = 'text/css'
-        link.rel = 'stylesheet'
-        link.href = url
-        document.head.appendChild(link)
+    addStyle(href) {
+        Util.createAndAddTag('link', 'head', {type: 'text/css', rel: 'stylesheet', href})
     },
-    addRawStyle(style, id){
-        var css = document.getElementById(id)
-        if (!css) {
-            css = document.createElement('style')
-            css.type = 'text/css'
-            css.id = id
-        }
-        css.innerHTML = style
-        document.getElementsByTagName('head')[0].appendChild(css)
-    },
-    addScript(url, className) {
-        const script = document.createElement('script')
-        script.src = url
-        script.async = true
-        script.defer = true
-        script.onload = () => {
+    addScript(src, className) {
+        const script = Util.createAndAddTag('script', 'head', {className, src, asyn: true, defer: true, onload: function() {
             script.setAttribute('loaded', true)
+        }})
+    },
+    createAndAddTag(name, target, attrs){
+        const tag = document.createElement(name)
+        for (const key of Object.keys(attrs)) {
+            if( attrs[key] )
+                tag[key] = attrs[key]
         }
-        if (className) {
-            script.className = className
-        }
-        document.head.appendChild(script)
+        document.getElementsByTagName(target)[0].appendChild(tag)
+        return tag
     },
     hasCapability(user, capa){
         const capabilities = (user && user.userData && user.userData.role && user.userData.role.capabilities) || []

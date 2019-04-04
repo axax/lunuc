@@ -191,7 +191,6 @@ class CmsViewContainer extends React.Component {
 
     }
 
-
     componentDidMount() {
         this.setUpSubsciptions(this.props)
         this._handleWindowClose = this.saveUnsafedChanges.bind(this)
