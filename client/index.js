@@ -10,7 +10,7 @@ const {store} = configureStore()
 _app_.config = config
 
 // try to detect language
-if( !_app_.lang ){
+if (!_app_.lang) {
     var lang = window.location.pathname.split('/')[1]
     if (!lang || lang.length !== 2) {
         lang = (navigator.language || navigator.userLanguage).substr(0, 2)
@@ -22,6 +22,7 @@ if( !_app_.lang ){
     sessionStorage.setItem('lang', lang)
     _app_.lang = lang
 }
+document.documentElement.setAttribute('lang', _app_.lang)
 
 const start = () => {
     render(
