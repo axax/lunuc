@@ -9,8 +9,18 @@ const {store} = configureStore()
 // add config to the global app object
 _app_.config = config
 
+// try to detect language
 if( !_app_.lang ){
-    _app_.lang = config.DEFAULT_LANGUAGE
+    var lang = window.location.pathname.split('/')[1]
+    if (!lang || lang.length !== 2) {
+        lang = (navigator.language || navigator.userLanguage).substr(0, 2)
+    } else {
+        lang = lang.toLowerCase()
+    }
+    // to detect a langauge change
+    _app_.langBefore = sessionStorage.getItem('lang')
+    sessionStorage.setItem('lang', lang)
+    _app_.lang = lang
 }
 
 const start = () => {

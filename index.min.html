@@ -1,12 +1,13 @@
 <!DOCTYPE html>
+<html>
 <head>
     <meta charset="UTF-8">
 </head>
 <body>
 <div id="app">Javascript is not supported</div>
 <script>
-    _app_ = {tr: {}, trLoaded: true, start: new Date()};
     document.getElementById('app').innerHTML=''
+    _app_ = {tr: {}, trLoaded: true, start: new Date()};
 </script>
 <script async src="/main.bundle.js?v=${BUILD_NUMBER}"></script>
 </body>
