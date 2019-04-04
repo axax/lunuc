@@ -119,15 +119,24 @@ class TypesContainer extends React.Component {
         }
     }
 
-    componentWillUnmount() {
-        this.saveSettings()
-    }
+
 
     componentDidMount() {
         this.getData(this.pageParams, true)
         if (this.props.onRef)
             this.props.onRef(this)
+
+        this._handleWindowClose = this.saveSettings.bind(this)
+        window.addEventListener('beforeunload', this._handleWindowClose)
     }
+
+    componentWillUnmount() {
+        setTimeout(() => {
+            this.saveSettings()
+        },1)
+        window.removeEventListener('beforeunload', this._handleWindowClose)
+    }
+
 
     shouldComponentUpdate(props, state) {
         return this.state !== state ||

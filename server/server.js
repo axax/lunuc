@@ -6,6 +6,7 @@ import fs from 'fs'
 import zlib from 'zlib'
 import config from 'gen/config'
 import MimeType from '../util/mime'
+import Util from 'api/util'
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL} = config
 
 // Port to listen to
@@ -106,8 +107,17 @@ const app = httpx.createServer(options, function (req, res) {
                     'content-type': MimeType.detectByExtension('html')
                 }
 
-                // send index.html
-                const indexfile = path.join(BUILD_DIR, '/index.html')
+                let indexfile
+
+                // TODO: resolve data in advance if possible
+
+                // TODO: host rule to load host specific index files
+                const host = Util.getHostFromHeaders(req.headers)
+                if( host === 'www.onyou.ch'){
+                    indexfile = path.join(BUILD_DIR, '/index.min.html')
+                }else{
+                    indexfile = path.join(BUILD_DIR, '/index.html')
+                }
 
                 sendFile(req, res, headers, indexfile);
             }

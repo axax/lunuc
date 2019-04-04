@@ -597,9 +597,9 @@ class JsonDom extends React.Component {
             //Escape double time
             str = str.replace(/\\/g, '\\\\')
         }
-
         try {
-            const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const parent = this.parent;const _i = this.tryCatch;return `' + str + '`;')
+            console.log(Object.keys(data).join(','))
+            const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const _i = this.tryCatch;return `' + str + '`;')
             //.replace(/(\r\n|\n|\r)/g,"");
             return tpl.call({
                 data,
@@ -674,11 +674,12 @@ class JsonDom extends React.Component {
             this.runScript = false
 
             // find root parent
-            let root = this
+            let root = this, parent = this.props._parentRef
             while (root.props._parentRef){
                 root = root.props._parentRef
             }
-
+            scope.root = root
+            scope.parent = parent
             try {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
@@ -702,7 +703,7 @@ class JsonDom extends React.Component {
                     _t,
                     history,
                     root,
-                    parent: this.props._parentRef})
+                    parent})
             } catch (e) {
                 jsError = e.message
             }

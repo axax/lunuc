@@ -158,6 +158,7 @@ if (DEV_MODE) {
         historyApiFallback: true,
         inline: true,
         hot: true,
+        stats: 'errors-only',
         port: PORT,
         host: '0.0.0.0',
         proxy: {
@@ -184,6 +185,10 @@ if (DEV_MODE) {
         new CopyWebpackPlugin([
             {
                 from: 'index.html', to: 'index.html',
+                transform: replacePlaceholders
+            },
+            {
+                from: 'index.min.html', to: 'index.min.html',
                 transform: replacePlaceholders
             },
             {

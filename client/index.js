@@ -9,6 +9,10 @@ const {store} = configureStore()
 // add config to the global app object
 _app_.config = config
 
+if( !_app_.lang ){
+    _app_.lang = config.DEFAULT_LANGUAGE
+}
+
 const start = () => {
     render(
         <App store={store}/>,

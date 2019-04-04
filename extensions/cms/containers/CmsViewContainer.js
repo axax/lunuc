@@ -177,7 +177,7 @@ class CmsViewContainer extends React.Component {
             try {
                 const a = JSON.parse(resources)
                 for (let i = 0; i < a.length; i++) {
-                    const r = a[i], ext = r.substring(r.lastIndexOf('.') + 1)
+                    const r = a[i].replace('${build}',''), ext = r.substring(r.lastIndexOf('.') + 1)
                     if (ext.indexOf('css') === 0) {
                         Util.addStyle(r)
                     } else if (ext.indexOf('js') === 0) {

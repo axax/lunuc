@@ -159,6 +159,11 @@ In this example the type FileDrop is extended under the name ImageDrop. Now the 
 }
 ```    
 
+
+**the scope** 
+
+Within a template all scope properties (See the section scope below) are accessible. For example if you want to access the parent scope just write ${parent.scope} or if you want to use data that has been resolved by the Data Resolver just type ${data.ProductCategory.total}
+
 ### Script
 **Reserved keywords**
 
@@ -180,7 +185,7 @@ In this example the type FileDrop is extended under the name ImageDrop. Now the 
 
 
 #### Scope
-The scope is a very important object which is accessible in script as well as in the template
+The scope is an object with all relevant properties which is accessible in the script as well as in the template
 
 Here is an example of a scope object:
 ```json
@@ -247,7 +252,9 @@ Here is an example of a scope object:
   },
   "bindings": {
     "xx": "1234"
-  }
+  },
+  "parent": [object Object]
+  "root": [object Object]
 }
 ```
 

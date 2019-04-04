@@ -29,7 +29,7 @@
     "client:dev": "export BABEL_ENV=client;API_PORT=3000 webpack-dev-server",
     "build": "NODE_ENV=production webpack -p",
     "api": "export BABEL_ENV=api;PORT=3000 node ./api/index.js",
-    "api:dev": "export BABEL_ENV=api;PORT=3000 nodemon ./api/index.js --watch api --watch extensions --ignore 'gensrc/*'",
+    "api:dev": "export BABEL_ENV=api;PORT=3000 nodemon ./api/index.js --watch api --watch extensions -i 'gensrc/*' -i 'extensions/*/client.js' -i 'extensions/*/components/*' -i 'extensions/*/containers/*'",
     "api:local": "export MONGO_URL=mongodb://localhost:27018/lunuc;export BABEL_ENV=api;PORT=3000 nodemon ./api/index.js --watch api --watch extensions --ignore 'gensrc/*'",
     "start": "echo \"Start api and client concurrently\" && npm run api & npm run client",
     "start:dev": "echo \"Start api and client in dev mode concurrently\" && npm run api:dev & npm run client:dev",

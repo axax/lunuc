@@ -166,17 +166,17 @@ export default class AggregationBuilder {
                 let filterPartArray
                 if (filterPart.constructor !== Array) {
                     filterPartArray = [filterPart]
-                }else{
+                } else {
                     filterPartArray = filterPart
                 }
 
 
-                for(const filterPartOfArray of filterPartArray){
+                for (const filterPartOfArray of filterPartArray) {
                     const {added, error} = this.addFilterToMatch({
                         filterKey: name,
                         filterValue: filterPartOfArray.value,
                         filterOptions: filterPartOfArray,
-                        type: reference?'ID':type,
+                        type: reference ? 'ID' : type,
                         multi,
                         match
                     })
@@ -211,7 +211,11 @@ export default class AggregationBuilder {
         return hasAtLeastOneMatch
     }
 
-
+    /*
+     filterKey: is the name of the collection field
+     filterValue: is always a string
+     type: of the collection field
+     */
     addFilterToMatch({filterKey, filterValue, type, multi, filterOptions, match}) {
 
         let comparator = '$regex' // default comparator
@@ -237,19 +241,19 @@ export default class AggregationBuilder {
 
             if (filterValue) {
 
-                if( filterValue.startsWith('[') && filterValue.endsWith(']') ){
-                    filterValue = filterValue.substring(1,filterValue.length-1).split(',')
+                if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
+                    filterValue = filterValue.substring(1, filterValue.length - 1).split(',')
                     const ids = []
-                    for( const id of filterValue){
-                        if (ObjectId.isValid(id)){
+                    for (const id of filterValue) {
+                        if (ObjectId.isValid(id)) {
                             ids.push(ObjectId(id))
-                        }else{
+                        } else {
                             return {added: false, error: 'Search for IDs. But not all ids are valid'}
                         }
                     }
                     filterValue = ids
                     comparator = '$in'
-                }else if (ObjectId.isValid(filterValue)) {
+                } else if (ObjectId.isValid(filterValue)) {
                     // match by id
                     filterValue = ObjectId(filterValue)
                 } else {
@@ -278,6 +282,8 @@ export default class AggregationBuilder {
                 })
                 return {added: true}
             }
+        } else if (type === 'Boolean') {
+            filterValue = (filterValue === 'true')
         }
 
 

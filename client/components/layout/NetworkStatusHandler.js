@@ -10,7 +10,7 @@ class NetworkStatusHandler extends React.Component {
 
     delayTimer = null
 
-    constructor(props){
+    constructor(props) {
         super(props)
 
         this.state = {
@@ -18,17 +18,17 @@ class NetworkStatusHandler extends React.Component {
         }
     }
 
-    componentWillReceiveProps(props){
-        if( props.networkStatus.loading){
-            if( !this.delayTimer ) {
+    componentWillReceiveProps(props) {
+        if (props.networkStatus.loading) {
+            if (!this.delayTimer) {
                 this.delayTimer = setTimeout(() => {
-                    this.setState({showLoader:true})
+                    this.setState({showLoader: true})
                 }, LOADER_DELAY)
             }
-        }else{
+        } else {
             clearTimeout(this.delayTimer)
-            this.delayTimer=null
-            if( this.state.showLoader ) {
+            this.delayTimer = null
+            if (this.state.showLoader) {
                 this.setState({showLoader: false})
             }
         }
@@ -36,9 +36,10 @@ class NetworkStatusHandler extends React.Component {
 
 
     render() {
-        if( !this.state.showLoader ) return null
-        return <div style={{height: '10px',position:'fixed',bottom:'0px',left:'0px',width:'100%',zIndex:9999}}>
-            <LinearProgress style={{height:'10px'}} mode="query" color="secondary"/>
+        if (!this.state.showLoader) return null
+        return <div
+            style={{height: '10px', position: 'fixed', bottom: '0px', left: '0px', width: '100%', zIndex: 9999}}>
+            <LinearProgress style={{height: '10px'}} mode="query" color="secondary"/>
         </div>
     }
 }
@@ -62,4 +63,3 @@ const mapStateToProps = state => ({networkStatus: state.networkStatusHandler.net
 export default connect(
     mapStateToProps,
 )(NetworkStatusHandler)
-

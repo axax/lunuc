@@ -32,13 +32,14 @@ class FilesContainer extends React.Component {
         super(props)
 
         this.state = {
-            file: false,
-            dir: '.',
+            file: props.file,
+            dir: props.dir || './',
             searchText: ''
         }
     }
 
     render() {
+        const {embedded, editOnly} = this.props
         const {file, dir, searchText} = this.state
 
         let command = 'ls -l ' + dir
@@ -48,122 +49,135 @@ class FilesContainer extends React.Component {
 
         }
 
+        let fileEditor = file &&
+            <Query query={gql(COMMAND_QUERY)}
+                   fetchPolicy="cache-and-network"
+                   variables={{sync: true, command: 'less -f -L ' + dir + '/' + file}}>
+                {({loading, error, data}) => {
+                    if (loading) return 'Loading...'
+                    if (error) return `Error! ${error.message}`
+                    if (!data.run) return `No data`
+                    const ext = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2)
 
-        return (
-            <BaseLayout>
-                <Typography variant="h3" gutterBottom>Files</Typography>
+                    return <CodeEditor lineNumbers onChange={c => {
+                        this.fileChange(dir + '/' + file, c)
+                    }} type={ext || 'text' } children={data.run.response}/>
+                }}
+            </Query>
 
-                <Row spacing={24}>
-                    <Col sm={4}>
-                        <TextField
-                            type="search"
-                            helperText={'Search for file content'}
-                            disabled={false} fullWidth
-                            placeholder="Search"
-                            name="searchText"
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                    console.log(e)
-                                    this.setState({searchText: e.target.value})
-                                }
-                            }}/>
 
-                        <Query query={gql(COMMAND_QUERY)}
-                               fetchPolicy="cache-and-network"
-                               variables={{sync: true, command}}>
-                            {({loading, error, data}) => {
-                                if (loading) {
-                                    this._loading = true
-                                    return 'Loading...'
-                                }
+        let content
 
-                                this._loading = false
-                                if (error) return `Error! ${error.message}`
-                                if (!data.run) return `No data`
+        if (editOnly) {
+            content = fileEditor
+        } else {
+            content = <Row spacing={24}>
+                <Col sm={4}>
+                    <TextField
+                        type="search"
+                        helperText={'Search for file content'}
+                        disabled={false} fullWidth
+                        placeholder="Search"
+                        name="searchText"
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                                console.log(e)
+                                this.setState({searchText: e.target.value})
+                            }
+                        }}/>
 
-                                const rows = data.run.response.split('\n')
-                                let listItems = []
-                                if (searchText) {
-                                    listItems = rows.reduce((a, fileRow) => {
-                                        if (fileRow) {
-                                            const b = fileRow.split(' ').filter(x => x);
-                                            a.push({
-                                                icon: <InsertDriveFileIcon />,
-                                                selected: false,
-                                                primary: fileRow,
-                                                onClick: () => {
-                                                    this.setState({file: fileRow})
-                                                }
-                                            })
-                                        }
-                                        return a
-                                    }, [])
-                                } else {
-                                    rows.shift()
+                    <Query query={gql(COMMAND_QUERY)}
+                           fetchPolicy="cache-and-network"
+                           variables={{sync: true, command}}>
+                        {({loading, error, data}) => {
+                            if (loading) {
+                                this._loading = true
+                                return 'Loading...'
+                            }
 
-                                    listItems = rows.reduce((a, fileRow) => {
-                                        if (fileRow) {
-                                            const b = fileRow.split(' ').filter(x => x);
-                                            a.push({
-                                                icon: b[0].indexOf('d') === 0 ? <FolderIcon /> :
-                                                    <InsertDriveFileIcon />,
-                                                selected: false,
-                                                primary: b[8],
-                                                onClick: () => {
-                                                    if (b[0].indexOf('d') === 0) {
-                                                        //change dir
-                                                        this.setState({dir: dir + '/' + b[8]})
-                                                    } else {
-                                                        this.setState({file: b[8]})
-                                                    }
-                                                },
-                                                secondary: Util.formatBytes(b[4])/*,
-                                                 actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
-                                                 disabled: ['creating', 'deleting'].indexOf(post.status) > -1*/
-                                            })
-                                        }
-                                        return a
-                                    }, [])
+                            this._loading = false
+                            if (error) return `Error! ${error.message}`
+                            if (!data.run) return `No data`
 
-                                    if (dir.indexOf('/') > 0) {
-                                        listItems.unshift({
-                                            icon: <FolderIcon />,
+                            const rows = data.run.response.split('\n')
+                            let listItems = []
+                            if (searchText) {
+                                listItems = rows.reduce((a, fileRow) => {
+                                    if (fileRow) {
+                                        const b = fileRow.split(' ').filter(x => x);
+                                        a.push({
+                                            icon: <InsertDriveFileIcon />,
                                             selected: false,
-                                            primary: '..',
+                                            primary: fileRow,
                                             onClick: () => {
-                                                this.setState({dir: dir.substring(0, dir.lastIndexOf('/'))})
+                                                this.setState({file: fileRow})
                                             }
                                         })
                                     }
+                                    return a
+                                }, [])
+                            } else {
+                                rows.shift()
+
+                                listItems = rows.reduce((a, fileRow) => {
+                                    if (fileRow) {
+                                        const b = fileRow.split(' ').filter(x => x);
+                                        a.push({
+                                            icon: b[0].indexOf('d') === 0 ? <FolderIcon /> :
+                                                <InsertDriveFileIcon />,
+                                            selected: false,
+                                            primary: b[8],
+                                            onClick: () => {
+                                                if (b[0].indexOf('d') === 0) {
+                                                    //change dir
+                                                    this.setState({dir: dir + '/' + b[8]})
+                                                } else {
+                                                    this.setState({file: b[8]})
+                                                }
+                                            },
+                                            secondary: Util.formatBytes(b[4])/*,
+                                             actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
+                                             disabled: ['creating', 'deleting'].indexOf(post.status) > -1*/
+                                        })
+                                    }
+                                    return a
+                                }, [])
+
+                                if (dir.indexOf('/') > 0) {
+                                    listItems.unshift({
+                                        icon: <FolderIcon />,
+                                        selected: false,
+                                        primary: '..',
+                                        onClick: () => {
+                                            this.setState({dir: dir.substring(0, dir.lastIndexOf('/'))})
+                                        }
+                                    })
                                 }
+                            }
 
-                                return <SimpleList items={listItems}
-                                                   count={listItems.length}/>
-                            }}
-                        </Query>
+                            return <SimpleList items={listItems}
+                                               count={listItems.length}/>
+                        }}
+                    </Query>
 
-                    </Col>
-                    <Col sm={8}>
-                        {file &&
-                        <Query query={gql(COMMAND_QUERY)}
-                               fetchPolicy="cache-and-network"
-                               variables={{sync: true, command: 'less -f -L ' + dir + '/' + file}}>
-                            {({loading, error, data}) => {
-                                if (loading) return 'Loading...'
-                                if (error) return `Error! ${error.message}`
-                                if (!data.run) return `No data`
-                                const ext = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2)
+                </Col>
+                <Col sm={8}>
+                    {fileEditor}
+                </Col>
+            </Row>
+        }
 
-                                return <CodeEditor lineNumbers onChange={c => {
-                                    this.fileChange(dir + '/' + file, c)
-                                }} type={ext || 'text' } children={data.run.response}/>
-                            }}
-                        </Query>
-                        }
-                    </Col>
-                </Row>
+        if (embedded) {
+            // without layout
+            return content
+        } else {
+            return <BaseLayout>
+                <Typography variant="h3" gutterBottom>Files</Typography>
+
+                {content}
             </BaseLayout>
-        )
+        }
+
     }
 
     handleInputChange = (e) => {
@@ -199,7 +213,11 @@ class FilesContainer extends React.Component {
 
 FilesContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
-    notificationAction: PropTypes.object.isRequired
+    notificationAction: PropTypes.object.isRequired,
+    file: PropTypes.string,
+    dir: PropTypes.string,
+    embedded: PropTypes.bool,
+    editOnly: PropTypes.bool
 }
 
 

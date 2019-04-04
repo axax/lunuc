@@ -42,7 +42,8 @@ class UserDataContainer extends React.PureComponent {
             return null
         }
         // this is the minimal loader that is defined in the index.html
-        document.getElementById('l').style.display='none'
+        const el =document.getElementById('l')
+        if( el ) el.style.display='none'
         return this.props.children
     }
 }

@@ -34,7 +34,7 @@ const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../components/layout/ErrorPage')}/>
 
 const UnauthorizedPage = (props) => (
-    <ErrorPage code="401" message="Unauthorized" background="#f4a742" />
+    <ErrorPage code="401" message="Unauthorized" background="#f4a742"/>
 )
 
 class Routes extends React.Component {
@@ -60,7 +60,7 @@ class Routes extends React.Component {
         super(props)
         Hook.call('Routes', {routes: this.routes, container: this})
 
-        if (this.contextLang === window._app_.lang) {
+        if (this.contextLang === _app_.lang) {
             this.pathPrefix = '/' + this.contextLang
         }
         // override push and replace methode to prepend language code if needed
@@ -106,7 +106,7 @@ class Routes extends React.Component {
                                       component={UnauthorizedPage}/>
                     }
                 })}
-                <Route component={ErrorPage} />
+                <Route component={ErrorPage}/>
             </Switch>
         </Router>
     }

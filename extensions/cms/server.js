@@ -23,7 +23,6 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(genSchema)
 })
 
-
 // Hook to create mongodb index
 Hook.on('index', ({db}) => {
 
@@ -43,7 +42,6 @@ Hook.on('createUserRoles', ({userRoles}) => {
         }
     })
 })
-
 
 Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
 

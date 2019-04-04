@@ -12,6 +12,8 @@ import {
     EditIconButton,
     SimpleDialog
 } from 'ui/admin'
+import FilesContainer from 'client/containers/FilesContainer'
+
 
 const styles = theme => ({
     resources: {
@@ -34,7 +36,8 @@ class ResourceEditor extends React.Component {
         super(props)
         this.state = {
             resources: '',
-            resourcesArray: []
+            resourcesArray: [],
+            editResource: false
         }
     }
 
@@ -60,12 +63,13 @@ class ResourceEditor extends React.Component {
         return <div className={classes.resources}>
             <List dense={true}>
                 {resourcesArray.map((item, i) => {
+                    const isExternal = item.match(/[a-zA-Z0-9]*:\/\/[^\s]*/g) != null
                     return <ListItem key={'resource-' + i}>
                         <TextField value={item} onBlur={this.handleBlur.bind(this, i)}
                                    onChange={this.handleChange.bind(this, i)} className={classes.textfield}
                                    placeholder="Enter a url"/>
                         <ListItemSecondaryAction>
-                            <EditIconButton onClick={this.handleRemoveClick.bind(this, i)}/>
+                            {!isExternal && <EditIconButton onClick={this.handleEditClick.bind(this, item)}/>}
                             <DeleteIconButton onClick={this.handleRemoveClick.bind(this, i)}/>
                         </ListItemSecondaryAction>
                     </ListItem>
@@ -80,23 +84,23 @@ class ResourceEditor extends React.Component {
                 className={classes.fab}>
                 <AddIcon />
             </Fab>
-            <SimpleDialog open={false} onClose={this.handleDialogClose}
+            <SimpleDialog open={!!this.state.editResource} onClose={this.handleDialogClose.bind(this)}
                           actions={[{
                               key: 'ok',
                               label: 'Ok',
                               type: 'primary'
                           }]}
-                          title="Edit Component">
+                          title="Edit Resource">
 
-               xxxx
-
+                <FilesContainer editOnly dir="./build/" file={this.state.editResource} embedded />
             </SimpleDialog>
         </div>
 
 
     }
 
-    handleDialogClose(){
+    handleDialogClose() {
+        this.setState({editResource: false})
 
     }
 
@@ -104,6 +108,11 @@ class ResourceEditor extends React.Component {
         const resourcesArray = this.state.resourcesArray
         resourcesArray.push('/style.css')
         this.setState({resourcesArray}, this.emitChange)
+
+    }
+
+    handleEditClick(item) {
+        this.setState({editResource: item})
 
     }
 

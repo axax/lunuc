@@ -12,6 +12,24 @@ const PASSWORD_MIN_LENGTH = 5
 
 
 const Util = {
+    getHostFromHeaders: (headers) => {
+        let host
+        if (headers) {
+            if (headers.forwarded) {
+                // if request comes from proxy server
+                const match = headers.forwarded.match(/(?<=(^|; )host=).*(?=(;|$))/)
+                if (match) {
+                    host = match[0].split(':')[0]
+                }
+            }
+
+            if (!host) {
+                host = headers.host.split(':')[0]
+            }
+        }
+
+        return host
+    },
     setKeyValues: async (db, context, keyvalues) => {
         for (var key in keyvalues) {
             if (keyvalues.hasOwnProperty(key)) {
