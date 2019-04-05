@@ -29,7 +29,7 @@ const DomUtil = {
     styleObjectToString(style){
         const styleString = (
             Object.entries(style).reduce((styleString, [propName, propValue]) => {
-                return `${styleString}${propName}:${propValue};`;
+                return `${styleString}${propName}:${propValue};`
             }, '')
         )
         return styleString

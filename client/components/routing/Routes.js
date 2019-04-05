@@ -12,6 +12,7 @@ import Async from 'client/components/Async'
 import {
     CAPABILITY_ACCESS_ADMIN_PAGE
 } from 'util/capabilities'
+import DomUtil from 'client/util/dom'
 
 
 const LoginContainer = (props) => <Async {...props}
@@ -62,6 +63,14 @@ class Routes extends React.Component {
 
         if (this.contextLang === _app_.lang) {
             this.pathPrefix = '/' + this.contextLang
+
+            if (this.contextLang === config.DEFAULT_LANGUAGE) {
+                // set canonical link
+                DomUtil.createAndAddTag('link', 'head', {
+                    rel: 'canonical',
+                    href: '/' + window.location.pathname.substring(4)
+                })
+            }
         }
         // override push and replace methode to prepend language code if needed
         this.history._replace = this.history.replace
@@ -86,10 +95,10 @@ class Routes extends React.Component {
     render() {
         const {user: {isAuthenticated, userData}} = this.props
         const capabilities = (userData && userData.role && userData.role.capabilities) || []
+
         return <Router history={this.history}>
             <Switch>
                 {this.routes.map((o, i) => {
-
                     if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || o.path.startsWith(ADMIN_BASE_URL + '/login') || o.path.startsWith(ADMIN_BASE_URL + '/logout') || capabilities.indexOf(CAPABILITY_ACCESS_ADMIN_PAGE) >= 0) {
                         if (o.private) {
                             return <PrivateRoute key={i} path={this.pathPrefix + o.path}
