@@ -139,7 +139,8 @@ const config = {
         })
     ],
     optimization: {
-        minimizer: []
+        // We no not want to minimize our code.
+        minimize: false
     }
 }
 
@@ -213,7 +214,7 @@ if (DEV_MODE) {
     )
 
 
-    config.optimization.minimizer.push(
+   /* config.optimization.minimizer.push(
         new UglifyJSPlugin({
             uglifyOptions: {
                 compress: {
@@ -226,7 +227,7 @@ if (DEV_MODE) {
                     beautify: false
                 }
             }
-        }))
+        }))*/
 
    /* const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
      config.plugins.push(new BundleAnalyzerPlugin())*/
