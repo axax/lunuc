@@ -40,7 +40,7 @@ export function configureMiddleware(store) {
         if (graphQLErrors) {
             graphQLErrors.map(({message, locations, path, state}) => {
                     // don't handle errors with a state.
-                    console.log(state)
+                console.log(state)
                     if (!state) {
                         errorCount++
                         store.dispatch(addError({
@@ -105,40 +105,33 @@ export function configureMiddleware(store) {
         httpLink
     ])
 
-    const supportsWebSockets = 'WebSocket' in window || 'MozWebSocket' in window;
-
-    let link
-    if (supportsWebSockets) {
-        const wsLink = new WebSocketLink({
-            uri: wsUri,
-            options: {
-                reconnect: true, //auto-reconnect
-            }
-        })
-
-        // create my middleware using the applyMiddleware method from subscriptions-transport-ws
-        const subscriptionMiddleware = {
-            applyMiddleware (options, next) {
-                options.auth = Util.getAuthToken()
-                next()
-            }
+    const wsLink = new WebSocketLink({
+        uri: wsUri,
+        options: {
+            reconnect: true, //auto-reconnect
         }
+    })
 
-        // add the middleware to the web socket link via the Subscription Transport client
-        wsLink.subscriptionClient.use([subscriptionMiddleware])
-
-        // add ws link
-        link = ApolloLink.split(
-            operation => {
-                const operationAST = getOperationAST(operation.query, operation.operationName)
-                return !!operationAST && operationAST.operation === 'subscription'
-            },
-            wsLink,
-            combinedLink
-        )
-    } else {
-        link = combinedLink
+    // create my middleware using the applyMiddleware method from subscriptions-transport-ws
+    const subscriptionMiddleware = {
+        applyMiddleware (options, next) {
+            options.auth = Util.getAuthToken()
+            next()
+        }
     }
+
+    // add the middleware to the web socket link via the Subscription Transport client
+    wsLink.subscriptionClient.use([subscriptionMiddleware])
+
+    // add ws link
+    const link = ApolloLink.split(
+        operation => {
+            const operationAST = getOperationAST(operation.query, operation.operationName)
+            return !!operationAST && operationAST.operation === 'subscription'
+        },
+        wsLink,
+        combinedLink
+    )
 
     const cacheOptions = {
         dataIdFromObject: (o) => {
