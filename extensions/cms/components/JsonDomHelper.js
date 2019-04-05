@@ -8,6 +8,7 @@ import {
     EditIcon
 } from 'ui/admin'
 import classNames from 'classnames'
+import DomUtil from 'client/util/dom'
 
 
 const styles = theme => ({
@@ -72,66 +73,51 @@ const COMPONENT_WITH_WRAPPER = ['Button', 'Cms', 'Divider']
 
 
 class JsonDomHelper extends React.Component {
-    state = {hovered: false, top: 0, left: 0, height: 0, width: 0, toolbarHovered: false}
-
     constructor(props) {
         super(props)
     }
 
     shouldComponentUpdate(props, state) {
-        if( this._onDrag ){
+        if (this._onDrag) {
             // never update when element is being dragged
             return false
         }
-        return props._item !== this.props._item ||
-            state.hovered !== this.state.hovered ||
-            state.toolbarHovered !== this.state.toolbarHovered
+        return props._item !== this.props._item
     }
 
-    elemOffset(el) {
-        var xPos = 0
-        var yPos = 0
-
-        while (el) {
-            if (el.tagName == "BODY") {
-                // deal with browser quirks with body/window/document and page scroll
-                var xScroll = el.scrollLeft || document.documentElement.scrollLeft
-                var yScroll = el.scrollTop || document.documentElement.scrollTop
-
-                xPos += (el.offsetLeft - xScroll + el.clientLeft)
-                yPos += (el.offsetTop - yScroll + el.clientTop)
-            } else {
-                // for all other non-BODY elements
-                xPos += (el.offsetLeft - el.scrollLeft + el.clientLeft)
-                yPos += (el.offsetTop - el.scrollTop + el.clientTop)
-            }
-
-            el = el.offsetParent
-        }
-        return {
-            left: xPos,
-            top: yPos
-        }
-    }
 
     helperTimeoutOut = null
     helperTimeoutIn = null
 
     onHelperMouseOver(e) {
         e.stopPropagation()
-        clearTimeout(this.helperTimeoutOut)
-        clearTimeout(this.helperTimeoutIn)
 
-        if (!this.state.hovered) {
-            const stat = {
-                hovered: true,
-                height: e.target.offsetHeight,
-                width: e.target.offsetWidth, ...this.elemOffset(e.target)
+        const {classes} = this.props
+
+        const pos = DomUtil.elemOffset(e.target)
+        this._highlighter = DomUtil.createAndAddTag('span', 'body', {
+            className: classes.highlighter, style: {
+                width: e.target.offsetWidth + 'px',
+                height: e.target.offsetHeight + 'px',
+                top: pos.top + 'px',
+                left: pos.left + 'px'
             }
-            this.helperTimeoutIn = setTimeout(() => {
-                this.setState(stat)
-            }, 50)
-        }
+        })
+
+
+        /*clearTimeout(this.helperTimeoutOut)
+         clearTimeout(this.helperTimeoutIn)
+
+         if (!this.state.hovered) {
+         const stat = {
+         hovered: true,
+         height: e.target.offsetHeight,
+         width: e.target.offsetWidth, ...this.elemOffset(e.target)
+         }
+         this.helperTimeoutIn = setTimeout(() => {
+         //  this.setState(stat)
+         }, 50)
+         }*/
 
     }
 
@@ -139,26 +125,22 @@ class JsonDomHelper extends React.Component {
     onHelperMouseOut(e) {
         e.stopPropagation()
 
-        if (this.state.hovered) {
-            this.helperTimeoutOut = setTimeout(() => {
-                this.setState({hovered: false})
-            }, 50)
-        } else {
-            clearTimeout(this.helperTimeoutIn)
+        if (this._highlighter) {
+            this._highlighter.parentElement.removeChild(this._highlighter)
         }
+
+        /*  if (this.state.hovered) {
+         this.helperTimeoutOut = setTimeout(() => {
+         //  this.setState({hovered: false})
+         }, 50)
+         } else {
+         clearTimeout(this.helperTimeoutIn)
+         }*/
     }
 
-    setStyleForClass(style, className) {
-        const dropAreas = document.querySelectorAll('.' + className)
-
-        for (const dropArea of dropAreas) {
-            dropArea.style = style
-        }
-    }
 
     onToolbarMouseOver(e) {
         e.stopPropagation()
-        this.setState({toolbarHovered: true})
     }
 
     onDragStart(e) {
@@ -167,33 +149,32 @@ class JsonDomHelper extends React.Component {
 
         //e.preventDefault()
         const {classes} = this.props
-            // TODO maybe only show drop areas which are close???
-            this.setStyleForClass('display:block', classes.dropArea)
-        this.setStyleForClass('display:none', classes.toolbar)
-        this.setStyleForClass('display:none', classes.highlighter)
 
 
-        //this.setState({hovered: false, toolbarHovered:false})
-        //console.log('start', this.props._key)
-        //e.dataTransfer.setData('text/plain', this.props._key)
+        // TODO maybe only show drop areas which are close???
+        /* this.setStyleForClass('display:none', classes.toolbar)
+         this.setStyleForClass('display:none', classes.highlighter)
+         setTimeout(()=> {
+         this.setStyleForClass('display:block', classes.dropArea)
+         },10)*/
+
     }
 
     onDragEnd(e) {
         e.stopPropagation()
-        console.log(e)
         this._onDrag = false
-        this.setStyleForClass('display:none', this.props.classes.dropArea)
-        this.setState({toolbarHovered: false, hovered: false})
+        /* this.setStyleForClass('display:none', this.props.classes.dropArea)
+         this.setState({toolbarHovered: false, hovered: false})*/
     }
 
     onDragEnter(e) {
         e.stopPropagation()
-        e.currentTarget.classList.add(this.props.classes.dropAreaOver)
+        //  e.currentTarget.classList.add(this.props.classes.dropAreaOver)
     }
 
     onDragLeave(e) {
         e.stopPropagation()
-        e.currentTarget.classList.remove(this.props.classes.dropAreaOver)
+        //   e.currentTarget.classList.remove(this.props.classes.dropAreaOver)
     }
 
     onToolbarMouseOut(className, e) {
@@ -209,7 +190,7 @@ class JsonDomHelper extends React.Component {
 
         e.stopPropagation()
         setTimeout(() => {
-            this.setState({toolbarHovered: false})
+            //     this.setState({toolbarHovered: false})
         }, 50)
     }
 
@@ -222,16 +203,21 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {classes, _WrappedComponent, _item, _cmsActions, children, ...rest} = this.props
-        const {hovered, toolbarHovered} = this.state
+        const {classes, _WrappedComponent, _item, _cmsActions, ...rest} = this.props
+
         let toolbar, highlighter, dropAreaAbove, dropAreaBelow
 
         const props = {
+            draggable: true,
             onMouseOver: this.onHelperMouseOver.bind(this),
-            onMouseOut: this.onHelperMouseOut.bind(this)
+            onMouseOut: this.onHelperMouseOut.bind(this),
+            onDragStart: this.onDragStart.bind(this),
+            onDragEnd: this.onDragEnd.bind(this)
         }
 
-console.log(this.props._key)
+        return <_WrappedComponent {...props} {...rest}/>
+
+
         if (hovered || toolbarHovered) {
 
             props.draggable = 'true'
@@ -287,15 +273,20 @@ console.log(this.props._key)
 
         }
 
+
         const componentName = _WrappedComponent.name || ''
         if (!children && componentName !== 'Col') {
             // need wrapper
             return <span
-                className={classes.wrapper} {...props}><_WrappedComponent {...rest}/>
+                className={classes.wrapper} {...props}>{dropAreaAbove}
+                <_WrappedComponent {...rest}/>
+                {dropAreaBelow}
                 {toolbar}{highlighter}</span>
         } else if (componentName.endsWith('$') || COMPONENT_WITH_WRAPPER.indexOf(componentName) >= 0) {
             return <span
-                className={classes.wrapper} {...props}><_WrappedComponent {...rest}>{children}</_WrappedComponent>
+                className={classes.wrapper} {...props}>{dropAreaAbove}
+                <_WrappedComponent {...rest}>{children}</_WrappedComponent>
+                {dropAreaBelow}
                 {toolbar}{highlighter}</span>
 
         } else {

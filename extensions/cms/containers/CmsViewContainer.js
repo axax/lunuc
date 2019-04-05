@@ -9,6 +9,7 @@ import config from 'gen/config'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
+import DomUtil from 'client/util/dom'
 import {getType} from 'util/types'
 import * as CmsActions from 'client/actions/CmsAction'
 import {bindActionCreators} from 'redux'
@@ -172,20 +173,31 @@ class CmsViewContainer extends React.Component {
         const {dynamic} = props
         let {resources} = state
 
-        //TODO remove all added resources here
-        if (!dynamic && resources) {
-            try {
-                const a = JSON.parse(resources)
-                for (let i = 0; i < a.length; i++) {
-                    const r = a[i].replace('${build}',''), ext = r.substring(r.lastIndexOf('.') + 1)
-                    if (ext.indexOf('css') === 0) {
-                        Util.addStyle(r)
-                    } else if (ext.indexOf('js') === 0) {
-                        Util.addScript(r, 'cms-script')
+
+        if (!dynamic) {
+
+            const addedElements = document.querySelectorAll(`[data-cms-view]`)
+            for (const ele of addedElements) {
+                ele.parentNode.removeChild(ele)
+            }
+            if( resources ) {
+                try {
+                    const a = JSON.parse(resources)
+                    for (let i = 0; i < a.length; i++) {
+                        const r = a[i].replace('${build}', ''), ext = r.substring(r.lastIndexOf('.') + 1)
+                        if (ext.indexOf('css') === 0) {
+                            DomUtil.addStyle(r, {
+                                data: {cmsView: true}
+                            })
+                        } else if (ext.indexOf('js') === 0) {
+                            DomUtil.addScript(r, {
+                                data: {cmsView: true}
+                            })
+                        }
                     }
+                } catch (e) {
+                    console.error('Error in resources', e)
                 }
-            } catch (e) {
-                console.error('Error in resources', e)
             }
         }
 

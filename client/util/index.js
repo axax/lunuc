@@ -186,23 +186,6 @@ const Util = {
         }
         return {parts, rest, restString}
     },
-    addStyle(href) {
-        Util.createAndAddTag('link', 'head', {type: 'text/css', rel: 'stylesheet', href})
-    },
-    addScript(src, className) {
-        const script = Util.createAndAddTag('script', 'head', {className, src, asyn: true, defer: true, onload: function() {
-            script.setAttribute('loaded', true)
-        }})
-    },
-    createAndAddTag(name, target, attrs){
-        const tag = document.createElement(name)
-        for (const key of Object.keys(attrs)) {
-            if( attrs[key] )
-                tag[key] = attrs[key]
-        }
-        document.getElementsByTagName(target)[0].appendChild(tag)
-        return tag
-    },
     hasCapability(user, capa){
         const capabilities = (user && user.userData && user.userData.role && user.userData.role.capabilities) || []
         return capabilities.indexOf(capa) >= 0

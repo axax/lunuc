@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import Hook from 'util/hook'
 import _t from 'util/i18n'
 import Util from 'client/util'
+import DomUtil from 'client/util/dom'
 import Async from 'client/components/Async'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {getKeyValueFromLS} from 'client/containers/generic/withKeyValues'
@@ -255,7 +256,7 @@ class JsonDom extends React.Component {
     checkResources() {
         // check if all scripts are loaded
         let allloaded = true, counter = 0
-        const scripts = document.querySelectorAll('script.cms-script')
+        const scripts = document.querySelectorAll(`script[data-json-dom-id="${this.instanceId}"]`)
 
         if (scripts) {
             scripts.forEach(script => {
@@ -291,8 +292,7 @@ class JsonDom extends React.Component {
     }
 
     removeAddedDomElements() {
-        const addedElements = document.querySelectorAll('.jsonDom-' + this.instanceId)
-
+        const addedElements = document.querySelectorAll(`[data-json-dom-id="${this.instanceId}"]`)
         for (const ele of addedElements) {
             ele.parentNode.removeChild(ele)
         }
@@ -674,7 +674,7 @@ class JsonDom extends React.Component {
 
             // find root parent
             let root = this, parent = this.props._parentRef
-            while (root.props._parentRef){
+            while (root.props._parentRef) {
                 root = root.props._parentRef
             }
             scope.root = root
@@ -693,8 +693,15 @@ class JsonDom extends React.Component {
                     clientQuery,
                     setKeyValue,
                     getKeyValueFromLS,
-                    setStyle: (innerHTML) => Util.createAndAddTag('style','head',{innerHTML,className: 'jsonDom-'+ this.instanceId}),
-                    addMetaTag: (name, content) => Util.createAndAddTag('meta','head',{name, content, className: 'jsonDom-'+ this.instanceId}),
+                    setStyle: (innerHTML) => DomUtil.createAndAddTag('style', 'head', {
+                        innerHTML,
+                        data: {jsonDomId: this.instanceId}
+                    }),
+                    addMetaTag: (name, content) => DomUtil.createAndAddTag('meta', 'head', {
+                        name,
+                        content,
+                        data: {jsonDomId: this.instanceId}
+                    }),
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,
@@ -703,7 +710,8 @@ class JsonDom extends React.Component {
                     _t,
                     history,
                     root,
-                    parent})
+                    parent
+                })
             } catch (e) {
                 jsError = e.message
             }

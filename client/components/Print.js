@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import Util from 'client/util'
+import DomUtil from 'client/util/dom'
 import injectSheet from 'react-jss'
 
 const styles = {
@@ -75,8 +75,8 @@ class Print extends React.PureComponent {
     constructor(props) {
         super(props)
 
-        Util.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js')
-        Util.addScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js')
+        DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js')
+        DomUtil.addScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js')
     }
 
     render() {

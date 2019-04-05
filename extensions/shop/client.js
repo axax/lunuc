@@ -1,6 +1,6 @@
 import React from 'react'
 import Hook from 'util/hook'
-import './style.less'
+import './style.global.less'
 import Async from 'client/components/Async'
 
 const Login = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../client/containers/LoginContainer')} />
