@@ -238,7 +238,7 @@ class JsonDom extends React.Component {
     }
 
     componentDidMount() {
-        this.runJsEvent('mount')
+        this.runJsEvent('mount', true)
         this.checkResources()
     }
 
@@ -250,14 +250,13 @@ class JsonDom extends React.Component {
 
     // is called after render
     componentDidUpdate(props) {
-        this.runJsEvent('update')
+        this.runJsEvent('update', true)
     }
 
     checkResources() {
         // check if all scripts are loaded
         let allloaded = true, counter = 0
-        const scripts = document.querySelectorAll(`script[data-json-dom-id="${this.instanceId}"]`)
-
+        const scripts = document.querySelectorAll(`script[data-cms-view="true"]`)
         if (scripts) {
             scripts.forEach(script => {
                 if (!script.getAttribute('loaded')) {
@@ -273,7 +272,7 @@ class JsonDom extends React.Component {
             })
         }
         if (allloaded) {
-            this.runJsEvent('resourcesready')
+            this.runJsEvent('resourcesready', true)
         }
     }
 
@@ -311,7 +310,7 @@ class JsonDom extends React.Component {
     }
 
     onSubscription(data) {
-        this.runJsEvent('subscription', data)
+        this.runJsEvent('subscription', false, data)
     }
 
     emitChange(key, value, save) {
@@ -483,7 +482,7 @@ class JsonDom extends React.Component {
                             const payload = _p['on' + e]
                             _p['on' + e] = (eo) => {
                                 const eLower = e.toLowerCase()
-                                this.runJsEvent(eLower, payload, eo)
+                                this.runJsEvent(eLower, false, payload, eo)
                             }
                         }
                     })
@@ -613,15 +612,20 @@ class JsonDom extends React.Component {
         }
     }
 
-    runJsEvent(name, ...args) {
-        //console.log(name,args)
+    runJsEvent(name, async, ...args) {
         let hasError = false, t = this.jsOnStack[name]
         if (t && t.length) {
             for (let i = 0; i < t.length; i++) {
                 const cb = t[i]
                 if (cb) {
                     try {
-                        cb(...args)
+                        if( async ) {
+                            setTimeout(() => {
+                                cb(...args)
+                            }, 0)
+                        }else{
+                            cb(...args)
+                        }
                     } catch (e) {
                         console.log(name, e)
                         hasError = true
@@ -720,11 +724,11 @@ class JsonDom extends React.Component {
             }
         } else {
             // if script was already executed only refresh the scope
-            this.runJsEvent('refreshscope', scope)
+            this.runJsEvent('refreshscope', false, scope)
         }
         scope.script = this.scriptResult || {}
 
-        if (!this.runJsEvent('beforerender', scope)) {
+        if (!this.runJsEvent('beforerender', false, scope)) {
             return <div>Error in script in {name} event: <strong>{e.message}</strong></div>
         }
 

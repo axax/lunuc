@@ -677,7 +677,7 @@ class CmsViewContainer extends React.Component {
 
 
     handleComponentEditChange(cmsComponentEdit, str) {
-        if (cmsComponentEdit.key) {
+        if (cmsComponentEdit.key && str) {
             cmsComponentEdit.stringified = str
             const json = JSON.parse(this.state.template)
             let item = Util.getComponentByKey(cmsComponentEdit.key, json);
@@ -691,7 +691,7 @@ class CmsViewContainer extends React.Component {
                     Object.assign(item, JSON.parse(str))
                     this.handleTemplateSaveChange(json)
                 } catch (e) {
-                    console.log('Error in json', e)
+                    console.log('Error in json', str)
                 }
             }
         }
