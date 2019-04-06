@@ -14,7 +14,7 @@ import {
     SimpleAutosuggest,
     SimpleMenu
 } from 'ui/admin'
-import Util from 'client/util'
+import JsonDomUtil from '../util/jsonDomUtil'
 
 const styles = theme => ({
     type: {
@@ -50,10 +50,12 @@ class JsonEditor extends React.Component {
             open: {}
         }
 
-        try {
-            this.state.json = JSON.parse(props.children)
-        } catch (e) {
-            console.log(e)
+        if( props.children ) {
+            try {
+                this.state.json = JSON.parse(props.children)
+            } catch (e) {
+                console.log(e, props.children)
+            }
         }
 
     }
@@ -64,16 +66,17 @@ class JsonEditor extends React.Component {
             try {
                 return {
                     dataOri: nextProps.children,
-                    json: JSON.parse(nextProps.children)
+                    json: nextProps.children ? JSON.parse(nextProps.children) : null
                 }
             } catch (e) {
-                console.log(e)
+                console.log(e, nextProps.children)
             }
         }
         return null
     }
 
     renderJsonRec(json, key, level) {
+        if( !json ) return null
         const {classes} = this.props
         if (json === undefined) return null
         if (!key) key = '0'
@@ -172,7 +175,7 @@ class JsonEditor extends React.Component {
     }
 
     setChildComponent(key, value, prop) {
-        const o = Util.getComponentByKey(key, this.state.json)
+        const o = JsonDomUtil.getComponentByKey(key, this.state.json)
         if (o) {
             o[prop || 'c'] = value
             this.props.onChange(JSON.stringify(this.state.json, null, 4))
@@ -195,29 +198,18 @@ class JsonEditor extends React.Component {
 
 
     addComponent(key) {
-        const o = Util.getComponentByKey(key, this.state.json)
-        if (o) {
-            let c = o['c']
-            if (!c) {
-                c = []
-            } else if (c.constructor === Object) {
-                c = [c]
-            } else if (c.constructor === String) {
-                c = [{c}]
-            }
-            c.push({'c': 'new component'})
-            o.c = c
+        const json = JsonDomUtil.addComponent({key, json: this.state.json})
+        if (json) {
             this.props.onChange(JSON.stringify(this.state.json, null, 4), true)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
-
         }
     }
 
 
     removeComponent(key) {
         const parentKey = key.substring(0, key.lastIndexOf('.'))
-        const parent = Util.getComponentByKey(parentKey, this.state.json),
-            child = Util.getComponentByKey(key, this.state.json)
+        const parent = JsonDomUtil.getComponentByKey(parentKey, this.state.json),
+            child = JsonDomUtil.getComponentByKey(key, this.state.json)
         if (parent && child) {
             let c = parent['c']
             if (!c) {

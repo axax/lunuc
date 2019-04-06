@@ -1,5 +1,8 @@
 import Util from 'client/util'
 
+/**
+ * Object with helper methods to handle file upload
+ */
 const UploadUtil = {
     uploadData: ({dataUrl, fileName, uploadTo, onProgress, onError, onLoad}) => {
 

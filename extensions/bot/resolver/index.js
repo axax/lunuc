@@ -18,6 +18,13 @@ export default db => ({
                     const ctx = new BotConnector()
                     botConnectors[currentId] = ctx
 
+                    ctx.on('command', (command, message_id) => {
+                        pubsub.publish('subscribeBotMessage', {
+                            userId: context.id,
+                            subscribeBotMessage: {response: text, id: currentId, message_id, event: 'newMessage'}
+                        })
+                    })
+
                     ctx.on('text', (text, message_id) => {
                         pubsub.publish('subscribeBotMessage', {
                             userId: context.id,
@@ -32,7 +39,7 @@ export default db => ({
                     })
 
                 }
-                botConnectors[currentId].setMessage(message)
+                botConnectors[currentId].setMessage({text: message, from: {first_name: context.username}})
                 registeredBots[botId].communicate('text', botConnectors[currentId])
 
 

@@ -12,6 +12,7 @@ class Bot {
     classifier = {}
     answers = {}
     expressions = {}
+    commands = {}
     telegramBot = false
     result = {}
     settings = {telegramChatIds: []}//[437556760,  -297061732, -356386664]
@@ -85,12 +86,20 @@ class Bot {
 
         if (this.telegramBot) {
 
+            Object.keys(this.commands).forEach(key => {
+                this.telegramBot.command(key, (ctx) => {
+                    this.commands[key].bind(this)({api: ctx})
+                })
+            })
+
             Object.keys(this.ons).forEach(key => {
                 this.telegramBot.on(key, ctx => {
                     this.addTelegramChat(ctx)
                     this.communicate(key, ctx)
                 })
             })
+
+
             /*this.telegramBot.start((ctx) => {
              this.addTelegramChat(ctx)
              ctx.reply('Welcome')
@@ -119,7 +128,17 @@ class Bot {
 
     communicate(key, ctx) {
         if (ctx.message && ctx.message.text) {
-            this.createResult(ctx.message.text)
+
+            let command = ctx.message.text.trim().toLowerCase()
+
+            if (command.startsWith('/') && this.commands[command.substring(1)]) {
+                // its a command
+                this.commands[command.substring(1)].bind(this)({api: ctx})
+                return
+            } else {
+
+                this.createResult(ctx.message.text)
+            }
         }
         this.handleOn(key, ctx)
     }
@@ -327,6 +346,15 @@ class Bot {
         this.context = {...this.context, ...context}
     }
 
+    addCommand(keys, callback) {
+        if (keys.constructor !== Array) {
+            keys = [keys]
+        }
+        for (const key of keys) {
+            this.commands[key.trim().toLowerCase()] = callback
+        }
+    }
+
     enhanceAnswerWithContext(text, context) {
         const allContext = {...this.context, ...context}
         if (allContext && Object.keys(allContext).length > 0 && text.indexOf('${') >= 0 && text.indexOf('}') > 0) {
@@ -394,6 +422,7 @@ class Bot {
                         const addAnswer = this.bot.addAnswer.bind(this.bot);
                         const findAnswer = this.bot.findAnswer.bind(this.bot);
                         const addContext = this.bot.addContext.bind(this.bot);
+                        const addCommand = this.bot.addCommand.bind(this.bot);
                         const natural = this.bot.natural
                         const require = this.require;
                         ${botCommand.script}

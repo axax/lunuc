@@ -86,8 +86,9 @@ class TemplateEditor extends React.Component {
     render() {
         const {tab, classes, scope, ...rest} = this.props
 
-        const type = (rest.children && rest.children.trim().indexOf('<') === 0 )? 'html' : 'json'
+        const type = (rest.children && rest.children.trim().indexOf('<') === 0 ) ? 'html' : 'json'
         const currentTab = (!scope && this.state.tab === 2 ? 0 : this.state.tab) || 0
+
         return <div style={{position: 'relative'}}>
             <Tabs
                 value={currentTab}
@@ -101,14 +102,20 @@ class TemplateEditor extends React.Component {
                 }}
             >
                 <Tab icon={<CodeIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>
-                {type==='json' && <Tab icon={<WebIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
+                {type === 'json' &&
+                <Tab icon={<WebIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
                 {scope &&
                 <Tab icon={<SubjectIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
             </Tabs>
             {currentTab === 0 && <TabContainer>
 
-                {type==='json' && <SimpleMenu mini fab color="secondary" style={{zIndex:999,position: 'absolute', bottom: '-8px', right: '-8px'}}
-                            items={[{name: 'Prettify', onClick: this.prettify.bind(this)}]}/>}
+                {type === 'json' && <SimpleMenu mini fab color="secondary" style={{
+                    zIndex: 999,
+                    position: 'absolute',
+                    bottom: '-8px',
+                    right: '-8px'
+                }}
+                                                items={[{name: 'Prettify', onClick: this.prettify.bind(this)}]}/>}
                 <CodeEditor lineNumbers type={type} {...rest}/>
 
             </TabContainer>}
@@ -117,7 +124,12 @@ class TemplateEditor extends React.Component {
             </TabContainer>}
             {scope && currentTab === 2 && <TabContainer>
                 <CodeEditor lineNumbers type="json" readOnly>
-                {JSON.stringify(scope, null, 4)}
+                    {JSON.stringify(scope, (key, val) => {
+                        if (['root', 'parent'].indexOf(key) >= 0) {
+                            return '[JsonDom]'
+                        }
+                        return val
+                    }, 4)}
                 </CodeEditor>
             </TabContainer>}
 
@@ -128,7 +140,7 @@ class TemplateEditor extends React.Component {
         const {onTabChange} = this.props
         this.setState({tab})
         if (onTabChange) {
-            onTabChange(tab)
+            //onTabChange(tab)
         }
     }
 

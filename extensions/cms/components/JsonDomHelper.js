@@ -11,6 +11,7 @@ import {
 import classNames from 'classnames'
 import AddToBody from './AddToBody'
 import DomUtil from 'client/util/dom'
+import JsonDomUtil from '../util/jsonDomUtil'
 
 const styles = theme => ({
     wrapper: {},
@@ -30,12 +31,13 @@ const styles = theme => ({
         display: 'none',
         borderRadius: '10px',
         background: '#fff',
-        margin: '2px',
+        margin: '0px',
         border: '1px dashed #c1c1c1',
-        height: '10px',
+        height: '30px',
+        lineHeight: '30px',
         color: '#c1c1c1',
         textAlign: 'center',
-        fontSize: '0.6rem',
+        fontSize: '0.8rem',
         fontWeight: 'normal'
     },
     dropAreaOver: {
@@ -83,7 +85,7 @@ class JsonDomHelper extends React.Component {
         if (JsonDomHelper.currentDragElement && JsonDomHelper.currentDragElement != this) {
             return false
         }
-        return props._item !== this.props._item ||
+        return props._json !== this.props._json ||
             state.hovered !== this.state.hovered ||
             state.dragging !== this.state.dragging ||
             state.toolbarHovered !== this.state.toolbarHovered
@@ -140,6 +142,23 @@ class JsonDomHelper extends React.Component {
         this.setState({toolbarHovered: true})
     }
 
+    onToolbarMouseOut(className, e) {
+        let el = e.toElement || e.relatedTarget
+        while (el && el.parentNode && el.parentNode != window) {
+            if (el.classList.contains(className)) {
+                e.preventDefault()
+                e.stopPropagation()
+                return false
+            }
+            el = el.parentNode
+        }
+
+        e.stopPropagation()
+        setTimeout(() => {
+            this.setState({toolbarHovered: false})
+        }, 50)
+    }
+
     onDragStart(e) {
         e.stopPropagation()
         if (!JsonDomHelper.currentDragElement) {
@@ -163,7 +182,6 @@ class JsonDomHelper extends React.Component {
             clearTimeout(this._onDragTimeout)
 
             const draggable = ReactDOM.findDOMNode(JsonDomHelper.currentDragElement)
-console.log(draggable)
             this._onDragTimeout = setTimeout(() => {
 
                 /*if( !JsonDomHelper.currentDragElement ){
@@ -189,35 +207,36 @@ console.log(draggable)
                         node = tag.parentNode
                     }
 
-                    console.log(JsonDomHelper.currentDragElement)
+                    if (JsonDomHelper.currentDragElement) {
+                        const pos = DomUtil.elemOffset(node)
 
-                    const pos = DomUtil.elemOffset(node)
-
-                    const distance = Math.abs(this._clientY - (pos.top + node.offsetHeight / 2))
-                    if (distance < 50) {
-                        tag.style.display = 'block'
-                    } else {
-
-                        tag.style.display = 'none'
+                        const distance = Math.abs(this._clientY - (pos.top + node.offsetHeight / 2))
+                        if (distance < 50) {
+                            tag.style.display = 'block'
+                        } else {
+                            if (distance > 150)
+                                tag.style.display = 'none'
+                        }
                     }
                 }
-
-
-                console.log(this._clientX, this._clientY)
-            }, 100)
+            }, 50) // prevent flickering
         }
     }
 
     onDragEnd(e) {
         e.stopPropagation()
-
-        JsonDomHelper.currentDragElement = null
-        this.setState({toolbarHovered: false, hovered: false, dragging: false})
+        this.resetDragState()
     }
 
     onDragEnterDropArea(e) {
         e.stopPropagation()
+        e.preventDefault()
         e.currentTarget.classList.add(this.props.classes.dropAreaOver)
+    }
+
+    onDragOverDropArea(e) {
+        e.stopPropagation()
+        e.preventDefault()
     }
 
     onDragLeaveDropArea(e) {
@@ -225,45 +244,74 @@ console.log(draggable)
         e.currentTarget.classList.remove(this.props.classes.dropAreaOver)
     }
 
-    onToolbarMouseOut(className, e) {
-        let el = e.toElement || e.relatedTarget
-        while (el && el.parentNode && el.parentNode != window) {
-            if (el.classList.contains(className)) {
-                e.preventDefault()
-                e.stopPropagation()
-                return false
-            }
-            el = el.parentNode
-        }
-
+    onDrop(e) {
         e.stopPropagation()
-        setTimeout(() => {
-            this.setState({toolbarHovered: false})
-        }, 50)
+        e.preventDefault()
+
+        const {classes, _json, _cmsActions, _scope} = this.props
+        e.currentTarget.classList.remove(classes.dropAreaOver)
+
+        const key = e.currentTarget.getAttribute('data-key'), index = e.currentTarget.getAttribute('data-index')
+
+        const component = JsonDomUtil.getComponentByKey(JsonDomHelper.currentDragElement.props._key, _json)
+        const targetComponent = JsonDomUtil.addComponent({key, json: _json, index, component})
+
+        //_cmsActions.editCmsComponent(key, targetComponent, _scope)
+
+
+        //console.log(targetComponent)
+        //console.log(JsonDomHelper.currentDragElement.props._key, component)
+
+
+        //_cmsActions.editCmsComponent(_key, subJson, _scope)
+
+
+        // console.log(this.)
+      /*  const json = JsonDomUtil.addComponent({key, json: this.props._json, index, component})
+        console.log(JsonDomHelper.currentDragElement, key)*/
+        this.resetDragState()
+
     }
+
+    resetDragState() {
+        DomUtil.setAttrForSelector('.' + this.props.classes.dropArea, {style: 'display:none'})
+        JsonDomHelper.currentDragElement = null
+        this.setState({toolbarHovered: false, hovered: false, dragging: false})
+    }
+
 
     handleEditClick(e) {
         e.stopPropagation()
         e.preventDefault()
-        const {_cmsActions, _key, _item, _scope} = this.props
-        _cmsActions.editCmsComponent(_key, _item, _scope)
+        const {_cmsActions, _key, _json, _scope} = this.props
+        const subJson = JsonDomUtil.getComponentByKey(_key, _json)
+
+        _cmsActions.editCmsComponent(_key, subJson, _scope)
 
     }
 
-    getDropArea(data, key) {
+    getDropArea(rest, index) {
         return <div
             onMouseOver={(e) => {
                 e.stopPropagation()
             }}
             onDragEnter={this.onDragEnterDropArea.bind(this)}
+            onDragOver={this.onDragOverDropArea.bind(this)}
             onDragLeave={this.onDragLeaveDropArea.bind(this)}
-            key={data._key + '.dropArea' + key}
-            style={{paddingLeft: (10 * (data._key.split('.').length - 1))}}
-            className={this.props.classes.dropArea}>drop here ${data.id || data._key}</div>
+            onDrop={this.onDrop.bind(this)}
+            data-key={rest._key}
+            data-index={index}
+            key={`${rest._key}.dropArea.${index}`}
+            style={{paddingLeft: (10 * (rest._key.split('.').length - 1))}}
+            className={this.props.classes.dropArea}>drop here ${rest.id || data_key}</div>
     }
 
     render() {
-        const {classes, _WrappedComponent, _item, _cmsActions, children, ...rest} = this.props
+        const {classes, _WrappedComponent, _json, _cmsActions, children, ...rest} = this.props
+
+        const subJson = JsonDomUtil.getComponentByKey(rest._key, _json)
+
+
         const {hovered, toolbarHovered, dragging} = this.state
         let toolbar, highlighter, dropAreaAbove, dropAreaBelow
 
@@ -273,7 +321,8 @@ console.log(draggable)
             draggable: 'true',
             onDragStart: this.onDragStart.bind(this),
             onDragEnd: this.onDragEnd.bind(this),
-            onDrag: this.onDrag.bind(this)
+            onDrag: this.onDrag.bind(this),
+            onDrop: this.onDrop.bind(this)
         }
 
         if (hovered || toolbarHovered) {
@@ -288,7 +337,7 @@ console.log(draggable)
                 className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}><EditIcon
                 className={classes.toolbarIcon}
                 size="small"/>
-                <span className={classes.info}>{_item.t} - {rest.id || rest._key}</span>
+                <span className={classes.info}>{subJson.t} - {rest.id || rest._key}</span>
 
             </span>
 
@@ -300,7 +349,6 @@ console.log(draggable)
 
         let kids
         if (children && children.constructor === Array) {
-            // hier it is dropable
             kids = []
             for (let i = 0; i < children.length; i++) {
                 kids.push(this.getDropArea(rest, i))
@@ -385,7 +433,7 @@ JsonDomHelper.propTypes = {
     _WrappedComponent: PropTypes.any.isRequired,
     _cmsActions: PropTypes.object.isRequired,
     _key: PropTypes.string.isRequired,
-    _item: PropTypes.object.isRequired,
+    _json: PropTypes.any.isRequired,
     _scope: PropTypes.object.isRequired
 }
 

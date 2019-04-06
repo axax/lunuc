@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import Hook from 'util/hook'
 import _t from 'util/i18n'
 import Util from 'client/util'
+import JsonDomUtil from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
 import Async from 'client/components/Async'
 import CmsViewContainer from '../containers/CmsViewContainer'
@@ -320,7 +321,7 @@ class JsonDom extends React.Component {
             return
 
         const jsonClone = this.getJsonRaw(this.props)
-        const o = Util.getComponentByKey(key, jsonClone)
+        const o = JsonDomUtil.getComponentByKey(key, jsonClone)
         if (o && o.c && o.c.constructor === String) {
             o.c = value
             onChange(jsonClone, save)
@@ -520,13 +521,10 @@ class JsonDom extends React.Component {
                     _editmode: this.props.editMode.toString(), ...cmsProps, ..._p
                 }
                 if (this.props.editMode && this.props.inlineEditor) {
-                    const _item = Util.getComponentByKey(key, this.getJsonRaw(this.props))
-                    if (_item) {
-                        eleProps._WrappedComponent = eleType
-                        eleProps._item = _item
-                        eleProps._scope = this.scope
-                        eleType = JsonDomHelper
-                    }
+                    eleProps._WrappedComponent = eleType
+                    eleProps._scope = this.scope
+                    eleProps._json = this.getJsonRaw(this.props)
+                    eleType = JsonDomHelper
                 }
                 h.push(React.createElement(
                     eleType,

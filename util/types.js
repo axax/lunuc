@@ -113,7 +113,7 @@ export const getTypeQueries = (typeName) => {
     result.update = `mutation update${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''},${updateParams}){update${name}(_id:$_id${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
     result.delete = `mutation delete${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}){delete${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.deleteMany = `mutation delete${name}s($_id: [ID]${collectionClonable ? ',$_version:String' : ''}){delete${name}s(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
-    result.clone = `mutation clone${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''},${updateParams}){clone${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${query}}}`
+    result.clone = `mutation clone${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''},${insertParams}){clone${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${query}}}`
 
     typeQueries[typeName] = result
     return result

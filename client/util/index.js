@@ -1,3 +1,6 @@
+/**
+ * Object with general client helper methods
+ */
 const Util = {
     escapeDoubleQuotes: (str) => {
         if (str && str.constructor === String) {
@@ -189,33 +192,6 @@ const Util = {
     hasCapability(user, capa){
         const capabilities = (user && user.userData && user.userData.role && user.userData.role.capabilities) || []
         return capabilities.indexOf(capa) >= 0
-    },
-    getComponentByKey(key, obj){
-        if (!obj) return
-        const keyParts = key.split('.')
-
-        // the root is always 0 so remove it
-        keyParts.shift()
-
-        if (obj.constructor !== Array) {
-            keyParts.shift()
-        }
-        let cur = obj
-        for (let i = 0; i < keyParts.length; i++) {
-            if (i > 0 && keyParts[i - 1] === '$loop') {
-                continue
-            }
-            const part = keyParts[i]
-            if (cur.constructor === Object && cur.c) cur = cur.c
-            if (cur.constructor === Object && !isNaN(part)) cur = [cur]
-
-            if (!cur[part]) {
-                console.warn('Something is wrong with the key: ' + key, part)
-                return null
-            }
-            cur = cur[part]
-        }
-        return cur
     },
     formatBytes(bytes, decimals) {
         if (bytes == 0) return '0 Bytes';

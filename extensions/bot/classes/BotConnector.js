@@ -1,6 +1,6 @@
 class BotConnector {
     _ons = {}
-    message = {text: ''}
+    message = {text: '', from: {first_name: 'Someone'}}
     messageCount = 0
 
     constructor() {
@@ -8,7 +8,7 @@ class BotConnector {
     }
 
     setMessage(message) {
-        this.message.text = message
+        this.message = message
     }
 
     reply(text) {

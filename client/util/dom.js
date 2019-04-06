@@ -1,3 +1,6 @@
+/**
+ * Html dom helper methods
+ */
 const DomUtil = {
     addStyle(href, attrs) {
         DomUtil.createAndAddTag('link', 'head', {type: 'text/css', rel: 'stylesheet', href, ...attrs})

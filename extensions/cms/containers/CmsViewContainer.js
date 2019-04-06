@@ -10,6 +10,7 @@ import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
 import DomUtil from 'client/util/dom'
+import JsonDomUtil from '../util/jsonDomUtil'
 import {getType} from 'util/types'
 import * as CmsActions from 'client/actions/CmsAction'
 import {bindActionCreators} from 'redux'
@@ -680,7 +681,7 @@ class CmsViewContainer extends React.Component {
         if (cmsComponentEdit.key && str) {
             cmsComponentEdit.stringified = str
             const json = JSON.parse(this.state.template)
-            let item = Util.getComponentByKey(cmsComponentEdit.key, json);
+            let item = JsonDomUtil.getComponentByKey(cmsComponentEdit.key, json);
             if (item) {
                 // empty object but keep reference
                 for (const key in item) {
