@@ -231,7 +231,7 @@ class CmsViewContainer extends React.Component {
                                  subscriptionCallback={cb => {
                                      this._subscriptionCallback = cb
                                  }}
-                                 onChange={this.handleTemplateSaveChange}>{children}</JsonDom>
+                                 onChange={this.handleTemplateChange}>{children}</JsonDom>
         let content
 
         if (!editMode) {
@@ -369,12 +369,10 @@ class CmsViewContainer extends React.Component {
                               title="Edit Component">
 
                     <TemplateEditor
-                        scope={cmsComponentEdit.scope}
+                        component={cmsComponentEdit}
                         tab={settings.templateTab}
                         onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
-                        onChange={this.handleComponentEditChange.bind(this, cmsComponentEdit)}>
-                        {cmsComponentEdit.stringified}
-                    </TemplateEditor>
+                        onChange={this.handleTemplateChange.bind(this)} />
 
 
                 </SimpleDialog>
@@ -619,6 +617,10 @@ class CmsViewContainer extends React.Component {
     }
 
     handleTemplateChange = (str, instantSave) => {
+        if( str.constructor !== String){
+            str = JSON.stringify(str, null, 4)
+        }
+
         this.setState({template: str, templateError: null})
         this._autoSaveTemplate = () => {
             clearTimeout(this._autoSaveTemplateTimeout)
@@ -633,7 +635,6 @@ class CmsViewContainer extends React.Component {
         } else {
             this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 5000)
         }
-
     }
 
     handleResourceChange = (str) => {
@@ -641,45 +642,12 @@ class CmsViewContainer extends React.Component {
         this.saveCmsPage(str, this.props.cmsPage, 'resources')
     }
 
-
-    handleTemplateSaveChange = (json, save) => {
-        const template = JSON.stringify(json, null, 4)
-        if (save) {
-            this.saveCmsPage(template, this.props.cmsPage, 'template')
-        } else {
-            this.setState({template, templateError: null})
-        }
-    }
-
-
     drawerWidthChange = (newWidth) => {
         this.handleSettingChange('drawerWidth', newWidth)
     }
 
     drawerOpenClose = (open) => {
         this.handleSettingChange('drawerOpen', open)
-    }
-
-
-    handleComponentEditChange(cmsComponentEdit, str) {
-        if (cmsComponentEdit.key && str) {
-            cmsComponentEdit.stringified = str
-            const json = JSON.parse(this.state.template)
-            let item = getComponentByKey(cmsComponentEdit.key, json);
-            if (item) {
-                // empty object but keep reference
-                for (const key in item) {
-                    delete item[key]
-                }
-                // set property of new object to existing reference
-                try {
-                    Object.assign(item, JSON.parse(str))
-                    this.handleTemplateSaveChange(json)
-                } catch (e) {
-                    console.log('Error in json', str)
-                }
-            }
-        }
     }
 
     handleComponentEditClose(e) {
@@ -1024,9 +992,6 @@ const CmsViewContainerWithGql = compose(
  * Map the state to props.
  */
 const mapStateToProps = (store) => {
-    if (store.cms.edit.key) {
-        store.cms.edit.stringified = JSON.stringify(store.cms.edit.component, null, 4)
-    }
     return {
         cmsComponentEdit: store.cms.edit,
         user: store.user

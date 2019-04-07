@@ -54,14 +54,11 @@ class JsonDom extends React.Component {
         'Col': UiCol,
         'Row': UiRow,
         'h1$': ({_this, children, ...rest}) => <h1 {...rest}><ContentEditable
-            onChange={(v) => _this.emitChange(rest._key, v)}
-            onBlur={(v) => _this.emitChange(rest._key, v, true)}>{children}</ContentEditable></h1>,
+            onChange={(v) => _this.emitChange(rest._key, v)}>{children}</ContentEditable></h1>,
         'h2$': ({_this, children, ...rest}) => <h2 {...rest}><ContentEditable
-            onChange={(v) => _this.emitChange(rest._key, v)}
-            onBlur={(v) => _this.emitChange(rest._key, v, true)}>{children}</ContentEditable></h2>,
+            onChange={(v) => _this.emitChange(rest._key, v)}>{children}</ContentEditable></h2>,
         'p$': ({_this, children, ...rest}) => <p {...rest}><ContentEditable
-            onChange={(v) => _this.emitChange(rest._key, v)}
-            onBlur={(v) => _this.emitChange(rest._key, v, true)}>{children}</ContentEditable></p>
+            onChange={(v) => _this.emitChange(rest._key, v)}>{children}</ContentEditable></p>
     }
     static hock = true
     static instanceCounter = 0
@@ -312,7 +309,7 @@ class JsonDom extends React.Component {
         this.runJsEvent('subscription', false, data)
     }
 
-    emitChange(key, value, save) {
+    emitChange(key, value) {
         const {onChange} = this.props
 
         if (!onChange)
@@ -322,7 +319,7 @@ class JsonDom extends React.Component {
         const o = getComponentByKey(key, jsonClone)
         if (o && o.c && o.c.constructor === String) {
             o.c = value
-            onChange(jsonClone, save)
+            onChange(jsonClone)
         }
     }
 

@@ -14,7 +14,7 @@ import {
     SimpleAutosuggest,
     SimpleMenu
 } from 'ui/admin'
-import {getComponentByKey, addComponent} from '../util/jsonDomUtil'
+import {getComponentByKey, addComponent, removeComponent} from '../util/jsonDomUtil'
 
 const styles = theme => ({
     type: {
@@ -207,27 +207,9 @@ class JsonEditor extends React.Component {
 
 
     removeComponent(key) {
-        const parentKey = key.substring(0, key.lastIndexOf('.'))
-        const parent = getComponentByKey(parentKey, this.state.json),
-            child = getComponentByKey(key, this.state.json)
-        if (parent && child) {
-            let c = parent['c']
-            if (!c) {
-                return
-            } else if (c.constructor !== Array) {
-                c = ''
-            } else {
-                c.splice(c.indexOf(child), 1);
-            }
-
-            if (c.constructor === Array && c.length === 0) {
-                c = '';
-            }
-
-            parent.c = c
+        if( removeComponent(key, this.state.json) ){
             this.props.onChange(JSON.stringify(this.state.json, null, 4), true)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
-
         }
     }
 

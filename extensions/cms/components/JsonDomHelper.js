@@ -11,7 +11,7 @@ import {
 import classNames from 'classnames'
 import AddToBody from './AddToBody'
 import DomUtil from 'client/util/dom'
-import {getComponentByKey, addComponent} from '../util/jsonDomUtil'
+import {getComponentByKey, addComponent, removeComponent, getParentKey} from '../util/jsonDomUtil'
 
 const styles = theme => ({
     wrapper: {},
@@ -251,32 +251,34 @@ class JsonDomHelper extends React.Component {
         const {classes, _json, _onchange} = this.props
         e.currentTarget.classList.remove(classes.dropAreaOver)
 
-        const key = e.currentTarget.getAttribute('data-key'), index = e.currentTarget.getAttribute('data-index')
+        let sourceKey = JsonDomHelper.currentDragElement.props._key,
+            sourceIndex = parseInt(sourceKey.substring(sourceKey.lastIndexOf('.') + 1)),
+            sourceParentKey = getParentKey(sourceKey),
+            targetKey = e.currentTarget.getAttribute('data-key'),
+            targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
 
-        const component = getComponentByKey(JsonDomHelper.currentDragElement.props._key, _json)
-        const targetComponent = addComponent({key, json: _json, index, component})
+        // 1. get element from json structure by key
+        const source = getComponentByKey(sourceKey, _json)
 
-        _onchange(_json)
-       /* _this.emitChange(rest._key, v)
+        //2. remove it from json
+        if (removeComponent(sourceKey, _json)) {
 
-        _onChange(_json)
+            if (sourceParentKey === targetKey) {
+                if (sourceIndex <= targetKey) {
+                    targetIndex -= 1
+                }
+            }
 
-        //_cmsActions.editCmsComponent(key, targetComponent, _scope)
+            // 3. add it to new position
+            addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
 
+            _onchange(_json)
 
-        //console.log(targetComponent)
-        //console.log(JsonDomHelper.currentDragElement.props._key, component)
+        }
 
-
-        //_cmsActions.editCmsComponent(_key, subJson, _scope)
-
-
-        // console.log(this.)
-      /*  const json = JsonDomUtil.addComponent({key, json: this.props._json, index, component})
-        console.log(JsonDomHelper.currentDragElement, key)*/
         this.resetDragState()
-
     }
+
 
     resetDragState() {
         DomUtil.setAttrForSelector('.' + this.props.classes.dropArea, {style: 'display:none'})
@@ -289,9 +291,8 @@ class JsonDomHelper extends React.Component {
         e.stopPropagation()
         e.preventDefault()
         const {_cmsActions, _key, _json, _scope} = this.props
-        const subJson = getComponentByKey(_key, _json)
 
-        _cmsActions.editCmsComponent(_key, subJson, _scope)
+        _cmsActions.editCmsComponent(_key, _json, _scope)
 
     }
 
@@ -317,7 +318,7 @@ class JsonDomHelper extends React.Component {
         const subJson = getComponentByKey(rest._key, _json)
 
 
-        const {hovered, toolbarHovered, dragging} = this.state
+        const {hovered, toolbarHovered} = this.state
         let toolbar, highlighter, dropAreaAbove, dropAreaBelow
 
         const events = {
@@ -373,62 +374,6 @@ class JsonDomHelper extends React.Component {
         } else {
             return comp
         }
-
-        /*
-         dropAreaAbove = <span
-         onMouseOver={(e) => {
-         e.stopPropagation()
-         }}
-         onDragEnter={this.onDragEnter.bind(this)}
-         onDragLeave={this.onDragLeave.bind(this)}
-         key={rest._key + '.dropAreaAbove'}
-         className={classNames(classes.dropArea, classes.dropAreaAbove)}>drop below ${rest._key}</span>
-
-         dropAreaBelow = <span
-         onMouseOver={(e) => {
-         e.stopPropagation()
-         }}
-         onDragEnter={this.onDragEnter.bind(this)}
-         onDragLeave={this.onDragLeave.bind(this)}
-         key={rest._key + '.dropAreaBelow'}
-         className={classNames(classes.dropArea, classes.dropAreaBelow)}>drop below ${rest._key}</span>
-         */
-        //props.onDragEnter = this.onDragEnter.bind(this)
-        //props.onDragLeave = this.onDragLeave.bind(this)
-        // props.onDragStart = this.onDragStart.bind(this)
-        // <div id="div1" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
-
-
-        /*     const componentName = _WrappedComponent.name || ''
-         if (!children && componentName !== 'Col') {
-         // need wrapper
-         return <span
-         className={classes.wrapper} {...props}><_WrappedComponent {...rest}/>
-         {toolbar}{highlighter}</span>
-         } else if (componentName.endsWith('$') || COMPONENT_WITH_WRAPPER.indexOf(componentName) >= 0) {
-         return <span
-         className={classes.wrapper} {...props}><_WrappedComponent {...rest}>{children}</_WrappedComponent>
-         {toolbar}{highlighter}</span>
-
-         } else {
-         let kids = children
-
-         if (toolbar) {
-         kids = []
-         if (!children) {
-         kids.push(toolbar)
-         } else {
-         if (children.constructor === Array) {
-         kids.push(...children)
-         } else {
-         kids.push(children)
-         }
-         kids.push(toolbar)
-         kids.push(highlighter)
-         }
-         }
-         return <_WrappedComponent {...props} {...rest}>{kids}</_WrappedComponent>
-         }*/
     }
 }
 

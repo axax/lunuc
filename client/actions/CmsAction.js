@@ -1,8 +1,8 @@
 import * as types from '../constants/ActionTypes'
 
-export const editCmsComponent = (key, component, scope) => ({
+export const editCmsComponent = (key, json, scope) => ({
 	type: types.CMS_EDIT_COMPONENT,
     key,
-    component,
+    json,
     scope
 })

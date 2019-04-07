@@ -33,7 +33,6 @@ export const getComponentByKey = (key, json) => {
 
 export const addComponent = ({key, json, index, component}) => {
     const subJson = getComponentByKey(key, json)
-
     if (subJson) {
 
         let c = subJson['c']
@@ -47,7 +46,7 @@ export const addComponent = ({key, json, index, component}) => {
         if (!component) {
             component = {'c': 'new component'}
         }
-        if (!index) {
+        if (isNaN(index)) {
             index = c.length
         }
 
@@ -55,4 +54,33 @@ export const addComponent = ({key, json, index, component}) => {
         subJson.c = c
     }
     return subJson
+}
+
+export const getParentKey = (key) => {
+    return key.substring(0, key.lastIndexOf('.'))
+}
+
+export const removeComponent = (key, json) => {
+    const parentKey = getParentKey(key)
+    const parent = getComponentByKey(parentKey, json),
+        child = getComponentByKey(key, json)
+    if (parent && child) {
+        let c = parent['c']
+        if (!c) {
+            return false
+        } else if (c.constructor !== Array) {
+            c = ''
+        } else {
+            c.splice(c.indexOf(child), 1)
+        }
+
+        if (c.constructor === Array && c.length === 0) {
+            c = ''
+        }
+
+        parent.c = c
+        return true
+    }
+
+    return false
 }
