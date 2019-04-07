@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import PropTypes from 'prop-types'
 import {withStyles} from 'ui/admin'
-import * as CmsActions from 'client/actions/CmsAction'
+import * as CmsActions from '../actions/CmsAction'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import {
@@ -191,7 +191,6 @@ class JsonDomHelper extends React.Component {
 
                 for (let i = 0; i < tags.length; ++i) {
                     const tag = tags[i]
-
                     if (draggable === tag.nextSibling || draggable === tag.previousSibling) {
                         tag.style.display = 'none'
                         continue

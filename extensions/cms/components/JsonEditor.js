@@ -140,7 +140,11 @@ class JsonEditor extends React.Component {
              suppressContentEditableWarning={true}
              contentEditable>{t}</span> */
             return [<ListItem dense disableRipple onMouseOver={() => {
-                console.log('TODO: implement highlighting')
+                const ele = document.querySelector(`[_key="${key}"]`)
+                if( ele ){
+                    console.log('TODO: implement highlighting')
+                }
+
             }} key={key} style={{paddingLeft: 10 * level}} button
                               onClick={this.handleClick.bind(this, key)}>
 

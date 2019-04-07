@@ -8,6 +8,7 @@ import {
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
+import CmsReducer from './reducers/CmsReducer'
 
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
@@ -18,6 +19,11 @@ const WebIcon = (props) => <Async {...props} expose="WebIcon"
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../client/components/layout/ErrorPage')}/>
 
+
+// add redux reducer
+Hook.on('reducer', ({reducers}) => {
+    reducers.cms = CmsReducer
+})
 
 export default () => {
 
@@ -57,12 +63,14 @@ export default () => {
                 if (d.slug) {
                     const {_version} = container.pageParams
                     const item = data.results[i]
-                    d.slug = <Link to={'/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug}><span style={{
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        color: '#663366',
-                        textDecoration: 'underline'
-                    }}>{item.slug}</span></Link>
+                    d.slug = <Link
+                        to={'/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug}><span
+                        style={{
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            color: '#663366',
+                            textDecoration: 'underline'
+                        }}>{item.slug}</span></Link>
                 }
             })
         }
@@ -84,9 +92,9 @@ export default () => {
 
     // add a click event
     /*Hook.on('TypeTableEntryClick', ({type, item, container}) => {
-        if (type === 'CmsPage') {
-            const {_version} = container.pageParams
-            container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug.split(';')[0] : ''))
-        }
-    })*/
+     if (type === 'CmsPage') {
+     const {_version} = container.pageParams
+     container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + (item.slug ? item.slug.split(';')[0] : ''))
+     }
+     })*/
 }

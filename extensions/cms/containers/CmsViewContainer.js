@@ -12,7 +12,7 @@ import Util from 'client/util'
 import DomUtil from 'client/util/dom'
 import {getComponentByKey} from '../util/jsonDomUtil'
 import {getType} from 'util/types'
-import * as CmsActions from 'client/actions/CmsAction'
+import * as CmsActions from '../actions/CmsAction'
 import {bindActionCreators} from 'redux'
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/containers/generic/withKeyValues'
 import {
@@ -181,7 +181,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _props, id, loading, className, children, user, dynamic, client} = this.props
+        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, loading, className, children, user, dynamic, client} = this.props
         let {template, resources, script, dataResolver, settings} = this.state
         if (!cmsPage) {
             if (!loading) {
@@ -218,6 +218,7 @@ class CmsViewContainer extends React.Component {
                                  clientQuery={this.clientQuery.bind(this)}
                                  className={className}
                                  _parentRef={_parentRef}
+                                 _key={_key}
                                  _props={_props}
                                  template={template}
                                  script={script}
@@ -825,6 +826,7 @@ CmsViewContainer.propTypes = {
     match: PropTypes.object.isRequired,
     /* Reference to the parent JsonDom */
     _parentRef: PropTypes.object,
+    _key: PropTypes.string,
     /* Object is passed to JsonDom */
     _props: PropTypes.object,
     id: PropTypes.string,

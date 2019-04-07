@@ -1,0 +1,1 @@
+export const CMS_EDIT_COMPONENT = 'CMS_EDIT_COMPONENT'

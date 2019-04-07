@@ -1,14 +1,17 @@
 import {combineReducers} from 'redux'
+import Hook from '../../util/hook'
 import errorHandler from './ErrorHandlerReducer'
 import notification from './NotificationReducer'
 import networkStatusHandler from './NetworkStatusReducer'
 import user from './UserReducer'
-import cms from './CmsReducer'
 
-export default combineReducers({
+const reducers = {
     errorHandler,
     notification,
     networkStatusHandler,
-    user,
-    cms
-})
+    user
+}
+
+Hook.call('reducer', {reducers})
+
+export default combineReducers(reducers)

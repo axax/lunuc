@@ -516,11 +516,14 @@ class JsonDom extends React.Component {
                     _editmode: this.props.editMode.toString(), ...cmsProps, ..._p
                 }
                 if (this.props.editMode && this.props.inlineEditor) {
-                    eleProps._WrappedComponent = eleType
-                    eleProps._scope = this.scope
-                    eleProps._json = this.getJsonRaw(this.props)
-                    eleProps._onchange = this.props.onChange
-                    eleType = JsonDomHelper
+                    const rawJson = this.getJsonRaw(this.props)
+                    if (rawJson) {
+                        eleProps._WrappedComponent = eleType
+                        eleProps._scope = this.scope
+                        eleProps._json = rawJson
+                        eleProps._onchange = this.props.onChange
+                        eleType = JsonDomHelper
+                    }
                 }
                 h.push(React.createElement(
                     eleType,
@@ -631,7 +634,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props} = this.props
+        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key} = this.props
         if (!template) {
             console.warn('Template is missing.')
             return null
@@ -726,7 +729,7 @@ class JsonDom extends React.Component {
             return <div>Error in script in {name} event: <strong>{e.message}</strong></div>
         }
 
-        let content = this.parseRec(this.getJson(this.props), 0)
+        let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0)
 
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
         if (this.parseError) {
@@ -769,6 +772,7 @@ JsonDom.propTypes = {
     editMode: PropTypes.bool,
     inlineEditor: PropTypes.bool,
     _parentRef: PropTypes.object,
+    _key: PropTypes.string,
     /* properties that are passed from another component */
     _props: PropTypes.object,
     history: PropTypes.object,
