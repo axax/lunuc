@@ -7,7 +7,7 @@ import {getComponentByKey} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
 import Async from 'client/components/Async'
 import CmsViewContainer from '../containers/CmsViewContainer'
-import {getKeyValueFromLS} from 'client/containers/generic/withKeyValues'
+import {getKeyValueFromLS} from 'client/util/keyvalue'
 import {
     SimpleMenu as UiSimpleMenu,
     Button as UiButton,

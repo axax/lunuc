@@ -10,11 +10,10 @@ import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
 import DomUtil from 'client/util/dom'
-import {getComponentByKey} from '../util/jsonDomUtil'
 import {getType} from 'util/types'
 import * as CmsActions from '../actions/CmsAction'
 import {bindActionCreators} from 'redux'
-import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/containers/generic/withKeyValues'
+import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
 import {
     CAPABILITY_MANAGE_CMS_PAGES
 } from '../constants'
@@ -96,7 +95,6 @@ class CmsViewContainer extends React.Component {
 
     static propsToState(props, state) {
         const {template, script, resources, dataResolver, ssr, status} = props.cmsPage || {}
-
         let settings = null
         if (props.keyValue) {
             // TODO optimize so JSON.parse is only called once
@@ -188,7 +186,7 @@ class CmsViewContainer extends React.Component {
                 console.warn('cmsPage missing')
                 return <ErrorPage />
             }
-            return null
+            return 'loading...'
         } else {
             // set page title
             // TODO: make tile localized
@@ -868,20 +866,27 @@ const CmsViewContainerWithGql = compose(
                 }
             }
 
-
             if (urlSensitiv || (urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
                 const q = window.location.search.substring(1)
                 if (q)
                     variables.query = q
             }
+            console.log(variables)
             return {
                 variables,
                 fetchPolicy: isEditMode(ownProps) ? 'network-only' : 'cache-and-network'
             }
         },
         props: ({data: {loading, cmsPage, variables}}) => {
-            if (cmsPage)
+            if (cmsPage) {
+                if( variables.slug !== cmsPage.slug){
+                    return {
+                        cmsPageVariables: variables,
+                        loading
+                    }
+                }
                 urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv
+            }
             return {
                 cmsPageVariables: variables,
                 cmsPage,

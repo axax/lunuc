@@ -3,52 +3,8 @@ import PropTypes from 'prop-types'
 import gql from 'graphql-tag'
 import {graphql, compose} from 'react-apollo'
 import {connect} from 'react-redux'
-
-export const NO_SESSION_KEY_VALUES = 'NO_SESSION_KEY_VALUES'
-export const NO_SESSION_KEY_VALUES_SERVER = 'NO_SESSION_KEY_VALUES_SERVER'
-
-/*
- this is a warpper component for accessing user key values
- */
-
-const keyValuesFromLS = {}
-
-
-export const getKeyValueFromLS = (key) => {
-    const kv = getKeyValuesFromLS()
-    try {
-        return JSON.parse(kv[key])
-    } catch (e) {
-        return kv[key]
-    }
-}
-
-export const getKeyValuesFromLS = () => {
-    const kvServer = getKeyValuesFromLSByKey(NO_SESSION_KEY_VALUES_SERVER),
-        kvClient = getKeyValuesFromLSByKey(NO_SESSION_KEY_VALUES)
-    return Object.assign({}, kvClient, kvServer)
-}
-
-export const getKeyValuesFromLSByKey = (localStorageKey) => {
-
-    if (!keyValuesFromLS[localStorageKey]) {
-        try {
-            keyValuesFromLS[localStorageKey] = JSON.parse(localStorage.getItem(localStorageKey))
-        } finally {
-        }
-        if (!keyValuesFromLS[localStorageKey]) keyValuesFromLS[localStorageKey] = {}
-    }
-    return keyValuesFromLS[localStorageKey]
-}
-
-export const setKeyValueToLS = (key, value, server) => {
-    const localStorageKey = server ? NO_SESSION_KEY_VALUES_SERVER : NO_SESSION_KEY_VALUES
-
-    const kv = getKeyValuesFromLSByKey(localStorageKey)
-    kv[key] = value
-
-    localStorage.setItem(localStorageKey, JSON.stringify(kv))
-}
+import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
+import {getKeyValuesFromLS, setKeyValueToLS} from 'client/util/keyvalue'
 
 // This function takes a component...
 export function withKeyValues(WrappedComponent, keys, keysGlobal) {
@@ -69,9 +25,10 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         shouldComponentUpdate(nextProps, nextState) {
 
             const ignoreToCompare = ['deleteKeyValueByKey', 'setKeyValue', 'setKeyValueGlobal', 'loading']
-            for (const k of Object.keys(nextProps)) {
-
-                if (!ignoreToCompare.includes(k) && nextProps[k] !== this.props[k]) {
+            const keys = Object.keys(nextProps)
+            for (let i = 0; i<keys.length; i++) {
+                const key = keys[i]
+                if (!ignoreToCompare.includes(key) && nextProps[key] !== this.props[key]) {
                     return true
                 }
             }
@@ -81,7 +38,6 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
         render() {
             const {keyValues, keyValueGlobals, kvUser, loading, ...rest} = this.props
-
 
             if (keys) {
                 if (!kvUser.isAuthenticated) {
@@ -107,7 +63,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                 } else if (loading) {
                     // there is nothing in cache
                     if (!keyValueGlobals) {
-                        return null
+                        return <NetworkStatusHandler />
                     }
 
                 }
