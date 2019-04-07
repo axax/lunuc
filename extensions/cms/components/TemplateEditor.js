@@ -73,21 +73,12 @@ class TemplateEditor extends React.Component {
     constructor(props) {
         super(props)
 
-        this.state = {
-            tab: props.tab || 0
-        }
+        this.state = TemplateEditor.getStateFromProps(props)
     }
 
-    shouldComponentUpdate(props, state) {
+    static getStateFromProps(props) {
 
-        return props.component !== this.props.component ||
-            props.children !== this.props.children ||
-            props.tab !== this.props.tab
-    }
-
-    render() {
-        const {tab, classes, component, children} = this.props
-
+        const {component, children} = props
 
         let data, type = 'json'
         if (!component) {
@@ -101,14 +92,42 @@ class TemplateEditor extends React.Component {
             }
         } else {
             const {json, key} = component
-            if (!key) {
-                return null
+            if (key) {
+                const jsonPart = getComponentByKey(key, json)
+                data = JSON.stringify(jsonPart, null, 4)
             }
-            const jsonPart = getComponentByKey(key, json)
-            data = JSON.stringify(jsonPart, null, 4)
         }
 
-        console.log('TemplateEditor.............................')
+
+        return {
+            data,
+            type,
+            children: props.children,
+            component: props.component,
+            tab: props.tab || 0
+        }
+    }
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+
+        if (nextProps.children !== prevState.children ||
+            nextProps.component !== prevState.component) {
+            return TemplateEditor.getStateFromProps(nextProps)
+        }
+        return null
+    }
+
+
+    shouldComponentUpdate(props, state) {
+
+        return state.data !== this.state.data ||
+            state.tab !== this.state.tab
+    }
+
+    render() {
+        const { classes, component} = this.props
+        const { tab, data, type} = this.state
+
 
         const currentTab = (!component && this.state.tab === 2 ? 0 : this.state.tab) || 0
 
@@ -166,24 +185,24 @@ class TemplateEditor extends React.Component {
         let data, type = 'json'
         if (!component) {
             onChange(str)
-        }else{
+        } else {
             const {json, key} = component
             if (!key) {
                 return null
             }
             const jsonPart = getComponentByKey(key, json)
-            if( jsonPart){
-                    // empty object but keep reference
-                    for (const key in jsonPart) {
-                        delete jsonPart[key]
-                    }
-                    // set property of new object to existing reference
-                    try {
-                        Object.assign(jsonPart, JSON.parse(str))
-                        onChange(json)
-                    } catch (e) {
-                        console.log('Error in json', str)
-                    }
+            if (jsonPart) {
+                // empty object but keep reference
+                for (const key in jsonPart) {
+                    delete jsonPart[key]
+                }
+                // set property of new object to existing reference
+                try {
+                    Object.assign(jsonPart, JSON.parse(str))
+                    onChange(json)
+                } catch (e) {
+                    console.log('Error in json', str)
+                }
             }
         }
     }
@@ -194,12 +213,15 @@ class TemplateEditor extends React.Component {
     }
 
     prettify() {
-        const {onChange, children} = this.props
-        if (children.trim() === '') return
+        const {onChange} = this.props
+        const {data} = this.state
+        if (data.trim() === '') return
+
         try {
-            const j = eval('(' + children + ')');
+            const j = eval('(' + data + ')');
             if (j.constructor === Array || j.constructor === Object) {
-                onChange(JSON.stringify(j, null, 4), true)
+                const data = JSON.stringify(j, null, 4)+' '
+                this.setState({data})
             }
         } catch (e) {
             console.error(e)
