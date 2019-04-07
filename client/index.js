@@ -1,3 +1,5 @@
+/* Remove this this line if you don't want to support older browser such as IE 11 */
+//import './polyfill'
 import 'gen/extensions-client'
 import React from 'react'
 import {render} from 'react-dom'
@@ -6,7 +8,7 @@ import configureStore from './store/index'
 import config from 'gen/config'
 
 const appEl = document.getElementById('app')
-if (!('WebSocket' in window)) {
+if (!('WebSocket' in window) || !Object.assign) {
     const el = document.getElementById('l')
     if (el) el.style.display = 'none'
     appEl.innerHTML = 'Sorry your browser / device is not supported'

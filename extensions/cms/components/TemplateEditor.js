@@ -84,7 +84,7 @@ class TemplateEditor extends React.Component {
     }
 
     render() {
-        const {tab, classes, scope, ...rest} = this.props
+        const {tab, classes, scope, onTabChange, ...rest} = this.props
 
         const type = (rest.children && rest.children.trim().indexOf('<') === 0 ) ? 'html' : 'json'
         const currentTab = (!scope && this.state.tab === 2 ? 0 : this.state.tab) || 0
@@ -140,7 +140,7 @@ class TemplateEditor extends React.Component {
         const {onTabChange} = this.props
         this.setState({tab})
         if (onTabChange) {
-            //onTabChange(tab)
+            onTabChange(tab)
         }
     }
 
@@ -160,7 +160,8 @@ class TemplateEditor extends React.Component {
 
 TemplateEditor.propTypes = {
     scope: PropTypes.object,
-    classes: PropTypes.object.isRequired
+    classes: PropTypes.object.isRequired,
+    onTabChange: PropTypes.func
 }
 
 export default withStyles(styles)(TemplateEditor)

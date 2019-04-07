@@ -56,6 +56,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
+    "@babel/polyfill": "^7.4.3",
     "@google-cloud/translate": "^2.1.4",
     "@material-ui/core": "^3.9.3",
     "@material-ui/icons": "^3.0.2",
@@ -111,6 +112,7 @@
     "spdy": "^4.0.0",
     "subscriptions-transport-ws": "^0.9.16",
     "telegraf": "^3.28.0",
+    "url-search-params-polyfill": "^5.1.0",
     "zip-local": "^0.3.4"
   },
   "devDependencies": {

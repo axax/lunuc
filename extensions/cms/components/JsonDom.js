@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import Hook from 'util/hook'
 import _t from 'util/i18n'
 import Util from 'client/util'
-import JsonDomUtil from '../util/jsonDomUtil'
+import {getComponentByKey} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
 import Async from 'client/components/Async'
 import CmsViewContainer from '../containers/CmsViewContainer'
@@ -259,7 +259,8 @@ class JsonDom extends React.Component {
         let allloaded = true, counter = 0
         const scripts = document.querySelectorAll(`script[data-cms-view="true"]`)
         if (scripts) {
-            scripts.forEach(script => {
+            for (let i = 0; i < scripts.length; ++i) {
+                const script = scripts[i]
                 if (!script.getAttribute('loaded')) {
                     allloaded = false
                     counter++
@@ -270,7 +271,7 @@ class JsonDom extends React.Component {
                         }
                     }
                 }
-            })
+            }
         }
         if (allloaded) {
             this.runJsEvent('resourcesready', true)
@@ -292,10 +293,7 @@ class JsonDom extends React.Component {
     }
 
     removeAddedDomElements() {
-        const addedElements = document.querySelectorAll(`[data-json-dom-id="${this.instanceId}"]`)
-        for (const ele of addedElements) {
-            ele.parentNode.removeChild(ele)
-        }
+        DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`)
     }
 
     handleBindingChange(cb, e) {
@@ -321,7 +319,7 @@ class JsonDom extends React.Component {
             return
 
         const jsonClone = this.getJsonRaw(this.props)
-        const o = JsonDomUtil.getComponentByKey(key, jsonClone)
+        const o = getComponentByKey(key, jsonClone)
         if (o && o.c && o.c.constructor === String) {
             o.c = value
             onChange(jsonClone, save)
@@ -524,6 +522,7 @@ class JsonDom extends React.Component {
                     eleProps._WrappedComponent = eleType
                     eleProps._scope = this.scope
                     eleProps._json = this.getJsonRaw(this.props)
+                    eleProps._onchange = this.props.onChange
                     eleType = JsonDomHelper
                 }
                 h.push(React.createElement(
@@ -617,11 +616,11 @@ class JsonDom extends React.Component {
                 const cb = t[i]
                 if (cb) {
                     try {
-                        if( async ) {
+                        if (async) {
                             setTimeout(() => {
                                 cb(...args)
                             }, 0)
-                        }else{
+                        } else {
                             cb(...args)
                         }
                     } catch (e) {
@@ -767,6 +766,7 @@ JsonDom.propTypes = {
     script: PropTypes.string,
     scope: PropTypes.string,
     setKeyValue: PropTypes.func,
+    /* Is fired when the json dom changes */
     onChange: PropTypes.func,
     onError: PropTypes.func,
     editMode: PropTypes.bool,

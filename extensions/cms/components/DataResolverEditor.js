@@ -5,7 +5,6 @@ import {SimpleMenu, BuildIcon} from 'ui/admin'
 class DataResolverEditor extends React.Component {
 
     render() {
-        const {...rest} = this.props
         return <div style={{position: 'relative'}}>
             <SimpleMenu key="dataResolverMenu" mini fab color="secondary"
                         style={{zIndex:99,position: 'absolute', bottom: '-8px', right: '-8px'}}
@@ -14,7 +13,7 @@ class DataResolverEditor extends React.Component {
                             icon: <BuildIcon />,
                             onClick: this.createExample.bind(this)
                         }]}/>
-            <CodeEditor lineNumbers type="json" {...rest}/>
+            <CodeEditor lineNumbers type="json" {...this.props}/>
         </div>
     }
 

@@ -11,7 +11,7 @@ import {
 import classNames from 'classnames'
 import AddToBody from './AddToBody'
 import DomUtil from 'client/util/dom'
-import JsonDomUtil from '../util/jsonDomUtil'
+import {getComponentByKey, addComponent} from '../util/jsonDomUtil'
 
 const styles = theme => ({
     wrapper: {},
@@ -189,8 +189,8 @@ class JsonDomHelper extends React.Component {
                  }*/
                 const tags = document.querySelectorAll('.' + this.props.classes.dropArea)
 
-                for (const tag of tags) {
-
+                for (let i = 0; i < tags.length; ++i) {
+                    const tag = tags[i]
 
                     if (draggable === tag.nextSibling || draggable === tag.previousSibling) {
                         tag.style.display = 'none'
@@ -248,13 +248,18 @@ class JsonDomHelper extends React.Component {
         e.stopPropagation()
         e.preventDefault()
 
-        const {classes, _json, _cmsActions, _scope} = this.props
+        const {classes, _json, _onchange} = this.props
         e.currentTarget.classList.remove(classes.dropAreaOver)
 
         const key = e.currentTarget.getAttribute('data-key'), index = e.currentTarget.getAttribute('data-index')
 
-        const component = JsonDomUtil.getComponentByKey(JsonDomHelper.currentDragElement.props._key, _json)
-        const targetComponent = JsonDomUtil.addComponent({key, json: _json, index, component})
+        const component = getComponentByKey(JsonDomHelper.currentDragElement.props._key, _json)
+        const targetComponent = addComponent({key, json: _json, index, component})
+
+        _onchange(_json)
+       /* _this.emitChange(rest._key, v)
+
+        _onChange(_json)
 
         //_cmsActions.editCmsComponent(key, targetComponent, _scope)
 
@@ -284,7 +289,7 @@ class JsonDomHelper extends React.Component {
         e.stopPropagation()
         e.preventDefault()
         const {_cmsActions, _key, _json, _scope} = this.props
-        const subJson = JsonDomUtil.getComponentByKey(_key, _json)
+        const subJson = getComponentByKey(_key, _json)
 
         _cmsActions.editCmsComponent(_key, subJson, _scope)
 
@@ -307,9 +312,9 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {classes, _WrappedComponent, _json, _cmsActions, children, ...rest} = this.props
+        const {classes, _WrappedComponent, _json, _cmsActions, _onchange, children, ...rest} = this.props
 
-        const subJson = JsonDomUtil.getComponentByKey(rest._key, _json)
+        const subJson = getComponentByKey(rest._key, _json)
 
 
         const {hovered, toolbarHovered, dragging} = this.state
@@ -434,7 +439,8 @@ JsonDomHelper.propTypes = {
     _cmsActions: PropTypes.object.isRequired,
     _key: PropTypes.string.isRequired,
     _json: PropTypes.any.isRequired,
-    _scope: PropTypes.object.isRequired
+    _scope: PropTypes.object.isRequired,
+    _onchange: PropTypes.func.isRequired
 }
 
 

@@ -10,7 +10,7 @@ import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
 import DomUtil from 'client/util/dom'
-import JsonDomUtil from '../util/jsonDomUtil'
+import {getComponentByKey} from '../util/jsonDomUtil'
 import {getType} from 'util/types'
 import * as CmsActions from 'client/actions/CmsAction'
 import {bindActionCreators} from 'redux'
@@ -21,10 +21,9 @@ import {
 import Async from 'client/components/Async'
 
 
+// admin pack
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorPage')}/>
-
-// admin pack
 const Expandable = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "admin" */ '../../../client/components/Expandable')}/>
 const DataResolverEditor = (props) => <Async {...props}
@@ -57,14 +56,6 @@ const ErrorHandler = (props) => <Async {...props}
 // the graphql query is also need to access and update the cache when data arrive from a supscription
 const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,nosession:$nosession,_version:$_version){cacheKey slug name urlSensitiv template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
-
-const editorStyle = {
-    padding: '10px',
-    minHeight: 200,
-    overflow: 'auto',
-    wordWrap: 'normal',
-    fontFamily: 'monospace'
-}
 
 const isPreview = (location) => {
     const params = new URLSearchParams(location.search)
@@ -170,40 +161,6 @@ class CmsViewContainer extends React.Component {
             this.state.settings.drawerWidth !== state.settings.drawerWidth
     }
 
-    addResources(props, state) {
-        const {dynamic} = props
-        let {resources} = state
-
-
-        if (!dynamic) {
-
-            const addedElements = document.querySelectorAll(`[data-cms-view]`)
-            for (const ele of addedElements) {
-                ele.parentNode.removeChild(ele)
-            }
-            if( resources ) {
-                try {
-                    const a = JSON.parse(resources)
-                    for (let i = 0; i < a.length; i++) {
-                        const r = a[i].replace('${build}', ''), ext = r.substring(r.lastIndexOf('.') + 1)
-                        if (ext.indexOf('css') === 0) {
-                            DomUtil.addStyle(r, {
-                                data: {cmsView: true}
-                            })
-                        } else if (ext.indexOf('js') === 0) {
-                            DomUtil.addScript(r, {
-                                data: {cmsView: true}
-                            })
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error in resources', e)
-                }
-            }
-        }
-
-    }
-
     componentDidMount() {
         this.setUpSubsciptions(this.props)
         this._handleWindowClose = this.saveUnsafedChanges.bind(this)
@@ -223,25 +180,6 @@ class CmsViewContainer extends React.Component {
         this.removeSubscriptions()
     }
 
-    saveUnsafedChanges() {
-        // blur on unload to make sure everything gets saved
-        document.activeElement.blur()
-
-        // clear timeouts
-        clearTimeout(this._scriptTimeout)
-        if (this._autoSaveScriptTimeout) {
-            this._autoSaveScript()
-        }
-
-        if (this._autoSaveTemplateTimeout) {
-            this._autoSaveTemplate()
-        }
-        if (this._autoSaveDataResolverTimeout) {
-            this._autoSaveDataResolver()
-        }
-        return true
-    }
-
     render() {
         const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _props, id, loading, className, children, user, dynamic, client} = this.props
         let {template, resources, script, dataResolver, settings} = this.state
@@ -250,10 +188,8 @@ class CmsViewContainer extends React.Component {
                 console.warn('cmsPage missing')
                 return <ErrorPage />
             }
-            //document.getElementById('l').style.display='block'
             return null
         } else {
-            //document.getElementById('l').style.display='none'
             // set page title
             // TODO: make tile localized
             if (!dynamic && cmsPage.name)
@@ -317,7 +253,6 @@ class CmsViewContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
-                            style={editorStyle}
                             onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
                     </Expandable>
 
@@ -454,6 +389,56 @@ class CmsViewContainer extends React.Component {
     }
 
 
+    addResources(props, state) {
+        const {dynamic} = props
+        let {resources} = state
+
+
+        if (!dynamic) {
+            DomUtil.removeElements(`[data-cms-view]`)
+
+            if (resources) {
+                try {
+                    const a = JSON.parse(resources)
+                    for (let i = 0; i < a.length; i++) {
+                        const r = a[i].replace('${build}', ''), ext = r.substring(r.lastIndexOf('.') + 1)
+                        if (ext.indexOf('css') === 0) {
+                            DomUtil.addStyle(r, {
+                                data: {cmsView: true}
+                            })
+                        } else if (ext.indexOf('js') === 0) {
+                            DomUtil.addScript(r, {
+                                data: {cmsView: true}
+                            })
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error in resources', e)
+                }
+            }
+        }
+
+    }
+
+    saveUnsafedChanges() {
+        // blur on unload to make sure everything gets saved
+        document.activeElement.blur()
+
+        // clear timeouts
+        clearTimeout(this._scriptTimeout)
+        if (this._autoSaveScriptTimeout) {
+            this._autoSaveScript()
+        }
+
+        if (this._autoSaveTemplateTimeout) {
+            this._autoSaveTemplate()
+        }
+        if (this._autoSaveDataResolverTimeout) {
+            this._autoSaveDataResolver()
+        }
+        return true
+    }
+
     removeSubscriptions() {
         // remove all subscriptions
         Object.keys(this.registeredSubscriptions).forEach(key => {
@@ -548,14 +533,13 @@ class CmsViewContainer extends React.Component {
                                     if (idx > -1) {
                                         const noNullData = Util.removeNullValues(data)
                                         Object.keys(noNullData).map(k => {
-                                            // if there are localized values in the current language
-                                            // set them to the regular field
-                                            /*if (k.endsWith('_localized')) {
-                                             const v = noNullData[k][_app_.lang]
-                                             if (v) {
-                                             noNullData[k.substring(0, k.length - 10)] = v
-                                             }
-                                             }*/
+                                            // check for localized values
+                                            if (noNullData[k].constructor === Object && noNullData[k].__typename === 'LocalizedString') {
+                                                const v = noNullData[k][_app_.lang]
+                                                if (v) {
+                                                    noNullData[k] = v
+                                                }
+                                            }
                                         })
                                         refResults[idx] = Object.assign({}, refResults[idx], noNullData)
                                         // back to string data
@@ -681,7 +665,7 @@ class CmsViewContainer extends React.Component {
         if (cmsComponentEdit.key && str) {
             cmsComponentEdit.stringified = str
             const json = JSON.parse(this.state.template)
-            let item = JsonDomUtil.getComponentByKey(cmsComponentEdit.key, json);
+            let item = getComponentByKey(cmsComponentEdit.key, json);
             if (item) {
                 // empty object but keep reference
                 for (const key in item) {

@@ -2,6 +2,15 @@
  * Html dom helper methods
  */
 const DomUtil = {
+    removeElements (selector){
+        const addedElements = document.querySelectorAll(selector)
+        if (addedElements) {
+            for (let i = 0; i < addedElements.length; ++i) {
+                const ele = addedElements[i]
+                ele.parentNode.removeChild(ele)
+            }
+        }
+    },
     addStyle(href, attrs) {
         DomUtil.createAndAddTag('link', 'head', {type: 'text/css', rel: 'stylesheet', href, ...attrs})
     },
@@ -40,10 +49,16 @@ const DomUtil = {
     setAttrForSelector(selector, attrs) {
         const tags = document.querySelectorAll(selector)
 
-        for (const tag of tags) {
-            for (const key of Object.keys(attrs)) {
-                if (attrs[key])
-                    tag[key] = attrs[key]
+
+        if (tags) {
+            const keys = Object.keys(attrs)
+            for (let i = 0; i < tags.length; ++i) {
+                const tag = tags[i]
+                for (let j = 0; j < keys.length; ++j) {
+                    const key = keys[j]
+                    if (attrs[key])
+                        tag[key] = attrs[key]
+                }
             }
         }
     },
