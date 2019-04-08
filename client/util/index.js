@@ -95,13 +95,6 @@ const Util = {
             return entityMap[s]
         })
     },
-    isOnServer: () => {
-        return !(
-            typeof window !== 'undefined' &&
-            window.document &&
-            window.document.createElement
-        )
-    },
     removeNullValues: obj => {
         let newObj = {}
         Object.keys(obj).forEach((prop) => {

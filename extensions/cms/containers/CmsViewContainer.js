@@ -198,7 +198,7 @@ class CmsViewContainer extends React.Component {
         }
 
         if( renewing ){
-            return 'renewing...'+loading
+            return 'renewing...'
         }
 
 
@@ -890,7 +890,6 @@ const CmsViewContainerWithGql = compose(
             }
 
             if (cmsPage) {
-                console.log(variables)
                 if( variables.slug !== cmsPage.slug ){
                     return result
                 }
