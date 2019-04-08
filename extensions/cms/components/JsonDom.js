@@ -634,7 +634,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key} = this.props
+        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key, loading} = this.props
         if (!template) {
             console.warn('Template is missing.')
             return null
@@ -779,7 +779,8 @@ JsonDom.propTypes = {
     children: PropTypes.any,
     id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another JsonDom */
-    dynamic: PropTypes.bool
+    dynamic: PropTypes.bool,
+    loading: PropTypes.bool
 }
 
 export default JsonDom

@@ -84,7 +84,7 @@ const UtilCms = {
                             resolvedData[k] = segment.data[k]
                         })
                     } else if (segment.t) {
-                        const {t, f, l, o, p, d, s} = segment
+                        const {t, f, l, o, p, d, s, cache} = segment
                         /*
                          f = filter for the query
                          t = type
@@ -118,6 +118,7 @@ const UtilCms = {
                             sort: s,
                             offset: o,
                             match,
+                            cache,
                             projectResult: true
                         })
                         debugInfo += ' result=true'

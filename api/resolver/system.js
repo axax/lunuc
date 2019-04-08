@@ -14,6 +14,7 @@ import Cache from 'util/cache'
 import Hook from 'util/hook'
 import {pubsub} from 'api/subscription'
 import {withFilter} from 'graphql-subscriptions'
+import {ObjectId} from 'mongodb'
 
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
@@ -30,6 +31,34 @@ const killExec = (id) => {
         }
         delete execs[id]
     }
+}
+
+const findAndReplaceObjectIds = function (obj) {
+    for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+            const v = obj[i]
+            if( v ) {
+                if (v.constructor === Array) {
+                    v.forEach((x, j) => {
+                        if (x.constructor === String) {
+                            if (ObjectId.isValid(x)) {
+                                v[j] = ObjectId(x)
+                            }
+                        } else {
+                            findAndReplaceObjectIds(x)
+                        }
+                    })
+                } else if (v.constructor === String) {
+                    if (ObjectId.isValid(v)) {
+                        obj[i] = ObjectId(v)
+                    }
+                } else {
+                    findAndReplaceObjectIds(v);
+                }
+            }
+        }
+    }
+    return null;
 }
 
 export const systemResolver = (db) => ({
@@ -361,8 +390,10 @@ export const systemResolver = (db) => ({
         },
         collectionAggregate: async ({collection, json}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            const jsonParsed = JSON.parse(json)
+            findAndReplaceObjectIds(jsonParsed)
 
-            let a = await (db.collection(collection).aggregate(JSON.parse(json),{allowDiskUse:true}).toArray())
+            let a = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
             return {result: JSON.stringify(a[0])}
         }
     },

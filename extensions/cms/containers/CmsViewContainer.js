@@ -140,16 +140,18 @@ class CmsViewContainer extends React.Component {
             console.log('refresh resources')
             this.addResources(props, state)
         }
+
         // only update if cms page was modified
         return !props.cmsPage ||
             !this.props.cmsPage ||
+            /*props.cmsPages !== this.props.cmsPages ||*/
             props.cmsComponentEdit !== this.props.cmsComponentEdit ||
             props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
+            props.cmsPage.slug !== this.props.cmsPage.slug ||
             props.location.search !== this.props.location.search ||
             props.location.hash !== this.props.location.hash ||
             props.user !== this.props.user ||
-            props.cmsPages !== this.props.cmsPages ||
             props.children != this.props.children ||
             props._props !== this.props._props ||
             (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script)) ||
@@ -179,19 +181,24 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, loading, className, children, user, dynamic, client} = this.props
+        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, loading, className, children, user, dynamic, client} = this.props
         let {template, resources, script, dataResolver, settings} = this.state
         if (!cmsPage) {
             if (!loading) {
                 console.warn('cmsPage missing')
                 return <ErrorPage />
             }
-            return 'loading...'
+            // show a loader here
+            return null
         } else {
             // set page title
             // TODO: make tile localized
             if (!dynamic && cmsPage.name)
                 document.title = cmsPage.name
+        }
+
+        if( renewing ){
+            return 'renewing...'+loading
         }
 
 
@@ -210,7 +217,6 @@ class CmsViewContainer extends React.Component {
             hashParams: (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})
         }
         const startTime = new Date()
-
         const jsonDom = <JsonDom id={id}
                                  dynamic={dynamic}
                                  clientQuery={this.clientQuery.bind(this)}
@@ -223,6 +229,7 @@ class CmsViewContainer extends React.Component {
                                  resolvedData={cmsPage.resolvedData}
                                  resources={cmsPage.resources}
                                  editMode={editMode}
+                                 loading={loading}
                                  inlineEditor={!!settings.inlineEditor}
                                  scope={JSON.stringify(scope)}
                                  history={history}
@@ -380,8 +387,7 @@ class CmsViewContainer extends React.Component {
             </DrawerLayout></UIProvider>
         }
 
-        console.info(`render ${this.constructor.name} for ${cmsPage.slug} in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
-
+        console.info(`render ${this.constructor.name} for ${cmsPage.slug} (loading=${loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
         return content
     }
 
@@ -871,27 +877,32 @@ const CmsViewContainerWithGql = compose(
                 if (q)
                     variables.query = q
             }
-            console.log(variables)
             return {
                 variables,
                 fetchPolicy: isEditMode(ownProps) ? 'network-only' : 'cache-and-network'
             }
         },
         props: ({data: {loading, cmsPage, variables}}) => {
+
+            const result = {
+                cmsPageVariables: variables,
+                loading
+            }
+
             if (cmsPage) {
-                if( variables.slug !== cmsPage.slug){
-                    return {
-                        cmsPageVariables: variables,
-                        loading
-                    }
+                console.log(variables)
+                if( variables.slug !== cmsPage.slug ){
+                    return result
+                }
+                if(variables.query && variables.query !== cmsPage.cacheKey){
+                    // we have another status here
+                    // it is renewing when slug is the same but the query changed
+                    result.renewing = true
                 }
                 urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv
             }
-            return {
-                cmsPageVariables: variables,
-                cmsPage,
-                loading
-            }
+            result.cmsPage = cmsPage
+            return result
         }
     }),
     graphql(gql`query cmsPages($filter:String,$_version:String){cmsPages(filter:$filter,_version:$_version){results{slug}}}`, {

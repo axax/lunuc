@@ -8,6 +8,7 @@ import {
 } from 'util/capabilities'
 import Hook from 'util/hook'
 import AggregationBuilder from './AggregationBuilder'
+import Cache from 'util/cache'
 
 const {DEFAULT_LANGUAGE} = config
 
@@ -31,7 +32,7 @@ const GenericResolver = {
         }
         const startTime = new Date()
 
-        let {match, _version, ...otherOptions} = options
+        let {match, _version, cache, ...otherOptions} = options
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
@@ -50,6 +51,19 @@ const GenericResolver = {
             }
         }
 
+        let cacheKey
+        if( !isNaN(cache) && cache > 0 ) {
+            cacheKey = collectionName + JSON.stringify(match) + context.lang + JSON.stringify(otherOptions)
+
+
+            const resultFromCache = Cache.get(cacheKey)
+            if (resultFromCache) {
+                console.log(`GenericResolver from cache for ${collectionName} complete: total time ${new Date() - startTime}ms`)
+
+                return resultFromCache
+            }
+        }
+
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
             match,
             includeCount: false,
@@ -57,7 +71,6 @@ const GenericResolver = {
         })
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
-
        /* if (typeName.indexOf("Product") >= 0) {
             console.log(JSON.stringify(dataQuery, null, 4))
         }*/
@@ -94,6 +107,11 @@ const GenericResolver = {
 
         }
         result.aggregateTime = new Date() - startTimeAggregate
+
+        if( cacheKey ) {
+            Cache.set(cacheKey, result, cache)
+        }
+
         console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${result.aggregateTime}ms total time ${new Date() - startTime}ms`)
         return result
     },

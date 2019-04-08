@@ -31,6 +31,7 @@ export class OfflineCache extends InMemoryCache {
 
 
     saveToLocalStorage() {
+        return
         if (APOLLO_CACHE) {
             const startTime = new Date()
             const state = this.extract()
@@ -42,12 +43,14 @@ export class OfflineCache extends InMemoryCache {
              )
              )
              .reduce((res, key) => (res[key] = state[key], res), {})*/
+            let stringified
             try {
-                window.localStorage.setItem(CACHE_KEY, JSON.stringify(state))
+                stringified = JSON.stringify(state)
             } catch (e) {
-                window.localStorage.setItem(CACHE_KEY, '{}')
+                stringified = '{}'
             }
-            console.info(`save to local storage in ${(new Date() - startTime)}ms`)
+            window.localStorage.setItem(CACHE_KEY, stringified)
+            console.info(`save to local storage (${(stringified.length/1024).toFixed(2)}kB) in ${(new Date() - startTime)}ms`)
         }
     }
 
