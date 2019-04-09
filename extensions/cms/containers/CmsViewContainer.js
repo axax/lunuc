@@ -94,7 +94,7 @@ class CmsViewContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, resources, dataResolver, ssr, status} = props.cmsPage || {}
+        const {template, script, resources, dataResolver, ssr, urlSensitiv, status} = props.cmsPage || {}
         let settings = null
         if (props.keyValue) {
             // TODO optimize so JSON.parse is only called once
@@ -116,6 +116,7 @@ class CmsViewContainer extends React.Component {
             script,
             dataResolver,
             ssr,
+            urlSensitiv,
             public: props.cmsPage && props.cmsPage.public
         }
         if (state && ['updating', 'updated'].indexOf(status) >= 0) {
@@ -296,6 +297,7 @@ class CmsViewContainer extends React.Component {
                     <Expandable title="Settings"
                                 onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
                                 expanded={settings.settingsExpanded}>
+
                         <SimpleSwitch
                             label="SSR (Server side Rendering)"
                             checked={!!this.state.ssr}
@@ -305,6 +307,11 @@ class CmsViewContainer extends React.Component {
                             label="Public (is visible to everyone)"
                             checked={!!this.state.public}
                             onChange={this.handleFlagChange.bind(this, 'public')}
+                        />
+                        <SimpleSwitch
+                            label="Url sensitive (refresh component on url change)"
+                            checked={!!this.state.urlSensitiv}
+                            onChange={this.handleFlagChange.bind(this, 'urlSensitiv')}
                         />
                     </Expandable>
 
@@ -936,7 +943,7 @@ const CmsViewContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public){slug template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv){slug template script resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key, cb) => {
                 const {_version, slug} = getSlugVersion(ownProps.slug)

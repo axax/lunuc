@@ -37,24 +37,23 @@ const findAndReplaceObjectIds = function (obj) {
     for (var i in obj) {
         if (obj.hasOwnProperty(i)) {
             const v = obj[i]
-            if( v ) {
-                if (v.constructor === Array) {
-                    v.forEach((x, j) => {
-                        if (x.constructor === String) {
-                            if (ObjectId.isValid(x)) {
-                                v[j] = ObjectId(x)
-                            }
-                        } else {
-                            findAndReplaceObjectIds(x)
+            if( v )
+            if (v.constructor === Array) {
+                v.forEach((x,j) => {
+                    if (x.constructor === String) {
+                        if ( i=== '$in' && ObjectId.isValid(x)) {
+                            v[j] = ObjectId(x)
                         }
-                    })
-                } else if (v.constructor === String) {
-                    if (ObjectId.isValid(v)) {
-                        obj[i] = ObjectId(v)
+                    } else {
+                        findAndReplaceObjectIds(x)
                     }
-                } else {
-                    findAndReplaceObjectIds(v);
+                })
+            } else if (v.constructor === String) {
+                if (ObjectId.isValid(v)) {
+                    obj[i] = ObjectId(v)
                 }
+            } else {
+                findAndReplaceObjectIds(v);
             }
         }
     }
@@ -392,8 +391,11 @@ export const systemResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
             const jsonParsed = JSON.parse(json)
             findAndReplaceObjectIds(jsonParsed)
+            const startTimeAggregate = new Date()
 
             let a = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
+            console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)
+
             return {result: JSON.stringify(a[0])}
         }
     },

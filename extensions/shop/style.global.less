@@ -284,54 +284,56 @@
 
   }
 
+
+  .navigation {
+    margin-top: 1.5rem;
+    max-width: 100%;
+    a {
+      transition: background-color 0.3s ease;
+      margin: 0.2rem;
+      background-color: @primary-color;
+      color: #fff;
+      padding: 0.3rem 0.6rem;
+      border-radius: @border-radius*3;
+      cursor: pointer;
+      display: inline-block;
+      &:hover, &.active {
+        background-color: @secondary-color;
+      }
+    }
+  }
+
+  .search {
+    width: 100%;
+    padding-left: 50%;
+    position: relative;
+    @media @mobile, @tablet {
+      padding-left: 0;
+    }
+
+    input {
+      width: calc(100% - @input-height);
+      border: 3px solid @secondary-color;
+      outline: none;
+    }
+
+    button {
+      position: absolute;
+      right: 4px;
+      width: @input-height;
+      height: @input-height;
+      border: 1px solid @secondary-color;
+      background: @secondary-color;
+      text-align: center;
+      color: #fff;
+      border-radius: @border-radius;
+      cursor: pointer;
+      font-size: 1.3rem;
+    }
+  }
+
   .main {
     padding: 2rem 1rem;
-    .search {
-      width: 100%;
-      padding-left: 50%;
-      position: relative;
-      @media @mobile, @tablet {
-        padding-left: 0;
-      }
-
-      input {
-        width: calc(100% - @input-height);
-        border: 3px solid @secondary-color;
-        outline: none;
-      }
-
-      button {
-        position: absolute;
-        right: 4px;
-        width: @input-height;
-        height: @input-height;
-        border: 1px solid @secondary-color;
-        background: @secondary-color;
-        text-align: center;
-        color: #fff;
-        border-radius: @border-radius;
-        cursor: pointer;
-        font-size: 1.3rem;
-      }
-    }
-
-    .categories {
-      margin-top: 1.5rem;
-      max-width: 100%;
-      a {
-        transition: background-color 0.3s ease;
-        margin: 0.2rem;
-        background-color: @primary-color;
-        color: #fff;
-        padding: 0.3rem 0.6rem;
-        border-radius: @border-radius*3;
-        cursor: pointer;
-        display: inline-block;
-        &:hover, &.active {
-          background-color: @secondary-color;
-        }
-      }
-    }
 
     &.productlist{
       .Card{

@@ -31,10 +31,12 @@
           "fields": [
             "name",
             "src"
-          ]
+          ],
+          "index": 1
         },
         {
-          "name": "image_src"
+          "name": "image_src",
+          "index": 1
         },
         {
           "name": "categories",

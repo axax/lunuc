@@ -139,11 +139,28 @@ const config = {
         })
     ],
     optimization: {
+        /*splitChunks: {
+            cacheGroups: {
+                style: {
+                    name: 'style',
+                    test: (c) => {
+                        if (c.type === 'css/mini-extract') {
+                            const path = c._identifier
+                            //console.log(path.substring(path.lastIndexOf('/')+1))
+                            return true
+                        }
+                        return false
+                    },
+                    chunks: 'all',
+                    enforce: true
+                }
+            }
+        },*/
         minimizer: []
     }/*optimization: {
-        // We no not want to minimize our code.
-        minimize: false
-    }*/
+     // We no not want to minimize our code.
+     minimize: false
+     }*/
 }
 
 /**

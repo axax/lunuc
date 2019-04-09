@@ -64,13 +64,14 @@ export default () => {
                     const {_version} = container.pageParams
                     const item = data.results[i]
                     d.slug = <Link
-                        to={'/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug}><span
+                        to={'/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug}>
+                        <span
                         style={{
                             fontWeight: 'bold',
                             cursor: 'pointer',
                             color: '#663366',
                             textDecoration: 'underline'
-                        }}>{item.slug}</span></Link>
+                        }}>{item.slug || <WebIcon />}</span></Link>
                 }
             })
         }

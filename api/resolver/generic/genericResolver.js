@@ -66,21 +66,20 @@ const GenericResolver = {
 
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
             match,
-            includeCount: false,
+            includeCount: true,
             lang: context.lang, ...otherOptions
         })
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
-       /* if (typeName.indexOf("Product") >= 0) {
-            console.log(JSON.stringify(dataQuery, null, 4))
-        }*/
+        if (typeName.indexOf("Product") >= 0) {
+            //console.log(JSON.stringify(dataQuery, null, 4))
+        }
         //console.log(JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
 
         const results = await collection.aggregate(dataQuery, {allowDiskUse: true}).toArray()
-
         let result
         if (results.length === 0) {
             return {
