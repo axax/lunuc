@@ -9,14 +9,14 @@ import {
 } from 'util/capabilities'
 
 const UtilCms = {
-    getCmsPage: async ({db, context, slug, _version, headers}) => {
+    getCmsPage: async ({db, context, slug, forceCache, _version, headers}) => {
         const userIsLoggedIn = Util.isUserLoggedIn(context)
         const host = getHostFromHeaders(headers)
 
         const cacheKey = 'cmsPage-' + _version + '-' + slug + (host ? '-' + host : '')
 
         let cmsPages
-        if (!userIsLoggedIn) {
+        if (!userIsLoggedIn || forceCache) {
             // get page from cache if user is not loggedin
             cmsPages = Cache.get(cacheKey)
         }

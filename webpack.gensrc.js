@@ -109,7 +109,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
             }
         })
 
-        const manifestStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJson, null, 4)}\nexport default extensions`
+        const manifestStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJson, null, 2)}\nexport default extensions`
 
         fs.writeFile(GENSRC_PATH + "/extensions.js", manifestStr, function (err) {
             if (err) {

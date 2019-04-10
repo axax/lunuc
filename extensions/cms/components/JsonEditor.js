@@ -182,7 +182,7 @@ class JsonEditor extends React.Component {
         const o = getComponentByKey(key, this.state.json)
         if (o) {
             o[prop || 'c'] = value
-            this.props.onChange(JSON.stringify(this.state.json, null, 4))
+            this.props.onChange(JSON.stringify(this.state.json, null, 2))
             this.forceUpdate()
         }
     }
@@ -196,7 +196,7 @@ class JsonEditor extends React.Component {
     handleBlur() {
         const {onChange} = this.props
         if (onChange) {
-            onChange(JSON.stringify(this.state.json, null, 4),true)
+            onChange(JSON.stringify(this.state.json, null, 2),true)
         }
     }
 
@@ -204,7 +204,7 @@ class JsonEditor extends React.Component {
     addComponent(key) {
         const json = addComponent({key, json: this.state.json})
         if (json) {
-            this.props.onChange(JSON.stringify(this.state.json, null, 4), true)
+            this.props.onChange(JSON.stringify(this.state.json, null, 2), true)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
         }
     }
@@ -212,7 +212,7 @@ class JsonEditor extends React.Component {
 
     removeComponent(key) {
         if( removeComponent(key, this.state.json) ){
-            this.props.onChange(JSON.stringify(this.state.json, null, 4), true)
+            this.props.onChange(JSON.stringify(this.state.json, null, 2), true)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
         }
     }

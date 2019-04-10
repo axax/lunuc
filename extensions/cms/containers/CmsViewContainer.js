@@ -55,6 +55,8 @@ const ErrorHandler = (props) => <Async {...props}
 // the graphql query is also need to access and update the cache when data arrive from a supscription
 const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,nosession:$nosession,_version:$_version){cacheKey slug name urlSensitiv template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
+const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){key value createdBy{_id}}}`
+
 
 const isPreview = (location) => {
     const params = new URLSearchParams(location.search)
@@ -67,6 +69,19 @@ const isEditMode = (props) => {
     return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_PAGES) && !isPreview(location) && !dynamic)
 }
 
+const getSlugVersion = (slug) => {
+    const ret = {}
+    if (slug.indexOf('@') === 0) {
+        const pos = slug.indexOf('/')
+        ret.slug = pos >= 0 ? slug.substring(pos + 1) : ''
+        ret._version = pos >= 0 ? slug.substring(1, pos) : slug.substring(1)
+
+    } else {
+        ret.slug = slug
+    }
+
+    return ret
+}
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -86,8 +101,7 @@ class CmsViewContainer extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         if ((nextProps.cmsPage !== prevState.cmsPage && (nextProps.cmsPage && nextProps.cmsPage.status !== 'updating')) || nextProps.keyValue !== prevState.keyValue) {
-            console.log('CmsViewContainer update state')
-
+            //console.log('CmsViewContainer update state')
             return CmsViewContainer.propsToState(nextProps, prevState)
         }
         return null
@@ -132,7 +146,7 @@ class CmsViewContainer extends React.Component {
     shouldComponentUpdate(props, state) {
 
         if (props.cmsPage && (!this.props.cmsPage || (props.cmsPage.subscriptions !== this.props.cmsPage.subscriptions))) {
-            console.log('renew subscriptions')
+            //console.log('renew subscriptions')
             this.removeSubscriptions()
             this.setUpSubsciptions(props)
         }
@@ -150,8 +164,12 @@ class CmsViewContainer extends React.Component {
             props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             props.cmsPage.slug !== this.props.cmsPage.slug ||
-            props.location.search !== this.props.location.search ||
-            props.location.hash !== this.props.location.hash ||
+            (!props.renewing && this.props.renewing) ||
+            (
+                props.cmsPage.urlSensitiv && (
+                props.location.search !== this.props.location.search ||
+                props.location.hash !== this.props.location.hash)
+            ) ||
             props.user !== this.props.user ||
             props.children != this.props.children ||
             props._props !== this.props._props ||
@@ -182,7 +200,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, loading, className, children, user, dynamic, client} = this.props
+        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, loading, className, children, user, dynamic, client, fetchMore} = this.props
         let {template, resources, script, dataResolver, settings} = this.state
         if (!cmsPage) {
             if (!loading) {
@@ -197,11 +215,6 @@ class CmsViewContainer extends React.Component {
             if (!dynamic && cmsPage.name)
                 document.title = cmsPage.name
         }
-
-        if( renewing ){
-            return 'renewing...'
-        }
-
 
         const editMode = isEditMode(this.props)
 
@@ -230,13 +243,24 @@ class CmsViewContainer extends React.Component {
                                  resolvedData={cmsPage.resolvedData}
                                  resources={cmsPage.resources}
                                  editMode={editMode}
-                                 loading={loading}
+                                 renewing={renewing}
                                  inlineEditor={!!settings.inlineEditor}
                                  scope={JSON.stringify(scope)}
                                  history={history}
                                  setKeyValue={this.setKeyValue.bind(this)}
                                  subscriptionCallback={cb => {
                                      this._subscriptionCallback = cb
+                                 }}
+                                 onFetchMore={(type) => {
+                                     console.log(type)
+                                     fetchMore({
+                                         variables: {
+                                             offset: 1
+                                         },
+                                         updateQuery: (prev, {fetchMoreResult}) => {
+                                             console.log(fetchMoreResult)
+                                         }
+                                     })
                                  }}
                                  onChange={this.handleTemplateChange}>{children}</JsonDom>
         let content
@@ -385,7 +409,7 @@ class CmsViewContainer extends React.Component {
                         component={cmsComponentEdit}
                         tab={settings.templateTab}
                         onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
-                        onChange={this.handleTemplateChange.bind(this)} />
+                        onChange={this.handleTemplateChange.bind(this)}/>
 
 
                 </SimpleDialog>
@@ -629,8 +653,8 @@ class CmsViewContainer extends React.Component {
     }
 
     handleTemplateChange = (str, instantSave) => {
-        if( str.constructor !== String){
-            str = JSON.stringify(str, null, 4)
+        if (str.constructor !== String) {
+            str = JSON.stringify(str, null, 2)
         }
 
         this.setState({template: str, templateError: null})
@@ -822,6 +846,7 @@ CmsViewContainer.propTypes = {
     className: PropTypes.string,
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
+    fetchMore: PropTypes.func,
     children: PropTypes.any,
     cmsPageVariables: PropTypes.object,
     cmsPage: PropTypes.object,
@@ -849,21 +874,7 @@ CmsViewContainer.propTypes = {
     _cmsActions: PropTypes.object.isRequired,
 }
 
-const getSlugVersion = (slug) => {
-    const ret = {}
-    if (slug.indexOf('@') === 0) {
-        const pos = slug.indexOf('/')
-        ret.slug = pos >= 0 ? slug.substring(pos + 1) : ''
-        ret._version = pos >= 0 ? slug.substring(1, pos) : slug.substring(1)
 
-    } else {
-        ret.slug = slug
-    }
-
-    return ret
-}
-
-const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){key value createdBy{_id}}}`
 const urlSensitivMap = {}
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
@@ -872,6 +883,8 @@ const CmsViewContainerWithGql = compose(
                 variables = {
                     ...getSlugVersion(slug)
                 }
+
+            // add settings from local storage if user is not logged in
             if (!user.isAuthenticated) {
                 const kv = localStorage.getItem(NO_SESSION_KEY_VALUES_SERVER)
                 if (kv) {
@@ -879,6 +892,7 @@ const CmsViewContainerWithGql = compose(
                 }
             }
 
+            // add query if page is url sensitiv
             if (urlSensitiv || (urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
                 const q = window.location.search.substring(1)
                 if (q)
@@ -889,25 +903,32 @@ const CmsViewContainerWithGql = compose(
                 fetchPolicy: isEditMode(ownProps) ? 'network-only' : 'cache-and-network'
             }
         },
-        props: ({data: {loading, cmsPage, variables}}) => {
+        props: ({data: {loading, cmsPage, variables, fetchMore}}) => {
 
             const result = {
                 cmsPageVariables: variables,
-                loading
+                loading,
+                fetchMore,
+                cmsPage,
+                renewing: false
             }
 
             if (cmsPage) {
-                if( variables.slug !== cmsPage.slug ){
-                    return result
-                }
-                if(variables.query && variables.query !== cmsPage.cacheKey){
-                    // we have another status here
-                    // it is renewing when slug is the same but the query changed
+
+                // renewing is another state
+                // the difference to load is that it is only set to true if it has been loading once before
+                if (variables.slug !== cmsPage.slug) {
                     result.renewing = true
+                } else {
+                    // check if query changed
+                    let query = cmsPage.cacheKey.split('#')[0]
+                    if( !query ) query = undefined
+                    if( query !== variables.query){
+                        result.renewing = true
+                    }
                 }
                 urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv
             }
-            result.cmsPage = cmsPage
             return result
         }
     }),

@@ -177,7 +177,7 @@ class GenericForm extends React.Component {
                 } else if (value) {
                     // detect type
                     try {
-                        json = JSON.stringify(JSON.parse(value), null, 4)
+                        json = JSON.stringify(JSON.parse(value), null, 2)
                         highlight = 'json'
                     } catch (e) {
 

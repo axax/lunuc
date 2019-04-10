@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {Card} from 'ui/admin'
+import styles from './style.css'
 
 class StockTicker extends React.Component {
 

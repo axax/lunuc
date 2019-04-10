@@ -94,7 +94,7 @@ class TemplateEditor extends React.Component {
             const {json, key} = component
             if (key) {
                 const jsonPart = getComponentByKey(key, json)
-                data = JSON.stringify(jsonPart, null, 4)
+                data = JSON.stringify(jsonPart, null, 2)
             }
         }
 
@@ -220,7 +220,7 @@ class TemplateEditor extends React.Component {
         try {
             const j = eval('(' + data + ')');
             if (j.constructor === Array || j.constructor === Object) {
-                const data = JSON.stringify(j, null, 4)+' '
+                const data = JSON.stringify(j, null, 2)+' '
                 this.setState({data})
             }
         } catch (e) {

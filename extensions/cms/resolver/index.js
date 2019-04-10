@@ -29,11 +29,11 @@ export default db => ({
                 _version
             })
         },
-        cmsPage: async ({slug, query, nosession, _version}, {context, headers}) => {
+        cmsPage: async ({slug, query, fetchMore, nosession, _version}, {context, headers}) => {
             // TODO: Not just check if user is logged in but also check what role he has
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
-            let cmsPages = await UtilCms.getCmsPage({db, context, slug, _version, headers})
+            let cmsPages = await UtilCms.getCmsPage({db, context, slug, _version, headers, forceCache: !!fetchMore})
 
             if (!cmsPages.results || cmsPages.results.length === 0) {
                 throw new Error('Cms page doesn\'t exist')
@@ -62,9 +62,12 @@ export default db => ({
             }
             console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
-            const apolloCacheKey = (_version && _version !== 'default' ? _version : '') + (query ? query : '')
+            const apolloCacheKey = (query ? query : '') + '#' + (fetchMore ? fetchMore : '') + '#' + (_version && _version !== 'default' ? _version : '')
 
-            if (userIsLoggedIn) {
+            if (fetchMore) {
+
+
+            } else if (userIsLoggedIn) {
                 // return all data
                 return {
                     _id,

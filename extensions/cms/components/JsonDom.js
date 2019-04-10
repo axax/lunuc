@@ -634,7 +634,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key, loading} = this.props
+        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key, renewing, onFetchMore} = this.props
         if (!template) {
             console.warn('Template is missing.')
             return null
@@ -670,6 +670,7 @@ class JsonDom extends React.Component {
         scope._app_ = _app_
         scope._t = _t
         scope.props = _props
+        scope.renewing = renewing
         if (this.runScript) {
             this.runScript = false
 
@@ -684,7 +685,7 @@ class JsonDom extends React.Component {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
                 let scope = arguments[0].scope
-                const {parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
+                const {fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
                 on('refreshscope',(newScope)=>{
                     scope = newScope
                 })
@@ -703,6 +704,7 @@ class JsonDom extends React.Component {
                         content,
                         data: {jsonDomId: this.instanceId}
                     }),
+                    fetchMore: onFetchMore,
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,
@@ -772,6 +774,7 @@ JsonDom.propTypes = {
     /* Is fired when the json dom changes */
     onChange: PropTypes.func,
     onError: PropTypes.func,
+    onFetchMore: PropTypes.func,
     editMode: PropTypes.bool,
     inlineEditor: PropTypes.bool,
     _parentRef: PropTypes.object,
@@ -783,7 +786,7 @@ JsonDom.propTypes = {
     id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another JsonDom */
     dynamic: PropTypes.bool,
-    loading: PropTypes.bool
+    renewing: PropTypes.bool
 }
 
 export default JsonDom

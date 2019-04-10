@@ -10,8 +10,6 @@ class CurrencyTicker extends React.Component {
     interval = null
     constructor(props) {
         super(props)
-
-        console.log(styles)
     }
 
     componentDidMount() {
