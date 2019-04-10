@@ -19,7 +19,6 @@ import {
 } from '../constants'
 import Async from 'client/components/Async'
 
-
 // admin pack
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorPage')}/>
@@ -435,7 +434,14 @@ class CmsViewContainer extends React.Component {
                 try {
                     const a = JSON.parse(resources)
                     for (let i = 0; i < a.length; i++) {
-                        const r = a[i].replace('${build}', ''), ext = r.substring(r.lastIndexOf('.') + 1)
+                        let r = a[i].replace('${build}', ''), ext = r.substring(r.lastIndexOf('.') + 1)
+
+                        if( r.indexOf('?')>=0 ){
+                            r+='&'
+                        }else{
+                            r+= '?'
+                        }
+                        r+='v='+config.BUILD_NUMBER
                         if (ext.indexOf('css') === 0) {
                             DomUtil.addStyle(r, {
                                 data: {cmsView: true}

@@ -31,7 +31,6 @@ export class OfflineCache extends InMemoryCache {
 
 
     saveToLocalStorage() {
-        return
         if (APOLLO_CACHE) {
             const startTime = new Date()
             const state = this.extract()
