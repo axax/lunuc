@@ -19,6 +19,7 @@ import {
 } from 'ui'
 import {Link} from 'react-router-dom'
 import JsonDomInput from './JsonDomInput'
+import {deepMergeConcatArrays} from 'util/deepMerge'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
@@ -704,7 +705,31 @@ class JsonDom extends React.Component {
                         content,
                         data: {jsonDomId: this.instanceId}
                     }),
-                    fetchMore: onFetchMore,
+                    fetchMore: () => {
+                        let query = ''
+                        if (!scope.params.page) {
+                            scope.params.page = 1
+                        }
+                        scope.params.page = parseInt(scope.params.page) + 1
+
+                        const keys = Object.keys(scope.params)
+                        for (let i = 0; i < keys.length; i++) {
+                            const key = keys[i]
+                            if (query) query += '&'
+                            query += `${key}=${scope.params[key]}`
+                        }
+
+                        onFetchMore(query, (res) => {
+                            if (res.cmsPage && res.cmsPage.resolvedData) {
+                                const newData = JSON.parse(res.cmsPage.resolvedData)
+
+                                this.resolvedDataJson = deepMergeConcatArrays(this.resolvedDataJson, newData)
+console.log(this.resolvedDataJson)
+                                this.forceUpdate()
+                            }
+                        })
+
+                    },
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,

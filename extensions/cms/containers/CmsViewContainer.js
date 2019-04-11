@@ -250,14 +250,13 @@ class CmsViewContainer extends React.Component {
                                  subscriptionCallback={cb => {
                                      this._subscriptionCallback = cb
                                  }}
-                                 onFetchMore={(type) => {
-                                     console.log(type)
+                                 onFetchMore={(query, cb) => {
                                      fetchMore({
                                          variables: {
-                                             offset: 1
+                                             query
                                          },
                                          updateQuery: (prev, {fetchMoreResult}) => {
-                                             console.log(fetchMoreResult)
+                                             cb(fetchMoreResult)
                                          }
                                      })
                                  }}
@@ -436,12 +435,12 @@ class CmsViewContainer extends React.Component {
                     for (let i = 0; i < a.length; i++) {
                         let r = a[i].replace('${build}', ''), ext = r.substring(r.lastIndexOf('.') + 1)
 
-                        if( r.indexOf('?')>=0 ){
-                            r+='&'
-                        }else{
-                            r+= '?'
+                        if (r.indexOf('?') >= 0) {
+                            r += '&'
+                        } else {
+                            r += '?'
                         }
-                        r+='v='+config.BUILD_NUMBER
+                        r += 'v=' + config.BUILD_NUMBER
                         if (ext.indexOf('css') === 0) {
                             DomUtil.addStyle(r, {
                                 data: {cmsView: true}
@@ -928,8 +927,8 @@ const CmsViewContainerWithGql = compose(
                 } else {
                     // check if query changed
                     let query = cmsPage.cacheKey.split('#')[0]
-                    if( !query ) query = undefined
-                    if( query !== variables.query){
+                    if (!query) query = undefined
+                    if (query !== variables.query) {
                         result.renewing = true
                     }
                 }
