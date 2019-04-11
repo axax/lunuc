@@ -706,11 +706,18 @@ class JsonDom extends React.Component {
                         data: {jsonDomId: this.instanceId}
                     }),
                     fetchMore: () => {
+                        if( scope.fetchMore ){
+                            return
+                        }
                         let query = ''
                         if (!scope.params.page) {
                             scope.params.page = 1
                         }
                         scope.params.page = parseInt(scope.params.page) + 1
+
+                        scope.fetchMore = true
+                        this.forceUpdate()
+
 
                         const keys = Object.keys(scope.params)
                         for (let i = 0; i < keys.length; i++) {
@@ -724,7 +731,8 @@ class JsonDom extends React.Component {
                                 const newData = JSON.parse(res.cmsPage.resolvedData)
 
                                 this.resolvedDataJson = deepMergeConcatArrays(this.resolvedDataJson, newData)
-console.log(this.resolvedDataJson)
+                                scope.fetchMore = false
+
                                 this.forceUpdate()
                             }
                         })
