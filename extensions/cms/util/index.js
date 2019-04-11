@@ -7,6 +7,7 @@ import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_KEYVALUES
 } from 'util/capabilities'
+import phantom from 'phantom'
 
 const UtilCms = {
     getCmsPage: async ({db, context, slug, forceCache, _version, headers}) => {
@@ -208,6 +209,23 @@ const UtilCms = {
                         resolvedData._meta.keyValueKey = segment.key || 'keyValues'
                         resolvedData[resolvedData._meta.keyValueKey] = map
 
+                    } else if (segment.phantom) {
+                        const {url} = segment.phantom
+                        const instance = await phantom.create();
+                        const page = await instance.createPage();
+
+                        /*await page.on('onResourceRequested', function(requestData) { console.info('Requesting', requestData.url); });*/
+                        const status = await page.open(url)
+                        //const content = await page.property('content')
+                        const pageTitle = await page.evaluate(function () {
+                            return document.title
+                        })
+                        await instance.exit()
+
+
+
+                        resolvedData._meta.phantom = segment.key || 'phantom'
+                        resolvedData[resolvedData._meta.phantom] = pageTitle
                     } else {
                         console.log('call cmsCustomResolver', segment)
                         Hook.call('cmsCustomResolver', {resolvedData, resolver: segment})

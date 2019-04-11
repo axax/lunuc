@@ -53,7 +53,7 @@ const styles = theme => ({
         position: 'fixed',
         top: '0px',
         bottom: '0px',
-        zIndex: 2
+        zIndex: 1201
     },
     drawerPaper: {
         display: 'block',

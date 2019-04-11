@@ -335,7 +335,11 @@
   .productlist {
     .Card {
       .Card__content {
-        padding: 1rem;
+        padding: 1em;
+
+        .product-image-wrap{
+          min-height: 12em;
+        }
 
         .product-image {
           max-width: 90%;
@@ -347,6 +351,24 @@
           right: 0;
           bottom: 0;
         }
+
+
+        .description {
+          overflow: hidden;
+          position: relative;
+          line-height: 1.2em;
+          max-height: 8em;
+        }
+        .description:after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right:0;
+          height:3em;
+          bottom: 0;
+          background: linear-gradient(to top, white, rgba(255,255,255,0.1));
+        }
+
       }
     }
   }

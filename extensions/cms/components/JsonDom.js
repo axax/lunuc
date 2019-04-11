@@ -456,7 +456,7 @@ class JsonDom extends React.Component {
 
             } else {
                 const key = rootKey + '.' + aIdx
-                let _t
+                let _t, _className
                 if (!t) {
                     _t = 'div'
                 } else if (t === '$children') {
@@ -468,6 +468,12 @@ class JsonDom extends React.Component {
                     _t = t.slice(0, -1) // remove last char
                 } else {
                     _t = t
+                }
+                if(_t.indexOf('.')>=0){
+                    const arr = _t.split('.')
+                    _t = arr[0]
+                    arr.shift()
+                    _className = arr.join(' ')
                 }
 
                 let _p
@@ -515,6 +521,9 @@ class JsonDom extends React.Component {
                     key,
                     _key: key,
                     _editmode: this.props.editMode.toString(), ...cmsProps, ..._p
+                }
+                if( _className ){
+                    eleProps.className = _className
                 }
                 if (this.props.editMode && this.props.inlineEditor) {
                     const rawJson = this.getJsonRaw(this.props)
@@ -647,7 +656,6 @@ class JsonDom extends React.Component {
             return <strong>There is something wrong with one of the components defined in the json content. See
                 console.log in the browser for more detail.</strong>
         }
-
         const startTime = (new Date()).getTime()
 
         const scope = this.getScope(this.props)
