@@ -156,7 +156,7 @@ class CmsViewContainer extends React.Component {
             this.addResources(props, state)
         }
 
-        if( !props.cmsPage && props.loading){
+        if( !props.cmsPage && props.loading && this.props.loading){
             // if there is still no cmsPage and it is still loading
             // there is no need to update
             return false
@@ -209,7 +209,6 @@ class CmsViewContainer extends React.Component {
         let {template, resources, script, dataResolver, settings} = this.state
 
         const editMode = isEditMode(this.props)
-
 
         if (!cmsPage) {
             if (!loading) {
@@ -928,15 +927,18 @@ const CmsViewContainerWithGql = compose(
             }
 
             if (cmsPage) {
-                // renewing is another state
-                // the difference to load is that it is only set to true if it has been loading once before
                 if (variables.slug !== cmsPage.slug) {
-                    result.renewing = true
+                    // if the cmsPage is set to null here the page is immediately removed from the screen when the slug change
+                    // otherwise the page keeps showing until the new page has been loaded
+                    result.cmsPage = null
+                    //result.renewing = true
                 } else {
                     // check if query changed
                     let query = cmsPage.cacheKey.split('#')[0]
                     if (!query) query = undefined
                     if (query !== variables.query) {
+                        // renewing is another state
+                        // the difference to loading is that it is set to true if the page has already been loading before
                         result.renewing = true
                     }
                 }

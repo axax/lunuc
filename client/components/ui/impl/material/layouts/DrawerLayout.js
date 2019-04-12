@@ -89,7 +89,7 @@ const styles = theme => ({
     },
     drawerDivider: {
         position: 'absolute',
-        width: '3px',
+        width: '4px',
         background: 'black',
         right: 0,
         top: 0,
@@ -185,7 +185,6 @@ class DrawerLayout extends React.Component {
     render() {
         const {classes, theme, title, sidebar, toolbarRight, children, fixedLayout} = this.props
         const {open, drawerWidth} = this.state
-
 
         const contentFixed = {}
         if (fixedLayout && open) {
