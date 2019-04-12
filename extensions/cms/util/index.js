@@ -212,29 +212,84 @@ const UtilCms = {
                     } else if (segment.phantom) {
 
                         const {url, pipeline} = segment.phantom
-                        const instance = await phantom.create();
+                        const instance = await phantom.create(['--ignore-ssl-errors=yes', '--load-images=no'], {
+                            logLevel: 'error', viewportSize: {width: 1600, height: 900},
+                            settings: {
+                                userAgent: 'Mozilla/5.0 (X11; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0',
+                                javascriptEnabled: 'true',
+                                loadImages: 'false'
+                            }
+                        })
                         const page = await instance.createPage();
+
+
+
+                        await page.on('onResourceRequested', function (requestData) {
+                            //console.info('Requesting', requestData.url)
+                        })
+                        await page.on('onLoadStarted', function () {
+                            //console.info('started')
+                        })
+                        await page.on('onLoadFinished', function () {
+                            //console.info('finshed')
+                        })
+                        await page.on('onNavigationRequested', function (targetUrl) {
+                            console.info('onNavigationRequested', targetUrl)
+                        })
+
+                        await page.on('onError', function (msg, trace) {
+                            console.error(msg, trace)
+                        })
+
 
                         /*await page.on('onResourceRequested', function(requestData) { console.info('Requesting', requestData.url); });*/
                         const status = await page.open(url)
-
                         let data
                         if (pipeline) {
+
+                            const evalFunc = (evalData) => {
+                                let evalStr
+                                if (evalData.constructor === Array) {
+                                    evalStr = evalData.join('\n')
+                                } else {
+                                    evalStr = evalData
+                                }
+                                return page.evaluate(function (evalStr) {
+                                    const tpl = new Function(evalStr)
+                                    return tpl.call({})
+                                }, evalStr)
+
+                            }
+
                             for (const pipe of pipeline) {
+                                if (pipe.waitFor) {
+                                    let startTime = new Date()
+                                    const timeout = pipe.waitFor.timeout || 10000
+                                    while (timeout > (new Date() - startTime)) {
+
+                                        /*  const tmpData = await evalFunc(pipe.waitFor.eval)
+                                         console.log(tmpData)
+                                         if( tmpData ){
+                                         break
+                                         }*/
+
+                                        await Util.sleep(50)
+                                    }
+
+                                }
+
                                 if (pipe.eval) {
-                                    const tmpData = await page.evaluate(function (evalStr) {
-                                        const tpl = new Function(evalStr)
-                                        return tpl.call({})
-                                    }, pipe.eval)
-                                    if( tmpData ){
+                                    const tmpData = await evalFunc(pipe.eval)
+                                    if (tmpData) {
                                         data = {...data, ...tmpData}
                                     }
                                 }
                             }
                         }
 
-                        resolvedData._meta.phantom = segment.key || 'phantom'
-                        resolvedData[resolvedData._meta.phantom] = data
+                        resolvedData[segment.key || 'phantom'] = {eval: data, debug: 'debug infos'}
+
+                        console.log(resolvedData)
                         //const content = await page.property('content')
 
 

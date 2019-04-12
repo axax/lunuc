@@ -43,7 +43,7 @@ export default () => {
             private: true,
             exact: true,
             path: ADMIN_BASE_URL + '/cms/:page*',
-            component: (p) => <TypesContainer baseUrl={ADMIN_BASE_URL + "/cms/"} fixType="CmsPage" {...p} />
+            component: (p) => <TypesContainer baseUrl={ADMIN_BASE_URL + "/cms/"} fixType="CmsPage" title="Content Management" {...p} />
         })
         routes.push({
             // match everything but paths that start with ADMIN_BASE_URL

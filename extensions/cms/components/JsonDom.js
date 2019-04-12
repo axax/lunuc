@@ -430,7 +430,11 @@ class JsonDom extends React.Component {
                         if (loopChild.constructor !== Object) {
                             loopChild = {data: loopChild}
                         }
-                        const tpl = new Function('const {' + Object.keys(loopChild).join(',') + '} = this.' + s + ';const Util = this.Util;return `' + cStr + '`;')
+                        const tpl = new Function(`  const {${Object.keys(loopChild).join(',')}} = this.${s}
+                                                    const Util = this.Util
+                                                    const _i = Util.tryCatch
+                                                    const _t = this._t
+                                                    return \`${cStr}\``)
                         // back to json
                         loopChild._index = childIdx
                         // remove tabs and parse
@@ -438,8 +442,6 @@ class JsonDom extends React.Component {
                             [s]: loopChild,
                             scope: this.scope,
                             Util: Util,
-                            escape: Util.escapeForJson,
-                            tryCatch: Util.tryCatch,
                             _t
                         }).replace(/\t/g, '\\t'))
 
@@ -456,51 +458,51 @@ class JsonDom extends React.Component {
 
             } else {
                 const key = rootKey + '.' + aIdx
-                let _t, _className
+                let tagName, className
                 if (!t) {
-                    _t = 'div'
+                    tagName = 'div'
                 } else if (t === '$children') {
                     if (this.props.children) {
                         h.push(this.props.children)
                     }
                     return
                 } else if (!this.props.editMode && t.slice(-1) === '$') {
-                    _t = t.slice(0, -1) // remove last char
+                    tagName = t.slice(0, -1) // remove last char
                 } else {
-                    _t = t
+                    tagName = t
                 }
-                if(_t.indexOf('.')>=0){
-                    const arr = _t.split('.')
-                    _t = arr[0]
+                if(tagName.indexOf('.')>=0){
+                    const arr = tagName.split('.')
+                    tagName = arr[0]
                     arr.shift()
-                    _className = arr.join(' ')
+                    className = arr.join(' ')
                 }
 
-                let _p
+                let properties
                 if (p) {
-                    _p = Object.assign({}, p)
+                    properties = Object.assign({}, p)
                     // replace events with real functions and pass payload
                     TEMPLATE_EVENTS.forEach((e) => {
-                        if (_p['on' + e] && _p['on' + e].constructor === Object) {
-                            const payload = _p['on' + e]
-                            _p['on' + e] = (eo) => {
+                        if (properties['on' + e] && properties['on' + e].constructor === Object) {
+                            const payload = properties['on' + e]
+                            properties['on' + e] = (eo) => {
                                 const eLower = e.toLowerCase()
                                 this.runJsEvent(eLower, false, payload, eo)
                             }
                         }
                     })
-                    if (_p.name) {
+                    if (properties.name) {
                         // handle controlled input here
-                        if (_p.value === undefined) {
-                            _p.value = ''
+                        if (properties.value === undefined) {
+                            properties.value = ''
                         }
-                        if (!this.state.bindings[_p.name]) {
-                            this.state.bindings[_p.name] = _p.value
+                        if (!this.state.bindings[properties.name]) {
+                            this.state.bindings[properties.name] = properties.value
                             this.scope.bindings = this.state.bindings
                         }
-                        _p.onChange = this.handleBindingChange.bind(this, _p.onChange)
+                        properties.onChange = this.handleBindingChange.bind(this, properties.onChange)
 
-                    } else if (_p.value) {
+                    } else if (properties.value) {
                         console.warn('Don\'t use property value without name')
                     }
                 }
@@ -511,7 +513,7 @@ class JsonDom extends React.Component {
                 if (t === 'Cms') {
                     cmsProps = {location: this.props.history.location}
                 }
-                let eleType = JsonDom.components[_t] || this.extendedComponents[_t] || _t
+                let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
                 if (eleType.constructor === Object) {
                     eleType = eleType.component
                 }
@@ -520,10 +522,10 @@ class JsonDom extends React.Component {
                     id: key,
                     key,
                     _key: key,
-                    _editmode: this.props.editMode.toString(), ...cmsProps, ..._p
+                    _editmode: this.props.editMode.toString(), ...cmsProps, ...properties
                 }
-                if( _className ){
-                    eleProps.className = _className
+                if( className ){
+                    eleProps.className = className
                 }
                 if (this.props.editMode && this.props.inlineEditor) {
                     const rawJson = this.getJsonRaw(this.props)
@@ -604,14 +606,18 @@ class JsonDom extends React.Component {
             str = str.replace(/\\/g, '\\\\')
         }
         try {
-            const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;const _i = this.tryCatch;return `' + str + '`;')
-            //.replace(/(\r\n|\n|\r)/g,"");
+            const tpl = new Function(`const {${Object.keys(data).join(',')}} = this.data
+            const Util = this.Util
+            const _i = Util.tryCatch.bind(this.data)
+            const _t = this._t;return \`${str}\``)
+
             return tpl.call({
                 data,
                 parent: this.props._parentRef,
-                escape: Util.escapeForJson,
-                tryCatch: Util.tryCatch.bind(data)
+                Util,
+                _t
             }).replace(/\t/g, '\\t')
+
         } catch (e) {
             //this.emitJsonError(e)
             console.error('Error in renderString', e)
@@ -677,7 +683,6 @@ class JsonDom extends React.Component {
         }
         scope.data = this.resolvedDataJson
         scope._app_ = _app_
-        scope._t = _t
         scope.props = _props
         scope.renewing = renewing
         if (this.runScript) {
@@ -694,7 +699,7 @@ class JsonDom extends React.Component {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
                 let scope = arguments[0].scope
-                const {fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
+                const {fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, escape, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
                 on('refreshscope',(newScope)=>{
                     scope = newScope
                 })

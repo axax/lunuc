@@ -244,6 +244,9 @@ const Util = {
             a[key] = os[key]()
             return a
         }, {})
+    },
+    sleep: (time) => {
+        return new Promise((resolve) => setTimeout(resolve, time))
     }
 }
 

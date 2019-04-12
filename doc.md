@@ -127,11 +127,17 @@ Here are some useful helper methods that can be used with in the template
 ```    
 
 
-**this.tryCatch** to eval a string and return result. errors are ignored and in case of an error an empty string is returned
+**Util.tryCatch** to eval a string and return result. errors are ignored and in case of an error an empty string is returned
 
 ```json
-"c": "Category ${this.tryCatch('this.filter.parts.categories[0]')}"   
-```    
+"c": "Category ${Util.tryCatch('this.filter.parts.categories[0]')}"   
+```
+
+or use the short form
+```json
+"c": "Category ${_i('this.filter.parts.categories[0]')}"   
+```
+    
 **define a click event in template**
 ```json
 {

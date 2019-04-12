@@ -531,7 +531,7 @@ class TypesContainer extends React.Component {
         const {description} = this.types[type]
         const content = [
             title === false ? '' :
-                <Typography key="typeTitle" variant="h3" gutterBottom>{fixType ? fixType : 'Types'}</Typography>,
+                <Typography key="typeTitle" variant="h3" gutterBottom>{title || (fixType ? fixType : 'Types')}</Typography>,
             description ?
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : '',
             <Row spacing={16} key="typeHeader">
