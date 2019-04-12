@@ -62,7 +62,6 @@ export default db => ({
             console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
             const apolloCacheKey = (query ? query + '#' : '') + (_version && _version !== 'default' ? _version : '')
-
             if (userIsLoggedIn) {
                 // return all data
                 return {

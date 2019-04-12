@@ -110,7 +110,6 @@ const UtilCms = {
                         } else {
                             match = {}
                         }
-
                         debugInfo += ' type=' + type
                         const result = await GenericResolver.entities(db, context, type, d, {
                             filter: f,

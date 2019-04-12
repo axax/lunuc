@@ -32,7 +32,6 @@ const Util = {
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str) {
         let data
-        console.log(this)
         if( this && this.data )
             data = this.data
         try {

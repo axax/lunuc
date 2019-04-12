@@ -652,7 +652,7 @@ class JsonDom extends React.Component {
     render() {
         const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key, renewing, onFetchMore} = this.props
         if (!template) {
-            console.warn('Template is missing.')
+            console.warn('Template is missing.', this.props)
             return null
         }
 
@@ -685,6 +685,7 @@ class JsonDom extends React.Component {
         scope._app_ = _app_
         scope.props = _props
         scope.renewing = renewing
+        scope.fetchMore = false
         if (this.runScript) {
             this.runScript = false
 

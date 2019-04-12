@@ -160,10 +160,10 @@ class CmsViewContainer extends React.Component {
             return false
         }
 
-
         // only update if cms page was modified
         return !props.cmsPage ||
             !this.props.cmsPage ||
+            props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsComponentEdit !== this.props.cmsComponentEdit ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             props.cmsPage.slug !== this.props.cmsPage.slug ||
@@ -212,14 +212,13 @@ class CmsViewContainer extends React.Component {
                 return <ErrorPage />
             }
             // show a loader here
-            return 'loading...'
+            return null
         } else {
             // set page title
             // TODO: make tile localized
             if (!dynamic && cmsPage.name)
                 document.title = cmsPage.name
         }
-
         const editMode = isEditMode(this.props)
 
         if (cmsPage.ssr && !editMode) {
@@ -924,7 +923,6 @@ const CmsViewContainerWithGql = compose(
             }
 
             if (cmsPage) {
-
                 // renewing is another state
                 // the difference to load is that it is only set to true if it has been loading once before
                 if (variables.slug !== cmsPage.slug) {
