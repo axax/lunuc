@@ -289,10 +289,6 @@ const UtilCms = {
 
                         resolvedData[segment.key || 'phantom'] = {eval: data, debug: 'debug infos'}
 
-                        console.log(resolvedData)
-                        //const content = await page.property('content')
-
-
                         await instance.exit()
 
 

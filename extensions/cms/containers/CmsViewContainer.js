@@ -50,6 +50,8 @@ const UIProvider = (props) => <Async {...props} expose="UIProvider"
                                      load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const ErrorHandler = (props) => <Async {...props}
                                        load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorHandler')}/>
+const NetworkStatusHandler = (props) => <Async {...props}
+                                       load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/NetworkStatusHandler')}/>
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
 const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,nosession:$nosession,_version:$_version){cacheKey slug name urlSensitiv template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
@@ -206,20 +208,22 @@ class CmsViewContainer extends React.Component {
         const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, loading, className, children, user, dynamic, client, fetchMore} = this.props
         let {template, resources, script, dataResolver, settings} = this.state
 
+        const editMode = isEditMode(this.props)
+
+
         if (!cmsPage) {
             if (!loading) {
                 console.warn('cmsPage missing')
                 return <ErrorPage />
             }
             // show a loader here
-            return null
+            return editMode ? <NetworkStatusHandler /> : null
         } else {
             // set page title
             // TODO: make tile localized
             if (!dynamic && cmsPage.name)
                 document.title = cmsPage.name
         }
-        const editMode = isEditMode(this.props)
 
         if (cmsPage.ssr && !editMode) {
             // it was already rendered on the server side
@@ -398,6 +402,7 @@ class CmsViewContainer extends React.Component {
                                                 title={`Edit Page "${cmsPage.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
                 {jsonDom}
                 <ErrorHandler />
+                <NetworkStatusHandler />
 
                 <SimpleDialog open={!!cmsComponentEdit.key} onClose={this.handleComponentEditClose.bind(this)}
                               actions={[{
