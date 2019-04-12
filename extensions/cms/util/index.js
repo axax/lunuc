@@ -223,7 +223,6 @@ const UtilCms = {
                         const page = await instance.createPage();
 
 
-
                         await page.on('onResourceRequested', function (requestData) {
                             //console.info('Requesting', requestData.url)
                         })
@@ -244,7 +243,7 @@ const UtilCms = {
 
                         /*await page.on('onResourceRequested', function(requestData) { console.info('Requesting', requestData.url); });*/
                         const status = await page.open(url)
-                        let data
+                        let data = {}
                         if (pipeline) {
 
                             const evalFunc = (evalData) => {
@@ -263,17 +262,19 @@ const UtilCms = {
 
                             for (const pipe of pipeline) {
                                 if (pipe.waitFor) {
-                                    let startTime = new Date()
+                                    const startTime = new Date()
                                     const timeout = pipe.waitFor.timeout || 10000
+                                    let isValid = false
                                     while (timeout > (new Date() - startTime)) {
-
-                                        /*  const tmpData = await evalFunc(pipe.waitFor.eval)
-                                         console.log(tmpData)
-                                         if( tmpData ){
-                                         break
-                                         }*/
-
+                                        const tmpData = await evalFunc(pipe.waitFor.eval)
+                                        if (tmpData) {
+                                            isValid = true
+                                            break
+                                        }
                                         await Util.sleep(50)
+                                    }
+                                    if( !isValid){
+                                        break
                                     }
 
                                 }

@@ -154,6 +154,13 @@ class CmsViewContainer extends React.Component {
             this.addResources(props, state)
         }
 
+        if( !props.cmsPage && props.loading){
+            // if there is still no cmsPage and it is still loading
+            // there is no need to update
+            return false
+        }
+
+
         // only update if cms page was modified
         return !props.cmsPage ||
             !this.props.cmsPage ||
@@ -198,13 +205,14 @@ class CmsViewContainer extends React.Component {
     render() {
         const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, loading, className, children, user, dynamic, client, fetchMore} = this.props
         let {template, resources, script, dataResolver, settings} = this.state
+
         if (!cmsPage) {
             if (!loading) {
                 console.warn('cmsPage missing')
                 return <ErrorPage />
             }
             // show a loader here
-            return null
+            return 'loading...'
         } else {
             // set page title
             // TODO: make tile localized
