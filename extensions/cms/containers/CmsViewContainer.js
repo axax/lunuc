@@ -100,7 +100,6 @@ class CmsViewContainer extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         if ((nextProps.cmsPage !== prevState.cmsPage && (nextProps.cmsPage && nextProps.cmsPage.status !== 'updating')) || nextProps.keyValue !== prevState.keyValue) {
-            //console.log('CmsViewContainer update state')
             return CmsViewContainer.propsToState(nextProps, prevState)
         }
         return null
@@ -158,9 +157,7 @@ class CmsViewContainer extends React.Component {
         // only update if cms page was modified
         return !props.cmsPage ||
             !this.props.cmsPage ||
-            /*props.cmsPages !== this.props.cmsPages ||*/
             props.cmsComponentEdit !== this.props.cmsComponentEdit ||
-            props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             props.cmsPage.slug !== this.props.cmsPage.slug ||
             (!props.renewing && this.props.renewing) ||

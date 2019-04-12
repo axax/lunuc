@@ -34,13 +34,13 @@ const UtilCms = {
             if (!userIsLoggedIn) {
                 // if no user only match public entries
                 if (hostRule) {
-                    match = {$and: [{$or: [{hostRule},{slug}]}, {public: true}]}
+                    match = {$and: [{$or: [{hostRule}, {slug}]}, {public: true}]}
                 } else {
                     match = {$and: [{slug}, {public: true}]}
                 }
             } else {
                 if (hostRule) {
-                    match = {$or: [{hostRule},{slug}]}
+                    match = {$or: [{hostRule}, {slug}]}
                 } else {
                     match = {slug}
                 }
@@ -210,22 +210,37 @@ const UtilCms = {
                         resolvedData[resolvedData._meta.keyValueKey] = map
 
                     } else if (segment.phantom) {
-                        const {url} = segment.phantom
+
+                        const {url, pipeline} = segment.phantom
                         const instance = await phantom.create();
                         const page = await instance.createPage();
 
                         /*await page.on('onResourceRequested', function(requestData) { console.info('Requesting', requestData.url); });*/
                         const status = await page.open(url)
+
+                        let data
+                        if (pipeline) {
+                            for (const pipe of pipeline) {
+                                if (pipe.eval) {
+                                    const tmpData = await page.evaluate(function (evalStr) {
+                                        const tpl = new Function(evalStr)
+                                        return tpl.call({})
+                                    }, pipe.eval)
+                                    if( tmpData ){
+                                        data = {...data, ...tmpData}
+                                    }
+                                }
+                            }
+                        }
+
+                        resolvedData._meta.phantom = segment.key || 'phantom'
+                        resolvedData[resolvedData._meta.phantom] = data
                         //const content = await page.property('content')
-                        const pageTitle = await page.evaluate(function () {
-                            return document.title
-                        })
+
+
                         await instance.exit()
 
 
-
-                        resolvedData._meta.phantom = segment.key || 'phantom'
-                        resolvedData[resolvedData._meta.phantom] = pageTitle
                     } else {
                         console.log('call cmsCustomResolver', segment)
                         Hook.call('cmsCustomResolver', {resolvedData, resolver: segment})

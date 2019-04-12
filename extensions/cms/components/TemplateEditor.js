@@ -181,6 +181,7 @@ class TemplateEditor extends React.Component {
     handleChange(str, instantSave) {
         const {onChange, component} = this.props
 
+        this.setState({data:str})
 
         let data, type = 'json'
         if (!component) {
@@ -213,15 +214,15 @@ class TemplateEditor extends React.Component {
     }
 
     prettify() {
-        const {onChange} = this.props
         const {data} = this.state
+
         if (data.trim() === '') return
 
         try {
             const j = eval('(' + data + ')');
             if (j.constructor === Array || j.constructor === Object) {
-                const data = JSON.stringify(j, null, 2)+' '
-                this.setState({data})
+                const prettyData = JSON.stringify(j, null, 2)+' '
+                this.setState({data:prettyData})
             }
         } catch (e) {
             console.error(e)

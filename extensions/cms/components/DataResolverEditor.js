@@ -24,6 +24,9 @@ class DataResolverEditor extends React.Component {
         try {
             const j = eval('(' + children + ')');
             if (j.constructor === Array) {
+
+                this.setState({data:prettyData})
+
                 onChange(JSON.stringify(j, null, 2))
             }
         } catch (e) {

@@ -3,8 +3,9 @@ import Hook from 'util/hook'
 import './style.global.less'
 import Async from 'client/components/Async'
 
-const Login = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../client/containers/LoginContainer')} />
-const System = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ './containers/System')} />
+const Login = (props) => <Async {...props}
+                                load={import(/* webpackChunkName: "admin" */ '../../client/containers/LoginContainer')}/>
+const System = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ './containers/System')}/>
 
 
 export default () => {
@@ -26,7 +27,7 @@ export default () => {
         components['Login'] = Login
     })
     Hook.on('ExtensionSystemInfo', ({extension}) => {
-        if( extension.name === 'Shop') {
+        if (extension.name === 'Shop') {
             extension.systemContent = <System />
         }
     })
