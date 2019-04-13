@@ -110,7 +110,7 @@ const config = {
             },
             {
                 test: /^(?:(?!\.global).)*\.css$/,
-                use: [{loader: 'style-loader', options: {attrs: {['data-style-loader']: true}}}, 'css-loader']
+                use: ['style-loader', 'css-loader']
             },
             {
                 test: /\.global\.less$/,
@@ -123,10 +123,7 @@ const config = {
             },
             {
                 test: /^(?:(?!\.global).)*\.less$/,
-                use: [{
-                    loader: 'style-loader',
-                    options: {attrs: {['data-style-loader']: true}}
-                }, 'css-loader', 'less-loader']
+                use: ['style-loader', 'css-loader', 'less-loader']
             }
         ]
     },

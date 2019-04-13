@@ -721,7 +721,7 @@ class JsonDom extends React.Component {
                         content,
                         data: {jsonDomId: this.instanceId}
                     }),
-                    fetchMore: () => {
+                    fetchMore: (callback) => {
                         if( scope.fetchMore ){
                             return
                         }
@@ -750,6 +750,9 @@ class JsonDom extends React.Component {
                                 scope.fetchMore = false
 
                                 this.forceUpdate()
+                            }
+                            if( callback && callback.constructor === Function ){
+                                callback()
                             }
                         })
 
