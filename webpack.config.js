@@ -110,7 +110,7 @@ const config = {
             },
             {
                 test: /^(?:(?!\.global).)*\.css$/,
-                use: ['style-loader', 'css-loader']
+                use: [{loader: 'style-loader', options: {attrs: {['data-style-loader']: true}}}, 'css-loader']
             },
             {
                 test: /\.global\.less$/,
@@ -123,7 +123,10 @@ const config = {
             },
             {
                 test: /^(?:(?!\.global).)*\.less$/,
-                use: ['style-loader', 'css-loader', 'less-loader']
+                use: [{
+                    loader: 'style-loader',
+                    options: {attrs: {['data-style-loader']: true}}
+                }, 'css-loader', 'less-loader']
             }
         ]
     },
@@ -140,22 +143,22 @@ const config = {
     ],
     optimization: {
         /*splitChunks: {
-            cacheGroups: {
-                style: {
-                    name: 'style',
-                    test: (c) => {
-                        if (c.type === 'css/mini-extract') {
-                            const path = c._identifier
-                            //console.log(path.substring(path.lastIndexOf('/')+1))
-                            return true
-                        }
-                        return false
-                    },
-                    chunks: 'all',
-                    enforce: true
-                }
-            }
-        },*/
+         cacheGroups: {
+         style: {
+         name: 'style',
+         test: (c) => {
+         if (c.type === 'css/mini-extract') {
+         const path = c._identifier
+         //console.log(path.substring(path.lastIndexOf('/')+1))
+         return true
+         }
+         return false
+         },
+         chunks: 'all',
+         enforce: true
+         }
+         }
+         },*/
         minimizer: []
     }/*optimization: {
      // We no not want to minimize our code.

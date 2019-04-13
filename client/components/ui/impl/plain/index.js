@@ -40,7 +40,6 @@ export const UIProvider = ({children}) => {
 export const withStyles = injectSheet
 
 export const Button = injectSheet(styles)(({classes, ...rest}) => {
-    console.log(rest)
     return <button className={classes.button} {...rest} />
 })
 

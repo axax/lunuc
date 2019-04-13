@@ -23,16 +23,6 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(genSchema)
 })
 
-// Hook to create mongodb index
-Hook.on('index', ({db}) => {
-
-    console.log('Creating indexes for cms...')
-
-    // field slug hast to be unique
-    const cmsPageCollection = db.collection('CmsPage')
-    cmsPageCollection.createIndex({slug: 1}, {unique: true})
-})
-
 // Hook to add or modify user roles
 Hook.on('createUserRoles', ({userRoles}) => {
     userRoles.forEach(userRole => {

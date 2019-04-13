@@ -9,23 +9,28 @@
       "fields": [
         {
           "name": "name",
-          "label": "Name"
+          "label": "Name",
+          "index": 1
         },
         {
           "name": "slug",
           "label": "Slug",
           "required": false,
-          "clone": "${slug}_copy"
+          "clone": "${slug}_copy",
+          "index": 1,
+          "unique": true
         },
         {
           "name": "hostRule",
           "label": "Host rule",
-          "required": false
+          "required": false,
+          "index": 1
         },
         {
           "name": "public",
           "label": "Public",
-          "type": "Boolean"
+          "type": "Boolean",
+          "index": 1
         },
         {
           "name": "urlSensitiv",

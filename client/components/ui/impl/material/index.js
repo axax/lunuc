@@ -12,6 +12,8 @@ import blue from '@material-ui/core/colors/blue';
 // material theme
 import {MuiThemeProvider, createMuiTheme} from '@material-ui/core/styles'
 import defaultSpacing from '@material-ui/core/styles/spacing'
+import CssBaseline from '@material-ui/core/CssBaseline';
+
 
 // override the default theme
 export const theme = createMuiTheme({
@@ -73,6 +75,7 @@ const generateClassName = createGenerateClassName({
 // Theme provider
 export const UIProvider = ({children, ...rest}) => {
     return <JssProvider generateClassName={generateClassName}>
+        <CssBaseline />
         <MuiThemeProvider disableStylesGeneration={false} theme={theme} {...rest}>{children}</MuiThemeProvider>
     </JssProvider>
 }

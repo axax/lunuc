@@ -52,13 +52,19 @@ const UtilCms = {
             })
 
             // minify template if no user is logged in
-            if (!userIsLoggedIn && cmsPages.results && cmsPages.results.length) {
+            if (cmsPages.results && cmsPages.results.length) {
 
-                // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
-                //console.log(cmsPages.results[0].template)
-                try {
-                    cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
-                } catch (e) {
+                if ( cmsPages.results.length > 1){
+                    console.warn("There are more than one page that match. Please check the slug and host rules")
+                }
+
+                if( !userIsLoggedIn ) {
+                    // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
+                    //console.log(cmsPages.results[0].template)
+                    try {
+                        cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
+                    } catch (e) {
+                    }
                 }
             }
             Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
