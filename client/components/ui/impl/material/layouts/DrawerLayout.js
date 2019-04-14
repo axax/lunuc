@@ -15,6 +15,17 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight'
 const DRAWER_WIDTH_DEFAULT = 400
 
 const styles = theme => ({
+    /*'@global': {
+        html: {
+            height: '100%'
+        },
+        body: {
+            height: '100%'
+        },
+        '#app':{
+            height: '100%'
+        }
+    },*/
     root: {
         width: '100%',
         height: '100%',
@@ -182,6 +193,19 @@ class DrawerLayout extends React.Component {
         this.mouseDividerPos = false
     }
 
+    // When the popover is open and users click anywhere on the page,
+    // the popover should close
+    componentDidMount() {
+        document.addEventListener('mousemove', this.dividerMouseMove)
+        document.addEventListener('mouseup', this.dividerMouseUp)
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener('mousemove', this.dividerMouseMove)
+        document.removeEventListener('mouseup', this.dividerMouseUp)
+    }
+
+
     render() {
         const {classes, theme, title, sidebar, toolbarRight, children, fixedLayout} = this.props
         const {open, drawerWidth} = this.state
@@ -191,9 +215,7 @@ class DrawerLayout extends React.Component {
             contentFixed.marginLeft = drawerWidth + 'px'
         }
         return (
-            <div className={classes.root}
-                 onMouseMove={this.dividerMouseMove}
-                 onMouseUp={this.dividerMouseUp}>
+            <div className={classes.root}>
                 <div className={classes.appFrame}>
                     <AppBar
                         className={classNames(classes.appBar, fixedLayout && classes.appBarFixed)}

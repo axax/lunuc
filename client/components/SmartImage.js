@@ -11,13 +11,20 @@ class SmartImage extends React.Component {
     }
 
     componentDidMount() {
+        this._ismounted = true
         this.checkVisibility()
     }
 
+    componentWillUnmount() {
+        this._ismounted = false;
+    }
+
     componentDidUpdate() {
-        const el = ReactDOM.findDOMNode(this)
-        if (!this.state.loaded && el.tagName === 'IMG' && el.complete) {
-            this.setState({loaded: true})
+        if (this._ismounted) {
+            const el = ReactDOM.findDOMNode(this)
+            if (!this.state.loaded && el.tagName === 'IMG' && el.complete) {
+                this.setState({loaded: true})
+            }
         }
     }
 
@@ -49,19 +56,21 @@ class SmartImage extends React.Component {
     }
 
     checkVisibility() {
-        const rect = ReactDOM.findDOMNode(this).getBoundingClientRect()
+        if (this._ismounted) {
+            const rect = ReactDOM.findDOMNode(this).getBoundingClientRect()
 
-        const isVisible = rect.bottom > 0 &&
-            rect.right > 0 &&
-            rect.left < (window.innerWidth || document.documentElement.clientWidth) &&
-            rect.top < (window.innerHeight || document.documentElement.clientHeight)
+            const isVisible = rect.bottom > 0 &&
+                rect.right > 0 &&
+                rect.left < (window.innerWidth || document.documentElement.clientWidth) &&
+                rect.top < (window.innerHeight || document.documentElement.clientHeight)
 
 
-        if (isVisible) {
-            this.setState({isVisible})
-        } else {
-            // check again
-            setTimeout(this.checkVisibility.bind(this), 100)
+            if (isVisible) {
+                this.setState({isVisible})
+            } else {
+                // check again
+                setTimeout(this.checkVisibility.bind(this), 100)
+            }
         }
     }
 

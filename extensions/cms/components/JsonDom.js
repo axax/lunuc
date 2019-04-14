@@ -473,7 +473,7 @@ class JsonDom extends React.Component {
                 } else {
                     tagName = t
                 }
-                if(tagName.indexOf('.')>=0){
+                if (tagName.indexOf('.') >= 0) {
                     const arr = tagName.split('.')
                     tagName = arr[0]
                     arr.shift()
@@ -526,7 +526,7 @@ class JsonDom extends React.Component {
                     _key: key,
                     _editmode: this.props.editMode.toString(), ...cmsProps, ...properties
                 }
-                if( className ){
+                if (className) {
                     eleProps.className = className
                 }
                 if (this.props.editMode && this.props.inlineEditor) {
@@ -722,7 +722,7 @@ class JsonDom extends React.Component {
                         data: {jsonDomId: this.instanceId}
                     }),
                     fetchMore: (callback) => {
-                        if( scope.fetchMore ){
+                        if (scope.fetchMore) {
                             return
                         }
                         let query = ''
@@ -751,7 +751,7 @@ class JsonDom extends React.Component {
 
                                 this.forceUpdate()
                             }
-                            if( callback && callback.constructor === Function ){
+                            if (callback && callback.constructor === Function) {
                                 callback()
                             }
                         })

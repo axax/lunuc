@@ -54,11 +54,11 @@ const UtilCms = {
             // minify template if no user is logged in
             if (cmsPages.results && cmsPages.results.length) {
 
-                if ( cmsPages.results.length > 1){
+                if (cmsPages.results.length > 1) {
                     console.warn("There are more than one page that match. Please check the slug and host rules")
                 }
 
-                if( !userIsLoggedIn ) {
+                if (!userIsLoggedIn) {
                     // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
                     //console.log(cmsPages.results[0].template)
                     try {
@@ -83,9 +83,23 @@ const UtilCms = {
                 for (let i = 0; i < segments.length; i++) {
 
                     debugInfo = ''
+
+                    let tempPhantom
+                    if (segments[i].phantom) {
+                        // exclude pipline from replacements
+                        tempPhantom = segments[i].phantom.pipeline
+                        segments[i].phantom.pipeline = null
+                    }
                     const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope;const {data} = this; return `' + JSON.stringify(segments[i]) + '`;')
                     const replacedSegmentStr = tpl.call({scope, data: resolvedData})
                     const segment = JSON.parse(replacedSegmentStr)
+
+
+                    if (tempPhantom) {
+                        segment.phantom.pipeline = tempPhantom
+                    }
+
+
                     if (segment.data) {
                         Object.keys(segment.data).forEach(k => {
                             resolvedData[k] = segment.data[k]
@@ -216,7 +230,13 @@ const UtilCms = {
 
                     } else if (segment.phantom) {
 
+                        if (segment.phantom.if && segment.phantom.if !== 'true') {
+                            continue
+                        }
+
                         const {url, pipeline} = segment.phantom
+
+
                         const instance = await phantom.create(['--ignore-ssl-errors=yes', '--load-images=no'], {
                             logLevel: 'error', viewportSize: {width: 1600, height: 900},
                             settings: {
@@ -245,6 +265,9 @@ const UtilCms = {
                             console.error(msg, trace)
                         })
 
+                        await page.on('onConsoleMessage', function (msg, lineNum, sourceId) {
+                            console.log('CONSOLE: ' + msg + ' (from line #' + lineNum + ' in "' + sourceId + '")');
+                        })
 
                         /*await page.on('onResourceRequested', function(requestData) { console.info('Requesting', requestData.url); });*/
                         const status = await page.open(url)
@@ -265,7 +288,12 @@ const UtilCms = {
 
                             }
 
-                            for (const pipe of pipeline) {
+                            for (const pipeObj of pipeline) {
+
+                                const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope;const {data} = this; return `' + JSON.stringify(pipeObj) + '`;')
+                                const pipeReplaceStr = tpl.call({scope, data: resolvedData})
+                                const pipe = JSON.parse(pipeReplaceStr)
+
                                 if (pipe.waitFor) {
                                     const startTime = new Date()
                                     const timeout = pipe.waitFor.timeout || 10000
@@ -278,22 +306,43 @@ const UtilCms = {
                                         }
                                         await Util.sleep(50)
                                     }
-                                    if( !isValid){
+                                    if (!isValid) {
                                         break
                                     }
 
-                                }
-
-                                if (pipe.eval) {
+                                } else if (pipe.eval) {
                                     const tmpData = await evalFunc(pipe.eval)
                                     if (tmpData) {
                                         data = {...data, ...tmpData}
                                     }
+                                } else if (pipe.open) {
+                                    await page.open(pipe.open)
+                                } else if (pipe.fetch) {
+
+                                    let headers = ''
+
+                                    if (pipe.fetch.headers) {
+
+                                        Object.entries(pipe.fetch.headers).forEach(header=>{
+                                            headers+='req.setRequestHeader(\'' + header[0]+ '\', \'' + header[1] + '\')\n'
+                                        })
+                                    }
+                                    const tmpData = await evalFunc(`const req = new XMLHttpRequest()
+                                    req.open('${pipe.fetch.methode || 'post'}', '${pipe.fetch.url}', false)
+                                    req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
+                                    ${headers}
+
+                                    req.send('${pipe.fetch.data}')
+                                    return req`)
+
+                                    if (tmpData) {
+                                        data = {...data, [pipe.fetch.key || 'fetchResult']: tmpData}
+                                    }
+
                                 }
+                                resolvedData[segment.key || 'phantom'] = {eval: data, debug: 'debug infos'}
                             }
                         }
-
-                        resolvedData[segment.key || 'phantom'] = {eval: data, debug: 'debug infos'}
 
                         await instance.exit()
 
