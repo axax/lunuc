@@ -52,7 +52,7 @@ const GenericResolver = {
         }
 
         let cacheKey
-        if( !isNaN(cache) && cache > 0 ) {
+        if (!isNaN(cache) && cache > 0) {
             cacheKey = collectionName + JSON.stringify(match) + context.lang + JSON.stringify(otherOptions)
 
 
@@ -72,8 +72,8 @@ const GenericResolver = {
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
         /*if (typeName.indexOf("Product") >= 0) {
-            console.log(JSON.stringify(dataQuery, null, 4))
-        }*/
+         console.log(JSON.stringify(dataQuery, null, 4))
+         }*/
         //console.log(JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
@@ -100,14 +100,14 @@ const GenericResolver = {
             const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()
             if (countResults.length > 0) {
                 result.total = countResults[0].count
-            }else{
+            } else {
                 result.total = 0
             }
 
         }
         result.aggregateTime = new Date() - startTimeAggregate
 
-        if( cacheKey ) {
+        if (cacheKey) {
             Cache.set(cacheKey, result, cache)
         }
 
@@ -194,6 +194,9 @@ const GenericResolver = {
         const deletedResult = await collection.deleteOne(options)
 
         if (deletedResult.deletedCount > 0) {
+
+            Hook.call('typeDeleted_' + typeName, {ids: [data._id], db})
+
             return {
                 _id: data._id,
                 status: 'deleted'
@@ -236,6 +239,7 @@ const GenericResolver = {
         const deletedResult = await collection.deleteMany(options)
 
         if (deletedResult.deletedCount > 0) {
+            Hook.call('typeDeleted_' + typeName, {ids: data._id, db})
             return result
         } else {
             throw new Error('Error deleting entries. You might not have premissions to manage other users')

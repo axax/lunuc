@@ -3,7 +3,6 @@ import {userResolver} from './user'
 import {notificationResolver} from './notification'
 import {keyvalueResolver} from './keyvalue'
 import {systemResolver} from './system'
-import {mediaResolver} from './media'
 
 import Hook from '../../util/hook'
 import {deepMerge} from 'util/deepMerge'
@@ -21,8 +20,7 @@ export const resolver = (db) => {
         userResolver(db),
         notificationResolver(db),
         keyvalueResolver(db),
-        systemResolver(db),
-        mediaResolver(db)
+        systemResolver(db)
     )
 
     Hook.call('resolver', {db, resolvers})

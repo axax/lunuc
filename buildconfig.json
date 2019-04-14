@@ -1,5 +1,8 @@
 {
   "extensions": {
+    "media": {
+      "active": true
+    },
     "cms": {
       "active": true
     },

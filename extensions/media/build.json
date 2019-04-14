@@ -1,0 +1,47 @@
+{
+  "types": [
+    {
+      "description": "Media can either be an internal or an external source.",
+      "name": "Media",
+      "fields": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "src"
+        },
+        {
+          "name": "mimeType"
+        },
+        {
+          "name": "group",
+          "type": "MediaGroup",
+          "multi": true
+        }
+      ]
+    },
+    {
+      "name": "MediaGroup",
+      "fields": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "MediaConversion",
+      "fields": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "conversion",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

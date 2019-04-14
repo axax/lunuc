@@ -90,6 +90,8 @@ Hook.on('Routes', ({routes}) => {
 | ------------- |-------------| -------------|
 | appready      |  db, app  | Is called as soon as connection and db is ready  |   
 | appexit      |    |Is called on precess exit  |  
+| typeUpdated_{typeName}      | result, db   |Is called when a type gets updated  |  
+| typeDeleted_{typeName}      | _id, db   |Is called when a type gets deleted  |  
 
 ## Content Management
 ### Data Resolver

@@ -38,7 +38,7 @@ GenSourceCode.prototype.apply = function (compiler) {
 
         clientContent += '\nconst settings = (_app_.localSettings && _app_.localSettings.extensions) || {}\n\n'
 
-        exteionsion.forEach(file => {
+        for (const file of exteionsion) {
             if (fs.statSync(EXTENSION_PATH + file).isDirectory()) {
                 if (APP_CONFIG.extensions) {
                     const ext = APP_CONFIG.extensions[file]
@@ -47,7 +47,25 @@ GenSourceCode.prototype.apply = function (compiler) {
 
                         if (fs.existsSync(EXTENSION_PATH + file + '/extension.json')) {
                             manifestJson[file] = JSON.parse(fs.readFileSync(EXTENSION_PATH + file + '/extension.json', 'utf8'));
-                            //TODO: implement dependency check
+
+                            const dependencies = manifestJson[file].dependencies
+                            if (dependencies) {
+                                for (const dependency of dependencies) {
+                                    let hasDependency = false
+
+                                    for (const extDep in APP_CONFIG.extensions) {
+
+                                        if (extDep === dependency && APP_CONFIG.extensions[extDep].active) {
+                                            hasDependency = true
+                                            break
+                                        }
+                                    }
+                                    if (!hasDependency) {
+                                        throw new Error(`Dependency ${dependency} is missing in extension ${file}. Please make sure that the extension ${dependency} is avtive in buildconfig.json`)
+                                    }
+                                }
+                                console.log(dependencies)
+                            }
                         } else {
                             manifestJson[file] = {name: file}
                         }
@@ -107,7 +125,7 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
                     }
                 }
             }
-        })
+        }
 
         const manifestStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJson, null, 2)}\nexport default extensions`
 
@@ -217,8 +235,8 @@ export const ${icon}IconButton = ({...rest}) => {
 `
                         uiContentIconsHooks += `components['${icon}Icon'] = ${icon}Icon\ncomponents['${icon}IconButton'] = ${icon}IconButton\n`
 
-                    }else{
-                        uiContentIcons +=  `
+                    } else {
+                        uiContentIcons += `
 export const ${icon}Icon = ({...rest}) => {
     return <div className="Icon Icon-${icon}" {...rest} />
 }
@@ -279,7 +297,7 @@ function gensrcExtension(name, options) {
 
             type.fields.forEach((field) => {
 
-                if (field.name.trim().toLowerCase()==='createdBy') {
+                if (field.name.trim().toLowerCase() === 'createdBy') {
                     throw Error('A filed name is not allowed. createdBy is a reserved field name')
                 }
 
@@ -310,12 +328,12 @@ function gensrcExtension(name, options) {
                 if (field.localized && !field.multi) { // no support for multi yet
                     typeSchema += '\t' + field.name + ': LocalizedString\n'
                     resolverFields += '\'' + field.name + '\''
-                    insertFields +=  field.name + ': LocalizedStringInput' + (field.required ? '!' : '')
-                    updateFields +=  field.name + ': LocalizedStringInput'
-                }else{
+                    insertFields += field.name + ': LocalizedStringInput' + (field.required ? '!' : '')
+                    updateFields += field.name + ': LocalizedStringInput'
+                } else {
                     typeSchema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
                     resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
-                    insertFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.required ? '!':'') + (field.multi ? ']' : '')
+                    insertFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.required ? '!' : '') + (field.multi ? ']' : '')
                     updateFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
                 }
             })
@@ -331,7 +349,7 @@ function gensrcExtension(name, options) {
             typeSchema += 'type ' + type.name + 'Result{\n\tresults:[' + type.name + ']\n\toffset:Int\n\tlimit:Int\n\ttotal:Int\n}\n\n'
 
             let mutationResult = type.mutationResult
-            if( !mutationResult ) {
+            if (!mutationResult) {
                 mutationResult = type.name + 'Status'
                 // if a mutationResult is set we return that otherwise we return a simple Status object
 
