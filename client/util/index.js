@@ -30,14 +30,15 @@ const Util = {
         return str.replace(new RegExp(replace, 'g'), removeBreaks ? '' : '\\n').replace(/[\\\b\\\f\\\t\"\\]/g, '\\$&')
     },
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
-    tryCatch: function (str) {
+    tryCatch: function (str, ignoreError) {
         let data
         if( this && this.data )
             data = this.data
         try {
             return eval(str)
         } catch (e) {
-            console.log(e, str)
+            if( !ignoreError )
+                console.log(e, str)
         }
 
         return ''
@@ -202,6 +203,9 @@ const Util = {
         const pattern = new RegExp(`(${query.replace(/\s/g, '|')})`, 'gi');
 
         return text.replace(pattern, match => `<span class='${cls || ''}'>${match}</span>`);
+    },
+    getMediaSrc(media, src){
+        return src?src:(media.src?media.src:'/uploads/'+media._id)
     }
 }
 export default Util

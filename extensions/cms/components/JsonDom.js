@@ -651,8 +651,46 @@ class JsonDom extends React.Component {
         return !hasError
     }
 
+
+    handleFetchMore(callback) {
+        const scope = this.getScope(this.props)
+        if (scope.fetchMore) {
+            return
+        }
+        let query = ''
+        if (!scope.params.page) {
+            scope.params.page = 1
+        }
+        scope.params.page = parseInt(scope.params.page) + 1
+
+        scope.fetchMore = true
+        this.forceUpdate()
+
+
+        const keys = Object.keys(scope.params)
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i]
+            if (query) query += '&'
+            query += `${key}=${scope.params[key]}`
+        }
+
+        this.props.onFetchMore(query, (res) => {
+            if (res.cmsPage && res.cmsPage.resolvedData) {
+                const newData = JSON.parse(res.cmsPage.resolvedData)
+
+                this.resolvedDataJson = deepMergeConcatArrays(this.resolvedDataJson, newData)
+                scope.fetchMore = false
+
+                this.forceUpdate()
+            }
+            if (callback && callback.constructor === Function) {
+                callback()
+            }
+        })
+    }
+
     render() {
-        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key, renewing, onFetchMore} = this.props
+        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key, renewing} = this.props
         if (!template) {
             console.warn('Template is missing.', this.props)
             return null
@@ -664,9 +702,10 @@ class JsonDom extends React.Component {
             return <strong>There is something wrong with one of the components defined in the json content. See
                 console.log in the browser for more detail.</strong>
         }
-        const startTime = (new Date()).getTime()
+        const startTime = (new Date()).getTime(),
+            scope = this.getScope(this.props)
 
-        const scope = this.getScope(this.props)
+
         let jsError, resolveDataError
 
         if (this.resolvedDataJson === undefined) {
@@ -721,42 +760,7 @@ class JsonDom extends React.Component {
                         content,
                         data: {jsonDomId: this.instanceId}
                     }),
-                    fetchMore: (callback) => {
-                        if (scope.fetchMore) {
-                            return
-                        }
-                        let query = ''
-                        if (!scope.params.page) {
-                            scope.params.page = 1
-                        }
-                        scope.params.page = parseInt(scope.params.page) + 1
-
-                        scope.fetchMore = true
-                        this.forceUpdate()
-
-
-                        const keys = Object.keys(scope.params)
-                        for (let i = 0; i < keys.length; i++) {
-                            const key = keys[i]
-                            if (query) query += '&'
-                            query += `${key}=${scope.params[key]}`
-                        }
-
-                        onFetchMore(query, (res) => {
-                            if (res.cmsPage && res.cmsPage.resolvedData) {
-                                const newData = JSON.parse(res.cmsPage.resolvedData)
-
-                                this.resolvedDataJson = deepMergeConcatArrays(this.resolvedDataJson, newData)
-                                scope.fetchMore = false
-
-                                this.forceUpdate()
-                            }
-                            if (callback && callback.constructor === Function) {
-                                callback()
-                            }
-                        })
-
-                    },
+                    fetchMore: this.handleFetchMore.bind(this),
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     refresh: this.jsRefresh,

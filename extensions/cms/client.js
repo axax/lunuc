@@ -9,7 +9,7 @@ import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
 import CmsReducer from './reducers/CmsReducer'
-
+import Util from 'client/util'
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
 
@@ -18,6 +18,11 @@ const WebIcon = (props) => <Async {...props} expose="WebIcon"
 
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../client/components/layout/ErrorPage')}/>
+
+// Extend Util to use in template
+Util.xx = ()=>{
+    return 'yy'
+}
 
 
 // add redux reducer

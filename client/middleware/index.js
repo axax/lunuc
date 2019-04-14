@@ -52,6 +52,7 @@ export function configureMiddleware(store) {
         }
         if (networkError) {
             // hide loader
+            loadingCounter = 0
             store.dispatch(setNetworkStatus({
                 networkStatus: {loading: false}
             }))

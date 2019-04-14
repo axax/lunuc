@@ -90,7 +90,10 @@ const UtilCms = {
                         tempPhantom = segments[i].phantom.pipeline
                         segments[i].phantom.pipeline = null
                     }
-                    const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope;const {data} = this; return `' + JSON.stringify(segments[i]) + '`;')
+                    const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
+                                              const {data} = this
+                                              return \`${JSON.stringify(segments[i])}\``)
+
                     const replacedSegmentStr = tpl.call({scope, data: resolvedData})
                     const segment = JSON.parse(replacedSegmentStr)
 
