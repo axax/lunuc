@@ -1,14 +1,17 @@
 export const userSchemaRaw = `
 
-
 	type UserGroup {
 		_id: ID!
-		status: String
-        modifiedAt: Float
         name: String!
-        role: UserRole!
+        role: [UserRole]!
+    }   
+     
+    type UserGroupResult {
+        results: [UserGroup]
+        offset: Int
+        limit: Int
+        total: Int
     }
-    
     
 	type UserRole {
 		_id: ID!
@@ -33,6 +36,8 @@ export const userSchemaRaw = `
         email: String!
         emailConfirmed: Boolean!
         note: [Note]
+        meta: String
+        group: [UserGroup]
         role: UserRole!
     }
     

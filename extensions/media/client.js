@@ -1,6 +1,7 @@
 import React from 'react'
 import Hook from 'util/hook'
 import FileDrop from 'client/components/FileDrop'
+import TypePicker from 'client/components/TypePicker'
 
 import config from 'gen/config'
 const {UPLOAD_URL} = config
@@ -53,16 +54,18 @@ export default () => {
         if (type === 'Media' && !dataToEdit && this.state.createEditDialogParams === 'upload') {
             // remove save button
             props.actions.splice(1, 1)
-            props.children =
-                <FileDrop multi={false} accept="*/*" uploadTo="/graphql/upload" resizeImages={true} onSuccess={r => {
-                    this.setState({createEditDialog: false, createEditDialogParams: null})
+            props.children = [
+                <TypePicker key="typePicker" placeholder="Select a conversion" type="MediaConversion"/>,
+                <FileDrop key="fileDrop" multi={false} accept="*/*" uploadTo="/graphql/upload" resizeImages={true}
+                          onSuccess={r => {
+                              this.setState({createEditDialog: false, createEditDialogParams: null})
 
-                    this.getData(this.pageParams, false)
-                    // TODO: but it directly into the store instead of reload
-                    //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
+                              this.getData(this.pageParams, false)
+                              // TODO: but it directly into the store instead of reload
+                              //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
 
 
-                }}/>
+                          }}/>]
         }
     })
 

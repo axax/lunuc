@@ -6,7 +6,8 @@
       "fields": [
         {
           "name": "name",
-          "required": true
+          "required": true,
+          "index": 1
         },
         {
           "name": "src"
@@ -18,6 +19,10 @@
           "name": "group",
           "type": "MediaGroup",
           "multi": true
+        },
+        {
+          "name": "conversion",
+          "type": "MediaConversion"
         }
       ]
     },
@@ -32,6 +37,7 @@
     },
     {
       "name": "MediaConversion",
+      "description": "Here you can define how you want to convert the medias.",
       "fields": [
         {
           "name": "name",
@@ -39,7 +45,8 @@
         },
         {
           "name": "conversion",
-          "required": true
+          "required": true,
+          "uitype": "editor"
         }
       ]
     }

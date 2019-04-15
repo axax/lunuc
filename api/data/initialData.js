@@ -40,7 +40,7 @@ export const createUploads = () => {
     if (Util.ensureDirectoryExistence(upload_dir)) {
         fs.readdir(upload_dir, (err, files) => {
             if (!err && files) {
-                const filterdFiles = files.filter(e => !e === '.DS_Store')
+                const filterdFiles = files.filter(e => e !== '.DS_Store')
                 if (filterdFiles.length === 0) {
                     console.log('Create upload files...')
                     zipper.sync.unzip(path.join(__dirname, './uploads.gz')).save(upload_dir)
