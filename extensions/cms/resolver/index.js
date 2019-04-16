@@ -10,9 +10,10 @@ import {pubsub} from 'api/subscription'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT} from '../constants'
 import Cache from 'util/cache'
 
-const createScopeForDataResolver = function (query) {
+const createScopeForDataResolver = function (query , _props) {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
-    const scope = {params: queryParams}
+    const props =  (_props ? JSON.parse(_props) : {})
+    const scope = {params: queryParams, props}
     return scope
 }
 
@@ -38,7 +39,7 @@ export default db => ({
             if (!cmsPages.results || cmsPages.results.length === 0) {
                 throw new Error('Cms page doesn\'t exist')
             }
-            const scope = {...createScopeForDataResolver(query), props: (props ? JSON.parse(props) : {}), page: {slug}}
+            const scope = {...createScopeForDataResolver(query, props), page: {slug}}
             const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
             const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope, nosession)

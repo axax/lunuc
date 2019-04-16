@@ -400,7 +400,7 @@ class JsonDom extends React.Component {
                 } else {
                     if( d && d.constructor === String){
                         try {
-                            data = Function('return ' + d).bind(scope)()
+                            data = Function(`const {${Object.keys(scope).join(',')}} = this;return ${d}`).bind(scope)()
                         }catch (e){
                             console.log(e, d)
                             return 'Error in parseRec (in data source for loop): ' + e.message
@@ -730,6 +730,7 @@ class JsonDom extends React.Component {
         scope.props = _props
         scope.renewing = renewing
         scope.fetchMore = false
+
         if (this.runScript) {
             this.runScript = false
 
@@ -785,7 +786,6 @@ class JsonDom extends React.Component {
             this.runJsEvent('refreshscope', false, scope)
         }
         scope.script = this.scriptResult || {}
-
         if (!this.runJsEvent('beforerender', false, scope)) {
             return <div>Error in script in {name} event: <strong>{e.message}</strong></div>
         }

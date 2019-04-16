@@ -1,10 +1,12 @@
 import React from 'react'
 import Hook from 'util/hook'
-import FileDrop from 'client/components/FileDrop'
-import TypePicker from 'client/components/TypePicker'
-
+import Async from 'client/components/Async'
 import config from 'gen/config'
 const {UPLOAD_URL} = config
+
+const FileDrop = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
+const TypePicker = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../client/components/TypePicker')}/>
+
 
 export default () => {
 

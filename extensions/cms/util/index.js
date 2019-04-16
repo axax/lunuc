@@ -121,7 +121,7 @@ const UtilCms = {
                         let fields
                         if( d && d.constructor === String){
                             try {
-                                fields = Function(`const {${Object.keys(scope).join(',')}} = this;return ${d}`).bind(scope)()
+                                fields = Function(`const {${Object.keys(scope).join(',')}} = this.scope;const {data} = this;return ${d}`).bind({scope, data:resolvedData})()
                             }catch (e){
                                 if (!segment.ignoreError)
                                     throw e
