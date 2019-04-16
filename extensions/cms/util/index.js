@@ -120,7 +120,12 @@ const UtilCms = {
                          */
                         let fields
                         if( d && d.constructor === String){
-                            fields = Function(`const {${Object.keys(scope).join(',')}} = this;return ${d}`).bind(scope)()
+                            try {
+                                fields = Function(`const {${Object.keys(scope).join(',')}} = this;return ${d}`).bind(scope)()
+                            }catch (e){
+                                if (!segment.ignoreError)
+                                    throw e
+                            }
                         }else{
                             fields = d
                         }

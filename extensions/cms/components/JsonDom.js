@@ -347,10 +347,10 @@ class JsonDom extends React.Component {
         }
     }
 
-    parseRec(a, rootKey, childScope) {
+    parseRec(a, rootKey, scope) {
         if (!a) return null
         if (a.constructor === String) return a
-        if (a.constructor === Object) return this.parseRec([a], rootKey, childScope)
+        if (a.constructor === Object) return this.parseRec([a], rootKey, scope)
         if (a.constructor !== Array) return ''
         let h = []
         a.forEach((item, aIdx) => {
@@ -368,12 +368,12 @@ class JsonDom extends React.Component {
             if ($if) {
                 // check condition
                 try {
-                    const tpl = new Function('const {' + Object.keys(this.scope).join(',') + '} = this.scope;return ' + $if + ';')
-                    if (!tpl.call({scope: this.scope})) {
+                    const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope;return ' + $if + ';')
+                    if (!tpl.call({scope})) {
                         return
                     }
                 } catch (e) {
-                    console.log(e, this.scope)
+                    console.log(e, scope)
                     return
                 }
             }
@@ -396,14 +396,15 @@ class JsonDom extends React.Component {
                 const {$d, d, c} = $loop
                 let data
                 if ($d) {
-                    if (childScope) {
-                        data = this.scopeByPath($d, childScope)
-                    } else {
-                        data = this.scopeByPath($d, this.scope)
-                    }
+                    data = this.scopeByPath($d, scope)
                 } else {
                     if( d && d.constructor === String){
-                        data = Function('return '+d).bind(childScope)()
+                        try {
+                            data = Function('return ' + d).bind(scope)()
+                        }catch (e){
+                            console.log(e, d)
+                            return 'Error in parseRec (in data source for loop): ' + e.message
+                        }
                     }else {
                         data = d
                     }
@@ -444,13 +445,14 @@ class JsonDom extends React.Component {
                         // remove tabs and parse
                         const json = JSON.parse(tpl.call({
                             [s]: loopChild,
-                            scope: this.scope,
+                            scope,
                             Util: Util,
                             _t
                         }).replace(/\t/g, '\\t'))
 
                         const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
-                        h.push(this.parseRec(json, key, {...childScope, [s]: loopChild}))
+                        scope[s] = loopChild
+                        h.push(this.parseRec(json, key, scope))
 
 
                     })
@@ -502,7 +504,7 @@ class JsonDom extends React.Component {
                         }
                         if (!this.state.bindings[properties.name]) {
                             this.state.bindings[properties.name] = properties.value
-                            this.scope.bindings = this.state.bindings
+                            scope.bindings = this.state.bindings
                         }
                         properties.onChange = this.handleBindingChange.bind(this, properties.onChange)
 
@@ -534,7 +536,7 @@ class JsonDom extends React.Component {
                     const rawJson = this.getJsonRaw(this.props)
                     if (rawJson) {
                         eleProps._WrappedComponent = eleType
-                        eleProps._scope = this.scope
+                        eleProps._scope = scope
                         eleProps._json = rawJson
                         eleProps._onchange = this.props.onChange
                         eleType = JsonDomHelper
@@ -544,7 +546,7 @@ class JsonDom extends React.Component {
                     eleType,
                     eleProps,
                     ($c ? <span dangerouslySetInnerHTML={{__html: $c}}/> :
-                        this.parseRec(c, key, childScope))
+                        this.parseRec(c, key, scope))
                 ))
             }
         })
@@ -788,7 +790,7 @@ class JsonDom extends React.Component {
             return <div>Error in script in {name} event: <strong>{e.message}</strong></div>
         }
 
-        let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0)
+        let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
 
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
         if (this.parseError) {
