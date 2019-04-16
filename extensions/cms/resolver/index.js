@@ -29,7 +29,7 @@ export default db => ({
                 _version
             })
         },
-        cmsPage: async ({slug, query, nosession, _version}, {context, headers}) => {
+        cmsPage: async ({slug, query, props, nosession, _version}, {context, headers}) => {
             // TODO: Not just check if user is logged in but also check what role he has
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
@@ -38,7 +38,7 @@ export default db => ({
             if (!cmsPages.results || cmsPages.results.length === 0) {
                 throw new Error('Cms page doesn\'t exist')
             }
-            const scope = {...createScopeForDataResolver(query), page: {slug}}
+            const scope = {...createScopeForDataResolver(query), props: (props ? JSON.parse(props) : {}), page: {slug}}
             const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
             const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope, nosession)

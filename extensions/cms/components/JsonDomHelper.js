@@ -308,7 +308,7 @@ class JsonDomHelper extends React.Component {
             data-index={index}
             key={`${rest._key}.dropArea.${index}`}
             style={{paddingLeft: (10 * (rest._key.split('.').length - 1))}}
-            className={this.props.classes.dropArea}>drop here ${rest.id || data_key}</div>
+            className={this.props.classes.dropArea}>drop here ${rest.id || rest._key}</div>
     }
 
     render() {

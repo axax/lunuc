@@ -402,9 +402,12 @@ class JsonDom extends React.Component {
                         data = this.scopeByPath($d, this.scope)
                     }
                 } else {
-                    data = d
+                    if( d && d.constructor === String){
+                        data = Function('return '+d).bind(childScope)()
+                    }else {
+                        data = d
+                    }
                 }
-
                 if (!data) return ''
                 if (data.constructor === Object) {
                     data = Object.keys(data).map((k) => {
@@ -428,7 +431,6 @@ class JsonDom extends React.Component {
 
                     /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
                     data.forEach((loopChild, childIdx) => {
-
                         if (loopChild.constructor !== Object) {
                             loopChild = {data: loopChild}
                         }
@@ -521,7 +523,6 @@ class JsonDom extends React.Component {
                 }
                 const eleProps = {
                     _this: this,
-                    id: key,
                     key,
                     _key: key,
                     _editmode: this.props.editMode.toString(), ...cmsProps, ...properties

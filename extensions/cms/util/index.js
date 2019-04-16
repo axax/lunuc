@@ -118,6 +118,12 @@ const UtilCms = {
                          o = offset
                          p = page (if no offset is defined, offset is limit * (page -1) )
                          */
+                        let fields
+                        if( d && d.constructor === String){
+                            fields = Function(`const {${Object.keys(scope).join(',')}} = this;return ${d}`).bind(scope)()
+                        }else{
+                            fields = d
+                        }
 
                         let type, match
                         if (t.indexOf('$') === 0) {
@@ -134,7 +140,7 @@ const UtilCms = {
                             match = {}
                         }
                         debugInfo += ' type=' + type
-                        const result = await GenericResolver.entities(db, context, type, d, {
+                        const result = await GenericResolver.entities(db, context, type, fields, {
                             filter: f,
                             limit: l,
                             page: p,

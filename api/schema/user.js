@@ -1,18 +1,5 @@
 export const userSchemaRaw = `
-
-	type UserGroup {
-		_id: ID!
-        name: String!
-        role: [UserRole]!
-    }   
-     
-    type UserGroupResult {
-        results: [UserGroup]
-        offset: Int
-        limit: Int
-        total: Int
-    }
-    
+   
 	type UserRole {
 		_id: ID!
 		status: String
@@ -37,7 +24,6 @@ export const userSchemaRaw = `
         emailConfirmed: Boolean!
         note: [Note]
         meta: String
-        group: [UserGroup]
         role: UserRole!
     }
     

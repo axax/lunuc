@@ -148,6 +148,7 @@ class TypesContainer extends React.Component {
     UNSAFE_componentWillReceiveProps(props) {
         const change = this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
         if (change) {
+            this._filterForm = null
             this.parseSettings(props)
         }
 
@@ -527,6 +528,20 @@ class TypesContainer extends React.Component {
             }
         }
 
+        if( !this._filterForm ){
+            this._filterForm = <GenericForm onChange={this.handleFilter}
+                                            onKeyDown={this.handelFilterKeyDown}
+                                            primaryButton={false}
+                                            fields={{
+                                                term: {
+                                                    uitype: 'search',
+                                                    value: this._changingFilter || filter,
+                                                    fullWidth: true,
+                                                    placeholder: 'Filter expression (for specifc fields use field=term)'
+                                                }
+                                            }}/>
+        }
+
         const {description} = this.types[type]
         const content = [
             title === false ? '' :
@@ -544,17 +559,7 @@ class TypesContainer extends React.Component {
                 </Col>
                 }
                 <Col xs={12} md={(fixType ? 12 : 3)} align="right">
-                    <GenericForm onChange={this.handleFilter}
-                                 onKeyDown={this.handelFilterKeyDown}
-                                 primaryButton={false}
-                                 fields={{
-                                     term: {
-                                         uitype: 'search',
-                                         value: this._changingFilter || filter,
-                                         fullWidth: true,
-                                         placeholder: 'Filter expression (for specifc fields use field=term)'
-                                     }
-                                 }}/>
+                    {this._filterForm}
                 </Col>
             </Row>,
             this.renderTable(columns),

@@ -51,10 +51,10 @@ const UIProvider = (props) => <Async {...props} expose="UIProvider"
 const ErrorHandler = (props) => <Async {...props}
                                        load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorHandler')}/>
 const NetworkStatusHandler = (props) => <Async {...props}
-                                       load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/NetworkStatusHandler')}/>
+                                               load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/NetworkStatusHandler')}/>
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,nosession:$nosession,_version:$_version){cacheKey slug name urlSensitiv template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
+const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,_version:$_version){cacheKey slug name urlSensitiv template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
 const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){key value createdBy{_id}}}`
 
@@ -156,7 +156,7 @@ class CmsViewContainer extends React.Component {
             this.addResources(props, state)
         }
 
-        if( !props.cmsPage && props.loading && this.props.loading){
+        if (!props.cmsPage && props.loading && this.props.loading) {
             // if there is still no cmsPage and it is still loading
             // there is no need to update
             return false
@@ -212,8 +212,12 @@ class CmsViewContainer extends React.Component {
 
         if (!cmsPage) {
             if (!loading) {
-                console.warn('cmsPage missing')
-                return <ErrorPage />
+                console.warn(`cmsPage ${this.props.slug} missing`)
+                if (!dynamic) {
+                    return <ErrorPage />
+                } else {
+                    return <div>Cms page {this.props.slug} doesn't exist</div>
+                }
             }
             // show a loader here
             return editMode ? <NetworkStatusHandler /> : null
@@ -400,7 +404,7 @@ class CmsViewContainer extends React.Component {
                                                 }
                                                 title={`Edit Page "${cmsPage.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
                 {jsonDom}
-                <ErrorHandler />
+                <ErrorHandler snackbar/>
                 <NetworkStatusHandler />
 
                 <SimpleDialog open={!!cmsComponentEdit.key} onClose={this.handleComponentEditClose.bind(this)}
@@ -893,10 +897,14 @@ const urlSensitivMap = {}
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
         options(ownProps) {
-            const {slug, urlSensitiv, user} = ownProps,
+            const {slug, urlSensitiv, user, _props} = ownProps,
                 variables = {
                     ...getSlugVersion(slug)
                 }
+
+            if (_props) {
+                variables.props  = JSON.stringify(_props)
+            }
 
             // add settings from local storage if user is not logged in
             if (!user.isAuthenticated) {
@@ -912,6 +920,7 @@ const CmsViewContainerWithGql = compose(
                 if (q)
                     variables.query = q
             }
+
             return {
                 variables,
                 fetchPolicy: isEditMode(ownProps) ? 'network-only' : 'cache-and-network'
