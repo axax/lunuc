@@ -32,7 +32,7 @@ const GenericResolver = {
         }
         const startTime = new Date()
 
-        let {match, _version, cache, ...otherOptions} = options
+        let {match, _version, cache, includeCount, ...otherOptions} = options
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
@@ -66,7 +66,7 @@ const GenericResolver = {
 
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
             match,
-            includeCount: true,
+            includeCount: (includeCount!==false),
             lang: context.lang, ...otherOptions
         })
 
@@ -97,14 +97,16 @@ const GenericResolver = {
         if (result.meta && result.meta.length) {
             result.total = result.meta[0].count
         } else {
-            const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()
+            /*const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()
             if (countResults.length > 0) {
                 result.total = countResults[0].count
             } else {
                 result.total = 0
-            }
-
+            }*/
+            result.total = 0
         }
+
+
         result.aggregateTime = new Date() - startTimeAggregate
 
         if (cacheKey) {

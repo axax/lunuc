@@ -598,7 +598,7 @@ class JsonDom extends React.Component {
     }
 
 
-    renderString(str, data) {
+    renderString(str, scope) {
 
         if (str.trim().startsWith('<')) {
             //its html
@@ -611,13 +611,13 @@ class JsonDom extends React.Component {
             str = str.replace(/\\/g, '\\\\')
         }
         try {
-            const tpl = new Function(`const {${Object.keys(data).join(',')}} = this.data
+            const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
             const Util = this.Util
             const _i = Util.tryCatch.bind(this.data)
             const _t = this._t;return \`${str}\``)
 
             return tpl.call({
-                data,
+                scope,
                 parent: this.props._parentRef,
                 Util,
                 _t
@@ -787,7 +787,7 @@ class JsonDom extends React.Component {
         }
         scope.script = this.scriptResult || {}
         if (!this.runJsEvent('beforerender', false, scope)) {
-            return <div>Error in script in {name} event: <strong>{e.message}</strong></div>
+            return <div>Error in beforerender event. See details in console log</div>
         }
 
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)

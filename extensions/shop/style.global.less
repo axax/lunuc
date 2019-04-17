@@ -14,6 +14,9 @@ html {
 }
 
 .Cms-shop {
+
+  /* General */
+
   font-family: Roboto, sans-serif;
   background-color: #fcfbfa;
   position: relative;
@@ -30,6 +33,22 @@ html {
     margin-right: 0.5rem;
   }
 
+  .clearfix:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .lighter-text {
+    color: @light-text;
+  }
+
+  .main-color-text {
+    color: @primary-color;
+  }
+
+  /* Badge */
+
   .badge {
     background-color: #6394F8;
     border-radius: 10px;
@@ -41,14 +60,6 @@ html {
     text-align: center;
     vertical-align: middle;
     white-space: nowrap;
-  }
-
-  .lighter-text {
-    color: @light-text;
-  }
-
-  .main-color-text {
-    color: @primary-color;
   }
 
   .add-to-basket {
@@ -72,16 +83,23 @@ html {
 
   }
 
-  .clearfix:after {
-    content: "";
-    display: table;
-    clear: both;
+  .main {
+    padding: 2rem 1rem;
   }
 
   .SimpleToolbar {
-    background-color: white;
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    z-index: 2;
+    width:100%;
+    top:0;
     height: 4rem;
+    background-color: white;
+    transition: box-shadow 0.2s linear;
+
+    &.scroll {
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+
     &__title {
       a {
         color: black;
@@ -169,14 +187,13 @@ html {
     background: white;
     width: 25rem;
     max-width: calc(100% - 1rem);
-    position: absolute;
-    right: 0.5rem;
+    position: fixed;
+    right: 1rem;
     top: 4.1rem;
     border-radius: 3px;
     padding: 2rem;
     z-index: 2;
     box-shadow: rgba(0, 0, 0, 0.16) 0 0 4px 0;
-
     visibility: hidden;
     opacity: 0;
     transition: visibility 0s 0.3s, opacity 0.3s linear;
@@ -289,8 +306,12 @@ html {
   }
 
   .navigation {
-    margin-top: 1.5rem;
+    margin-top: 4rem;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
     max-width: 100%;
+    padding: 10px;
+    background: #fff;
     a {
       transition: background-color 0.3s ease;
       margin: 0.2rem;
@@ -336,12 +357,34 @@ html {
     }
   }
 
+  .breadcrumb {
+    // background-color: #eeeeee;
+    list-style: none;
+    padding: 10px 16px;
+    display: inline;
+    font-size: 18px;
+    a {
+      color: #0275d8;
+      text-decoration: none;
+      &:hover {
+        color: #01447e;
+      }
+    }
+    a + a {
+      &:before {
+        color: black;
+        content: "/\00a0";
+        padding: 8px;
+      }
+    }
+  }
+
   .productlist {
     .Card {
       .Card__content {
         padding: 1em;
 
-        .product-image-wrap{
+        .product-image-wrap {
           min-height: 12em;
         }
 
@@ -356,7 +399,6 @@ html {
           bottom: 0;
         }
 
-
         .description {
           overflow: hidden;
           position: relative;
@@ -367,18 +409,14 @@ html {
           content: '';
           position: absolute;
           left: 0;
-          right:0;
-          height:3em;
+          right: 0;
+          height: 3em;
           bottom: 0;
-          background: linear-gradient(to top, white, rgba(255,255,255,0.1));
+          background: linear-gradient(to top, white, rgba(255, 255, 255, 0.1));
         }
 
       }
     }
-  }
-
-  .main {
-    padding: 2rem 1rem;
   }
 
   /* Absolute Center Spinner */
@@ -393,126 +431,43 @@ html {
     left: 0;
     bottom: 0;
     right: 0;
-  }
 
-  /* Transparent Overlay */
-  .overlayLoader:before {
-    content: '';
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.3);
-  }
+    /* Transparent Overlay */
+    &:before {
+      content: '';
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.3);
+    }
 
-  /* :not(:required) hides these rules from IE9 and below */
-  .overlayLoader:not(:required) {
-    /* hide "loading..." text */
-    font: 0/0 a;
-    color: transparent;
-    text-shadow: none;
-    background-color: transparent;
-    border: 0;
-    visibility: hidden;
-    animation: 0s linear 0.35s forwards delayedShow;
-  }
+    /* :not(:required) hides these rules from IE9 and below */
+    &:not(:required) {
+      /* hide "loading..." text */
+      font: 0/0 a;
+      color: transparent;
+      text-shadow: none;
+      background-color: transparent;
+      border: 0;
+      visibility: hidden;
+      animation: 0s linear 0.35s forwards delayedShow;
+    }
 
-  .overlayLoader:not(:required):after {
-    content: '';
-    display: block;
-    font-size: 10px;
-    width: 1em;
-    height: 1em;
-    margin-top: -0.5em;
-    -webkit-animation: spinner 1500ms infinite linear;
-    -moz-animation: spinner 1500ms infinite linear;
-    -ms-animation: spinner 1500ms infinite linear;
-    -o-animation: spinner 1500ms infinite linear;
-    animation: spinner 1500ms infinite linear;
-    border-radius: 0.5em;
-    -webkit-box-shadow: rgba(0, 0, 0, 0.75) 1.5em 0 0 0, rgba(0, 0, 0, 0.75) 1.1em 1.1em 0 0, rgba(0, 0, 0, 0.75) 0 1.5em 0 0, rgba(0, 0, 0, 0.75) -1.1em 1.1em 0 0, rgba(0, 0, 0, 0.5) -1.5em 0 0 0, rgba(0, 0, 0, 0.5) -1.1em -1.1em 0 0, rgba(0, 0, 0, 0.75) 0 -1.5em 0 0, rgba(0, 0, 0, 0.75) 1.1em -1.1em 0 0;
-    box-shadow: rgba(0, 0, 0, 0.75) 1.5em 0 0 0, rgba(0, 0, 0, 0.75) 1.1em 1.1em 0 0, rgba(0, 0, 0, 0.75) 0 1.5em 0 0, rgba(0, 0, 0, 0.75) -1.1em 1.1em 0 0, rgba(0, 0, 0, 0.75) -1.5em 0 0 0, rgba(0, 0, 0, 0.75) -1.1em -1.1em 0 0, rgba(0, 0, 0, 0.75) 0 -1.5em 0 0, rgba(0, 0, 0, 0.75) 1.1em -1.1em 0 0;
-  }
-
-
-  @keyframes delayedShow {
-    to {
-      visibility: visible;
+    &:not(:required):after {
+      content: '';
+      display: block;
+      font-size: 10px;
+      width: 1em;
+      height: 1em;
+      margin-top: -0.5em;
+      animation: spinner 1500ms infinite linear;
+      border-radius: 0.5em;
+      box-shadow: rgba(0, 0, 0, 0.75) 1.5em 0 0 0, rgba(0, 0, 0, 0.75) 1.1em 1.1em 0 0, rgba(0, 0, 0, 0.75) 0 1.5em 0 0, rgba(0, 0, 0, 0.75) -1.1em 1.1em 0 0, rgba(0, 0, 0, 0.75) -1.5em 0 0 0, rgba(0, 0, 0, 0.75) -1.1em -1.1em 0 0, rgba(0, 0, 0, 0.75) 0 -1.5em 0 0, rgba(0, 0, 0, 0.75) 1.1em -1.1em 0 0;
     }
   }
-
-  /* Animation */
-
-  @-webkit-keyframes spinner {
-    0% {
-      -webkit-transform: rotate(0deg);
-      -moz-transform: rotate(0deg);
-      -ms-transform: rotate(0deg);
-      -o-transform: rotate(0deg);
-      transform: rotate(0deg);
-    }
-    100% {
-      -webkit-transform: rotate(360deg);
-      -moz-transform: rotate(360deg);
-      -ms-transform: rotate(360deg);
-      -o-transform: rotate(360deg);
-      transform: rotate(360deg);
-    }
-  }
-  @-moz-keyframes spinner {
-    0% {
-      -webkit-transform: rotate(0deg);
-      -moz-transform: rotate(0deg);
-      -ms-transform: rotate(0deg);
-      -o-transform: rotate(0deg);
-      transform: rotate(0deg);
-    }
-    100% {
-      -webkit-transform: rotate(360deg);
-      -moz-transform: rotate(360deg);
-      -ms-transform: rotate(360deg);
-      -o-transform: rotate(360deg);
-      transform: rotate(360deg);
-    }
-  }
-  @-o-keyframes spinner {
-    0% {
-      -webkit-transform: rotate(0deg);
-      -moz-transform: rotate(0deg);
-      -ms-transform: rotate(0deg);
-      -o-transform: rotate(0deg);
-      transform: rotate(0deg);
-    }
-    100% {
-      -webkit-transform: rotate(360deg);
-      -moz-transform: rotate(360deg);
-      -ms-transform: rotate(360deg);
-      -o-transform: rotate(360deg);
-      transform: rotate(360deg);
-    }
-  }
-  @keyframes spinner {
-    0% {
-      -webkit-transform: rotate(0deg);
-      -moz-transform: rotate(0deg);
-      -ms-transform: rotate(0deg);
-      -o-transform: rotate(0deg);
-      transform: rotate(0deg);
-    }
-    100% {
-      -webkit-transform: rotate(360deg);
-      -moz-transform: rotate(360deg);
-      -ms-transform: rotate(360deg);
-      -o-transform: rotate(360deg);
-      transform: rotate(360deg);
-    }
-  }
-
-
-
-
 
   .scrolltop-wrap {
     box-sizing: border-box;
@@ -521,7 +476,6 @@ html {
     right: 2rem;
     bottom: 0;
     pointer-events: none;
-    -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
   }
   .scrolltop-wrap #scrolltop-bg {
@@ -550,15 +504,10 @@ html {
     width: 3rem;
     height: 3rem;
     margin-bottom: -5rem;
-    -webkit-transform: translateY(100vh);
     transform: translateY(100vh);
-    -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     display: inline-block;
     text-decoration: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
     pointer-events: all;
     outline: none;
@@ -574,9 +523,7 @@ html {
     transition: all 0.1s;
   }
   .scrolltop-wrap a #scrolltop-arrow {
-    -webkit-transform: scale(0.66);
     transform: scale(0.66);
-    -webkit-transform-origin: center;
     transform-origin: center;
   }
   @media print {
@@ -584,4 +531,22 @@ html {
       display: none !important;
     }
   }
+
+  /* Animations */
+
+  @keyframes delayedShow {
+    to {
+      visibility: visible;
+    }
+  }
+
+  @keyframes spinner {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
 }

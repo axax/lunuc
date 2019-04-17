@@ -66,7 +66,6 @@ const isPreview = (location) => {
 
 const isEditMode = (props) => {
     const {user, location, dynamic} = props
-
     return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_PAGES) && !isPreview(location) && !dynamic)
 }
 

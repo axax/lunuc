@@ -529,6 +529,7 @@ class TypesContainer extends React.Component {
         }
 
         if( !this._filterForm ){
+            console.log('create form')
             this._filterForm = <GenericForm onChange={this.handleFilter}
                                             onKeyDown={this.handelFilterKeyDown}
                                             primaryButton={false}
