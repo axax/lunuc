@@ -119,14 +119,17 @@ const UtilCms = {
                          p = page (if no offset is defined, offset is limit * (page -1) )
                          */
                         let fields
-                        if( d && d.constructor === String){
+                        if (d && d.constructor === String) {
                             try {
-                                fields = Function(`const {${Object.keys(scope).join(',')}} = this.scope;const {data} = this;return ${d}`).bind({scope, data:resolvedData})()
-                            }catch (e){
+                                fields = Function(`const {${Object.keys(scope).join(',')}} = this.scope;const {data} = this;return ${d}`).bind({
+                                    scope,
+                                    data: resolvedData
+                                })()
+                            } catch (e) {
                                 if (!segment.ignoreError)
                                     throw e
                             }
-                        }else{
+                        } else {
                             fields = d
                         }
 
@@ -337,8 +340,8 @@ const UtilCms = {
 
                                     if (pipe.fetch.headers) {
 
-                                        Object.entries(pipe.fetch.headers).forEach(header=>{
-                                            headers+='req.setRequestHeader(\'' + header[0]+ '\', \'' + header[1] + '\')\n'
+                                        Object.entries(pipe.fetch.headers).forEach(header => {
+                                            headers += 'req.setRequestHeader(\'' + header[0] + '\', \'' + header[1] + '\')\n'
                                         })
                                     }
                                     const tmpData = await evalFunc(`const req = new XMLHttpRequest()

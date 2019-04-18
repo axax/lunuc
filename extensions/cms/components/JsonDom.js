@@ -437,7 +437,7 @@ class JsonDom extends React.Component {
                         }
                         const tpl = new Function(`  const {${Object.keys(loopChild).join(',')}} = this.${s}
                                                     const Util = this.Util
-                                                    const _i = Util.tryCatch
+                                                    const _i = Util.tryCatch.bind(this)
                                                     const _t = this._t
                                                     return \`${cStr}\``)
                         // back to json
@@ -472,7 +472,7 @@ class JsonDom extends React.Component {
                         h.push(this.props.children)
                     }
                     return
-                } else if (!this.props.editMode && t.slice(-1) === '$') {
+                } else if ( (!this.props.editMode || this.props.dynamic) && t.slice(-1) === '$') {
                     tagName = t.slice(0, -1) // remove last char
                 } else {
                     tagName = t
@@ -527,12 +527,14 @@ class JsonDom extends React.Component {
                     _this: this,
                     key,
                     _key: key,
-                    _editmode: this.props.editMode.toString(), ...cmsProps, ...properties
+                    _editmode: this.props.editMode.toString(),
+                    ...cmsProps,
+                    ...properties
                 }
                 if (className) {
                     eleProps.className = className
                 }
-                if (this.props.editMode && this.props.inlineEditor) {
+                if (!this.props.dynamic && this.props.editMode && this.props.inlineEditor) {
                     const rawJson = this.getJsonRaw(this.props)
                     if (rawJson) {
                         eleProps._WrappedComponent = eleType
@@ -613,7 +615,7 @@ class JsonDom extends React.Component {
         try {
             const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
             const Util = this.Util
-            const _i = Util.tryCatch.bind(this.data)
+            const _i = Util.tryCatch.bind(this)
             const _t = this._t;return \`${str}\``)
 
             return tpl.call({

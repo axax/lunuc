@@ -20,6 +20,7 @@ html {
   font-family: Roboto, sans-serif;
   background-color: #fcfbfa;
   position: relative;
+  padding: 100px 20px 20px 20px;
 
   input {
     border: 1px solid #e5e5e5;
@@ -83,21 +84,161 @@ html {
 
   }
 
-  .main {
-    padding: 2rem 1rem;
+  /* menu menu */
+  section.menu-container {
+    input {
+      display: none;
+      &:checked ~ div.menu {
+        right: -50px; // Accounts for transition bounce
+      }
+      &:checked ~ label.menu-closer {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+
+    input:checked ~ label.menu-opener {
+      .menu-icon {
+        background: rgba(255, 255, 255, 0);
+        &:before {
+          margin-top: 0px;
+          transform: rotate(405deg);
+        }
+        &:after {
+          margin-top: 0px;
+          transform: rotate(-405deg);
+        }
+      }
+    }
+
+    .menu-opener {
+      display: flex;
+      height: 24px;
+      width: 30px;
+      margin-right: 10px;
+      cursor: pointer;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .menu-icon,
+    .menu-icon:before,
+    .menu-icon:after {
+      display: block;
+      background-color: #000;
+      position: absolute;
+      height: 4px;
+      width: 30px;
+      transition: transform 400ms cubic-bezier(0.23, 1, 0.32, 1);
+      border-radius: 2px;
+    }
+
+    .menu-icon {
+      &:before {
+        content: '';
+        margin-top: -8px;
+      }
+      &:after {
+        content: '';
+        margin-top: 8px;
+      }
+    }
+
+    // *** Click-Off Menu Close *** //
+    .menu-closer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.4);
+      height: 100%;
+      width: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transition: 0.3s ease;
+      z-index: 4;
+    }
+
+    // *** Slide Menu *** //
+    .menu {
+      height: 100%;
+      width: 350px; // +50px for transition bounce and to hide scrollbar
+      position: fixed;
+      right: -370px; // +20px to hide shadow off screen
+      top: 0;
+      background: @primary-color;
+      transition: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+      z-index: 5;
+
+      .menu-inner {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        background: @primary-color;
+        &::before {
+          content: "";
+          position: absolute;
+          z-index: -1;
+          left: 0;
+          box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+          border-radius: 50%;
+          top: 15%;
+          width: 10%;
+          height: 70%;
+        }
+      }
+
+      nav {
+        width: 100%;
+        height: 100%;
+        overflow-y: scroll;
+
+        ul {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+        }
+
+        h3, a {
+          text-align: left;
+          padding: 20px calc(20px + 30px) 20px 20px; // Calc to account for expand/collapse of menu
+          margin: 0;
+          font-weight: 300;
+          color: #FFF;
+        }
+        h3 {
+          background: @secondary-color;
+          font-size: 25px;
+        }
+        a {
+          transition: background-color 0.3s ease;
+          font-size: 16px;
+          border-bottom: 1px solid @secondary-color;
+          transition: 0.3s ease;
+          cursor: pointer;
+          display: block;
+          text-decoration: none;
+          &.active,&:hover {
+            background: @secondary-color;
+          }
+        }
+      }
+    }
   }
 
   .SimpleToolbar {
     position: fixed;
-    z-index: 2;
-    width:100%;
-    top:0;
+    z-index: 3;
+    width: 100%;
+    top: 0;
+    left:0;
     height: 4rem;
     background-color: white;
     transition: box-shadow 0.2s linear;
-
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
     &.scroll {
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
     }
 
     &__title {
@@ -165,7 +306,6 @@ html {
 
   .Basket {
     .shopping-cart-items {
-
       list-style: none;
       padding-left: 0;
       li {
@@ -328,7 +468,7 @@ html {
   }
 
   .search {
-    margin-top: 2em;
+    margin-top: 0.5em;
     width: 100%;
     padding-left: 50%;
     position: relative;
@@ -358,11 +498,7 @@ html {
   }
 
   .breadcrumb {
-    // background-color: #eeeeee;
     list-style: none;
-    padding: 10px 16px;
-    display: inline;
-    font-size: 18px;
     a {
       color: #0275d8;
       text-decoration: none;

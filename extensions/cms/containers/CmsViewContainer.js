@@ -66,7 +66,7 @@ const isPreview = (location) => {
 
 const isEditMode = (props) => {
     const {user, location, dynamic} = props
-    return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_PAGES) && !isPreview(location) && !dynamic)
+    return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_PAGES) && !isPreview(location))
 }
 
 const getSlugVersion = (slug) => {
@@ -273,7 +273,7 @@ class CmsViewContainer extends React.Component {
                                  onChange={this.handleTemplateChange}>{children}</JsonDom>
         let content
 
-        if (!editMode) {
+        if (!editMode || dynamic) {
             content = jsonDom
         } else {
             const sidebar = () => <div>
@@ -922,7 +922,7 @@ const CmsViewContainerWithGql = compose(
 
             return {
                 variables,
-                fetchPolicy: isEditMode(ownProps) ? 'network-only' : 'cache-and-network'
+                fetchPolicy: isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network'
             }
         },
         props: ({data: {loading, cmsPage, variables, fetchMore}}) => {

@@ -4,10 +4,25 @@ import ReactDOM from 'react-dom'
 
 class SmartImage extends React.Component {
 
-    state = {
-        isVisible: false,
-        hasError: false,
-        loaded: false
+    constructor(props){
+        super(props)
+        this.state = SmartImage.getStateFromProps(props)
+    }
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.src !== prevState.src) {
+            return SmartImage.getStateFromProps(nextProps)
+        }
+        return null
+    }
+
+    static getStateFromProps(props){
+        return {
+            src: props.src,
+            isVisible: false,
+            hasError: false,
+            loaded: false
+        }
     }
 
     componentDidMount() {
@@ -29,7 +44,10 @@ class SmartImage extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        return state.isVisible !== this.state.isVisible || state.hasError !== this.state.hasError || state.loaded !== this.state.loaded
+        if( this.state.src !== state.src ){
+            this.checkVisibility()
+        }
+        return this.state.src !== state.src || state.isVisible !== this.state.isVisible || state.hasError !== this.state.hasError || state.loaded !== this.state.loaded
     }
 
     render() {
