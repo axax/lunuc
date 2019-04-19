@@ -3,7 +3,6 @@
 @import '../../../../../../gensrc/ui/variables.less';
 @import './grid.css';
 
-
 .NavLink {
   padding: 20px;
 }
@@ -51,25 +50,25 @@
     margin: 0
   }
 
-  &__drawerPaper{
+  &__drawerPaper {
     flex: 0 0 auto;
     width: 200px;
     background: @primary-background;
-    z-index:10;
+    z-index: 10;
     display: none;
     &--open {
       display: block;
     }
   }
 
-  &__sidebar{
-    margin:0px;
+  &__sidebar {
+    margin: 0px;
   }
-  &__sidebarHeader{
+  &__sidebarHeader {
 
   }
 
-  &__content{
+  &__content {
     height: calc(100% - 64px);
     margin-top: 64px;
     width: 100%;
@@ -78,10 +77,9 @@
   }
 }
 
-.Table{
+.Table {
   width: 100%;
 }
-
 
 .LinearProgress {
   overflow: hidden;
@@ -145,16 +143,16 @@
 }
 
 /* Card */
-.Card{
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-  transition: 0.3s;
+.Card {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.3s;
   border-radius: 2px;
   background-color: #fff;
-  &__content{
+  &__content {
 
   }
-}
-.Card:hover {
-  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+  &:hover {
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+  }
 }
 
