@@ -4,6 +4,9 @@
 @grey: #777;
 @border-radius: 0.2rem;
 @input-height: 2.225rem;
+@content-padding: 2rem;
+@content-max-width: 1500px;
+@toolbar-height: 4rem;
 
 @mobile: ~"only screen and (max-width:690px)";
 @tablet: ~"only screen and (min-width:690px) and (max-width: 995px)";
@@ -16,11 +19,10 @@ html {
 .Cms-shop {
 
   /* General */
-
   font-family: Roboto, sans-serif;
   background-color: #fcfbfa;
   position: relative;
-  padding: 100px 20px 20px 20px;
+  padding-top: @toolbar-height;
 
   input {
     border: 1px solid #e5e5e5;
@@ -82,6 +84,12 @@ html {
       border-color: @secondary-color;
     }
 
+  }
+
+  .main {
+    padding: @content-padding;
+    max-width: @content-max-width;
+    margin: 0 auto;
   }
 
   /* menu menu */
@@ -219,7 +227,7 @@ html {
           cursor: pointer;
           display: block;
           text-decoration: none;
-          &.active,&:hover {
+          &.active, &:hover {
             background: @secondary-color;
           }
         }
@@ -228,15 +236,16 @@ html {
   }
 
   .SimpleToolbar {
+    padding: 0 @content-padding;
     position: fixed;
     z-index: 3;
-    width: 100%;
     top: 0;
-    left:0;
-    height: 4rem;
+    right: 0;
+    left: 0;
+    height: @toolbar-height;
     background-color: white;
     transition: box-shadow 0.2s linear;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+    /*box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);*/
     &.scroll {
       box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
     }
@@ -446,28 +455,57 @@ html {
   }
 
   .navigation {
-    margin-top: 4rem;
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
+    &:after{
+      display: block;
+      content: '';
+      border-top: 1px solid #ccc;
+      left: 0;
+      width: 100%;
+      position: absolute;
+    }
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
     max-width: 100%;
-    padding: 10px;
     background: #fff;
+    height: 5rem;
+    overflow-y: hidden;
+    padding: 2rem @content-padding 0 @content-padding;
+    display: flex;
+
+    nav {
+      flex: auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-evenly;
+      align-items: stretch;
+      a {
+        flex: auto;
+      }
+    }
+
     a {
+      font-size: 1rem;
+      line-height: 1rem;
+      flex: 0;
+      text-align: center;
+      padding: 1rem;
+      display: block;
       transition: background-color 0.3s ease;
-      margin: 0.2rem;
-      background-color: @primary-color;
-      color: #fff;
-      padding: 0.3rem 0.6rem;
-      border-radius: @border-radius*3;
+      color: #000;
       cursor: pointer;
-      display: inline-block;
       &:hover, &.active {
+        color: #fff;
         background-color: @secondary-color;
       }
+    }
+    a.more{
+      min-width: 10rem;
     }
   }
 
   .search {
+
+    margin: 0 auto;
+
     margin-top: 0.5em;
     width: 100%;
     padding-left: 50%;
@@ -498,6 +536,10 @@ html {
   }
 
   .breadcrumb {
+    font-size: 0.9rem;
+    padding: 0 @content-padding;
+    max-width: @content-max-width;
+    margin: 0 auto;
     list-style: none;
     a {
       color: #0275d8;
