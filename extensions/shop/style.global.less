@@ -3,9 +3,9 @@
 @light-text: #ABB0BE;
 @grey: #777;
 @grey-100: #d6d6d6;
-@grey-10: #f3f3f3;
+@grey-10: #e5e3e3;
 @border-radius: 0.1rem;
-@input-height: 2.225rem;
+@input-height: 2.5rem;
 @content-padding: 2rem;
 @content-max-width: 1500px;
 @toolbar-height: 4rem;
@@ -28,8 +28,8 @@ html {
   padding-top: @toolbar-height;
 
   input {
-    border: 1px solid #e5e5e5;
-    padding: 0 1em;
+    border: 1px solid @grey-10;
+    padding: 0 1rem;
     height: @input-height;
     border-radius: @border-radius;
   }
@@ -60,7 +60,7 @@ html {
     border-radius: 10px;
     color: white;
     display: inline-block;
-    font-size: 12px;
+    font-size: 0.7rem;
     line-height: 1;
     padding: 3px 7px;
     text-align: center;
@@ -342,15 +342,34 @@ html {
 
       .meta-menu {
         display: flex;
+        svg{
+          flex: auto;
+          fill: black;
+          width:1rem;
+          height: 1rem;
+          margin-right: 0.2rem;
+        }
+        .link-text {
+          flex: auto;
+        }
         a {
+          position: relative;
           padding: 1rem 0;
-          display: block;
+          display: flex;
+          align-items: center;
           &:not(:last-child) {
-            margin-right: 20px;
+            margin-right: 1rem;
+          }
+          &:hover{
+            svg{
+              fill: @primary-color;
+            }
           }
         }
         .badge {
-
+          position: absolute;
+          bottom:0.1rem;
+          left:-0.5rem;
         }
         @media @mobile {
           .fa {
@@ -511,7 +530,7 @@ html {
     &:after {
       display: block;
       content: '';
-      border-top: 1px solid #ccc;
+      border-top: 1px solid @grey-10;
       left: 0;
       width: 100%;
       position: absolute;
@@ -562,21 +581,30 @@ html {
     margin: auto;
     position: relative;
     flex: auto;
-    max-width: 30rem;
+    max-width: 40rem;
 
     input {
       width: calc(100% - @input-height);
-      border: 1px solid @grey-100;
+      border: 1px solid @grey-10;
       outline: none;
     }
 
     button {
+      &:after {
+        position: absolute;
+        left: 1px;
+        top: 1px;
+        bottom: 1px;
+        right: 1px;
+        border: solid 1px white;
+      }
+      padding: 0.4rem;
       position: absolute;
       right: 4px;
       width: @input-height;
       height: @input-height;
-      border: 1px solid @grey-100;
-      background: @grey-100;
+      background-color: @grey-10;
+      border: 1px solid @grey-10;
       text-align: center;
       color: @grey;
       border-radius: @border-radius;
@@ -776,5 +804,4 @@ html {
       transform: rotate(360deg);
     }
   }
-
 }

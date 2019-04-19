@@ -398,14 +398,14 @@ class JsonDom extends React.Component {
                 if ($d) {
                     data = this.scopeByPath($d, scope)
                 } else {
-                    if( d && d.constructor === String){
+                    if (d && d.constructor === String) {
                         try {
                             data = Function(`const {${Object.keys(scope).join(',')}} = this;return ${d}`).bind(scope)()
-                        }catch (e){
+                        } catch (e) {
                             console.log(e, d)
                             return 'Error in parseRec (in data source for loop): ' + e.message
                         }
-                    }else {
+                    } else {
                         data = d
                     }
                 }
@@ -472,7 +472,7 @@ class JsonDom extends React.Component {
                         h.push(this.props.children)
                     }
                     return
-                } else if ( (!this.props.editMode || this.props.dynamic) && t.slice(-1) === '$') {
+                } else if ((!this.props.editMode || this.props.dynamic) && t.slice(-1) === '$') {
                     tagName = t.slice(0, -1) // remove last char
                 } else {
                     tagName = t
@@ -544,11 +544,13 @@ class JsonDom extends React.Component {
                         eleType = JsonDomHelper
                     }
                 }
+                if ($c) {
+                    eleProps.dangerouslySetInnerHTML = {__html: $c}
+                }
                 h.push(React.createElement(
                     eleType,
                     eleProps,
-                    ($c ? <span dangerouslySetInnerHTML={{__html: $c}}/> :
-                        this.parseRec(c, key, scope))
+                    ($c ? null : this.parseRec(c, key, scope))
                 ))
             }
         })
