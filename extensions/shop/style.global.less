@@ -16,7 +16,6 @@
 
 html {
   scroll-behavior: smooth;
-  font-size: 0.9rem;
 }
 
 .Cms-shop {
@@ -28,6 +27,7 @@ html {
   padding-top: @toolbar-height;
 
   input {
+    font-size: 1rem;
     border: 1px solid @grey-10;
     padding: 0 1rem;
     height: @input-height;
@@ -271,6 +271,7 @@ html {
       }
 
       .mobile-fav {
+        cursor: pointer;
         position: absolute;
         right: @content-padding;
         &.active {
@@ -345,8 +346,8 @@ html {
         svg{
           flex: auto;
           fill: black;
-          width:1rem;
-          height: 1rem;
+          width:1.2rem;
+          height: 1.2rem;
           margin-right: 0.2rem;
         }
         .link-text {
@@ -598,12 +599,15 @@ html {
         right: 1px;
         border: solid 1px white;
       }
-      padding: 0.4rem;
+      svg{
+        fill: @grey;
+      }
+      padding: 0.6rem;
       position: absolute;
       right: 4px;
       width: @input-height;
       height: @input-height;
-      background-color: @grey-10;
+      background-color: white;
       border: 1px solid @grey-10;
       text-align: center;
       color: @grey;
