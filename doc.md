@@ -275,7 +275,8 @@ Here is an example of a scope object:
 * unmount => JsonDom is unmounted
 * update => Is called after JsonDom is updated
 * resourcesReady => Is called after JsonDom is updated and all resources are loaded
-* refreshScope => when the scope changed
+* refreshScope => is called when only the scope might have changed 
+* urlchanged => is called when the url has changed (it only makes sens if the page is not urlSensitive) 
 * subscription => on subscription event
 * reset => gets called when the current template is either removed or reset
   

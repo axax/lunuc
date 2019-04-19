@@ -83,12 +83,16 @@ export function configureMiddleware(store) {
 
     const statusLink = new ApolloLink((operation, forward) => {
         loadingCounter++
+       // console.log("start "+loadingCounter,operation)
+
         if (loadingCounter === 1) {
             store.dispatch(setNetworkStatus({
                 networkStatus: {loading: true}
             }))
         }
         return forward(operation).map((data) => {
+
+           // console.log("end "+(loadingCounter-1),operation)
             dispatchNetworkSatus()
             /* HOOK */
             Hook.call('ApiResponse', data)

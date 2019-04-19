@@ -241,6 +241,10 @@ class JsonDom extends React.Component {
     componentDidMount() {
         this.runJsEvent('mount', true)
         this.checkResources()
+        this.props.history.listen(() => {
+            this.scope.params = Util.extractQueryParams()
+            this.runJsEvent('urlchanged', false)
+        })
     }
 
     componentWillUnmount() {
@@ -562,6 +566,9 @@ class JsonDom extends React.Component {
         const {scope} = props
         this.scope = JSON.parse(scope)
 
+        // set default scope values
+        this.scope.fetchingMore = false
+
         return this.scope
     }
 
@@ -661,7 +668,7 @@ class JsonDom extends React.Component {
 
     handleFetchMore(callback) {
         const scope = this.getScope(this.props)
-        if (scope.fetchMore) {
+        if (scope.fetchingMore) {
             return
         }
         let query = ''
@@ -670,7 +677,7 @@ class JsonDom extends React.Component {
         }
         scope.params.page = parseInt(scope.params.page) + 1
 
-        scope.fetchMore = true
+        scope.fetchingMore = true
         this.forceUpdate()
 
 
@@ -686,7 +693,7 @@ class JsonDom extends React.Component {
                 const newData = JSON.parse(res.cmsPage.resolvedData)
 
                 this.resolvedDataJson = deepMergeConcatArrays(this.resolvedDataJson, newData)
-                scope.fetchMore = false
+                scope.fetchingMore = false
 
                 this.forceUpdate()
             }
@@ -733,7 +740,6 @@ class JsonDom extends React.Component {
         scope._app_ = _app_
         scope.props = _props
         scope.renewing = renewing
-        scope.fetchMore = false
 
         if (this.runScript) {
             this.runScript = false

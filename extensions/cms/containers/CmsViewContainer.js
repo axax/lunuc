@@ -59,14 +59,14 @@ const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$no
 const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){key value createdBy{_id}}}`
 
 
-const isPreview = (location) => {
-    const params = new URLSearchParams(location.search)
+const isPreview = () => {
+    const params = new URLSearchParams(window.location.search)
     return params.get('preview')
 }
 
 const isEditMode = (props) => {
-    const {user, location, dynamic} = props
-    return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_PAGES) && !isPreview(location))
+    const {user, dynamic} = props
+    return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_PAGES) && !isPreview())
 }
 
 const getSlugVersion = (slug) => {
@@ -186,20 +186,24 @@ class CmsViewContainer extends React.Component {
 
     componentDidMount() {
         this.setUpSubsciptions(this.props)
-        this._handleWindowClose = this.saveUnsafedChanges.bind(this)
-        window.addEventListener('beforeunload', this._handleWindowClose)
-        this.props.history.listen((location, action) => {
-            this.saveUnsafedChanges()
-        })
+        if (isEditMode(this.props) && !this.props.dynamic) {
+            this._handleWindowClose = this.saveUnsafedChanges.bind(this)
+            window.addEventListener('beforeunload', this._handleWindowClose)
+            this.props.history.listen(() => {
+                this.saveUnsafedChanges()
+            })
+        }
     }
 
     componentWillUnmount() {
-        if (!this.props.dynamic)
+        if (!this.props.dynamic) {
             document.title = this.oriTitle
 
-        this.saveUnsafedChanges()
-        window.removeEventListener('beforeunload', this._handleWindowClose)
-
+            if (isEditMode(this.props)) {
+                this.saveUnsafedChanges()
+                window.removeEventListener('beforeunload', this._handleWindowClose)
+            }
+        }
         this.removeSubscriptions()
     }
 
@@ -896,13 +900,13 @@ const urlSensitivMap = {}
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
         options(ownProps) {
-            const {slug, urlSensitiv, user, _props} = ownProps,
+            const {slug, urlSensitiv, dynamic, user, _props} = ownProps,
                 variables = {
                     ...getSlugVersion(slug)
                 }
 
             if (_props) {
-                variables.props  = JSON.stringify(_props)
+                variables.props = JSON.stringify(_props)
             }
 
             // add settings from local storage if user is not logged in
@@ -914,7 +918,7 @@ const CmsViewContainerWithGql = compose(
             }
 
             // add query if page is url sensitiv
-            if (urlSensitiv || (urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
+            if (urlSensitiv === true || (!dynamic && urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
                 const q = window.location.search.substring(1)
                 if (q)
                     variables.query = q
@@ -922,10 +926,10 @@ const CmsViewContainerWithGql = compose(
 
             return {
                 variables,
-                fetchPolicy: isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network'
+                fetchPolicy: isEditMode(ownProps) && !dynamic ? 'network-only' : 'cache-and-network'
             }
         },
-        props: ({data: {loading, cmsPage, variables, fetchMore}}) => {
+        props: ({data: {loading, cmsPage, variables, fetchMore}, ownProps}) => {
 
             const result = {
                 cmsPageVariables: variables,
@@ -951,7 +955,18 @@ const CmsViewContainerWithGql = compose(
                         result.renewing = true
                     }
                 }
-                urlSensitivMap[cmsPage.slug] = cmsPage.urlSensitiv
+                urlSensitivMap[cmsPage.slug] = !!cmsPage.urlSensitiv
+
+                if (!cmsPage.urlSensitiv && variables.query) {
+                    // update cache to avoid second unneeded request
+                    const data = ownProps.client.readQuery({
+                        query: gqlQuery,
+                        variables
+                    })
+                    delete variables.query
+                    ownProps.client.writeQuery({query: gqlQuery, variables, data})
+                }
+
             }
             return result
         }
