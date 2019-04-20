@@ -108,7 +108,7 @@ const UtilCms = {
                             resolvedData[k] = segment.data[k]
                         })
                     } else if (segment.t) {
-                        const {t, f, l, o, p, d, s, cache} = segment
+                        const {t, f, l, o, p, d, s, cache, includeCount} = segment
                         /*
                          f = filter for the query
                          t = type
@@ -117,6 +117,9 @@ const UtilCms = {
                          l = limit of results
                          o = offset
                          p = page (if no offset is defined, offset is limit * (page -1) )
+
+                         cache = defines cache policy
+                         includeCount = whether to return the total number of results
                          */
                         let fields
                         if (d && d.constructor === String) {
@@ -156,6 +159,7 @@ const UtilCms = {
                             offset: o,
                             match,
                             cache,
+                            includeCount,
                             projectResult: true
                         })
 

@@ -206,6 +206,14 @@ const Util = {
     },
     getMediaSrc(media, src){
         return src?src:(media.src?media.src:'/uploads/'+media._id)
+    },
+    // mini jQuery
+    $(expr, p){
+        const nodeList = (p || document).querySelectorAll(expr)
+        if( nodeList.length === 1){
+            return nodeList[0]
+        }
+        return nodeList
     }
 }
 export default Util

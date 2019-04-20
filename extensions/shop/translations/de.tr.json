@@ -6,5 +6,7 @@
   "shop.checkout":"Bestellen",
   "shop.payment.type":"Zahlungsart",
   "shop.payment.cashinadvance":"Vorauskasse",
-  "shop.more":"weitere..."
+  "shop.more":"weitere...",
+  "shop.breadcrumb.search":"Suche: %text%",
+  "shop.search.result": "%count% Ergebnisse für \"%text%\""
 }

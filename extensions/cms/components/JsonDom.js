@@ -568,6 +568,7 @@ class JsonDom extends React.Component {
 
         // set default scope values
         this.scope.fetchingMore = false
+        this.scope._app_ = _app_
 
         return this.scope
     }
@@ -737,20 +738,19 @@ class JsonDom extends React.Component {
             }
         }
         scope.data = this.resolvedDataJson
-        scope._app_ = _app_
         scope.props = _props
         scope.renewing = renewing
 
+        // find root parent
+        let root = this, parent = this.props._parentRef
+        while (root.props._parentRef) {
+            root = root.props._parentRef
+        }
+        scope.root = root
+        scope.parent = parent
+
         if (this.runScript) {
             this.runScript = false
-
-            // find root parent
-            let root = this, parent = this.props._parentRef
-            while (root.props._parentRef) {
-                root = root.props._parentRef
-            }
-            scope.root = root
-            scope.parent = parent
             try {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
@@ -799,7 +799,6 @@ class JsonDom extends React.Component {
         if (!this.runJsEvent('beforerender', false, scope)) {
             return <div>Error in beforerender event. See details in console log</div>
         }
-
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
 
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)

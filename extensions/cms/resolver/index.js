@@ -42,6 +42,7 @@ export default db => ({
             const scope = {...createScopeForDataResolver(query, props), page: {slug}}
             const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
+
             const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope, nosession)
             let html
             if (ssr) {
