@@ -243,7 +243,11 @@ html {
     }
   }
 
-  .SimpleToolbar {
+  .header {
+    padding: 1.2rem;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
     padding: 0 @content-padding;
     position: fixed;
     z-index: 3;
@@ -252,6 +256,14 @@ html {
     left: 0;
     height: @toolbar-height;
     background-color: white;
+
+    a {
+      text-decoration: none;
+      color: black;
+      &:hover {
+        color: @primary-color;
+      }
+    }
 
     .mobile-fav {
       display: none;
@@ -277,12 +289,10 @@ html {
 
       .mobile-fav {
         cursor: pointer;
-        position: absolute;
-        right: @content-padding;
         &.active {
-          right: 0;
           background: @secondary-color;
         }
+        margin-right: -@content-padding;
         color: black;
         width: 4rem;
         height: 4rem;
@@ -296,19 +306,19 @@ html {
       }
     }
 
-    &__title {
+    .title {
+      color: white;
       flex: 1;
       a {
-        color: black;
         font-weight: bold;
-        text-decoration: none;
       }
       @media @mobile {
+        margin-left: 3rem;
         text-align: center;
       }
     }
 
-    &__children {
+    .mobile-wrap {
       flex: 3;
       display: flex;
       align-items: center;
@@ -319,95 +329,93 @@ html {
         position: absolute;
         transition: width 0.3s linear;
         left: 0.5rem;
+        z-index: 2;
         background: white;
         &.show-mobile {
-          width: calc(100% - 5rem);
+          width: calc(100% - 4.5rem);
         }
       }
 
+    }
+
+    .languages {
+      display: flex;
+      margin-left: auto;
+      font-size: 0.7rem;
+      color: #666;
       a {
-        text-decoration: none;
-        color: black;
+        padding: 1rem 0.3rem;
+        &.active {
+          font-weight: bold;
+        }
+      }
+    }
+
+    .toolbar-button {
+      display: flex;
+      margin-left: 1rem;
+      svg {
+        flex: auto;
+        fill: black;
+        width: 1.2rem;
+        height: 1.2rem;
+      }
+      a, .minibasket-opener {
+        min-width: 3rem;
+        height: 4rem;
+        position: relative;
+        display: flex;
+        align-items: center;
         &:hover {
           color: @primary-color;
-        }
-      }
-      .languages {
-        display: flex;
-        margin-left: auto;
-        font-size: 0.7rem;
-        color: #666;
-        margin-right: 1rem;
-        a {
-          padding: 1rem 0.3rem;
-          &.active {
-            font-weight: bold;
+          svg {
+            fill: @primary-color;
           }
         }
       }
 
-      .meta-menu {
-        display: flex;
-        svg {
-          flex: auto;
-          fill: black;
-          width: 1.2rem;
-          height: 1.2rem;
-          margin-right: 0.2rem;
+      .link-text {
+        flex: auto;
+        margin-left: 0.2rem;
+      }
+
+      .minibasket-closer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        background: @overlay-bg;
+        height: 100%;
+        width: 100%;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease;
+        z-index: 4;
+      }
+
+      input {
+        display: none;
+        &:checked ~ div.minibasket {
+          visibility: visible;
+          opacity: 1;
         }
+        &:checked ~ label.minibasket-closer {
+          opacity: 1;
+          visibility: visible;
+        }
+      }
+
+      .badge {
+        position: absolute;
+        bottom: 0.7rem;
+        left: -0.4rem;
+      }
+      @media @mobile, @tablet {
+        margin-left: 0;
         .link-text {
-          flex: auto;
-        }
-        .minibasket-closer {
-          position: fixed;
-          top: 0;
-          left: 0;
-          background: @overlay-bg;
-          height: 100%;
-          width: 100%;
-          opacity: 0;
-          visibility: hidden;
-          transition: opacity 0.3s ease;
-          z-index: 4;
-        }
-        a, .minibasket-opener {
-          position: relative;
-          padding: 1rem 0;
-          display: flex;
-          align-items: center;
-          &:hover {
-            color: @primary-color;
-            svg {
-              fill: @primary-color;
-            }
-          }
-        }
-
-        input {
           display: none;
-          &:checked ~ div.minibasket {
-            visibility: visible;
-            opacity: 1;
-          }
-          &:checked ~ label.minibasket-closer {
-            opacity: 1;
-            visibility: visible;
-          }
         }
-
         .badge {
-          position: absolute;
-          bottom: 0.1rem;
-          left: -0.5rem;
-        }
-        @media @mobile {
-          .fa {
-            font-size: 1.4rem;
-          }
-
-          .link-text {
-            display: none;
-          }
+          left: 0.5rem;
         }
       }
 
@@ -455,7 +463,7 @@ html {
       width: 0;
       height: 0;
       top: 0;
-      right: 2rem;
+      right: 1.7rem;
       box-sizing: border-box;
       border: 0.5rem solid black;
       border-color: transparent transparent white white;
