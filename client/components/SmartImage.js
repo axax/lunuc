@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom'
 
 class SmartImage extends React.Component {
 
-    constructor(props){
+    constructor(props) {
         super(props)
         this.state = SmartImage.getStateFromProps(props)
     }
@@ -16,7 +16,7 @@ class SmartImage extends React.Component {
         return null
     }
 
-    static getStateFromProps(props){
+    static getStateFromProps(props) {
         return {
             src: props.src,
             isVisible: false,
@@ -44,7 +44,7 @@ class SmartImage extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        if( this.state.src !== state.src ){
+        if (this.state.src !== state.src) {
             this.checkVisibility()
         }
         return this.state.src !== state.src || state.isVisible !== this.state.isVisible || state.hasError !== this.state.hasError || state.loaded !== this.state.loaded
@@ -75,19 +75,38 @@ class SmartImage extends React.Component {
 
     checkVisibility() {
         if (this._ismounted) {
-            const rect = ReactDOM.findDOMNode(this).getBoundingClientRect()
+            const el = ReactDOM.findDOMNode(this)
+            const style = window.getComputedStyle(el);
 
-            const isVisible = rect.bottom > 0 &&
-                rect.right > 0 &&
-                rect.left < (window.innerWidth || document.documentElement.clientWidth) &&
-                rect.top < (window.innerHeight || document.documentElement.clientHeight)
+            let isVisible = style.width !== '0' &&
+                style.height !== '0' &&
+                style.opacity !== '0' &&
+                style.display !== 'none' &&
+                style.visibility !== 'hidden'
+
+            if (isVisible) {
+                // is it in viewport
+
+                const rect = el.getBoundingClientRect()
+                isVisible = rect.bottom > 0 &&
+                    rect.right > 0 &&
+                    rect.left < (window.innerWidth || document.documentElement.clientWidth) &&
+                    rect.top < (window.innerHeight || document.documentElement.clientHeight)
+            }
 
 
             if (isVisible) {
                 this.setState({isVisible})
+                setTimeout(() => {
+                    if (!this.state.loaded) {
+                        console.log('image load timeout')
+                        // timeout
+                        this.setState({hasError: true, loaded: false})
+                    }
+                }, 10000)
             } else {
                 // check again
-                setTimeout(this.checkVisibility.bind(this), 100)
+                setTimeout(this.checkVisibility.bind(this), 150)
             }
         }
     }

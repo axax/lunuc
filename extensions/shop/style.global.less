@@ -20,7 +20,7 @@ html {
 }
 
 .Cms-shop {
-
+  display: block !important;
   /* General */
   font-family: Roboto, sans-serif;
   background-color: #fcfbfa;
@@ -252,6 +252,7 @@ html {
     left: 0;
     height: @toolbar-height;
     background-color: white;
+    transition: padding 0.2s linear, box-shadow 0.25s linear;
 
     a {
       text-decoration: none;
@@ -266,7 +267,6 @@ html {
     }
 
     &.scroll {
-      transition: padding 0.2s linear, box-shadow 0.25s linear;
       box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
       padding-top: 0;
     }
