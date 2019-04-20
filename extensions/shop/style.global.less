@@ -9,6 +9,7 @@
 @content-padding: 2rem;
 @content-max-width: 1500px;
 @toolbar-height: 4rem;
+@overlay-bg: rgba(0, 0, 0, 0.35);
 
 @mobile: ~"only screen and (max-width:690px)";
 @tablet: ~"only screen and (min-width:690px) and (max-width: 995px)";
@@ -19,6 +20,10 @@ html {
 }
 
 .Cms-shop {
+
+  /** {
+    transition: none !important;
+  }*/
 
   /* General */
   font-family: Roboto, sans-serif;
@@ -55,7 +60,6 @@ html {
   }
 
   /* Badge */
-
   .badge {
     background-color: #6394F8;
     border-radius: 10px;
@@ -162,12 +166,12 @@ html {
       position: fixed;
       top: 0;
       left: 0;
-      background: rgba(0, 0, 0, 0.4);
+      background: @overlay-bg;
       height: 100%;
       width: 100%;
       opacity: 0;
       visibility: hidden;
-      transition: 0.3s ease;
+      transition: opacity 0.3s ease;
       z-index: 4;
     }
 
@@ -344,26 +348,36 @@ html {
 
       .meta-menu {
         display: flex;
-        svg{
+        svg {
           flex: auto;
           fill: black;
-          width:1.2rem;
+          width: 1.2rem;
           height: 1.2rem;
           margin-right: 0.2rem;
         }
         .link-text {
           flex: auto;
         }
-        a {
+        .minibasket-closer {
+          position: fixed;
+          top: 0;
+          left: 0;
+          background: @overlay-bg;
+          height: 100%;
+          width: 100%;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.3s ease;
+          z-index: 4;
+        }
+        a, .minibasket-opener {
           position: relative;
           padding: 1rem 0;
           display: flex;
           align-items: center;
-          &:not(:last-child) {
-            margin-right: 1rem;
-          }
-          &:hover{
-            svg{
+          &:hover {
+            color: @primary-color;
+            svg {
               fill: @primary-color;
             }
           }
@@ -371,33 +385,20 @@ html {
 
         input {
           display: none;
-          &:checked ~ div.menu {
-            right: -50px; // Accounts for transition bounce
+          &:checked ~ div.minibasket {
+            visibility: visible;
+            opacity: 1;
           }
-          &:checked ~ label.menu-closer {
+          &:checked ~ label.minibasket-closer {
             opacity: 1;
             visibility: visible;
           }
         }
 
-        input:checked ~ label.menu-opener {
-          .menu-icon {
-            background: rgba(255, 255, 255, 0);
-            &:before {
-              margin-top: 0px;
-              transform: rotate(405deg);
-            }
-            &:after {
-              margin-top: 0px;
-              transform: rotate(-405deg);
-            }
-          }
-        }
-
         .badge {
           position: absolute;
-          bottom:0.1rem;
-          left:-0.5rem;
+          bottom: 0.1rem;
+          left: -0.5rem;
         }
         @media @mobile {
           .fa {
@@ -430,7 +431,7 @@ html {
     }
   }
 
-  .MiniBasket {
+  .minibasket {
     background: white;
     width: 30rem;
     max-width: calc(100% - 2rem);
@@ -440,19 +441,13 @@ html {
     top: calc(@toolbar-height + 1.7rem);
     border-radius: 3px;
     padding: 2rem;
-    z-index: 3;
+    z-index: 5;
     box-shadow: rgba(0, 0, 0, 0.16) 0 0 4px 0;
     visibility: hidden;
     opacity: 0;
     transition: visibility 0s 0.3s, opacity 0.3s linear;
     display: flex;
     flex-direction: column;
-
-    &__visible {
-      visibility: visible;
-      opacity: 1;
-      transition: opacity 0.3s linear;
-    }
 
     &:after {
       content: "";
@@ -627,7 +622,7 @@ html {
         right: 1px;
         border: solid 1px white;
       }
-      svg{
+      svg {
         fill: @grey;
       }
       padding: 0.6rem;
@@ -729,7 +724,7 @@ html {
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.3);
+      background-color: @overlay-bg;
     }
 
     /* :not(:required) hides these rules from IE9 and below */

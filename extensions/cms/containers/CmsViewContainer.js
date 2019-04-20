@@ -440,7 +440,6 @@ class CmsViewContainer extends React.Component {
         const {dynamic} = props
         let {resources} = state
 
-
         if (!dynamic) {
             DomUtil.removeElements(`[data-cms-view]`)
             //DomUtil.removeElements(`style[data-style-loader="true"]`)
@@ -485,6 +484,8 @@ class CmsViewContainer extends React.Component {
             this._autoSaveScript()
         }
 
+
+        clearTimeout(this._templateTimeout)
         if (this._autoSaveTemplateTimeout) {
             this._autoSaveTemplate()
         }
@@ -674,24 +675,29 @@ class CmsViewContainer extends React.Component {
     }
 
     handleTemplateChange = (str, instantSave) => {
-        if (str.constructor !== String) {
-            str = JSON.stringify(str, null, 2)
-        }
+        clearTimeout(this._templateTimeout)
+        this._templateTimeout = setTimeout(() => {
 
-        this.setState({template: str, templateError: null})
-        this._autoSaveTemplate = () => {
+            if (str.constructor !== String) {
+                str = JSON.stringify(str, null, 2)
+            }
+
+            this.setState({template: str, templateError: null})
+            this._autoSaveTemplate = () => {
+                clearTimeout(this._autoSaveTemplateTimeout)
+                this._autoSaveTemplateTimeout = 0
+                this._autoSaveTemplate = null
+                this.saveCmsPage(str, this.props.cmsPage, 'template')
+            }
+
             clearTimeout(this._autoSaveTemplateTimeout)
-            this._autoSaveTemplateTimeout = 0
-            this._autoSaveTemplate = null
-            this.saveCmsPage(str, this.props.cmsPage, 'template')
-        }
+            if (instantSave) {
+                this._autoSaveTemplate()
+            } else {
+                this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 5000)
+            }
 
-        clearTimeout(this._autoSaveTemplateTimeout)
-        if (instantSave) {
-            this._autoSaveTemplate()
-        } else {
-            this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 5000)
-        }
+        }, instantSave ? 0 : 750)
     }
 
     handleResourceChange = (str) => {

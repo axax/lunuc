@@ -806,24 +806,27 @@ class JsonDom extends React.Component {
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
-
-            let slugClass
-
             if (dynamic) {
-                slugClass = 'Cms-' + scope.page.slug.replace(/[\W_-]+/g, '-')
+                return content
             } else {
-                const p = scope.page.slug.split('/')
-                let path = ''
-                slugClass = ''
-                for (let i = 0; i < p.length; i++) {
-                    if (path !== '') path += '-'
-                    if (slugClass !== '') slugClass += ' '
-                    path += p[i]
+                let slugClass
 
-                    slugClass += 'Cms-' + path
+                if (dynamic) {
+                    slugClass = 'Cms-' + scope.page.slug.replace(/[\W_-]+/g, '-')
+                } else {
+                    const p = scope.page.slug.split('/')
+                    let path = ''
+                    slugClass = ''
+                    for (let i = 0; i < p.length; i++) {
+                        if (path !== '') path += '-'
+                        if (slugClass !== '') slugClass += ' '
+                        path += p[i]
+
+                        slugClass += 'Cms-' + path
+                    }
                 }
+                return <div className={'JsonDom ' + slugClass + (className ? ' ' + className : '')}>{content}</div>
             }
-            return <div className={'JsonDom ' + slugClass + (className ? ' ' + className : '')}>{content}</div>
         }
 
     }
