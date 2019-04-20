@@ -261,18 +261,28 @@ class JsonDom extends React.Component {
     checkResources() {
         // check if all scripts are loaded
         let allloaded = true, counter = 0
-        const scripts = document.querySelectorAll(`script[data-cms-view="true"]`)
-        if (scripts) {
-            for (let i = 0; i < scripts.length; ++i) {
-                const script = scripts[i]
-                if (!script.getAttribute('loaded')) {
+        const resources = document.querySelectorAll(`[data-cms-view="true"]`)
+        if (resources) {
+            for (let i = 0; i < resources.length; ++i) {
+                const resource = resources[i]
+                if (!resource.getAttribute('loaded')) {
                     allloaded = false
                     counter++
-                    script.onload = () => {
+
+                    const cb = (e) => {
                         counter--
                         if (counter === 0) {
                             this.runJsEvent('resourcesready')
                         }
+                    }
+
+                    if (resource.tagName === 'LINK') {
+                        // hack to detect when style sheet is loaded
+                        const img = document.createElement('img')
+                        img.onerror = cb
+                        img.src = resource.href
+                    } else {
+                        resource.addEventListener('load', cb)
                     }
                 }
             }

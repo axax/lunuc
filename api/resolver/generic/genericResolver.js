@@ -83,7 +83,6 @@ const GenericResolver = {
         let result
         if (results.length === 0) {
             return {
-                aggregateTime: new Date() - startTimeAggregate,
                 page: aggregationBuilder.getPage(),
                 limit: aggregationBuilder.getLimit(),
                 offset: aggregationBuilder.getOffset(),
@@ -106,14 +105,15 @@ const GenericResolver = {
             result.total = 0
         }
 
+        const aggregateTime = new Date() - startTimeAggregate
+        //result.meta.aggregateTime = new Date() - startTimeAggregate
 
-        result.aggregateTime = new Date() - startTimeAggregate
 
         if (cacheKey) {
             Cache.set(cacheKey, result, cache)
         }
 
-        console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${result.aggregateTime}ms total time ${new Date() - startTime}ms`)
+        console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${new Date() - startTime}ms`)
         return result
     },
     createEnity: async (db, context, typeName, {_version, ...data}) => {

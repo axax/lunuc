@@ -442,8 +442,6 @@ class CmsViewContainer extends React.Component {
 
         if (!dynamic) {
             DomUtil.removeElements(`[data-cms-view]`)
-            //DomUtil.removeElements(`style[data-style-loader="true"]`)
-
             if (resources) {
                 try {
                     const a = JSON.parse(resources)

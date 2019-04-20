@@ -12,7 +12,14 @@ const DomUtil = {
         }
     },
     addStyle(href, attrs) {
-        DomUtil.createAndAddTag('link', 'head', {type: 'text/css', rel: 'stylesheet', href, ...attrs})
+        const style = DomUtil.createAndAddTag('link', 'head', {type: 'text/css', rel: 'stylesheet', href, ...attrs})
+
+        // hack to detect when style sheet is loaded
+        const img = document.createElement('img')
+        img.onerror = () => {
+            style.setAttribute('loaded', true)
+        }
+        img.src = href
     },
     addScript(src, attrs) {
         const script = DomUtil.createAndAddTag('script', 'head', {
