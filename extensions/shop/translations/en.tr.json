@@ -8,5 +8,6 @@
   "shop.payment.cashinadvance": "Cash in advance",
   "shop.more": "more...",
   "shop.breadcrumb.search": "Search: %text%",
-  "shop.search.result": "%count% Results for \"%text%\""
+  "shop.search.result": "%count% Results for \"%text%\"",
+  "shop.cart.added": "Item <strong>\"%name%\"</strong> was added to the cart."
 }

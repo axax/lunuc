@@ -69,7 +69,7 @@ const app = httpx.createServer(options, function (req, res) {
             fs.exists(filename, (exists) => {
                 if (exists) {
                     const fileStream = fs.createReadStream(filename)
-                    const headerExtra = {'Cache-Control': 'public, max-age=604800'}
+                    const headerExtra = {'Cache-Control': 'public, max-age=31536000'}
                     res.writeHead(200, {...headerExtra})
                     fileStream.pipe(res)
                 } else {
@@ -97,7 +97,7 @@ const app = httpx.createServer(options, function (req, res) {
                         res.end()
                     } else {
                         const mimeType = MimeType.detectByExtension(ext),
-                            headerExtra = {'Cache-Control': 'public, max-age=604800', 'content-type': mimeType}
+                            headerExtra = {'Cache-Control': 'public, max-age=31536000', 'content-type': mimeType}
                         sendFile(req, res, headerExtra, filename);
                     }
                 })

@@ -8,5 +8,6 @@
   "shop.payment.cashinadvance":"Vorauskasse",
   "shop.more":"weitere...",
   "shop.breadcrumb.search":"Suche: %text%",
-  "shop.search.result": "%count% Ergebnisse für \"%text%\""
+  "shop.search.result": "%count% Ergebnisse für \"%text%\"",
+  "shop.cart.added": "Artikel <strong>\"%name%\"</strong> wurde dem Warenkorb hinzugefügt."
 }

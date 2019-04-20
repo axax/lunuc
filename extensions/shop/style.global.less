@@ -414,6 +414,7 @@ html {
         .link-text {
           display: none;
         }
+
         .badge {
           left: 0.5rem;
         }
@@ -829,7 +830,52 @@ html {
     }
   }
 
+  /* snackbar */
+  .snackbar {
+    position: fixed;
+    left:0;
+    right: 0;
+    visibility: hidden;
+    margin: 0 auto;
+    max-width: 30rem;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: @border-radius;
+    padding: @content-padding / 2;
+    z-index: 5;
+    bottom: 2rem;
+    font-size: 1rem;
+
+    &.show {
+      visibility: visible;
+      animation: fadein 0.5s, fadeout 0.5s 2.5s forwards;
+    }
+  }
+
   /* Animations */
+
+  @keyframes fadein {
+    from {
+      bottom: 0;
+      opacity: 0;
+    }
+    to {
+      bottom: 30px;
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeout {
+    from {
+      bottom: 30px;
+      opacity: 1;
+    }
+    to {
+      bottom: 0;
+      opacity: 0;
+    }
+  }
 
   @keyframes delayedShow {
     to {
