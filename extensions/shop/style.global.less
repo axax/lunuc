@@ -49,6 +49,13 @@ html {
     color: @primary-color;
   }
 
+  .truncate {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   /* Badge */
   .badge {
     background-color: #6394F8;
@@ -493,9 +500,12 @@ html {
       }
 
       .item-image {
-        width: 6rem;
+        flex: 0 0 6rem;
         margin-right: 0.5rem;
+        text-align: center;
+        line-height: 4rem;
         img {
+          vertical-align: middle;
           max-width: 6rem;
           max-height: 6rem;
         }
@@ -534,9 +544,9 @@ html {
       .item-remove {
         flex-grow: 1;
         text-align: right;
-        svg{
+        svg {
           cursor: pointer;
-          fill:  @grey;
+          fill: @grey;
           width: 2rem;
         }
       }
@@ -676,41 +686,46 @@ html {
   }
 
   .productlist {
-    .Card {
-      .Card__content {
-        padding: 1em;
+    .product {
+      box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.01);
+      transition: box-shadow 0.3s;
+      border-radius: @border-radius;
+      background-color: #fff;
 
-        .product-image-wrap {
-          min-height: 12em;
-        }
+      &:hover {
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.05);
+      }
 
-        .product-image {
-          max-width: 90%;
-          max-height: 90%;
-          position: absolute;
-          margin: auto;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-        }
+      padding: 1em;
+      .product-image-wrap {
+        min-height: 12em;
+      }
 
-        .description {
-          overflow: hidden;
-          position: relative;
-          line-height: 1.2em;
-          max-height: 8em;
-        }
-        .description:after {
-          content: '';
-          position: absolute;
-          left: 0;
-          right: 0;
-          height: 3em;
-          bottom: 0;
-          background: linear-gradient(to top, white, rgba(255, 255, 255, 0.1));
-        }
+      .product-image {
+        max-width: 90%;
+        max-height: 90%;
+        position: absolute;
+        margin: auto;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
 
+      .description {
+        overflow: hidden;
+        position: relative;
+        line-height: 1.2em;
+        max-height: 8em;
+      }
+      .description:after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 3em;
+        bottom: 0;
+        background: linear-gradient(to top, white, rgba(255, 255, 255, 0.1));
       }
     }
   }
