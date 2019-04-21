@@ -13,7 +13,6 @@ import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import config from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
 import Util from 'client/util'
-import {USER_DATA_QUERY} from '../constants'
 
 class LoginContainer extends React.Component {
     state = {

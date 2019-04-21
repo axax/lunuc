@@ -105,7 +105,7 @@ export const start = (done) => {
                     schema,
                     rootValue,
                     graphiql: true,
-                    formatError,
+                    customFormatErrorFn:formatError,
                     extensions({document, variables, operationName, result}) {
                         //UserStats.addData(req, {operationName})
                     }
