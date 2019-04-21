@@ -98,7 +98,7 @@ class SmartImage extends React.Component {
             if (isVisible) {
                 this.setState({isVisible})
                 setTimeout(() => {
-                    if (!this.state.loaded) {
+                    if (this._ismounted && !this.state.loaded) {
                         console.log('image load timeout')
                         // timeout
                         this.setState({hasError: true, loaded: false})

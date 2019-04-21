@@ -143,7 +143,6 @@ class JsonDom extends React.Component {
     jsRefresh = (id, noScript) => {
 
         let nodeToRefresh = this.jsGetComponent(id)
-
         if (!nodeToRefresh) {
             // if no id is defined or not found refresh the current dom
             nodeToRefresh = this
@@ -251,6 +250,7 @@ class JsonDom extends React.Component {
         this.runJsEvent('unmount')
         this.resetTemplate()
         this.removeAddedDomElements()
+        this.componentRefs = null
     }
 
     // is called after render
@@ -293,7 +293,6 @@ class JsonDom extends React.Component {
         this.runJsEvent('reset')
         this.json = null
         this.jsonRaw = null
-        this.componentRefs = {}
     }
 
     removeAddedDomElements() {
