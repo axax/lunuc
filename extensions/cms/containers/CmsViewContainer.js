@@ -177,11 +177,13 @@ class CmsViewContainer extends React.Component {
             props.user !== this.props.user ||
             props.children != this.props.children ||
             props._props !== this.props._props ||
-            (isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script)) ||
+            /* only if in edit mode */
+            (!props.dynamic && isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script ||
+            this.props.cmsPages !== props.cmsPages ||
             this.state.settings.fixedLayout !== state.settings.fixedLayout ||
             this.state.settings.inlineEditor !== state.settings.inlineEditor ||
             this.state.settings.templateTab !== state.settings.templateTab ||
-            this.state.settings.drawerWidth !== state.settings.drawerWidth
+            this.state.settings.drawerWidth !== state.settings.drawerWidth))
     }
 
     componentDidMount() {
@@ -223,7 +225,7 @@ class CmsViewContainer extends React.Component {
                 }
             }
             // show a loader here
-            return editMode ? <NetworkStatusHandler /> : null
+            return !dynamic && editMode ? <NetworkStatusHandler /> : null
         } else {
             // set page title
             // TODO: make tile localized
@@ -239,6 +241,7 @@ class CmsViewContainer extends React.Component {
             page: {slug: cmsPage.slug},
             user,
             editMode,
+            dynamic,
             pathname: location.pathname,
             params: Util.extractQueryParams(),
             hashParams: (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})
@@ -390,12 +393,12 @@ class CmsViewContainer extends React.Component {
                                                 onDrawerWidthChange={this.drawerWidthChange}
                                                 toolbarRight={[
                                                     <SimpleSwitch key="inlineEditorSwitch" color="default"
-                                                                  checked={settings.inlineEditor}
+                                                                  checked={!!settings.inlineEditor}
                                                                   onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
                                                                   contrast
                                                                   label="Inline Editor"/>,
                                                     <SimpleSwitch key="fixedLayoutSwitch" color="default"
-                                                                  checked={settings.fixedLayout}
+                                                                  checked={!!settings.fixedLayout}
                                                                   onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
                                                                   contrast
                                                                   label="Fixed"/>,
@@ -902,36 +905,42 @@ CmsViewContainer.propTypes = {
 
 
 const urlSensitivMap = {}
+
+const getGqlVariables = props => {
+    const {slug, urlSensitiv, dynamic, user, _props} = props,
+        variables = {
+            ...getSlugVersion(slug)
+        }
+
+    if (_props) {
+        variables.props = JSON.stringify(_props)
+    }
+
+    // add settings from local storage if user is not logged in
+    if (!user.isAuthenticated) {
+        const kv = localStorage.getItem(NO_SESSION_KEY_VALUES_SERVER)
+        if (kv) {
+            variables.nosession = kv
+        }
+    }
+
+    // add query if page is url sensitiv
+    if (urlSensitiv === true || (!dynamic && urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
+        const q = window.location.search.substring(1)
+        if (q)
+            variables.query = q
+    }
+
+    return variables
+}
+
+
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
         options(ownProps) {
-            const {slug, urlSensitiv, dynamic, user, _props} = ownProps,
-                variables = {
-                    ...getSlugVersion(slug)
-                }
-
-            if (_props) {
-                variables.props = JSON.stringify(_props)
-            }
-
-            // add settings from local storage if user is not logged in
-            if (!user.isAuthenticated) {
-                const kv = localStorage.getItem(NO_SESSION_KEY_VALUES_SERVER)
-                if (kv) {
-                    variables.nosession = kv
-                }
-            }
-
-            // add query if page is url sensitiv
-            if (urlSensitiv === true || (!dynamic && urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
-                const q = window.location.search.substring(1)
-                if (q)
-                    variables.query = q
-            }
-
             return {
-                variables,
-                fetchPolicy: isEditMode(ownProps) && !dynamic ? 'network-only' : 'cache-and-network'
+                variables: getGqlVariables(ownProps),
+                fetchPolicy: isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network'
             }
         },
         props: ({data: {loading, cmsPage, variables, fetchMore}, ownProps}) => {
@@ -962,7 +971,7 @@ const CmsViewContainerWithGql = compose(
                 }
                 urlSensitivMap[cmsPage.slug] = !!cmsPage.urlSensitiv
 
-                if (!cmsPage.urlSensitiv && variables.query) {
+                if (!loading && !cmsPage.urlSensitiv && variables.query) {
                     // update cache to avoid second unneeded request
                     const data = ownProps.client.readQuery({
                         query: gqlQuery,
@@ -1008,18 +1017,16 @@ const CmsViewContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv){slug template script resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,query:$query,props:$props){slug template script resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key, cb) => {
-                const {_version, slug} = getSlugVersion(ownProps.slug)
 
-                const variables = {_id, [key]: rest[key], slug}
+                const variables = getGqlVariables(ownProps)
+                const variablesWithNewValue = {...variables, _id, [key]: rest[key]}
 
-                if (_version) {
-                    variables._version = _version
-                }
+
                 return mutate({
-                    variables,
+                    variables: variablesWithNewValue,
                     optimisticResponse: {
                         __typename: 'Mutation',
                         // Optimistic message
@@ -1037,15 +1044,7 @@ const CmsViewContainerWithGql = compose(
                         }
                     },
                     update: (store, {data: {updateCmsPage}}) => {
-                        const {slug, urlSensitiv} = ownProps,
-                            variables = {
-                                ...getSlugVersion(slug)
-                            }
-                        if (urlSensitiv) {
-                            const q = window.location.search.substring(1)
-                            if (q)
-                                variables.query = q
-                        }
+
                         const data = store.readQuery({
                             query: gqlQuery,
                             variables

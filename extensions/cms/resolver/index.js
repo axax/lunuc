@@ -10,18 +10,23 @@ import {pubsub} from 'api/subscription'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT} from '../constants'
 import Cache from 'util/cache'
 
-const createScopeForDataResolver = function (query , _props) {
+const createScopeForDataResolver = (query, _props) => {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
-    const props =  (_props ? JSON.parse(_props) : {})
+    const props = (_props ? JSON.parse(_props) : {})
     const scope = {params: queryParams, props}
     return scope
+}
+
+const createClientCacheKey = (query, props, _version) => {
+    //TODO caching for version should not be handled here
+    return (query ? query.replace(/#/g, '-') : '') + '#' + (props ? props.replace(/#/g, '-') : '') + '#' + (_version && _version !== 'default' ? _version : '')
 }
 
 export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug', 'hostRule', 'name', 'urlSensitiv'], {
+            const data = await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug', 'hostRule', 'name', 'urlSensitiv'], {
                 limit,
                 page,
                 offset,
@@ -29,6 +34,16 @@ export default db => ({
                 sort,
                 _version
             })
+
+            // add client cache key
+            const clientCacheKey = createClientCacheKey(null, null, _version)
+
+            if (data.results) {
+                data.results.forEach(page => {
+                    page.cacheKey = clientCacheKey
+                })
+            }
+            return data
         },
         cmsPage: async ({slug, query, props, nosession, _version}, {context, headers}) => {
             // TODO: Not just check if user is logged in but also check what role he has
@@ -63,7 +78,9 @@ export default db => ({
             }
             console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
-            const apolloCacheKey = (query ? query + '#' : '') + (_version && _version !== 'default' ? _version : '')
+            // this is used to locate the proper client cache value
+            const clientCacheKey = createClientCacheKey(urlSensitiv && query ? query : null, props, _version)
+
             if (userIsLoggedIn) {
                 // return all data
                 return {
@@ -86,7 +103,7 @@ export default db => ({
                     /* we return a cacheKey here because the resolvedData may be dependent on the query that gets passed.
                      that leads to ambiguous results for the same id.
                      */
-                    cacheKey: apolloCacheKey,
+                    cacheKey: clientCacheKey,
                     /* Return the current user settings of the view
                      */
                     settings: ''
@@ -111,7 +128,7 @@ export default db => ({
                     resolvedData: JSON.stringify(resolvedData),
                     subscriptions,
                     urlSensitiv,
-                    cacheKey: apolloCacheKey
+                    cacheKey: clientCacheKey
                 }
 
             }
@@ -132,13 +149,16 @@ export default db => ({
                 script: DEFAULT_SCRIPT
             })
         },
-        updateCmsPage: async ({_id, query, ...rest}, {context}) => {
+        updateCmsPage: async ({_id, query, props, ...rest}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            // clear cache
-            const cacheKey = 'cmsPage-' + rest._version + '-' + rest.slug
+            const {_version} = rest
+            // clear server cache
+            const cacheKey = 'cmsPage-' + _version + '-' + rest.slug
             Cache.clearStartWith(cacheKey)
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
+
+
             // if dataResolver has changed resolveData and return it
             if (rest.dataResolver) {
                 const scope = createScopeForDataResolver(query)
@@ -159,6 +179,8 @@ export default db => ({
                 }
             })
 
+            // this is used to locate the proper client cache value
+            result.cacheKey = createClientCacheKey(query, props, _version)
 
             return result
         },

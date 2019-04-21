@@ -82,7 +82,14 @@
           "type": "Float"
         },
         {
-          "name": "cacheKey",
+          "name": "cacheKey"
+        },
+        {
+          "name": "query",
+          "hidden": true
+        },
+        {
+          "name": "props",
           "hidden": true
         }
       ]
