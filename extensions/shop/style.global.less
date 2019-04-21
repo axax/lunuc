@@ -26,6 +26,18 @@ html {
   background-color: #fcfbfa;
   position: relative;
   padding-top: @toolbar-height;
+  /* general font color */
+  h1,h2,h3,h4,h5,h6,p {
+    color: #4b4236;
+  }
+
+  h1{
+    font-size: 7vmin;
+  }
+
+  h2{
+    font-size: 4vmin;
+  }
 
   input {
     -webkit-appearance: none; /*remove inner shadow */
@@ -58,8 +70,8 @@ html {
 
   /* Badge */
   .badge {
-    background-color: #6394F8;
-    border-radius: 10px;
+    background-color: @primary-color;
+    border-radius: 1rem;
     color: white;
     display: inline-block;
     font-size: 0.7rem;
@@ -71,7 +83,6 @@ html {
   }
 
   .add-to-basket {
-    font-size: 13px;
     font-weight: 900;
     text-transform: uppercase;
     color: @grey;
@@ -222,11 +233,9 @@ html {
         }
         h3 {
           background: @secondary-color;
-          font-size: 25px;
         }
         a {
           transition: background-color 0.3s ease;
-          font-size: 16px;
           border-bottom: 1px solid @secondary-color;
           transition: 0.3s ease;
           cursor: pointer;
@@ -339,7 +348,6 @@ html {
       display: flex;
       margin-left: auto;
       font-size: 0.7rem;
-      color: #666;
       a {
         padding: 1rem 0.3rem;
         &.active {
@@ -377,6 +385,7 @@ html {
       }
 
       .minibasket-closer {
+        overscroll-behavior: contain;
         position: fixed;
         top: 0;
         left: 0;
@@ -438,6 +447,7 @@ html {
   }
 
   .minibasket {
+    overscroll-behavior: contain;
     background: white;
     width: 30rem;
     max-width: calc(100% - 2rem);
@@ -522,6 +532,7 @@ html {
         display: block;
         flex: 100%;
         margin-bottom: auto;
+        padding-bottom: 0.5rem;
       }
 
       .item-quantity {
@@ -544,6 +555,7 @@ html {
       .item-remove {
         flex-grow: 1;
         text-align: right;
+        padding-right: 1rem;
         svg {
           cursor: pointer;
           fill: @grey;
@@ -563,7 +575,6 @@ html {
         text-decoration: none;
         display: block;
         border-radius: 3px;
-        font-size: 16px;
         margin: 25px 0 0 0;
         &:hover {
           background: lighten(@primary-color, 3%);
@@ -670,10 +681,10 @@ html {
     margin: 2rem auto 0 auto;
     list-style: none;
     a {
-      color: #0275d8;
+      color: @primary-color;
       text-decoration: none;
       &:hover {
-        color: #01447e;
+        color: @secondary-color;
       }
     }
     a + a {
@@ -757,10 +768,6 @@ html {
 
     /* :not(:required) hides these rules from IE9 and below */
     &:not(:required) {
-      /* hide "loading..." text */
-      font: 0/0 a;
-      color: transparent;
-      text-shadow: none;
       background-color: transparent;
       border: 0;
       visibility: hidden;
@@ -770,7 +777,7 @@ html {
     &:not(:required):after {
       content: '';
       display: block;
-      font-size: 10px;
+      font-size: 0.7rem; /* size of loader */
       width: 1em;
       height: 1em;
       margin-top: -0.5em;
@@ -821,14 +828,14 @@ html {
     }
 
     #scrolltop-bg {
-      fill: #007bff;
+      fill: @primary-color;
     }
     #scrolltop-arrow {
       fill: white;
     }
     a:hover {
       #scrolltop-bg {
-        fill: #2990ff;
+        fill: @secondary-color;
       }
       #scrolltop-arrow {
         fill: white;
