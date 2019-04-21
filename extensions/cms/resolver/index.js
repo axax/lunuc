@@ -17,9 +17,8 @@ const createScopeForDataResolver = (query, _props) => {
     return scope
 }
 
-const createClientCacheKey = (query, props, _version) => {
-    //TODO caching for version should not be handled here
-    return (query ? query.replace(/#/g, '-') : '') + '#' + (props ? props.replace(/#/g, '-') : '') + '#' + (_version && _version !== 'default' ? _version : '')
+const createClientCacheKey = (query, props) => {
+    return (query ? query.replace(/#/g, '-') : '') + '#' + (props ? props.replace(/#/g, '-') : '')
 }
 
 export default db => ({
@@ -36,7 +35,7 @@ export default db => ({
             })
 
             // add client cache key
-            const clientCacheKey = createClientCacheKey(null, null, _version)
+            const clientCacheKey = createClientCacheKey(null, null)
 
             if (data.results) {
                 data.results.forEach(page => {
@@ -79,7 +78,7 @@ export default db => ({
             console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
             // this is used to locate the proper client cache value
-            const clientCacheKey = createClientCacheKey(urlSensitiv && query ? query : null, props, _version)
+            const clientCacheKey = createClientCacheKey(urlSensitiv && query ? query : null, props)
 
             if (userIsLoggedIn) {
                 // return all data
@@ -180,7 +179,7 @@ export default db => ({
             })
 
             // this is used to locate the proper client cache value
-            result.cacheKey = createClientCacheKey(query, props, _version)
+            result.cacheKey = createClientCacheKey(query, props)
 
             return result
         },

@@ -41,12 +41,6 @@ html {
     margin-right: 0.5rem;
   }
 
-  .clearfix:after {
-    content: "";
-    display: table;
-    clear: both;
-  }
-
   .lighter-text {
     color: @light-text;
   }
@@ -350,12 +344,6 @@ html {
     .toolbar-button {
       display: flex;
       margin-left: 1rem;
-      svg {
-        flex: auto;
-        fill: black;
-        width: 1.2rem;
-        height: 1.2rem;
-      }
       a, .minibasket-opener {
         min-width: 3rem;
         height: 4rem;
@@ -367,6 +355,12 @@ html {
           svg {
             fill: @primary-color;
           }
+        }
+        > svg {
+          flex: auto;
+          fill: black;
+          width: 1.2rem;
+          height: 1.2rem;
         }
       }
 
@@ -388,7 +382,7 @@ html {
         z-index: 4;
       }
 
-      input {
+      > input {
         display: none;
         &:checked ~ div.minibasket {
           visibility: visible;
@@ -486,41 +480,46 @@ html {
 
     .shopping-cart-items {
       overflow-y: scroll;
-
       overscroll-behavior: contain;
       list-style: none;
       padding-left: 0;
+
       li {
+        display: flex;
+
         padding-bottom: 1rem;
         border-bottom: solid 1px @grey-10;
-        margin-bottom: 18px;
+        margin-bottom: 1rem;
       }
 
-      img {
-        float: left;
-        margin-right: 0.8rem;
-        max-width: 3rem;
-        margin-bottom: 2rem;
+      .item-image {
+        flex: 1;
+        margin-right: 0.5rem;
+        img {
+          max-width: 6rem;
+          max-height: 6rem;
+        }
+      }
+
+      .item-details {
+        flex: auto;
+        display: flex;
+        flex-flow: wrap;
+        align-items: center;
       }
 
       .item-name {
         display: block;
-        padding-top: 10px;
-        font-size: 16px;
-      }
-
-      .item-details {
-        display: flex;
-        align-items: baseline;
+        flex: 100%;
+        margin-bottom: 1rem;
       }
 
       .item-quantity {
         flex-grow: 1;
         color: @light-text;
         input {
-          height: 2rem;
+          max-width: 6rem;
           text-align: right;
-          width: 4rem;
         }
       }
 
@@ -535,6 +534,10 @@ html {
       .item-remove {
         flex-grow: 1;
         text-align: right;
+        svg{
+          fill:  @grey;
+          width: 2rem;
+        }
       }
     }
 
@@ -831,7 +834,7 @@ html {
   /* snackbar */
   .snackbar {
     position: fixed;
-    left:0;
+    left: 0;
     right: 0;
     visibility: hidden;
     margin: 0 auto;
