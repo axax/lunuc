@@ -7,20 +7,44 @@ __How to use this framework__
 ### Types
 | Name        | Description           |
 | ------------- |:-------------:|
-| Keyvalue      |  |
-| Notification      |       | 
-| Media |       |
+| Keyvalue      | Key/Value store  |
 | User |       |
+| UserRole |    There are different user roles like administrator or subscriber with different privileges    |
 
 ## Extensions
+
+| Name        | Description           |
+| ------------- |:-------------:|
+| Media      | Media Handling / Image conversion and uploading | 
+| Cms      |  Content management system     | 
+
 ## Types
 A type is basically a collection in mongodb or a table in relational databases.
 
-There are some core types such as Media, User...
+A Type can be define in the build.json of an extension. Types can also have references to other types. 
 
-Types can have references to other types. 
+**Type properties**
+* name = Name of the type
+* fields = An array of the fields
+* collectionClonable = If true the whole collection of the type is cloneable
+* entryClonable = If true a single data record is cloneable
+* genResolver = If set to false the resolver is not generated automatically
+* mutationResult = The type that is returned after a mutation (default is {TypeName}Status)
 
-**How to create a new Type?**
+**Field properties**
+
+* name = Name of the field
+* label = The label that is show in the frontend editor
+* required = If set to true the filed must have a value
+* multi = If true multiple values can be selected
+* type = The type of the field. It can be String (default), Boolean, Float or the name of another type
+* index = Creates a database index. For FTS the value can be text
+* hidden = If true the field is not visible in the type editor
+* uitype = It can be datetime, number, editor, jseditor. If the value is set you can force the type editor to use a certain ui element
+* readOnly = The value is read only. It is not defined whether the field exist in the database or is only dynamic
+* pickerField = When the type is a reference you can define which field you want to show in the frontend for type picking
+
+**An example of a type definition**
 ```json
  {"types": [
     {
@@ -308,3 +332,7 @@ _tr()
 ### Config environment vars
 
 APP_FORCE_HTTPS=true 
+
+### Security
+
+This framework uses the local and the session storage to cache data. Be aware of the vulnerability and make sure that sensitiv data never end up in the local storage.

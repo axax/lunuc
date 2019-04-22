@@ -160,7 +160,6 @@ class CmsViewContainer extends React.Component {
             // there is no need to update
             return false
         }
-
         // only update if cms page was modified
         return !props.cmsPage ||
             !this.props.cmsPage ||

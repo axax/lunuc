@@ -5,32 +5,32 @@ import Pagination from './Pagination'
 
 /* JSS increases bundle size drastically */
 /*import injectSheet, {ThemeProvider} from 'react-jss'
-export const withStyles = injectSheet
+ export const withStyles = injectSheet
 
-const styles = theme => ({
-    button: {
-        background: theme.colorPrimary
-    },
-    label: {
-        fontWeight: 'bold'
-    }
-})
+ const styles = theme => ({
+ button: {
+ background: theme.colorPrimary
+ },
+ label: {
+ fontWeight: 'bold'
+ }
+ })
 
-const theme = {
-    colorPrimary: 'green'
-}
+ const theme = {
+ colorPrimary: 'green'
+ }
 
 
-// ui provider
-export const UIProvider = ({children}) => {
-    return <ThemeProvider theme={theme}>{children}</ThemeProvider>
-}
+ // ui provider
+ export const UIProvider = ({children}) => {
+ return <ThemeProvider theme={theme}>{children}</ThemeProvider>
+ }
  */
 const styles = {}
-const injectSheet = (e)=> {
-    return (f)=>{
-        return function(p){
-            return f({classes:{},...p})
+const injectSheet = (e) => {
+    return (f) => {
+        return function (p) {
+            return f({classes: {}, ...p})
         }
     }
 }
@@ -90,8 +90,9 @@ export {default as Pagination} from './Pagination'
 export const Row = ({...rest}) => {
     return <div className="row" {...rest} />
 }
-export const Col = ({span, lg, md, mdAlign, sm, className, ...rest}) => {
-    return <div className={'col' + (lg ? ' col-lg-' + lg : '') + (md ? ' col-md-' + md : '') + (sm ? ' col-sm-' + sm:'') + (mdAlign ? ' col-md-align-' + mdAlign:'')+(className?' '+className:'')} {...rest} />
+export const Col = ({xs, sm, md, lg, xl, mdAlign, className, ...rest}) => {
+    return <div
+        className={'col' + (xs ? ' col-xs-' + xs : '') + (sm ? ' col-sm-' + sm : '') + (md ? ' col-md-' + md : '') + (lg ? ' col-lg-' + lg : '') + (xl ? ' col-xl-' + xl : '') + (mdAlign ? ' col-md-align-' + mdAlign : '') + (className ? ' ' + className : '')} {...rest} />
 }
 
 // table

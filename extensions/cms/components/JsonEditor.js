@@ -15,6 +15,7 @@ import {
     SimpleMenu
 } from 'ui/admin'
 import {getComponentByKey, addComponent, removeComponent} from '../util/jsonDomUtil'
+import DomUtil from 'client/util/dom'
 
 const styles = theme => ({
     type: {
@@ -50,7 +51,7 @@ class JsonEditor extends React.Component {
             open: {}
         }
 
-        if( props.children ) {
+        if (props.children) {
             try {
                 this.state.json = JSON.parse(props.children)
             } catch (e) {
@@ -76,10 +77,15 @@ class JsonEditor extends React.Component {
     }
 
     renderJsonRec(json, key, level) {
-        if( !json ) return null
+        if (!json) return null
         const {classes} = this.props
         if (json === undefined) return null
-        if (!key) key = '0'
+        if (!key) {
+            key = '0'
+            if (json.constructor !== Array) {
+                key += '.0'
+            }
+        }
         if (!level) level = 0
 
         if (json.constructor === Array) {
@@ -97,12 +103,12 @@ class JsonEditor extends React.Component {
             }
 
             let specialType, actions
-            if( json.$loop ){
+            if (json.$loop) {
                 json = json.$loop
                 specialType = '$loop'
                 newkey += '.$loop.0'
                 newlevel++
-            }else{
+            } else {
                 actions = [{
                     name: 'Add child component', onClick: e => {
                         this.addComponent(key)
@@ -139,26 +145,46 @@ class JsonEditor extends React.Component {
              }}
              suppressContentEditableWarning={true}
              contentEditable>{t}</span> */
-            return [<ListItem dense disableRipple onMouseOver={() => {
-                const ele = document.querySelector(`[_key="${key}"]`)
-                if( ele ){
-                    console.log('TODO: implement highlighting')
-                }
+            return [<ListItem dense disableRipple
+                              onMouseEnter={() => {
+                                  const ele = document.querySelector(`[_key="${key}"]`)
+                                  if (ele) {
+                                      const pos = DomUtil.elemOffset(ele);
+                                      DomUtil.createAndAddTag('div', 'body', {
+                                          id: 'JsonEditorHighlighter',
+                                          style: {
+                                              display: 'block',
+                                              position: 'absolute',
+                                              background: 'rgba(0,0,0,0.1)',
+                                              left: pos.left + 'px',
+                                              top: pos.top + 'px',
+                                              height: ele.offsetHeight + 'px',
+                                              width: ele.offsetWidth + 'px'
+                                          }
+                                      })
+                                  }
 
-            }} key={key} style={{paddingLeft: 10 * level}} button
+                              }}
+                              onMouseLeave={() => {
+                                  DomUtil.createAndAddTag('div', 'body', {
+                                      id: 'JsonEditorHighlighter',
+                                      style: {display: 'none'}
+                                  })
+                              }}
+                              key={key} style={{paddingLeft: 10 * level}} button
                               onClick={this.handleClick.bind(this, key)}>
 
                 {actions && <SimpleMenu mini color="secondary" items={actions}/>}
                 <ListItemText classes={{primary: classes.type}}>
 
                     {specialType ? t :
-                    <SimpleAutosuggest placeholder="Enter component type" value={t}
-                                       onChange={(e, v) => {
-                                           this.setChildComponent(key, v, 't')
-                                       }
-                                       }
-                                       onBlur={this.handleBlur.bind(this)}
-                                       onClick={this.stopPropagation} items={JsonEditor.components}/>}
+                        <SimpleAutosuggest placeholder="Enter component type" value={t}
+                                           onChange={(e, v) => {
+                                               this.setChildComponent(key, v, 't')
+                                           }
+                                           }
+                                           onBlur={this.handleBlur.bind(this)}
+                                           onClick={this.stopPropagation} items={JsonEditor.components}/>}
                 </ListItemText>
                 { json.c !== undefined && (!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
             </ListItem>,
@@ -179,6 +205,8 @@ class JsonEditor extends React.Component {
     }
 
     setChildComponent(key, value, prop) {
+
+        console.log(key, this.state.json)
         const o = getComponentByKey(key, this.state.json)
         if (o) {
             o[prop || 'c'] = value
@@ -196,7 +224,7 @@ class JsonEditor extends React.Component {
     handleBlur() {
         const {onChange} = this.props
         if (onChange) {
-            onChange(JSON.stringify(this.state.json, null, 2),true)
+            onChange(JSON.stringify(this.state.json, null, 2), true)
         }
     }
 
@@ -211,7 +239,7 @@ class JsonEditor extends React.Component {
 
 
     removeComponent(key) {
-        if( removeComponent(key, this.state.json) ){
+        if (removeComponent(key, this.state.json)) {
             this.props.onChange(JSON.stringify(this.state.json, null, 2), true)
             this.setState({open: Object.assign({}, this.state.open, {[key]: true})});
         }

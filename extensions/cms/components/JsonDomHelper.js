@@ -316,7 +316,6 @@ class JsonDomHelper extends React.Component {
 
         const subJson = getComponentByKey(rest._key, _json)
 
-
         const {hovered, toolbarHovered} = this.state
         let toolbar, highlighter, dropAreaAbove, dropAreaBelow
 

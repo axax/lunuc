@@ -62,9 +62,9 @@ export const getTypeQueries = (typeName) => {
     let insertParams = '', insertUpdateQuery = '', updateParams = ''
 
     if (fields) {
-        fields.map(({name, type, required, multi, reference, localized, ...rest}) => {
+        fields.map(({name, type, required, multi, reference, localized, readOnly, ...rest}) => {
 
-            if (insertParams !== '') {
+            if (insertParams !== '' && !readOnly) {
                 insertParams += ', '
                 updateParams += ', '
                 insertUpdateQuery += ', '
@@ -94,9 +94,11 @@ export const getTypeQueries = (typeName) => {
                 }
             }
 
-            insertParams += '$' + name + ': ' + (multi && !reference ? '[' + t + ']' : t) + (required ? '!' : '')
-            updateParams += '$' + name + ': ' + (multi && !reference ? '[' + t + ']' : t)
-            insertUpdateQuery += name + ': ' + '$' + name
+            if( !readOnly ) {
+                insertParams += '$' + name + ': ' + (multi && !reference ? '[' + t + ']' : t) + (required ? '!' : '')
+                updateParams += '$' + name + ': ' + (multi && !reference ? '[' + t + ']' : t)
+                insertUpdateQuery += name + ': ' + '$' + name
+            }
         })
     }
     let selectParamsString = ''
@@ -176,7 +178,6 @@ export const queryStatemantForType = (type) => {
     return query
 }
 
-
 export const getFormFields = (type) => {
     if (typeFormFields[type]) return typeFormFields[type]
     const types = getTypes()
@@ -199,6 +200,7 @@ export const getFormFields = (type) => {
             placeholder,
             uitype,
             multi: !!field.multi,
+            readOnly: !!field.readOnly,
             type: field.type,
             required: !!field.required,
             localized: !!field.localized,

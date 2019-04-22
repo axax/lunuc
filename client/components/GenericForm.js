@@ -165,8 +165,10 @@ class GenericForm extends React.Component {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
 
         const formFields = Object.keys(fields).map((k, i) => {
-            const o = fields[k],
-                value = this.state.fields[k]
+            const o = fields[k],value = this.state.fields[k]
+            if( o.readOnly){
+                return
+            }
 
             const uitype = o.uitype || (o.enum ? 'select' : 'text')
 

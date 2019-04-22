@@ -320,21 +320,25 @@ function gensrcExtension(name, options) {
                     }
                 }
 
-                if (insertFields !== '') insertFields += ','
-                if (updateFields !== '') updateFields += ','
+                if (insertFields !== '' && !field.readOnly) insertFields += ','
+                if (updateFields !== '' && !field.readOnly) updateFields += ','
                 if (resolverFields !== '') resolverFields += ','
 
 
                 if (field.localized && !field.multi) { // no support for multi yet
                     typeSchema += '\t' + field.name + ': LocalizedString\n'
                     resolverFields += '\'' + field.name + '\''
-                    insertFields += field.name + ': LocalizedStringInput' + (field.required ? '!' : '')
-                    updateFields += field.name + ': LocalizedStringInput'
+                    if (!field.readOnly) {
+                        insertFields += field.name + ': LocalizedStringInput' + (field.required ? '!' : '')
+                        updateFields += field.name + ': LocalizedStringInput'
+                    }
                 } else {
                     typeSchema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
                     resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
-                    insertFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.required ? '!' : '') + (field.multi ? ']' : '')
-                    updateFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
+                    if (!field.readOnly) {
+                        insertFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.required ? '!' : '') + (field.multi ? ']' : '')
+                        updateFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
+                    }
                 }
             })
 

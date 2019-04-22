@@ -6,7 +6,7 @@ export const getComponentByKey = (key, json) => {
     if (!json) return
     const keyParts = key.split('.')
 
-    // the root is always 0 so remove it
+    // as the key always starts with 0 remove the first value
     keyParts.shift()
 
     if (json.constructor !== Array) {

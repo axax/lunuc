@@ -201,7 +201,8 @@ class JsonDom extends React.Component {
             this.props.scope !== props.scope ||
             this.props.script !== props.script ||
             this.props.inlineEditor !== props.inlineEditor ||
-            this.props.resolvedData !== props.resolvedData
+            this.props.resolvedData !== props.resolvedData ||
+            this.props.renewing !== props.renewing
 
         if (update) {
             // do some stuff before update

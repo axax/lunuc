@@ -18,7 +18,11 @@ const createScopeForDataResolver = (query, _props) => {
 }
 
 const createClientCacheKey = (query, props) => {
-    return (query ? query.replace(/#/g, '-') : '') + '#' + (props ? props.replace(/#/g, '-') : '')
+    const cacheKey = (query ? query.replace(/#/g, '-') : '') + '#' + (props ? props.replace(/#/g, '-') : '')
+    if( cacheKey!== '#'){
+        return cacheKey
+    }
+    return ''
 }
 
 export default db => ({

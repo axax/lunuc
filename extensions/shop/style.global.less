@@ -1,6 +1,7 @@
 @primary-color: #6394F8;
 @secondary-color: #efad3b;
 @light-text: #ABB0BE;
+@grey-200: #4b4236;
 @grey: #777;
 @grey-100: #d6d6d6;
 @grey-10: #e5e3e3;
@@ -28,7 +29,7 @@ html {
   padding-top: @toolbar-height;
   /* general font color */
   h1, h2, h3, h4, h5, h6, p {
-    color: #4b4236;
+    color: @grey-200;
   }
 
   h1 {
@@ -51,6 +52,11 @@ html {
   input[type="radio"] {
     height: auto;
     margin-right: 0.5rem;
+  }
+
+  button {
+    outline: none;
+    text-align: center;
   }
 
   .lighter-text {
@@ -86,14 +92,10 @@ html {
     font-weight: 900;
     text-transform: uppercase;
     color: @grey;
-    padding: 12px 18px;
     transition: color .15s ease-in-out, border-color .15s ease-in-out;
-    line-height: .95;
     border: 2px solid @grey;
-    border-radius: 20px;
-    overflow: hidden;
-    cursor: pointer;
-    outline: none;
+    border-radius: 1.4rem;
+    padding: 0.8rem 1.4rem;
 
     &:hover {
       color: @secondary-color;
@@ -349,6 +351,7 @@ html {
       margin-left: auto;
       font-size: 0.7rem;
       a {
+        cursor: pointer;
         padding: 1rem 0.3rem;
         &.active {
           font-weight: bold;
@@ -489,6 +492,7 @@ html {
 
       .shopping-cart-total {
         text-align: right;
+        font-weight: bold;
         .main-color-text {
           padding-left: 0.5rem;
         }
@@ -539,7 +543,7 @@ html {
         flex-grow: 1;
         color: @light-text;
         input {
-          max-width: 6rem;
+          max-width: 5rem;
           text-align: right;
         }
       }
@@ -565,17 +569,12 @@ html {
     }
 
     .shopping-cart-footer {
-
       button {
+        padding: 0.8rem 1rem;
+        border-radius: @border-radius;
         width: 100%;
         background: @primary-color;
         color: white;
-        text-align: center;
-        padding: 12px;
-        text-decoration: none;
-        display: block;
-        border-radius: 3px;
-        margin: 25px 0 0 0;
         &:hover {
           background: lighten(@primary-color, 3%);
         }
@@ -828,14 +827,14 @@ html {
     }
 
     #scrolltop-bg {
-      fill: @primary-color;
+      fill: @secondary-color;
     }
     #scrolltop-arrow {
       fill: white;
     }
     a:hover {
       #scrolltop-bg {
-        fill: @secondary-color;
+        fill: lighten(@secondary-color, 3%);
       }
       #scrolltop-arrow {
         fill: white;

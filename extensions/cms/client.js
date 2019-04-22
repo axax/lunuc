@@ -96,6 +96,18 @@ export default () => {
         }
     })
 
+
+    // remove cacheKey column
+    Hook.on('TypeTableColumns', ({columns}) => {
+        for(let i = 0;i<columns.length;i++){
+            const col = columns[i]
+            if( col.id === 'cacheKey'){
+                columns.splice(i, 1)
+                return
+            }
+        }
+    })
+
     // add a click event
     /*Hook.on('TypeTableEntryClick', ({type, item, container}) => {
      if (type === 'CmsPage') {

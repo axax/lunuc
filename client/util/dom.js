@@ -22,7 +22,12 @@ const DomUtil = {
         })
     },
     createAndAddTag(name, target, attrs){
-        const tag = document.createElement(name)
+        let tag = document.createElement(name)
+        if (attrs.id) {
+            tag = document.getElementById(attrs.id)
+        }
+        if (!tag)
+            tag = document.createElement(name)
         for (const key of Object.keys(attrs)) {
             if (key === 'data') {
                 for (const dataKey of Object.keys(attrs[key])) {

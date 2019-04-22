@@ -82,7 +82,8 @@
           "type": "Float"
         },
         {
-          "name": "cacheKey"
+          "name": "cacheKey",
+          "readOnly": true
         },
         {
           "name": "query",
