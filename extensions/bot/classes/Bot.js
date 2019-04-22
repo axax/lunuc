@@ -112,7 +112,7 @@ class Bot {
     }
 
     getTelegramChat(id) {
-        for (let i = 0; i < this.settings.telegramChats; i++) {
+        for (let i = 0; i < this.settings.telegramChats.length; i++) {
             const chat = this.settings.telegramChats[i]
             if (chat.id === id) {
                 return chat
