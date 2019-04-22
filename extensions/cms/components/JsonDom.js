@@ -538,6 +538,7 @@ class JsonDom extends React.Component {
                 if (className) {
                     eleProps.className = className
                 }
+
                 if (!this.props.dynamic && this.props.editMode && this.props.inlineEditor) {
                     const rawJson = this.getJsonRaw(this.props)
                     if (rawJson) {

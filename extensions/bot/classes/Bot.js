@@ -15,7 +15,7 @@ class Bot {
     commands = {}
     telegramBot = false
     result = {}
-    settings = {telegramChatIds: []}//[437556760,  -297061732, -356386664]
+    settings = {telegramChats: []}//[437556760,  -297061732, -356386664]
     db = null
 
     synonym = {
@@ -111,11 +111,27 @@ class Bot {
         this.interval = setInterval(this.checkStatus.bind(this), 10000)
     }
 
-    addTelegramChat(ctx) {
-        if (this.settings.telegramChatIds.indexOf(ctx.chat.id) < 0) {
-            this.settings.telegramChatIds.push(ctx.chat.id)
-            this.saveSettings()
+    getTelegramChat(id) {
+        for (let i = 0; i < this.settings.telegramChats; i++) {
+            const chat = this.settings.telegramChats[i]
+            if (chat.id === id) {
+                return chat
+            }
         }
+        return null
+    }
+
+
+    addTelegramChat(ctx) {
+        let id = ctx.chat.id
+        let chat = this.getTelegramChat(id)
+        let lastActive = (new Date()).getTime()
+        if (!chat) {
+            this.settings.telegramChats.push({id, lastActive})
+        } else {
+            chat.lastActive = lastActive
+        }
+        this.saveSettings()
     }
 
     saveSettings() {

@@ -17,6 +17,8 @@ import {
 import {getComponentByKey, addComponent, removeComponent} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
 
+const INDENT = 30
+
 const styles = theme => ({
     type: {
         fontWeight: 'bold'
@@ -109,28 +111,61 @@ class JsonEditor extends React.Component {
                 newkey += '.$loop.0'
                 newlevel++
             } else {
-                actions = [{
-                    name: 'Add child component', onClick: e => {
+                actions = [
+                    {
+                        name: 'Add child component', onClick: e => {
                         this.addComponent(key)
                         return this.stopPropagation(e)
                     }
-                }, {
-                    name: 'Remove this component', onClick: e => {
+                    },
+                    {
+                        name: 'Add property', onClick: e => {
+                        this.setComponentProperty(key, 'new value', 'newProperty')
+                        return this.stopPropagation(e)
+                    }
+                    },
+                    {
+                        name: 'Remove this component', onClick: e => {
                         this.removeComponent(key)
                         return this.stopPropagation(e)
                     }
-                }]
+                    }
+                ]
             }
 
             const t = (specialType || json.t || 'div')
             const props = []
             Object.keys(json).forEach(k => {
                 if (k !== 't' && k !== 'c') {
-                    props.push(<ListItem style={{paddingLeft: 10 * level + 10}}
-                                         key={key + '.' + k}><ListItemText>{k + ' = ' + JSON.stringify(json[k])}</ListItemText></ListItem>)
+                    let value = json[k]
+                    if (value.constructor !== String) {
+                        value = JSON.stringify(value, null, 4)
+                    }
+                    props.push(<tr key={key + '.' + k}>
+                        <td style={{fontWeight: 'bold'}} suppressContentEditableWarning={true}
+                            contentEditable
+                            onBlur={(e) => {
+                                this.setComponentProperty(key, null, k, true)
+                                this.setComponentProperty(key, json[k], e.target.innerText.trim())
+                            }}>{k}</td>
+                        <td style={{width: '100%', whiteSpace: 'pre'}} suppressContentEditableWarning={true}
+                            contentEditable
+                            onBlur={(e) => {
+                                let newValue = e.target.innerText.trim()
+                                if (newValue.startsWith('{') && newValue.endsWith('}')) {
+                                    try {
+                                        newValue = JSON.parse(newValue)
+                                    } catch (e) {
+                                    }
+                                }
+                                this.setComponentProperty(key, newValue, k)
+                            }}>{value}</td>
+                        <td><ClearIconButton onClick={() => {
+                            this.setComponentProperty(key, null, k)
+                        }}/></td>
+                    </tr>)
                 }
             })
-
 
             /* <span
              onClick={e => {
@@ -171,7 +206,7 @@ class JsonEditor extends React.Component {
                                       style: {display: 'none'}
                                   })
                               }}
-                              key={key} style={{paddingLeft: 10 * level}} button
+                              key={key} style={{paddingLeft: INDENT * level}} button
                               onClick={this.handleClick.bind(this, key)}>
 
                 {actions && <SimpleMenu mini color="secondary" items={actions}/>}
@@ -180,38 +215,45 @@ class JsonEditor extends React.Component {
                     {specialType ? t :
                         <SimpleAutosuggest placeholder="Enter component type" value={t}
                                            onChange={(e, v) => {
-                                               this.setChildComponent(key, v, 't')
+                                               this.setComponentProperty(key, v, 't')
                                            }
                                            }
                                            onBlur={this.handleBlur.bind(this)}
                                            onClick={this.stopPropagation} items={JsonEditor.components}/>}
                 </ListItemText>
-                { json.c !== undefined && (!!this.state.open[key] ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+                { (json.c !== undefined || props.length > 0) && (!!this.state.open[key] ? <ExpandLessIcon /> :
+                    <ExpandMoreIcon />)}
             </ListItem>,
                 <Collapse key={key + '.colapse'} in={!!this.state.open[key]} timeout="auto" unmountOnExit>
-                    {props}
+                    <div style={{paddingLeft: INDENT * level + 90}}>
+                        <table colspstyle={{width: '100%', fontSize: '0.9em'}}>
+                            <tbody>{props}</tbody>
+                        </table>
+                    </div>
                     {this.renderJsonRec(json.c, newkey, newlevel)}
-
                 </Collapse>
             ]
         } else {
-            return <ListItem style={{paddingLeft: 10 * level + 10}} key={key + '.c'}><ListItemText>
+            return <ListItem style={{paddingLeft: INDENT * level + 65}} key={key + '.c'}><ListItemText>
                 <TextField placeholder="Enter some content" fullWidth value={json} onChange={e => {
-                    this.setChildComponent(key, e.target.value)
+                    this.setComponentProperty(key, e.target.value, 'c')
                 }
                 } onBlur={this.handleBlur.bind(this)}/>
             </ListItemText></ListItem>
         }
     }
 
-    setChildComponent(key, value, prop) {
-
-        console.log(key, this.state.json)
+    setComponentProperty(key, value, prop, dontUpdate) {
         const o = getComponentByKey(key, this.state.json)
         if (o) {
-            o[prop || 'c'] = value
+            if (value === null) {
+                delete o[prop]
+            } else {
+                o[prop] = value
+            }
             this.props.onChange(JSON.stringify(this.state.json, null, 2))
-            this.forceUpdate()
+            if (!dontUpdate)
+                this.forceUpdate()
         }
     }
 
