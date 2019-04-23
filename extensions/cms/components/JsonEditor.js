@@ -47,10 +47,9 @@ class JsonEditor extends React.Component {
             JsonEditor.components.push({key: 'div', label: 'Arbitrary block of content'})
             console.log('JsonEditor components created')
         }
-
         this.state = {
             dataOri: props.children,
-            open: {}
+            open: JsonEditor.openState || {}
         }
 
         if (props.children) {
@@ -60,7 +59,11 @@ class JsonEditor extends React.Component {
                 console.log(e, props.children)
             }
         }
+    }
 
+    componentWillUnmount() {
+        // keep latest state
+        JsonEditor.openState = this.state.open
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -137,24 +140,27 @@ class JsonEditor extends React.Component {
             const props = []
             Object.keys(json).forEach(k => {
                 if (k !== 't' && k !== 'c') {
-                    let value = json[k]
+                    let value = json[k], valueOri = json[k]
                     if (value.constructor !== String) {
                         value = JSON.stringify(value, null, 4)
                     }
                     props.push(<tr key={key + '.' + k}>
-                        <td style={{fontWeight: 'bold'}} suppressContentEditableWarning={true}
+                        <td style={{fontWeight: 'bold', background:'#ffdbfb'}} suppressContentEditableWarning={true}
                             contentEditable
                             onBlur={(e) => {
-                                this.setComponentProperty(key, null, k, true)
-                                this.setComponentProperty(key, json[k], e.target.innerText.trim())
+                                const newKey = e.target.innerText.trim()
+                                if( k !== newKey ) {
+                                    this.setComponentProperty(key, null, k, true)
+                                    this.setComponentProperty(key, valueOri, newKey)
+                                }
                             }}>{k}</td>
-                        <td style={{width: '100%', whiteSpace: 'pre'}} suppressContentEditableWarning={true}
+                        <td style={{width: '100%', whiteSpace: 'pre',background:'#dbffde'}} suppressContentEditableWarning={true}
                             contentEditable
                             onBlur={(e) => {
                                 let newValue = e.target.innerText.trim()
                                 if (newValue.startsWith('{') && newValue.endsWith('}')) {
                                     try {
-                                        newValue = JSON.parse(newValue)
+                                        newValue = eval('(' + newValue + ')')
                                     } catch (e) {
                                     }
                                 }
@@ -225,7 +231,7 @@ class JsonEditor extends React.Component {
                     <ExpandMoreIcon />)}
             </ListItem>,
                 <Collapse key={key + '.colapse'} in={!!this.state.open[key]} timeout="auto" unmountOnExit>
-                    <div style={{paddingLeft: INDENT * level + 90}}>
+                    <div style={{paddingLeft: INDENT * level + 65}}>
                         <table colspstyle={{width: '100%', fontSize: '0.9em'}}>
                             <tbody>{props}</tbody>
                         </table>
