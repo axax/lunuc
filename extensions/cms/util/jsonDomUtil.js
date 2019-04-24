@@ -34,7 +34,6 @@ export const getComponentByKey = (key, json) => {
 export const addComponent = ({key, json, index, component}) => {
     const subJson = getComponentByKey(key, json)
     if (subJson) {
-
         let c = subJson['c']
         if (!c) {
             c = []

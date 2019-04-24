@@ -698,7 +698,7 @@ class CmsViewContainer extends React.Component {
                 this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 5000)
             }
 
-        }, instantSave ? 0 : 750)
+        }, instantSave ? 0 : 250)
     }
 
     handleResourceChange = (str) => {

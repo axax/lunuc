@@ -123,7 +123,10 @@ class JsonEditor extends React.Component {
                     },
                     {
                         name: 'Add property', onClick: e => {
-                        this.setComponentProperty(key, 'new value', 'newProperty')
+
+                        const comp = getComponentByKey(key, this.state.json)
+                        const prop = Object.assign({}, comp.p, {'newProperty': 'Property value'})
+                        this.setComponentProperty(key, prop, 'p')
                         return this.stopPropagation(e)
                     }
                     },
@@ -138,23 +141,29 @@ class JsonEditor extends React.Component {
 
             const t = (specialType || json.t || 'div')
             const props = []
-            Object.keys(json).forEach(k => {
-                if (k !== 't' && k !== 'c') {
-                    let value = json[k], valueOri = json[k]
+            if (json.p) {
+                Object.keys(json.p).forEach(k => {
+                    let value = json.p[k], valueOri = json.p[k]
                     if (value.constructor !== String) {
                         value = JSON.stringify(value, null, 4)
                     }
-                    props.push(<tr key={key + '.' + k}>
-                        <td style={{fontWeight: 'bold', background:'#ffdbfb'}} suppressContentEditableWarning={true}
+                    props.push(<tr key={key + '.p.' + k}>
+                        <td style={{fontWeight: 'bold', background: '#ffdbfb'}}
+                            suppressContentEditableWarning={true}
                             contentEditable
                             onBlur={(e) => {
+                                const comp = getComponentByKey(key, this.state.json)
+                                const prop = Object.assign({}, comp.p)
+
                                 const newKey = e.target.innerText.trim()
-                                if( k !== newKey ) {
-                                    this.setComponentProperty(key, null, k, true)
-                                    this.setComponentProperty(key, valueOri, newKey)
+                                if (k !== newKey && !prop[newKey]) {
+                                    delete prop[k]
+                                    prop[newKey] = valueOri
+                                    this.setComponentProperty(key, prop, 'p')
                                 }
                             }}>{k}</td>
-                        <td style={{width: '100%', whiteSpace: 'pre',background:'#dbffde'}} suppressContentEditableWarning={true}
+                        <td style={{width: '100%', whiteSpace: 'pre', background: '#dbffde'}}
+                            suppressContentEditableWarning={true}
                             contentEditable
                             onBlur={(e) => {
                                 let newValue = e.target.innerText.trim()
@@ -164,14 +173,20 @@ class JsonEditor extends React.Component {
                                     } catch (e) {
                                     }
                                 }
-                                this.setComponentProperty(key, newValue, k)
+                                const comp = getComponentByKey(key, this.state.json)
+                                const prop = Object.assign({}, comp.p)
+                                prop[k] = newValue
+                                this.setComponentProperty(key, prop, 'p')
                             }}>{value}</td>
                         <td><ClearIconButton onClick={() => {
-                            this.setComponentProperty(key, null, k)
+                            const comp = getComponentByKey(key, this.state.json)
+                            const prop = Object.assign({}, comp.p)
+                            delete prop[k]
+                            this.setComponentProperty(key, prop, 'p')
                         }}/></td>
                     </tr>)
-                }
-            })
+                })
+            }
 
             /* <span
              onClick={e => {

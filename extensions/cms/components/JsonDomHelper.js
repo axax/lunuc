@@ -256,24 +256,51 @@ class JsonDomHelper extends React.Component {
             targetKey = e.currentTarget.getAttribute('data-key'),
             targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
 
+        let isTargetAbove = true
+        const sourceKeyParts = sourceKey.split('.')
+        const targetKeyParts = targetKey.split('.')
+        for (let i = 0; i < sourceKeyParts.length; i++) {
+            if (i > targetKeyParts.length) {
+                break
+            }
+            if (sourceKeyParts[i] === targetKeyParts[i]) {
+                continue
+            }
+            const posSource = parseInt(sourceKeyParts[i]),
+                posTarget = parseInt(targetKeyParts[i])
+
+            if (posTarget > posSource) {
+                isTargetAbove = false
+                break
+            }
+        }
+
+
         // 1. get element from json structure by key
         const source = getComponentByKey(sourceKey, _json)
 
-        //2. remove it from json
-        if (removeComponent(sourceKey, _json)) {
-
-            if (sourceParentKey === targetKey) {
-                if (sourceIndex <= targetKey) {
-                    targetIndex -= 1
-                }
+        if (sourceParentKey === targetKey) {
+            if (sourceIndex <= targetKey) {
+                targetIndex -= 1
             }
-
-            // 3. add it to new position
-            addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
-
-            _onchange(_json)
-
         }
+//console.log(isTargetAbove)
+        if (isTargetAbove) {
+            //2. remove it from json
+            if (removeComponent(sourceKey, _json)) {
+
+                // 3. add it to new position
+                addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
+
+                _onchange(_json)
+
+            }
+        } else {
+            addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
+            removeComponent(sourceKey, _json)
+        }
+        _onchange(_json)
+
 
         this.resetDragState()
     }
@@ -315,6 +342,7 @@ class JsonDomHelper extends React.Component {
         const {classes, _WrappedComponent, _json, _cmsActions, _onchange, children, ...rest} = this.props
 
         const subJson = getComponentByKey(rest._key, _json)
+        if (!subJson) return null
 
         const {hovered, toolbarHovered} = this.state
         let toolbar, highlighter, dropAreaAbove, dropAreaBelow
