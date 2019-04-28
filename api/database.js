@@ -43,9 +43,12 @@ export const dbConnection = (cb) => {
             /* http://mongodb.github.io/node-mongodb-native/2.1/reference/connecting/connection-settings/ */
             reconnectTries: 0,
             autoReconnect: true,
-            poolSize: 10,
             ssl: false,
             useNewUrlParser: true,
+            poolSize: 20,
+            socketTimeoutMS: 480000,
+            keepAlive: 300000,
+            sslValidate: false,
             ...urlParams
         }
         MongoClient.connect(urlParts[0],
