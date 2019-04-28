@@ -6,7 +6,8 @@
       "fields": [
         {
           "name": "name",
-          "required": true
+          "required": true,
+          "clone": "${name} (copy)"
         },
         {
           "name": "script",

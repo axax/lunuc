@@ -11,7 +11,7 @@ import {
 import classNames from 'classnames'
 import AddToBody from './AddToBody'
 import DomUtil from 'client/util/dom'
-import {getComponentByKey, addComponent, removeComponent, getParentKey} from '../util/jsonDomUtil'
+import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
 
 const styles = theme => ({
     wrapper: {},
@@ -256,24 +256,6 @@ class JsonDomHelper extends React.Component {
             targetKey = e.currentTarget.getAttribute('data-key'),
             targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
 
-        let isTargetAbove = true
-        const sourceKeyParts = sourceKey.split('.')
-        const targetKeyParts = targetKey.split('.')
-        for (let i = 0; i < sourceKeyParts.length; i++) {
-            if (i > targetKeyParts.length) {
-                break
-            }
-            if (sourceKeyParts[i] === targetKeyParts[i]) {
-                continue
-            }
-            const posSource = parseInt(sourceKeyParts[i]),
-                posTarget = parseInt(targetKeyParts[i])
-
-            if (posTarget > posSource) {
-                isTargetAbove = false
-                break
-            }
-        }
 
 
         // 1. get element from json structure by key
@@ -284,8 +266,7 @@ class JsonDomHelper extends React.Component {
                 targetIndex -= 1
             }
         }
-//console.log(isTargetAbove)
-        if (isTargetAbove) {
+        if (isTargetAbove(sourceKey, targetKey)) {
             //2. remove it from json
             if (removeComponent(sourceKey, _json)) {
 

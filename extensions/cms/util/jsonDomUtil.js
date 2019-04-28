@@ -83,3 +83,26 @@ export const removeComponent = (key, json) => {
 
     return false
 }
+
+
+export const isTargetAbove = (sourceKey, targetKey) => {
+    let isTargetAbove = true
+    const sourceKeyParts = sourceKey.split('.')
+    const targetKeyParts = targetKey.split('.')
+    for (let i = 0; i < sourceKeyParts.length; i++) {
+        if (i > targetKeyParts.length) {
+            break
+        }
+        if (sourceKeyParts[i] === targetKeyParts[i]) {
+            continue
+        }
+        const posSource = parseInt(sourceKeyParts[i]),
+            posTarget = parseInt(targetKeyParts[i])
+
+        if (posTarget > posSource) {
+            isTargetAbove = false
+            break
+        }
+    }
+    return isTargetAbove
+}

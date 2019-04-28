@@ -59,10 +59,10 @@ export const getTypeQueries = (typeName) => {
     }
     let queryMutation = '_id status'
 
-    let insertParams = '', insertUpdateQuery = '', updateParams = ''
+    let insertParams = '', cloneParams = '', insertUpdateQuery = '', updateParams = '', cloneQuery = ''
 
     if (fields) {
-        fields.map(({name, type, required, multi, reference, localized, readOnly, ...rest}) => {
+        fields.map(({clone, name, type, required, multi, reference, localized, readOnly, ...rest}) => {
 
             if (insertParams !== '' && !readOnly) {
                 insertParams += ', '
@@ -70,7 +70,7 @@ export const getTypeQueries = (typeName) => {
                 insertUpdateQuery += ', '
             }
 
-            let t = localized ? 'LocalizedStringInput' : ( type || 'String')
+            let t = localized ? 'LocalizedStringInput' : (type || 'String')
 
 
             if (reference) {
@@ -94,11 +94,16 @@ export const getTypeQueries = (typeName) => {
                 }
             }
 
-            if( !readOnly ) {
+            if (!readOnly) {
                 insertParams += '$' + name + ': ' + (multi && !reference ? '[' + t + ']' : t) + (required ? '!' : '')
                 updateParams += '$' + name + ': ' + (multi && !reference ? '[' + t + ']' : t)
                 insertUpdateQuery += name + ': ' + '$' + name
+                if (clone) {
+                    cloneParams += ', $' + name + ': ' + (multi && !reference ? '[' + t + ']' : t) + (required ? '!' : '')
+                    cloneQuery += ',' + name + ': ' + '$' + name
+                }
             }
+
         })
     }
     let selectParamsString = ''
@@ -115,7 +120,7 @@ export const getTypeQueries = (typeName) => {
     result.update = `mutation update${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''},${updateParams}){update${name}(_id:$_id${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
     result.delete = `mutation delete${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}){delete${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.deleteMany = `mutation delete${name}s($_id: [ID]${collectionClonable ? ',$_version:String' : ''}){delete${name}s(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
-    result.clone = `mutation clone${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''},${insertParams}){clone${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${query}}}`
+    result.clone = `mutation clone${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}${cloneParams}){clone${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}${cloneQuery}){${query}}}`
 
     typeQueries[typeName] = result
     return result

@@ -293,7 +293,8 @@ function gensrcExtension(name, options) {
             let typeSchema = 'type ' + type.name + '{\n'
             typeSchema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy:UserPublic!' : '') + '\n\tstatus: String\n'
 
-            let insertFields = '', updateFields = '', resolverFields = '', refResolvers = '', refResolversObjectId = ''
+            let insertFields = '', cloneFields = '', updateFields = '', resolverFields = '', refResolvers = '',
+                refResolversObjectId = ''
 
             type.fields.forEach((field) => {
 
@@ -322,25 +323,35 @@ function gensrcExtension(name, options) {
 
                 if (insertFields !== '' && !field.readOnly) insertFields += ','
                 if (updateFields !== '' && !field.readOnly) updateFields += ','
+
+
                 if (resolverFields !== '') resolverFields += ','
 
-
+                let newInsertField = ''
                 if (field.localized && !field.multi) { // no support for multi yet
                     typeSchema += '\t' + field.name + ': LocalizedString\n'
                     resolverFields += '\'' + field.name + '\''
                     if (!field.readOnly) {
-                        insertFields += field.name + ': LocalizedStringInput' + (field.required ? '!' : '')
+                        newInsertField = field.name + ': LocalizedStringInput' + (field.required ? '!' : '')
                         updateFields += field.name + ': LocalizedStringInput'
                     }
                 } else {
                     typeSchema += '\t' + field.name + ':' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') + '\n'
                     resolverFields += '\'' + field.name + (isRef ? '$' + (field.multi ? '[' : '') + type + (field.multi ? ']' : '') : '') + '\''
                     if (!field.readOnly) {
-                        insertFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.required ? '!' : '') + (field.multi ? ']' : '')
+                        newInsertField = field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.required ? '!' : '') + (field.multi ? ']' : '')
                         updateFields += field.name + ':' + (field.multi ? '[' : '') + (isRef ? 'ID' : type) + (field.multi ? ']' : '')
                     }
                 }
+                if (newInsertField) {
+                    insertFields += newInsertField
+                }
+
+                if (field.clone) {
+                    cloneFields += ',' + newInsertField
+                }
             })
+
 
             if (type.collectionClonable) {
                 insertFields += ',_version:String'
@@ -369,7 +380,7 @@ function gensrcExtension(name, options) {
             typeSchema += '\tdelete' + type.name + ' (_id:ID!' + (type.collectionClonable ? ',_version:String' : '') + '):' + mutationResult + '\n'
             typeSchema += '\tdelete' + type.name + 's (_id:[ID]' + (type.collectionClonable ? ',_version:String' : '') + '):[' + mutationResult + ']\n'
             if (type.entryClonable) {
-                typeSchema += '\tclone' + type.name + ' (_id:ID!' + (insertFields.length > 0 ? ',' : '') + insertFields + '):' + type.name + '\n'
+                typeSchema += '\tclone' + type.name + ' (_id:ID!' + cloneFields + '):' + type.name + '\n'
             }
             typeSchema += '}\n\n'
 
