@@ -82,7 +82,7 @@ class JsonEditor extends React.Component {
     }
 
     renderJsonRec(json, key, level) {
-        if (!json) return null
+        if (json===undefined) return null
         const {classes} = this.props
         if (json === undefined) return null
         if (!key) {

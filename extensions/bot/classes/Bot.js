@@ -223,6 +223,7 @@ class Bot {
 
                 if (expression.tokens.hasContext) {
                     const x = this.matchExpressionWithContext(expression.tokens, tokens)
+                    //console.log(x,match)
                     match.accuracy = x.accuracy
                     match.context = x.context
                 } else {

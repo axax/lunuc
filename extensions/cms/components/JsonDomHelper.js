@@ -261,12 +261,7 @@ class JsonDomHelper extends React.Component {
         // 1. get element from json structure by key
         const source = getComponentByKey(sourceKey, _json)
 
-        if (sourceParentKey === targetKey) {
-            if (sourceIndex <= targetKey) {
-                targetIndex -= 1
-            }
-        }
-        if (isTargetAbove(sourceKey, targetKey)) {
+        if (isTargetAbove(sourceKey, targetKey+'.'+targetIndex)) {
             //2. remove it from json
             if (removeComponent(sourceKey, _json)) {
 
