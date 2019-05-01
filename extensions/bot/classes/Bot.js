@@ -222,8 +222,7 @@ class Bot {
                 let match = {key: expression.key, lang}
 
                 if (expression.tokens.hasContext) {
-                    const x = this.matchExpressionWithContext(expression.tokens, tokens)
-                    //console.log(x,match)
+                    const x = this.matchExpressionWithContext(expression.tokens, tokens, options)
                     match.accuracy = x.accuracy
                     match.context = x.context
                 } else {
@@ -260,12 +259,17 @@ class Bot {
     }
 
 
-    matchExpressionWithContext(exprTokens, textTokens) {
+    matchExpressionWithContext(exprTokens, textTokens, options) {
         let result = {accuracy: 0, context: {}}
 
         if (textTokens.stemmed.length >= exprTokens.stemmed.length) {
-            let tmpContext = {}, totalAccuracy = 0, count = 0, currentKey, exprIdx = 0
+            let tmpContext = {}, totalAccuracy = 0, count = 0, currentKey, exprIdx = -1
             for (let i = 0; i < textTokens.stemmed.length; i++) {
+                exprIdx++
+                if (exprIdx >= exprTokens.stemmed.length) {
+                    exprIdx = exprTokens.stemmed.length - 1
+                }
+
                 let pushit = false
                 if (exprTokens.stemmed[exprIdx].startsWith(Stemmer.CONTEXTSTART) && exprTokens.stemmed[exprIdx].endsWith(Stemmer.CONTEXTEND)) {
                     currentKey = exprTokens.stemmed[exprIdx].substring(Stemmer.CONTEXTSTART.length, exprTokens.stemmed[exprIdx].length - Stemmer.CONTEXTEND.length)
@@ -282,6 +286,7 @@ class Bot {
                         pushit = true
                         exprIdx--
                     } else {
+                        currentKey = ''
                         totalAccuracy += accuracy
                         count++
                     }
@@ -289,20 +294,34 @@ class Bot {
                 }
 
                 if (pushit) {
-                    tmpContext[currentKey + 'List'].push(textTokens.original[i])
-                    tmpContext[currentKey + 'StemmedList'].push(textTokens.stemmed[i])
-                    tmpContext[currentKey] = tmpContext[currentKey + 'List'].join(' ')
-                    tmpContext[currentKey + 'Stemmed'] = tmpContext[currentKey + 'StemmedList'].join(' ')
-                }
+                    if(options && options.maxContextParts && tmpContext[currentKey + 'List'].length > options.maxContextParts-1 ){
 
-                exprIdx++
-                if (exprIdx >= exprTokens.stemmed.length) {
-                    exprIdx = exprTokens.stemmed.length - 1
+                        // context is too long
+                        totalAccuracy += 0.65
+                        count++
+                    }else {
+                        tmpContext[currentKey + 'List'].push(textTokens.original[i])
+                        tmpContext[currentKey + 'StemmedList'].push(textTokens.stemmed[i])
+                        tmpContext[currentKey] = tmpContext[currentKey + 'List'].join(' ')
+                        tmpContext[currentKey + 'Stemmed'] = tmpContext[currentKey + 'StemmedList'].join(' ')
+                    }
                 }
             }
+
+            // if there are more words at the end of the matched express add to count
+            count += exprTokens.stemmed.length - 1 - exprIdx
+
             result.accuracy = totalAccuracy / count
             result.context = tmpContext
+            result.exprIdx = exprIdx
         }
+
+        /*if (result.accuracy > .80) {
+            console.log(exprTokens.stemmed, textTokens.stemmed)
+            console.log(result, options)
+            console.log( exprTokens.stemmed.length)
+
+        }*/
         return result
     }
 

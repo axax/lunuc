@@ -82,7 +82,7 @@ class JsonEditor extends React.Component {
     }
 
     renderJsonRec(json, key, level) {
-        if (json===undefined) return null
+        if (json === undefined) return null
         const {classes} = this.props
         if (json === undefined) return null
         if (!key) {
@@ -117,24 +117,24 @@ class JsonEditor extends React.Component {
                 actions = [
                     {
                         name: 'Add child component', onClick: e => {
-                        this.addComponent(key)
-                        return this.stopPropagation(e)
-                    }
+                            this.addComponent(key)
+                            return this.stopPropagation(e)
+                        }
                     },
                     {
                         name: 'Add property', onClick: e => {
 
-                        const comp = getComponentByKey(key, this.state.json)
-                        const prop = Object.assign({}, comp.p, {'newProperty': 'Property value'})
-                        this.setComponentProperty(key, prop, 'p')
-                        return this.stopPropagation(e)
-                    }
+                            const comp = getComponentByKey(key, this.state.json)
+                            const prop = Object.assign({}, comp.p, {'newProperty': 'Property value'})
+                            this.setComponentProperty(key, prop, 'p')
+                            return this.stopPropagation(e)
+                        }
                     },
                     {
                         name: 'Remove this component', onClick: e => {
-                        this.removeComponent(key)
-                        return this.stopPropagation(e)
-                    }
+                            this.removeComponent(key)
+                            return this.stopPropagation(e)
+                        }
                     }
                 ]
             }
@@ -201,7 +201,9 @@ class JsonEditor extends React.Component {
              }}
              suppressContentEditableWarning={true}
              contentEditable>{t}</span> */
-            return [<ListItem dense disableRipple
+            return [<ListItem dense
+                              draggable
+                              disableRipple
                               onMouseEnter={() => {
                                   const ele = document.querySelector(`[_key="${key}"]`)
                                   if (ele) {
@@ -242,8 +244,8 @@ class JsonEditor extends React.Component {
                                            onBlur={this.handleBlur.bind(this)}
                                            onClick={this.stopPropagation} items={JsonEditor.components}/>}
                 </ListItemText>
-                { (json.c !== undefined || props.length > 0) && (!!this.state.open[key] ? <ExpandLessIcon /> :
-                    <ExpandMoreIcon />)}
+                {(json.c !== undefined || props.length > 0) && (!!this.state.open[key] ? <ExpandLessIcon/> :
+                    <ExpandMoreIcon/>)}
             </ListItem>,
                 <Collapse key={key + '.colapse'} in={!!this.state.open[key]} timeout="auto" unmountOnExit>
                     <div style={{paddingLeft: INDENT * level + 65}}>
@@ -251,7 +253,10 @@ class JsonEditor extends React.Component {
                             <tbody>{props}</tbody>
                         </table>
                     </div>
-                    {this.renderJsonRec(json.c, newkey, newlevel)}
+                    {['input', 'textarea'].indexOf(t) < 0 || json.c ? this.renderJsonRec(json.c, newkey, newlevel) :
+                        <ListItem style={{paddingLeft: INDENT * newlevel + 65}}
+                                  key={key + '.c'}>Type {t} can not have
+                            children</ListItem>}
                 </Collapse>
             ]
         } else {
