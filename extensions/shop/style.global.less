@@ -52,6 +52,14 @@
   button {
     outline: none;
     text-align: center;
+    padding: 0.8rem 1rem;
+    border-radius: @border-radius;
+    background: @primary-color;
+    color: white;
+    cursor: pointer;
+    &:hover {
+      background: lighten(@primary-color, 3%);
+    }
   }
 
   .lighter-text {
@@ -91,10 +99,12 @@
     border: 2px solid @grey;
     border-radius: 1.4rem;
     padding: 0.8rem 1.4rem;
+    background: white;
 
     &:hover {
       color: @secondary-color;
       border-color: @secondary-color;
+      background: white;
     }
 
   }
@@ -427,20 +437,100 @@
     }
   }
 
-  .Basket {
-    .shopping-cart-items {
-      list-style: none;
-      padding-left: 0;
-      li {
-        margin-bottom: 18px;
-      }
 
+  .shopping-cart-items {
+    overflow-y: scroll;
+    overscroll-behavior: contain;
+    list-style: none;
+    padding-left: 0;
+
+    li {
+      display: flex;
+
+      padding-bottom: 1rem;
+      border-bottom: solid 1px @grey-10;
+      margin-bottom: 1rem;
+    }
+
+    .item-image {
+      flex: 0 0 6rem;
+      margin-right: 0.5rem;
+      text-align: center;
+      line-height: 4rem;
       img {
-        float: left;
-        margin-right: 0.8rem;
-        max-width: 3rem;
-        margin-bottom: 2rem;
+        vertical-align: middle;
+        max-width: 6rem;
+        max-height: 6rem;
       }
+    }
+
+    .item-details {
+      flex: auto;
+      display: flex;
+      flex-flow: wrap;
+      align-items: center;
+    }
+
+    .item-name {
+      display: block;
+      flex: 100%;
+      margin-bottom: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .item-quantity {
+      flex-grow: 1;
+      color: @light-text;
+      input {
+        max-width: 5rem;
+        text-align: right;
+      }
+    }
+
+    .item-price {
+      flex-grow: 2;
+      text-align: right;
+      color: @primary-color;
+      margin-right: 0.6rem;
+      margin-left: 0.6rem;
+    }
+
+    .item-total-price {
+      flex-grow: 2;
+      text-align: right;
+      color: @primary-color;
+      margin-right: 0.6rem;
+      margin-left: 0.6rem;
+    }
+
+    .item-remove {
+      flex-grow: 1;
+      text-align: right;
+      padding-right: 1rem;
+      svg {
+        cursor: pointer;
+        fill: @grey;
+        width: 2rem;
+      }
+    }
+  }
+
+  .basket {
+
+    .shopping-cart-items {
+
+      li{
+        .item-image {
+          flex: 0 0 10rem;
+        }
+      }
+    }
+
+    .shopping-cart-total{
+      display: flex;
+      justify-content: flex-end;
+      margin-right: 0.6rem;
+      font-weight: bold;
     }
   }
 
@@ -494,85 +584,9 @@
       }
     }
 
-    .shopping-cart-items {
-      overflow-y: scroll;
-      overscroll-behavior: contain;
-      list-style: none;
-      padding-left: 0;
-
-      li {
-        display: flex;
-
-        padding-bottom: 1rem;
-        border-bottom: solid 1px @grey-10;
-        margin-bottom: 1rem;
-      }
-
-      .item-image {
-        flex: 0 0 6rem;
-        margin-right: 0.5rem;
-        text-align: center;
-        line-height: 4rem;
-        img {
-          vertical-align: middle;
-          max-width: 6rem;
-          max-height: 6rem;
-        }
-      }
-
-      .item-details {
-        flex: auto;
-        display: flex;
-        flex-flow: wrap;
-        align-items: center;
-      }
-
-      .item-name {
-        display: block;
-        flex: 100%;
-        margin-bottom: auto;
-        padding-bottom: 0.5rem;
-      }
-
-      .item-quantity {
-        flex-grow: 1;
-        color: @light-text;
-        input {
-          max-width: 5rem;
-          text-align: right;
-        }
-      }
-
-      .item-price {
-        flex-grow: 2;
-        text-align: right;
-        color: @primary-color;
-        margin-right: 0.6rem;
-        margin-left: 0.6rem;
-      }
-
-      .item-remove {
-        flex-grow: 1;
-        text-align: right;
-        padding-right: 1rem;
-        svg {
-          cursor: pointer;
-          fill: @grey;
-          width: 2rem;
-        }
-      }
-    }
-
     .shopping-cart-footer {
       button {
-        padding: 0.8rem 1rem;
-        border-radius: @border-radius;
         width: 100%;
-        background: @primary-color;
-        color: white;
-        &:hover {
-          background: lighten(@primary-color, 3%);
-        }
       }
     }
 
@@ -760,15 +774,6 @@
     input{
       width: 100%;
       margin-bottom: 1rem;
-    }
-    button {
-      padding: 0.8rem 1rem;
-      border-radius: @border-radius;
-      background: @primary-color;
-      color: white;
-      &:hover {
-        background: lighten(@primary-color, 3%);
-      }
     }
     .error{
       color: red;
