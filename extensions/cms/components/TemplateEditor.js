@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import CodeEditor from 'client/components/CodeEditor'
 import JsonEditor from './JsonEditor'
-import {SimpleMenu, Tabs, Tab, CodeIcon, WebIcon, SubjectIcon, withStyles} from 'ui/admin'
+import {Tabs, Tab, CodeIcon, WebIcon, SubjectIcon, withStyles} from 'ui/admin'
 import {getComponentByKey} from '../util/jsonDomUtil'
 
 
@@ -125,13 +125,13 @@ class TemplateEditor extends React.Component {
     }
 
     render() {
-        const { classes, component} = this.props
-        const { tab, data, type} = this.state
+        const {classes, component} = this.props
+        const {tab, data, type} = this.state
 
 
         const currentTab = (!component && this.state.tab === 2 ? 0 : this.state.tab) || 0
 
-        return <div style={{position: 'relative'}}>
+        return <div>
             <Tabs
                 value={currentTab}
                 onChange={this.handleTabChange.bind(this)}
@@ -143,21 +143,13 @@ class TemplateEditor extends React.Component {
                     indicator: (component ? classes.tabsIndicator : classes.tabsIndicator50)
                 }}
             >
-                <Tab icon={<CodeIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>
+                <Tab icon={<CodeIcon/>} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>
                 {type === 'json' &&
-                <Tab icon={<WebIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
+                <Tab icon={<WebIcon/>} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
                 {component &&
-                <Tab icon={<SubjectIcon />} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
+                <Tab icon={<SubjectIcon/>} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
             </Tabs>
             {currentTab === 0 && <TabContainer>
-
-                {type === 'json' && <SimpleMenu mini fab color="secondary" style={{
-                    zIndex: 999,
-                    position: 'absolute',
-                    bottom: '-8px',
-                    right: '-8px'
-                }}
-                                                items={[{name: 'Prettify', onClick: this.prettify.bind(this)}]}/>}
                 <CodeEditor onChange={this.handleChange.bind(this)} lineNumbers type={type}>{data}</CodeEditor>
 
             </TabContainer>}
@@ -181,7 +173,7 @@ class TemplateEditor extends React.Component {
     handleChange(str, instantSave) {
         const {onChange, component} = this.props
 
-        this.setState({data:str})
+        this.setState({data: str})
 
         let data, type = 'json'
         if (!component) {
@@ -211,22 +203,6 @@ class TemplateEditor extends React.Component {
     handleTabChange(event, tab) {
         this.setState({tab})
         this.props.onTabChange(tab)
-    }
-
-    prettify() {
-        const {data} = this.state
-
-        if (data.trim() === '') return
-
-        try {
-            const j = eval('(' + data + ')');
-            if (j.constructor === Array || j.constructor === Object) {
-                const prettyData = JSON.stringify(j, null, 2)+' '
-                this.setState({data:prettyData})
-            }
-        } catch (e) {
-            console.error(e)
-        }
     }
 }
 

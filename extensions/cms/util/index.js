@@ -36,12 +36,7 @@ const UtilCms = {
 
             let tmpSlug = slug
             ors.push({slug})
-            /*while(tmpSlug.indexOf('/')>0){
-                tmpSlug = tmpSlug.substring(0,tmpSlug.lastIndexOf('/'))
-                ors.push({slug:tmpSlug})
-            }*/
 
-            // slugMatch.$regex = 'test|'+slug
             if (!userIsLoggedIn) {
                 // if no user only match public entries
                 match = {$and: [{$or: ors}, {public: true}]}
@@ -66,7 +61,7 @@ const UtilCms = {
                     }
                 }
             }
-            Cache.set(cacheKey, cmsPages, 60000) // cache expires in 1 min
+            Cache.set(cacheKey, cmsPages, 300000) // cache expires in 5 min
         }
         return cmsPages
     },

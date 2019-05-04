@@ -1,5 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import {SimpleMenu} from 'ui/admin'
 import {UnControlled as CodeMirror} from 'react-codemirror2'
 import './codemirror/javascript'
 import 'codemirror/mode/htmlmixed/htmlmixed'
@@ -33,31 +34,43 @@ class CodeEditor extends React.Component {
 
     shouldComponentUpdate(nextProps, nextState) {
         let refresh = false
-        if( nextState.data !== this._data){
+        if (nextState.data !== this._data) {
             this._data = nextState.data
-            refresh =true
+            refresh = true
         }
         return refresh
     }
 
+    autoFormatSelection() {
+        const from = this._editor.getCursor(true), to = this._editor.getCursor(false)
+        if (from !== to) {
+            this._editor.autoFormatRange(from, to)
+        }
+    }
 
     render() {
-        const {onChange, readOnly, lineNumbers, type} = this.props
+        const {onChange, readOnly, lineNumbers, type, actions} = this.props
         const options = {
             mode: {},
             readOnly,
             lineNumbers,
+            tabSize: 2,
             indentWithTabs: true,
             /*  lineWrapping: false,
              matchBrackets: true,*/
-            extraKeys: {'Ctrl-Space': 'autocomplete'}
+            extraKeys: {
+                'Ctrl-Space': 'autocomplete',
+                'Ctrl-L': (cm) => {
+                    this.autoFormatSelection()
+                }
+            },
         }
 
         if (['js', 'javascript', 'json'].indexOf(type) >= 0) {
             options.mode.name = 'javascript'
-        }else if( type === 'html'){
+        } else if (type === 'html') {
             options.mode.name = 'htmlmixed'
-        }else{
+        } else {
             options.mode.name = type
         }
 
@@ -65,24 +78,37 @@ class CodeEditor extends React.Component {
             options.mode.json = true
             options.indentWithTabs = false
             // repalce tabs with spaces
-            options.extraKeys = {
-                Tab: (cm) => cm.execCommand('indentMore'),
-                'Shift-Tab': (cm) => cm.execCommand('indentLess')
-            }
+            options.extraKeys.Tab = (cm) => cm.execCommand('indentMore')
+            options.extraKeys['Shift-Tab'] = (cm) => cm.execCommand('indentLess')
         }
 
-        console.log('render CodeEditor')
-        return <CodeMirror
-            value={this._data}
-            options={options}
-            onChange={(editor, dataObject, data) => {
+        const allActions = [{name: 'Format selection (Ctrl-L)', onClick: this.autoFormatSelection.bind(this)}]
 
-                this._data = data
-                if (onChange) {
-                    onChange(data)
-                }
-            }}
-        />
+        if (actions) {
+            allActions.push(...actions)
+        }
+        console.log('render CodeEditor')
+        return [
+            <SimpleMenu key="menu" mini fab color="secondary" style={{
+                zIndex: 999,
+                position: 'absolute',
+                bottom: '8px',
+                right: '8px'
+            }} items={allActions}/>, <CodeMirror
+                key="editor"
+                editorDidMount={editor => {
+                    this._editor = editor
+                }}
+                value={this._data}
+                options={options}
+                onChange={(editor, dataObject, data) => {
+
+                    this._data = data
+                    if (onChange) {
+                        onChange(data)
+                    }
+                }}
+            />]
     }
 }
 
@@ -92,7 +118,8 @@ CodeEditor.propTypes = {
     readOnly: PropTypes.bool,
     onChange: PropTypes.func,
     type: PropTypes.string,
-    children: PropTypes.string
+    children: PropTypes.string,
+    actions: PropTypes.array
 }
 
 

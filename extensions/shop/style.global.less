@@ -128,6 +128,11 @@
     margin: 0 auto;
   }
 
+  .home-teaser{
+    margin: -@content-padding -@content-padding @content-padding -@content-padding;
+    width: calc(100% + 2*@content-padding);
+  }
+
   /* menu menu */
 
   .menu-container {
@@ -814,6 +819,44 @@
     }
   }
 
+
+
+  .product {
+
+
+    .product-image-wrap {
+      min-height: 12em;
+    }
+
+    .product-image {
+      max-width: 90%;
+      max-height: 90%;
+      position: absolute;
+      margin: auto;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+
+    .description {
+      overflow: hidden;
+      position: relative;
+      line-height: 1.2em;
+      max-height: 8em;
+    }
+
+    .description:after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3em;
+      bottom: 0;
+      background: linear-gradient(to top, white, rgba(255, 255, 255, 0.1));
+    }
+  }
+
   .productlist {
 
     .productlist-header{
@@ -822,14 +865,6 @@
       @media @mobile {
         flex-direction: column;
       }
-
-    }
-
-    .order{
-      @media @mobile {
-        margin-top: 1rem;
-        width:100%;
-      }
     }
 
     .product {
@@ -837,47 +872,22 @@
       transition: box-shadow 0.3s;
       border-radius: @border-radius;
       background-color: #fff;
+      padding: 1em;
 
       &:hover {
         box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.05);
       }
 
-      padding: 1em;
 
       .product-link{
         text-decoration: none;
       }
+    }
 
-      .product-image-wrap {
-        min-height: 12em;
-      }
-
-      .product-image {
-        max-width: 90%;
-        max-height: 90%;
-        position: absolute;
-        margin: auto;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-      }
-
-      .description {
-        overflow: hidden;
-        position: relative;
-        line-height: 1.2em;
-        max-height: 8em;
-      }
-
-      .description:after {
-        content: '';
-        position: absolute;
-        left: 0;
-        right: 0;
-        height: 3em;
-        bottom: 0;
-        background: linear-gradient(to top, white, rgba(255, 255, 255, 0.1));
+    .order{
+      @media @mobile {
+        margin-top: 1rem;
+        width:100%;
       }
     }
   }
