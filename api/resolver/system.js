@@ -303,7 +303,7 @@ export const systemResolver = (db) => ({
                 name = 'backup.db.' + date + '.gz',
                 fullName = path.join(backup_dir, name)
 
-            const response = execSync('mongodump --uri $LUNUC_MONGO_URL -v --archive="' + fullName + '" --gzip')
+            const response = execSync('mongodump --uri $MONGO_URL -v --archive="' + fullName + '" --gzip')
             console.log('createDbDump', response)
 
             const stats = fs.statSync(fullName)

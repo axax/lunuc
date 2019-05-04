@@ -26,37 +26,39 @@ const UtilCms = {
 
             let match, hostRule
 
+            const ors = []
+
             if (host) {
                 hostRule = {$regex: `(^|;)${host.replace(/\./g, '\\.')}=${slug}($|;)`, $options: 'i'}
+                ors.push({hostRule})
             }
+
+
+            let tmpSlug = slug
+            ors.push({slug})
+            while(tmpSlug.indexOf('/')>0){
+                tmpSlug = tmpSlug.substring(0,tmpSlug.lastIndexOf('/'))
+                ors.push({slug:tmpSlug})
+            }
+
+
+
 
             // slugMatch.$regex = 'test|'+slug
             if (!userIsLoggedIn) {
                 // if no user only match public entries
-                if (hostRule) {
-                    match = {$and: [{$or: [{hostRule}, {slug}]}, {public: true}]}
-                } else {
-                    match = {$and: [{slug}, {public: true}]}
-                }
+                match = {$and: [{$or: ors}, {public: true}]}
             } else {
-                if (hostRule) {
-                    match = {$or: [{hostRule}, {slug}]}
-                } else {
-                    match = {slug}
-                }
+                match = {$or: ors}
             }
-
             cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv'], {
                 match,
+                limit:1,
                 _version
             })
 
             // minify template if no user is logged in
             if (cmsPages.results && cmsPages.results.length) {
-
-                if (cmsPages.results.length > 1) {
-                    console.warn("There are more than one page that match. Please check the slug and host rules")
-                }
 
                 if (!userIsLoggedIn) {
                     // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
