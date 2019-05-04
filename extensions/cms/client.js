@@ -1,6 +1,7 @@
 import React from 'react'
 import Hook from 'util/hook'
 import config from 'gen/config'
+
 const {ADMIN_BASE_URL} = config
 import {
     CAPABILITY_MANAGE_CMS_PAGES
@@ -10,6 +11,7 @@ import CmsViewContainer from './containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
 import CmsReducer from './reducers/CmsReducer'
 import Util from 'client/util'
+
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
 
@@ -20,7 +22,7 @@ const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../client/components/layout/ErrorPage')}/>
 
 // Extend Util to use in template
-Util.xx = ()=>{
+Util.xx = () => {
     return 'yy'
 }
 
@@ -34,7 +36,7 @@ export default () => {
 
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
-        menuItems.push({name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true, icon: <WebIcon />})
+        menuItems.push({name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true, icon: <WebIcon/>})
     })
 
     // Hook to add user capabilities
@@ -48,11 +50,14 @@ export default () => {
             private: true,
             exact: true,
             path: ADMIN_BASE_URL + '/cms/:page*',
-            component: (p) => <TypesContainer baseUrl={ADMIN_BASE_URL + "/cms/"} fixType="CmsPage" title="Content Management" {...p} />
+            component: (p) => <TypesContainer baseUrl={ADMIN_BASE_URL + "/cms/"} fixType="CmsPage"
+                                              title="Content Management" {...p} />
         })
         routes.push({
             // match everything but paths that start with ADMIN_BASE_URL
             exact: false, path: '/:slug*', render: ({match}) => {
+                Hook.call('CMSSlug', {match})
+
                 if (match.params.slug === undefined || (match.params.slug && match.params.slug.split('/')[0] !== container.adminBaseUrlPlain)) {
                     return <CmsViewContainer match={match} slug={match.params.slug || ''}/>;
                 }
@@ -71,12 +76,12 @@ export default () => {
                     d.slug = <Link
                         to={'/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug}>
                         <span
-                        style={{
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            color: '#663366',
-                            textDecoration: 'underline'
-                        }}>{item.slug || <WebIcon />}</span></Link>
+                            style={{
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                color: '#663366',
+                                textDecoration: 'underline'
+                            }}>{item.slug || <WebIcon/>}</span></Link>
                 }
             })
         }
@@ -91,7 +96,7 @@ export default () => {
                     const {_version} = container.pageParams
                     container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug)
                 },
-                icon: <WebIcon />
+                icon: <WebIcon/>
             })
         }
     })
@@ -99,9 +104,9 @@ export default () => {
 
     // remove cacheKey column
     Hook.on('TypeTableColumns', ({columns}) => {
-        for(let i = 0;i<columns.length;i++){
+        for (let i = 0; i < columns.length; i++) {
             const col = columns[i]
-            if( col.id === 'cacheKey'){
+            if (col.id === 'cacheKey') {
                 columns.splice(i, 1)
                 return
             }

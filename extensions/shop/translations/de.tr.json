@@ -9,5 +9,9 @@
   "shop.more":"weitere...",
   "shop.breadcrumb.search":"Suche: %text%",
   "shop.search.result": "%count% Ergebnisse für \"%text%\"",
-  "shop.cart.added": "Artikel <strong>\"%name%\"</strong> wurde dem Warenkorb hinzugefügt."
+  "shop.cart.added": "Artikel <strong>\"%name%\"</strong> wurde dem Warenkorb hinzugefügt.",
+  "shop.products": "Produkte",
+  "shop.sort.relevance": "Relevanz",
+  "shop.sort.priceDesc": "Preis absteigend",
+  "shop.sort.priceAsc": "Preis aufsteigend"
 }

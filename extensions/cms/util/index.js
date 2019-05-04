@@ -36,13 +36,10 @@ const UtilCms = {
 
             let tmpSlug = slug
             ors.push({slug})
-            while(tmpSlug.indexOf('/')>0){
+            /*while(tmpSlug.indexOf('/')>0){
                 tmpSlug = tmpSlug.substring(0,tmpSlug.lastIndexOf('/'))
                 ors.push({slug:tmpSlug})
-            }
-
-
-
+            }*/
 
             // slugMatch.$regex = 'test|'+slug
             if (!userIsLoggedIn) {
@@ -53,7 +50,7 @@ const UtilCms = {
             }
             cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv'], {
                 match,
-                limit:1,
+                limit: 1,
                 _version
             })
 
@@ -105,7 +102,9 @@ const UtilCms = {
                     }
 
 
-                    if (segment.data) {
+                    if (segment._data) {
+                        resolvedData._data = segment._data
+                    } else if (segment.data) {
                         Object.keys(segment.data).forEach(k => {
                             resolvedData[k] = segment.data[k]
                         })
@@ -376,6 +375,7 @@ const UtilCms = {
                     }
 
                 }
+                delete resolvedData._data
             } catch (e) {
                 resolvedData.error = e.message + ' -> scope=' + JSON.stringify(scope) + debugInfo
             }

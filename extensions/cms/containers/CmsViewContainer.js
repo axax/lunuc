@@ -984,12 +984,13 @@ const CmsViewContainerWithGql = compose(
             return result
         }
     }),
-    graphql(gql`query cmsPages($filter:String,$_version:String){cmsPages(filter:$filter,_version:$_version){results{slug}}}`, {
+    graphql(gql`query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug}}}`, {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {
             const {slug, _version} = getSlugVersion(ownProps.slug),
                 variables = {
                     _version,
+                    limit:99,
                     filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`
                 }
             return {

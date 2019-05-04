@@ -10,16 +10,21 @@
     <style>
         #l {
             height: 4px;
-            left:-100%;
+            left: -100%;
             width: 100%;
             position: fixed;
             background: #2980b9;
             animation: l 1.3s linear infinite;
             animation-delay: 0.5s;
         }
+
         @keyframes l {
-            from {left: -100%;}
-            to {left: 100%;}
+            from {
+                left: -100%;
+            }
+            to {
+                left: 100%;
+            }
         }
     </style>
 </head>
@@ -27,31 +32,35 @@
 <div id="l"></div>
 <div id="app">Javascript is not supported</div>
 <script>
-    document.getElementById('app').innerHTML=''
+    document.getElementById('app').innerHTML = ''
     var ls = null
-    try{
+    try {
         ls = JSON.parse(localStorage.getItem('localSettings'))
-    }catch(e){}
+    } catch (e) {
+    }
 
-    _app_ = {tr: {}, trLoaded: false, localSettings: ls, start: new Date()};
-    var l = window.location.pathname.split('/')[1];
+    _app_ = {tr: {}, trLoaded: false, localSettings: ls, start: new Date(), langBefore: sessionStorage.getItem('lang')}
+    var l = window.location.pathname.split('/')[1]
     if (!l || l.length !== 2) {
-        l = (navigator.language || navigator.userLanguage).substr(0, 2);
+        if (!_app_.langBefore) {
+            l = (navigator.language || navigator.userLanguage).substr(0, 2)
+        } else {
+            l = '${DEFAULT_LANGUAGE}'
+        }
     } else {
-        l = l.toLowerCase();
+        l = l.toLowerCase()
     }
 
-    _app_.langBefore = sessionStorage.getItem('lang');
-    sessionStorage.setItem('lang', l);
+    sessionStorage.setItem('lang', l)
 
-    _app_.lang = l;
-    var s = document.createElement('script');
+    _app_.lang = l
+    var s = document.createElement('script')
     s.onload = function () {
-        _app_.trLoaded = true;
-        if (_app_.trCallback) _app_.trCallback();
+        _app_.trLoaded = true
+        if (_app_.trCallback) _app_.trCallback()
     }
-    s.setAttribute('src', '/' + l + '.tr.js?v=${BUILD_NUMBER}');
-    document.head.appendChild(s);
+    s.setAttribute('src', '/' + l + '.tr.js?v=${BUILD_NUMBER}')
+    document.head.appendChild(s)
 </script>
 <script async src="/main.bundle.js?v=${BUILD_NUMBER}"></script>
 </body>

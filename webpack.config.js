@@ -40,7 +40,9 @@ const APP_VALUES = {
     APP_NAME: PACKAGE_JSON.name,
     APP_VERSION: PACKAGE_JSON.version,
     APP_DESCRIPTION: PACKAGE_JSON.description,
-    APP_COLOR: '#2196f3'
+    APP_DESCRIPTION: PACKAGE_JSON.description,
+    APP_COLOR: '#2196f3',
+    ...APP_CONFIG.options
 }
 
 if (APP_CONFIG.extensions) {
@@ -163,6 +165,32 @@ const config = {
      }*/
 }
 
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+config.plugins.push(
+    new CopyWebpackPlugin([
+        {
+            from: 'index.html', to: 'index.html',
+            transform: replacePlaceholders
+        },
+        {
+            from: 'index.min.html', to: 'index.min.html',
+            transform: replacePlaceholders
+        },
+        {
+            from: 'serviceworker.js', to: 'serviceworker.js',
+            transform: replacePlaceholders
+        },
+        {
+            from: 'manifest.json', to: 'manifest.json',
+            transform: replacePlaceholders
+        },
+        {from: 'favicon.ico', to: 'favicon.ico'},
+        {from: 'favicon.svg', to: 'favicon.svg'},
+        {from: 'favicon-192x192.png', to: 'favicon-192x192.png'},
+        {from: 'favicon-512x512.png', to: 'favicon-512x512.png'}
+    ])
+)
+
 /**
  *  Developer / Debug Config
  */
@@ -198,33 +226,6 @@ if (DEV_MODE) {
 } else {
     console.log('Build for production')
     config.mode = 'production'
-
-
-    const CopyWebpackPlugin = require('copy-webpack-plugin')
-    config.plugins.push(
-        new CopyWebpackPlugin([
-            {
-                from: 'index.html', to: 'index.html',
-                transform: replacePlaceholders
-            },
-            {
-                from: 'index.min.html', to: 'index.min.html',
-                transform: replacePlaceholders
-            },
-            {
-                from: 'serviceworker.js', to: 'serviceworker.js',
-                transform: replacePlaceholders
-            },
-            {
-                from: 'manifest.json', to: 'manifest.json',
-                transform: replacePlaceholders
-            },
-            {from: 'favicon.ico', to: 'favicon.ico'},
-            {from: 'favicon.svg', to: 'favicon.svg'},
-            {from: 'favicon-192x192.png', to: 'favicon-192x192.png'},
-            {from: 'favicon-512x512.png', to: 'favicon-512x512.png'}
-        ])
-    )
 
     config.plugins.push(
         new CompressionPlugin({

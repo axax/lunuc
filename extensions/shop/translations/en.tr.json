@@ -9,5 +9,9 @@
   "shop.more": "more...",
   "shop.breadcrumb.search": "Search: %text%",
   "shop.search.result": "%count% Results for \"%text%\"",
-  "shop.cart.added": "Item <strong>\"%name%\"</strong> was added to the cart."
+  "shop.cart.added": "Item <strong>\"%name%\"</strong> was added to the cart.",
+  "shop.products": "Products",
+  "shop.sort.relevance": "Relevance",
+  "shop.sort.priceDesc": "Price descending",
+  "shop.sort.priceAsc": "Price ascending"
 }

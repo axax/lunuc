@@ -147,6 +147,9 @@ class JsonDom extends React.Component {
             // if no id is defined or not found refresh the current dom
             nodeToRefresh = this
         }
+
+        if (!nodeToRefresh._ismounted)
+            return false
         nodeToRefresh.json = null
         if (!noScript) {
             nodeToRefresh.runScript = true
@@ -239,6 +242,7 @@ class JsonDom extends React.Component {
     }
 
     componentDidMount() {
+        this._ismounted = true
         this.runJsEvent('mount', true)
         this.checkResources()
         this.props.history.listen(() => {
@@ -248,6 +252,7 @@ class JsonDom extends React.Component {
     }
 
     componentWillUnmount() {
+        this._ismounted = false
         this.runJsEvent('unmount')
         this.resetTemplate()
         this.removeAddedDomElements()

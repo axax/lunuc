@@ -31,7 +31,7 @@ class SmartImage extends React.Component {
     }
 
     componentWillUnmount() {
-        this._ismounted = false;
+        this._ismounted = false
     }
 
     componentDidUpdate() {

@@ -36,13 +36,16 @@
     font-size: 1.4rem;
   }
 
-  input {
-    -webkit-appearance: none; /*remove inner shadow */
+  input, select {
     font-size: 1rem;
     border: 1px solid @grey-10;
     padding: 0 1rem;
     height: @input-height;
     border-radius: @border-radius;
+  }
+
+  input{
+    -webkit-appearance: none; /*remove inner shadow */
   }
 
   input[type="radio"] {
@@ -801,6 +804,9 @@
       @media @mobile {
         font-size: 6vw;
       }
+    }
+
+    .order{
     }
 
     .product {
