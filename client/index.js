@@ -21,16 +21,18 @@ if (!('WebSocket' in window) || !Object.assign) {
     _app_.config = config
 
     // context language
-    let contextLanguage = window.location.pathname.split('/')[1]
+    let contextLanguage = window.location.pathname.split('/')[1], basePath
     if (contextLanguage && contextLanguage.length === 2) {
         contextLanguage = contextLanguage.toLowerCase()
+        basePath = window.location.pathname.substring(3)
     } else {
         contextLanguage = false
+        basePath = window.location.pathname
     }
+    basePath += window.location.search + window.location.hash
 
     // try to detect language
     if (!_app_.lang) {
-        console.log(sessionStorage.getItem('lang'))
         let lang
         if (contextLanguage) {
             lang = contextLanguage
@@ -41,17 +43,42 @@ if (!('WebSocket' in window) || !Object.assign) {
                 lang = config.DEFAULT_LANGUAGE
             }
         }
-        // to detect a langauge change
         _app_.langBefore = sessionStorage.getItem('lang')
         sessionStorage.setItem('lang', lang)
         _app_.lang = lang
     }
 
+
     if (config.DEFAULT_LANGUAGE !== _app_.lang && contextLanguage !== _app_.lang) {
         // add language to url and redirect
-        window.location = window.location.origin + '/' + _app_.lang + window.location.pathname + window.location.search + window.location.hash
+        window.location = window.location.origin + '/' + _app_.lang + basePath
     } else {
         document.documentElement.setAttribute('lang', _app_.lang)
+
+        if (contextLanguage === config.DEFAULT_LANGUAGE) {
+            // set canonical link
+            DomUtil.createAndAddTag('link', 'head', {
+                rel: 'canonical',
+                href: window.location.origin + basePath
+            })
+        }
+
+        // set alternative language
+        DomUtil.createAndAddTag('link', 'head', {
+            rel: 'alternate',
+            hreflang: 'x-default',
+            href: window.location.origin + basePath
+        })
+        for (let i = 0; i < config.LANGUAGES.length; i++) {
+            const curLang = config.LANGUAGES[i]
+            const isDefault = curLang === config.DEFAULT_LANGUAGE
+            DomUtil.createAndAddTag('link', 'head', {
+                rel: 'alternate',
+                hreflang: curLang,
+                href: window.location.origin + (!isDefault ? '/' + curLang : '') + basePath
+            })
+        }
+
 
         const start = () => {
             render(

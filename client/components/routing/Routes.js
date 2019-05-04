@@ -12,7 +12,6 @@ import Async from 'client/components/Async'
 import {
     CAPABILITY_ACCESS_ADMIN_PAGE
 } from 'util/capabilities'
-import DomUtil from 'client/util/dom'
 
 
 const LoginContainer = (props) => <Async {...props}
@@ -63,14 +62,6 @@ class Routes extends React.Component {
 
         if (this.contextLang === _app_.lang) {
             this.pathPrefix = '/' + this.contextLang
-
-            if (this.contextLang === config.DEFAULT_LANGUAGE) {
-                // set canonical link
-                DomUtil.createAndAddTag('link', 'head', {
-                    rel: 'canonical',
-                    href: '/' + window.location.pathname.substring(4)
-                })
-            }
         }
         // override push and replace methode to prepend language code if needed
         this.history._replace = this.history.replace
