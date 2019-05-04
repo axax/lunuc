@@ -782,6 +782,13 @@
     }
   }
 
+  .main-title {
+    margin: 0;
+    @media @mobile {
+      font-size: 6vw;
+    }
+  }
+
   .breadcrumb {
     font-size: 0.85rem;
     padding: 0 @content-padding;
@@ -808,12 +815,6 @@
   }
 
   .productlist {
-    .productlist-title {
-      margin: 0;
-      @media @mobile {
-        font-size: 6vw;
-      }
-    }
 
     .productlist-header{
       margin-bottom: 2.5rem;
@@ -842,6 +843,10 @@
       }
 
       padding: 1em;
+
+      .product-link{
+        text-decoration: none;
+      }
 
       .product-image-wrap {
         min-height: 12em;

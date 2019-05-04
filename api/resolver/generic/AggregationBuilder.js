@@ -240,7 +240,6 @@ export default class AggregationBuilder {
         if (type === 'ID') {
 
             if (filterValue) {
-
                 if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
                     filterValue = filterValue.substring(1, filterValue.length - 1).split(',')
                     const ids = []
@@ -392,7 +391,7 @@ export default class AggregationBuilder {
             // handle it here
             this.addFilterToMatch({
                 filterKey: '_id',
-                filterValue: ObjectId(parsedFilter.parts._id.value),
+                filterValue: parsedFilter.parts._id.value,
                 filterOptions: parsedFilter.parts._id,
                 type: 'ID',
                 match: rootMatch

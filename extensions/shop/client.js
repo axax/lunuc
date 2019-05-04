@@ -29,15 +29,19 @@ export default () => {
 
     Hook.on('ExtensionSystemInfo', ({extension}) => {
         if (extension.name === 'Shop') {
-            extension.systemContent = <System />
+            extension.systemContent = <System/>
         }
     })
 
     Hook.on('CMSSlug', ({match}) => {
-        if( match.params.slug && match.params.slug.startsWith('shop/') && window.location.search.startsWith('?f=') ) {
+        if (match.params.slug) {
             // this is a product page
             // allow pretty url
-            match.params.slug = 'shop'
+            if (match.params.slug.startsWith('shop/list/')) {
+                match.params.slug = 'shop/list'
+            } else if (match.params.slug.startsWith('shop/detail/')) {
+                match.params.slug = 'shop/detail'
+            }
         }
     })
 }
