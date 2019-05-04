@@ -801,12 +801,26 @@
 
   .productlist {
     .productlist-title {
+      margin: 0;
       @media @mobile {
         font-size: 6vw;
       }
     }
 
+    .productlist-header{
+      margin-bottom: 2.5rem;
+      display: flex;
+      @media @mobile {
+        flex-direction: column;
+      }
+
+    }
+
     .order{
+      @media @mobile {
+        margin-top: 1rem;
+        width:100%;
+      }
     }
 
     .product {
