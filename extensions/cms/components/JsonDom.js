@@ -536,9 +536,11 @@ class JsonDom extends React.Component {
                     _this: this,
                     key,
                     _key: key,
-                    _editmode: this.props.editMode.toString(),
                     ...cmsProps,
                     ...properties
+                }
+                if( this.props.editMode){
+                   eleProps._editmode = 'true'
                 }
                 if (className) {
                     eleProps.className = className

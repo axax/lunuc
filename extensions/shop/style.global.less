@@ -42,12 +42,18 @@
     padding: 0 1rem;
     height: @input-height;
     border-radius: @border-radius;
+    -webkit-appearance: none;
+    -moz-appearance: none;
   }
 
-  input{
-    -webkit-appearance: none; /*remove inner shadow */
+  select{
+    background: transparent;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position-x: calc(100% - 0.1rem);
+    background-position-y: 0.5rem;
+    padding-right: 2rem;
   }
-
   input[type="radio"] {
     height: auto;
     margin-right: 0.5rem;
@@ -61,6 +67,7 @@
     background: @primary-color;
     color: white;
     cursor: pointer;
+    border-color: lighten(@primary-color, 3%);
 
     &:hover {
       background: lighten(@primary-color, 3%);
@@ -712,6 +719,7 @@
     }
 
     a {
+      text-decoration: none;
       font-size: 1rem;
       line-height: 1rem;
       flex: 0;
@@ -892,7 +900,7 @@
       margin-top: 0;
     }
 
-    input {
+    input, button:not(:last-child) {
       width: 100%;
       margin-bottom: 1rem;
     }
