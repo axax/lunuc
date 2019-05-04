@@ -380,7 +380,7 @@ function gensrcExtension(name, options) {
             typeSchema += '\tdelete' + type.name + ' (_id:ID!' + (type.collectionClonable ? ',_version:String' : '') + '):' + mutationResult + '\n'
             typeSchema += '\tdelete' + type.name + 's (_id:[ID]' + (type.collectionClonable ? ',_version:String' : '') + '):[' + mutationResult + ']\n'
             if (type.entryClonable) {
-                typeSchema += '\tclone' + type.name + ' (_id:ID!' + cloneFields + '):' + type.name + '\n'
+                typeSchema += '\tclone' + type.name + ' (_id:ID!' + (type.collectionClonable ? ',_version:String' : '') + cloneFields + '):' + type.name + '\n'
             }
             typeSchema += '}\n\n'
 

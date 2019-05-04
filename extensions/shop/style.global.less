@@ -23,6 +23,7 @@
   position: relative;
   padding-top: @toolbar-height;
   /* general font color */
+
   h1, h2, h3, h4, h5, h6, p {
     color: @grey-200;
   }
@@ -57,6 +58,7 @@
     background: @primary-color;
     color: white;
     cursor: pointer;
+
     &:hover {
       background: lighten(@primary-color, 3%);
     }
@@ -78,6 +80,7 @@
   }
 
   /* Badge */
+
   .badge {
     background-color: @primary-color;
     border-radius: 1rem;
@@ -116,12 +119,15 @@
   }
 
   /* menu menu */
+
   .menu-container {
     input {
       display: none;
+
       &:checked ~ div.menu {
         right: -50px; // Accounts for transition bounce
       }
+
       &:checked ~ label.menu-closer {
         opacity: 1;
         visibility: visible;
@@ -131,10 +137,12 @@
     input:checked ~ label.menu-opener {
       .menu-icon {
         background: rgba(255, 255, 255, 0);
+
         &:before {
           margin-top: 0px;
           transform: rotate(405deg);
         }
+
         &:after {
           margin-top: 0px;
           transform: rotate(-405deg);
@@ -170,6 +178,7 @@
         content: '';
         margin-top: -8px;
       }
+
       &:after {
         content: '';
         margin-top: 8px;
@@ -207,6 +216,7 @@
         height: 100%;
         display: flex;
         background: @primary-color;
+
         &::before {
           content: "";
           position: absolute;
@@ -238,9 +248,11 @@
           font-weight: 300;
           color: #FFF;
         }
+
         h3 {
           background: @secondary-color;
         }
+
         a {
           transition: background-color 0.3s ease;
           border-bottom: 1px solid @secondary-color;
@@ -248,6 +260,7 @@
           cursor: pointer;
           display: block;
           text-decoration: none;
+
           &.active, &:hover {
             background: @secondary-color;
           }
@@ -274,6 +287,7 @@
     a {
       text-decoration: none;
       color: black;
+
       &:hover {
         color: @primary-color;
       }
@@ -302,9 +316,11 @@
 
       .mobile-fav {
         cursor: pointer;
+
         &.active {
           background: @secondary-color;
         }
+
         margin-right: -@content-padding;
         color: black;
         width: 4rem;
@@ -313,6 +329,7 @@
         font-size: 1.5rem;
         display: block;
         text-align: center;
+
         &:focus, &:hover {
           color: black;
         }
@@ -322,9 +339,11 @@
     .title {
       color: white;
       flex: 1;
+
       a {
         font-weight: bold;
       }
+
       @media @mobile {
         margin-left: 3rem;
         text-align: center;
@@ -355,9 +374,11 @@
       display: flex;
       margin-left: auto;
       font-size: 0.7rem;
+
       a {
         cursor: pointer;
         padding: 1rem 0.3rem;
+
         &.active {
           font-weight: bold;
         }
@@ -367,18 +388,22 @@
     .toolbar-button {
       display: flex;
       margin-left: 1rem;
-      a, .minibasket-opener {
+      .minibasket-opener, .account-opener {
         min-width: 3rem;
         height: 4rem;
         position: relative;
         display: flex;
         align-items: center;
+        cursor: pointer;
+
         &:hover {
           color: @primary-color;
+
           svg {
             fill: @primary-color;
           }
         }
+
         > svg {
           flex: auto;
           fill: black;
@@ -392,7 +417,8 @@
         margin-left: 0.2rem;
       }
 
-      .minibasket-closer {
+      .minibasket-closer,
+      .account-closer {
         overscroll-behavior: contain;
         position: fixed;
         top: 0;
@@ -408,11 +434,15 @@
 
       > input {
         display: none;
-        &:checked ~ div.minibasket {
+
+        &:checked ~ div.minibasket,
+        &:checked ~ div.accountmenu {
           visibility: visible;
           opacity: 1;
         }
-        &:checked ~ label.minibasket-closer {
+
+        &:checked ~ label.minibasket-closer,
+        &:checked ~ label.account-closer {
           opacity: 1;
           visibility: visible;
         }
@@ -423,6 +453,7 @@
         bottom: 0.7rem;
         left: -0.4rem;
       }
+
       @media @mobile, @tablet {
         margin-left: 0;
         .link-text {
@@ -457,6 +488,7 @@
       margin-right: 0.5rem;
       text-align: center;
       line-height: 4rem;
+
       img {
         vertical-align: middle;
         max-width: 6rem;
@@ -481,6 +513,7 @@
     .item-quantity {
       flex-grow: 1;
       color: @light-text;
+
       input {
         max-width: 5rem;
         text-align: right;
@@ -507,6 +540,7 @@
       flex-grow: 1;
       text-align: right;
       padding-right: 1rem;
+
       svg {
         cursor: pointer;
         fill: @grey;
@@ -519,25 +553,30 @@
 
     .shopping-cart-items {
 
-      li{
+      li {
         .item-image {
           flex: 0 0 10rem;
         }
       }
     }
 
-    .shopping-cart-total{
+    .shopping-cart-total {
       display: flex;
       justify-content: flex-end;
       margin-right: 0.6rem;
       font-weight: bold;
+
+      .price-column {
+        width: 10rem;
+        text-align: right;
+      }
     }
   }
 
-  .minibasket {
+
+  .toolbarmenu {
     overscroll-behavior: contain;
     background: white;
-    width: 30rem;
     max-width: calc(100% - 2rem);
     max-height: calc(100% - @toolbar-height - 2.7rem);
     position: fixed;
@@ -553,31 +592,73 @@
     display: flex;
     flex-direction: column;
 
+
     &:after {
       content: "";
       position: absolute;
       width: 0;
       height: 0;
       top: 0;
-      right: 1.7rem;
       box-sizing: border-box;
       border: 0.5rem solid black;
       border-color: transparent transparent white white;
-
       transform-origin: 0 0;
       transform: rotate(135deg);
-
       box-shadow: -1px 1px 1px 0 rgba(0, 0, 0, 0.16);
+    }
 
+  }
+
+
+  .accountmenu {
+    width: 20rem;
+
+
+    @media @desktop {
+      &:after {
+        right: 8.7rem;
+      }
+    }
+    @media @mobile, @tablet {
+      &:after {
+        right: 3.7rem;
+      }
+    }
+    a {
+      display: flex;
+      align-items: center;
+      padding: 1rem 0;
+      &:not(:last-child) {
+        border-bottom: 1px solid @grey-10;
+      }
+      svg{
+        width: 1.4rem;
+        height: 1.4rem;
+        margin-right: 1rem;
+      }
+      &:hover{
+        svg{
+          fill: @primary-color;
+        }
+      }
+    }
+  }
+
+  .minibasket {
+
+    width: 30rem;
+    &:after {
+      right: 1.7rem;
     }
 
     .shopping-cart-header {
-      border-bottom: 1px solid #E8E8E8;
+      border-bottom: 1px solid @grey-10;
       padding-bottom: 15px;
 
       .shopping-cart-total {
         text-align: right;
         font-weight: bold;
+
         .main-color-text {
           padding-left: 0.5rem;
         }
@@ -601,6 +682,7 @@
       width: 100%;
       position: absolute;
     }
+
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
     max-width: 100%;
     background: #fff;
@@ -612,12 +694,14 @@
     @media @mobile {
       display: none;
     }
+
     nav {
       flex: auto;
       display: flex;
       flex-wrap: wrap;
       justify-content: space-evenly;
       align-items: stretch;
+
       a {
         flex: auto;
       }
@@ -633,11 +717,13 @@
       transition: background-color 0.3s ease;
       color: #000;
       cursor: pointer;
+
       &:hover, &.active {
         color: #fff;
         background-color: @secondary-color;
       }
     }
+
     a.more {
       min-width: 10rem;
     }
@@ -664,9 +750,11 @@
         right: 1px;
         border: solid 1px white;
       }
+
       svg {
         fill: @grey;
       }
+
       padding: 0.6rem;
       position: absolute;
       right: 4px;
@@ -688,13 +776,16 @@
     max-width: @content-max-width;
     margin: 2rem auto 0 auto;
     list-style: none;
+
     a {
       color: @primary-color;
       text-decoration: none;
+
       &:hover {
         color: @secondary-color;
       }
     }
+
     a + a {
       &:before {
         color: black;
@@ -705,6 +796,12 @@
   }
 
   .productlist {
+    .productlist-title {
+      @media @mobile {
+        font-size: 6vw;
+      }
+    }
+
     .product {
       box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.01);
       transition: box-shadow 0.3s;
@@ -716,6 +813,7 @@
       }
 
       padding: 1em;
+
       .product-image-wrap {
         min-height: 12em;
       }
@@ -737,6 +835,7 @@
         line-height: 1.2em;
         max-height: 8em;
       }
+
       .description:after {
         content: '';
         position: absolute;
@@ -750,7 +849,7 @@
   }
 
 
-  .login-box{
+  .login-box {
     margin: auto;
     width: 30rem;
     max-width: 100%;
@@ -760,28 +859,31 @@
     padding: @content-padding;
     border-radius: @border-radius;
 
-    &.login-box-loading{
-      button{
+    &.login-box-loading {
+      button {
         background-color: lighten(@primary-color, 10%);
         color: #666666;
         pointer-events: none;
       }
     }
 
-    h1{
+    h1 {
       margin-top: 0;
     }
-    input{
+
+    input {
       width: 100%;
       margin-bottom: 1rem;
     }
-    .error{
+
+    .error {
       color: red;
       margin-bottom: 1.5rem;
     }
   }
 
   /* Absolute Center Spinner */
+
   .overlayLoader {
     position: fixed;
     z-index: 999;
@@ -795,6 +897,7 @@
     right: 0;
 
     /* Transparent Overlay */
+
     &:before {
       content: '';
       display: block;
@@ -807,6 +910,7 @@
     }
 
     /* :not(:required) hides these rules from IE9 and below */
+
     &:not(:required) {
       background-color: transparent;
       border: 0;
@@ -835,6 +939,7 @@
     bottom: 0;
     pointer-events: none;
     backface-visibility: hidden;
+
     a {
       position: fixed;
       position: -webkit-sticky;
@@ -852,15 +957,18 @@
       pointer-events: all;
       outline: none;
       overflow: hidden;
+
       svg {
         display: block;
         border-radius: 50%;
         width: 100%;
         height: 100%;
+
         path {
           transition: all 0.1s;
         }
       }
+
       #scrolltop-arrow {
         transform: scale(0.66);
         transform-origin: center;
@@ -870,18 +978,22 @@
     #scrolltop-bg {
       fill: @secondary-color;
     }
+
     #scrolltop-arrow {
       fill: white;
     }
+
     a:hover {
       #scrolltop-bg {
         fill: lighten(@secondary-color, 3%);
       }
+
       #scrolltop-arrow {
         fill: white;
       }
     }
   }
+
   @supports (-moz-appearance: meterbar) {
     .scrolltop-wrap {
       clip: rect(0, 3rem, auto, 0);
@@ -895,6 +1007,7 @@
   }
 
   /* snackbar */
+
   .snackbar {
     position: fixed;
     left: 0;
