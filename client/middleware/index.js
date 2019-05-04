@@ -15,7 +15,44 @@ const httpUri = `${window.location.protocol}//${window.location.hostname}:${wind
 const wsUri = (window.location.protocol === 'https:' ? 'wss' : 'ws') + `://${window.location.hostname}:${window.location.port}/ws`
 
 
+// create a middleware for state handling and to attach the hook
+let loadingCounter = 0, _store
+
+function addLoader() {
+    loadingCounter++
+    if (loadingCounter === 1) {
+        _store.dispatch(setNetworkStatus({
+            networkStatus: {loading: true}
+        }))
+    }
+}
+
+function removeLoader() {
+    loadingCounter--
+    if (loadingCounter === 0) {
+        // send loading false when all request are done
+        _store.dispatch(setNetworkStatus({
+            networkStatus: {loading: false}
+        }))
+    }
+}
+
+const oldfetch = fetch;
+fetch = function (input, opts) {
+    addLoader()
+    return new Promise((resolve, reject) => {
+        oldfetch(input, opts).then((...args) => {
+            removeLoader()
+            resolve(...args)
+        }, (...args) => {
+            removeLoader()
+            reject(...args)
+        })
+    })
+}
+
 export function configureMiddleware(store) {
+    _store = store
 
     //// TODO: batch queries is not support in graphql-express --> replace with ApolloServer
     //const httpLink = new BatchHttpLink({uri: httpUri})
@@ -32,6 +69,7 @@ export function configureMiddleware(store) {
             }
         }
     })
+
 
     // create a middleware for error handling
     const errorLink = onError(({networkError, graphQLErrors, operation, response}) => {
@@ -51,16 +89,6 @@ export function configureMiddleware(store) {
             )
         }
         if (networkError) {
-            // hide loader
-            loadingCounter = 0
-            store.dispatch(setNetworkStatus({
-                networkStatus: {loading: false}
-            }))
-
-            if (networkError.statusCode === 500) {
-                // this is needed in order to get rid of the loading bar
-                dispatchNetworkSatus()
-            }
             if (errorCount == 0) {
                 // this is only shown if not already a graphql_error has dispatched
                 store.dispatch(addError({key: 'api_error', msg: networkError.message}))
@@ -68,32 +96,8 @@ export function configureMiddleware(store) {
         }
     })
 
-    // create a middleware for state handling and to attach the hook
-    let loadingCounter = 0
-
-    const dispatchNetworkSatus = () => {
-        loadingCounter--
-        if (loadingCounter === 0) {
-            // send loading false when all request are done
-            store.dispatch(setNetworkStatus({
-                networkStatus: {loading: false}
-            }))
-        }
-    }
-
     const statusLink = new ApolloLink((operation, forward) => {
-        loadingCounter++
-        console.log("start "+loadingCounter,operation)
-
-        if (loadingCounter === 1) {
-            store.dispatch(setNetworkStatus({
-                networkStatus: {loading: true}
-            }))
-        }
         return forward(operation).map((data) => {
-
-            console.log("end "+(loadingCounter-1),operation)
-            dispatchNetworkSatus()
             /* HOOK */
             Hook.call('ApiResponse', data)
             return data
@@ -118,7 +122,7 @@ export function configureMiddleware(store) {
 
     // create my middleware using the applyMiddleware method from subscriptions-transport-ws
     const subscriptionMiddleware = {
-        applyMiddleware (options, next) {
+        applyMiddleware(options, next) {
             options.auth = Util.getAuthToken()
             next()
         }
