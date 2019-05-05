@@ -53,8 +53,13 @@ class JsonDom extends React.Component {
                 return <a {...rest}/>
             }
         },
-        'Cms': ({props, _this, ...rest}) => <CmsViewContainer _props={props} _parentRef={_this}
-                                                              dynamic={true} {...rest}/>,
+        'Cms': ({props, _this, ...rest}) => {
+            if (!rest.id) {
+                console.warn(`There is no id set for included Cms Component ${rest.slug}`, props)
+            }
+            return <CmsViewContainer key={rest.id} _props={props} _parentRef={_this}
+                                     dynamic={true} {...rest}/>
+        },
         'SimpleToolbar': ({_this, position, ...rest}) => <UiSimpleToolbar
             position={(_this.props.editMode ? 'static' : position)} {...rest} />,
         'Button': UiButton,
@@ -76,7 +81,8 @@ class JsonDom extends React.Component {
     extendedComponents = {}
     json = null
     jsonRaw = null
-    scope = null
+    scope = {}
+    updateScope = true
     parseError = null
     runScript = true
     scriptResult = null
@@ -157,7 +163,7 @@ class JsonDom extends React.Component {
 
         if (nodeToRefresh) {
             if (!nodeToRefresh._ismounted) {
-                console.warn(`Component ${id} is not mounted`)
+                console.warn(`Component ${id} is not mounted`, nodeToRefresh)
                 return false
             }
             nodeToRefresh.json = null
@@ -232,7 +238,7 @@ class JsonDom extends React.Component {
             }
 
             if (this.props.scope !== props.scope) {
-                this.scope = null
+                this.updateScope = true
                 this.json = null
             }
 
@@ -252,7 +258,7 @@ class JsonDom extends React.Component {
     }
 
     componentDidMount() {
-        //console.log('mount',this.props)
+        //console.log('xx mount', this.props.id)
         this._ismounted = true
         this.runJsEvent('mount', true)
         this.checkResources()
@@ -263,8 +269,8 @@ class JsonDom extends React.Component {
     }
 
     componentWillUnmount() {
+        //console.log('xx unmount', this.props.id)
         this.runJsEvent('unmount')
-        //console.log('unmount',this.props)
         this._ismounted = false
         this.resetTemplate()
         this.removeAddedDomElements()
@@ -273,6 +279,7 @@ class JsonDom extends React.Component {
 
     // is called after render
     componentDidUpdate(props) {
+        //console.log('xx update', this.props.id)
         this._ismounted = true
         this.runJsEvent('update', true)
     }
@@ -531,7 +538,7 @@ class JsonDom extends React.Component {
                         properties.onChange = this.handleBindingChange.bind(this, properties.onChange)
 
                     } else if (properties.value) {
-                        console.warn('Don\'t use property value without name')
+                        console.warn(`Don't use property value without name in ${scope.page.slug}`)
                     }
                 }
 
@@ -583,14 +590,19 @@ class JsonDom extends React.Component {
     }
 
     getScope(props) {
-        if (this.scope) return this.scope
-        const {scope} = props
-        this.scope = JSON.parse(scope)
+        if( this.updateScope ){
+            this.updateScope = false
 
-        // set default scope values
-        this.scope.fetchingMore = false
-        this.scope._app_ = _app_
+            const scope = JSON.parse(props.scope), keys = Object.keys(scope)
+            for(let i=0;i<keys.length;i++){
+                const key = keys[i]
+                this.scope[key] = scope[key]
+            }
+            // set default scope values
+            this.scope.fetchingMore = false
+            this.scope._app_ = _app_
 
+        }
         return this.scope
     }
 
@@ -717,7 +729,7 @@ class JsonDom extends React.Component {
                 this.resolvedDataJson = deepMergeConcatArrays(this.resolvedDataJson, newData)
                 scope.fetchingMore = false
 
-                if( this._ismounted )
+                if (this._ismounted)
                     this.forceUpdate()
             }
             if (callback && callback.constructor === Function) {
@@ -773,14 +785,11 @@ class JsonDom extends React.Component {
 
         if (this.runScript) {
             this.runScript = false
+            console.log('runscript',scope.page.slug)
             try {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
-                let scope = arguments[0].scope
-                const {fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, escape, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
-                on('refreshscope',(newScope)=>{
-                    scope = newScope
-                })
+                const {scope,fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, escape, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
                 ${script}`).call(this, {
                     scope,
                     on: this.jsOn,
@@ -813,9 +822,6 @@ class JsonDom extends React.Component {
             if (jsError) {
                 return <div>Error in the script: <strong>{jsError}</strong></div>
             }
-        } else {
-            // if script was already executed only refresh the scope
-            this.runJsEvent('refreshscope', false, scope)
         }
         scope.script = this.scriptResult || {}
         if (!this.runJsEvent('beforerender', false, scope)) {

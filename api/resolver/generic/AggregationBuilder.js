@@ -323,16 +323,29 @@ export default class AggregationBuilder {
         let fieldDefinition = {}
 
         if (fieldData.constructor === Object) {
-            // if a value is in this format {'categories':['name']}
-            // we expect that the field categories is a reference to another type
-            // so we create a lookup for this type
             const fieldNames = Object.keys(fieldData)
             if (fieldNames.length > 0) {
 
                 // there should be only one attribute
                 fieldDefinition.name = fieldNames[0]
 
-                fieldDefinition.fields = fieldData[fieldDefinition.name]
+
+                const data = fieldData[fieldDefinition.name]
+
+                if( data.constructor === Array) {
+                    // if a value is in this format {'categories':['name']}
+                    // we expect that the field categories is a reference to another type
+                    // so we create a lookup for this type
+                    fieldDefinition.fields = data
+                }else{
+                    if( data.localized) {
+                        fieldDefinition.projectLocal = true
+                    }
+                    if( data.substr) {
+                        fieldDefinition.substr = data.substr
+                    }
+                }
+
             }
 
         } else if (fieldData.indexOf('$') > 0) {
@@ -499,7 +512,12 @@ export default class AggregationBuilder {
 
                     if (fieldDefinition.localized && fieldDefinition.projectLocal) {
                         // project localized field in current language
-                        projectResultData[fieldName] = '$' + fieldName + '.' + lang
+                        if( fieldDefinition.substr){
+                            projectResultData[fieldName] =  { $substr: [ '$' + fieldName + '.' + lang, fieldDefinition.substr[0], fieldDefinition.substr[1] ] }
+                        }else{
+                            projectResultData[fieldName] = '$' + fieldName + '.' + lang
+                        }
+
                     } else {
                         projectResultData[fieldName] = 1
                     }
