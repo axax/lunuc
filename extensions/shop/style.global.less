@@ -801,13 +801,17 @@
     margin: 2rem auto 0 auto;
     list-style: none;
 
-    a {
+    a[href] {
       color: @primary-color;
       text-decoration: none;
 
       &:hover {
         color: @secondary-color;
       }
+    }
+
+    a:not([href]) {
+      color: @grey;
     }
 
     a + a {

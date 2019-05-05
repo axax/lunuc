@@ -456,7 +456,6 @@ class CmsViewContainer extends React.Component {
                             r += '?'
                         }
                         r += 'v=' + config.BUILD_NUMBER
-                        console.log(r)
                         if (ext.indexOf('css') === 0) {
                             DomUtil.addStyle(r, {
                                 data: {cmsView: true}

@@ -46,7 +46,13 @@ class JsonDom extends React.Component {
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'SimpleMenu': UiSimpleMenu,
-        'Link': Link,
+        'Link': ({to, ...rest}) => {
+            if (to) {
+                return <Link to={to} {...rest}/>
+            } else {
+                return <a {...rest}/>
+            }
+        },
         'Cms': ({props, _this, ...rest}) => <CmsViewContainer _props={props} _parentRef={_this}
                                                               dynamic={true} {...rest}/>,
         'SimpleToolbar': ({_this, position, ...rest}) => <UiSimpleToolbar
@@ -141,21 +147,25 @@ class JsonDom extends React.Component {
         return jsGetComponentRec(this.jsRootComponent(), id)
     }
     jsRefresh = (id, noScript) => {
-
-        let nodeToRefresh = this.jsGetComponent(id)
-        if (!nodeToRefresh) {
-            // if no id is defined or not found refresh the current dom
+        let nodeToRefresh
+        if (id) {
+            nodeToRefresh = this.jsGetComponent(id)
+        } else {
+            // if no id is defined select the current dom
             nodeToRefresh = this
         }
 
-        if (!nodeToRefresh._ismounted)
-            return false
-        nodeToRefresh.json = null
-        if (!noScript) {
-            nodeToRefresh.runScript = true
+        if (nodeToRefresh) {
+            if (!nodeToRefresh._ismounted) {
+                console.warn(`Component ${id} is not mounted`)
+                return false
+            }
+            nodeToRefresh.json = null
+            if (!noScript) {
+                nodeToRefresh.runScript = true
+            }
+            nodeToRefresh.forceUpdate()
         }
-        nodeToRefresh.forceUpdate()
-
     }
 
 
@@ -539,8 +549,8 @@ class JsonDom extends React.Component {
                     ...cmsProps,
                     ...properties
                 }
-                if( this.props.editMode){
-                   eleProps._editmode = 'true'
+                if (this.props.editMode) {
+                    eleProps._editmode = 'true'
                 }
                 if (className) {
                     eleProps.className = className

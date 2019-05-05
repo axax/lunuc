@@ -192,9 +192,48 @@ In this example the type FileDrop is extended under the name ImageDrop. Now the 
 ```    
 
 
-**the scope** 
+#### The scope
 
 Within a template all scope properties (See the section scope below) are accessible. For example if you want to access the parent scope just write ${parent.scope} or if you want to use data that has been resolved by the Data Resolver just type ${data.ProductCategory.total}
+
+
+#### loop
+Let's assume there is a property array **breadcrumbs** on the scope like this:
+
+```json
+scope.breadcrumbs = [{name:'Home',url:'/'},{name:'Page 1', url: '/page1'}]
+```  
+
+In the template we can iterate through it with the $loop expression:
+
+```json
+{
+  "$loop": {
+    "d": "breadcrumbs",
+    "c": {
+      "t": "Link",
+      "c": "$.loop{name}",
+      "p": {
+        "to": "$.loop{url}"
+      }
+    }
+  }
+}
+```  
+
+##### Properties
++ d = data source (access on the scope)
++ $d = data source as string that gets parsed to an array
++ c = children in loop
++ s = name of scope in loop to access data (default is loop). If s is equal to x for example data can be accessed with $.x{name}
+
+##### Other
++ Use this.scope to access the main scope within a loop.
++ Use this.loop to access the whole data object
++ If the data is not an object use $.loop{data} to access it
++ Use _index to get the current position in the loop
+
+
 
 ### Script
 **Reserved keywords**
