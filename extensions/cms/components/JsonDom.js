@@ -252,6 +252,7 @@ class JsonDom extends React.Component {
     }
 
     componentDidMount() {
+        //console.log('mount',this.props)
         this._ismounted = true
         this.runJsEvent('mount', true)
         this.checkResources()
@@ -262,8 +263,9 @@ class JsonDom extends React.Component {
     }
 
     componentWillUnmount() {
-        this._ismounted = false
         this.runJsEvent('unmount')
+        //console.log('unmount',this.props)
+        this._ismounted = false
         this.resetTemplate()
         this.removeAddedDomElements()
         this.componentRefs = null
@@ -271,6 +273,7 @@ class JsonDom extends React.Component {
 
     // is called after render
     componentDidUpdate(props) {
+        this._ismounted = true
         this.runJsEvent('update', true)
     }
 
@@ -687,7 +690,7 @@ class JsonDom extends React.Component {
 
     handleFetchMore(callback) {
         const scope = this.getScope(this.props)
-        if (scope.fetchingMore) {
+        if (scope.fetchingMore || !this._ismounted) {
             return
         }
         let query = ''
@@ -714,7 +717,8 @@ class JsonDom extends React.Component {
                 this.resolvedDataJson = deepMergeConcatArrays(this.resolvedDataJson, newData)
                 scope.fetchingMore = false
 
-                this.forceUpdate()
+                if( this._ismounted )
+                    this.forceUpdate()
             }
             if (callback && callback.constructor === Function) {
                 callback()
