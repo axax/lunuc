@@ -534,9 +534,12 @@ class JsonDom extends React.Component {
                         if (!this.state.bindings[properties.name]) {
                             this.state.bindings[properties.name] = properties.value
                             scope.bindings = this.state.bindings
+                        } else {
+                            properties.value = this.state.bindings[properties.name]
                         }
                         properties.onChange = this.handleBindingChange.bind(this, properties.onChange)
 
+                        properties.time = new Date()
                     } else if (properties.value) {
                         console.warn(`Don't use property value without name in ${scope.page.slug}`)
                     }
@@ -590,11 +593,11 @@ class JsonDom extends React.Component {
     }
 
     getScope(props) {
-        if( this.updateScope ){
+        if (this.updateScope) {
             this.updateScope = false
 
             const scope = JSON.parse(props.scope), keys = Object.keys(scope)
-            for(let i=0;i<keys.length;i++){
+            for (let i = 0; i < keys.length; i++) {
                 const key = keys[i]
                 this.scope[key] = scope[key]
             }
@@ -659,10 +662,12 @@ class JsonDom extends React.Component {
             const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
             const Util = this.Util
             const _i = Util.tryCatch.bind(this)
+            const _r = (c)=>{return ''}
             const _t = this._t;return \`${str}\``)
 
             return tpl.call({
                 scope,
+                _this: this,
                 parent: this.props._parentRef,
                 Util,
                 _t
@@ -785,7 +790,7 @@ class JsonDom extends React.Component {
 
         if (this.runScript) {
             this.runScript = false
-            console.log('runscript',scope.page.slug)
+            console.log('runscript', scope.page.slug)
             try {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
@@ -822,8 +827,8 @@ class JsonDom extends React.Component {
             if (jsError) {
                 return <div>Error in the script: <strong>{jsError}</strong></div>
             }
+            scope.script = this.scriptResult || {}
         }
-        scope.script = this.scriptResult || {}
         if (!this.runJsEvent('beforerender', false, scope)) {
             return <div>Error in beforerender event. See details in console log</div>
         }

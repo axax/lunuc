@@ -48,8 +48,12 @@ export class OfflineCache extends InMemoryCache {
             } catch (e) {
                 stringified = '{}'
             }
-            window.localStorage.setItem(CACHE_KEY, stringified)
-            console.info(`save to local storage (${(stringified.length/1024).toFixed(2)}kB) in ${(new Date() - startTime)}ms`)
+            try {
+                window.localStorage.setItem(CACHE_KEY, stringified)
+            } catch (e) {
+                window.localStorage.setItem(CACHE_KEY, '{}')
+            }
+            console.info(`save to local storage (${(stringified.length / 1024).toFixed(2)}kB) in ${(new Date() - startTime)}ms`)
         }
     }
 

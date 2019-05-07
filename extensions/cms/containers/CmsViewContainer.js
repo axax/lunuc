@@ -170,19 +170,20 @@ class CmsViewContainer extends React.Component {
             (!props.renewing && this.props.renewing) ||
             (
                 props.cmsPage.urlSensitiv && (
-                props.location.search !== this.props.location.search ||
-                props.location.hash !== this.props.location.hash)
+                    props.location.search !== this.props.location.search ||
+                    props.location.hash !== this.props.location.hash)
             ) ||
             props.user !== this.props.user ||
             props.children != this.props.children ||
             props._props !== this.props._props ||
             /* only if in edit mode */
             (!props.dynamic && isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script ||
-            this.props.cmsPages !== props.cmsPages ||
-            this.state.settings.fixedLayout !== state.settings.fixedLayout ||
-            this.state.settings.inlineEditor !== state.settings.inlineEditor ||
-            this.state.settings.templateTab !== state.settings.templateTab ||
-            this.state.settings.drawerWidth !== state.settings.drawerWidth))
+                this.props.cmsPages !== props.cmsPages ||
+                this.state.settings.fixedLayout !== state.settings.fixedLayout ||
+                this.state.settings.inlineEditor !== state.settings.inlineEditor ||
+                this.state.settings.templateTab !== state.settings.templateTab ||
+                this.state.settings.drawerWidth !== state.settings.drawerWidth))
+
     }
 
     componentDidMount() {
@@ -218,13 +219,13 @@ class CmsViewContainer extends React.Component {
             if (!loading) {
                 console.warn(`cmsPage ${this.props.slug} missing`)
                 if (!dynamic) {
-                    return <ErrorPage />
+                    return <ErrorPage/>
                 } else {
                     return <div>Cms page {this.props.slug} doesn't exist</div>
                 }
             }
             // show a loader here
-            return !dynamic && editMode ? <NetworkStatusHandler /> : null
+            return !dynamic && editMode ? <NetworkStatusHandler/> : null
         } else {
             // set page title
             // TODO: make tile localized
@@ -290,7 +291,7 @@ class CmsViewContainer extends React.Component {
                         win.focus()
                     }} button primary="Preview"/>
                 </MenuList>
-                <Divider />
+                <Divider/>
 
                 <div style={{padding: '10px'}}>
 
@@ -410,7 +411,7 @@ class CmsViewContainer extends React.Component {
                                                 title={`Edit Page "${cmsPage.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
                 {jsonDom}
                 <ErrorHandler snackbar/>
-                <NetworkStatusHandler />
+                <NetworkStatusHandler/>
 
                 <SimpleDialog open={!!cmsComponentEdit.key} onClose={this.handleComponentEditClose.bind(this)}
                               actions={[{
@@ -479,7 +480,6 @@ class CmsViewContainer extends React.Component {
         document.activeElement.blur()
 
         // clear timeouts
-        clearTimeout(this._scriptTimeout)
         if (this._autoSaveScriptTimeout) {
             this._autoSaveScript()
         }
@@ -642,10 +642,10 @@ class CmsViewContainer extends React.Component {
 
 
     handleClientScriptChange = (script) => {
-        clearTimeout(this._scriptTimeout)
-        this._scriptTimeout = setTimeout(() => {
+        /*clearTimeout(this._scriptTimeout)
+        this._scriptTimeout = setTimeout(() => {*/
             this.setState({script})
-        }, 500)
+        /*}, 500)*/
 
         this._autoSaveScript = () => {
             clearTimeout(this._autoSaveScriptTimeout)
@@ -989,7 +989,7 @@ const CmsViewContainerWithGql = compose(
             const {slug, _version} = getSlugVersion(ownProps.slug),
                 variables = {
                     _version,
-                    limit:99,
+                    limit: 99,
                     filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`
                 }
             return {

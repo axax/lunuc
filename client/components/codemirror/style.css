@@ -1,5 +1,7 @@
 .CodeMirror{
-    height: auto;
+    height: 35rem;
+    overflow-y: scroll;
+    background-color: #fefefe;
 }
 .cm-s-default .cm-custom {
     color: #f4c242;

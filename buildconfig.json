@@ -38,6 +38,9 @@
     },
     "bot": {
       "active": true
+    },
+    "newsletter": {
+      "active": true
     }
   },
   "ui": [

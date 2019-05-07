@@ -14,8 +14,8 @@ class JsonDomInput extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.value !== prevState.valueOri) {
-            return {value: nextProps.value, valueOri: nextProps.value}
+        if (nextProps.value !== prevState.valueOri || nextProps.time !== prevState.time) {
+            return {value: nextProps.value, valueOri: nextProps.value, time: nextProps.time}
         }
         // it is importent to return the prevState here
         // otherwise it won't refresh when property like style or placeholder change

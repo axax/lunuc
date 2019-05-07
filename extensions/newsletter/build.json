@@ -1,0 +1,30 @@
+{
+  "types": [
+    {
+      "name": "NewsletterSubscriber",
+      "noUserRelation": true,
+      "fields": [
+        {
+          "name": "email",
+          "required": true,
+          "index": 1,
+          "unique": true
+        },
+        {
+          "name": "list",
+          "multi": true,
+          "type": "NewsletterList"
+        }
+      ]
+    },
+    {
+      "name": "NewsletterList",
+      "fields": [
+        {
+          "name": "name",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
