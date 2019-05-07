@@ -266,6 +266,7 @@ class JsonDom extends React.Component {
             this.scope.params = Util.extractQueryParams()
             this.runJsEvent('urlchanged', false)
         })
+        this.moveInHtmlComponents()
     }
 
     componentWillUnmount() {
@@ -282,6 +283,7 @@ class JsonDom extends React.Component {
         //console.log('xx update', this.props.id)
         this._ismounted = true
         this.runJsEvent('update', true)
+        this.moveInHtmlComponents()
     }
 
     checkResources() {
@@ -645,6 +647,31 @@ class JsonDom extends React.Component {
         return this.jsonRaw
     }
 
+    renderIntoHtml(c) {
+        const key = 'inHtmlComponent' + this._inHtmlComponents.length
+        this._inHtmlComponents.push(this.parseRec(c, key, this.scope))
+
+        return '<div id=' + key + '></div>'
+    }
+
+    moveInHtmlComponents() {
+        if (this._inHtmlComponents && this._inHtmlComponents.length > 0) {
+            // move elements to right place
+            for (let i = 0; i < this._inHtmlComponents.length; i++) {
+                let key = this._inHtmlComponents[i][0].key
+                const ele = Util.$('[_key="' + key + '-0.0"]')
+                if (!ele || ele.length===0) {
+                    //try again
+                    console.log('not ready try again')
+                    setTimeout(() => {
+                        this.moveInHtmlComponents()
+                    }, 100)
+                    return
+                }
+                Util.$('#' + key.substr(0, key.length - 2)).appendChild(ele)
+            }
+        }
+    }
 
     renderString(str, scope) {
 
@@ -662,12 +689,12 @@ class JsonDom extends React.Component {
             const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
             const Util = this.Util
             const _i = Util.tryCatch.bind(this)
-            const _r = (c)=>{return ''}
+            const _r = this.renderIntoHtml
             const _t = this._t;return \`${str}\``)
 
             return tpl.call({
                 scope,
-                _this: this,
+                renderIntoHtml: this.renderIntoHtml.bind(this),
                 parent: this.props._parentRef,
                 Util,
                 _t
@@ -832,7 +859,12 @@ class JsonDom extends React.Component {
         if (!this.runJsEvent('beforerender', false, scope)) {
             return <div>Error in beforerender event. See details in console log</div>
         }
+        this._inHtmlComponents = []
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
+
+        if (this._inHtmlComponents.length > 0) {
+            content = [content, ...this._inHtmlComponents]
+        }
 
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
         if (this.parseError) {
