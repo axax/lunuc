@@ -7,7 +7,7 @@ export default db => ({
 
             const collection = db.collection('NewsletterSubscriber')
             const insertResult = await collection.insertOne(
-                {email, list: (list ? ObjectId(list) : list)}
+                {email, list:(list?list.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):list)}
             )
 
             if (insertResult.insertedCount) {
