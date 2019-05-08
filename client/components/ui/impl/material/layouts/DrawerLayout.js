@@ -213,6 +213,7 @@ class DrawerLayout extends React.Component {
         const contentFixed = {}
         if (fixedLayout && open) {
             contentFixed.marginLeft = drawerWidth + 'px'
+            contentFixed.width = 'calc(100% - ' + drawerWidth + 'px)'
         }
         return (
             <div className={classes.root}>
@@ -228,7 +229,7 @@ class DrawerLayout extends React.Component {
                                 onClick={this.handleDrawerOpen}
                                 className={classNames(classes.menuButton, open && classes.hide)}
                             >
-                                <MenuIcon />
+                                <MenuIcon/>
                             </IconButton>
                             <Typography variant="h6" color="inherit" noWrap style={{flex: 1}}>
                                 {title}
@@ -245,13 +246,13 @@ class DrawerLayout extends React.Component {
                         }}
                         open={open}
                     >
-                        <div className={ classNames(classes.drawerInner) } style={{width: drawerWidth + 'px'}}>
+                        <div className={classNames(classes.drawerInner)} style={{width: drawerWidth + 'px'}}>
                             <div className={classes.drawerHeader}>
                                 <IconButton onClick={this.handleDrawerClose}>
-                                    {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+                                    {theme.direction === 'rtl' ? <ChevronRightIcon/> : <ChevronLeftIcon/>}
                                 </IconButton>
                             </div>
-                            <Divider />
+                            <Divider/>
                             {open && sidebar}
                             <div className={classes.drawerDivider}
                                  onMouseDown={this.dividerMouseDown}></div>

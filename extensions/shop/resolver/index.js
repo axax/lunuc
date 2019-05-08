@@ -4,6 +4,7 @@ import path from 'path'
 import config from 'gen/config'
 import fs from 'fs'
 import {csv2json} from 'api/util/csv'
+import {sendMail} from 'api/util/mail'
 
 const {LANGUAGES, DEFAULT_LANGUAGE} = config
 
@@ -144,6 +145,13 @@ export default db => ({
             const {countCategories, countProducts} = await readCsv(db, context)
 
             return {status: 'complete', message: `${countProducts} products and ${countCategories} categories has been imported.`}
+        },
+        placeOrder: async ({}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+
+            await sendMail(db, context, {slug:'shop/mail/template/order', recipient: 'axax@gmx.net', subject:'test', body: '{}'})
+
+            return {status: 'complete', message: `.`}
         }
     }
 })

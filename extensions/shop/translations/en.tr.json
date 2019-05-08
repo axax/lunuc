@@ -13,5 +13,6 @@
   "shop.products": "Products",
   "shop.sort.relevance": "Relevance",
   "shop.sort.priceDesc": "Price descending",
-  "shop.sort.priceAsc": "Price ascending"
+  "shop.sort.priceAsc": "Price ascending",
+  "shop.ordernow": "Order now"
 }

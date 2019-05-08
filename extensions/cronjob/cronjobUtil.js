@@ -26,9 +26,11 @@ const cronjobUtil = {
         })();
         `)
 
-        let scriptLog = ''
+        let scriptLog = '', scriptDebug = ''
         const log = (msg) => {
             scriptLog += msg
+        }, debug = (msg) => {
+            scriptDebug += msg
         }
 
         const error = (e) => {
@@ -36,7 +38,9 @@ const cronjobUtil = {
                 _id: dbResult._id,
                 state: 'error',
                 endTime: (new Date()).getTime(),
-                scriptLog: e.message
+                scriptError: e.message,
+                scriptLog,
+                scriptDebug
             })
         }
 
@@ -45,7 +49,8 @@ const cronjobUtil = {
                 _id: dbResult._id,
                 state: 'finished',
                 endTime: (new Date()).getTime(),
-                scriptLog
+                scriptLog,
+                scriptDebug
             })
         }
 
@@ -53,12 +58,12 @@ const cronjobUtil = {
             await GenericResolver.entities(db, context, collection, fields, filter)
         }
 
-        const result = tpl.call({require, log, end, error, select, ...props})
+        const result = tpl.call({require, log, debug, end, error, select, ...props})
 
         return dbResult._id;
     },
     execFilter: (filter) => {
-        return Util.matchFilterExpression(filter, Util.systemProperties() )
+        return Util.matchFilterExpression(filter, Util.systemProperties())
     }
 }
 

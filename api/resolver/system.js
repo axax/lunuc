@@ -4,18 +4,16 @@ import path from 'path'
 import fs from 'fs'
 import config from 'gen/config'
 import zipper from 'zip-local'
-import nodemailer from 'nodemailer'
 import {
     CAPABILITY_MANAGE_BACKUPS,
     CAPABILITY_MANAGE_COLLECTION,
     CAPABILITY_RUN_COMMAND
 } from 'util/capabilities'
 import Cache from 'util/cache'
-import Hook from 'util/hook'
 import {pubsub} from 'api/subscription'
 import {withFilter} from 'graphql-subscriptions'
 import {ObjectId} from 'mongodb'
-
+import {sendMail} from '../util/mail'
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
 const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ', 'pwd', 'ls', 'ping']
@@ -152,48 +150,9 @@ export const systemResolver = (db) => ({
 
             return {response, id: currentId}
         },
-        sendMail: async ({recipient, subject, body, slug}, {context}) => {
+        sendMail: async (data, {context}) => {
             //Util.checkIfUserIsLoggedIn(context)
-            const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
-
-            const mailSettings = values.MailSettings
-            if (!mailSettings) {
-                throw new Error('Mail settings are missing. Please add MailSettings as a global value')
-            }
-
-            let html
-            if (slug && 'undefined' != typeof( Hook.hooks['cmsTemplateRenderer'] ) && Hook.hooks['cmsTemplateRenderer'].length) {
-                html = await Hook.hooks['cmsTemplateRenderer'][0].callback({
-                    context,
-                    db,
-                    recipient,
-                    subject,
-                    body,
-                    slug
-                })
-            } else {
-                html = body
-            }
-
-            const message = {
-                from: mailSettings.from,
-                to: recipient,
-                subject: subject,
-                text: 'Plaintext version of the message',
-                html
-            }
-
-            var transporter = nodemailer.createTransport({
-                service: mailSettings.service,
-                auth: {
-                    user: mailSettings.user,
-                    pass: mailSettings.password
-                }
-            })
-
-            const response = await transporter.sendMail(message)
-
-
+            const response = await sendMail(db,context,data)
             return {response: JSON.stringify(response)}
         },
         ping: async ({}, {context}) => {

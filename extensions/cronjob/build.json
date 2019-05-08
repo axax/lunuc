@@ -43,6 +43,14 @@
           "uitype": "editor"
         },
         {
+          "name": "scriptDebug",
+          "uitype": "editor"
+        },
+        {
+          "name": "scriptError",
+          "uitype": "editor"
+        },
+        {
           "name": "cronjob",
           "type": "CronJob"
         }
