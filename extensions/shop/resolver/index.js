@@ -149,7 +149,9 @@ export default db => ({
         placeOrder: async ({}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            await sendMail(db, context, {slug:'shop/mail/template/order', recipient: 'axax@gmx.net', subject:'test', body: '{}'})
+            const user = await Util.userById(db, context.id)
+
+            await sendMail(db, context, {slug:'shop/mail/template/order', recipient: user.email, subject:'test', body: '{}'})
 
             return {status: 'complete', message: `.`}
         }

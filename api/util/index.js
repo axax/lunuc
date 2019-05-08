@@ -130,16 +130,21 @@ const Util = {
             throw new Error(`User has not given premission for this operation. Missing capability "${capability}"`)
         }
     },
+    userById: async (db, id) => {
+        const cacheKeyUser = 'User' + id
+        let user = Cache.get(cacheKeyUser)
+
+        if (!user) {
+            user = (await db.collection('User').findOne({_id: ObjectId(id)}))
+            Cache.set(cacheKeyUser, user, 6000000) // cache expires in 100 min
+        }
+
+        return user
+    },
     userHasCapability: async (db, context, capability) => {
         if (context && context.id) {
 
-            const cacheKeyUser = 'User' + context.id
-            let user = Cache.get(cacheKeyUser)
-
-            if (!user) {
-                user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
-                Cache.set(cacheKeyUser, user, 6000000) // cache expires in 100 min
-            }
+            const user = Util.userById(db, context.id)
 
             if (user && user.role) {
                 const cacheKeyUserRole = 'UserRole' + user.role

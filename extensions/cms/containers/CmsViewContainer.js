@@ -449,14 +449,27 @@ class CmsViewContainer extends React.Component {
                 try {
                     const a = JSON.parse(resources)
                     for (let i = 0; i < a.length; i++) {
-                        let r = a[i].replace('${build}', ''), ext = r.substring(r.lastIndexOf('.') + 1)
+                        let r = a[i].replace('${build}', ''), ext, params
 
-                        if (r.indexOf('?') >= 0) {
-                            r += '&'
-                        } else {
-                            r += '?'
+                        if( r.startsWith('[')){
+                            params = r.substring(1,r.indexOf(']'))
+                            r = r.substring(r.indexOf(']')+1)
+                            ext = params
                         }
-                        r += 'v=' + config.BUILD_NUMBER
+
+                        if( !ext ) {
+                            ext = r.substring(r.lastIndexOf('.') + 1)
+                        }
+
+                        if( !params ) {
+                            if (r.indexOf('?') >= 0) {
+                                r += '&'
+                            } else {
+                                r += '?'
+                            }
+                            r += 'v=' + config.BUILD_NUMBER
+                        }
+
                         if (ext.indexOf('css') === 0) {
                             DomUtil.addStyle(r, {
                                 data: {cmsView: true}
