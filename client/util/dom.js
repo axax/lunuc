@@ -22,6 +22,10 @@ const DomUtil = {
         })
     },
     createAndAddTag(name, target, attrs){
+        if( _app_.ssr ){
+            //TODO: implmentation for server side rendering
+            return
+        }
         let tag = document.createElement(name)
         if (attrs.id) {
             tag = document.getElementById(attrs.id)

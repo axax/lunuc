@@ -144,8 +144,7 @@ const Util = {
     userHasCapability: async (db, context, capability) => {
         if (context && context.id) {
 
-            const user = Util.userById(db, context.id)
-
+            const user = await Util.userById(db, context.id)
             if (user && user.role) {
                 const cacheKeyUserRole = 'UserRole' + user.role
                 let userRole = Cache.get(cacheKeyUserRole)

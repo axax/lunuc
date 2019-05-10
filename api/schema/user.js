@@ -18,6 +18,7 @@ export const userSchemaRaw = `
 		_id: ID!
 		status: String
         modifiedAt: Float
+        lastLogin: Float
         username: String!
         password: String!
         email: String!
@@ -51,6 +52,15 @@ export const userSchemaRaw = `
 		user: User
 	}
 	
+	type ForgotPasswordResult {
+		status: String
+		message: String
+	}
+	type NewPasswordResult {
+		status: String
+		message: String
+	}
+	
     type Query {
         users(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserResult
         userRoles(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserRoleResult
@@ -60,6 +70,8 @@ export const userSchemaRaw = `
         
         me: User
         login(username: String!, password: String!): Token
+        forgotPassword(username: String!, url: String!): ForgotPasswordResult
+        newPassword(token:String!, password:String!, passwordConfirm:String!): NewPasswordResult
     }
 		
 	type Mutation {

@@ -67,7 +67,7 @@ export default db => ({
                 // Server side rendering
                 // todo: ssr for apollo https://github.com/apollographql/apollo-client/blob/master/docs/source/recipes/server-side-rendering.md
                 try {
-                    global._app_ = {}
+                    global._app_ = {ssr: true}
                     html = ReactDOMServer.renderToString(<UIProvider>
                         <JsonDom template={template}
                                  script={script}

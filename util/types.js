@@ -319,6 +319,11 @@ Hook.on('Types', ({types}) => {
                 required: true
             },
             {
+                name: 'lastLogin',
+                label: 'Last login',
+                uitype: 'datetime'
+            },
+            {
                 name: 'password',
                 required: true,
                 uitype: 'password'

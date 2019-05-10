@@ -36,6 +36,10 @@
     font-size: 1.4rem;
   }
 
+  a{
+    color: @primary-color;
+  }
+
   input, select {
     font-size: 1rem;
     border: 1px solid @grey-10;
@@ -59,10 +63,12 @@
     margin-right: 0.5rem;
   }
 
-  button {
+  button,input[type="submit"] {
     outline: none;
     text-align: center;
     padding: 0.8rem 1rem;
+    height: auto;
+    line-height: 1;
     border-radius: @border-radius;
     background: @primary-color;
     color: white;
@@ -907,7 +913,9 @@
   }
 
 
-  .login-box {
+  .new-password-form,
+  .fogot-password-form,
+  .login-form{
     margin: auto;
     width: 30rem;
     max-width: 100%;
@@ -917,8 +925,9 @@
     padding: @content-padding;
     border-radius: @border-radius;
 
-    &.login-box-loading {
-      button {
+    &.fogot-password-form-loading,
+    &.login-form-loading {
+      button,input[type="submit"] {
         background-color: lighten(@primary-color, 10%);
         color: #666666;
         pointer-events: none;
@@ -937,6 +946,10 @@
     .error {
       color: red;
       margin-bottom: 1.5rem;
+    }
+
+    a{
+      font-size: 0.9rem;
     }
   }
 

@@ -21,38 +21,44 @@ if (!('WebSocket' in window) || !Object.assign) {
     _app_.config = config
 
     // context language
+    // we expect the first part of the path to be the language when its length is 2
     let contextLanguage = window.location.pathname.split('/')[1], basePath
     if (contextLanguage && contextLanguage.length === 2) {
         contextLanguage = contextLanguage.toLowerCase()
+        _app_.contextPath = '/' + contextLanguage
         basePath = window.location.pathname.substring(3)
     } else {
+        _app_.contextPath = ''
         contextLanguage = false
         basePath = window.location.pathname
     }
     basePath += window.location.search + window.location.hash
 
-    // try to detect language
+
+    // if lang is not set already
     if (!_app_.lang) {
         let lang
+        const sessionLanguage = sessionStorage.getItem('lang')
         if (contextLanguage) {
             lang = contextLanguage
         } else {
-            if (!sessionStorage.getItem('lang')) {
+            if (!sessionLanguage) {
                 lang = (navigator.language || navigator.userLanguage).substr(0, 2)
             } else {
                 lang = config.DEFAULT_LANGUAGE
             }
         }
-        _app_.langBefore = sessionStorage.getItem('lang')
-        sessionStorage.setItem('lang', lang)
+        _app_.langBefore = sessionLanguage
         _app_.lang = lang
     }
 
-
-    if (config.DEFAULT_LANGUAGE !== _app_.lang && contextLanguage !== _app_.lang) {
+    if (!contextLanguage && config.DEFAULT_LANGUAGE !== _app_.lang) {
         // add language to url and redirect
         window.location = window.location.origin + '/' + _app_.lang + basePath
     } else {
+        // keep language in session
+        sessionStorage.setItem('lang', _app_.lang)
+
         document.documentElement.setAttribute('lang', _app_.lang)
 
         if (contextLanguage === config.DEFAULT_LANGUAGE) {

@@ -9,6 +9,9 @@ import {
     CAPABILITY_MANAGE_USER_ROLE,
     CAPABILITY_MANAGE_OTHER_USERS
 } from 'util/capabilities'
+import {sendMail} from 'api/util/mail'
+import crypto from 'crypto'
+import {getHostFromHeaders} from "../../util/host";
 
 // deprecrated
 const enhanceUserSettings = (user) => {
@@ -47,7 +50,7 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'email', 'emailConfirmed', 'role$UserRole'], {
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'email', 'emailConfirmed', 'role$UserRole', 'lastLogin'], {
                 limit,
                 page,
                 offset,
@@ -110,6 +113,39 @@ export const userResolver = (db) => ({
         login: async ({username, password}) => {
             const result = await auth.createToken(username, password, db)
             return result
+        },
+        forgotPassword: async ({username, url},{context, headers}) => {
+
+            const userCollection = db.collection('User')
+
+            const resetToken = crypto.randomBytes(16).toString("hex")
+
+            const result = await userCollection.findOneAndUpdate({$or: [{'email': username}, {'username': username}]},{$set: {passwordReset: new Date().getTime(), resetToken}})
+
+            const user = result.value
+            if( user ){
+                await sendMail(db, context, {slug:'core/forgot-password/mail', recipient: user.email, subject:'Password reset', body: `{"url":"${url}?token=${resetToken}","name":"${user.username}"}`})
+
+                return {status: 'ok'}
+            }else {
+
+                return {status: 'error', message: 'user does not exist'}
+            }
+        },
+        newPassword: async ({token,password,passwordConfirm},{context}) => {
+
+            const userCollection = db.collection('User')
+
+            const user = await userCollection.findOne({$or: [{'email': username}, {'username': username}]})
+
+            if( user ){
+              //  await sendMail(db, context, {slug:'core/forgot-password/mail', recipient: user.email, subject:'Password reset', body: `{"name":"${user.username}"}`})
+
+                return {status: 'ok'}
+            }else {
+
+                return {status: 'error'}
+            }
         },
     },
     Mutation: {

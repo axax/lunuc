@@ -46,13 +46,12 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
         throw new Error(`Error in body: ${e.message}`)
         scopeContext = {}
     }
-
     const scope = {context: scopeContext, page: {slug}}
 
     const {template, script, dataResolver} = cmsPages.results[0]
     const {resolvedData} = await UtilCms.resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope)
     try {
-        global._app_ = {lang: context.lang}
+        global._app_ = {lang: context.lang, ssr: true}
         return ReactDOMServer.renderToString(<UIProvider>
             <JsonDom template={template}
                      script={script}
