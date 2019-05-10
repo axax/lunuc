@@ -40,20 +40,19 @@ body{
     margin:100px auto;
 }
 ._404{
-    font-size: 200px;
+    font-size: 30vmin;
     position: relative;
     display: inline-block;
     z-index: 2;
-    height: 250px;
     letter-spacing: 15px;
 }
 ._1{
     text-align:center;
     display:block;
     position:relative;
-    letter-spacing: 12px;
-    font-size: 4em;
-    line-height: 80%;
+    letter-spacing: 6px;
+    font-size: 8vmin;
+    line-height: 100%;
     margin: 20px 0;
 }
 ._2{
@@ -81,6 +80,7 @@ body{
     position: relative;
     display: inline-block;
     width: 358px;
+    max-width:100%;
     padding: 5px;
     z-index: 5;
     font-size: 25px;
@@ -102,6 +102,7 @@ hr{
     text-align: center;
     margin: 0px auto;
     width: 420px;
+    max-width:100%;
     height:10px;
     z-index: -10;
 }
@@ -231,7 +232,7 @@ hr:after {
                 <hr />
                 <div className="_1">{message.toUpperCase()}</div>
                 <div className="_2">WE ARE SORRY</div>
-                <a className='btn' href="/">GO BACK</a>
+                <a className='btn' onClick={()=>{history.back()}} href="#">GO BACK</a>
             </div>
         </div>
     }
