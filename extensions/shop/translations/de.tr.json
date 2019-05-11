@@ -11,6 +11,7 @@
   "shop.search.result": "%count% Ergebnisse für \"%text%\"",
   "shop.cart.added": "Artikel <strong>\"%name%\"</strong> wurde dem Warenkorb hinzugefügt.",
   "shop.products": "Produkte",
+  "shop.sort": "Sortierung",
   "shop.sort.relevance": "Relevanz",
   "shop.sort.priceDesc": "Preis absteigend",
   "shop.sort.priceAsc": "Preis aufsteigend",

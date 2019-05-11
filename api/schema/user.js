@@ -103,6 +103,7 @@ export const userSchemaRaw = `
 		): UserRole
 		
     	deleteUser(_id: ID!): User
+	    deleteUsers (_id:[ID]):[User]
 
 						
 		updateMe (

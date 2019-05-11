@@ -11,7 +11,6 @@ import {
 } from 'util/capabilities'
 import {sendMail} from 'api/util/mail'
 import crypto from 'crypto'
-import {getHostFromHeaders} from "../../util/host";
 
 // deprecrated
 const enhanceUserSettings = (user) => {
@@ -409,6 +408,9 @@ export const userResolver = (db) => ({
         },
         deleteUser: async ({_id}, {context}) => {
             return GenericResolver.deleteEnity(db, context, 'User', {_id})
-        }
+        },
+        deleteUsers: async ({_id}, {context}) => {
+            return GenericResolver.deleteEnities(db, context, 'User', {_id})
+        },
     }
 })
