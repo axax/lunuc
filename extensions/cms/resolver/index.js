@@ -7,8 +7,9 @@ import ClientUtil from 'client/util'
 import UtilCms from '../util'
 import {UIProvider} from 'ui'
 import {pubsub} from 'api/subscription'
-import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT} from '../constants'
+import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
 import Cache from 'util/cache'
+import {CAPABILITY_MANAGE_BACKUPS} from "../../../util/capabilities";
 
 const createScopeForDataResolver = (query, _props) => {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
@@ -19,7 +20,7 @@ const createScopeForDataResolver = (query, _props) => {
 
 const createClientCacheKey = (query, props) => {
     const cacheKey = (query ? query.replace(/#/g, '-') : '') + '#' + (props ? props.replace(/#/g, '-') : '')
-    if( cacheKey!== '#'){
+    if (cacheKey !== '#') {
         return cacheKey
     }
     return ''
@@ -48,11 +49,10 @@ export default db => ({
             }
             return data
         },
-        cmsPage: async ({slug, query, props, nosession, _version}, {context, headers}) => {
-            // TODO: Not just check if user is logged in but also check what role he has
+        cmsPage: async ({slug, query, props, nosession, editmode, _version}, {context, headers}) => {
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
-            let cmsPages = await UtilCms.getCmsPage({db, context, slug, _version, headers})
+            let cmsPages = await UtilCms.getCmsPage({db, context, slug, _version, headers, editmode})
 
             if (!cmsPages.results || cmsPages.results.length === 0) {
                 throw new Error('Cms page doesn\'t exist')
@@ -84,8 +84,8 @@ export default db => ({
             // this is used to locate the proper client cache value
             const clientCacheKey = createClientCacheKey(urlSensitiv && query ? query : null, props)
 
-            if (userIsLoggedIn) {
-                // return all data
+            if (userIsLoggedIn && editmode && await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
+                // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
                 return {
                     _id,
                     modifiedAt,

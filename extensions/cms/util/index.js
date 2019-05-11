@@ -10,15 +10,13 @@ import {
 import phantom from 'phantom'
 
 const UtilCms = {
-    getCmsPage: async ({db, context, slug, forceCache, _version, headers}) => {
-        const userIsLoggedIn = Util.isUserLoggedIn(context)
+    getCmsPage: async ({db, context, slug, editmode, _version, headers}) => {
         const host = getHostFromHeaders(headers)
 
         const cacheKey = 'cmsPage-' + _version + '-' + slug + (host ? '-' + host : '')
 
         let cmsPages
-        if (!userIsLoggedIn || forceCache) {
-            // get page from cache if user is not loggedin
+        if (!editmode) {
             cmsPages = Cache.get(cacheKey)
         }
         if (!cmsPages) {
@@ -37,7 +35,7 @@ const UtilCms = {
             let tmpSlug = slug
             ors.push({slug})
 
-            if (!userIsLoggedIn) {
+            if (!Util.isUserLoggedIn(context)) {
                 // if no user only match public entries
                 match = {$and: [{$or: ors}, {public: true}]}
             } else {
@@ -52,7 +50,7 @@ const UtilCms = {
             // minify template if no user is logged in
             if (cmsPages.results && cmsPages.results.length) {
 
-                if (!userIsLoggedIn) {
+                if (!editmode) {
                     // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
                     //console.log(cmsPages.results[0].template)
                     try {

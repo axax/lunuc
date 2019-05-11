@@ -513,7 +513,7 @@ export default class AggregationBuilder {
                     if (fieldDefinition.localized && fieldDefinition.projectLocal) {
                         // project localized field in current language
                         if( fieldDefinition.substr){
-                            projectResultData[fieldName] =  { $substr: [ '$' + fieldName + '.' + lang, fieldDefinition.substr[0], fieldDefinition.substr[1] ] }
+                            projectResultData[fieldName] =  { $substrCP: [ '$' + fieldName + '.' + lang, fieldDefinition.substr[0], fieldDefinition.substr[1] ] }
                         }else{
                             projectResultData[fieldName] = '$' + fieldName + '.' + lang
                         }

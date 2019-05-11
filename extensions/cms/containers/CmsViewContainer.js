@@ -54,7 +54,7 @@ const NetworkStatusHandler = (props) => <Async {...props}
                                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/NetworkStatusHandler')}/>
 
 // the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,_version:$_version){cacheKey slug name urlSensitiv template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
+const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name urlSensitiv template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
 const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){key value createdBy{_id}}}`
 
@@ -925,6 +925,10 @@ const getGqlVariables = props => {
 
     if (_props) {
         variables.props = JSON.stringify(_props)
+    }
+
+    if (isEditMode(props)) {
+        variables.editmode = true
     }
 
     // add settings from local storage if user is not logged in
