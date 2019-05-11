@@ -84,7 +84,7 @@ export default db => ({
             // this is used to locate the proper client cache value
             const clientCacheKey = createClientCacheKey(urlSensitiv && query ? query : null, props)
 
-            if (userIsLoggedIn && editmode && await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
+            if (userIsLoggedIn && editmode && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
                 // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
                 return {
                     _id,
