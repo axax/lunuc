@@ -45,6 +45,62 @@ const enhanceUserSettings = (user) => {
     user.settings = settings
 }
 
+const createUser = async ({username, role, password, email, db, context}) => {
+
+    const errors = []
+
+    // Validate Username
+    if (username.trim() === '') {
+        errors.push({key: 'usernameError', message: 'Username is missing'})
+    }
+
+    // Validate Password
+    const err = Util.validatePassword(password)
+    if (err.length > 0) {
+        errors.push({key: 'passwordError', message: 'Invalid Password: \n' + err.join('\n')})
+    }
+
+    // Validate Email Address
+    if (!Util.validateEmail(email)) {
+        errors.push({key: 'emailError', message: 'Email is not valid'})
+    }
+
+    if (errors.length > 0) {
+        throw new ValidationError(errors)
+    }
+
+    const userCollection = db.collection('User')
+
+
+    const userExists = (await userCollection.findOne({$or: [{'email': email}, {'username': username}]})) != null
+
+    if (userExists) {
+        errors.push({key: 'usernameError', message: 'Username or email already taken'})
+        throw new ValidationError(errors)
+    }
+
+
+    const hashedPw = Util.hashPassword(password)
+
+    let roleId
+    if (role && await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
+        roleId = ObjectId(role)
+    } else {
+        const userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
+        roleId = userRole._id
+    }
+    const insertResult = await userCollection.insertOne({
+        role: roleId,
+        emailConfirmed: false,
+        email: email,
+        username: username,
+        password: hashedPw
+    })
+
+    return insertResult
+
+}
+
 
 export const userResolver = (db) => ({
     Query: {
@@ -170,61 +226,20 @@ export const userResolver = (db) => ({
         },
     },
     Mutation: {
-        createUser: async ({username, password, email, role}) => {
-
-            const errors = []
-
-            // Validate Username
-            if (username.trim() === '') {
-                errors.push({key: 'usernameError', message: 'Username is missing'})
-            }
-
-            // Validate Password
-            const err = Util.validatePassword(password)
-            if (err.length > 0) {
-                errors.push({key: 'passwordError', message: 'Invalid Password: \n' + err.join('\n')})
-            }
-
-            // Validate Email Address
-            if (!Util.validateEmail(email)) {
-                errors.push({key: 'emailError', message: 'Email is not valid'})
-            }
-
-            if (errors.length > 0) {
-                throw new ValidationError(errors)
-            }
-
-            const userCollection = db.collection('User')
-
-
-            const userExists = (await userCollection.findOne({$or: [{'email': email}, {'username': username}]})) != null
-
-            if (userExists) {
-                errors.push({key: 'usernameError', message: 'Username or email already taken'})
-                throw new ValidationError(errors)
-            }
-
-
-            const hashedPw = Util.hashPassword(password)
-
-            let roleId
-            if (role && await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
-                roleId = ObjectId(role)
-            } else {
-                const userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
-                roleId = userRole._id
-            }
-            const insertResult = await userCollection.insertOne({
-                role: roleId,
-                emailConfirmed: false,
-                email: email,
-                username: username,
-                password: hashedPw
-            })
+        createUser: async ({username, password, email, role}, {context}) => {
+            const insertResult = await createUser({db, context, username, email, password})
 
             if (insertResult.insertedCount) {
                 const doc = insertResult.ops[0]
                 return doc
+            }
+        },
+        signUp: async ({password, username, email, role}, {context}) => {
+            const insertResult = await createUser({db, context, username, email, password})
+
+            if (insertResult.insertedCount) {
+                const result = await auth.createToken(email, password, db)
+                return result
             }
         },
         updateUser: async ({_id, username, email, password, role}, {context}) => {

@@ -73,6 +73,14 @@ export const userSchemaRaw = `
     }
 		
 	type Mutation {
+	
+	    signUp(
+			email: String!
+			username: String!
+			password: String!
+            role: ID
+		): Token
+		
 		createUser (
 			email: String!
 			username: String!
