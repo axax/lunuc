@@ -451,17 +451,17 @@ class CmsViewContainer extends React.Component {
                     for (let i = 0; i < a.length; i++) {
                         let r = a[i].replace('${build}', ''), ext, params
 
-                        if( r.startsWith('[')){
-                            params = r.substring(1,r.indexOf(']'))
-                            r = r.substring(r.indexOf(']')+1)
+                        if (r.startsWith('[')) {
+                            params = r.substring(1, r.indexOf(']'))
+                            r = r.substring(r.indexOf(']') + 1)
                             ext = params
                         }
 
-                        if( !ext ) {
+                        if (!ext) {
                             ext = r.substring(r.lastIndexOf('.') + 1)
                         }
 
-                        if( !params ) {
+                        if (!params) {
                             if (r.indexOf('?') >= 0) {
                                 r += '&'
                             } else {
@@ -657,7 +657,7 @@ class CmsViewContainer extends React.Component {
     handleClientScriptChange = (script) => {
         /*clearTimeout(this._scriptTimeout)
         this._scriptTimeout = setTimeout(() => {*/
-            this.setState({script})
+        this.setState({script})
         /*}, 500)*/
 
         this._autoSaveScript = () => {

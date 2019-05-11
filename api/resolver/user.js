@@ -114,50 +114,58 @@ export const userResolver = (db) => ({
             const result = await auth.createToken(username, password, db)
             return result
         },
-        forgotPassword: async ({username, url},{context, headers}) => {
+        forgotPassword: async ({username, url}, {context, headers}) => {
 
             const userCollection = db.collection('User')
 
             const resetToken = crypto.randomBytes(16).toString("hex")
 
-            const result = await userCollection.findOneAndUpdate({$or: [{'email': username}, {'username': username}]},{$set: {passwordReset: new Date().getTime(), resetToken}})
+            const result = await userCollection.findOneAndUpdate({$or: [{'email': username}, {'username': username}]}, {
+                $set: {
+                    passwordReset: new Date().getTime(),
+                    resetToken
+                }
+            })
 
             const user = result.value
-            if( user ){
-                await sendMail(db, context, {slug:'core/forgot-password/mail', recipient: user.email, subject:'Password reset', body: `{"url":"${url}?token=${resetToken}","name":"${user.username}"}`})
+            if (user) {
+                await sendMail(db, context, {
+                    slug: 'core/forgot-password/mail',
+                    recipient: user.email,
+                    subject: 'Password reset',
+                    body: `{"url":"${url}?token=${resetToken}","name":"${user.username}"}`
+                })
 
                 return {status: 'ok'}
-            }else {
-
-                return {status: 'error', message: 'user does not exist'}
+            } else {
+                throw new ValidationError(`User ${username} does not exist`, 'no.user')
             }
         },
-        newPassword: async ({token,password,passwordConfirm},{context}) => {
+        newPassword: async ({token, password, passwordConfirm}, {context}) => {
 
             const userCollection = db.collection('User')
 
-            if( password !== passwordConfirm){
-                return {status: 'error', message: 'Make sure the passwords match'}
+            if (passwordConfirm && password !== passwordConfirm) {
+                throw new ValidationError(`Make sure the passwords match`, 'password.match')
             }
 
             // Validate Password
             const err = Util.validatePassword(password)
             if (err.length > 0) {
-                return {status: 'error', message: 'Invalid Password: \n' + err.join('\n')}
+                throw new ValidationError('Invalid Password: \n' + err.join('\n'), 'password.invalid')
             }
 
 
             const hashPassword = Util.hashPassword(password)
 
 
-            const result = await userCollection.findOneAndUpdate({$and: [{'resetToken': token},{ passwordReset: { $gte: (new Date().getTime()) - 3600000} }]},{$set: {password: hashPassword}})
+            const result = await userCollection.findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {$set: {password: hashPassword}})
 
             const user = result.value
-            if( user ){
+            if (user) {
                 return {status: 'ok'}
-            }else {
-
-                return {status: 'error', message: 'Something went wrong. Please try again!'}
+            } else {
+                throw new ValidationError('Something went wrong. Please try again!', 'general.error')
             }
         },
     },

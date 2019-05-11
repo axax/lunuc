@@ -54,11 +54,9 @@ export const userSchemaRaw = `
 	
 	type ForgotPasswordResult {
 		status: String
-		message: String
 	}
 	type NewPasswordResult {
 		status: String
-		message: String
 	}
 	
     type Query {
@@ -71,7 +69,7 @@ export const userSchemaRaw = `
         me: User
         login(username: String!, password: String!): Token
         forgotPassword(username: String!, url: String!): ForgotPasswordResult
-        newPassword(token:String!, password:String!, passwordConfirm:String!): NewPasswordResult
+        newPassword(token:String!, password:String!, passwordConfirm:String): NewPasswordResult
     }
 		
 	type Mutation {

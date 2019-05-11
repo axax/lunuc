@@ -34,7 +34,8 @@ import Hook from 'util/hook'
 import {checkFieldType, getTypes, getTypeQueries, getFormFields, typeDataToLabel} from 'util/types'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
-import {deepMerge}  from 'util/deepMerge'
+import {deepMerge} from 'util/deepMerge'
+
 const {ADMIN_BASE_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
 import {COLLECTIONS_QUERY} from '../constants'
 
@@ -119,7 +120,6 @@ class TypesContainer extends React.Component {
     }
 
 
-
     componentDidMount() {
         this.getData(this.pageParams, true)
         if (this.props.onRef)
@@ -132,7 +132,7 @@ class TypesContainer extends React.Component {
     componentWillUnmount() {
         setTimeout(() => {
             this.saveSettings()
-        },1)
+        }, 1)
         window.removeEventListener('beforeunload', this._handleWindowClose)
     }
 
@@ -279,7 +279,7 @@ class TypesContainer extends React.Component {
                                             onBlur={e => this.handleDataChange.bind(this)(e, item, field, lang)}
                                             suppressContentEditableWarning
                                             contentEditable>{v && v[lang]}</span>
-                                            <br />
+                                            <br/>
                                         </div>)
                                     })
                                     dynamic[field.name] = langVar
@@ -303,7 +303,7 @@ class TypesContainer extends React.Component {
                         dynamic._user = (item.createdBy ? item.createdBy.username : '???')
                     }
                     if (columnsMap['date']) {
-                        dynamic.date = <span><span>{Util.formattedDateFromObjectId(item._id)}</span><br /><small>{item._id}</small></span>
+                        dynamic.date = <span><span>{Util.formattedDateFromObjectId(item._id)}</span><br/><small>{item._id}</small></span>
                     }
                     if (columnsMap['action']) {
 
@@ -311,12 +311,12 @@ class TypesContainer extends React.Component {
                             name: 'Delete entry',
                             disabled: (item.status == 'deleting' || item.status == 'updating'),
                             onClick: this.handleDeleteDataClick.bind(this, item),
-                            icon: <DeleteIcon />
+                            icon: <DeleteIcon/>
                         }, {
                             name: 'Edit entry',
                             disabled: (item.status == 'deleting' || item.status == 'updating'),
                             onClick: this.handleEditDataClick.bind(this, item),
-                            icon: <EditIcon />
+                            icon: <EditIcon/>
                         }]
 
                         if (this.types[type].entryClonable) {
@@ -325,7 +325,7 @@ class TypesContainer extends React.Component {
                                     name: 'Clone entry',
                                     disabled: (item.status == 'deleting' || item.status == 'updating'),
                                     onClick: this.handleCopyClick.bind(this, item, fields),
-                                    icon: <FileCopyIcon />
+                                    icon: <FileCopyIcon/>
                                 })
                         }
                         Hook.call('TypeTableEntryAction', {type, actions: entryActions, item, container: this})
@@ -345,11 +345,11 @@ class TypesContainer extends React.Component {
             const actions = [
                 {
                     name: 'Add new ' + type, onClick: () => {
-                    setTimeout(() => {
-                        this.setState({createEditDialog: true})
-                    }, 300)
+                        setTimeout(() => {
+                            this.setState({createEditDialog: true})
+                        }, 300)
 
-                }
+                    }
                 }, {
                     name: 'View settings', onClick: () => {
                         this.setState({viewSettingDialog: true})
@@ -484,7 +484,7 @@ class TypesContainer extends React.Component {
                                                              onChange={(e) => {
                                                                  this.handleViewSettingChange.bind(this)(e, type)
                                                              }}
-                                                             checked={ this.isColumnActive(type, c.id) }/></div>
+                                                             checked={this.isColumnActive(type, c.id)}/></div>
                     })
                     }
                 </div>
@@ -528,13 +528,13 @@ class TypesContainer extends React.Component {
             }
         }
 
-        if( !this._filterForm ){
-            console.log('create form')
+        if (!this._filterForm) {
             this._filterForm = <GenericForm onChange={this.handleFilter}
                                             onKeyDown={this.handelFilterKeyDown}
                                             primaryButton={false}
                                             fields={{
                                                 term: {
+                                                    autoFocus: true,
                                                     uitype: 'search',
                                                     value: this._changingFilter || filter,
                                                     fullWidth: true,
@@ -546,7 +546,8 @@ class TypesContainer extends React.Component {
         const {description} = this.types[type]
         const content = [
             title === false ? '' :
-                <Typography key="typeTitle" variant="h3" gutterBottom>{title || (fixType ? fixType : 'Types')}</Typography>,
+                <Typography key="typeTitle" variant="h3"
+                            gutterBottom>{title || (fixType ? fixType : 'Types')}</Typography>,
             description ?
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : '',
             <Row spacing={16} key="typeHeader">

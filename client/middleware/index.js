@@ -80,6 +80,7 @@ export function configureMiddleware(store) {
                     // don't handle errors with a state.
                     if (!state) {
                         errorCount++
+                        _app_.lastGraphQLError = message
                         store.dispatch(addError({
                             key: 'graphql_error-' + errorCount,
                             msg: message + (path ? ' (in operation ' + path.join('/') + ')' : '')
