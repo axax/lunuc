@@ -138,7 +138,7 @@ export const userResolver = (db) => ({
 
                 return {status: 'ok'}
             } else {
-                throw new ValidationError(`User ${username} does not exist`, 'no.user')
+                throw new ApiError(`User ${username} does not exist`, 'no.user')
             }
         },
         newPassword: async ({token, password, passwordConfirm}, {context}) => {
@@ -146,13 +146,13 @@ export const userResolver = (db) => ({
             const userCollection = db.collection('User')
 
             if (passwordConfirm && password !== passwordConfirm) {
-                throw new ValidationError(`Make sure the passwords match`, 'password.match')
+                throw new ApiError(`Make sure the passwords match`, 'password.match')
             }
 
             // Validate Password
             const err = Util.validatePassword(password)
             if (err.length > 0) {
-                throw new ValidationError('Invalid Password: \n' + err.join('\n'), 'password.invalid')
+                throw new ApiError('Invalid Password: \n' + err.join('\n'), 'password.invalid')
             }
 
 
@@ -165,7 +165,7 @@ export const userResolver = (db) => ({
             if (user) {
                 return {status: 'ok'}
             } else {
-                throw new ValidationError('Something went wrong. Please try again!', 'general.error')
+                throw new ApiError('Something went wrong. Please try again!', 'general.error')
             }
         },
     },
@@ -208,7 +208,7 @@ export const userResolver = (db) => ({
             const hashedPw = Util.hashPassword(password)
 
             let roleId
-            if (role) {
+            if (role && await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
                 roleId = ObjectId(role)
             } else {
                 const userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
