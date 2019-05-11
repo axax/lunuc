@@ -136,15 +136,28 @@ export const userResolver = (db) => ({
 
             const userCollection = db.collection('User')
 
-            const user = await userCollection.findOne({$or: [{'email': username}, {'username': username}]})
+            if( password !== passwordConfirm){
+                return {status: 'error', message: 'Make sure the passwords match'}
+            }
 
+            // Validate Password
+            const err = Util.validatePassword(password)
+            if (err.length > 0) {
+                return {status: 'error', message: 'Invalid Password: \n' + err.join('\n')}
+            }
+
+
+            const hashPassword = Util.hashPassword(password)
+
+
+            const result = await userCollection.findOneAndUpdate({$and: [{'resetToken': token},{ passwordReset: { $gte: (new Date().getTime()) - 3600000} }]},{$set: {password: hashPassword}})
+
+            const user = result.value
             if( user ){
-              //  await sendMail(db, context, {slug:'core/forgot-password/mail', recipient: user.email, subject:'Password reset', body: `{"name":"${user.username}"}`})
-
                 return {status: 'ok'}
             }else {
 
-                return {status: 'error'}
+                return {status: 'error', message: 'Something went wrong. Please try again!'}
             }
         },
     },

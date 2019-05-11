@@ -23,8 +23,7 @@ class ErrorPage extends React.Component {
 
         this.css = document.createElement("style")
         this.css.type = "text/css"
-        this.css.innerHTML =
-            `
+        this.css.innerHTML =`
 body{
     background: ${background};
     color:#fff;
@@ -115,6 +114,15 @@ hr:after {
     font-size: 2em;
     padding: 0 0.2em;
     background: #33cc99;
+}
+
+#clouds{
+    overflow:hidden;
+    position:fixed;
+    top:0;
+    left:0;
+    bottom:0;
+    right:0;
 }
 
 .cloud {
