@@ -860,6 +860,7 @@ class JsonDom extends React.Component {
         }
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
 
+        console.log(scope.page.slug,this._inHtmlComponents)
         if (this._inHtmlComponents.length > 0) {
             content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
         }

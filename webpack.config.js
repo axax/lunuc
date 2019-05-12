@@ -238,7 +238,7 @@ if (DEV_MODE) {
         new UglifyJSPlugin({
             uglifyOptions: {
                 compress: {
-                    drop_console: true
+                    drop_console: false
                 },
                 output: {
                     comments: false,

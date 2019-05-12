@@ -137,6 +137,14 @@ class JsonEditor extends React.Component {
                         }
                     }
                 ]
+
+                if (json.t === 'Cms') {
+                    actions.push({
+                        name: 'Edit this component', onClick: e => {
+                            window.location = '/' + json.p.slug
+                        }
+                    })
+                }
             }
 
             const t = (specialType || json.t || 'div')
