@@ -7,7 +7,7 @@
 @grey-10: #e5e3e3;
 @border-radius: 0.1rem;
 @input-height: 2.5rem;
-@content-padding: 2rem;
+@content-padding: 1rem;
 @content-max-width: 1500px;
 @toolbar-height: 4rem;
 @overlay-bg: rgba(0, 0, 0, 0.35);
@@ -88,6 +88,12 @@
     color: @primary-color;
   }
 
+  .info-box{
+    margin-bottom: @content-padding*2;
+    padding: @content-padding;
+    background-color:#fbfccf;
+  }
+
   .truncate {
     width: 100%;
     white-space: nowrap;
@@ -129,13 +135,13 @@
   }
 
   .main {
-    padding: @content-padding;
+    padding: @content-padding*2 @content-padding;
     max-width: @content-max-width;
     margin: 0 auto;
   }
 
   .home-teaser{
-    margin: -@content-padding -@content-padding @content-padding -@content-padding;
+    margin: -@content-padding*2 -@content-padding @content-padding -@content-padding;
     width: calc(100% + 2*@content-padding);
   }
 
@@ -291,7 +297,6 @@
   }
 
   .header {
-    padding: 1.2rem;
     display: flex;
     flex-flow: row wrap;
     align-items: center;
@@ -324,7 +329,7 @@
     }
 
     @media @tablet, @desktop {
-      padding-top: 1.5rem;
+      padding-top: @content-padding;
     }
 
     @media @mobile {
@@ -493,7 +498,7 @@
   .footer{
     background: white;
     .footer-inner {
-      padding: @content-padding;
+      padding: @content-padding*2 @content-padding;
       margin: 0 auto;
       width: @content-max-width;
       max-width: 100%;
@@ -719,7 +724,7 @@
     background: #fff;
     height: calc(5rem - 1px);
     overflow-y: hidden;
-    padding: 2rem @content-padding 0 @content-padding;
+    padding: @content-padding*2 @content-padding 0 @content-padding;
     display: flex;
 
     @media @mobile {

@@ -233,10 +233,18 @@ export const userResolver = (db) => ({
                 return doc
             }
         },
-        signUp: async ({password, username, email, role}, {context}) => {
+        signUp: async ({password, username, email, mailTemplate, role}, {context}) => {
             const insertResult = await createUser({db, context, username, email, password})
 
             if (insertResult.insertedCount) {
+                if( mailTemplate ){
+                    sendMail(db, context, {
+                        slug: mailTemplate,
+                        recipient: email,
+                        subject: 'Lunuc Shop',
+                        body: `{"url":"","name":"${username || email}"}`
+                    })
+                }
                 const result = await auth.createToken(email, password, db)
                 return result
             }

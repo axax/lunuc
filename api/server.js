@@ -100,6 +100,10 @@ export const start = (done) => {
 
             app.use('/graphql', (req, res, next) => {
 
+                /*var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+                console.log(ip)*/
+
                 // TODO: replace with ApolloServer so with can use batch queries
                 graphqlHTTP({
                     schema,

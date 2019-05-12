@@ -474,7 +474,7 @@ class JsonDom extends React.Component {
                         const tpl = new Function(`  const {${Object.keys(loopChild).join(',')}} = this.${s}
                                                     const Util = this.Util
                                                     const _i = Util.tryCatch.bind(this)
-                                                    const _t = this._t
+                                                    const _t = this._t.bind(this.scope.data)
                                                     return \`${cStr}\``)
                         // back to json
                         loopChild._index = childIdx
@@ -698,7 +698,7 @@ class JsonDom extends React.Component {
             const Util = this.Util
             const _i = Util.tryCatch.bind(this)
             const _r = this.renderIntoHtml
-            const _t = this._t;return \`${str}\``)
+            const _t = this._t.bind(data);return \`${str}\``)
 
             return tpl.call({
                 scope,
@@ -877,9 +877,9 @@ class JsonDom extends React.Component {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
             if (dynamic) {
-                if (this.props.editMode) {
+               /* if (this.props.editMode) {
                     return <div _key={_key}>{content}</div>
-                }
+                }*/
                 return content
             } else {
                 let slugClass
