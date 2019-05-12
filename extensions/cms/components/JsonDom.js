@@ -212,7 +212,6 @@ class JsonDom extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-
         const update = state.hasReactError ||
             !props.template || !props.scope ||
             props.children !== this.props.children ||
@@ -616,7 +615,18 @@ class JsonDom extends React.Component {
         if (this.json) return this.json
         const {template} = props
         const scope = this.getScope(props)
+console.log(this._inHtmlComponents)
+        for (let i = 0; i < this._inHtmlComponents.length; i++) {
+            const key = this._inHtmlComponents[i][0].key
+            const ele = Util.$('[_key="' + key + '-0.0"]')
+            console.log(ele)
+            if (ele ) {
+                ele.parentNode.removeChild(ele)
+            }
+        }
+
         this._inHtmlComponents = []
+
         try {
             /*
              json is the modified version for viewing (placeholder are replaced)
