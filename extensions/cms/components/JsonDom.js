@@ -817,7 +817,6 @@ class JsonDom extends React.Component {
 
         if (this.runScript) {
             this.runScript = false
-            console.log('runscript', scope.page.slug)
             try {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
@@ -865,6 +864,7 @@ class JsonDom extends React.Component {
         if (this._inHtmlComponents.length > 0) {
             content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
         }
+        console.log(this._inHtmlComponents)
 
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
         if (this.parseError) {
