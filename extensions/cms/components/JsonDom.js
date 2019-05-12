@@ -263,13 +263,11 @@ class JsonDom extends React.Component {
         this.runJsEvent('mount', true)
         this.checkResources()
         this.props.history.listen(() => {
+            this.moveInHtmlComponents()
             this.scope.params = Util.extractQueryParams()
             this.runJsEvent('urlchanged', false)
         })
-        setTimeout(() => {
-            this.moveInHtmlComponents()
-        }, 0)
-
+        this.moveInHtmlComponents()
     }
 
     componentWillUnmount() {
@@ -874,6 +872,9 @@ class JsonDom extends React.Component {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
             if (dynamic) {
+                if( this.props.editMode ){
+                    return <div _key={_key}>{content}</div>
+                }
                 return content
             } else {
                 let slugClass

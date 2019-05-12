@@ -35,7 +35,6 @@ const Util = {
         if( this && this.data )
             data = this.data
 
-        console.log(str,this)
         try {
             return eval(str)
         } catch (e) {
