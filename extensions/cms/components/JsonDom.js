@@ -1,4 +1,5 @@
 import React from 'react'
+import ReactDOM from 'react-dom'
 import PropTypes from 'prop-types'
 import Hook from 'util/hook'
 import _t from 'util/i18n'
@@ -276,6 +277,10 @@ class JsonDom extends React.Component {
         this.resetTemplate()
         this.removeAddedDomElements()
         this.componentRefs = null
+        const ele = ReactDOM.findDOMNode(this)
+        if( ele.oriParent ){
+            ele.oriParent.appendChild(ele)
+        }
     }
 
     // is called after render
@@ -671,6 +676,7 @@ class JsonDom extends React.Component {
                 }, 100)
                 return
             }
+        ele.oriParent = ele.parentNode
             Util.$('#' + key.substr(0, key.length - 2)).appendChild(ele)
         }
     }
