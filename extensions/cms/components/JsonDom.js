@@ -322,7 +322,6 @@ class JsonDom extends React.Component {
         this.runJsEvent('reset')
         this.json = null
         this.jsonRaw = null
-        this._inHtmlComponents = []
     }
 
     removeAddedDomElements() {
@@ -617,6 +616,7 @@ class JsonDom extends React.Component {
         if (this.json) return this.json
         const {template} = props
         const scope = this.getScope(props)
+        this._inHtmlComponents = []
         try {
             /*
              json is the modified version for viewing (placeholder are replaced)
