@@ -81,6 +81,7 @@ class JsonDom extends React.Component {
     extendedComponents = {}
     json = null
     jsonRaw = null
+    _inHtmlComponents = []
     scope = {}
     updateScope = true
     parseError = null
@@ -321,6 +322,7 @@ class JsonDom extends React.Component {
         this.runJsEvent('reset')
         this.json = null
         this.jsonRaw = null
+        this._inHtmlComponents = []
     }
 
     removeAddedDomElements() {
@@ -655,21 +657,19 @@ class JsonDom extends React.Component {
     }
 
     moveInHtmlComponents() {
-        if (this._inHtmlComponents && this._inHtmlComponents.length > 0) {
-            // move elements to right place
-            for (let i = 0; i < this._inHtmlComponents.length; i++) {
-                let key = this._inHtmlComponents[i][0].key
-                const ele = Util.$('[_key="' + key + '-0.0"]')
-                if (!ele || ele.length === 0) {
-                    //try again
-                    console.log('not ready try again')
-                    setTimeout(() => {
-                        this.moveInHtmlComponents()
-                    }, 100)
-                    return
-                }
-                Util.$('#' + key.substr(0, key.length - 2)).appendChild(ele)
+        // move elements to right place
+        for (let i = 0; i < this._inHtmlComponents.length; i++) {
+            const key = this._inHtmlComponents[i][0].key
+            const ele = Util.$('[_key="' + key + '-0.0"]')
+            if (!ele || ele.length === 0) {
+                //try again
+                console.log('not ready try again')
+                setTimeout(() => {
+                    this.moveInHtmlComponents()
+                }, 100)
+                return
             }
+            Util.$('#' + key.substr(0, key.length - 2)).appendChild(ele)
         }
     }
 
@@ -858,20 +858,18 @@ class JsonDom extends React.Component {
         if (!this.runJsEvent('beforerender', false, scope)) {
             return <div>Error in beforerender event. See details in console log</div>
         }
-        this._inHtmlComponents = []
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
 
         if (this._inHtmlComponents.length > 0) {
             content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
         }
-        console.log(this._inHtmlComponents)
 
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
             if (dynamic) {
-                if( this.props.editMode ){
+                if (this.props.editMode) {
                     return <div _key={_key}>{content}</div>
                 }
                 return content
