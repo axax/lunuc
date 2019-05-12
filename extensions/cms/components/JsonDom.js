@@ -263,7 +263,6 @@ class JsonDom extends React.Component {
         this.runJsEvent('mount', true)
         this.checkResources()
         this.props.history.listen(() => {
-            this.moveInHtmlComponents()
             this.scope.params = Util.extractQueryParams()
             this.runJsEvent('urlchanged', false)
         })

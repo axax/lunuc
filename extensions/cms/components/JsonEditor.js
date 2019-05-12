@@ -215,7 +215,7 @@ class JsonEditor extends React.Component {
                                               position: 'absolute',
                                               background: 'rgba(0,0,0,0.1)',
                                               left: pos.left + 'px',
-                                              top: pos.top + 'px',
+                                              top: (pos.top + window.scrollY) + 'px',
                                               height: ele.offsetHeight + 'px',
                                               width: ele.offsetWidth + 'px'
                                           }
