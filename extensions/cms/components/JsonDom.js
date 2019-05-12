@@ -615,16 +615,6 @@ class JsonDom extends React.Component {
         if (this.json) return this.json
         const {template} = props
         const scope = this.getScope(props)
-console.log(this._inHtmlComponents)
-        for (let i = 0; i < this._inHtmlComponents.length; i++) {
-            const key = this._inHtmlComponents[i][0].key
-            const ele = Util.$('[_key="' + key + '-0.0"]')
-            console.log(ele)
-            if (ele ) {
-                ele.parentNode.removeChild(ele)
-            }
-        }
-
         this._inHtmlComponents = []
 
         try {
@@ -660,7 +650,9 @@ console.log(this._inHtmlComponents)
     }
 
     renderIntoHtml(c) {
-        const key = 'inHtmlComponent' + this._inHtmlComponents.length
+
+        JsonDom.instanceCounter++
+        const key = 'inHtmlComponent' + JsonDom.instanceCounter
         this._inHtmlComponents.push(this.parseRec(c, key, this.scope))
 
         return '<div id=' + key + '></div>'
@@ -870,7 +862,6 @@ console.log(this._inHtmlComponents)
         }
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
 
-        console.log(scope.page.slug,this._inHtmlComponents)
         if (this._inHtmlComponents.length > 0) {
             content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
         }
