@@ -923,8 +923,8 @@ const getGqlVariables = props => {
             ...getSlugVersion(slug)
         }
 
-    if (_props) {
-        variables.props = JSON.stringify(_props)
+    if (_props && _props.$) {
+        variables.props = JSON.stringify(_props.$)
     }
 
     if (isEditMode(props)) {
