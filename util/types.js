@@ -319,9 +319,14 @@ Hook.on('Types', ({types}) => {
                 required: true
             },
             {
+                name: 'emailConfirmed',
+                type: 'Boolean'
+            },
+            {
                 name: 'lastLogin',
                 label: 'Last login',
-                uitype: 'datetime'
+                uitype: 'datetime',
+                readOnly:true
             },
             {
                 name: 'password',

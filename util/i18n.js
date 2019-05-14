@@ -1,6 +1,5 @@
 const _t = function (key, replacements) {
     let str
-    console.log(this)
     if (this && this.tr && this.tr[key]) {
         str = this.tr[key]
     } else {

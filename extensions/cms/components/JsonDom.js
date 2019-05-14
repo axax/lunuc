@@ -611,7 +611,6 @@ class JsonDom extends React.Component {
             // set default scope values
             this.scope.fetchingMore = false
             this.scope._app_ = _app_
-
         }
         return this.scope
     }

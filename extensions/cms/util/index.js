@@ -160,6 +160,8 @@ const UtilCms = {
                         debugInfo += ' result=true'
 
                         resolvedData[segment.key || type] = result
+                    } else if (segment.tr) {
+                        resolvedData.tr = segment.tr[context.lang]
                     } else if (segment.eval) {
                         debugInfo += ' in eval'
                         try {

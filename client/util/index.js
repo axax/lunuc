@@ -2,6 +2,9 @@
  * Object with general client helper methods
  */
 const Util = {
+    setUser: () => {
+
+    },
     escapeDoubleQuotes: (str) => {
         if (str && str.constructor === String) {
             return str.replace(/"/g, '\\"')
@@ -32,13 +35,13 @@ const Util = {
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str, ignoreError) {
         let data
-        if( this && this.data )
+        if (this && this.data)
             data = this.data
 
         try {
             return eval(str)
         } catch (e) {
-            if( !ignoreError )
+            if (!ignoreError)
                 console.log(e, str)
         }
 
@@ -77,7 +80,7 @@ const Util = {
         }
         return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId), options)
     },
-    formattedDatetime(stamp){
+    formattedDatetime(stamp) {
         if (!stamp) return ''
         if (typeof stamp === 'string') {
             stamp = parseFloat(stamp);
@@ -186,7 +189,7 @@ const Util = {
         }
         return {parts, rest, restString}
     },
-    hasCapability(user, capa){
+    hasCapability(user, capa) {
         const capabilities = (user && user.userData && user.userData.role && user.userData.role.capabilities) || []
         return capabilities.indexOf(capa) >= 0
     },
@@ -205,13 +208,13 @@ const Util = {
 
         return text.replace(pattern, match => `<span class='${cls || ''}'>${match}</span>`);
     },
-    getMediaSrc(media, src){
-        return src?src:(media.src?media.src:'/uploads/'+media._id)
+    getMediaSrc(media, src) {
+        return src ? src : (media.src ? media.src : '/uploads/' + media._id)
     },
     // mini jQuery
-    $(expr, p){
+    $(expr, p) {
         const nodeList = (p || document).querySelectorAll(expr)
-        if( nodeList.length === 1){
+        if (nodeList.length === 1) {
             return nodeList[0]
         }
         return nodeList

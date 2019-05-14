@@ -59,6 +59,10 @@ export const userSchemaRaw = `
 		status: String
 	}
 	
+	type ConfirmEmailResult {
+		status: String
+	}
+	
     type Query {
         users(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserResult
         userRoles(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserRoleResult
@@ -70,6 +74,8 @@ export const userSchemaRaw = `
         login(username: String!, password: String!): Token
         forgotPassword(username: String!, url: String!): ForgotPasswordResult
         newPassword(token:String!, password:String!, passwordConfirm:String): NewPasswordResult
+        confirmEmail(token:String!): ConfirmEmailResult
+        
     }
 		
 	type Mutation {
@@ -79,6 +85,8 @@ export const userSchemaRaw = `
 			username: String!
 			password: String!
 			mailTemplate: String
+			mailSubject: String
+			mailUrl: String
             role: ID
 		): Token
 		

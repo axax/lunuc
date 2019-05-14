@@ -78,7 +78,7 @@ const createUser = async ({username, role, password, email, db, context}) => {
         throw new ValidationError(errors)
     }
 
-
+    const signupToken = crypto.randomBytes(16).toString("hex")
     const hashedPw = Util.hashPassword(password)
 
     let roleId
@@ -93,9 +93,9 @@ const createUser = async ({username, role, password, email, db, context}) => {
         emailConfirmed: false,
         email: email,
         username: username,
-        password: hashedPw
+        password: hashedPw,
+        signupToken: signupToken
     })
-
     return insertResult
 
 }
@@ -223,6 +223,22 @@ export const userResolver = (db) => ({
                 throw new ApiError('Something went wrong. Please try again!', 'general.error')
             }
         },
+        confirmEmail: async ({token}, {context}) => {
+
+            const userCollection = db.collection('User')
+
+
+            const result = await userCollection.findOneAndUpdate({'signupToken': token}, {$set: {emailConfirmed: true}})
+            const user = result.value
+            if (user) {
+                return {status: 'ok'}
+            } else {
+                throw new ApiError('Something went wrong. Please try again!', 'general.error')
+            }
+        },
+        sendConformationEmail() {
+
+        }
     },
     Mutation: {
         createUser: async ({username, password, email, role}, {context}) => {
@@ -233,16 +249,20 @@ export const userResolver = (db) => ({
                 return doc
             }
         },
-        signUp: async ({password, username, email, mailTemplate, role}, {context}) => {
+        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, role}, {context}) => {
+
             const insertResult = await createUser({db, context, username, email, password})
 
             if (insertResult.insertedCount) {
-                if( mailTemplate ){
+                if (mailTemplate) {
+
+                    const signupToken = insertResult.ops[0].signupToken
+
                     sendMail(db, context, {
                         slug: mailTemplate,
                         recipient: email,
-                        subject: 'Lunuc Shop',
-                        body: `{"url":"","name":"${username || email}"}`
+                        subject: mailSubject,
+                        body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${signupToken}","name":"${username || email}"}`
                     })
                 }
                 const result = await auth.createToken(email, password, db)
