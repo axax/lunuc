@@ -41,6 +41,7 @@ const UtilCms = {
             } else {
                 match = {$or: ors}
             }
+            console.log(match)
             cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv'], {
                 match,
                 limit: 1,
@@ -51,12 +52,12 @@ const UtilCms = {
             if (cmsPages.results && cmsPages.results.length) {
 
                 if (!editmode) {
-                    const template = JSON.parse(cmsPages.results[0].template)
 
                     // TODO: Include sub CMS component to reduce number of requests
                     //console.log(template)
 
                     try {
+                        const template = JSON.parse(cmsPages.results[0].template)
                         cmsPages.results[0].template = JSON.stringify(template, null, 0)
                     } catch (e) {
                     }
