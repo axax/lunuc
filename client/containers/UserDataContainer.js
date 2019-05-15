@@ -12,13 +12,15 @@ class UserDataContainer extends React.PureComponent {
     state = {
         loading: false,
         loaded: false,
-        token: localStorage.getItem('token') || ''
+        token: localStorage.getItem('token') || '',
+        force:  localStorage.getItem('refreshUserData')
     }
 
     getUserData = () => {
         const {client, userActions} = this.props
+        localStorage.setItem('refreshUserData', null)
         client.query({
-            fetchPolicy: (_app_.lang !== _app_.langBefore ? 'network-only' : 'cache-first'),
+            fetchPolicy: (_app_.lang !== _app_.langBefore || this.state.force ? 'network-only' : 'cache-first'),
             query: gql(USER_DATA_QUERY)
         }).then(response => {
             userActions.setUser(response.data.me, !!response.data.me)

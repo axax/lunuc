@@ -53,10 +53,12 @@ const UtilCms = {
 
                 if (!editmode) {
 
-                    // TODO: Include sub CMS component to reduce number of requests
                     //console.log(template)
 
                     try {
+                        // TODO: Include sub CMS component to reduce number of requests
+                        // TODO: also check if template is html
+
                         const template = JSON.parse(cmsPages.results[0].template)
                         cmsPages.results[0].template = JSON.stringify(template, null, 0)
                     } catch (e) {

@@ -18,6 +18,7 @@ import {
     CAPABILITY_MANAGE_CMS_PAGES
 } from '../constants'
 import Async from 'client/components/Async'
+import * as UserActions from "../../../client/actions/UserAction";
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}
@@ -210,7 +211,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, loading, className, children, user, dynamic, client, fetchMore} = this.props
+        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, loading, className, children, user, dynamic, client, fetchMore, userActions} = this.props
         let {template, resources, script, dataResolver, settings} = this.state
 
         const editMode = isEditMode(this.props)
@@ -256,6 +257,7 @@ class CmsViewContainer extends React.Component {
                                  _props={_props}
                                  template={template}
                                  script={script}
+                                 userActions={userActions}
                                  resolvedData={cmsPage.resolvedData}
                                  resources={cmsPage.resources}
                                  editMode={editMode}
@@ -912,6 +914,7 @@ CmsViewContainer.propTypes = {
     urlSensitiv: PropTypes.bool,
     /* actions */
     _cmsActions: PropTypes.object.isRequired,
+    userActions: PropTypes.object.isRequired,
 }
 
 
@@ -1111,6 +1114,7 @@ const mapStateToProps = (store) => {
  * Map the actions to props.
  */
 const mapDispatchToProps = (dispatch) => ({
+    userActions: bindActionCreators(UserActions, dispatch),
     _cmsActions: bindActionCreators(CmsActions, dispatch)
 })
 

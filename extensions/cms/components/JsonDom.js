@@ -278,7 +278,7 @@ class JsonDom extends React.Component {
         this.removeAddedDomElements()
         this.componentRefs = null
         const ele = ReactDOM.findDOMNode(this)
-        if( ele.oriParent ){
+        if (ele.oriParent) {
             ele.oriParent.appendChild(ele)
         }
     }
@@ -675,7 +675,7 @@ class JsonDom extends React.Component {
                 }, 100)
                 return
             }
-        ele.oriParent = ele.parentNode
+            ele.oriParent = ele.parentNode
             Util.$('#' + key.substr(0, key.length - 2)).appendChild(ele)
         }
     }
@@ -827,7 +827,7 @@ class JsonDom extends React.Component {
             try {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
-                const {scope,fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, escape, getComponent, Util, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
+                const {scope,fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, forceUpdate, escape, getComponent, Util, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
                 const _t = arguments[0]._t.bind(scope.data)
                 ${script}`).call(this, {
                     scope,
@@ -847,7 +847,11 @@ class JsonDom extends React.Component {
                     fetchMore: this.handleFetchMore.bind(this),
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
+                    /* deprecated */
                     refresh: this.jsRefresh,
+                    forceUpdate: (id, script) => {
+                        this.jsRefresh(id, !script)
+                    },
                     getComponent: this.jsGetComponent,
                     Util,
                     _t,
@@ -877,9 +881,9 @@ class JsonDom extends React.Component {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
             if (dynamic) {
-               /* if (this.props.editMode) {
-                    return <div _key={_key}>{content}</div>
-                }*/
+                /* if (this.props.editMode) {
+                     return <div _key={_key}>{content}</div>
+                 }*/
                 return content
             } else {
                 let slugClass
@@ -931,7 +935,9 @@ JsonDom.propTypes = {
     id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another JsonDom */
     dynamic: PropTypes.bool,
-    renewing: PropTypes.bool
+    renewing: PropTypes.bool,
+
+    userActions: PropTypes.object.isRequired,
 }
 
 export default JsonDom
