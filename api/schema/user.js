@@ -94,6 +94,7 @@ export const userSchemaRaw = `
 			email: String!
 			username: String!
 			password: String!
+			emailConfirmed: Boolean
             role: ID
 		): User
 		
@@ -102,6 +103,7 @@ export const userSchemaRaw = `
 			email: String
 			username: String
 			password: String
+			emailConfirmed: Boolean
             role: ID
 		): User
 		

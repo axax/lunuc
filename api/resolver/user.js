@@ -252,8 +252,8 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, role}, {context}) => {
-            const insertResult = await createUser({db, context, username, email, password})
+        createUser: async ({username, password, email, emailConfirmed, role}, {context}) => {
+            const insertResult = await createUser({db, context, username, email, emailConfirmed, password})
 
             if (insertResult.insertedCount) {
                 const doc = insertResult.ops[0]
@@ -280,12 +280,16 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, role}, {context}) => {
+        updateUser: async ({_id, username, email, password, emailConfirmed, role}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             const user = {}
             const errors = []
             const userCollection = db.collection('User')
+
+            if( emailConfirmed !== undefined){
+                user.emailConfirmed = emailConfirmed
+            }
 
             if (username) {
                 // Validate Username

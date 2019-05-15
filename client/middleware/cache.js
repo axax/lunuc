@@ -49,7 +49,7 @@ export class OfflineCache extends InMemoryCache {
                 stringified = '{}'
             }
             try {
-             //   window.localStorage.setItem(CACHE_KEY, stringified)
+                window.localStorage.setItem(CACHE_KEY, stringified)
             } catch (e) {
                 window.localStorage.setItem(CACHE_KEY, '{}')
             }
