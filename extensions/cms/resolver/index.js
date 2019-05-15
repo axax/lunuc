@@ -29,7 +29,7 @@ export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const data = await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug', 'hostRule', 'name', 'urlSensitiv','dataResolver'], {
+            const data = await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug', 'hostRule', 'name', 'urlSensitiv'], {
                 limit,
                 page,
                 offset,

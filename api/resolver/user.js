@@ -236,8 +236,19 @@ export const userResolver = (db) => ({
                 throw new ApiError('Something went wrong. Please try again!', 'general.error')
             }
         },
-        sendConformationEmail() {
+        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl},{context})=> {
+            Util.checkIfUserIsLoggedIn(context)
 
+            const user = await Util.userById(db, context.id)
+
+            sendMail(db, context, {
+                slug: mailTemplate,
+                recipient: user.email,
+                subject: mailSubject,
+                body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${user.signupToken}","name":"${user.username || user.email}"}`
+            })
+
+            return {status: 'ok'}
         }
     },
     Mutation: {

@@ -51,15 +51,18 @@ const UtilCms = {
             if (cmsPages.results && cmsPages.results.length) {
 
                 if (!editmode) {
-                    // TODO: maybe it is better to store the template already minified in the collection instead of minify it here
-                    //console.log(cmsPages.results[0].template)
+                    const template = JSON.parse(cmsPages.results[0].template)
+
+                    // TODO: Include sub CMS component to reduce number of requests
+                    //console.log(template)
+
                     try {
-                        cmsPages.results[0].template = JSON.stringify(JSON.parse(cmsPages.results[0].template), null, 0)
+                        cmsPages.results[0].template = JSON.stringify(template, null, 0)
                     } catch (e) {
                     }
                 }
             }
-            Cache.set(cacheKey, cmsPages, 300000) // cache expires in 5 min
+            Cache.set(cacheKey, cmsPages, 600000) // cache expires in 10 min
         }
         return cmsPages
     },

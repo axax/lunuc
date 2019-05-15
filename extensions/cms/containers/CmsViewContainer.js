@@ -972,7 +972,11 @@ const CmsViewContainerWithGql = compose(
                 if (variables.slug !== cmsPage.slug) {
                     // if the cmsPage is set to null here the page is immediately removed from the screen when the slug change
                     // otherwise the page keeps showing until the new page has been loaded
-                    result.cmsPage = null
+                    //console.log(cmsPage)
+                    // TEMP
+                    if( cmsPage.slug.indexOf('shop')<0) {
+                        result.cmsPage = null
+                    }
                     //result.renewing = true
                 } else {
                     // check if query changed

@@ -827,7 +827,8 @@ class JsonDom extends React.Component {
             try {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
-                const {scope,fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, escape, getComponent, Util, _t, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
+                const {scope,fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, escape, getComponent, Util, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
+                const _t = arguments[0]._t.bind(scope.data)
                 ${script}`).call(this, {
                     scope,
                     on: this.jsOn,
