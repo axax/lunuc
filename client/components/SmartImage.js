@@ -52,6 +52,7 @@ class SmartImage extends React.Component {
 
     render() {
         const {isVisible, hasError, loaded} = this.state
+        const {asBackground, className, style, ...rest} = this.props
 
         if (!isVisible) {
             return <div>hidden</div>
@@ -60,9 +61,18 @@ class SmartImage extends React.Component {
         if (hasError) {
             return <span>Image not available</span>
         }
-
-        return <img data-loading={!loaded} onLoad={this.handleLoad.bind(this)}
-                    onError={this.handleError.bind(this)} {...this.props}/>
+        if (asBackground) {
+            return <div className={className} data-loading={!loaded}
+                        style={{backgroundImage: 'url(' + this.props.src + ')', ...style}}>
+                <img style={{opacity: 0}} onLoad={this.handleLoad.bind(this)}
+                     onError={this.handleError.bind(this)} {...rest}/>
+            </div>
+        } else {
+            return <img data-loading={!loaded} onLoad={this.handleLoad.bind(this)}
+                        className={className}
+                        style={style}
+                        onError={this.handleError.bind(this)} {...rest}/>
+        }
     }
 
     handleError() {

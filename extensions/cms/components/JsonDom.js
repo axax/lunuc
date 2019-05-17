@@ -886,21 +886,15 @@ class JsonDom extends React.Component {
                  }*/
                 return content
             } else {
-                let slugClass
+                let slugClass = ''
+                const p = scope.page.slug.split('/')
+                let path = ''
+                for (let i = 0; i < p.length; i++) {
+                    if (path !== '') path += '-'
+                    if (slugClass !== '') slugClass += ' '
+                    path += p[i]
 
-                if (dynamic) {
-                    slugClass = 'Cms-' + scope.page.slug.replace(/[\W_-]+/g, '-')
-                } else {
-                    const p = scope.page.slug.split('/')
-                    let path = ''
-                    slugClass = ''
-                    for (let i = 0; i < p.length; i++) {
-                        if (path !== '') path += '-'
-                        if (slugClass !== '') slugClass += ' '
-                        path += p[i]
-
-                        slugClass += 'Cms-' + path
-                    }
+                    slugClass += 'Cms-' + path
                 }
                 return <div className={'JsonDom ' + slugClass + (className ? ' ' + className : '')}>{content}</div>
             }

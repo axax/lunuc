@@ -6,6 +6,7 @@
   "shop.checkout": "Checkout",
   "shop.payment.type": "Payment type",
   "shop.payment.cashinadvance": "Cash in advance",
+  "shop.payment.paypal": "Paypal",
   "shop.more": "more...",
   "shop.breadcrumb.search": "Search: %text%",
   "shop.search.result": "%count% Results for \"%text%\"",
