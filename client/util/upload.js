@@ -37,10 +37,13 @@ const UploadUtil = {
 
         req.send()
     },
-    resizeImageFromFile: ({file, maxWidth, maxHeight, quality, onSuccess}) => {
+    resizeImageFromFile: ({file, conversion, onSuccess}) => {
 
         const oriImg = new Image()
         oriImg.onload = () => {
+
+            //TODO support for multiple conversions
+            const {maxWidth, maxHeight, quality} = conversion[0]
 
             let width = oriImg.width, height = oriImg.height
 
@@ -56,7 +59,7 @@ const UploadUtil = {
                 }
             }
 
-
+console.log(conversion)
             const canvas = document.createElement('canvas')
             canvas.width = width
             canvas.height = height

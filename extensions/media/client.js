@@ -1,11 +1,14 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Hook from 'util/hook'
 import Async from 'client/components/Async'
 import config from 'gen/config'
+
 const {UPLOAD_URL} = config
 
-const FileDrop = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
-const TypePicker = (props) => <Async {...props} load={import(/* webpackChunkName: "admin" */ '../../client/components/TypePicker')}/>
+const FileDrop = (props) => <Async {...props}
+                                   load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
+const TypePicker = (props) => <Async {...props}
+                                     load={import(/* webpackChunkName: "admin" */ '../../client/components/TypePicker')}/>
 
 
 export default () => {
@@ -56,18 +59,33 @@ export default () => {
         if (type === 'Media' && !dataToEdit && this.state.createEditDialogParams === 'upload') {
             // remove save button
             props.actions.splice(1, 1)
-            props.children = [
-                <TypePicker key="typePicker" placeholder="Select a conversion" type="MediaConversion"/>,
-                <FileDrop key="fileDrop" multi={false} accept="*/*" uploadTo="/graphql/upload" resizeImages={true}
-                          onSuccess={r => {
-                              this.setState({createEditDialog: false, createEditDialogParams: null})
 
-                              this.getData(this.pageParams, false)
-                              // TODO: but it directly into the store instead of reload
-                              //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
+            const MediaUploader = () => {
+                const [conversion, setConversion] = useState(
+                    []
+                )
+                return (
+                    [
+                        <div style={{position: 'relative', zIndex: 3}} key="typePicker">
+                            <TypePicker onChange={(e) => {
+                                setConversion(JSON.parse(e.target.value[0].conversion))
+                            }} name="conversion" placeholder="Select a conversion"
+                                        type="MediaConversion"/>
+                        </div>,
+                        <FileDrop key="fileDrop" multi={false} conversion={conversion} accept="*/*" uploadTo="/graphql/upload" resizeImages={true}
+                                  onSuccess={r => {
+                                      this.setState({createEditDialog: false, createEditDialogParams: null})
+
+                                      this.getData(this.pageParams, false)
+                                      // TODO: but it directly into the store instead of reload
+                                      //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
 
 
-                          }}/>]
+                                  }}/>]
+                )
+            }
+
+            props.children = <MediaUploader />
         }
     })
 

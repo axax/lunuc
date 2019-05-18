@@ -72,10 +72,10 @@ class FileDrop extends React.Component {
     constructor(props) {
         super(props)
 
-        this.state = this.initialState(props)
+        this.state = FileDrop.initialState(props)
     }
 
-    initialState(props) {
+    static initialState(props) {
         const images = []
         if (props.value) {
             images.push(props.value)
@@ -86,9 +86,19 @@ class FileDrop extends React.Component {
             uploadCompleted: 0,
             uploading: false,
             errorMessage: null,
-            successMessage: null
+            successMessage: null,
+            conversion: props.conversion || [{qualitiy: IMAGE_QUALITY, maxWidth: IMAGE_MAX_WIDTH}]
         }
     }
+
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.conversion !== prevState.conversion) {
+            return FileDrop.initialState(nextProps)
+        }
+        return null
+    }
+
 
     reset() {
         this.setState(this.initialState(this.props))
@@ -114,19 +124,19 @@ class FileDrop extends React.Component {
             }
 
 
-            { !uploading && !(!multi && images.length) &&
+            {!uploading && !(!multi && images.length) &&
             <CloudUploadIcon className={classNames(classes.uploadIcon, isHover && classes.uploadIconOver)}
-                             color="disabled"/> }
+                             color="disabled"/>}
 
-            { !uploading &&
+            {!uploading &&
             <Typography
-                variant="caption">{label || 'Drop files here, or click to select files to upload.'}</Typography> }
+                variant="caption">{label || 'Drop files here, or click to select files to upload.'}</Typography>}
 
-            { errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography> }
-            { successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography> }
+            {errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography>}
+            {successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography>}
 
-            { uploading && <Typography variant="body2">uploading data...</Typography> }
-            { uploading && <LinearProgress className={classes.progress} mode="determinate" value={uploadCompleted}/> }
+            {uploading && <Typography variant="body2">uploading data...</Typography>}
+            {uploading && <LinearProgress className={classes.progress} mode="determinate" value={uploadCompleted}/>}
 
         </div>
     }
@@ -147,6 +157,7 @@ class FileDrop extends React.Component {
 
     handelDrop(e) {
         const {onFileContent, onFiles, onChange, name, accept, uploadTo, resizeImages} = this.props
+        const {conversion} = this.state
         this.setDragState(e, false)
 
         // Fetch FileList object
@@ -171,14 +182,12 @@ class FileDrop extends React.Component {
                 if (isImage) {
                     images.push(URL.createObjectURL(file))
                 }
-                console.log(name)
+                console.log(name,conversion)
 
                 if (resizeImages && isImage) {
                     UploadUtil.resizeImageFromFile({
                         file,
-                        maxWidth: IMAGE_MAX_WIDTH,
-                        maxHeight: IMAGE_MAX_HEIGHT,
-                        quality: IMAGE_QUALITY,
+                        conversion,
                         onSuccess: (dataUrl) => {
                             if (uploadTo) {
                                 this.uploadData(dataUrl, file, uploadTo)
@@ -258,7 +267,8 @@ FileDrop.propTypes = {
     value: PropTypes.string,
     style: PropTypes.object,
     resizeImages: PropTypes.bool,
-    multi: PropTypes.bool
+    multi: PropTypes.bool,
+    conversion: PropTypes.array
 }
 
 export default withStyles(styles)(FileDrop)

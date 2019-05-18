@@ -31,15 +31,24 @@ class TypePicker extends React.Component {
         }
     }
 
-    UNSAFE_componentWillReceiveProps(props) {
-        this.setState({value: props.value || [], hasFocus: false})
+    static getDerivedStateFromProps(nextProps, prevState) {
+
+        if (nextProps.value && nextProps.value !== prevState.valueOri) {
+            return {...prevState, value: nextProps.value}
+        }
+        return null
     }
 
+    shouldComponentUpdate(props, state) {
+        return state.value !== this.state.value || state.textValue !== this.state.textValue || state.data !== this.state.data || state.selIdx !== this.state.selIdx
+    }
+
+
     render() {
-        console.log('render TypePicker')
         const {classes, placeholder, multi, error, helperText, pickerField} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
+        console.log('render TypePicker')
 
         return <div className={classes.root}>
 
@@ -80,13 +89,15 @@ class TypePicker extends React.Component {
         value.splice(idx, 1)
 
         this.props.onChange({target: {value, name: this.props.name}})
+        this.setState({value})
+
     }
 
     handlePick(idx) {
         const value = (this.state.value ? this.state.value.slice(0) : []), item = this.state.data.results[idx]
         value.push({__typename: this.props.type, ...item})
         this.props.onChange({target: {value, name: this.props.name}})
-        this.setState({textValue: '', hastFocus: false, data: null})
+        this.setState({value, textValue: '', hastFocus: false, data: null})
 
     }
 

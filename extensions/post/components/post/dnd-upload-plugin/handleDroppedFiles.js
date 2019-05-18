@@ -59,9 +59,11 @@ export default function onDropFile(config) {
                     if (isImage) {
                         UploadUtil.resizeImageFromFile({
                             file,
-                            maxWidth: 1000,
-                            maxHeight: 100,
-                            quality: 0.6,
+                            conversion: [{
+                                maxWidth: 1000,
+                                maxHeight: 100,
+                                quality: 0.6
+                            }],
                             onSuccess: (dataUrl) => {
                                 setEditorState(addImage(getEditorState(), dataUrl))
                             }
@@ -69,7 +71,7 @@ export default function onDropFile(config) {
                     } else {
 
 
-                       // this.uploadData(config, getEditorState(), URL.createObjectURL(file), file)
+                        // this.uploadData(config, getEditorState(), URL.createObjectURL(file), file)
                     }
                 }
             }

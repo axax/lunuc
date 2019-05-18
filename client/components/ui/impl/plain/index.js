@@ -87,8 +87,8 @@ export {default as HeaderMenu} from './HeaderMenu'
 export {default as Pagination} from './Pagination'
 
 // grid
-export const Row = ({...rest}) => {
-    return <div className="row" {...rest} />
+export const Row = ({className, ...rest}) => {
+    return <div className={'row' + (className ? ' ' + className : '')} {...rest} />
 }
 export const Col = ({xs, sm, md, lg, xl, mdAlign, className, ...rest}) => {
     return <div
