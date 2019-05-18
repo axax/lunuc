@@ -13,7 +13,7 @@ const UtilCms = {
     getCmsPage: async ({db, context, slug, editmode, _version, headers}) => {
         const host = getHostFromHeaders(headers)
 
-        const cacheKey = 'cmsPage-' + _version + '-' + slug + (host ? '-' + host : '')
+        const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '')
 
         let cmsPages
         if (!editmode) {
@@ -41,8 +41,7 @@ const UtilCms = {
             } else {
                 match = {$or: ors}
             }
-            console.log(match)
-            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv'], {
+            cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv'], {
                 match,
                 limit: 1,
                 _version
@@ -166,6 +165,9 @@ const UtilCms = {
                         debugInfo += ' result=true'
 
                         resolvedData[segment.key || type] = result
+                    } else if (segment.request) {
+                        //TODO implement
+
                     } else if (segment.tr) {
                         resolvedData.tr = segment.tr[context.lang]
                     } else if (segment.eval) {
@@ -184,9 +186,22 @@ const UtilCms = {
                             subscriptions.push(JSON.stringify(segment.subscription))
                         }
                     } else if (segment.system) {
-                        const system = Util.systemProperties()
+                        const data = {}
+                        if (segment.system.properties) {
+                            data.properties = Util.systemProperties()
+                            //Object.keys(Cache.cache).length
+                        }
+                        if (segment.system.cache) {
+                            data.cache = {}
+                            if (segment.system.cache.data) {
+                                data.cache.data = Cache.cache
+                            }
+                            if (segment.system.cache.count) {
+                                data.cache.count = Object.keys(Cache.cache).length
+                            }
+                        }
                         resolvedData._meta.system = segment.key || 'system'
-                        resolvedData[resolvedData._meta.system] = system
+                        resolvedData[resolvedData._meta.system] = data
                     } else if (segment.keyValueGlobals) {
                         const match = {key: {$in: segment.keyValueGlobals}}
 

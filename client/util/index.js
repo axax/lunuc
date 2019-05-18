@@ -13,6 +13,8 @@ const Util = {
     },
     escapeForJson: (str) => {
         if (!str) return ''
+        if( str.constructor === Object)
+            str = JSON.stringify(str)
 
         return str.replace(/[\\]/g, '\\\\')
             .replace(/[\"]/g, '\\\"')

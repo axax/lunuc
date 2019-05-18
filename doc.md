@@ -241,13 +241,14 @@ In the template we can iterate through it with the $loop expression:
 * this => is the current JsonDom
 * parent => reference to the parent JsonDom
 * root => reference to the root parent JsonDom
-* clientQuery => for direct communication with the backend
+* getComponent(id) => get any JsonDom by its id
+* clientQuery => for communication with the graphql api
 * setStyle => set a css style for this page. Will automatically be removed when page is released
 * scope => Object with properties related to the current template
 * on => Add an event listener function
 * setLocal => put data to the localstorage
 * getLocal => get data from the localstorage
-* refresh => refresh a component
+* forceUpdate(id,refreshScript) => refresh a component
 * history => history obj  
 * _t => i18n
 * Util => Utilities

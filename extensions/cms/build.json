@@ -46,6 +46,10 @@
           "hidden": true
         },
         {
+          "name": "serverScript",
+          "hidden": true
+        },
+        {
           "name": "dataResolver",
           "hidden": true
         },
