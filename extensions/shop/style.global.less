@@ -552,14 +552,19 @@
       justify-content: center;
       align-items: center;
       border-top: 1px solid rgba(0,0,0,.05);
-
+      padding: 0;
       li {
-
-        padding: 1rem 3rem;
+        text-align: center;
         color: rgba(0, 0, 0, .5);
-        font: 400 11px 'Source Sans Pro';
         letter-spacing: 2px;
         text-transform: uppercase;
+        font: 400 0.8rem 'Source Sans Pro';
+
+        padding: 1rem 2rem;
+        @media @mobile {
+          padding: 1rem 0.5rem;
+          font-size: 0.6rem;
+        }
 
         &:not(:last-child) {
           border-right: 1px solid rgba(0, 0, 0, .05);
@@ -571,7 +576,6 @@
           font-size: 1.4rem;
           font-weight: 700;
           letter-spacing: 0;
-          text-align: center;
           padding-top: 0.4rem;
           margin: 0 auto;
         }

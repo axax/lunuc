@@ -134,7 +134,6 @@ export default db => ({
                 }
 
             }
-
         }
     },
     Mutation: {
@@ -156,7 +155,8 @@ export default db => ({
 
             const {_version} = rest
             // clear server cache
-            const cacheKey = 'cmsPage-' + _version + '-' + rest.slug
+            const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + rest.slug
+
             Cache.clearStartWith(cacheKey)
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
 

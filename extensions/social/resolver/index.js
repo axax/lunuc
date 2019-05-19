@@ -23,13 +23,18 @@ export default (db) => ({
             const authRequest = async () => {
                 const response = (await request({
                     method: 'GET',
-                    uri: 'https://api.linkedin.com/v1/people/~:(id,first-name,last-name,maiden-name,formatted-name,phonetic-first-name,phonetic-last-name,formatted-phonetic-name,headline,location,industry,current-share,num-connections,num-connections-capped,summary,specialties,positions,picture-url,site-standard-profile-request,api-standard-profile-request,public-profile-url,email-address)?format=json',
+                    uri: 'https://api.linkedin.com/v2/me/', //?projection=(ID,localizedFirstName,localizedLastName,localizedHeadline,firstName,lastName,profilePicture,headline,vanityName)', //'/~:(id,first-name,last-name,maiden-name,formatted-name,phonetic-first-name,phonetic-last-name,formatted-phonetic-name,headline,location,industry,current-share,num-connections,num-connections-capped,summary,specialties,positions,picture-url,site-standard-profile-request,api-standard-profile-request,public-profile-url,email-address)?format=json',
                     headers: {
+                        'X-RestLi-Protocol-Version': '2.0.0',
                         Authorization: `Bearer ${keyvalueMap.linkedInAccessToken}`
                     },
                     json: true
                 }))
-                return response
+                return {
+                    headline: response.localizedFirstName + ' ' + response.localizedLastName,
+                    firstName: response.localizedFirstName,
+                    lastName: response.localizedLastName
+                }
             }
 
             if (keyvalueMap.linkedInAccessToken) {

@@ -59,6 +59,7 @@ class JsonDom extends React.Component {
                 console.warn(`There is no id set for included Cms Component ${rest.slug}`, props)
             }
             return <CmsViewContainer key={rest.id} _props={props} _parentRef={_this}
+                                     aboutToChange={_this.props.aboutToChange}
                                      dynamic={true} {...rest}/>
         },
         'SimpleToolbar': ({_this, position, ...rest}) => <UiSimpleToolbar
@@ -134,7 +135,7 @@ class JsonDom extends React.Component {
 
         const jsGetComponentRec = (comp, id) => {
             let res = null
-            if (comp) {
+            if (comp && comp.componentRefs) {
                 let k
                 for (k of Object.keys(comp.componentRefs)) {
                     const o = comp.componentRefs[k]
@@ -224,7 +225,11 @@ class JsonDom extends React.Component {
             this.props.resolvedData !== props.resolvedData ||
             this.props.renewing !== props.renewing
 
-        if (update) {
+        const locationChanged = this.props.location.search !== props.location.search ||
+            this.props.location.hash !== props.location.hash
+
+
+        if (update || locationChanged) {
             // do some stuff before update
             this.parseError = null
             this.addParentRef(props)
@@ -238,7 +243,7 @@ class JsonDom extends React.Component {
                 }
             }
 
-            if (this.props.scope !== props.scope) {
+            if (this.props.scope !== props.scope || locationChanged) {
                 this.updateScope = true
                 this.json = null
             }
@@ -251,21 +256,25 @@ class JsonDom extends React.Component {
             if (this.props.resources !== props.resources) {
                 this.checkResources()
             }
-
+            return true
         }
 
-        return update
+        return false
 
     }
 
     componentDidMount() {
-        //console.log('xx mount', this.props.id)
         this._ismounted = true
         this.runJsEvent('mount', true)
         this.checkResources()
-        this.props.history.listen(() => {
-            this.scope.params = Util.extractQueryParams()
-            this.runJsEvent('urlchanged', false)
+        this._historyUnlisten = this.props.history.listen(() => {
+            const before = {pathname: this.scope.pathname, params: this.scope.params, hashParams: this.scope.params}
+            this.addLocationToScope()
+            this.runJsEvent('urlchange', false, before)
+
+            // TODO remove
+            // deprecated
+            this.runJsEvent('urlchanged', false, before)
         })
         this.moveInHtmlComponents()
     }
@@ -273,6 +282,7 @@ class JsonDom extends React.Component {
     componentWillUnmount() {
         //console.log('xx unmount', this.props.id)
         this.runJsEvent('unmount')
+        this._historyUnlisten()
         this._ismounted = false
         this.resetTemplate()
         this.removeAddedDomElements()
@@ -340,7 +350,6 @@ class JsonDom extends React.Component {
             if (cb) {
                 cb.bind(this)(e)
             }
-            //this.jsRefresh(null, true)
         })
     }
 
@@ -611,8 +620,15 @@ class JsonDom extends React.Component {
             // set default scope values
             this.scope.fetchingMore = false
             this.scope._app_ = _app_
+            this.addLocationToScope()
         }
         return this.scope
+    }
+
+    addLocationToScope() {
+        this.scope.pathname = this.props.history.location.pathname
+        this.scope.params = Util.extractQueryParams()
+        this.scope.hashParams = (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})
     }
 
     getJson(props) {
@@ -793,7 +809,6 @@ class JsonDom extends React.Component {
         const startTime = (new Date()).getTime(),
             scope = this.getScope(this.props)
 
-
         let jsError, resolveDataError
 
         if (this.resolvedDataJson === undefined) {
@@ -925,11 +940,13 @@ JsonDom.propTypes = {
     /* properties that are passed from another component */
     _props: PropTypes.object,
     history: PropTypes.object,
+    location: PropTypes.object,
     children: PropTypes.any,
     id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another JsonDom */
     dynamic: PropTypes.bool,
     renewing: PropTypes.bool,
+    aboutToChange: PropTypes.bool,
 
     userActions: PropTypes.object.isRequired,
 }

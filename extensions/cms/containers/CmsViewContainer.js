@@ -164,10 +164,10 @@ class CmsViewContainer extends React.Component {
         // only update if cms page was modified
         return !props.cmsPage ||
             !this.props.cmsPage ||
+            props.cmsPage.slug !== this.props.cmsPage.slug ||
             props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsComponentEdit !== this.props.cmsComponentEdit ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
-            props.cmsPage.slug !== this.props.cmsPage.slug ||
             (!props.renewing && this.props.renewing) ||
             (
                 props.cmsPage.urlSensitiv && (
@@ -211,9 +211,8 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, loading, className, children, user, dynamic, client, fetchMore, userActions} = this.props
+        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, aboutToChange, loading, className, children, user, dynamic, client, fetchMore, userActions} = this.props
         let {template, resources, script, dataResolver, settings} = this.state
-
         const editMode = isEditMode(this.props)
 
         if (!cmsPage) {
@@ -242,19 +241,13 @@ class CmsViewContainer extends React.Component {
             page: {slug: cmsPage.slug},
             user,
             editMode,
-            dynamic,
-            pathname: location.pathname,
-            params: Util.extractQueryParams(),
-            hashParams: (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})
+            dynamic
         }
         const startTime = new Date()
         const jsonDom = <JsonDom id={id}
                                  dynamic={dynamic}
                                  clientQuery={this.clientQuery.bind(this)}
                                  className={className}
-                                 _parentRef={_parentRef}
-                                 _key={_key}
-                                 _props={_props}
                                  template={template}
                                  script={script}
                                  userActions={userActions}
@@ -262,9 +255,11 @@ class CmsViewContainer extends React.Component {
                                  resources={cmsPage.resources}
                                  editMode={editMode}
                                  renewing={renewing}
+                                 aboutToChange={aboutToChange}
                                  inlineEditor={!!settings.inlineEditor}
                                  scope={JSON.stringify(scope)}
                                  history={history}
+                                 location={location}
                                  setKeyValue={this.setKeyValue.bind(this)}
                                  subscriptionCallback={cb => {
                                      this._subscriptionCallback = cb
@@ -279,7 +274,10 @@ class CmsViewContainer extends React.Component {
                                          }
                                      })
                                  }}
-                                 onChange={this.handleTemplateChange}>{children}</JsonDom>
+                                 onChange={this.handleTemplateChange}
+                                 _parentRef={_parentRef}
+                                 _key={_key}
+                                 _props={_props}>{children}</JsonDom>
         let content
 
         if (!editMode || dynamic) {
@@ -888,6 +886,8 @@ CmsViewContainer.propTypes = {
     className: PropTypes.string,
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
+    renewing: PropTypes.bool,
+    aboutToChange: PropTypes.bool,
     fetchMore: PropTypes.func,
     children: PropTypes.any,
     cmsPageVariables: PropTypes.object,
@@ -955,6 +955,7 @@ const getGqlVariables = props => {
 
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
+        skip: props => props.aboutToChange,
         options(ownProps) {
             return {
                 variables: getGqlVariables(ownProps),
@@ -962,25 +963,19 @@ const CmsViewContainerWithGql = compose(
             }
         },
         props: ({data: {loading, cmsPage, variables, fetchMore}, ownProps}) => {
-
             const result = {
                 cmsPageVariables: variables,
                 loading,
                 fetchMore,
                 cmsPage,
-                renewing: false
+                renewing: false,
+                aboutToChange: false
             }
 
             if (cmsPage) {
                 if (variables.slug !== cmsPage.slug) {
-                    // if the cmsPage is set to null here the page is immediately removed from the screen when the slug change
-                    // otherwise the page keeps showing until the new page has been loaded
-                    //console.log(cmsPage)
-                    // TEMP
-                    if( cmsPage.slug.indexOf('shop')<0) {
-                        result.cmsPage = null
-                    }
-                    //result.renewing = true
+                    // we define a new state here when component is reused with a new slug
+                    result.aboutToChange = true
                 } else {
                     // check if query changed
                     let query = cmsPage.cacheKey.split('#')[0]

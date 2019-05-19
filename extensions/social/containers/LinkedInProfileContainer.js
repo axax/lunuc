@@ -51,7 +51,7 @@ class LinkedInProfileContainer extends React.Component {
             linkedInBase = 'https://www.linkedin.com/oauth/v2/authorization?response_type=code',
             linkedInClientId = '772exdl15hhf0d',
             linkedInState = Math.random().toString(36).substr(2),
-            linkedInAuthUrl = `${linkedInBase}&client_id=${linkedInClientId}&state=${linkedInState}&redirect_uri=${encodeURIComponent(linkedInRedirectUrl)}`
+            linkedInAuthUrl = `${linkedInBase}&client_id=${linkedInClientId}&state=${linkedInState}&scope=r_liteprofile+r_basicprofile+r_emailaddress&redirect_uri=${encodeURIComponent(linkedInRedirectUrl)}`
 
         // store temporarily
         sessionStorage.setItem('linkedInState', linkedInState)
