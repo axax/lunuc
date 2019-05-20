@@ -56,12 +56,12 @@ class FilesContainer extends React.Component {
                 {({loading, error, data}) => {
                     if (loading) return 'Loading...'
                     if (error) return `Error! ${error.message}`
-                    if (!data.run) return `No data`
-                    const ext = file.slice((file.lastIndexOf(".") - 1 >>> 0) + 2)
+                    if (!data.run) return 'No data'
+                    const ext = file.slice((file.lastIndexOf('.') - 1 >>> 0) + 2)
 
                     return <CodeEditor lineNumbers onChange={c => {
                         this.fileChange(dir + '/' + file, c)
-                    }} type={ext || 'text' } children={data.run.response}/>
+                    }} type={ext || 'text' }>{data.run.response}</CodeEditor>
                 }}
             </Query>
 
@@ -97,14 +97,14 @@ class FilesContainer extends React.Component {
 
                             this._loading = false
                             if (error) return `Error! ${error.message}`
-                            if (!data.run) return `No data`
+                            if (!data.run) return 'No data'
 
                             const rows = data.run.response.split('\n')
                             let listItems = []
                             if (searchText) {
                                 listItems = rows.reduce((a, fileRow) => {
                                     if (fileRow) {
-                                        const b = fileRow.split(' ').filter(x => x);
+                                        const b = fileRow.split(' ').filter(x => x)
                                         a.push({
                                             icon: <InsertDriveFileIcon />,
                                             selected: false,
@@ -121,7 +121,7 @@ class FilesContainer extends React.Component {
 
                                 listItems = rows.reduce((a, fileRow) => {
                                     if (fileRow) {
-                                        const b = fileRow.split(' ').filter(x => x);
+                                        const b = fileRow.split(' ').filter(x => x)
                                         a.push({
                                             icon: b[0].indexOf('d') === 0 ? <FolderIcon /> :
                                                 <InsertDriveFileIcon />,

@@ -6,6 +6,6 @@ type CmsServerMethod{
 
 type Query {
     cmsPage(slug: String!, props: String, query: String, nosession: String, editmode: Boolean, _version: String): CmsPage
-    cmsServerMethod(slug: String!, props: String, query: String, _version: String): CmsServerMethod
+    cmsServerMethod(slug: String!, methodName: String!, props: String, query: String, _version: String): CmsServerMethod
 }
 `

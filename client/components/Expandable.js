@@ -33,6 +33,7 @@ class Expandable extends React.Component {
 }
 
 Expandable.propTypes = {
+    children: PropTypes.any,
     title: PropTypes.string,
     onChange: PropTypes.func,
     expanded: PropTypes.bool

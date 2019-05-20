@@ -90,12 +90,12 @@ class ContentEditable extends React.Component {
 
     handleKeyDown(e) {
         const {highlight} = this.props
-        if (e.key === "Enter") {
+        if (e.key === 'Enter') {
             e.preventDefault()
             document.execCommand('insertHTML', false, '\n')
         } else
         // handle tab
-        if (e.key === "Tab") {
+        if (e.key === 'Tab') {
             e.preventDefault()
             const selStr = window.getSelection().toString()
 
@@ -154,14 +154,14 @@ class ContentEditable extends React.Component {
     }
 
     handleKeyUp(e) {
-        if (e.getModifierState("Control") || e.key === "Shift") {
+        if (e.getModifierState('Control') || e.key === 'Shift') {
             // ignore if Control is pressed
             return
         }
 
         const {highlight} = this.props
         if (highlight) {
-            const ignoreKeys = ["ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "End", "Home", "PageUp", "PageDown", "Control"] // arrows --> don't ignore Meta
+            const ignoreKeys = ['ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'End', 'Home', 'PageUp', 'PageDown', 'Control'] // arrows --> don't ignore Meta
             if (ignoreKeys.indexOf(e.key) < 0) {
                 this.highlightDelay(e.target)
             }
@@ -422,6 +422,8 @@ class ContentEditable extends React.Component {
 }
 
 ContentEditable.propTypes = {
+    className: PropTypes.string,
+    children: PropTypes.any,
     style: PropTypes.object,
     onBlur: PropTypes.func,
     onChange: PropTypes.func,

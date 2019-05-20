@@ -24,17 +24,39 @@ const styles = theme => ({
 class GenericForm extends React.Component {
     constructor(props) {
         super(props)
-        this.state = this.getInitalState(props)
+        this.state = GenericForm.getInitalState(props)
+    }
+
+    static getInitalState = (props) => {
+        const initalState = {fieldsOri: props.fields, fields: {}, fieldErrors: {}, isValid: true}
+        Object.keys(props.fields).map(k => {
+            const item = props.fields[k]
+            let fieldValue
+            if (item.localized) {
+                fieldValue = props.values && props.values[k] ? Object.assign({}, props.values[k]) : null
+            } else {
+                if (props.values) {
+                    fieldValue = props.values[k]
+                } else {
+                    // value must be null instead of undefined
+                    fieldValue = item.value === undefined ? null : item.value
+                }
+            }
+            initalState.fields[k] = fieldValue
+        })
+        return initalState
+    }
+
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.fields !== prevState.fieldsOri) {
+            return GenericForm.getInitalState(nextProps)
+        }
+        return null
     }
 
     shouldComponentUpdate(props, state) {
         return props.fields !== this.props.fields || state !== this.state
-    }
-
-    componentWillReceiveProps(props) {
-        if (props.fields !== this.props.fields) {
-            this.setState(this.getInitalState(props))
-        }
     }
 
     componentDidMount() {
@@ -100,26 +122,6 @@ class GenericForm extends React.Component {
         return true
     }
 
-    getInitalState = (props) => {
-        const initalState = {fields: {}, fieldErrors: {}, isValid: true}
-        Object.keys(props.fields).map(k => {
-            const item = props.fields[k]
-            let fieldValue
-            if (item.localized) {
-                fieldValue = props.values && props.values[k] ? Object.assign({}, props.values[k]) : null
-            } else {
-                if (props.values) {
-                    fieldValue = props.values[k]
-                } else {
-                    // value must be null instead of undefined
-                    fieldValue = item.value === undefined ? null : item.value
-                }
-            }
-            initalState.fields[k] = fieldValue
-        })
-        return initalState
-    }
-
     reset = () => {
         this.setState(this.getInitalState(this.props))
         this.setValidateState(this.state)
@@ -165,8 +167,8 @@ class GenericForm extends React.Component {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
 
         const formFields = Object.keys(fields).map((k, i) => {
-            const o = fields[k],value = this.state.fields[k]
-            if( o.readOnly){
+            const o = fields[k], value = this.state.fields[k]
+            if (o.readOnly) {
                 return
             }
 
@@ -273,6 +275,7 @@ GenericForm.propTypes = {
     onClick: PropTypes.func,
     onKeyDown: PropTypes.func,
     onValidate: PropTypes.func,
+    onChange: PropTypes.func,
     caption: PropTypes.string,
     primaryButton: PropTypes.bool,
     classes: PropTypes.object.isRequired,

@@ -760,7 +760,6 @@ class JsonDom extends React.Component {
         if (scope.fetchingMore || !this._ismounted) {
             return
         }
-        let query = ''
         if (!scope.params.page) {
             scope.params.page = 1
         }
@@ -769,7 +768,7 @@ class JsonDom extends React.Component {
         scope.fetchingMore = true
         this.forceUpdate()
 
-
+        let query = ''
         const keys = Object.keys(scope.params)
         for (let i = 0; i < keys.length; i++) {
             const key = keys[i]
@@ -791,6 +790,10 @@ class JsonDom extends React.Component {
                 callback()
             }
         })
+    }
+
+    serverMethod(name, cb) {
+        this.props.serverMethod(name, cb)
     }
 
     render() {
@@ -842,7 +845,7 @@ class JsonDom extends React.Component {
             try {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`
-                const {scope,fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, forceUpdate, escape, getComponent, Util, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
+                const {scope,fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, forceUpdate, getComponent, Util, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
                 const _t = arguments[0]._t.bind(scope.data)
                 ${script}`).call(this, {
                     scope,
@@ -920,34 +923,41 @@ class JsonDom extends React.Component {
 }
 
 JsonDom.propTypes = {
-    subscriptionCallback: PropTypes.func,
-    clientQuery: PropTypes.func,
     className: PropTypes.string,
     template: PropTypes.string,
     resolvedData: PropTypes.string,
     resources: PropTypes.string,
     script: PropTypes.string,
     scope: PropTypes.string,
+
+    /* states */
+    renewing: PropTypes.bool,
+    aboutToChange: PropTypes.bool,
+
+    /* Methods */
     setKeyValue: PropTypes.func,
-    /* Is fired when the json dom changes */
-    onChange: PropTypes.func,
+    serverMethod: PropTypes.func,
+    clientQuery: PropTypes.func,
+    subscriptionCallback: PropTypes.func,
+    onChange: PropTypes.func, /* Is fired when the json dom changes */
     onError: PropTypes.func,
     onFetchMore: PropTypes.func,
+
+    /* editMode */
     editMode: PropTypes.bool,
     inlineEditor: PropTypes.bool,
-    _parentRef: PropTypes.object,
     _key: PropTypes.string,
+
     /* properties that are passed from another component */
     _props: PropTypes.object,
+    _parentRef: PropTypes.object,
+
     history: PropTypes.object,
     location: PropTypes.object,
     children: PropTypes.any,
     id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another JsonDom */
     dynamic: PropTypes.bool,
-    renewing: PropTypes.bool,
-    aboutToChange: PropTypes.bool,
-
     userActions: PropTypes.object.isRequired,
 }
 

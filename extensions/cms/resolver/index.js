@@ -57,7 +57,7 @@ export default db => ({
                 throw new Error('Cms page doesn\'t exist')
             }
             const scope = {...createScopeForDataResolver(query, props), page: {slug}}
-            const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name} = cmsPages.results[0]
+            const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
 
             const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope, nosession)
@@ -95,6 +95,7 @@ export default db => ({
                     script,
                     resources,
                     dataResolver,
+                    serverScript,
                     ssr,
                     public: ispublic, // if public the content is visible to everyone
                     online: _version === 'default',  // if true it is the active _version that is online
@@ -134,6 +135,19 @@ export default db => ({
                 }
 
             }
+        },
+        cmsServerMethod: async ({slug, methodName, query, props, _version}, {context, headers}) => {
+            const userIsLoggedIn = Util.isUserLoggedIn(context)
+            const startTime = (new Date()).getTime()
+            let cmsPages = await UtilCms.getCmsPage({db, context, slug, _version, headers})
+
+            if (!cmsPages.results || cmsPages.results.length === 0) {
+                throw new Error('Cms page doesn\'t exist')
+            }
+
+            const {serverScript} = cmsPages.results[0]
+
+            return {result: 'sss'}
         }
     },
     Mutation: {

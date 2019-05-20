@@ -146,7 +146,7 @@ class Print extends React.PureComponent {
             if (page < breaks.length) {
                 let elem = breaks[page]
                 while (elem = elem.nextSibling) {
-                    if (elem.nodeType === 3) continue; // text node
+                    if (elem.nodeType === 3) continue // text node
                     elem.classList.add(classes.invisible)
                 }
             }
@@ -159,14 +159,14 @@ class Print extends React.PureComponent {
                 /*proxy: ( (ENV=="development" )?"linkedin/src/php/html2canvasproxy.php":"php/html2canvasproxy.php"),*/
             }).then(canvas => {
 
-                var data = canvas.toDataURL();
+                var data = canvas.toDataURL()
                 pdfContent.push({
                     image: data,
                     width: 600
                 })
 
                 if (page < breaks.length) {
-                    nextPage(page + 1);
+                    nextPage(page + 1)
                 } else {
                     // $pai.css({marginTop:0})
                     //$pa.css({overflow:"visible",height:"auto"})
@@ -203,7 +203,7 @@ class Print extends React.PureComponent {
 
                      },{ autoPrint: true } )
                      }else{*/
-                    pdfMake.createPdf(docDefinition).download("cv.pdf", () => {
+                    pdfMake.createPdf(docDefinition).download('cv.pdf', () => {
                         ol.style.display = 'none'
                     })
                     /*}*/
@@ -293,6 +293,8 @@ class Print extends React.PureComponent {
 
 
 Print.propTypes = {
+    children: PropTypes.any,
+    style: PropTypes.object,
     classes: PropTypes.object.isRequired
 }
 

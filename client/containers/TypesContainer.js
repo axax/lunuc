@@ -646,7 +646,7 @@ class TypesContainer extends React.Component {
             if (checked) {
                 selectedrows[value] = checked
             } else {
-                delete selectedrows[value];
+                delete selectedrows[value]
             }
         }
 
@@ -1031,7 +1031,7 @@ class TypesContainer extends React.Component {
         if (type) {
             const {client} = this.props
             client.mutate({
-                mutation: gql(`mutation cloneCollection($type:String!,$name:String){cloneCollection(type:$type,name:$name){collection{name}}}`),
+                mutation: gql`mutation cloneCollection($type:String!,$name:String){cloneCollection(type:$type,name:$name){collection{name}}}`,
                 variables: {name, type},
                 update: (store, {data}) => {
 
@@ -1215,7 +1215,7 @@ class TypesContainer extends React.Component {
     handleConfirmDeletion = (action) => {
         if (action && action.key === 'yes') {
             this.deleteData(this.pageParams, this.state.dataToDelete.reduce((acc, item) => {
-                acc.push(item._id);
+                acc.push(item._id)
                 return acc
             }, []))
         }

@@ -1,8 +1,16 @@
-import React from "react";
+import React from 'react'
 import ReactDOM from 'react-dom'
+import PropTypes from 'prop-types'
 
 
 class SmartImage extends React.Component {
+
+    propTypes = {
+        src: PropTypes.string,
+        asBackground: PropTypes.bool,
+        className: PropTypes.string,
+        style: PropTypes.object
+    }
 
     constructor(props) {
         super(props)
@@ -86,7 +94,7 @@ class SmartImage extends React.Component {
     checkVisibility() {
         if (this._ismounted) {
             const el = ReactDOM.findDOMNode(this)
-            const style = window.getComputedStyle(el);
+            const style = window.getComputedStyle(el)
 
             let isVisible = style.width !== '0' &&
                 style.height !== '0' &&

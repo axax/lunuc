@@ -54,8 +54,8 @@ const ErrorHandler = (props) => <Async {...props}
 const NetworkStatusHandler = (props) => <Async {...props}
                                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/NetworkStatusHandler')}/>
 
-// the graphql query is also need to access and update the cache when data arrive from a supscription
-const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name urlSensitiv template script resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
+// the graphql query is also need to access and update the cache when data arrive from a subscription
+const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
 const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){key value createdBy{_id}}}`
 
@@ -84,6 +84,39 @@ const getSlugVersion = (slug) => {
     return ret
 }
 
+
+const getGqlVariables = props => {
+    const {slug, urlSensitiv, dynamic, user, _props} = props,
+        variables = {
+            ...getSlugVersion(slug)
+        }
+
+    if (_props && _props.$) {
+        variables.props = JSON.stringify(_props.$)
+    }
+
+    if (isEditMode(props)) {
+        variables.editmode = true
+    }
+
+    // add settings from local storage if user is not logged in
+    if (!user.isAuthenticated) {
+        const kv = localStorage.getItem(NO_SESSION_KEY_VALUES_SERVER)
+        if (kv) {
+            variables.nosession = kv
+        }
+    }
+
+    // add query if page is url sensitiv
+    if (urlSensitiv === true || (!dynamic && urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
+        const q = window.location.search.substring(1)
+        if (q)
+            variables.query = q
+    }
+
+    return variables
+}
+
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
     registeredSubscriptions = {}
@@ -108,7 +141,7 @@ class CmsViewContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, resources, dataResolver, ssr, urlSensitiv, status} = props.cmsPage || {}
+        const {template, script, serverScript, resources, dataResolver, ssr, urlSensitiv, status} = props.cmsPage || {}
         let settings = null
         if (props.keyValue) {
             // TODO optimize so JSON.parse is only called once
@@ -128,6 +161,7 @@ class CmsViewContainer extends React.Component {
             template,
             resources,
             script,
+            serverScript,
             dataResolver,
             ssr,
             urlSensitiv,
@@ -137,6 +171,7 @@ class CmsViewContainer extends React.Component {
             // take value from state if there is any because it might be more up to date
             result.template = state.template
             result.script = state.script
+            result.serverScript = state.serverScript
             result.dataResolver = state.dataResolver
             result.resources = state.resources
         }
@@ -178,7 +213,10 @@ class CmsViewContainer extends React.Component {
             props.children != this.props.children ||
             props._props !== this.props._props ||
             /* only if in edit mode */
-            (!props.dynamic && isEditMode(props) && (state.template !== this.state.template || state.script !== this.state.script ||
+            (!props.dynamic && isEditMode(props) && (
+                state.template !== this.state.template ||
+                state.script !== this.state.script ||
+                state.serverScript !== this.state.serverScript ||
                 this.props.cmsPages !== props.cmsPages ||
                 this.state.settings.fixedLayout !== state.settings.fixedLayout ||
                 this.state.settings.inlineEditor !== state.settings.inlineEditor ||
@@ -212,7 +250,7 @@ class CmsViewContainer extends React.Component {
 
     render() {
         const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, aboutToChange, loading, className, children, user, dynamic, client, fetchMore, userActions} = this.props
-        let {template, resources, script, dataResolver, settings} = this.state
+        let {template, resources, script, serverScript, dataResolver, settings} = this.state
         const editMode = isEditMode(this.props)
 
         if (!cmsPage) {
@@ -247,6 +285,8 @@ class CmsViewContainer extends React.Component {
         const jsonDom = <JsonDom id={id}
                                  dynamic={dynamic}
                                  clientQuery={this.clientQuery.bind(this)}
+                                 serverMethod={this.serverMethod.bind(this)}
+                                 setKeyValue={this.setKeyValue.bind(this)}
                                  className={className}
                                  template={template}
                                  script={script}
@@ -260,7 +300,6 @@ class CmsViewContainer extends React.Component {
                                  scope={JSON.stringify(scope)}
                                  history={history}
                                  location={location}
-                                 setKeyValue={this.setKeyValue.bind(this)}
                                  subscriptionCallback={cb => {
                                      this._subscriptionCallback = cb
                                  }}
@@ -300,6 +339,13 @@ class CmsViewContainer extends React.Component {
                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
                             onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
+                    </Expandable>
+
+                    <Expandable title="Server Script"
+                                onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
+                                expanded={settings.serverScriptExpanded}>
+                        <ScriptEditor
+                            onChange={this.handleServerScriptChange.bind(this)}>{serverScript}</ScriptEditor>
                     </Expandable>
 
                     <Expandable title="Template"
@@ -497,6 +543,9 @@ class CmsViewContainer extends React.Component {
             this._autoSaveScript()
         }
 
+        if (this._autoSaveServerScriptTimeout) {
+            this._autoSaveServerScript()
+        }
 
         clearTimeout(this._templateTimeout)
         if (this._autoSaveTemplateTimeout) {
@@ -668,7 +717,18 @@ class CmsViewContainer extends React.Component {
 
         clearTimeout(this._autoSaveScriptTimeout)
         this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
+    }
 
+    handleServerScriptChange = (serverScript) => {
+        this.setState({serverScript})
+        this._autoSaveServerScript = () => {
+            clearTimeout(this._autoSaveServerScriptTimeout)
+            this._autoSaveServerScriptTimeout = 0
+            this.saveCmsPage(serverScript, this.props.cmsPage, 'serverScript')
+        }
+
+        clearTimeout(this._autoSaveServerScriptTimeout)
+        this._autoSaveServerScriptTimeout = setTimeout(this._autoSaveServerScript, 5000)
     }
 
     handleDataResolverChange = (str, instantSave) => {
@@ -726,7 +786,7 @@ class CmsViewContainer extends React.Component {
         this.handleSettingChange('drawerOpen', open)
     }
 
-    handleComponentEditClose(e) {
+    handleComponentEditClose() {
         const {_cmsActions, cmsComponentEdit} = this.props
         this.saveCmsPage(this.state.template, this.props.cmsPage, 'template')
         _cmsActions.editCmsComponent(null, cmsComponentEdit.component, cmsComponentEdit.scope)
@@ -770,6 +830,22 @@ class CmsViewContainer extends React.Component {
                 ...rest
             }).then(success).catch(error)
         }
+    }
+
+
+    serverMethod(methodName, cb) {
+        const {slug, _version} = getSlugVersion(this.props.slug)
+
+        this.props.client.query({
+            fetchPolicy: 'network-only',
+            forceFetch: true,
+            query: gql('query cmsServerMethod($slug:String!,$methodName:String!,$_version:String){cmsServerMethod(slug:$slug,methodName:$methodName,_version:$_version){result}}'),
+            variables: {
+                _version,
+                slug,
+                methodName
+            }
+        }).then(cb).catch(cb)
     }
 
     updateResolvedData(json) {
@@ -920,39 +996,6 @@ CmsViewContainer.propTypes = {
 
 const urlSensitivMap = {}
 
-const getGqlVariables = props => {
-    const {slug, urlSensitiv, dynamic, user, _props} = props,
-        variables = {
-            ...getSlugVersion(slug)
-        }
-
-    if (_props && _props.$) {
-        variables.props = JSON.stringify(_props.$)
-    }
-
-    if (isEditMode(props)) {
-        variables.editmode = true
-    }
-
-    // add settings from local storage if user is not logged in
-    if (!user.isAuthenticated) {
-        const kv = localStorage.getItem(NO_SESSION_KEY_VALUES_SERVER)
-        if (kv) {
-            variables.nosession = kv
-        }
-    }
-
-    // add query if page is url sensitiv
-    if (urlSensitiv === true || (!dynamic && urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
-        const q = window.location.search.substring(1)
-        if (q)
-            variables.query = q
-    }
-
-    return variables
-}
-
-
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
         skip: props => props.aboutToChange,
@@ -1035,7 +1078,7 @@ const CmsViewContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,query:$query,props:$props){slug template script resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$serverScript:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,query:$query,props:$props){slug template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key, cb) => {
 
