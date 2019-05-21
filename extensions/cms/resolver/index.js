@@ -9,6 +9,8 @@ import {UIProvider} from 'ui'
 import {pubsub} from 'api/subscription'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
 import Cache from 'util/cache'
+import _t from "../../../util/i18n";
+import {withFilter} from "graphql-subscriptions";
 
 const createScopeForDataResolver = (query, _props) => {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
@@ -29,7 +31,16 @@ export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const data = await GenericResolver.entities(db, context, 'CmsPage', ['public', 'slug', 'hostRule', 'name', 'urlSensitiv'], {
+            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv']
+            if( filter ){
+                // search in fields
+                fields.push('dataResolver')
+                fields.push('script')
+                fields.push('serverScript')
+                fields.push('template')
+            }
+
+            const data = await GenericResolver.entities(db, context, 'CmsPage', fields, {
                 limit,
                 page,
                 offset,
@@ -136,7 +147,7 @@ export default db => ({
 
             }
         },
-        cmsServerMethod: async ({slug, methodName, query, props, _version}, {context, headers}) => {
+        cmsServerMethod: async ({slug, methodName, args, query, props, _version}, {context, headers}) => {
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
             let cmsPages = await UtilCms.getCmsPage({db, context, slug, _version, headers})
@@ -147,7 +158,19 @@ export default db => ({
 
             const {serverScript} = cmsPages.results[0]
 
-            return {result: 'sss'}
+            if( args ){
+                try{
+                    args = JSON.parse(args)
+                }catch(e){
+
+                }
+            }
+
+            const result = new Function(`${serverScript}
+            return ${methodName}(this.args)`).call({args})
+
+
+            return {result}
         }
     },
     Mutation: {
@@ -206,6 +229,15 @@ export default db => ({
         cloneCmsPage: async (data, {context}) => {
             return GenericResolver.cloneEntity(db, context, 'CmsPage', data)
         }
+    },
+    Subscription: {
+        cmsPageData: withFilter(() => pubsub.asyncIterator('cmsPageData'),
+            (payload, context) => {
+                if (payload) {
+                    return payload.userId === context.id
+                }
+            }
+        )
     }
 })
 

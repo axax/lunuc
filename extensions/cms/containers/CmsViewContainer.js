@@ -263,7 +263,7 @@ class CmsViewContainer extends React.Component {
                 }
             }
             // show a loader here
-            return !dynamic && editMode ? <NetworkStatusHandler/> : null
+            return !dynamic && editMode ? <NetworkStatusHandler/> : <div className={`CmsPage-loading CmsPage-${this.props.slug}-loading`} />
         } else {
             // set page title
             // TODO: make tile localized
@@ -833,17 +833,18 @@ class CmsViewContainer extends React.Component {
     }
 
 
-    serverMethod(methodName, cb) {
+    serverMethod(methodName, args, cb) {
         const {slug, _version} = getSlugVersion(this.props.slug)
 
         this.props.client.query({
             fetchPolicy: 'network-only',
             forceFetch: true,
-            query: gql('query cmsServerMethod($slug:String!,$methodName:String!,$_version:String){cmsServerMethod(slug:$slug,methodName:$methodName,_version:$_version){result}}'),
+            query: gql('query cmsServerMethod($slug:String!,$methodName:String!,$args:String,$_version:String){cmsServerMethod(slug:$slug,methodName:$methodName,args:$args,_version:$_version){result}}'),
             variables: {
                 _version,
                 slug,
-                methodName
+                methodName,
+                args: args && (args.constructor === Object || args.constructor === Array) ? JSON.stringify(args) : args
             }
         }).then(cb).catch(cb)
     }

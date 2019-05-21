@@ -1,12 +1,12 @@
 import jwt from 'jsonwebtoken'
-import bodyParser from 'body-parser'
 import Util from './util'
 import config from 'gen/config'
 
 const {DEFAULT_LANGUAGE} = config
 
-//TODO but SECRET_KEY to a save place
+//TODO put SECRET_KEY to a save place
 const AUTH_HEADER = 'authorization',
+    SESSION_HEADER = 'x-session',
     CONTENT_LANGUAGE_HEADER = 'content-language',
     AUTH_SCHEME = 'JWT',
     SECRET_KEY = 'fa-+3452sdfas!ä$$34dää$',
@@ -28,7 +28,7 @@ export const auth = {
             user.role = Util.getUserRoles(db, user.role)
 
             // from now on we'll identify the user by the id and the id is the only personalized value that goes into our token
-            const payload = {'username': user.username, 'id': user._id}
+            const payload = {username: user.username, id: user._id}
             const token = jwt.sign(payload, SECRET_KEY, {expiresIn: AUTH_EXPIRES_IN})
             return {token: token, user}
         } else {
@@ -59,13 +59,15 @@ export const auth = {
 
 
         app.use((req, res, next) => {
-            const token = req.headers[AUTH_HEADER], lang = req.headers[CONTENT_LANGUAGE_HEADER]
+            const token = req.headers[AUTH_HEADER], lang = req.headers[CONTENT_LANGUAGE_HEADER], session = req.headers[SESSION_HEADER]
 
             // now if auth is needed we can check if the context is available
             req.context = auth.decodeToken(token)
 
             // add the requested language to the context
             req.context.lang = lang || DEFAULT_LANGUAGE
+
+            req.context.session = session
 
             next()
         })

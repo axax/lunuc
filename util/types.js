@@ -62,7 +62,9 @@ export const getTypeQueries = (typeName) => {
     let insertParams = '', cloneParams = '', insertUpdateQuery = '', updateParams = '', cloneQuery = ''
 
     if (fields) {
-        fields.map(({clone, name, type, required, multi, reference, localized, readOnly, ...rest}) => {
+        fields.map(({clone, name, type, required, multi, reference, localized, readOnly, hidden, ...rest}) => {
+
+            if( hidden ) return
 
             if (insertParams !== '' && !readOnly) {
                 insertParams += ', '

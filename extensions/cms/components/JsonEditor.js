@@ -72,7 +72,7 @@ class JsonEditor extends React.Component {
             try {
                 return {
                     dataOri: nextProps.children,
-                    json: nextProps.children ? JSON.parse(nextProps.children) : null
+                    json: nextProps.children ? JSON.parse(nextProps.children) : nextProps.children
                 }
             } catch (e) {
                 console.log(e, nextProps.children)
@@ -84,7 +84,6 @@ class JsonEditor extends React.Component {
     renderJsonRec(json, key, level) {
         if (json === undefined) return null
         const {classes} = this.props
-        if (json === undefined) return null
         if (!key) {
             key = '0'
             if (json.constructor !== Array) {

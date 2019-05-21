@@ -697,7 +697,7 @@ class TypesContainer extends React.Component {
         })
 
         typeDefinition.fields.forEach(field => {
-            if (field.name !== 'createdBy') {
+            if (!field.hidden && field.name !== 'createdBy') {
                 this.typeColumns[type].push({
                     title: (field.label || field.name) + (field.localized ? ' [' + _app_.lang + ']' : ''),
                     id: field.name,

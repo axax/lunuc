@@ -8,6 +8,7 @@ import {
     CAPABILITY_MANAGE_KEYVALUES
 } from 'util/capabilities'
 import phantom from 'phantom'
+import request from 'request-promise'
 
 const UtilCms = {
     getCmsPage: async ({db, context, slug, editmode, _version, headers}) => {
@@ -166,7 +167,27 @@ const UtilCms = {
 
                         resolvedData[segment.key || type] = result
                     } else if (segment.request) {
+                        const {key, async, ...options} = segment.request
                         //TODO implement
+                        if (async) {
+
+                            request(options).then((body) => {
+                                console.log(body)
+                            }).catch(function (err) {
+                                console.log(err)
+                            })
+
+                            subscriptions.push('{"cmsPageData":"resolvedData"}')
+
+                        } else {
+                            let result
+                            try {
+                                result = await request(options)
+                            } catch (error) {
+                                result = error;
+                            }
+                            resolvedData[key || 'request'] = result
+                        }
 
                     } else if (segment.tr) {
                         resolvedData.tr = segment.tr[context.lang]

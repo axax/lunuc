@@ -39,19 +39,23 @@
         },
         {
           "name": "template",
-          "hidden": true
+          "hidden": true,
+          "searchable": true
         },
         {
           "name": "script",
-          "hidden": true
+          "hidden": true,
+          "searchable": true
         },
         {
           "name": "serverScript",
-          "hidden": true
+          "hidden": true,
+          "searchable": true
         },
         {
           "name": "dataResolver",
-          "hidden": true
+          "hidden": true,
+          "searchable": true
         },
         {
           "name": "resolvedData",

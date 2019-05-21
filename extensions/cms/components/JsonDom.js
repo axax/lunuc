@@ -63,7 +63,7 @@ class JsonDom extends React.Component {
                                      dynamic={true} {...rest}/>
         },
         'SimpleToolbar': ({_this, position, ...rest}) => <UiSimpleToolbar
-            position={(_this.props.editMode ? 'static' : position)} {...rest} />,
+            position={(_this && _this.props.editMode ? 'static' : position)} {...rest} />,
         'Button': UiButton,
         'Divider': UiDivider,
         'Card': UiCard,
@@ -561,24 +561,26 @@ class JsonDom extends React.Component {
                     }
                 }
 
-                // if we have a cms component in another cms component the location props gets not refreshed
-                // that's way we pass it directly to the reactElement as a prop
-                let cmsProps = null
-                if (t === 'Cms') {
-                    cmsProps = {location: this.props.history.location}
-                }
+
                 let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
                 if (eleType.constructor === Object) {
                     eleType = eleType.component
                 }
                 const eleProps = {
-                    _this: this,
                     key,
                     _key: key,
-                    ...cmsProps,
                     ...properties
                 }
+
+                if (t === 'Cms') {
+                    // if we have a cms component in another cms component the location props gets not refreshed
+                    // that's way we pass it directly to the reactElement as a prop
+                    eleProps.location = this.props.history.location
+                    eleProps._this= this
+                }
+
                 if (this.props.editMode) {
+                    eleProps._this= this
                     eleProps._editmode = 'true'
                 }
                 if (className) {
@@ -709,13 +711,12 @@ class JsonDom extends React.Component {
             str = str.replace(/\\/g, '\\\\')
         }
         try {
-            const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
+            return new Function(`const {${Object.keys(scope).join(',')}} = this.scope
             const Util = this.Util
             const _i = Util.tryCatch.bind(this)
             const _r = this.renderIntoHtml
-            const _t = this._t.bind(data);return \`${str}\``)
-
-            return tpl.call({
+            const _t = this._t.bind(data)
+            return \`${str}\``).call({
                 scope,
                 renderIntoHtml: this.renderIntoHtml.bind(this),
                 parent: this.props._parentRef,
@@ -792,8 +793,8 @@ class JsonDom extends React.Component {
         })
     }
 
-    serverMethod(name, cb) {
-        this.props.serverMethod(name, cb)
+    serverMethod(name, args, cb) {
+        this.props.serverMethod(name, args, cb)
     }
 
     render() {

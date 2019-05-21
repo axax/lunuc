@@ -39,7 +39,8 @@ A Type can be define in the build.json of an extension. Types can also have refe
 * multi = If true multiple values can be selected
 * type = The type of the field. It can be String (default), Boolean, Float or the name of another type
 * index = Creates a database index. For FTS the value can be text
-* hidden = If true the field is not visible in the type editor
+* hidden = If true the field is not visible in the type editor nor it is included in the search. It is as if it is non-existent
+* searchable = If true the field is included in the search also if it is hidden
 * uitype = It can be datetime, number, editor, jseditor. If the value is set you can force the type editor to use a certain ui element
 * readOnly = The value is read only. It is not defined whether the field exist in the database or is only dynamic
 * pickerField = When the type is a reference you can define which field you want to show in the frontend for type picking

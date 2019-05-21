@@ -23,16 +23,7 @@ const Util = {
             .replace(/[\f]/g, '\\f')
             .replace(/[\n]/g, '\\n')
             .replace(/[\r]/g, '\\r')
-            .replace(/[\t]/g, '\\t');
-
-        let replace = '(?:\r\n|\r|\n'
-        if (removeBreaks) {
-            // use remove breaks for html
-            replace += '|\t'
-        }
-        replace += ')'
-
-        return str.replace(new RegExp(replace, 'g'), removeBreaks ? '' : '\\n').replace(/[\\\b\\\f\\\t\"\\]/g, '\\$&')
+            .replace(/[\t]/g, '\\t')
     },
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str, ignoreError) {

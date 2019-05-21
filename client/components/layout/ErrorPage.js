@@ -18,6 +18,7 @@ class ErrorPage extends React.Component {
         super(props)
 
         const {code, message, background} = this.getErrorStatus(props)
+        this.titleOri = document.title
         document.title = `${code} ${message}`
 
 
@@ -219,6 +220,7 @@ hr:after {
     }
 
     componentWillUnmount() {
+        document.title = this.titleOri
         document.body.removeChild(this.css)
     }
 

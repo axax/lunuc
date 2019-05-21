@@ -3,12 +3,14 @@ import PropTypes from 'prop-types'
 import {SimpleMenu} from 'ui/admin'
 import {UnControlled as CodeMirror} from 'react-codemirror2'
 import './codemirror/javascript'
+import './codemirror/search'
 import 'codemirror/mode/htmlmixed/htmlmixed'
 import 'codemirror/addon/hint/javascript-hint'
 import 'codemirror/addon/hint/show-hint'
 import 'codemirror/lib/codemirror.css'
 import 'codemirror/addon/hint/show-hint.css'
 import './codemirror/style.css'
+import './codemirror/dialog.css'
 
 
 class CodeEditor extends React.Component {
