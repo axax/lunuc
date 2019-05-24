@@ -22,6 +22,7 @@ import SmartImage from 'client/components/SmartImage'
 import {Link} from 'react-router-dom'
 import JsonDomInput from './JsonDomInput'
 import {deepMergeConcatArrays} from 'util/deepMerge'
+import {classNameByPath} from '../util/jsonDomUtil'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
@@ -576,11 +577,11 @@ class JsonDom extends React.Component {
                     // if we have a cms component in another cms component the location props gets not refreshed
                     // that's way we pass it directly to the reactElement as a prop
                     eleProps.location = this.props.history.location
-                    eleProps._this= this
+                    eleProps._this = this
                 }
 
                 if (this.props.editMode) {
-                    eleProps._this= this
+                    eleProps._this = this
                     eleProps._editmode = 'true'
                 }
                 if (className) {
@@ -905,17 +906,7 @@ class JsonDom extends React.Component {
                  }*/
                 return content
             } else {
-                let slugClass = ''
-                const p = scope.page.slug.split('/')
-                let path = ''
-                for (let i = 0; i < p.length; i++) {
-                    if (path !== '') path += '-'
-                    if (slugClass !== '') slugClass += ' '
-                    path += p[i]
-
-                    slugClass += 'Cms-' + path
-                }
-                return <div className={'JsonDom ' + slugClass + (className ? ' ' + className : '')}>{content}</div>
+                return <div className={classNameByPath(scope.page.slug, className)}>{content}</div>
             }
         }
 

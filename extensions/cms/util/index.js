@@ -171,9 +171,26 @@ const UtilCms = {
                         const {key, async, placeholder, cache, ...options} = segment.request
 
                         const dataKey = key || 'request'
+                        let cacheKey
+                        if( cache ){
+                            cacheKey = cache.key || key
+                            if( cacheKey ){
+                                const data = Cache.get('request'+key)
+                                if(data){
+                                    resolvedData[dataKey] = data
+                                    continue
+                                }
+                            }else{
+                                console.warn('Please define a key or a cacheKey if you want to use caching')
+                            }
+                        }
 
                         if (async) {
                             request(options).then((body) => {
+                                if( cacheKey ){
+                                    Cache.set(cacheKey, body, cache.expiresIn)
+                                }
+
                                 pubsub.publish('cmsPageData', {
                                     userId: context.id,
                                     session: context.session,

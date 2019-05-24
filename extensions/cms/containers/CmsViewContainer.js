@@ -19,6 +19,7 @@ import {
 } from '../constants'
 import Async from 'client/components/Async'
 import * as UserActions from "../../../client/actions/UserAction";
+import {classNameByPath} from "../util/jsonDomUtil";
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}
@@ -249,21 +250,22 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, aboutToChange, loading, className, children, user, dynamic, client, fetchMore, userActions} = this.props
+        const {slug, cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, aboutToChange, loading, className, children, user, dynamic, client, fetchMore, userActions} = this.props
         let {template, resources, script, serverScript, dataResolver, settings} = this.state
         const editMode = isEditMode(this.props)
 
         if (!cmsPage) {
             if (!loading && !aboutToChange) {
-                console.warn(`cmsPage ${this.props.slug} missing`)
+                console.warn(`cmsPage ${slug} missing`)
                 if (!dynamic) {
                     return <ErrorPage/>
                 } else {
-                    return <div>Cms page {this.props.slug} doesn't exist</div>
+                    return <div>Cms page {slug} doesn't exist</div>
                 }
             }
+            console.log(classNameByPath(slug, 'Cms--loading'))
             // show a loader here
-            return !dynamic && editMode ? <NetworkStatusHandler/> : <div className={`CmsPage-loading`} />
+            return !dynamic && editMode ? <NetworkStatusHandler/> : <div className={classNameByPath(slug, 'Cms--loading')} />
         } else {
             // set page title
             // TODO: make tile localized
@@ -276,7 +278,7 @@ class CmsViewContainer extends React.Component {
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
         const scope = {
-            page: {slug: cmsPage.slug},
+            page: {slug},
             user,
             editMode,
             dynamic
@@ -415,7 +417,7 @@ class CmsViewContainer extends React.Component {
                         <MenuList>
                             {
                                 cmsPages.results.map(i => {
-                                        if (i.slug !== cmsPage.slug) {
+                                        if (i.slug !== slug) {
                                             return <MenuListItem key={i.slug} onClick={e => {
                                                 history.push('/' + i.slug)
                                             }} button primary={i.slug}/>
@@ -454,7 +456,7 @@ class CmsViewContainer extends React.Component {
                                                     }}>Back</Button>
                                                 ]
                                                 }
-                                                title={`Edit Page "${cmsPage.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
+                                                title={`Edit Page "${slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
                 {jsonDom}
                 <ErrorHandler snackbar/>
                 <NetworkStatusHandler/>
@@ -480,7 +482,7 @@ class CmsViewContainer extends React.Component {
             </DrawerLayout></UIProvider>
         }
 
-        console.info(`render ${this.constructor.name} for ${cmsPage.slug} (loading=${loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
+        console.info(`render ${this.constructor.name} for ${slug} (loading=${loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
         return content
     }
 
