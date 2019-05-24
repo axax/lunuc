@@ -5,13 +5,6 @@ import PropTypes from 'prop-types'
 
 class SmartImage extends React.Component {
 
-    propTypes = {
-        src: PropTypes.string,
-        asBackground: PropTypes.bool,
-        className: PropTypes.string,
-        style: PropTypes.object
-    }
-
     constructor(props) {
         super(props)
         this.state = SmartImage.getStateFromProps(props)
@@ -129,6 +122,13 @@ class SmartImage extends React.Component {
         }
     }
 
+}
+
+SmartImage.propTypes = {
+    src: PropTypes.string,
+    asBackground: PropTypes.bool,
+    className: PropTypes.string,
+    style: PropTypes.object
 }
 
 export default SmartImage

@@ -147,6 +147,7 @@ export const start = (done) => {
                     onOperation: ({payload}) => {
                         // now if auth is needed we can check if the context is available
                         const context = auth.decodeToken(payload.auth)
+                        context.session = payload.session
                         return {context, schema}
                     }
                 },

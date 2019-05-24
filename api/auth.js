@@ -59,7 +59,7 @@ export const auth = {
 
 
         app.use((req, res, next) => {
-            const token = req.headers[AUTH_HEADER], lang = req.headers[CONTENT_LANGUAGE_HEADER], session = req.headers[SESSION_HEADER]
+            const token = req.headers[AUTH_HEADER], lang = req.headers[CONTENT_LANGUAGE_HEADER], currentSession = req.headers[SESSION_HEADER]
 
             // now if auth is needed we can check if the context is available
             req.context = auth.decodeToken(token)
@@ -67,7 +67,9 @@ export const auth = {
             // add the requested language to the context
             req.context.lang = lang || DEFAULT_LANGUAGE
 
-            req.context.session = session
+            req.context.session = currentSession || 'newsessiontoken'
+
+            res.header(SESSION_HEADER, req.context.session );
 
             next()
         })

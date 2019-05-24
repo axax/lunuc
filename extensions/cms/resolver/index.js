@@ -9,7 +9,6 @@ import {UIProvider} from 'ui'
 import {pubsub} from 'api/subscription'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
 import Cache from 'util/cache'
-import _t from "../../../util/i18n";
 import {withFilter} from "graphql-subscriptions";
 
 const createScopeForDataResolver = (query, _props) => {
@@ -166,11 +165,13 @@ export default db => ({
                 }
             }
 
-            const result = new Function(`${serverScript}
-            return ${methodName}(this.args)`).call({args})
+            const result = new Function(`
+            const require = this.require
+            ${serverScript}
+            return ${methodName}(this.args)`).call({args, require})
 
 
-            return {result}
+            return await {result}
         }
     },
     Mutation: {
@@ -233,9 +234,7 @@ export default db => ({
     Subscription: {
         cmsPageData: withFilter(() => pubsub.asyncIterator('cmsPageData'),
             (payload, context) => {
-                if (payload) {
-                    return payload.userId === context.id
-                }
+                return payload && payload.session === context.session //payload.userId === context.id
             }
         )
     }

@@ -254,7 +254,7 @@ class CmsViewContainer extends React.Component {
         const editMode = isEditMode(this.props)
 
         if (!cmsPage) {
-            if (!loading) {
+            if (!loading && !aboutToChange) {
                 console.warn(`cmsPage ${this.props.slug} missing`)
                 if (!dynamic) {
                     return <ErrorPage/>
@@ -263,7 +263,7 @@ class CmsViewContainer extends React.Component {
                 }
             }
             // show a loader here
-            return !dynamic && editMode ? <NetworkStatusHandler/> : <div className={`CmsPage-loading CmsPage-${this.props.slug}-loading`} />
+            return !dynamic && editMode ? <NetworkStatusHandler/> : <div className={`CmsPage-loading`} />
         } else {
             // set page title
             // TODO: make tile localized

@@ -9,6 +9,7 @@ import {
 } from 'util/capabilities'
 import phantom from 'phantom'
 import request from 'request-promise'
+import {pubsub} from "../../../api/subscription";
 
 const UtilCms = {
     getCmsPage: async ({db, context, slug, editmode, _version, headers}) => {
@@ -167,18 +168,31 @@ const UtilCms = {
 
                         resolvedData[segment.key || type] = result
                     } else if (segment.request) {
-                        const {key, async, ...options} = segment.request
-                        //TODO implement
-                        if (async) {
+                        const {key, async, placeholder, cache, ...options} = segment.request
 
+                        const dataKey = key || 'request'
+
+                        if (async) {
                             request(options).then((body) => {
-                                console.log(body)
+                                pubsub.publish('cmsPageData', {
+                                    userId: context.id,
+                                    session: context.session,
+                                    cmsPageData: {resolvedData: JSON.stringify({[dataKey]: body})}
+                                })
+
+                                //console.log(body)
                             }).catch(function (err) {
-                                console.log(err)
+                                //console.log(err)
+                                pubsub.publish('cmsPageData', {
+                                    userId: context.id,
+                                    session: context.session,
+                                    cmsPageData: {resolvedData: JSON.stringify({[dataKey]: err})}
+                                })
                             })
 
                             subscriptions.push('{"cmsPageData":"resolvedData"}')
 
+                            resolvedData[dataKey] = placeholder !== undefined ? placeholder : 'async: subscribe to cmsPageData to retrieve data'
                         } else {
                             let result
                             try {
@@ -186,7 +200,7 @@ const UtilCms = {
                             } catch (error) {
                                 result = error;
                             }
-                            resolvedData[key || 'request'] = result
+                            resolvedData[dataKey] = result
                         }
 
                     } else if (segment.tr) {

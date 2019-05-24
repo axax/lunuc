@@ -62,12 +62,16 @@ export function configureMiddleware(store) {
 
     // create a middleware with the authentication
     const authLink = setContext((req) => {
-        return {
-            headers: {
-                Authorization: Util.getAuthToken(),
-                ['Content-Language']: _app_.lang
-            }
+        const headers= {
+            Authorization: Util.getAuthToken(),
+            ['Content-Language']: _app_.lang
         }
+        if( _app_.session ){
+            headers['x-session'] = _app_.session
+        }
+
+
+        return { headers}
     })
 
 
@@ -99,6 +103,7 @@ export function configureMiddleware(store) {
 
     const statusLink = new ApolloLink((operation, forward) => {
         return forward(operation).map((data) => {
+            _app_.session = operation.getContext().response.headers.get('x-session')
             /* HOOK */
             Hook.call('ApiResponse', data)
             return data
@@ -125,6 +130,7 @@ export function configureMiddleware(store) {
     const subscriptionMiddleware = {
         applyMiddleware(options, next) {
             options.auth = Util.getAuthToken()
+            options.session = _app_.session
             next()
         }
     }
