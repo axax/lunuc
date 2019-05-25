@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import Util from './util'
 import config from 'gen/config'
+import _t from 'util/i18nServer'
 
 const {DEFAULT_LANGUAGE} = config
 
@@ -14,7 +15,7 @@ const AUTH_HEADER = 'authorization',
 
 
 export const auth = {
-    createToken: async (username, password, db) => {
+    createToken: async (username, password, db, context) => {
 
         const userCollection = db.collection('User')
 
@@ -23,7 +24,7 @@ export const auth = {
         const user = result.value
 
         if (!user) {
-            return {error: 'no such user found', token: null, user: null}
+            return {error: _t('core.login.invalid', context.lang), token: null, user: null}
         } else if (Util.compareWithHashedPassword(password, user.password)) {
             user.role = Util.getUserRoles(db, user.role)
 
@@ -32,7 +33,7 @@ export const auth = {
             const token = jwt.sign(payload, SECRET_KEY, {expiresIn: AUTH_EXPIRES_IN})
             return {token: token, user}
         } else {
-            return {error: 'password did not match', token: null, user: null}
+            return {error: _t('core.login.invalid', context.lang), token: null, user: null}
         }
     },
     decodeToken: (token) => {

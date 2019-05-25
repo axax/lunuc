@@ -1,7 +1,4 @@
 {
-  "admin.home.title":"Administrationskonsole",
-  "admin.home.hi":"Hallo %username%!",
-  "GenericForm.validation.required":"Das Feld darf nicht leer sein",
   "core.save":"Speichern",
   "core.account":"Konto",
   "core.address":"Adresse",
@@ -13,5 +10,6 @@
   "core.address.street": "Strasse",
   "core.address.street_number": "Strasse Nr.",
   "core.address.postcode": "PLZ",
-  "core.address.place": "Ort"
+  "core.address.place": "Ort",
+  "core.login.invalid": "Benutzer oder Passwort sind ungültig"
 }

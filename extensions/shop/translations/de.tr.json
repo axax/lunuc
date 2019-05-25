@@ -16,5 +16,9 @@
   "shop.sort.relevance": "Relevanz",
   "shop.sort.priceDesc": "Preis absteigend",
   "shop.sort.priceAsc": "Preis aufsteigend",
-  "shop.ordernow": "Jetzt bestellen"
+  "shop.ordernow": "Jetzt bestellen",
+  "shop.profile": "Mein Profil",
+  "shop.orders": "Meine Käufe",
+  "shop.sales": "Meine Verkäufe",
+  "shop.logout": "Abmelden"
 }

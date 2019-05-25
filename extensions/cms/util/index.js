@@ -10,6 +10,7 @@ import {
 import phantom from 'phantom'
 import request from 'request-promise'
 import {pubsub} from "../../../api/subscription";
+import translations from 'gensrc/tr'
 
 const UtilCms = {
     getCmsPage: async ({db, context, slug, editmode, _version, headers}) => {
@@ -172,22 +173,22 @@ const UtilCms = {
 
                         const dataKey = key || 'request'
                         let cacheKey
-                        if( cache ){
+                        if (cache) {
                             cacheKey = cache.key || key
-                            if( cacheKey ){
-                                const data = Cache.get('request'+key)
-                                if(data){
+                            if (cacheKey) {
+                                const data = Cache.get('request' + key)
+                                if (data) {
                                     resolvedData[dataKey] = data
                                     continue
                                 }
-                            }else{
+                            } else {
                                 console.warn('Please define a key or a cacheKey if you want to use caching')
                             }
                         }
 
                         if (async) {
                             request(options).then((body) => {
-                                if( cacheKey ){
+                                if (cacheKey) {
                                     Cache.set(cacheKey, body, cache.expiresIn)
                                 }
 
@@ -221,7 +222,25 @@ const UtilCms = {
                         }
 
                     } else if (segment.tr) {
-                        resolvedData.tr = segment.tr[context.lang]
+                        if (!resolvedData.tr)
+                            resolvedData.tr = {}
+                        if (segment.tr.constructor === Array) {
+
+                            if (translations[context.lang]) {
+                                for (let i = 0; i < segment.tr.length; i++) {
+                                    const key = segment.tr[i]
+                                    const val = translations[context.lang][key]
+                                    if (val) {
+                                        resolvedData.tr[key] = val
+                                    }
+                                }
+                            }
+
+                        } else {
+                            resolvedData.tr = Object.assign(resolvedData.tr, segment.tr[context.lang])
+                        }
+
+
                     } else if (segment.eval) {
                         debugInfo += ' in eval'
                         try {
@@ -338,24 +357,24 @@ const UtilCms = {
                         const page = await instance.createPage();
 
 
-                        await page.on('onResourceRequested', function (requestData) {
+                        page.on('onResourceRequested', function (requestData) {
                             //console.info('Requesting', requestData.url)
                         })
-                        await page.on('onLoadStarted', function () {
+                        page.on('onLoadStarted', function () {
                             //console.info('started')
                         })
-                        await page.on('onLoadFinished', function () {
+                        page.on('onLoadFinished', function () {
                             //console.info('finshed')
                         })
-                        await page.on('onNavigationRequested', function (targetUrl) {
+                        page.on('onNavigationRequested', function (targetUrl) {
                             console.info('onNavigationRequested', targetUrl)
                         })
 
-                        await page.on('onError', function (msg, trace) {
+                        page.on('onError', function (msg, trace) {
                             console.error(msg, trace)
                         })
 
-                        await page.on('onConsoleMessage', function (msg, lineNum, sourceId) {
+                        page.on('onConsoleMessage', function (msg, lineNum, sourceId) {
                             console.log('CONSOLE: ' + msg + ' (from line #' + lineNum + ' in "' + sourceId + '")');
                         })
 

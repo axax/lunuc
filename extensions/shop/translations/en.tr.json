@@ -16,5 +16,9 @@
   "shop.sort.relevance": "Relevance",
   "shop.sort.priceDesc": "Price descending",
   "shop.sort.priceAsc": "Price ascending",
-  "shop.ordernow": "Order now"
+  "shop.ordernow": "Order now",
+  "shop.profile": "Profile",
+  "shop.orders": "Orders",
+  "shop.sales": "Sales",
+  "shop.logout": "Logout"
 }

@@ -165,8 +165,8 @@ export const userResolver = (db) => ({
 
             return users
         },
-        login: async ({username, password}) => {
-            const result = await auth.createToken(username, password, db)
+        login: async ({username, password},{context}) => {
+            const result = await auth.createToken(username, password, db, context)
             return result
         },
         forgotPassword: async ({username, url}, {context, headers}) => {
@@ -276,7 +276,7 @@ export const userResolver = (db) => ({
                         body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${signupToken}","name":"${username || email}"}`
                     })
                 }
-                const result = await auth.createToken(email, password, db)
+                const result = await auth.createToken(email, password, db, context)
                 return result
             }
         },

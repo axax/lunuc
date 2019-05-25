@@ -39,7 +39,7 @@
     } catch (e) {
     }
 
-    _app_ = {tr: {}, trLoaded: false, localSettings: ls, start: new Date(), langBefore: sessionStorage.getItem('lang')}
+    _app_ = {tr: {}, trLoaded: true, localSettings: ls, start: new Date(), langBefore: sessionStorage.getItem('lang')}
     var l = window.location.pathname.split('/')[1]
     if (!l || l.length !== 2) {
         if (!_app_.langBefore) {
@@ -58,7 +58,7 @@
         if (_app_.trCallback) _app_.trCallback()
     }
     s.setAttribute('src', '/' + l + '.tr.js?v=${BUILD_NUMBER}')
-    document.head.appendChild(s)
+   // document.head.appendChild(s)
 </script>
 <script async src="/main.bundle.js?v=${BUILD_NUMBER}"></script>
 </body>

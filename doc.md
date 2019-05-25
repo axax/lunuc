@@ -304,7 +304,6 @@ Here is an example of a scope object:
   "_app_": {
     "tr": {
     },
-    "trLoaded": true,
     "lang": "en",
     "config": {
       "APOLLO_CACHE": true,

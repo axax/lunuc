@@ -2,23 +2,26 @@ const glob = require('glob'),
     fs = require('fs'),
     path = require('path');
 
+
+const GENSRC_PATH = './gensrc';
+
 function WebpackI18nPlugin(options) {
     this.src = options.src;
     this.dest = options.dest;
 }
 
-WebpackI18nPlugin.prototype.apply = function(compiler) {
+WebpackI18nPlugin.prototype.apply = function (compiler) {
     var self = this;
 
     this.filesTimeStamps = {};
 
-    compiler.plugin('emit', function(compilation, callback) {
-        glob(self.src, function(error, files) {
+    compiler.plugin('emit', function (compilation, callback) {
+        glob(self.src, function (error, files) {
             var json = {},
                 filesChanged = [],
                 isAtLeastOneFileChanged;
 
-            files.forEach(function(fileName) {
+            files.forEach(function (fileName) {
                 var filePath = path.join(compiler.context, fileName),
                     isFileChanged;
 
@@ -33,11 +36,20 @@ WebpackI18nPlugin.prototype.apply = function(compiler) {
                 self.updateFileStamp(compilation, filePath);
             });
 
-            isAtLeastOneFileChanged = filesChanged.some(function(isChanged) {
+            isAtLeastOneFileChanged = filesChanged.some(function (isChanged) {
                 return isChanged;
             });
 
             if (isAtLeastOneFileChanged) {
+
+                // add all translations to gensrc
+                fs.writeFile(GENSRC_PATH + "/tr.js", 'export default ' + JSON.stringify(json), function (err) {
+                    if (err) {
+                        return console.log(err)
+                    }
+                })
+
+                // add frontend translations to assets path so they can be loaded from the client
                 self.addJsonToWebPackAssets(compilation, json);
             }
 
@@ -46,45 +58,47 @@ WebpackI18nPlugin.prototype.apply = function(compiler) {
     });
 };
 
-WebpackI18nPlugin.prototype.addFileToWebPackDependencies = function(compilation, filePath) {
+WebpackI18nPlugin.prototype.addFileToWebPackDependencies = function (compilation, filePath) {
     compilation.fileDependencies.add(filePath);
 };
 
-WebpackI18nPlugin.prototype.addJsonToWebPackAssets = function(compilation, json) {
+WebpackI18nPlugin.prototype.addJsonToWebPackAssets = function (compilation, json) {
 
     Object.keys(json).map((key) => {
-        const jsonString = 'window._app_.tr='+JSON.stringify(json[key])
-        compilation.assets[key+'.js'] = {
-            source: function() {
+        const jsonString = 'window._app_.tr=' + JSON.stringify(json[key])
+        compilation.assets[key + '.tr.js'] = {
+            source: function () {
                 return new Buffer(jsonString)
             },
-            size: function() {
+            size: function () {
                 return Buffer.byteLength(jsonString)
             }
         }
     })
-
-
-
-
 };
 
-WebpackI18nPlugin.prototype.addJsonToMergedJson = function(fileName, json) {
-    const file = fs.readFileSync(fileName, 'utf8'),
-        name = path.parse(fileName).name
+WebpackI18nPlugin.prototype.addJsonToMergedJson = function (fileName, json) {
+    const file = fs.readFileSync(fileName, 'utf8')
+
+    let name = path.parse(fileName).name
+
+    if (name.endsWith('.tr')) {
+        name = name.substring(0, name.length - 3)
+    }
+
 
     try {
         var fileContent = JSON.parse(file);
-        if( !json[name] ) json[name] = {}
+        if (!json[name]) json[name] = {}
 
         Object.assign(json[name], fileContent);
 
-    } catch(e) {
+    } catch (e) {
 
     }
 };
 
-WebpackI18nPlugin.prototype.isFileChanged = function(compilation, filePath) {
+WebpackI18nPlugin.prototype.isFileChanged = function (compilation, filePath) {
     var newFileTimeStamp = compilation.fileTimestamps[filePath],
         fileTimeStamp = this.filesTimeStamps[filePath];
 
@@ -93,7 +107,7 @@ WebpackI18nPlugin.prototype.isFileChanged = function(compilation, filePath) {
     }
 };
 
-WebpackI18nPlugin.prototype.updateFileStamp = function(compilation, filePath) {
+WebpackI18nPlugin.prototype.updateFileStamp = function (compilation, filePath) {
     this.filesTimeStamps[filePath] = compilation.fileTimestamps[filePath];
 };
 

@@ -1,9 +1,11 @@
 const _t = function (key, replacements) {
     let str
     if (this && this.tr && this.tr[key]) {
+        // local translations
         str = this.tr[key]
     } else {
-        str = window._app_.tr[key] || key
+        // global translations
+        str = _app_.tr[key] || key
     }
     if (replacements) {
         str = str.replace(/%(\w+)%/g, function (all, key) {

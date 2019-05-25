@@ -117,7 +117,7 @@ const app = httpx.createServer(options, function (req, res) {
                 if( host === 'www.onyou.ch'){
                     indexfile = path.join(BUILD_DIR, '/index.min.html')
                 }else{
-                    indexfile = path.join(BUILD_DIR, '/index.html')
+                    indexfile = path.join(BUILD_DIR, '/index.min.html')
                 }
 
                 sendFile(req, res, headers, indexfile);
