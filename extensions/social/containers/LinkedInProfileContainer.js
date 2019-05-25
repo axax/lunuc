@@ -2,13 +2,14 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
-import {DrawerLayout, Button, Typography, Divider, Col, Row} from 'ui/admin'
+import {Button, Typography, Col, Row} from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {withRouter} from 'react-router-dom'
 import PrettyResume from '../components/PrettyResume'
 import FileDrop from 'client/components/FileDrop'
 import _t from 'util/i18n'
-
+import translations from '../translations/translations'
+_app_.tr = Object.assign(_app_.tr, translations[_app_.lang])
 
 const withLinkedInCallback = (Container) => {
 
@@ -39,15 +40,15 @@ class LinkedInProfileContainer extends React.Component {
         }
     }
 
-    componentWillReceiveProps(props){
+    componentWillReceiveProps(props) {
         const ld = props.keyValueMap && props.keyValueMap.linkedInData
-        if( ld ){
-            this.setState({data:ld})
+        if (ld) {
+            this.setState({data: ld})
         }
     }
 
     handelLinkedInConnect = () => {
-        const linkedInRedirectUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port?':'+window.location.port:''}${this.props.location.pathname}`,
+        const linkedInRedirectUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}${this.props.location.pathname}`,
             linkedInBase = 'https://www.linkedin.com/oauth/v2/authorization?response_type=code',
             linkedInClientId = '772exdl15hhf0d',
             linkedInState = Math.random().toString(36).substr(2),
@@ -95,7 +96,7 @@ class LinkedInProfileContainer extends React.Component {
 
                     c--
                     if (c === 0) {
-                        this.props.setKeyValue({key:'linkedInData',value:data})
+                        this.props.setKeyValue({key: 'linkedInData', value: data})
                         this.setState({data})
                     }
                 }
@@ -360,7 +361,7 @@ const LinkedInProfileContainerWithGql = compose(
 )(LinkedInProfileContainer)
 
 
-export default withKeyValues(withRouter(withLinkedInCallback(LinkedInProfileContainerWithGql)),['linkedInData'])
+export default withKeyValues(withRouter(withLinkedInCallback(LinkedInProfileContainerWithGql)), ['linkedInData'])
 
 
 function CSVToArray(strData, strDelimiter) {
@@ -370,11 +371,11 @@ function CSVToArray(strData, strDelimiter) {
     // Create a regular expression to parse the CSV values.
     var objPattern = new RegExp((
         // Delimiters.
-    "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
-    // Quoted fields.
-    "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
-    // Standard fields.
-    "([^\"\\" + strDelimiter + "\\r\\n]*))"), "gi");
+        "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
+        // Quoted fields.
+        "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
+        // Standard fields.
+        "([^\"\\" + strDelimiter + "\\r\\n]*))"), "gi");
     // Create an array to hold our data. Give the array
     // a default empty first row.
     var arrData = [[]];

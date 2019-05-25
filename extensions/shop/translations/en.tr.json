@@ -20,5 +20,6 @@
   "shop.profile": "Profile",
   "shop.orders": "Orders",
   "shop.sales": "Sales",
-  "shop.logout": "Logout"
+  "shop.logout": "Logout",
+  "shop.addtobasket": "Add to basket"
 }

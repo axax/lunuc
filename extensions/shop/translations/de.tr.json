@@ -20,5 +20,6 @@
   "shop.profile": "Mein Profil",
   "shop.orders": "Meine Käufe",
   "shop.sales": "Meine Verkäufe",
-  "shop.logout": "Abmelden"
+  "shop.logout": "Abmelden",
+  "shop.addtobasket": "In den Warenkorb"
 }
