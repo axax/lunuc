@@ -13,7 +13,7 @@ const Util = {
     },
     escapeForJson: (str) => {
         if (!str) return ''
-        if( str.constructor === Object)
+        if (str.constructor === Object)
             str = JSON.stringify(str)
 
         return str.replace(/[\\]/g, '\\\\')
@@ -27,12 +27,8 @@ const Util = {
     },
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str, ignoreError) {
-        let data
-        if (this && this.data)
-            data = this.data
-
         try {
-            return eval(str)
+            return eval((!str.startsWith('this.') ? 'this.' : '') + str)
         } catch (e) {
             if (!ignoreError)
                 console.log(e, str)

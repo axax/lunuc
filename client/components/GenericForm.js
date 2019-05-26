@@ -4,8 +4,7 @@ import {Button, TextField, SimpleSwitch, SimpleSelect} from 'ui/admin'
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
 import config from 'gen/config'
-import _t from 'util/i18n'
-import ContentEditable from './ContentEditable'
+import CodeEditor from './CodeEditor'
 import {withStyles} from 'ui/admin'
 import {checkFieldType} from 'util/types'
 
@@ -13,10 +12,8 @@ import {checkFieldType} from 'util/types'
 const styles = theme => ({
     editor: {
         border: '1px solid ' + theme.palette.grey['200'],
-        padding: theme.spacing.unit,
         margin: theme.spacing.unit * 3 + 'px 0',
-        maxHeight: 200,
-        overflow: 'auto'
+        height: '20rem'
     }
 })
 
@@ -187,14 +184,12 @@ class GenericForm extends React.Component {
 
                     }
                 }
-                return <div key={k} className={classes.editor}><ContentEditable lines highlight={highlight}
-                                                                                onChange={(v) => this.handleInputChange({
-                                                                                    target: {
-                                                                                        name: k,
-                                                                                        value: v
-                                                                                    }
-                                                                                })}>{json ? json : value}</ContentEditable>
-                </div>
+                return <CodeEditor className={classes.editor} key={k} onChange={(v) => this.handleInputChange({
+                        target: {
+                            name: k,
+                            value: v
+                        }
+                    })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor>
 
             }
             if (uitype === 'image') {

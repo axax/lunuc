@@ -150,14 +150,14 @@ class TemplateEditor extends React.Component {
                 <Tab icon={<SubjectIcon/>} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
             </Tabs>
             {currentTab === 0 && <TabContainer>
-                <CodeEditor onChange={this.handleChange.bind(this)} lineNumbers type={type}>{data}</CodeEditor>
+                <CodeEditor onChange={this.handleChange.bind(this)} showFab lineNumbers type={type}>{data}</CodeEditor>
 
             </TabContainer>}
             {currentTab === 1 && <TabContainer>
                 <JsonEditor onChange={this.handleChange.bind(this)}>{data}</JsonEditor>
             </TabContainer>}
             {component && currentTab === 2 && <TabContainer>
-                <CodeEditor lineNumbers type="json" readOnly>
+                <CodeEditor showFab lineNumbers type="json" readOnly>
                     {JSON.stringify(component.scope, (key, val) => {
                         if (['root', 'parent'].indexOf(key) >= 0) {
                             return '[JsonDom]'

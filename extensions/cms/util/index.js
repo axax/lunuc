@@ -7,10 +7,10 @@ import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_KEYVALUES
 } from 'util/capabilities'
-import phantom from 'phantom'
 import request from 'request-promise'
 import {pubsub} from "../../../api/subscription";
 import translations from 'gensrc/tr'
+import {openInBrowser} from './browser'
 
 const UtilCms = {
     getCmsPage: async ({db, context, slug, editmode, _version, headers}) => {
@@ -77,18 +77,19 @@ const UtilCms = {
         if (dataResolver) {
             let debugInfo = null
             try {
-                let segments = JSON.parse(dataResolver)
+                let segments = JSON.parse(dataResolver),
+                    addDataResolverSubsription = false
                 if (segments.constructor === Object) segments = [segments]
 
                 for (let i = 0; i < segments.length; i++) {
 
                     debugInfo = ''
 
-                    let tempPhantom
-                    if (segments[i].phantom) {
+                    let tempBrowser
+                    if (segments[i].browser) {
                         // exclude pipline from replacements
-                        tempPhantom = segments[i].phantom.pipeline
-                        segments[i].phantom.pipeline = null
+                        tempBrowser = segments[i].browser.pipeline
+                        segments[i].browser.pipeline = null
                     }
                     const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
                                               const {data} = this
@@ -98,8 +99,8 @@ const UtilCms = {
                     const segment = JSON.parse(replacedSegmentStr)
 
 
-                    if (tempPhantom) {
-                        segment.phantom.pipeline = tempPhantom
+                    if (tempBrowser) {
+                        segment.browser.pipeline = tempBrowser
                     }
 
 
@@ -207,9 +208,7 @@ const UtilCms = {
                                     cmsPageData: {resolvedData: JSON.stringify({[dataKey]: err})}
                                 })
                             })
-
-                            subscriptions.push('{"cmsPageData":"resolvedData"}')
-
+                            addDataResolverSubsription = true
                             resolvedData[dataKey] = placeholder !== undefined ? placeholder : 'async: subscribe to cmsPageData to retrieve data'
                         } else {
                             let result
@@ -337,125 +336,31 @@ const UtilCms = {
                         resolvedData._meta.keyValueKey = segment.key || 'keyValues'
                         resolvedData[resolvedData._meta.keyValueKey] = map
 
-                    } else if (segment.phantom) {
+                    } else if (segment.browser) {
+                        // headless browser
 
-                        if (segment.phantom.if && segment.phantom.if !== 'true') {
+                        if (segment.browser.if && segment.browser.if !== 'true') {
                             continue
                         }
+                        const dataKey = segment.key || 'browser'
 
-                        const {url, pipeline} = segment.phantom
+                        if( segment.async ){
 
+                            addDataResolverSubsription = true
+                            resolvedData[dataKey] = segment.placeholder || 'async: subscribe to cmsPageData to retrieve data'
+                            setTimeout( async ()=>{
+                                const data = await openInBrowser(segment.browser, scope, resolvedData)
+                                pubsub.publish('cmsPageData', {
+                                    userId: context.id,
+                                    session: context.session,
+                                    cmsPageData: {resolvedData: JSON.stringify({[dataKey]: data})}
+                                })
 
-                        const instance = await phantom.create(['--ignore-ssl-errors=yes', '--load-images=no'], {
-                            logLevel: 'error', viewportSize: {width: 1600, height: 900},
-                            settings: {
-                                userAgent: 'Mozilla/5.0 (X11; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0',
-                                javascriptEnabled: 'true',
-                                loadImages: 'false'
-                            }
-                        })
-                        const page = await instance.createPage();
+                            },0)
 
-
-                        page.on('onResourceRequested', function (requestData) {
-                            //console.info('Requesting', requestData.url)
-                        })
-                        page.on('onLoadStarted', function () {
-                            //console.info('started')
-                        })
-                        page.on('onLoadFinished', function () {
-                            //console.info('finshed')
-                        })
-                        page.on('onNavigationRequested', function (targetUrl) {
-                            console.info('onNavigationRequested', targetUrl)
-                        })
-
-                        page.on('onError', function (msg, trace) {
-                            console.error(msg, trace)
-                        })
-
-                        page.on('onConsoleMessage', function (msg, lineNum, sourceId) {
-                            console.log('CONSOLE: ' + msg + ' (from line #' + lineNum + ' in "' + sourceId + '")');
-                        })
-
-                        /*await page.on('onResourceRequested', function(requestData) { console.info('Requesting', requestData.url); });*/
-                        const status = await page.open(url)
-                        let data = {}
-                        if (pipeline) {
-
-                            const evalFunc = (evalData) => {
-                                let evalStr
-                                if (evalData.constructor === Array) {
-                                    evalStr = evalData.join('\n')
-                                } else {
-                                    evalStr = evalData
-                                }
-                                return page.evaluate(function (evalStr) {
-                                    const tpl = new Function(evalStr)
-                                    return tpl.call({})
-                                }, evalStr)
-
-                            }
-
-                            for (const pipeObj of pipeline) {
-
-                                const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope;const {data} = this; return `' + JSON.stringify(pipeObj) + '`;')
-                                const pipeReplaceStr = tpl.call({scope, data: resolvedData})
-                                const pipe = JSON.parse(pipeReplaceStr)
-
-                                if (pipe.waitFor) {
-                                    const startTime = new Date()
-                                    const timeout = pipe.waitFor.timeout || 10000
-                                    let isValid = false
-                                    while (timeout > (new Date() - startTime)) {
-                                        const tmpData = await evalFunc(pipe.waitFor.eval)
-                                        if (tmpData) {
-                                            isValid = true
-                                            break
-                                        }
-                                        await Util.sleep(50)
-                                    }
-                                    if (!isValid) {
-                                        break
-                                    }
-
-                                } else if (pipe.eval) {
-                                    const tmpData = await evalFunc(pipe.eval)
-                                    if (tmpData) {
-                                        data = {...data, ...tmpData}
-                                    }
-                                } else if (pipe.open) {
-                                    await page.open(pipe.open)
-                                } else if (pipe.fetch) {
-
-                                    let headers = ''
-
-                                    if (pipe.fetch.headers) {
-
-                                        Object.entries(pipe.fetch.headers).forEach(header => {
-                                            headers += 'req.setRequestHeader(\'' + header[0] + '\', \'' + header[1] + '\')\n'
-                                        })
-                                    }
-                                    const tmpData = await evalFunc(`const req = new XMLHttpRequest()
-                                    req.open('${pipe.fetch.methode || 'post'}', '${pipe.fetch.url}', false)
-                                    req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
-                                    ${headers}
-
-                                    req.send('${pipe.fetch.data}')
-                                    return req`)
-
-                                    if (tmpData) {
-                                        data = {...data, [pipe.fetch.key || 'fetchResult']: tmpData}
-                                    }
-
-                                }
-                                resolvedData[segment.key || 'phantom'] = {eval: data, debug: 'debug infos'}
-                            }
+                        }else {
+                            resolvedData[dataKey] = await openInBrowser(segment.browser, scope, resolvedData)
                         }
-
-                        await instance.exit()
-
-
                     } else {
                         console.log('call cmsCustomResolver', segment)
                         Hook.call('cmsCustomResolver', {resolvedData, resolver: segment})
@@ -463,6 +368,9 @@ const UtilCms = {
 
                 }
                 delete resolvedData._data
+                if( addDataResolverSubsription ){
+                    subscriptions.push('{"cmsPageData":"resolvedData"}')
+                }
             } catch (e) {
                 resolvedData.error = e.message + ' -> scope=' + JSON.stringify(scope) + debugInfo
             }

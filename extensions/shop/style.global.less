@@ -4,7 +4,7 @@
 @grey-200: #4b4236;
 @grey: #777;
 @grey-100: #d6d6d6;
-@grey-10: #e5e3e3;
+@grey-10: rgba(0, 0, 0, .05);
 @border-radius: 0.1rem;
 @input-height: 2.5rem;
 @content-padding: 1rem;
@@ -552,12 +552,12 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      border-top: 1px solid rgba(0, 0, 0, .05);
+      border-top: 1px solid @grey-10;
       padding: 0;
 
       li {
         text-align: center;
-        color: rgba(0, 0, 0, .5);
+        color: @grey-10;
         letter-spacing: 2px;
         text-transform: uppercase;
         font: 400 0.8rem 'Source Sans Pro';
@@ -569,7 +569,7 @@
         }
 
         &:not(:last-child) {
-          border-right: 1px solid rgba(0, 0, 0, .05);
+          border-right: 1px solid @grey-10;
         }
 
         span {
@@ -1006,6 +1006,20 @@
     input:not([type=checkbox]):not([type=radio]), select {
       width: 25rem;
       max-width: 100%;
+    }
+  }
+
+  .pagenav{
+    display: flex;
+    border-bottom: solid 1px @grey-10;
+    background: #fff;
+    a {
+      padding: 1rem;
+      flex-grow: 1;
+      text-align: center;
+      &:not(:last-child){
+        border-right: solid 1px @grey-10;
+      }
     }
   }
 

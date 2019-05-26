@@ -70,12 +70,8 @@ class JsonDom extends React.Component {
         'Card': UiCard,
         'Col': UiCol,
         'Row': UiRow,
-        'h1$': ({_this, children, ...rest}) => <h1 {...rest}><ContentEditable
-            onChange={(v) => _this.emitChange(rest._key, v)}>{children}</ContentEditable></h1>,
-        'h2$': ({_this, children, ...rest}) => <h2 {...rest}><ContentEditable
-            onChange={(v) => _this.emitChange(rest._key, v)}>{children}</ContentEditable></h2>,
-        'p$': ({_this, children, ...rest}) => <p {...rest}><ContentEditable
-            onChange={(v) => _this.emitChange(rest._key, v)}>{children}</ContentEditable></p>
+        'ContentEditable': ({_this, _key, ...props}) => <ContentEditable
+            onChange={(v) => _this.emitChange(_key, v)} {...props} />
     }
     static hock = true
     static instanceCounter = 0
@@ -510,7 +506,7 @@ class JsonDom extends React.Component {
 
             } else {
                 const key = rootKey + '.' + aIdx
-                let tagName, className
+                let tagName, className, properties = {}
                 if (!t) {
                     tagName = 'div'
                 } else if (t === '$children') {
@@ -518,8 +514,13 @@ class JsonDom extends React.Component {
                         h.push(this.props.children)
                     }
                     return
-                } else if ((!this.props.editMode || this.props.dynamic) && t.slice(-1) === '$') {
+                } else if (t.slice(-1) === '$') {
+                    // editable
                     tagName = t.slice(0, -1) // remove last char
+                    if (this.props.editMode && !this.props.dynamic) {
+                        properties.tag = tagName
+                        tagName = 'ContentEditable'
+                    }
                 } else {
                     tagName = t
                 }
@@ -530,9 +531,9 @@ class JsonDom extends React.Component {
                     className = arr.join(' ')
                 }
 
-                let properties
+
                 if (p) {
-                    properties = Object.assign({}, p)
+                    properties = Object.assign(properties, p)
                     // replace events with real functions and pass payload
                     TEMPLATE_EVENTS.forEach((e) => {
                         if (properties['on' + e] && properties['on' + e].constructor === Object) {
@@ -567,11 +568,11 @@ class JsonDom extends React.Component {
                 if (eleType.constructor === Object) {
                     eleType = eleType.component
                 }
-                const eleProps = {
-                    key,
-                    _key: key,
-                    ...properties
-                }
+                const eleProps = Object.assign({
+                        key,
+                        _key: key
+                    }, properties
+                )
 
                 if (t === 'Cms') {
                     // if we have a cms component in another cms component the location props gets not refreshed
