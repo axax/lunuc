@@ -73,7 +73,6 @@ class Routes extends React.Component {
             } else {
                 newPath = path
             }
-            window.scrollTo(0, 0)
             this.history._push(newPath, state)
         }
         this.history.replace = (o, state) => {
