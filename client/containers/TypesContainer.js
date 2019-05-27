@@ -528,21 +528,6 @@ class TypesContainer extends React.Component {
             }
         }
 
-        if (!this._filterForm) {
-            this._filterForm = <GenericForm onChange={this.handleFilter}
-                                            onKeyDown={this.handelFilterKeyDown}
-                                            primaryButton={false}
-                                            fields={{
-                                                term: {
-                                                    autoFocus: true,
-                                                    uitype: 'search',
-                                                    value: this._changingFilter || filter,
-                                                    fullWidth: true,
-                                                    placeholder: 'Filter expression (for specifc fields use field=term)'
-                                                }
-                                            }}/>
-        }
-
         const {description} = this.types[type]
         const content = [
             title === false ? '' :
@@ -561,7 +546,18 @@ class TypesContainer extends React.Component {
                 </Col>
                 }
                 <Col xs={12} md={(fixType ? 12 : 3)} align="right">
-                    {this._filterForm}
+                    <GenericForm onChange={this.handleFilter}
+                                 onKeyDown={this.handelFilterKeyDown}
+                                 primaryButton={false}
+                                 fields={{
+                                     term: {
+                                         autoFocus: true,
+                                         uitype: 'search',
+                                         value: this._changingFilter || filter,
+                                         fullWidth: true,
+                                         placeholder: 'Filter expression (for specifc fields use field=term)'
+                                     }
+                                 }}/>
                 </Col>
             </Row>,
             this.renderTable(columns),
@@ -1081,14 +1077,14 @@ class TypesContainer extends React.Component {
 
     handleFilterTimeout = null
     handleFilter = ({value}, immediate) => {
-        this._changingFilter = value
+      this._changingFilter = value
         clearTimeout(this.handleFilterTimeout)
         if (immediate) {
             this.runFilter(value)
         } else {
             this.handleFilterTimeout = setTimeout(() => {
                 this.runFilter(value)
-            }, 750)
+            }, 500)
         }
     }
 

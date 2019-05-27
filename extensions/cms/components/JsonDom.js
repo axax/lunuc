@@ -442,7 +442,10 @@ class JsonDom extends React.Component {
                 } else {
                     if (d && d.constructor === String) {
                         try {
-                            data = Function(`const {${Object.keys(scope).join(',')}} = this;return ${d}`).bind(scope)()
+                            data = Function(`const {${Object.keys(scope).join(',')}} = this.scope;const Util = this.Util;return ${d}`).call({
+                                scope,
+                                Util
+                            })
                         } catch (e) {
                             console.log(e, d)
                             return 'Error in parseRec (in data source for loop): ' + e.message

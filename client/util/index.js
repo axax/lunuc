@@ -1,10 +1,10 @@
+import {getType, getTypes} from 'util/types'
 /**
  * Object with general client helper methods
  */
 const Util = {
-    setUser: () => {
-
-    },
+    getType: getType,
+    getTypes: getTypes,
     escapeDoubleQuotes: (str) => {
         if (str && str.constructor === String) {
             return str.replace(/"/g, '\\"')
@@ -28,7 +28,7 @@ const Util = {
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str, ignoreError) {
         try {
-            return eval((!str.startsWith('this.') ? 'this.' : '') + str)
+            return new Function('return ' +(!str.startsWith('this.') ? 'this.' : '') + str).bind(this).call()
         } catch (e) {
             if (!ignoreError)
                 console.log(e, str)

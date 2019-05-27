@@ -250,7 +250,7 @@ class PrettyResume extends React.Component {
                                 <ul>
                                     { resumeData.courses.values.map((p, i) =>
                                         <li key={i}>
-                                            <span className="label label-pill" suppressContentEditableWarning={true}
+                                            <span className="label" suppressContentEditableWarning={true}
                                                   contentEditable>{p.name}</span>
 
                                         </li>
@@ -268,7 +268,7 @@ class PrettyResume extends React.Component {
                                 <ul>
                                     { resumeData.interests.values.map((p, i) =>
                                         <li key={i}>
-                                            <span className="label label-pill" suppressContentEditableWarning={true}
+                                            <span className="label" suppressContentEditableWarning={true}
                                                   contentEditable>{p.supportedCause}</span>
 
                                         </li>
@@ -284,10 +284,10 @@ class PrettyResume extends React.Component {
                                     <span suppressContentEditableWarning={true} contentEditable>Interests</span>
                                 </h2>
 
-                                <ul>
+                                <ul className="list">
                                     { resumeData.languages.values.map((p, i) =>
                                         <li key={i}>
-                                            <span className="label label-pill" suppressContentEditableWarning={true}
+                                            <span className="label" suppressContentEditableWarning={true}
                                                   contentEditable>{p.name}</span>
                                             <small suppressContentEditableWarning={true}
                                                    contentEditable>{p.proficiency}</small>
@@ -307,7 +307,7 @@ class PrettyResume extends React.Component {
     }
 
     toHtml(str){
-        return str.replace(/(\r\n|\n|\r)/g,'<br />')
+        return str.replace(/(\r\n|\n|\r)/g,'<br />').replace(/(・)/g,'<br />・')
     }
 
 
