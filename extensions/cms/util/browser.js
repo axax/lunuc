@@ -4,7 +4,7 @@ const openInBrowser = async (options, scope, resolvedData) => {
     const {url, pipeline, images, ignoreSsl, waitUntil, timeout} = options
     let data = {}, error
 
-    const browser = await puppeteer.launch({ignoreHTTPSErrors: ignoreSsl})
+    const browser = await puppeteer.launch({ignoreHTTPSErrors: ignoreSsl, args: ['--no-sandbox', '--disable-setuid-sandbox']})
     const page = await browser.newPage()
     const gotoOptions = {waitUntil, timeout}
 
