@@ -67,7 +67,7 @@ const isPreview = () => {
 }
 
 const isEditMode = (props) => {
-    const {user, dynamic} = props
+    const {user} = props
     return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_PAGES) && !isPreview())
 }
 
@@ -96,7 +96,7 @@ const getGqlVariables = props => {
         variables.props = JSON.stringify(_props.$)
     }
 
-    if (isEditMode(props)) {
+    if (!dynamic && isEditMode(props)) {
         variables.editmode = true
     }
 
@@ -265,7 +265,8 @@ class CmsViewContainer extends React.Component {
             }
             console.log(classNameByPath(slug, 'Cms--loading'))
             // show a loader here
-            return !dynamic && editMode ? <NetworkStatusHandler/> : <div className={classNameByPath(slug, 'Cms--loading')} />
+            return !dynamic && editMode ? <NetworkStatusHandler/> :
+                <div className={classNameByPath(slug, 'Cms--loading')}/>
         } else {
             // set page title
             // TODO: make tile localized

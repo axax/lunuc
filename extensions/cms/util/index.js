@@ -86,10 +86,10 @@ const UtilCms = {
                     debugInfo = ''
 
                     let tempBrowser
-                    if (segments[i].browser) {
+                    if (segments[i].website) {
                         // exclude pipline from replacements
-                        tempBrowser = segments[i].browser.pipeline
-                        segments[i].browser.pipeline = null
+                        tempBrowser = segments[i].website.pipeline
+                        segments[i].website.pipeline = null
                     }
                     const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
                                               const {data} = this
@@ -100,7 +100,7 @@ const UtilCms = {
 
 
                     if (tempBrowser) {
-                        segment.browser.pipeline = tempBrowser
+                        segment.website.pipeline = tempBrowser
                     }
 
 
@@ -170,14 +170,14 @@ const UtilCms = {
 
                         resolvedData[segment.key || type] = result
                     } else if (segment.request) {
-                        const {key, async, placeholder, cache, ...options} = segment.request
 
-                        const dataKey = key || 'request'
+                        const dataKey = segment.key || 'request'
                         let cacheKey
-                        if (cache) {
-                            cacheKey = cache.key || key
+                        if (segment.cache) {
+                            cacheKey = segment.cache.key || segment.key
                             if (cacheKey) {
-                                const data = Cache.get('request' + key)
+                                cacheKey = 'dataresolver_request_' + cacheKey
+                                const data = Cache.get(cacheKey)
                                 if (data) {
                                     resolvedData[dataKey] = data
                                     continue
@@ -187,35 +187,43 @@ const UtilCms = {
                             }
                         }
 
-                        if (async) {
-                            request(options).then((body) => {
+                        if (segment.async !== false) {
+                            request(segment.request).then((body) => {
+                                const result = {body}
+                                if (segment.meta) {
+                                    result.meta = segment.meta
+                                }
                                 if (cacheKey) {
-                                    Cache.set(cacheKey, body, cache.expiresIn)
+                                    Cache.set(cacheKey, result, segment.cache.expiresIn)
                                 }
 
                                 pubsub.publish('cmsPageData', {
                                     userId: context.id,
                                     session: context.session,
-                                    cmsPageData: {resolvedData: JSON.stringify({[dataKey]: body})}
+                                    cmsPageData: {resolvedData: JSON.stringify({[dataKey]: result})}
                                 })
 
-                                //console.log(body)
-                            }).catch(function (err) {
-                                //console.log(err)
+                            }).catch(function (error) {
                                 pubsub.publish('cmsPageData', {
                                     userId: context.id,
                                     session: context.session,
-                                    cmsPageData: {resolvedData: JSON.stringify({[dataKey]: err})}
+                                    cmsPageData: {resolvedData: JSON.stringify({[dataKey]: {error}})}
                                 })
                             })
                             addDataResolverSubsription = true
-                            resolvedData[dataKey] = placeholder !== undefined ? placeholder : 'async: subscribe to cmsPageData to retrieve data'
+                            resolvedData[dataKey] = {meta: segment.meta}
                         } else {
                             let result
                             try {
-                                result = await request(options)
+                                result = {body: await request(segment.request)}
+                                if (segment.meta) {
+                                    result.meta = segment.meta
+                                }
                             } catch (error) {
-                                result = error;
+                                result = {error}
+                            }
+                            if (cacheKey) {
+                                Cache.set(cacheKey, result, segment.cache.expiresIn)
                             }
                             resolvedData[dataKey] = result
                         }
@@ -336,30 +344,59 @@ const UtilCms = {
                         resolvedData._meta.keyValueKey = segment.key || 'keyValues'
                         resolvedData[resolvedData._meta.keyValueKey] = map
 
-                    } else if (segment.browser) {
+                    } else if (segment.website) {
+
                         // headless browser
 
-                        if (segment.browser.if && segment.browser.if !== 'true') {
+                        if (segment.if && segment.if !== 'true') {
                             continue
                         }
-                        const dataKey = segment.key || 'browser'
 
-                        if( segment.async ){
+                        const dataKey = segment.key || 'website'
+
+                        let cacheKey
+                        if (segment.cache) {
+                            cacheKey = segment.cache.key || segment.key
+                            if (cacheKey) {
+                                cacheKey = 'dataresolver_website_' + cacheKey
+                                const data = Cache.get(cacheKey)
+                                if (data) {
+                                    resolvedData[dataKey] = data
+                                    continue
+                                }
+                            } else {
+                                console.warn('Please define a key or a cacheKey if you want to use caching')
+                            }
+                        }
+
+                        if (segment.async !== false) {
 
                             addDataResolverSubsription = true
-                            resolvedData[dataKey] = segment.placeholder || 'async: subscribe to cmsPageData to retrieve data'
-                            setTimeout( async ()=>{
-                                const data = await openInBrowser(segment.browser, scope, resolvedData)
+                            resolvedData[dataKey] = {meta: segment.meta}
+                            setTimeout(async () => {
+                                const data = await openInBrowser(segment.website, scope, resolvedData)
+                                if (segment.meta) {
+                                    data.meta = segment.meta
+                                }
+                                if (cacheKey) {
+                                    Cache.set(cacheKey, data, segment.cache.expiresIn)
+                                }
                                 pubsub.publish('cmsPageData', {
                                     userId: context.id,
                                     session: context.session,
                                     cmsPageData: {resolvedData: JSON.stringify({[dataKey]: data})}
                                 })
 
-                            },0)
+                            }, 0)
 
-                        }else {
-                            resolvedData[dataKey] = await openInBrowser(segment.browser, scope, resolvedData)
+                        } else {
+                            resolvedData[dataKey] = await openInBrowser(segment.website, scope, resolvedData)
+                            if (segment.meta) {
+                                resolvedData[dataKey].meta = segment.meta
+                            }
+                            if (cacheKey) {
+                                Cache.set(cacheKey, resolvedData[dataKey], segment.cache.expiresIn)
+                            }
                         }
                     } else {
                         console.log('call cmsCustomResolver', segment)
@@ -368,7 +405,7 @@ const UtilCms = {
 
                 }
                 delete resolvedData._data
-                if( addDataResolverSubsription ){
+                if (addDataResolverSubsription) {
                     subscriptions.push('{"cmsPageData":"resolvedData"}')
                 }
             } catch (e) {
