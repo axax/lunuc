@@ -4,7 +4,7 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import KeyValueContainer from './KeyValueContainer'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import {Button, Typography, TextField, Divider, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
+import {Button, Typography, TextField, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
 import {
     CAPABILITY_MANAGE_KEYVALUES
 } from 'util/capabilities'

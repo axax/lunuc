@@ -4,13 +4,8 @@ import {connect} from 'react-redux'
 import gql from 'graphql-tag'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {
-    SimpleButton,
-    SimpleDialog,
     Typography,
     TextField,
-    Divider,
-    DeleteIconButton,
-    Chip,
     SimpleList,
     Row,
     Col,
@@ -26,7 +21,6 @@ import ApolloClient from 'apollo-client'
 import * as NotificationAction from 'client/actions/NotificationAction'
 
 class FilesContainer extends React.Component {
-
 
     constructor(props) {
         super(props)

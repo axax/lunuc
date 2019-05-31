@@ -197,7 +197,7 @@ class CmsViewContainer extends React.Component {
             // there is no need to update
             return false
         }
-        // only update if cms page was modified
+        // only update if it is needed
         return !props.cmsPage ||
             !this.props.cmsPage ||
             props.cmsPage.slug !== this.props.cmsPage.slug ||
@@ -263,7 +263,6 @@ class CmsViewContainer extends React.Component {
                     return <div>Cms page {slug} doesn't exist</div>
                 }
             }
-            console.log(classNameByPath(slug, 'Cms--loading'))
             // show a loader here
             return !dynamic && editMode ? <NetworkStatusHandler/> :
                 <div className={classNameByPath(slug, 'Cms--loading')}/>
@@ -587,8 +586,8 @@ class CmsViewContainer extends React.Component {
 
         // register new supscriptions
         subscriptions.forEach(subs => {
-            if (!this.registeredSubscriptions[subs]) {
 
+            if (!this.registeredSubscriptions[subs]) {
                 let query = '', subscriptionName = '', isTypeSubscription = false
                 if (subs.indexOf('{') === 0) {
                     const obj = JSON.parse(subs)

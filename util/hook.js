@@ -1,3 +1,15 @@
+/*
+Hook API
+
+Define a hook call
+Hook.call('Types', {types})
+
+Add a method that gets called
+Hook.on('Types', ({types}) => {
+    types.KeyValue = {}
+})
+ */
+
 const Hook = {
     hooks: {},
     hooksOrder: {},

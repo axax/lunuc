@@ -2,7 +2,6 @@ import Util from '../util'
 import {ObjectId} from 'mongodb'
 import {auth} from '../auth'
 import {ApiError, ValidationError} from '../error'
-import {speechLanguages, translateLanguages} from '../data/common'
 import GenericResolver from './generic/genericResolver'
 import Cache from 'util/cache'
 import {
@@ -12,37 +11,6 @@ import {
 import {sendMail} from 'api/util/mail'
 import crypto from 'crypto'
 
-// deprecrated
-const enhanceUserSettings = (user) => {
-    // settings
-    const settings = {
-        speechLang: {
-            data: speechLanguages,
-            selection: null
-        },
-        translateLang: {
-            data: translateLanguages,
-            selection: null
-        }
-    }
-
-    if (user.settings) {
-        if (user.settings.speechLang) {
-            const filtered = speechLanguages.filter(lang => lang.key === user.settings.speechLang)
-            if (filtered.length > 0) {
-                settings.speechLang.selection = filtered[0]
-            }
-        }
-        if (user.settings.translateLang) {
-            const filtered = translateLanguages.filter(lang => lang.key === user.settings.translateLang)
-            if (filtered.length > 0) {
-                settings.translateLang.selection = filtered[0]
-            }
-        }
-    }
-
-    user.settings = settings
-}
 
 const createUser = async ({username, role, password, email, db, context}) => {
 

@@ -10,10 +10,6 @@ import {deepMerge} from 'util/deepMerge'
 // The root provides a resolver function for each API endpoint
 export const resolver = (db) => {
 
-    //db.collection('DynamicTypes')
-    //TODO implement logic for dynamictypes???
-
-
     // default core resolvers
     const resolvers =deepMerge({},
         commonResolver(db),

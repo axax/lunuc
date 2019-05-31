@@ -59,7 +59,6 @@ const UploadUtil = {
                 }
             }
 
-console.log(conversion)
             const canvas = document.createElement('canvas')
             canvas.width = width
             canvas.height = height

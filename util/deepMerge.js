@@ -1,3 +1,7 @@
+/*
+A function for deep (recursive) merging of objects and arrays
+*/
+
 const _deepMerge = (concatArrays, ...objects) => {
     const isObject = obj => obj && typeof obj === 'object'
 

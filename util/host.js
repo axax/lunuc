@@ -1,3 +1,7 @@
+/*
+Util to extract hostname from http headers
+ */
+
 export const getHostFromHeaders= (headers) => {
     let host
     if (headers) {

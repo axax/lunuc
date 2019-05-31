@@ -8,6 +8,19 @@ import cronjobUtil from './cronjobUtil'
 import {deepMergeToFirst} from 'util/deepMerge'
 
 let registeredCronJobs = []
+let cronJobQueue = []
+let isQueueProcessing = false
+const processCronJobQueue = async (job) => {
+    cronJobQueue.push(job)
+    if (!isQueueProcessing) {
+        isQueueProcessing = true
+        while (cronJobQueue.length > 0) {
+            await cronjobUtil.runScript(cronJobQueue[0])
+            cronJobQueue.shift()
+        }
+        isQueueProcessing = false
+    }
+}
 
 const registerCronJobs = async (db) => {
     const cronJobs = (await db.collection('CronJob').find({active: true}).toArray())
@@ -23,7 +36,8 @@ const registerCronJobs = async (db) => {
             registeredCronJobs.push(cron.schedule(cronJob.expression, () => {
 
                 const context = {lang: 'en', id: cronJob.createdBy, username: 'unknown'}
-                cronjobUtil.runScript({cronjobId: cronJob._id, script: cronJob.script, context, db})
+
+                processCronJobQueue({cronjobId: cronJob._id, script: cronJob.script, context, db})
 
             }))
         }

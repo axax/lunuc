@@ -262,16 +262,13 @@ class JsonDom extends React.Component {
 
     componentDidMount() {
         this._ismounted = true
+        this.node = ReactDOM.findDOMNode(this)
         this.runJsEvent('mount', true)
         this.checkResources()
         this._historyUnlisten = this.props.history.listen(() => {
             const before = {pathname: this.scope.pathname, params: this.scope.params, hashParams: this.scope.params}
             this.addLocationToScope()
             this.runJsEvent('urlchange', false, before)
-
-            // TODO remove
-            // deprecated
-            this.runJsEvent('urlchanged', false, before)
         })
         this.moveInHtmlComponents()
     }
@@ -284,9 +281,8 @@ class JsonDom extends React.Component {
         this.resetTemplate()
         this.removeAddedDomElements()
         this.componentRefs = null
-        const ele = ReactDOM.findDOMNode(this)
-        if (ele.oriParent) {
-            ele.oriParent.appendChild(ele)
+        if (this.node.oriParent) {
+            this.node.oriParent.appendChild(ele)
         }
     }
 
