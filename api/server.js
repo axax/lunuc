@@ -14,6 +14,7 @@ import {formatError} from './error'
 import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload} from './upload'
 import Hook from 'util/hook'
 import compression from 'compression'
+import {pubsub} from './subscription'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -113,7 +114,9 @@ export const start = (done) => {
                     extensions({document, variables, operationName, result}) {
                         //UserStats.addData(req, {operationName})
                     }
-                })(req, res, next).catch((e) => {
+                })(req, res, next).then(()=>{
+                    //console.log(req.context)
+                }).catch((e) => {
                     res.writeHead(500, {'content-type': 'application/json'})
                     res.end(`{"errors":[{"message":"Error in graphql. Probably there is something wrong with the schema or the resolver: ${e.message}"}]}`)
 

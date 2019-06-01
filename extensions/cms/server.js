@@ -10,7 +10,8 @@ import {deepMergeToFirst} from 'util/deepMerge'
 import {
     CAPABILITY_MANAGE_CMS_PAGES
 } from './constants'
-import UtilCms from './util'
+import {getCmsPage} from './util/cmsPage'
+import {resolveData} from './util/dataResolver'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
@@ -35,7 +36,7 @@ Hook.on('createUserRoles', ({userRoles}) => {
 
 Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
 
-    let cmsPages = await UtilCms.getCmsPage({db, context, slug})
+    let cmsPages = await getCmsPage({db, context, slug})
     if (!cmsPages.results) {
         throw new Error(`Template ${slug} doesn't exist`)
     }
@@ -49,7 +50,7 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
     const scope = {context: scopeContext, page: {slug}}
 
     const {template, script, dataResolver} = cmsPages.results[0]
-    const {resolvedData} = await UtilCms.resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope)
+    const {resolvedData} = await resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope)
     try {
         //TODO don't use global here
         global._app_ = {lang: context.lang, ssr: true}

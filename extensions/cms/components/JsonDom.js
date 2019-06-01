@@ -506,7 +506,7 @@ class JsonDom extends React.Component {
             } else {
                 const key = rootKey + '.' + aIdx
                 let tagName, className, properties = {}
-                if (!t) {
+                if (!t || t.constructor !== String) {
                     tagName = 'div'
                 } else if (t === '$children') {
                     if (this.props.children) {
@@ -814,7 +814,7 @@ class JsonDom extends React.Component {
         const startTime = (new Date()).getTime(),
             scope = this.getScope(this.props)
 
-        let jsError, resolveDataError
+        let resolveDataError
 
         if (this.resolvedDataJson === undefined) {
             try {
@@ -880,10 +880,8 @@ class JsonDom extends React.Component {
                     parent
                 })
             } catch (e) {
-                jsError = e.message
-            }
-            if (jsError) {
-                return <div>Error in the script: <strong>{jsError}</strong></div>
+                console.error(e)
+                return <div>Error in the script: <strong>{e.message}</strong></div>
             }
             scope.script = this.scriptResult || {}
         }

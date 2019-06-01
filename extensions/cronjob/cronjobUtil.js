@@ -3,7 +3,7 @@ import {ObjectId} from 'mongodb'
 import Util from 'api/util'
 
 const cronjobUtil = {
-    runScript: async (props) => {
+    runScript: async (props, callback) => {
 
         const {cronjobId, script, context, db} = props
 
@@ -17,8 +17,9 @@ const cronjobUtil = {
         const start = (async () => {
             try {
             
-            ${script}
+                ${script}
             
+                this.success();
             } catch(e) {
                 this.error(e);
             }
@@ -44,7 +45,7 @@ const cronjobUtil = {
             })
         }
 
-        const end = () => {
+        const success = () => {
             GenericResolver.updateEnity(db, context, 'CronJobExecution', {
                 _id: dbResult._id,
                 state: 'finished',
@@ -54,11 +55,17 @@ const cronjobUtil = {
             })
         }
 
+        const end = () => {
+            if (callback) {
+                callback()
+            }
+        }
+
         const select = async (collection, fields, filter) => {
             await GenericResolver.entities(db, context, collection, fields, filter)
         }
 
-        const result = tpl.call({require, log, debug, end, error, select, ...props})
+        const result = tpl.call({require, log, debug, end, error, success, select, ...props})
 
         return dbResult._id;
     },

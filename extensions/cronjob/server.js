@@ -15,7 +15,11 @@ const processCronJobQueue = async (job) => {
     if (!isQueueProcessing) {
         isQueueProcessing = true
         while (cronJobQueue.length > 0) {
-            await cronjobUtil.runScript(cronJobQueue[0])
+
+            await new Promise(resolve => {
+                cronjobUtil.runScript(cronJobQueue[0], resolve)
+            })
+
             cronJobQueue.shift()
         }
         isQueueProcessing = false

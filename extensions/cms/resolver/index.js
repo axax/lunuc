@@ -4,12 +4,13 @@ import JsonDom from '../components/JsonDom'
 import React from 'react'
 import Util from 'api/util'
 import ClientUtil from 'client/util'
-import UtilCms from '../util'
+import {getCmsPage} from '../util/cmsPage'
+import {resolveData} from '../util/dataResolver'
 import {UIProvider} from 'ui'
 import {pubsub} from 'api/subscription'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
 import Cache from 'util/cache'
-import {withFilter} from "graphql-subscriptions";
+import {withFilter} from 'graphql-subscriptions'
 
 const createScopeForDataResolver = (query, _props) => {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
@@ -61,7 +62,7 @@ export default db => ({
         cmsPage: async ({slug, query, props, nosession, editmode, _version}, {context, headers}) => {
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
-            let cmsPages = await UtilCms.getCmsPage({db, context, slug, _version, headers, editmode})
+            let cmsPages = await getCmsPage({db, context, slug, _version, headers, editmode})
 
             if (!cmsPages.results || cmsPages.results.length === 0) {
                 throw new Error('Cms page doesn\'t exist')
@@ -70,7 +71,7 @@ export default db => ({
             const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
 
-            const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope, nosession)
+            const {resolvedData, subscriptions} = await resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope, nosession)
             let html
             if (ssr) {
                 // Server side rendering
@@ -149,7 +150,7 @@ export default db => ({
         cmsServerMethod: async ({slug, methodName, args, query, props, _version}, {context, headers}) => {
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
-            let cmsPages = await UtilCms.getCmsPage({db, context, slug, _version, headers})
+            let cmsPages = await getCmsPage({db, context, slug, _version, headers})
 
             if (!cmsPages.results || cmsPages.results.length === 0) {
                 throw new Error('Cms page doesn\'t exist')
@@ -202,7 +203,7 @@ export default db => ({
             // if dataResolver has changed resolveData and return it
             if (rest.dataResolver) {
                 const scope = createScopeForDataResolver(query)
-                const {resolvedData, subscriptions} = await UtilCms.resolveData(db, context, rest.dataResolver, scope)
+                const {resolvedData, subscriptions} = await resolveData(db, context, rest.dataResolver, scope)
 
                 result.resolvedData = JSON.stringify(resolvedData)
                 result.subscriptions = subscriptions
