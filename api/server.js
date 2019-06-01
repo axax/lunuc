@@ -115,10 +115,12 @@ export const start = (done) => {
                         //UserStats.addData(req, {operationName})
                     }
                 })(req, res, next).then(() => {
-                    req.context.responded = true
-                    if (req.context.delayedPubsubs) {
-                        for (const pub of req.context.delayedPubsubs) {
-                            pubsub.publish(pub.triggerName, pub.payload)
+                    if( req.context ) {
+                        req.context.responded = true
+                        if (req.context.delayedPubsubs) {
+                            for (const pub of req.context.delayedPubsubs) {
+                                pubsub.publish(pub.triggerName, pub.payload)
+                            }
                         }
                     }
                 }).catch((e) => {
