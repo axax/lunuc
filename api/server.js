@@ -2,7 +2,7 @@ import 'gen/extensions-server'
 import express from 'express'
 import {buildSchema} from 'graphql'
 import graphqlHTTP from 'express-graphql'
-import  {ApolloServer, gql} from 'apollo-server-express'
+import {ApolloServer, gql} from 'apollo-server-express'
 import {createServer} from 'http'
 import {SubscriptionServer} from 'subscriptions-transport-ws'
 import {execute, subscribe} from 'graphql'
@@ -21,18 +21,18 @@ const PORT = (process.env.PORT || 3000)
 process.on('SIGINT', () => {
     console.log('Caught interrupt signal. Exit process')
 
-    if ('undefined' != typeof( Hook.hooks['appexit'] ) && Hook.hooks['appexit'].length) {
+    if ('undefined' != typeof (Hook.hooks['appexit']) && Hook.hooks['appexit'].length) {
         let c = Hook.hooks['appexit'].length
         for (let i = 0; i < Hook.hooks['appexit'].length; ++i) {
             const promise = Hook.hooks['appexit'][i].callback()
-            promise.then(()=>{
+            promise.then(() => {
                 c--
-                if( c=== 0) {
+                if (c === 0) {
                     process.exit()
                 }
             })
         }
-    }else {
+    } else {
         process.exit()
     }
 })
@@ -57,9 +57,9 @@ export const start = (done) => {
             app.use(compression())
 
             // delay response
-           /* app.use(function (req, res, next) {
-             setTimeout(next, 1000)
-             })*/
+            /* app.use(function (req, res, next) {
+              setTimeout(next, 1000)
+              })*/
 
             // Authentication
             auth.initialize(app, db)
@@ -110,12 +110,17 @@ export const start = (done) => {
                     schema,
                     rootValue,
                     graphiql: true,
-                    customFormatErrorFn:formatError,
+                    customFormatErrorFn: formatError,
                     extensions({document, variables, operationName, result}) {
                         //UserStats.addData(req, {operationName})
                     }
-                })(req, res, next).then(()=>{
-                    //console.log(req.context)
+                })(req, res, next).then(() => {
+                    req.context.responded = true
+                    if (req.context.delayedPubsubs) {
+                        for (const pub of req.context.delayedPubsubs) {
+                            pubsub.publish(pub.triggerName, pub.payload)
+                        }
+                    }
                 }).catch((e) => {
                     res.writeHead(500, {'content-type': 'application/json'})
                     res.end(`{"errors":[{"message":"Error in graphql. Probably there is something wrong with the schema or the resolver: ${e.message}"}]}`)

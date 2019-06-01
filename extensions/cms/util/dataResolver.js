@@ -7,7 +7,7 @@ import Util from '../../../api/util'
 import {CAPABILITY_MANAGE_KEYVALUES} from '../../../util/capabilities'
 import {openInBrowser} from './browser'
 import Hook from '../../../util/hook'
-import {pubsub} from '../../../api/subscription'
+import {pubsubDelayed} from '../../../api/subscription'
 
 export const resolveData = async (db, context, dataResolver, scope, nosession) => {
     const resolvedData = {_meta: {}}, subscriptions = []
@@ -135,18 +135,18 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                                 Cache.set(cacheKey, result, segment.cache.expiresIn)
                             }
 
-                            pubsub.publish('cmsPageData', {
+                            pubsubDelayed.publish('cmsPageData', {
                                 userId: context.id,
                                 session: context.session,
                                 cmsPageData: {resolvedData: JSON.stringify({[dataKey]: result})}
-                            })
+                            }, context)
 
                         }).catch(function (error) {
-                            pubsub.publish('cmsPageData', {
+                            pubsubDelayed.publish('cmsPageData', {
                                 userId: context.id,
                                 session: context.session,
                                 cmsPageData: {resolvedData: JSON.stringify({[dataKey]: {error}})}
-                            })
+                            }, context)
                         })
                         addDataResolverSubsription = true
                         resolvedData[dataKey] = {meta: segment.meta}
@@ -319,11 +319,11 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                             if (cacheKey) {
                                 Cache.set(cacheKey, data, segment.cache.expiresIn)
                             }
-                            pubsub.publish('cmsPageData', {
+                            pubsubDelayed.publish('cmsPageData', {
                                 userId: context.id,
                                 session: context.session,
                                 cmsPageData: {resolvedData: JSON.stringify({[dataKey]: data})}
-                            })
+                            }, context)
 
                         }, 0)
 

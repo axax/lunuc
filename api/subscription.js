@@ -1,8 +1,22 @@
-import { PubSub } from 'graphql-subscriptions'
+import {PubSub} from 'graphql-subscriptions'
 
 // the default PubSub is based on EventEmitters. It can easily
 // be replaced with one different one, e.g. Redis
 const pubsub = new PubSub()
+
+// if pubsubDelayed is used it will be published after the current request has completed
+const pubsubDelayed = {
+    publish: (triggerName, payload, context) => {
+        if (context.responded) {
+            pubsub.publish(triggerName, payload)
+        } else {
+            if (!context.delayedPubsubs) {
+                context.delayedPubsubs = []
+            }
+            context.delayedPubsubs.push({triggerName, payload})
+        }
+    }
+}
 
 // send test notifications
 /*var counter=0
@@ -12,4 +26,4 @@ setInterval(()=>{
 },5000)*/
 
 
-export {pubsub}
+export {pubsub, pubsubDelayed}

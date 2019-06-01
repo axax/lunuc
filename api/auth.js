@@ -58,7 +58,6 @@ export const auth = {
     },
     initialize: (app, db) => {
 
-
         app.use((req, res, next) => {
             const token = req.headers[AUTH_HEADER], lang = req.headers[CONTENT_LANGUAGE_HEADER], currentSession = req.headers[SESSION_HEADER]
 
@@ -74,24 +73,5 @@ export const auth = {
 
             next()
         })
-
-
-        // we do login via graphql for now
-        // creates the body object on the request
-        /*app.use(bodyParser.json())
-		app.post('/login', async (req, res) => {
-			const {username, password} = req.body
-
-			const result = await auth.createToken(username,password,db)
-
-			if( result.error ) {
-				res.status(401).json(result)
-			}else{
-				res.json(result)
-			}
-
-
-		})*/
-
     }
 }
