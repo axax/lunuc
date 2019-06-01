@@ -7,16 +7,14 @@ const pubsub = new PubSub()
 // if pubsubDelayed is used it will be published after the current request has completed
 const pubsubDelayed = {
     publish: (triggerName, payload, context) => {
-        setTimeout(()=> {
-            if (context.responded) {
-                pubsub.publish(triggerName, payload)
-            } else {
-                if (!context.delayedPubsubs) {
-                    context.delayedPubsubs = []
-                }
-                context.delayedPubsubs.push({triggerName, payload})
+        if (context.responded) {
+            pubsub.publish(triggerName, payload)
+        } else {
+            if (!context.delayedPubsubs) {
+                context.delayedPubsubs = []
             }
-        },0)
+            context.delayedPubsubs.push({triggerName, payload})
+        }
     }
 }
 
