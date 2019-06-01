@@ -3,7 +3,7 @@ import config from 'gen/config'
 
 const {APOLLO_CACHE} = config
 // cache
-export const CACHE_KEY = '@APOLLO_OFFLINE_CACHE_' + _app_.lang
+export const CACHE_KEY = '@APOLLO_OFFLINE_CACHE_'
 
 export class OfflineCache extends InMemoryCache {
     changeTimeout = 0
@@ -12,7 +12,7 @@ export class OfflineCache extends InMemoryCache {
         super(...args)
         if (APOLLO_CACHE) {
             const startTime = new Date()
-            this.restore(JSON.parse(localStorage.getItem(CACHE_KEY)))
+            this.restore(JSON.parse(localStorage.getItem(CACHE_KEY+ _app_.lang)))
             console.info(`restore local storage in ${(new Date() - startTime)}ms`)
 
         }
@@ -49,9 +49,9 @@ export class OfflineCache extends InMemoryCache {
                 stringified = '{}'
             }
             try {
-                window.localStorage.setItem(CACHE_KEY, stringified)
+                window.localStorage.setItem(CACHE_KEY+ _app_.lang, stringified)
             } catch (e) {
-                window.localStorage.setItem(CACHE_KEY, '{}')
+                window.localStorage.setItem(CACHE_KEY+ _app_.lang, '{}')
             }
             console.info(`save to local storage (${(stringified.length / 1024).toFixed(2)}kB) in ${(new Date() - startTime)}ms`)
         }
