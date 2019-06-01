@@ -282,7 +282,7 @@ class JsonDom extends React.Component {
         this.removeAddedDomElements()
         this.componentRefs = null
         if (this.node.oriParent) {
-            this.node.oriParent.appendChild(ele)
+            this.node.oriParent.appendChild(this.node)
         }
     }
 

@@ -186,7 +186,7 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                     }
 
 
-                } else if (segment.eval) {
+                } else if (segment['eval']) {
                     debugInfo += ' in eval'
                     try {
                         const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope; const {data} = this;' + segment.eval)
