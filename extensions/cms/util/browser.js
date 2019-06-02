@@ -185,8 +185,6 @@ const openInBrowser = async (options, scope, resolvedData) => {
                 } else if (pipe.click) {
                     const btn = await page.$(pipe.click)
                     await page.evaluate(btn => btn.click(), btn)
-                    await page.waitForNavigation({waitUntil: 'load'})
-
 
                 } else if (pipe.waitForNavigation) {
                     await page.waitForNavigation(pipe.waitForNavigation)

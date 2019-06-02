@@ -10,7 +10,7 @@ const Cache = {
     get: function (key) {
         const o = Cache.cache[key]
         if (o) {
-            if (o.validUntil === 0 || (new Date()).getTime() < o.validUntil) {
+            if (Cache.isValid(o)) {
                 return o.data
             } else {
                 delete Cache.cache[key]
@@ -18,12 +18,15 @@ const Cache = {
         }
         return null
     },
-    remove: function (key){
+    isValid: function (o) {
+        return o.validUntil === 0 || (new Date()).getTime() < o.validUntil
+    },
+    remove: function (key) {
         delete Cache.cache[key]
     },
     clearStartWith: (startkey) => {
         Object.keys(Cache.cache).forEach(key => {
-            if (key.indexOf(startkey)>=0) {
+            if (key.indexOf(startkey) >= 0) {
                 delete Cache.cache[key]
             }
         })

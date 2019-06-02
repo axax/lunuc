@@ -116,10 +116,13 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                         cacheKey = segment.cache.key || segment.key
                         if (cacheKey) {
                             cacheKey = 'dataresolver_request_' + cacheKey
-                            const data = Cache.get(cacheKey)
-                            if (data) {
-                                resolvedData[dataKey] = data
-                                continue
+                            const cachedData = Cache.cache[cacheKey]
+                            if (cachedData) {
+                                resolvedData[dataKey] = cachedData.data
+                                if (Cache.isValid(cachedData)) {
+                                    // no need to renew cache
+                                    continue
+                                }
                             }
                         } else {
                             console.warn('Please define a key or a cacheKey if you want to use caching')
@@ -286,8 +289,7 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                 } else if (segment.website) {
 
                     // headless browser
-
-                    if (segment.if && segment.if !== 'true') {
+                    if (segment.if === false) {
                         continue
                     }
 
@@ -298,10 +300,14 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                         cacheKey = segment.cache.key || segment.key
                         if (cacheKey) {
                             cacheKey = 'dataresolver_website_' + cacheKey
-                            const data = Cache.get(cacheKey)
-                            if (data) {
-                                resolvedData[dataKey] = data
-                                continue
+
+                            const cachedData = Cache.cache[cacheKey] // Cache.get(cacheKey, true)
+                            if (cachedData) {
+                                resolvedData[dataKey] = cachedData.data
+                                if (Cache.isValid(cachedData)) {
+                                    // no need to renew cache
+                                    continue
+                                }
                             }
                         } else {
                             console.warn('Please define a key or a cacheKey if you want to use caching')
