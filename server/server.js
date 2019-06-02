@@ -7,6 +7,7 @@ import zlib from 'zlib'
 import config from 'gen/config'
 import MimeType from '../util/mime'
 import {getHostFromHeaders} from 'util/host'
+
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL} = config
 
 // Port to listen to
@@ -24,7 +25,7 @@ const options = {
 // Initialize http api
 const app = httpx.createServer(options, function (req, res) {
     if (!config.DEV_MODE && req.headers.host !== 'localhost:' + PORT && req.headers['x-forwarded-proto'] !== 'https') {
-        if( process.env.APP_FORCE_HTTPS ) {
+        if (process.env.APP_FORCE_HTTPS) {
             console.log('Redirect to https' + req.headers.host)
             res.writeHead(301, {"Location": "https://" + req.headers.host + req.url})
             res.end()
@@ -64,7 +65,8 @@ const app = httpx.createServer(options, function (req, res) {
         } else if (uri.startsWith(UPLOAD_URL + '/')) {
             const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
             // uploads
-            const filename = path.join(upload_dir, uri.substring(UPLOAD_DIR.length +  1))
+            const filename = path.join(upload_dir, uri.substring(UPLOAD_DIR.length + 1).replace(/\.\.\//g, ''))
+
 
             fs.exists(filename, (exists) => {
                 if (exists) {
@@ -114,9 +116,9 @@ const app = httpx.createServer(options, function (req, res) {
                 // TODO: host rule to load host specific index files
                 const host = getHostFromHeaders(req.headers)
                 console.log(host, uri)
-                if( host === 'www.onyou.ch'){
+                if (host === 'www.onyou.ch') {
                     indexfile = path.join(BUILD_DIR, '/index.min.html')
-                }else{
+                } else {
                     indexfile = path.join(BUILD_DIR, '/index.min.html')
                 }
 
@@ -162,7 +164,8 @@ const webSocket = function (req, socket, head) {
     proxy.ws(req, socket, head, {
         hostname: 'localhost',
         port: API_PORT,
-        path: '/ws'})
+        path: '/ws'
+    })
 }
 
 //
