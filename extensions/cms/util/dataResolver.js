@@ -5,9 +5,10 @@ import request from 'request-promise'
 import translations from 'gensrc/tr'
 import Util from '../../../api/util'
 import {CAPABILITY_MANAGE_KEYVALUES} from '../../../util/capabilities'
-import {openInBrowser} from './browser'
+import {processWebsiteQueue} from './browser'
 import Hook from '../../../util/hook'
 import {pubsubDelayed} from '../../../api/subscription'
+
 
 export const resolveData = async (db, context, dataResolver, scope, nosession) => {
     const resolvedData = {_meta: {}}, subscriptions = []
@@ -307,35 +308,10 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                         }
                     }
 
-                    if (segment.async !== false) {
+                    addDataResolverSubsription = true
+                    resolvedData[dataKey] = {meta: segment.meta}
+                    processWebsiteQueue({segment, scope, resolvedData, context, dataKey, cacheKey})
 
-                        addDataResolverSubsription = true
-                        resolvedData[dataKey] = {meta: segment.meta}
-                        setTimeout(async () => {
-                            const data = await openInBrowser(segment.website, scope, resolvedData)
-                            if (segment.meta) {
-                                data.meta = segment.meta
-                            }
-                            if (cacheKey) {
-                                Cache.set(cacheKey, data, segment.cache.expiresIn)
-                            }
-                            pubsubDelayed.publish('cmsPageData', {
-                                userId: context.id,
-                                session: context.session,
-                                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: data})}
-                            }, context)
-
-                        }, 0)
-
-                    } else {
-                        resolvedData[dataKey] = await openInBrowser(segment.website, scope, resolvedData)
-                        if (segment.meta) {
-                            resolvedData[dataKey].meta = segment.meta
-                        }
-                        if (cacheKey) {
-                            Cache.set(cacheKey, resolvedData[dataKey], segment.cache.expiresIn)
-                        }
-                    }
                 } else {
                     console.log('call cmsCustomResolver', segment)
                     Hook.call('cmsCustomResolver', {resolvedData, resolver: segment})

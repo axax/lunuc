@@ -2,46 +2,76 @@ import puppeteer from 'puppeteer'
 import config from 'gen/config'
 import path from 'path'
 import Util from '../../../api/util'
+import Cache from '../../../util/cache'
+import {pubsubDelayed} from '../../../api/subscription'
 
 
 const {UPLOAD_DIR, UPLOAD_URL} = config
 
-let browserInstance
+
+let websiteProcessingQueue = []
+let isQueueProcessing = false
+const processWebsiteQueue = async (job) => {
+    websiteProcessingQueue.push(job)
+
+    if (!isQueueProcessing) {
+        isQueueProcessing = true
+        while (websiteProcessingQueue.length > 0) {
+            const {segment, scope, resolvedData, cacheKey, context, dataKey} = websiteProcessingQueue[0]
+            const data = await openInBrowser(segment.website, scope, resolvedData)
+            if (segment.meta) {
+                data.meta = segment.meta
+            }
+            if (cacheKey) {
+                Cache.set(cacheKey, data, segment.cache.expiresIn)
+            }
+            pubsubDelayed.publish('cmsPageData', {
+                userId: context.id,
+                session: context.session,
+                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: data})}
+            }, context)
+
+            websiteProcessingQueue.shift()
+        }
+        isQueueProcessing = false
+    }
+}
 
 const openInBrowser = async (options, scope, resolvedData) => {
     const {url, pipeline, images, ignoreSsl, waitUntil, timeout} = options
     let data = {}, error
 
-    if ( !browserInstance) {
-        browserInstance = await puppeteer.launch({
-            ignoreHTTPSErrors: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-        })
-    }
+    const browserInstance = await puppeteer.launch({
+        ignoreHTTPSErrors: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    })
     const page = await browserInstance.newPage()
-    const gotoOptions = {waitUntil, timeout}
 
-    if (images === false) {
-        await page.setRequestInterception(true)
-        page.on('request', request => {
-            if (request.resourceType() === 'image')
-                request.abort()
-            else
-                request.continue()
-        })
-    }
-
-    //page.on('console', msg => console.log('PAGE LOG:', msg.text()))
-
-    page.on('error', err => {
-        console.log('error happen at the page: ', err)
-    })
-
-    page.on('pageerror', pageerr => {
-        console.log('pageerror occurred: ', pageerr)
-    })
 
     try {
+
+        if (images === false) {
+            await page.setRequestInterception(true)
+            page.on('request', request => {
+                if (request.resourceType() === 'image')
+                    request.abort()
+                else
+                    request.continue()
+            })
+        }
+
+        //page.on('console', msg => console.log('PAGE LOG:', msg.text()))
+
+        page.on('error', err => {
+            console.log('error happen at the page: ', err)
+        })
+
+        page.on('pageerror', pageerr => {
+            console.log('pageerror occurred: ', pageerr)
+        })
+
+        const gotoOptions = {waitUntil, timeout}
+
         await page.goto(url, gotoOptions)
 
 
@@ -191,7 +221,7 @@ const openInBrowser = async (options, scope, resolvedData) => {
                         break
                     }*/
 
-                } else if (pipe.eval) {
+                } else if (pipe['eval']) {
                     const tmpData = await evalFunc(pipe.eval)
                     if (tmpData) {
                         data = {...data, ...tmpData}
@@ -228,11 +258,9 @@ const openInBrowser = async (options, scope, resolvedData) => {
         error = e.message
     }
     await page.close()
-    //await browser.close()
-
-    console.log(process.memoryUsage().heapUsed / 1024 / 1024)
+    browserInstance.close()
 
     return {eval: data, error}
 }
 
-export {openInBrowser}
+export {openInBrowser, processWebsiteQueue}
