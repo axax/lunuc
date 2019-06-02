@@ -14,6 +14,7 @@ import {pubsub} from 'api/subscription'
 import {withFilter} from 'graphql-subscriptions'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail'
+
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
 const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ', 'pwd', 'ls', 'ping']
@@ -35,24 +36,24 @@ const findAndReplaceObjectIds = function (obj) {
     for (var i in obj) {
         if (obj.hasOwnProperty(i)) {
             const v = obj[i]
-            if( v )
-            if (v.constructor === Array) {
-                v.forEach((x,j) => {
-                    if (x.constructor === String) {
-                        if ( i=== '$in' && ObjectId.isValid(x)) {
-                            v[j] = ObjectId(x)
+            if (v)
+                if (v.constructor === Array) {
+                    v.forEach((x, j) => {
+                        if (x.constructor === String) {
+                            if (i === '$in' && ObjectId.isValid(x)) {
+                                v[j] = ObjectId(x)
+                            }
+                        } else {
+                            findAndReplaceObjectIds(x)
                         }
-                    } else {
-                        findAndReplaceObjectIds(x)
+                    })
+                } else if (v.constructor === String) {
+                    if (ObjectId.isValid(v)) {
+                        obj[i] = ObjectId(v)
                     }
-                })
-            } else if (v.constructor === String) {
-                if (ObjectId.isValid(v)) {
-                    obj[i] = ObjectId(v)
+                } else {
+                    findAndReplaceObjectIds(v);
                 }
-            } else {
-                findAndReplaceObjectIds(v);
-            }
         }
     }
     return null;
@@ -64,7 +65,7 @@ export const systemResolver = (db) => ({
             killExec(id)
             return {id}
         },
-        run: async ({command, id, sync}, {context}) => {
+        run: async ({command, scope, id, sync}, {context}) => {
             let performCheck = true, response = ''
 
             const currentId = id || (context.id + String((new Date()).getTime()))
@@ -80,79 +81,102 @@ export const systemResolver = (db) => ({
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
             }
 
-            if (!command) {
-                throw new Error('No command to execute.')
-            }
 
-            if (sync) {
-                response = execSync(command, {encoding: 'utf8'})
-            } else {
-                /*execs[id] = spawn(command, options, (err, stdout, stderr) => {
-                 console.log(stdout)
-                 pubsub.publish('subscribeRun', {
-                 userId: context.id,
-                 subscribeRun: {response: stdout, error: stderr, id}
-                 })
-                 })*/
-                if (!execs[currentId] || execs[currentId].exitCode !== null) {
-                    execs[currentId] = spawn('bash', [], {detached: true})
+            if (scope === 'lu') {
+                // lu commands
 
+                if (command === 'memusage') {
+                    const memusage = process.memoryUsage().heapUsed / 1024 / 1024
 
-                    execs[currentId].stdout.on('data', (data) => {
-                        let str = data.toString('utf8')
-                        const isEnd = (str.indexOf(ENDOFCOMMAND) === str.length - ENDOFCOMMAND.length)
-                        if (isEnd) {
-                            str = str.substring(0, str.length - ENDOFCOMMAND.length)
-                        }
-
-                        pubsub.publish('subscribeRun', {
-                            userId: context.id,
-                            subscribeRun: {event: isEnd ? 'end' : 'data', response: str, id: currentId}
-                        })
-                    })
-
-                    execs[currentId].stderr.on('data', (data) => {
-                        pubsub.publish('subscribeRun', {
-                            userId: context.id,
-                            subscribeRun: {event: 'error', error: data.toString('utf8'), id: currentId}
-                        })
-                    })
-
-                    execs[currentId].on('close', (code) => {
-                        pubsub.publish('subscribeRun', {
-                            userId: context.id,
-                            subscribeRun: {event: 'close', id: currentId}
-                        })
-                    })
-                    execs[currentId].on('error', (error) => {
-                        pubsub.publish('subscribeRun', {
-                            userId: context.id,
-                            subscribeRun: {event: 'error', error, id: currentId}
-                        })
-                    })
-                }
-                execs[currentId].stdin.write(`${command} && echo ${ENDOFCOMMAND}`)
-
-                clearTimeout(execs[currentId].execTimeout)
-                execs[currentId].execTimeout = setTimeout(function () {
-                    killExec(currentId)
                     pubsub.publish('subscribeRun', {
                         userId: context.id,
-                        subscribeRun: {
-                            event: 'error',
-                            error: 'Execution timeout reached. Console has been reseted',
-                            id: currentId
-                        }
+                        subscribeRun: {event: 'end', response: memusage, id: currentId}
                     })
-                }, 60000)
-            }
 
+                } else {
+                    pubsub.publish('subscribeRun', {
+                        userId: context.id,
+                        subscribeRun: {event: 'error', error: 'Unknown command', id: currentId}
+                    })
+                }
+
+
+            } else {
+                //Shell
+
+                if (!command) {
+                    throw new Error('No command to execute.')
+                }
+
+                if (sync) {
+                    response = execSync(command, {encoding: 'utf8'})
+                } else {
+                    /*execs[id] = spawn(command, options, (err, stdout, stderr) => {
+                     console.log(stdout)
+                     pubsub.publish('subscribeRun', {
+                     userId: context.id,
+                     subscribeRun: {response: stdout, error: stderr, id}
+                     })
+                     })*/
+                    if (!execs[currentId] || execs[currentId].exitCode !== null) {
+                        execs[currentId] = spawn('bash', [], {detached: true})
+
+
+                        execs[currentId].stdout.on('data', (data) => {
+                            let str = data.toString('utf8')
+                            const isEnd = (str.indexOf(ENDOFCOMMAND) === str.length - ENDOFCOMMAND.length)
+                            if (isEnd) {
+                                str = str.substring(0, str.length - ENDOFCOMMAND.length)
+                            }
+
+                            pubsub.publish('subscribeRun', {
+                                userId: context.id,
+                                subscribeRun: {event: isEnd ? 'end' : 'data', response: str, id: currentId}
+                            })
+                        })
+
+                        execs[currentId].stderr.on('data', (data) => {
+                            pubsub.publish('subscribeRun', {
+                                userId: context.id,
+                                subscribeRun: {event: 'error', error: data.toString('utf8'), id: currentId}
+                            })
+                        })
+
+                        execs[currentId].on('close', (code) => {
+                            pubsub.publish('subscribeRun', {
+                                userId: context.id,
+                                subscribeRun: {event: 'close', id: currentId}
+                            })
+                        })
+                        execs[currentId].on('error', (error) => {
+                            pubsub.publish('subscribeRun', {
+                                userId: context.id,
+                                subscribeRun: {event: 'error', error, id: currentId}
+                            })
+                        })
+                    }
+                    execs[currentId].stdin.write(`${command} && echo ${ENDOFCOMMAND}`)
+
+                    clearTimeout(execs[currentId].execTimeout)
+                    execs[currentId].execTimeout = setTimeout(function () {
+                        killExec(currentId)
+                        pubsub.publish('subscribeRun', {
+                            userId: context.id,
+                            subscribeRun: {
+                                event: 'error',
+                                error: 'Execution timeout reached. Console has been reseted',
+                                id: currentId
+                            }
+                        })
+                    }, 60000)
+                }
+            }
 
             return {response, id: currentId}
         },
         sendMail: async (data, {context}) => {
             //Util.checkIfUserIsLoggedIn(context)
-            const response = await sendMail(db,context,data)
+            const response = await sendMail(db, context, data)
             return {response: JSON.stringify(response)}
         },
         ping: async ({}, {context}) => {

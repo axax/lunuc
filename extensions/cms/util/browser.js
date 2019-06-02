@@ -6,16 +6,19 @@ import Util from '../../../api/util'
 
 const {UPLOAD_DIR, UPLOAD_URL} = config
 
+let browserInstance
 
 const openInBrowser = async (options, scope, resolvedData) => {
     const {url, pipeline, images, ignoreSsl, waitUntil, timeout} = options
     let data = {}, error
 
-    const browser = await puppeteer.launch({
-        ignoreHTTPSErrors: ignoreSsl,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    })
-    const page = await browser.newPage()
+    if ( !browserInstance) {
+        browserInstance = await puppeteer.launch({
+            ignoreHTTPSErrors: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        })
+    }
+    const page = await browserInstance.newPage()
     const gotoOptions = {waitUntil, timeout}
 
     if (images === false) {
@@ -225,7 +228,9 @@ const openInBrowser = async (options, scope, resolvedData) => {
         error = e.message
     }
     await page.close()
-    await browser.close()
+    //await browser.close()
+
+    console.log(process.memoryUsage().heapUsed / 1024 / 1024)
 
     return {eval: data, error}
 }

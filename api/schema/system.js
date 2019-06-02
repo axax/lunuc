@@ -72,7 +72,7 @@ export const systemSchemaRaw = `
         
     type Query {
         brokenReferences(type: String!, field: String): BrokenReferencesResult
-    	run(command: String!, id: String, sync: Boolean): RunResult
+    	run(command: String!, scope: String, id: String, sync: Boolean): RunResult
     	killRun(id: String!): RunResult
     	sendMail(recipient: String!, subject: String, body: String, slug: String): MailResult
     	dbDumps: DbDumpResult   
