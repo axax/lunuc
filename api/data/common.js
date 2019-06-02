@@ -1,3 +1,7 @@
+/*
+Place general static data here
+ */
+
 
 const langs = {
     'auto': 'Automatic',

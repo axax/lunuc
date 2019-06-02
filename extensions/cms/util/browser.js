@@ -224,6 +224,7 @@ const openInBrowser = async (options, scope, resolvedData) => {
         console.error(e)
         error = e.message
     }
+    await page.close()
     await browser.close()
 
     return {eval: data, error}
