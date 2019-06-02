@@ -1,4 +1,11 @@
 import puppeteer from 'puppeteer'
+import config from 'gen/config'
+import path from 'path'
+import Util from '../../../api/util'
+
+
+const {UPLOAD_DIR, UPLOAD_URL} = config
+
 
 const openInBrowser = async (options, scope, resolvedData) => {
     const {url, pipeline, images, ignoreSsl, waitUntil, timeout} = options
@@ -103,7 +110,20 @@ const openInBrowser = async (options, scope, resolvedData) => {
                 }
 
 
-                if (pipe.extract) {
+                if (pipe.screenshot) {
+
+                    const upload_dir = path.join(__dirname, '../../../' + UPLOAD_DIR) + '/screenshots/'
+
+                    if (Util.ensureDirectoryExistence(upload_dir)) {
+
+                        const name = pipe.screenshot.name || (new Date()).getTime() + '.png'
+
+                        await page.screenshot({path: upload_dir + name});
+                        if (!data.screenshot) data.screenshot = []
+                        data.screenshot.push(UPLOAD_URL + '/screenshots/' + name)
+                    }
+
+                } else if (pipe.extract) {
 
                     await extractData(pipe.extract)
 
