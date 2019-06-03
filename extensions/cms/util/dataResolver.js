@@ -153,7 +153,10 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                             }, context)
                         })
                         addDataResolverSubsription = true
-                        resolvedData[dataKey] = {meta: segment.meta}
+                        if( !resolvedData[dataKey] ){
+                            resolvedData[dataKey] = {}
+                        }
+                        resolvedData[dataKey].meta = segment.meta
                     } else {
                         let result
                         try {
@@ -315,7 +318,10 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                     }
 
                     addDataResolverSubsription = true
-                    resolvedData[dataKey] = {meta: segment.meta}
+                    if( !resolvedData[dataKey] ){
+                        resolvedData[dataKey] = {}
+                    }
+                    resolvedData[dataKey].meta = segment.meta
                     processWebsiteQueue({segment, scope, resolvedData, context, dataKey, cacheKey})
 
                 } else {
