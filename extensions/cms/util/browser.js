@@ -149,9 +149,10 @@ const openInBrowser = async (options, scope, resolvedData) => {
 
                     if (Util.ensureDirectoryExistence(upload_dir)) {
 
+
                         const name = pipe.screenshot.name || (new Date()).getTime() + '.png'
 
-                        await page.screenshot({path: upload_dir + name});
+                        await page.screenshot({...pipe.screenshot, path: upload_dir + name});
                         if (!data.screenshot) data.screenshot = []
                         data.screenshot.push(UPLOAD_URL + '/screenshots/' + name)
                     }
