@@ -85,7 +85,14 @@ export const systemResolver = (db) => ({
             if (scope === 'lu') {
                 // lu commands
 
-                if (command === 'memusage') {
+                if (command === 'clearcache') {
+                    pubsub.publish('subscribeRun', {
+                        userId: context.id,
+                        subscribeRun: {event: 'end', response: `${Object.keys(Cache.cache).length} cached items cleared.`, id: currentId}
+                    })
+                    Cache.cache = {}
+
+                } else if (command === 'memusage') {
                     const memusage = process.memoryUsage().heapUsed / 1024 / 1024
 
                     pubsub.publish('subscribeRun', {
