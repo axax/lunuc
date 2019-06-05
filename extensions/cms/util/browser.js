@@ -22,7 +22,7 @@ const processWebsiteQueue = async (job) => {
             if (segment.meta) {
                 data.meta = segment.meta
             }
-            if (cacheKey) {
+            if (cacheKey && !data.error) {
                 Cache.set(cacheKey, data, segment.cache.expiresIn)
             }
             pubsubDelayed.publish('cmsPageData', {
