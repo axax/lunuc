@@ -695,7 +695,10 @@ class JsonDom extends React.Component {
                 return
             }
             ele.oriParent = ele.parentNode
-            Util.$('#' + key.substr(0, key.length - 2)).appendChild(ele)
+            const container = Util.$('#' + key.substr(0, key.length - 2))
+            if (container.appendChild) {
+                container.appendChild(ele)
+            }
         }
     }
 
@@ -890,7 +893,7 @@ class JsonDom extends React.Component {
         }
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
 
-        if (this._inHtmlComponents.length > 0) {
+        if (content && this._inHtmlComponents.length > 0) {
             content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
         }
 
