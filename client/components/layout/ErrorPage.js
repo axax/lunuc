@@ -1,4 +1,5 @@
 import React from 'react'
+import DomUtil from '../../util/dom'
 
 
 class ErrorPage extends React.Component {
@@ -20,6 +21,12 @@ class ErrorPage extends React.Component {
         const {code, message, background} = this.getErrorStatus(props)
         this.titleOri = document.title
         document.title = `${code} ${message}`
+
+        DomUtil.createAndAddTag('meta', 'head', {
+            name:'robots',
+            content:'noindex',
+            id:'errorPageNoindex'
+        })
 
 
         this.css = document.createElement("style")
@@ -222,6 +229,7 @@ hr:after {
     componentWillUnmount() {
         document.title = this.titleOri
         document.body.removeChild(this.css)
+        DomUtil.removeElements('#errorPageNoindex')
     }
 
     render() {
