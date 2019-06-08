@@ -9,7 +9,7 @@ import config from 'gen/config'
 import DomUtil from 'client/util/dom'
 
 const appEl = document.getElementById('app')
-if (!('WebSocket' in window) || !Object.assign) {
+if (!('WebSocket' in window) || !('fetch' in window) || !Object.assign) {
     const el = document.getElementById('l')
     if (el) el.style.display = 'none'
     appEl.innerHTML = 'Sorry your browser / device is not supported'

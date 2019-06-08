@@ -101,6 +101,7 @@ export default () => {
         }
     })
 
+    //            slug = slug.trim().toLowerCase().replace(/[\W_]+/g,"_")
 
     // remove cacheKey column
     Hook.on('TypeTableColumns', ({columns}) => {
@@ -109,6 +110,23 @@ export default () => {
             if (col.id === 'cacheKey') {
                 columns.splice(i, 1)
                 return
+            }
+        }
+    })
+
+    // add default slug
+    Hook.on('TypeCreateEditDialogBlur', ({event, type}) => {
+        console.log(event.target.name , event.target.closest)
+        if (type === 'CmsPage' && event.target.name ===  'name' && event.target.closest) {
+            const form = event.target.closest('form')
+            const slugInput = form.querySelector('input[name=slug]')
+
+            if( slugInput && !slugInput.value ){
+                const value = event.target.value.trim().toLowerCase().replace(/[\W_]+/g, "_")
+                setTimeout(()=> {
+                    slugInput.value = value
+                    slugInput.focus()
+                },10)
             }
         }
     })

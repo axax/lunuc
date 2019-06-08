@@ -39,6 +39,13 @@ const UploadUtil = {
     },
     resizeImageFromFile: ({file, conversion, onSuccess}) => {
 
+        if (!conversion || !conversion.length) {
+
+            // nothing to convert
+            onSuccess(URL.createObjectURL(file))
+            return
+        }
+
         const oriImg = new Image()
         oriImg.onload = () => {
 
@@ -104,7 +111,7 @@ const UploadUtil = {
                 if (maxFileSize && file.size > maxFileSize) {
                     results.invalidFiles.push({
                         file,
-                        message: `File size of ${file.name} exceeds the max file size of ${maxFileSize/1024/1024}MB.`
+                        message: `File size of ${file.name} exceeds the max file size of ${maxFileSize / 1024 / 1024}MB.`
                     })
                     continue
                 }

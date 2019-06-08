@@ -469,12 +469,12 @@ class CmsViewContainer extends React.Component {
                               }]}
                               title="Edit Component">
 
-                    <TemplateEditor
-                        component={cmsComponentEdit}
-                        tab={settings.templateTab}
-                        onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
-                        onChange={this.handleTemplateChange.bind(this)}/>
-
+                        <TemplateEditor
+                            fabButtonStyle={{bottom:'3rem', right: '1rem'}}
+                            component={cmsComponentEdit}
+                            tab={settings.templateTab}
+                            onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
+                            onChange={this.handleTemplateChange.bind(this)}/>
 
                 </SimpleDialog>
 

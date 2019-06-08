@@ -182,7 +182,6 @@ class FileDrop extends React.Component {
                 if (isImage) {
                     images.push(URL.createObjectURL(file))
                 }
-                console.log(name,conversion)
 
                 if (resizeImages && isImage) {
                     UploadUtil.resizeImageFromFile({

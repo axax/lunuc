@@ -154,6 +154,15 @@ class GenericForm extends React.Component {
         })
     }
 
+
+    handleBlur = (e) => {
+        const {onBlur} = this.props
+
+        if( onBlur ){
+            onBlur(e)
+        }
+    }
+
     onAddClick = () => {
         if (this.props.onClick)
             this.props.onClick(this.state.fields)
@@ -230,6 +239,7 @@ class GenericForm extends React.Component {
                                           onKeyDown={(e) => {
                                               onKeyDown && onKeyDown(e, value[l])
                                           }}
+                                          onBlur={this.handleBlur}
                                           onChange={this.handleInputChange}/>)
                         return a
                     }, [])
@@ -246,6 +256,7 @@ class GenericForm extends React.Component {
                                       onKeyDown={(e) => {
                                           onKeyDown && onKeyDown(e, value)
                                       }}
+                                      onBlur={this.handleBlur}
                                       onChange={this.handleInputChange}/>
                 }
 
@@ -271,6 +282,7 @@ GenericForm.propTypes = {
     onKeyDown: PropTypes.func,
     onValidate: PropTypes.func,
     onChange: PropTypes.func,
+    onBlur: PropTypes.func,
     caption: PropTypes.string,
     primaryButton: PropTypes.bool,
     classes: PropTypes.object.isRequired,

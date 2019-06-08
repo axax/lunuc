@@ -125,12 +125,10 @@ class TemplateEditor extends React.Component {
     }
 
     render() {
-        const {classes, component} = this.props
+        const {classes, component, fabButtonStyle} = this.props
         const {tab, data, type} = this.state
 
-
         const currentTab = (!component && this.state.tab === 2 ? 0 : this.state.tab) || 0
-
         return <div>
             <Tabs
                 value={currentTab}
@@ -150,14 +148,14 @@ class TemplateEditor extends React.Component {
                 <Tab icon={<SubjectIcon/>} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
             </Tabs>
             {currentTab === 0 && <TabContainer>
-                <CodeEditor onChange={this.handleChange.bind(this)} showFab lineNumbers type={type}>{data}</CodeEditor>
+                <CodeEditor fabButtonStyle={fabButtonStyle} onChange={this.handleChange.bind(this)} showFab lineNumbers type={type}>{data}</CodeEditor>
 
             </TabContainer>}
             {currentTab === 1 && <TabContainer>
                 <JsonEditor onChange={this.handleChange.bind(this)}>{data}</JsonEditor>
             </TabContainer>}
             {component && currentTab === 2 && <TabContainer>
-                <CodeEditor showFab lineNumbers type="json" readOnly>
+                <CodeEditor showFab fabButtonStyle={fabButtonStyle} lineNumbers type="json" readOnly>
                     {JSON.stringify(component.scope, (key, val) => {
                         if (['root', 'parent'].indexOf(key) >= 0) {
                             return '[JsonDom]'
@@ -211,6 +209,7 @@ TemplateEditor.propTypes = {
     classes: PropTypes.object.isRequired,
     onTabChange: PropTypes.func.isRequired,
     onChange: PropTypes.func.isRequired,
+    fabButtonStyle: PropTypes.object,
     tab: PropTypes.any
 }
 

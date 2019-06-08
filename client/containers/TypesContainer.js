@@ -505,6 +505,8 @@ class TypesContainer extends React.Component {
                 }],
                 children: <GenericForm autoFocus innerRef={ref => {
                     this.createEditForm = ref
+                }} onBlur={event => {
+                    Hook.call('TypeCreateEditDialogBlur', {type, event}, this)
                 }} onChange={field => {
                     Hook.call('TypeCreateEditDialogChange', {field, type, props: editDialogProps, dataToEdit}, this)
                 }} primaryButton={false} fields={formFields} values={dataToEdit}/>
@@ -546,7 +548,8 @@ class TypesContainer extends React.Component {
                 </Col>
                 }
                 <Col xs={12} md={(fixType ? 12 : 3)} align="right">
-                    <GenericForm onChange={this.handleFilter}
+                    <GenericForm key="searchType"
+                                 onChange={this.handleFilter}
                                  onKeyDown={this.handelFilterKeyDown}
                                  primaryButton={false}
                                  fields={{

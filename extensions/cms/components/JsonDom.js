@@ -225,7 +225,6 @@ class JsonDom extends React.Component {
         const locationChanged = this.props.location.search !== props.location.search ||
             this.props.location.hash !== props.location.hash
 
-
         if (update || locationChanged) {
             // do some stuff before update
             this.parseError = null
@@ -234,7 +233,7 @@ class JsonDom extends React.Component {
             const scriptChanged = this.props.script !== props.script
 
             if (this.props.template !== props.template || this.props._props !== props._props || scriptChanged) {
-                this.resetTemplate()
+                this.json = this.jsonRaw = null
                 if (scriptChanged || this.runScript) {
                     this.removeAddedDomElements()
                 }
@@ -242,7 +241,7 @@ class JsonDom extends React.Component {
 
             if (this.props.scope !== props.scope || locationChanged) {
                 this.updateScope = true
-                this.json = null
+                this.json = this.jsonRaw = null
             }
 
             if (scriptChanged) {
@@ -278,9 +277,8 @@ class JsonDom extends React.Component {
         this.runJsEvent('unmount')
         this._historyUnlisten()
         this._ismounted = false
-        this.resetTemplate()
         this.removeAddedDomElements()
-        this.componentRefs = null
+        this.json = this.jsonRaw = this.componentRefs = null
         if (this.node.oriParent) {
             this.node.oriParent.appendChild(this.node)
         }
@@ -323,12 +321,6 @@ class JsonDom extends React.Component {
         if (_parentRef && id) {
             props._parentRef.componentRefs[id] = this
         }
-    }
-
-    resetTemplate() {
-        this.runJsEvent('reset')
-        this.json = null
-        this.jsonRaw = null
     }
 
     removeAddedDomElements() {
@@ -639,7 +631,6 @@ class JsonDom extends React.Component {
         const {template} = props
         const scope = this.getScope(props)
         this._inHtmlComponents = []
-
         try {
             /*
              json is the modified version for viewing (placeholder are replaced)

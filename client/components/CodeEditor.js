@@ -51,7 +51,7 @@ class CodeEditor extends React.Component {
     }
 
     render() {
-        const {onChange, readOnly, lineNumbers, type, actions, showFab, style, className} = this.props
+        const {onChange, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className} = this.props
         const options = {
             mode: {},
             readOnly,
@@ -89,13 +89,14 @@ class CodeEditor extends React.Component {
         if (actions) {
             allActions.push(...actions)
         }
-        console.log('render CodeEditor')
+
+        console.log('render CodeEditor', fabButtonStyle)
         return <div className={className} style={{height: '35rem', ...style}}>
             {showFab && <SimpleMenu key="menu" mini fab color="secondary" style={{
                 zIndex: 999,
                 position: 'absolute',
                 bottom: '8px',
-                right: '8px'
+                right: '8px', ...fabButtonStyle
             }} items={allActions}/>}
             <CodeMirror
                 key="editor"
@@ -126,6 +127,7 @@ CodeEditor.propTypes = {
     actions: PropTypes.array,
     showFab: PropTypes.bool,
     style: PropTypes.object,
+    fabButtonStyle: PropTypes.object,
     className: PropTypes.string
 }
 

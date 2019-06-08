@@ -37,7 +37,7 @@ function removeLoader() {
     }
 }
 
-const oldfetch = fetch;
+const oldfetch = fetch
 fetch = function (input, opts) {
     addLoader()
     return new Promise((resolve, reject) => {
