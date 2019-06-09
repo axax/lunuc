@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken'
 import Util from './util'
 import config from 'gen/config'
 import _t from 'util/i18nServer'
+import crypto from 'crypto'
 
 const {DEFAULT_LANGUAGE} = config
 
@@ -67,7 +68,7 @@ export const auth = {
             // add the requested language to the context
             req.context.lang = lang || DEFAULT_LANGUAGE
 
-            req.context.session = currentSession || 'newsessiontoken'
+            req.context.session = currentSession || crypto.randomBytes(16).toString("hex")
 
             res.header(SESSION_HEADER, req.context.session );
 

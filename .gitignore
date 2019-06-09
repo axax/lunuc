@@ -81,3 +81,4 @@ mongodb_tmp
 gensrc
 uploads
 backups
+static

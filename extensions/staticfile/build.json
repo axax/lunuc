@@ -1,0 +1,26 @@
+{
+  "types": [
+    {
+      "name": "StaticFile",
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "name",
+          "required": true,
+          "clone": "${name} (copy)"
+        },
+        {
+          "name": "mimeType"
+        },
+        {
+          "name": "active",
+          "type": "Boolean"
+        },
+        {
+          "name": "content",
+          "uitype": "editor"
+        }
+      ]
+    }
+  ]
+}

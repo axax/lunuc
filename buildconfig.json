@@ -41,6 +41,9 @@
     },
     "newsletter": {
       "active": true
+    },
+    "staticfile": {
+      "active": true
     }
   },
   "ui": [
@@ -93,6 +96,7 @@
     "APOLLO_CACHE": true,
     "DEBUG": true,
     "ADMIN_BASE_URL": "/admin",
+    "STATIC_DIR": "/static",
     "BACKUP_DIR": "/backups",
     "BACKUP_URL": "/backups",
     "UPLOAD_DIR": "/uploads",

@@ -8,7 +8,7 @@ import config from 'gen/config'
 import MimeType from '../util/mime'
 import {getHostFromHeaders} from 'util/host'
 
-const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL} = config
+const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, STATIC_DIR} = config
 
 // Port to listen to
 const PORT = (process.env.PORT || 8080)
@@ -84,46 +84,67 @@ const app = httpx.createServer(options, function (req, res) {
 
 
         } else {
-            const filename = path.join(BUILD_DIR, uri),
-                ext = path.extname(filename).split('.')[1]
+
+            const staticFile = path.join(STATIC_DIR, uri)
+
+            fs.stat(staticFile, function (err, staticStats) {
 
 
-            if (ext) {
+                if (err) {
+                    // it is not a static file so check in build dir
 
-
-                fs.stat(filename, function (err, stats) {
-                    if (err) {
-                        console.log('not exists: ' + filename)
-                        res.writeHead(404, {'Content-Type': 'text/plain'})
-                        res.write('404 Not Found\n')
-                        res.end()
+                    const filename = path.join(BUILD_DIR, uri)
+                    const ext = path.extname(filename).split('.')[1]
+                    if (ext) {
+                        fs.stat(filename, function (err, stats) {
+                            if (err) {
+                                console.log('not exists: ' + filename)
+                                res.writeHead(404, {'Content-Type': 'text/plain'})
+                                res.write('404 Not Found\n')
+                                res.end()
+                            } else {
+                                const mimeType = MimeType.detectByExtension(ext),
+                                    headerExtra = {
+                                        'Cache-Control': 'public, max-age=31536000',
+                                        'Content-Type': mimeType,
+                                        'Last-Modified': stats.mtime.toUTCString()
+                                    }
+                                sendFile(req, res, headerExtra, filename);
+                            }
+                        })
                     } else {
-                        const mimeType = MimeType.detectByExtension(ext),
-                            headerExtra = {'Cache-Control': 'public, max-age=31536000', 'content-type': mimeType}
-                        sendFile(req, res, headerExtra, filename);
+                        const headers = {
+                            'Cache-Control': 'public, max-age=60',
+                            'content-type': MimeType.detectByExtension('html')
+                        }
+
+                        let indexfile
+
+                        // TODO: resolve data in advance if possible
+
+                        // TODO: host rule to load host specific index files
+                        const host = getHostFromHeaders(req.headers)
+                        console.log(host, uri)
+                        if (host === 'www.onyou.ch') {
+                            indexfile = path.join(BUILD_DIR, '/index.min.html')
+                        } else {
+                            indexfile = path.join(BUILD_DIR, '/index.min.html')
+                        }
+
+                        sendFile(req, res, headers, indexfile);
                     }
-                })
-            } else {
-                const headers = {
-                    'Cache-Control': 'public, max-age=60',
-                    'content-type': MimeType.detectByExtension('html')
-                }
-
-                let indexfile
-
-                // TODO: resolve data in advance if possible
-
-                // TODO: host rule to load host specific index files
-                const host = getHostFromHeaders(req.headers)
-                console.log(host, uri)
-                if (host === 'www.onyou.ch') {
-                    indexfile = path.join(BUILD_DIR, '/index.min.html')
                 } else {
-                    indexfile = path.join(BUILD_DIR, '/index.min.html')
+                    // static file
+                    const ext = path.extname(staticFile).split('.')[1]
+                    const mimeType = MimeType.detectByExtension(ext),
+                        headerExtra = {
+                            'Cache-Control': 'public, max-age=31536000',
+                            'Content-Type': mimeType,
+                            'Last-Modified': staticStats.mtime.toUTCString()
+                        }
+                    sendFile(req, res, headerExtra, staticFile);
                 }
-
-                sendFile(req, res, headers, indexfile);
-            }
+            })
         }
     }
 })

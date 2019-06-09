@@ -117,6 +117,7 @@ export default class PostEditor extends React.Component {
             editorProps.handleKeyCommand = this.handleKeyCommand
             editorProps.onTab = this.onTab
             editorProps.spellCheck = true
+            editorProps.blockRendererFn=this.blockRendererFn
 
 
             // If the user changes block type before entering any text, we can
@@ -168,8 +169,32 @@ export default class PostEditor extends React.Component {
         }
     }
 
+
+    blockRendererFn = (block) => {
+
+        const {editorState} = this.state
+        const entityKey = block.getEntityAt(0)
+        if (!entityKey) {
+            return
+        }
+
+        const entity = editorState.getCurrentContent().getEntity(entityKey)
+        if (entity.getType() !== 'IMAGE') {
+            return
+        }
+
+        const {height, src, width} = entity.getData()
+        // don't render block text; it's still in content state though
+        return {
+            component: () => (<img
+                height={height}
+                src={src}
+                width={width}
+            />)
+        }
+    }
+
     _getEditorState(bodyRaw) {
-        console.log('get editor state')
         if (bodyRaw && bodyRaw != '') {
             var parsedContent
             try {
@@ -233,8 +258,7 @@ export default class PostEditor extends React.Component {
 }
 
 
-PostEditor
-    .propTypes = {
+PostEditor.propTypes = {
     onChange: PropTypes.func,
     post: PropTypes.object.isRequired,
     readOnly: PropTypes.bool

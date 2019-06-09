@@ -203,6 +203,7 @@ if (DEV_MODE) {
 
 
     config.devServer = {
+        contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static')],
         historyApiFallback: true,
         inline: true,
         hot: true,
