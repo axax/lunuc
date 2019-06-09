@@ -372,7 +372,7 @@ class CmsViewContainer extends React.Component {
                     </Expandable>
 
 
-                    <Expandable title="Resources"
+                    <Expandable title="Static assets"
                                 onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
                                 expanded={settings.resourceExpanded}>
 

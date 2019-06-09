@@ -8,7 +8,7 @@ import config from 'gen/config'
 import MimeType from '../util/mime'
 import {getHostFromHeaders} from 'util/host'
 
-const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, STATIC_DIR} = config
+const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL} = config
 
 // Port to listen to
 const PORT = (process.env.PORT || 8080)
@@ -16,6 +16,7 @@ const API_PORT = (process.env.API_PORT || 3000)
 
 // Build dir
 const BUILD_DIR = path.join(__dirname, '../build')
+const STATIC_DIR = path.join(__dirname, '..' + config.STATIC_DIR)
 
 
 const options = {

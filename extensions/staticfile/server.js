@@ -28,13 +28,6 @@ const createStaticFiles = async (db) => {
     }
 }
 
-function sayHi() {
-    if (true) {
-        var s = "hi";
-    }
-    alert(s); // alert("hi") -- `s` is still within scope.
-}
-
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
     deepMergeToFirst(resolvers, resolverGen(db))
