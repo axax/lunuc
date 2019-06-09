@@ -16,7 +16,7 @@ const API_PORT = (process.env.API_PORT || 3000)
 
 // Build dir
 const BUILD_DIR = path.join(__dirname, '../build')
-const STATIC_DIR = path.join(__dirname, '..' + config.STATIC_DIR)
+const STATIC_DIR = path.join(__dirname, '../' + config.STATIC_DIR)
 
 
 const options = {
@@ -88,17 +88,16 @@ const app = httpx.createServer(options, function (req, res) {
 
             const staticFile = path.join(STATIC_DIR, uri)
 
-            fs.stat(staticFile, function (err, staticStats) {
+            fs.stat(staticFile, function (errStats, staticStats) {
 
-
-                if (err) {
+                if (errStats || !staticStats.isFile()) {
                     // it is not a static file so check in build dir
 
                     const filename = path.join(BUILD_DIR, uri)
                     const ext = path.extname(filename).split('.')[1]
                     if (ext) {
                         fs.stat(filename, function (err, stats) {
-                            if (err) {
+                            if (err || !stats.isFile()) {
                                 console.log('not exists: ' + filename)
                                 res.writeHead(404, {'Content-Type': 'text/plain'})
                                 res.write('404 Not Found\n')
