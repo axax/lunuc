@@ -21,18 +21,12 @@ const gqlCollectionsQuery = gql(COLLECTIONS_QUERY)
 
 
 class ManageCollectionClones extends React.PureComponent {
+
     state = {
         showConfirmDeletion: false,
         dataToDelete: null,
         setAsDefault: null
     }
-
-    /*static getDerivedStateFromProps(nextProps, prevState) {
-     if (!prevState.loaded) {
-     return Object.assign({}, prevState, {loading: true})
-     }
-     return prevState
-     }*/
 
     handleDeleteClick(item) {
         this.setState({showConfirmDeletion: true, dataToDelete: item})

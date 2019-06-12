@@ -10,6 +10,9 @@ import {
 
 const PASSWORD_MIN_LENGTH = 5
 
+/**
+ * Object with general server side helper methods
+ */
 
 const Util = {
     setKeyValues: async (db, context, keyvalues) => {

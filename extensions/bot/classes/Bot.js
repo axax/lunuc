@@ -2,6 +2,7 @@ import natural from 'natural'
 import Telegraf from 'telegraf'
 import Stemmer from './Stemmer'
 import stopwords_en from 'natural/lib/natural/util/stopwords'
+import {ObjectId} from "mongodb";
 
 class Bot {
 
@@ -145,7 +146,7 @@ class Bot {
 
     communicate(key, ctx) {
         if (ctx.message && ctx.message.text) {
-
+            this.archiveMessage(ctx)
             let command = ctx.message.text.trim().toLowerCase()
 
             if (command.startsWith('/') && this.commands[command.substring(1)]) {
@@ -158,6 +159,14 @@ class Bot {
             }
         }
         this.handleOn(key, ctx)
+    }
+
+
+    archiveMessage(context){
+        const insertResult = this.db.collection('BotConversation').insertOne({
+            context: JSON.stringify(context),
+            bot: this.data._id
+        })
     }
 
 

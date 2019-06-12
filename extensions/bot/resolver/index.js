@@ -21,6 +21,7 @@ export default db => ({
                     ctx.on('command', (command, message_id) => {
                         pubsub.publish('subscribeBotMessage', {
                             userId: context.id,
+                            session: context.session,
                             subscribeBotMessage: {response: text, id: currentId, message_id, event: 'newMessage'}
                         })
                     })
@@ -28,12 +29,14 @@ export default db => ({
                     ctx.on('text', (text, message_id) => {
                         pubsub.publish('subscribeBotMessage', {
                             userId: context.id,
+                            session: context.session,
                             subscribeBotMessage: {response: text, id: currentId, message_id, event: 'newMessage'}
                         })
                     })
                     ctx.on('deleteMessage', (message_id) => {
                         pubsub.publish('subscribeBotMessage', {
                             userId: context.id,
+                            session: context.session,
                             subscribeBotMessage: {message_id, id: currentId, event: 'deleteMessage'}
                         })
                     })
@@ -52,9 +55,7 @@ export default db => ({
     Subscription: {
         subscribeBotMessage: withFilter(() => pubsub.asyncIterator('subscribeBotMessage'),
             (payload, context) => {
-                if (payload) {
-                    return payload.userId === context.id
-                }
+                return payload && payload.session === context.session
             }
         )
     }

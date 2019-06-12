@@ -55,6 +55,21 @@
           "pickerField": "name"
         }
       ]
+    },
+    {
+      "name": "BotConversation",
+      "noUserRelation": true,
+      "fields": [
+        {
+          "name": "context",
+          "uitype": "json"
+        },
+        {
+          "name": "bot",
+          "type": "Bot",
+          "pickerField": "name"
+        }
+      ]
     }
   ]
 }

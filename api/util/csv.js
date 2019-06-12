@@ -1,3 +1,6 @@
+/*
+ A very basic implementation for converting a csv file to a json
+ */
 
 export const csv2json = (strData, strDelimiter) => {
     // Check to see if the delimiter is defined. If not,

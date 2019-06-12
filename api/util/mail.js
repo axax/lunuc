@@ -2,6 +2,12 @@ import Util from "./index";
 import Hook from "../../util/hook";
 import nodemailer from "nodemailer";
 
+/*
+ A very basic implementation for sending emails
+ it uses the mail settings from the global key value store
+ */
+
+
 export const sendMail = async (db, context, {recipient, subject, body, slug}) =>
 {
     const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])

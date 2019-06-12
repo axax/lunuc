@@ -77,39 +77,6 @@ class BaseLayout extends React.Component {
                 {children}
             </ResponsiveDrawerLayout>
         </UIProvider>
-
-
-        /*return <Layout className="Layout">
-
-         <LayoutHeader style={{marginTop:'64px'}} className="LayoutHeader">
-
-
-
-         <HeaderMenu items={this.menuItems} metaContent={
-         isAuthenticated ?
-         <Button color="inherit" dense onClick={() => {
-         localStorage.removeItem('token')
-         userActions.setUser(null, false)
-         history.push('/')
-         }}>Logout</Button>
-
-         : <Button color="inherit" dense onClick={this.linkTo.bind(this, {to: ADMIN_BASE_URL + '/login'})}>Login</Button>
-         }/>
-
-
-         </LayoutHeader>
-
-
-         <LayoutContent style={{padding: '50px'}}>
-
-         </LayoutContent>
-         <LayoutFooter style={{textAlign: 'center'}}>
-         ©2016 Created by simon
-         </LayoutFooter>
-
-         <NetworkStatusHandler />
-
-         </Layout>*/
     }
 }
 

@@ -1,6 +1,6 @@
 import {getType, getTypes} from 'util/types'
 /**
- * Object with general client helper methods. This Util object is also exposed in the CMS Editor
+ * Object with general client helper methods. It is also accessible in the CMS Editor
  */
 const Util = {
     getType: getType,

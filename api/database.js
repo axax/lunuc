@@ -7,7 +7,6 @@ const MONGO_URL = (process.env.MONGO_URL || process.env.LUNUC_MONGO_URL)
 
 //const MONGO_URL="mongodb://localhost:27018/lunuc"
 
-// LUNUC_MONGO_URL="mongodb+srv://lunuc:<PASSWORD>@cluster0-zi771.gcp.mongodb.net/lunuc?ssl=true" npm run api
 /*
 
  Backup: mongodump --uri $LUNUC_MONGO_URL -v --archive=backup.25022018.gz --gzip

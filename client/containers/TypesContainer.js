@@ -257,7 +257,7 @@ class TypesContainer extends React.Component {
                                 dynamic[field.name] =
                                     <img style={{height: '40px'}}
                                          src={v}/>
-                            } else if (field.uitype === 'jseditor') {
+                            } else if (['json', 'editor', 'jseditor'].indexOf(field.uitype) >= 0) {
                                 if (v.length > 50) {
                                     dynamic[field.name] = <span
                                         className={classes.script}>{v.substring(0, 20) + '...' + v.substring(v.length - 20)}</span>
@@ -556,7 +556,7 @@ class TypesContainer extends React.Component {
                                      term: {
                                          autoFocus: true,
                                          uitype: 'search',
-                                         value: this._changingFilter || filter,
+                                         value: filter,
                                          fullWidth: true,
                                          placeholder: 'Filter expression (for specifc fields use field=term)'
                                      }
@@ -1080,7 +1080,6 @@ class TypesContainer extends React.Component {
 
     handleFilterTimeout = null
     handleFilter = ({value}, immediate) => {
-      this._changingFilter = value
         clearTimeout(this.handleFilterTimeout)
         if (immediate) {
             this.runFilter(value)
@@ -1116,7 +1115,6 @@ class TypesContainer extends React.Component {
         if (v !== this.pageParams.type) {
             this.settings.lastType = v
             this.saveSettings()
-            this._changingFilter = false
             this.props.history.push(`${ADMIN_BASE_URL}/types/${v}`)
         }
     }

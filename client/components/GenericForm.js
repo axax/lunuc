@@ -129,9 +129,9 @@ class GenericForm extends React.Component {
 
         const {fields} = this.props
 
-        const target = e.target
+        const target = e.target, name = target.name
         let value = target.type === 'checkbox' ? target.checked : target.value
-        const name = target.name
+
         if (fields[name]) {
             value = checkFieldType(value, fields[name])
         }
@@ -158,7 +158,7 @@ class GenericForm extends React.Component {
     handleBlur = (e) => {
         const {onBlur} = this.props
 
-        if( onBlur ){
+        if (onBlur) {
             onBlur(e)
         }
     }
@@ -180,10 +180,13 @@ class GenericForm extends React.Component {
 
             const uitype = o.uitype || (o.enum ? 'select' : 'text')
 
-            if (uitype === 'editor' || uitype === 'jseditor') {
+            if (['json', 'editor', 'jseditor'].indexOf(uitype) >= 0) {
+
                 let highlight, json
                 if (uitype === 'jseditor') {
                     highlight = 'js'
+                } else if (uitype === 'json') {
+                    highlight = 'json'
                 } else if (value) {
                     // detect type
                     try {
@@ -194,14 +197,13 @@ class GenericForm extends React.Component {
                     }
                 }
                 return <CodeEditor className={classes.editor} key={k} onChange={(v) => this.handleInputChange({
-                        target: {
-                            name: k,
-                            value: v
-                        }
-                    })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor>
+                    target: {
+                        name: k,
+                        value: v
+                    }
+                })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor>
 
-            }
-            if (uitype === 'image') {
+            } else if (uitype === 'image') {
                 return <FileDrop key={k}/>
             } else if (uitype === 'type_picker') {
 
