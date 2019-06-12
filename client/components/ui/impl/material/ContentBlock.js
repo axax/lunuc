@@ -4,7 +4,7 @@ import {withStyles} from '@material-ui/core/styles'
 
 const styles = theme => ({
     contentBlock: {
-        marginBottom: theme.spacing.unit*4
+        marginBottom: theme.spacing(4)
     },
 })
 

@@ -12,7 +12,7 @@ import {checkFieldType} from 'util/types'
 const styles = theme => ({
     editor: {
         border: '1px solid ' + theme.palette.grey['200'],
-        margin: theme.spacing.unit * 3 + 'px 0',
+        margin: theme.spacing(3) + 'px 0',
         height: '20rem'
     }
 })

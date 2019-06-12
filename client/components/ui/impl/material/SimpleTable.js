@@ -25,7 +25,7 @@ const styles = theme => ({
         overflowY: 'auto',
     },
     toolbar: {
-        paddingRight: theme.spacing.unit,
+        paddingRight: theme.spacing(1),
     },
     highlight: theme.palette.type === 'light'
         ? {

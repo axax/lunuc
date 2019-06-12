@@ -83,7 +83,7 @@ class DbDumpContainer extends React.Component {
             <BaseLayout>
                 <Typography variant="h3" gutterBottom>Backups</Typography>
 
-                <Row spacing={32}>
+                <Row spacing={4}>
                     <Col md={6}>
 
                         <SimpleButton variant="contained" color="primary"

@@ -49,7 +49,7 @@ const styles = theme => ({
         position: 'fixed',
         background: theme.palette.grey['200'],
         boxShadow: theme.shadows['1'],
-        padding: theme.spacing.unit / 2,
+        padding: theme.spacing(0.5),
         opacity: 0.7,
         color: 'black',
         fontSize: '0.8rem',

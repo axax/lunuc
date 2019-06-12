@@ -60,7 +60,7 @@ const styles = theme => ({
         boxSizing: 'border-box',
         backgroundColor: theme.palette.background.default,
         width: '100%',
-        padding: theme.spacing.unit * 3,
+        padding: theme.spacing(3),
         height: 'calc(100% - 56px)',
         marginTop: 56,
         marginLeft:0,

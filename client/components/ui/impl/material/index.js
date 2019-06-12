@@ -7,12 +7,12 @@
 
 import './style.less'
 import React from 'react'
-import blue from '@material-ui/core/colors/blue';
+import blue from '@material-ui/core/colors/blue'
 
 // material theme
 import {MuiThemeProvider, createMuiTheme} from '@material-ui/core/styles'
-import defaultSpacing from '@material-ui/core/styles/spacing'
-import CssBaseline from '@material-ui/core/CssBaseline';
+import defaultTheme from '@material-ui/core/styles/defaultTheme'
+import CssBaseline from '@material-ui/core/CssBaseline'
 
 
 // override the default theme
@@ -24,12 +24,12 @@ export const theme = createMuiTheme({
         MuiButton: {
             // Name of the styleSheet
             root: {
-                margin: defaultSpacing.unit
+                margin: defaultTheme.spacing(1)
             },
         },
         MuiInput: {
             root: {
-                margin: defaultSpacing.unit
+                margin: defaultTheme.spacing(1)
             },
             formControl: {
                 margin: 0
@@ -37,15 +37,15 @@ export const theme = createMuiTheme({
         },
         MuiFormControl: {
             root: {
-                margin: defaultSpacing.unit
+                margin: defaultTheme.spacing(1)
             },
             fullWidth: {
-                margin: `${defaultSpacing.unit}px 0`
+                margin: `${defaultTheme.spacing(1)}px 0`
             }
         },
         MuiChip: {
             root: {
-                margin: defaultSpacing.unit
+                margin: defaultTheme.spacing(1)
             },
         }
     },
@@ -65,7 +65,8 @@ export const theme = createMuiTheme({
 
 
 import {JssProvider} from 'react-jss'
-import {createGenerateClassName} from '@material-ui/core/styles'
+import {createGenerateClassName} from '@material-ui/styles'
+
 
 const generateClassName = createGenerateClassName({
     dangerouslyUseGlobalCSS: false,
@@ -75,8 +76,8 @@ const generateClassName = createGenerateClassName({
 // Theme provider
 export const UIProvider = ({children, ...rest}) => {
     return <JssProvider generateClassName={generateClassName}>
-        <CssBaseline />
-        <MuiThemeProvider disableStylesGeneration={false} theme={theme} {...rest}>{children}</MuiThemeProvider>
+        <CssBaseline/>
+        <MuiThemeProvider theme={theme} {...rest}>{children}</MuiThemeProvider>
     </JssProvider>
 }
 
@@ -106,7 +107,6 @@ export CircularProgress from '@material-ui/core/CircularProgress'
 export MenuItem from '@material-ui/core/MenuItem'
 export Paper from '@material-ui/core/Paper'
 export Avatar from '@material-ui/core/Avatar'
-export Stepper, {Step, StepLabel, StepContent} from '@material-ui/core/Stepper'
 export Tabs from '@material-ui/core/Tabs'
 export Tab from '@material-ui/core/Tab'
 
@@ -170,6 +170,7 @@ export const MenuListItem = ({primary, ...rest}) => {
 import MaterialCard from '@material-ui/core/Card'
 import MaterialCardActions from '@material-ui/core/CardActions'
 import MaterialCardContent from '@material-ui/core/CardContent'
+
 export const Card = ({children, ...rest}) => {
     return <MaterialCard {...rest}>
         <MaterialCardContent>
@@ -187,7 +188,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 export const ExpansionPanel = ({className, heading, children, ...rest}) => {
     return <MaterialExpansionPanel {...rest}>
-        <ExpansionPanelSummary className={className && className.heading} expandIcon={<ExpandMoreIcon />}>
+        <ExpansionPanelSummary className={className && className.heading} expandIcon={<ExpandMoreIcon/>}>
             {heading}
         </ExpansionPanelSummary>
         <ExpansionPanelDetails className={className && className.detail}>

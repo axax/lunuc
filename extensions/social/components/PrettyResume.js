@@ -31,8 +31,14 @@ class PrettyResume extends React.Component {
     timeago(start, end) {
         const sDate = (start ? new Date(start) : new Date()), eDate = (end ? new Date(end) : new Date())
 
-        const years = eDate.getFullYear() - sDate.getFullYear(),
-            months = sDate.getMonth() + 1 + eDate.getMonth()
+        let years = eDate.getFullYear() - sDate.getFullYear(),
+            months = 0
+        if( eDate.getMonth() - sDate.getMonth() < 0){
+            years--
+            months = 12 - sDate.getMonth() + (eDate.getMonth() + 1)
+        }else{
+            months = eDate.getMonth() - sDate.getMonth()+1
+        }
 
         if (years > 0) {
             return `${years > 0 ? years + ' year' + (years > 1 ? 's' : '') : ''}  ${months} month${months > 1 ? 's' : ''}`
@@ -54,7 +60,6 @@ class PrettyResume extends React.Component {
     render() {
         const {resumeData} = this.props
         const {profileImageData} = this.state
-
 
         console.log('render PrettyResume')
 
@@ -119,6 +124,7 @@ class PrettyResume extends React.Component {
 
                     <div className="cv-section timeline">
                         <div className="timeline-starter"></div>
+                        <div className="timeline-line"></div>
 
                         {resumeData.positions &&
                         <div className="section-position">
@@ -165,7 +171,7 @@ class PrettyResume extends React.Component {
                                 <div key={i} className="timeline-section">
 
                                     <div className="timeline-left">
-                                <span suppressContentEditableWarning={true} contentEditable>{p.startDate}
+                                <span suppressContentEditableWarning={true} contentEditable>{p.startDate}&nbsp;
                                     - {p.endDate}</span>
                                     </div>
 
@@ -197,8 +203,8 @@ class PrettyResume extends React.Component {
                                 <div key={i} className="timeline-section">
 
                                     <div className="timeline-left">
-                                <span suppressContentEditableWarning={true} contentEditable>{p.startDate}
-                                    - {p.endDate || 'Today'}</span>
+                                <span suppressContentEditableWarning={true} contentEditable>{p.startedOn}&nbsp;
+                                    - {p.finishedOn || 'Today'}</span>
                                     </div>
 
 
@@ -218,7 +224,8 @@ class PrettyResume extends React.Component {
                     </div>
 
 
-                    <div className="cv-section blocks">
+                    <div className="cv-section blocks" style={{
+                        "borderTop": "1px solid #E5E5E5"}}>
                         {resumeData.skills &&
                         <div className="col-md-12">
                             <h2 className="section-title">
@@ -281,7 +288,7 @@ class PrettyResume extends React.Component {
                             {resumeData.languages &&
                             <Col md={4}>
                                 <h2 className="section-title">
-                                    <span suppressContentEditableWarning={true} contentEditable>Interests</span>
+                                    <span suppressContentEditableWarning={true} contentEditable>Languages</span>
                                 </h2>
 
                                 <ul className="list">

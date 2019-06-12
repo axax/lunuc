@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import {Row, Col, TextField, Button} from 'ui/admin'
 
 const KeyValuePair = ({keyvalue, onChange, onDelete}) => {
-	return <Row spacing={8} style={{marginBottom: 8}}>
+	return <Row spacing={1} style={{marginBottom: 8}}>
 		<Col md={5}>
 			<TextField type="text" readOnly value={keyvalue.key}/>
 		</Col>

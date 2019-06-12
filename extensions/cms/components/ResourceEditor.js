@@ -26,7 +26,7 @@ const styles = theme => ({
         position: 'absolute',
         bottom: '0px',
         right: '0px',
-        margin: theme.spacing.unit
+        margin: theme.spacing(1)
     }
 })
 

@@ -65,7 +65,7 @@ class FilesContainer extends React.Component {
         if (editOnly) {
             content = fileEditor
         } else {
-            content = <Row spacing={24}>
+            content = <Row spacing={3}>
                 <Col sm={4}>
                     <TextField
                         type="search"

@@ -27,7 +27,7 @@ const styles = theme => ({
         minWidth: 72,
         maxWidth: '100%',
         fontWeight: theme.typography.fontWeightRegular,
-        marginRight: theme.spacing.unit * 4,
+        marginRight: theme.spacing(4),
         fontFamily: [
             '-apple-system',
             'BlinkMacSystemFont',
@@ -54,7 +54,7 @@ const styles = theme => ({
     },
     tabSelected: {},
     typography: {
-        padding: theme.spacing.unit * 3,
+        padding: theme.spacing(3),
     },
 })
 

@@ -537,7 +537,7 @@ class TypesContainer extends React.Component {
                             gutterBottom>{title || (fixType ? fixType : 'Types')}</Typography>,
             description ?
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : '',
-            <Row spacing={16} key="typeHeader">
+            <Row spacing={2} key="typeHeader">
                 {!fixType &&
                 <Col md={9}>
                     <SimpleSelect

@@ -19,11 +19,11 @@ import Util from 'client/util'
 
 const styles = theme => ({
     card: {
-        marginBottom: theme.spacing.unit * 2
+        marginBottom: theme.spacing(2)
     },
     divider: {
-        marginTop: theme.spacing.unit,
-        marginBottom: theme.spacing.unit
+        marginTop: theme.spacing(1),
+        marginBottom: theme.spacing(1)
     },
     hightlight: {
         backgroundColor: '#FFF59D'

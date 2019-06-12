@@ -151,7 +151,6 @@
         padding-left: 0px;
         padding-right: 0px;
         border-top: 1px solid #E5E5E5;
-        border-bottom: 1px solid #E5E5E5;
         position: relative;
 
         .timeline-seperator {
@@ -255,15 +254,16 @@
 
         }
 
-        &:after {
+        .timeline-line {
           position: absolute;
           top: 0px;
           bottom: 0px;
           left: 30%;
           display: block;
-          border-right: 1px solid #E5E5E5;
+          width: 1px;
+          background: #E5E5E5;
           content: '';
-          z-index: 0;
+          z-index: 1;
         }
 
       }
