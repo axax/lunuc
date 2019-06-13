@@ -23,6 +23,7 @@ import {Link} from 'react-router-dom'
 import JsonDomInput from './JsonDomInput'
 import {deepMergeConcatArrays} from 'util/deepMerge'
 import {classNameByPath} from '../util/jsonDomUtil'
+import {preprocessCss} from '../util/cssPreprocessor'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
@@ -37,10 +38,15 @@ const Print = (props) => <Async {...props}
                                 load={import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
 
 
-const TEMPLATE_EVENTS = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit']
-
 class JsonDom extends React.Component {
 
+    /* Events that are listend to */
+    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit']
+
+    /*
+    * default components
+    * new components can be added with the JsonDom hook
+    * */
     static components = {
         'FileDrop': {component: FileDrop, label: 'File Drop'},
         'SmartImage': {component: SmartImage, label: 'Smart Image (lazy load, error handing...)'},
@@ -526,7 +532,7 @@ class JsonDom extends React.Component {
                 if (p) {
                     properties = Object.assign(properties, p)
                     // replace events with real functions and pass payload
-                    TEMPLATE_EVENTS.forEach((e) => {
+                    JsonDom.events.forEach((e) => {
                         if (properties['on' + e] && properties['on' + e].constructor === Object) {
                             const payload = properties['on' + e]
                             properties['on' + e] = (eo) => {
@@ -849,8 +855,8 @@ class JsonDom extends React.Component {
                     clientQuery,
                     setKeyValue,
                     getKeyValueFromLS,
-                    setStyle: (innerHTML) => DomUtil.createAndAddTag('style', 'head', {
-                        innerHTML,
+                    setStyle: (style, preprocess) => DomUtil.createAndAddTag('style', 'head', {
+                        innerHTML: preprocess ? preprocessCss(style) : style,
                         data: {jsonDomId: this.instanceId}
                     }),
                     addMetaTag: (name, content) => DomUtil.createAndAddTag('meta', 'head', {

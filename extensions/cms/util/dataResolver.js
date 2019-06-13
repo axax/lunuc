@@ -10,6 +10,20 @@ import Hook from '../../../util/hook'
 import {pubsubDelayed} from '../../../api/subscription'
 
 
+const createCacheKey = (segment, name) => {
+    let cacheKey
+    if (segment.cache) {
+        cacheKey = segment.cache.key || segment.key
+        if (cacheKey) {
+            cacheKey = `dataresolver_${name}_${cacheKey}`
+        } else {
+            console.warn('Please define a key or a cacheKey if you want to use caching')
+        }
+    }
+
+    return cacheKey
+}
+
 export const resolveData = async (db, context, dataResolver, scope, nosession) => {
     const resolvedData = {_meta: {}}, subscriptions = []
 
@@ -111,21 +125,15 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                 } else if (segment.request) {
 
                     const dataKey = segment.key || 'request'
-                    let cacheKey
-                    if (segment.cache) {
-                        cacheKey = segment.cache.key || segment.key
-                        if (cacheKey) {
-                            cacheKey = 'dataresolver_request_' + cacheKey
-                            const cachedData = Cache.cache[cacheKey]
-                            if (cachedData) {
-                                resolvedData[dataKey] = cachedData.data
-                                if (Cache.isValid(cachedData)) {
-                                    // no need to renew cache
-                                    continue
-                                }
+                    const cacheKey = createCacheKey(segment, 'request')
+                    if (cacheKey) {
+                        const cachedData = Cache.cache[cacheKey]
+                        if (cachedData) {
+                            resolvedData[dataKey] = cachedData.data
+                            if (Cache.isValid(cachedData)) {
+                                // no need to renew cache
+                                continue
                             }
-                        } else {
-                            console.warn('Please define a key or a cacheKey if you want to use caching')
                         }
                     }
 
@@ -153,7 +161,7 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                             }, context)
                         })
                         addDataResolverSubsription = true
-                        if( !resolvedData[dataKey] ){
+                        if (!resolvedData[dataKey]) {
                             resolvedData[dataKey] = {}
                         }
                         resolvedData[dataKey].meta = segment.meta
@@ -226,6 +234,18 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                     resolvedData._meta.system = segment.key || 'system'
                     resolvedData[resolvedData._meta.system] = data
                 } else if (segment.keyValueGlobals) {
+
+                    const dataKey = segment.key || 'keyValueGlobals'
+                    const cacheKey = createCacheKey(segment, 'keyValueGlobals')
+
+                    if (cacheKey) {
+                        const cachedData = Cache.get(cacheKey)
+                        if (cachedData) {
+                            resolvedData[dataKey] = cachedData
+                            continue
+                        }
+                    }
+
                     const match = {key: {$in: segment.keyValueGlobals}}
 
                     // if user don't have capability to manage keys he can only see the public ones
@@ -239,7 +259,6 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                     const map = {}
                     if (result.results) {
                         result.results.map(entry => {
-                            console.log(entry)
                             try {
                                 map[entry.key] = JSON.parse(entry.value)
                             } catch (e) {
@@ -247,8 +266,10 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
                             }
                         })
                     }
-                    resolvedData._meta.keyValueGlobalKey = segment.key || 'keyValueGlobals'
-                    resolvedData[resolvedData._meta.keyValueGlobalKey] = map
+                    if (cacheKey) {
+                        Cache.set(cacheKey, map, segment.cache.expiresIn)
+                    }
+                    resolvedData[dataKey] = map
                 } else if (segment.keyValues) {
 
                     const map = {}
@@ -298,27 +319,21 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
 
                     const dataKey = segment.key || 'website'
 
-                    let cacheKey
-                    if (segment.cache) {
-                        cacheKey = segment.cache.key || segment.key
-                        if (cacheKey) {
-                            cacheKey = 'dataresolver_website_' + cacheKey
+                    const cacheKey = createCacheKey(segment, 'website')
 
-                            const cachedData = Cache.cache[cacheKey] // Cache.get(cacheKey, true)
-                            if (cachedData) {
-                                resolvedData[dataKey] = cachedData.data
-                                if (Cache.isValid(cachedData)) {
-                                    // no need to renew cache
-                                    continue
-                                }
+                    if (cacheKey) {
+                        const cachedData = Cache.cache[cacheKey] // Cache.get(cacheKey, true)
+                        if (cachedData) {
+                            resolvedData[dataKey] = cachedData.data
+                            if (Cache.isValid(cachedData)) {
+                                // no need to renew cache
+                                continue
                             }
-                        } else {
-                            console.warn('Please define a key or a cacheKey if you want to use caching')
                         }
                     }
 
                     addDataResolverSubsription = true
-                    if( !resolvedData[dataKey] ){
+                    if (!resolvedData[dataKey]) {
                         resolvedData[dataKey] = {}
                     }
                     resolvedData[dataKey].meta = segment.meta
