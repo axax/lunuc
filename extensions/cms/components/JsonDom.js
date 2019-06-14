@@ -383,7 +383,7 @@ class JsonDom extends React.Component {
         }
     }
 
-    parseRec(a, rootKey, scope) {
+    parseRec(a, rootKey, scope, initial) {
         if (!a) return null
         if (a.constructor === String) return a
         if (a.constructor === Object) return this.parseRec([a], rootKey, scope)
@@ -497,6 +497,9 @@ class JsonDom extends React.Component {
                     })
                 } catch (ex) {
                     console.log(ex, c)
+                    if (ex.message.startsWith('Unexpected token')) {
+                        console.error('There is an error in the Json. Try to use Util.escapeForJson')
+                    }
                     return 'Error in parseRec: ' + ex.message
                 }
 
@@ -586,7 +589,7 @@ class JsonDom extends React.Component {
                     eleProps.className = className
                 }
 
-                if (!this.props.dynamic && this.props.editMode && this.props.inlineEditor) {
+                if (this.props.editMode && this.props.inlineEditor && (initial || !this.props.dynamic)) {
                     const rawJson = this.getJsonRaw(this.props)
                     if (rawJson) {
                         eleProps._WrappedComponent = eleType
@@ -888,7 +891,7 @@ class JsonDom extends React.Component {
         if (!this.runJsEvent('beforerender', false, scope)) {
             return <div>Error in beforerender event. See details in console log</div>
         }
-        let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
+        let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope, true)
 
         if (content && this._inHtmlComponents.length > 0) {
             content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]

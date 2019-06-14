@@ -6,6 +6,7 @@ import * as CmsActions from '../actions/CmsAction'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import {
+    SimpleMenu,
     EditIcon
 } from 'ui/admin'
 import classNames from 'classnames'
@@ -45,22 +46,14 @@ const styles = theme => ({
         borderColor: 'red',
     },
     toolbar: {
-        zIndex: 9999,
+        zIndex: 999,
         position: 'fixed',
-        background: theme.palette.grey['200'],
-        boxShadow: theme.shadows['1'],
-        padding: theme.spacing(0.5),
-        opacity: 0.7,
-        color: 'black',
-        fontSize: '0.8rem',
-        fontWeight: 'normal',
     },
-    toolbarHovered: {
-        opacity: 1
-    },
-    toolbarIcon: {
-        width: '0.6rem',
-        height: '0.6rem'
+    toolbarHovered: {},
+    toolbarMenu: {
+        position: 'absolute',
+        left: '-2.2rem',
+        top: 'calc(50% - 1.5rem)'
     },
     info: {
         position: 'fixed',
@@ -75,7 +68,16 @@ const styles = theme => ({
 class JsonDomHelper extends React.Component {
     static currentDragElement
 
-    state = {hovered: false, top: 0, left: 0, height: 0, width: 0, toolbarHovered: false, dragging: false}
+    state = {
+        hovered: false,
+        top: 0,
+        left: 0,
+        height: 0,
+        width: 0,
+        toolbarHovered: false,
+        dragging: false,
+        toolbarMenuOpen: false
+    }
 
     constructor(props) {
         super(props)
@@ -96,8 +98,10 @@ class JsonDomHelper extends React.Component {
 
     onHelperMouseOver(e) {
         e.stopPropagation()
-
         const {hovered, dragging} = this.state
+
+        // take this node instead of e.target becuase it might be a child of it
+        const node = ReactDOM.findDOMNode(this)
 
         if (dragging) {
             return
@@ -108,8 +112,8 @@ class JsonDomHelper extends React.Component {
         if (!hovered) {
             const stat = {
                 hovered: true,
-                height: e.target.offsetHeight,
-                width: e.target.offsetWidth, ...DomUtil.elemOffset(e.target)
+                height: node.offsetHeight,
+                width: node.offsetWidth, ...DomUtil.elemOffset(node)
             }
             this.helperTimeoutIn = setTimeout(() => {
                 this.setState(stat)
@@ -139,24 +143,30 @@ class JsonDomHelper extends React.Component {
 
     onToolbarMouseOver(e) {
         e.stopPropagation()
-        this.setState({toolbarHovered: true})
+
+        if( !this.state.toolbarMenuOpen ) {
+            this.setState({toolbarHovered: true})
+        }
     }
 
     onToolbarMouseOut(className, e) {
-        let el = e.toElement || e.relatedTarget
-        while (el && el.parentNode && el.parentNode != window) {
-            if (el.classList.contains(className)) {
-                e.preventDefault()
-                e.stopPropagation()
-                return false
-            }
-            el = el.parentNode
-        }
-
         e.stopPropagation()
-        setTimeout(() => {
-            this.setState({toolbarHovered: false})
-        }, 50)
+
+        if( !this.state.toolbarMenuOpen ) {
+            let el = e.toElement || e.relatedTarget
+            while (el && el.parentNode && el.parentNode != window) {
+                if (el.classList.contains(className)) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    return false
+                }
+                el = el.parentNode
+            }
+
+            setTimeout(() => {
+                this.setState({toolbarHovered: false})
+            }, 50)
+        }
     }
 
     onDragStart(e) {
@@ -257,11 +267,10 @@ class JsonDomHelper extends React.Component {
             targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
 
 
-
         // 1. get element from json structure by key
         const source = getComponentByKey(sourceKey, _json)
 
-        if (isTargetAbove(sourceKey, targetKey+'.'+targetIndex)) {
+        if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
             //2. remove it from json
             if (removeComponent(sourceKey, _json)) {
 
@@ -320,7 +329,7 @@ class JsonDomHelper extends React.Component {
         const subJson = getComponentByKey(rest._key, _json)
         if (!subJson) return null
 
-        const {hovered, toolbarHovered} = this.state
+        const {hovered, toolbarHovered, toolbarMenuOpen} = this.state
         let toolbar, highlighter, dropAreaAbove, dropAreaBelow
 
         const events = {
@@ -333,21 +342,28 @@ class JsonDomHelper extends React.Component {
             onDrop: this.onDrop.bind(this)
         }
 
-        if (hovered || toolbarHovered) {
+        if (hovered || toolbarHovered || toolbarMenuOpen) {
 
 
-            toolbar = <span
+            toolbar = <div
                 key={rest._key + '.toolbar'}
                 onMouseOver={this.onToolbarMouseOver.bind(this)}
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
-                onClick={this.handleEditClick.bind(this)}
-                style={{top: this.state.top, left: this.state.left}}
-                className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}><EditIcon
-                className={classes.toolbarIcon}
-                size="small"/>
-                <span className={classes.info}>{subJson.t} - {rest.id || rest._key}</span>
-
-            </span>
+                style={{top: this.state.top, left: this.state.left, height: this.state.height}}
+                className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}>
+                <div className={classes.info}>{subJson.t} - {rest.id || rest._key}</div>
+                <SimpleMenu
+                    onOpen={() => {
+                        this.setState({toolbarMenuOpen: true})
+                    }}
+                    onClose={() => {
+                        this.setState({hovered: false, toolbarHovered: false, toolbarMenuOpen: false})
+                    }}
+                    className={classes.toolbarMenu} mini items={[
+                    {name: 'Edit', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)},
+                    {name: 'Add component', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)}
+                    ]}/>
+            </div>
 
             highlighter = <span
                 key={rest._key + '.highlighter'}
@@ -367,9 +383,13 @@ class JsonDomHelper extends React.Component {
         } else {
             kids = children
         }
+        let comp
 
-        let comp = <_WrappedComponent key={rest._key} {...events} {...rest} children={kids}/>
-
+        if(_WrappedComponent.name === 'Cms'){
+            comp = <div {...events}><_WrappedComponent key={rest._key} {...rest} children={kids}/></div>
+        }else{
+            comp = <_WrappedComponent key={rest._key} {...events} {...rest} children={kids}/>
+        }
 
         if (toolbar) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>]
@@ -411,7 +431,7 @@ const mapDispatchToProps = (dispatch) => ({
  * Connect the component to
  * the Redux store.
  */
-export default withStyles(styles)(connect(
+export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(JsonDomHelper))
+)(withStyles(styles)(JsonDomHelper))

@@ -4,8 +4,8 @@ import Button from '@material-ui/core/Button'
 import Fab from '@material-ui/core/Fab'
 import Menu from '@material-ui/core/Menu'
 import MenuItem from '@material-ui/core/MenuItem'
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
+import ListItemIcon from '@material-ui/core/ListItemIcon'
+import ListItemText from '@material-ui/core/ListItemText'
 import MoreVertIcon from '@material-ui/icons/MoreVert'
 import IconButton from '@material-ui/core/IconButton'
 
@@ -17,20 +17,26 @@ class SimpleMenu extends React.Component {
     handleClick = e => {
         e.stopPropagation()
         this.setState({anchorEl: e.currentTarget})
+        if( this.props.onOpen ){
+            this.props.onOpen()
+        }
         return false
     }
 
     handleClose = e => {
         e.stopPropagation()
         this.setState({anchorEl: null})
+        if( this.props.onClose ){
+            this.props.onClose()
+        }
         return false
     }
 
     render() {
         const {anchorEl} = this.state
-        const {style, items, label, mini, color, fab, onClick} = this.props
+        const {style, items, label, mini, color, fab, onClick, className} = this.props
         return (
-            <div style={style}>
+            <div className={className} style={style}>
                 {
                     label !== undefined || fab !== undefined ?
                         fab ?
@@ -102,7 +108,9 @@ SimpleMenu.propTypes = {
     label: PropTypes.string,
     mini: PropTypes.bool,
     fab: PropTypes.bool,
-    color: PropTypes.string
+    color: PropTypes.string,
+    onOpen: PropTypes.func,
+    onClose: PropTypes.func
 }
 
 export default SimpleMenu
