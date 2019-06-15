@@ -52,8 +52,6 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
     const {template, script, dataResolver} = cmsPages.results[0]
     const {resolvedData} = await resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope)
     try {
-        //TODO don't use global here
-        global._app_ = {lang: context.lang, ssr: true}
         return ReactDOMServer.renderToString(<UIProvider>
             <JsonDom template={template}
                      script={script}
