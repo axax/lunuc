@@ -78,6 +78,16 @@ export const handleUpload = db => async (req, res) => {
             res.writeHead(200, {'content-type': 'application/json'})
 
 
+            const data = {}
+            form.on('field', function (key, value) {
+                if (ObjectId.isValid(value)) {
+                    data[key] = ObjectId(value)
+                } else {
+                    data[key] = value
+                }
+            })
+
+
             // every time a file has been uploaded successfully,
             // rename it to it's orignal name
             form.on('file', function (field, file) {
@@ -94,7 +104,8 @@ export const handleUpload = db => async (req, res) => {
                         _id,
                         name: file.name,
                         mimeType: mimeType || 'application/octet-stream',
-                        createdBy: ObjectId(authContext.id)
+                        createdBy: ObjectId(authContext.id),
+                        ...data
                     })
                     if (insertResult.insertedCount > 0) {
                         /*const doc = insertResult.ops[0]

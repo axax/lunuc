@@ -31,7 +31,7 @@ export const preprocessCss = ncss => {
                     if(token === '{') ++ll
                     if((token === '}' && --ll === 0) || (token === ';' && ll === 0)) {
                         const parts = /^([^{]+){([\s\S]*)}$/.exec(atRule)
-                        if(parts && /^\s*@(media|supports|document)/.test(parts[0])) atRule = parts[1] + '{' + convertNcssTextToCss(parts[2]).replace(/\n/g, ' ') + ' }'
+                        if(parts && /^\s*@(media|supports|document)/.test(parts[0])) atRule = parts[1] + '{' + preprocessCss(parts[2]).replace(/\n/g, ' ') + ' }'
                         rules.push([[], [atRule.replace(/ *\n */g, ' ')]])
                         atRule = null
                     }

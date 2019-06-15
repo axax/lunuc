@@ -129,7 +129,7 @@ class FileDrop extends React.Component {
                              color="disabled"/>}
 
             {!uploading &&
-            <Typography
+            <Typography component="div"
                 variant="caption">{label || 'Drop files here, or click to select files to upload.'}</Typography>}
 
             {errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography>}
@@ -228,6 +228,7 @@ class FileDrop extends React.Component {
         this.setState({uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0})
         UploadUtil.uploadData({
             dataUrl,
+            data: this.props.data,
             fileName: file.name,
             uploadTo,
             onProgress: this.updateFileProgress.bind(this),
@@ -265,6 +266,7 @@ FileDrop.propTypes = {
     name: PropTypes.string,
     value: PropTypes.string,
     style: PropTypes.object,
+    data: PropTypes.object,
     resizeImages: PropTypes.bool,
     multi: PropTypes.bool,
     conversion: PropTypes.array

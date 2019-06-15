@@ -4,7 +4,7 @@ import Util from 'client/util'
  * Object with helper methods to handle file upload
  */
 const UploadUtil = {
-    uploadData: ({dataUrl, fileName, uploadTo, onProgress, onError, onLoad}) => {
+    uploadData: ({dataUrl, fileName, uploadTo, onProgress, onError, onLoad, data}) => {
 
         UploadUtil.dataURLtoBlob(dataUrl, (blob) => {
 
@@ -20,6 +20,11 @@ const UploadUtil = {
             xhr.setRequestHeader('Authorization', Util.getAuthToken())
 
             const fd = new FormData()
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    fd.set(key, data[key])
+                })
+            }
             fd.append('blob', blob, fileName)
             xhr.send(fd)
 

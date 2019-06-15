@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, {useState} from 'react'
 import Hook from 'util/hook'
 import Async from 'client/components/Async'
 import config from 'gen/config'
@@ -64,6 +64,10 @@ export default () => {
                 const [conversion, setConversion] = useState(
                     []
                 )
+
+                const [group, setGroup] = useState(
+                    []
+                )
                 return (
                     [
                         <div style={{position: 'relative', zIndex: 3}} key="typePicker">
@@ -71,8 +75,15 @@ export default () => {
                                 setConversion(JSON.parse(e.target.value[0].conversion))
                             }} name="conversion" placeholder="Select a conversion"
                                         type="MediaConversion"/>
+
+                            <TypePicker onChange={(e) => {
+                                setGroup(e.target.value[0]._id)
+                            }} name="conversion" placeholder="Select a group"
+                                        type="MediaGroup"/>
                         </div>,
-                        <FileDrop key="fileDrop" multi={false} conversion={conversion} accept="*/*" uploadTo="/graphql/upload" resizeImages={true}
+                        <FileDrop key="fileDrop" multi={true} conversion={conversion} accept="*/*"
+                                  uploadTo="/graphql/upload" resizeImages={true}
+                                  data={{group}}
                                   onSuccess={r => {
                                       this.setState({createEditDialog: false, createEditDialogParams: null})
 
@@ -85,7 +96,7 @@ export default () => {
                 )
             }
 
-            props.children = <MediaUploader />
+            props.children = <MediaUploader/>
         }
     })
 
