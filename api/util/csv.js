@@ -14,7 +14,7 @@ export const csv2json = (strData, strDelimiter) => {
     // Quoted fields.
     "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
     // Standard fields.
-    "([^\"\\" + strDelimiter + "\\r\\n]*))"), "gi")
+    "([^\"\\" + strDelimiter + "\\r\\n]*))"), 'gi')
     // Create an array to hold our data. Give the array
     // a default empty first row.
     var arrData = [[]]

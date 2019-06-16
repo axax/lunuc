@@ -88,18 +88,18 @@ class GenericForm extends React.Component {
                         fieldValue = fieldValue[0]
                     }
                     if (!fieldValue || !fieldValue._id) {
-                        fieldErrors[k] = "Field is required"
+                        fieldErrors[k] = 'Field is required'
                     }
                 } else {
                     if (field.localized) {
                         config.LANGUAGES.forEach(lang => {
                             if (!theState.fields[k] || !theState.fields[k][lang] || !theState.fields[k][lang].trim() === '') {
-                                fieldErrors[k + '.' + lang] = "Field is required"
+                                fieldErrors[k + '.' + lang] = 'Field is required'
                             }
                         })
                     } else {
                         if (!theState.fields[k] || theState.fields[k].trim() === '') {
-                            fieldErrors[k] = "Field is required"
+                            fieldErrors[k] = 'Field is required'
                         }
                     }
                 }
