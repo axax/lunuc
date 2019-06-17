@@ -255,6 +255,7 @@ class CmsViewContainer extends React.Component {
         const editMode = isEditMode(this.props)
 
         if (!cmsPage) {
+
             if (!loading && !aboutToChange) {
                 console.warn(`cmsPage ${slug} missing`)
                 if (!dynamic) {

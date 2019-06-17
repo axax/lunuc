@@ -139,9 +139,9 @@ class JsonDom extends React.Component {
         const locationChanged = this.props.location.search !== props.location.search ||
             this.props.location.hash !== props.location.hash
 
-        const scriptChanged = (props.editMode && this.props.script !== props.script)
-        const resourcesChanged = (props.editMode && this.props.resources !== props.resources)
-        const templateChanged = !props.template || (props.editMode && this.props.template !== props.template)
+        const scriptChanged = (this.props.script !== props.script)
+        const resourcesChanged = (this.props.resources !== props.resources)
+        const templateChanged = !props.template || (this.props.template !== props.template)
 
         const propsChanged = this.props._props !== props._props
         const slugChanged = this.props.slug !== props.slug
