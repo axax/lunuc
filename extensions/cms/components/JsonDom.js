@@ -10,13 +10,13 @@ import Async from 'client/components/Async'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {getKeyValueFromLS} from 'client/util/keyvalue'
 import {
-    SimpleMenu as UiSimpleMenu,
-    Button as UiButton,
-    Divider as UiDivider,
-    Col as UiCol,
-    Row as UiRow,
-    SimpleToolbar as UiSimpleToolbar,
-    Card as UiCard
+    SimpleMenu,
+    Button,
+    Divider,
+    Col,
+    Row,
+    SimpleToolbar,
+    Card
 } from 'ui'
 import SmartImage from 'client/components/SmartImage'
 import {Link} from 'react-router-dom'
@@ -32,28 +32,33 @@ const ContentEditable = (props) => <Async {...props}
                                           load={import(/* webpackChunkName: "admin" */ '../../../client/components/ContentEditable')}/>
 
 const FileDrop = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
+                                   load={import(/* webpackChunkName: "extra" */ '../../../client/components/FileDrop')}/>
 
 const Print = (props) => <Async {...props}
-                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
+                                load={import(/* webpackChunkName: "extra" */ '../../../client/components/Print')}/>
+
+
+const MarkDown = (props) => <Async {...props}
+                                   load={import(/* webpackChunkName: "extra" */ '../../../client/components/MarkDown')}/>
 
 
 class JsonDom extends React.Component {
 
-    /* Events that are listend to */
+    /* Events that are listened to */
     static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit']
 
     /*
-    * default components
+    * Default components
     * new components can be added with the JsonDom hook
     * */
     static components = {
         'FileDrop': {component: FileDrop, label: 'File Drop'},
+        'MarkDown': {component: MarkDown, label: 'Markdown parser'},
         'SmartImage': {component: SmartImage, label: 'Smart Image (lazy load, error handing...)'},
         'Print': {component: Print, label: 'Printable area'},
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
-        'SimpleMenu': UiSimpleMenu,
+        'SimpleMenu': SimpleMenu,
         'Link': ({to, ...rest}) => {
             if (to) {
                 return <Link to={to} {...rest}/>
@@ -69,20 +74,32 @@ class JsonDom extends React.Component {
                                      aboutToChange={_this.props.aboutToChange}
                                      dynamic={true} {...rest}/>
         },
-        'SimpleToolbar': ({_this, position, ...rest}) => <UiSimpleToolbar
+        'SimpleToolbar': ({_this, position, ...rest}) => <SimpleToolbar
             position={(_this && _this.props.editMode ? 'static' : position)} {...rest} />,
-        'Button': UiButton,
-        'Divider': UiDivider,
-        'Card': UiCard,
-        'Col': UiCol,
-        'Row': UiRow,
+        'Button': Button,
+        'Divider': Divider,
+        'Card': Card,
+        'Col': Col,
+        'Row': Row,
         'ContentEditable': ({_this, _key, ...props}) => <ContentEditable
             onChange={(v) => _this.emitChange(_key, v)} {...props} />
     }
-    static hock = true
+
+    // Makes sure that the hook is only called once on the first instantiation of this class
+    static callHock = true
+
+    // This is a counter each instance of JsonDom get a unique number
     static instanceCounter = 0
 
+    // Is the parsed version of the resolved data
     resolvedDataJson = undefined
+
+    // Data bindings on form input, textarea, and select elements
+    bindings = {}
+
+    // Is set to true when there is an error
+    hasError = false
+
     extendedComponents = {}
     json = null
     jsonRaw = null
@@ -94,91 +111,6 @@ class JsonDom extends React.Component {
     scriptResult = null
     componentRefs = {} // this is the object with references to elements with identifier
     jsOnStack = {}
-    jsOn = (keys, cb) => {
-        if (keys.constructor !== Array) {
-            keys = [keys]
-        }
-        for (let i = 0; i < keys.length; i++) {
-            const key = keys[i]
-            const keyLower = key.toLowerCase()
-            if (!this.jsOnStack[keyLower]) this.jsOnStack[keyLower] = []
-            this.jsOnStack[keyLower].push(cb)
-        }
-    }
-    jsGetLocal = (key, def) => {
-        if (typeof localStorage === 'undefined') return def
-        const value = localStorage.getItem(key)
-        if (value) {
-            try {
-                const o = JSON.parse(value)
-                return o
-            } catch (e) {
-                return value
-            }
-        }
-        return def
-    }
-    jsSetLocal = (key, value) => {
-        if (typeof localStorage !== 'undefined') {
-            localStorage.setItem(key, JSON.stringify(value))
-        }
-    }
-    jsRootComponent = () => {
-        let p = this, root
-        while (p) {
-            root = p
-            p = p.props._parentRef
-        }
-        return root
-    }
-    jsGetComponent = (id) => {
-        if (!id) {
-            return null
-        }
-
-        const jsGetComponentRec = (comp, id) => {
-            let res = null
-            if (comp && comp.componentRefs) {
-                let k
-                for (k of Object.keys(comp.componentRefs)) {
-                    const o = comp.componentRefs[k]
-                    if (id === k) {
-                        res = o
-                        break
-                    } else {
-                        res = jsGetComponentRec(o, id)
-                        if (res) {
-                            break
-                        }
-                    }
-                }
-
-            }
-            return res
-        }
-        return jsGetComponentRec(this.jsRootComponent(), id)
-    }
-    jsRefresh = (id, noScript) => {
-        let nodeToRefresh
-        if (id) {
-            nodeToRefresh = this.jsGetComponent(id)
-        } else {
-            // if no id is defined select the current dom
-            nodeToRefresh = this
-        }
-
-        if (nodeToRefresh) {
-            if (!nodeToRefresh._ismounted) {
-                console.warn(`Component ${id} is not mounted`, nodeToRefresh)
-                return false
-            }
-            nodeToRefresh.json = null
-            if (!noScript) {
-                nodeToRefresh.runScript = true
-            }
-            nodeToRefresh.forceUpdate()
-        }
-    }
 
 
     constructor(props) {
@@ -188,81 +120,86 @@ class JsonDom extends React.Component {
         if (props.subscriptionCallback) {
             props.subscriptionCallback(this.onSubscription.bind(this))
         }
-        this.state = {hasReactError: false, bindings: {}}
 
         /* HOOK */
-        if (JsonDom.hock) {
-            // call only once if JsonDom is used somewhere
-            JsonDom.hock = false
+        if (JsonDom.callHock) {
+            // Call only once on the first instantiation of JsonDom
+            JsonDom.callHock = false
+
+            // In this hook extensions can add custom components
             Hook.call('JsonDom', JsonDom)
         }
 
         this.addParentRef(props)
     }
 
-
-    componentDidCatch() {
-        this.setState({hasReactError: true})
-    }
-
-    UNSAFE_componentWillReceiveProps(props) {
-
-
-        if (this.props.resolvedData !== props.resolvedData) {
-            this.resolvedDataJson = undefined
-            this.json = null
-            this.setState({bindings: {}})
-        }
-        this.setState({hasReactError: false})
-    }
-
     shouldComponentUpdate(props, state) {
-        const update = state.hasReactError ||
-            !props.template || !props.scope ||
-            props.children !== this.props.children ||
-            this.props.template !== props.template ||
-            this.props._props !== props._props ||
-            this.props.scope !== props.scope ||
-            this.props.script !== props.script ||
-            this.props.inlineEditor !== props.inlineEditor ||
-            this.props.resolvedData !== props.resolvedData ||
-            this.props.renewing !== props.renewing
+        const resolvedDataChanged = this.props.resolvedData !== props.resolvedData
 
         const locationChanged = this.props.location.search !== props.location.search ||
             this.props.location.hash !== props.location.hash
 
-        if (update || locationChanged) {
-            // do some stuff before update
+        const scriptChanged = (props.editMode && this.props.script !== props.script)
+        const resourcesChanged = (props.editMode && this.props.resources !== props.resources)
+        const templateChanged = !props.template || (props.editMode && this.props.template !== props.template)
+
+        const propsChanged = this.props._props !== props._props
+        const slugChanged = this.props.slug !== props.slug
+
+
+        const updateIsNeeded = resolvedDataChanged ||
+            locationChanged ||
+            scriptChanged ||
+            templateChanged ||
+            resourcesChanged ||
+            propsChanged ||
+            slugChanged ||
+            props.children !== this.props.children ||
+            this.props.user !== props.user ||
+            this.props.renewing !== props.renewing ||
+            this.props.inlineEditor !== props.inlineEditor
+
+        if (updateIsNeeded) {
+
+            // set error to false before render
+            this.hasError = false
+
+            // reset parsing error
             this.parseError = null
-            this.addParentRef(props)
 
-            const scriptChanged = this.props.script !== props.script
+            if (resolvedDataChanged) {
+                // renew resolved data json
+                this.resolvedDataJson = undefined
+                this.json = null
 
-            if (this.props.template !== props.template || this.props._props !== props._props || scriptChanged) {
-                this.json = this.jsonRaw = null
-                if (scriptChanged || this.runScript) {
-                    this.removeAddedDomElements()
-                }
             }
 
-            if (this.props.scope !== props.scope || locationChanged) {
+            if (slugChanged || locationChanged || templateChanged || propsChanged || scriptChanged) {
+                this.json = this.jsonRaw = null
                 this.updateScope = true
-                this.json = this.jsonRaw = null
             }
 
-            if (scriptChanged) {
+            if (slugChanged || scriptChanged || this.runScript) {
+                this.removeAddedDomElements()
                 this.scriptResult = null
                 this.runScript = true
             }
 
-            if (this.props.resources !== props.resources) {
+            if (resourcesChanged) {
                 this.checkResources()
             }
+
+
+            this.addParentRef(props)
+
             return true
         }
-
         return false
+    }
 
+    componentDidCatch() {
+        this.hasError = true
+        this.forceUpdate()
     }
 
     componentDidMount() {
@@ -279,7 +216,6 @@ class JsonDom extends React.Component {
     }
 
     componentWillUnmount() {
-        //console.log('xx unmount', this.props.id)
         this.runJsEvent('unmount')
         this._historyUnlisten()
         this._ismounted = false
@@ -292,10 +228,118 @@ class JsonDom extends React.Component {
 
     // is called after render
     componentDidUpdate(props) {
-        //console.log('xx update', this.props.id)
         this._ismounted = true
         this.runJsEvent('update', true)
         this.moveInHtmlComponents()
+    }
+
+    render() {
+        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key, renewing} = this.props
+        if (!template) {
+            console.warn('Template is missing.', this.props)
+            return null
+        }
+
+        if (this.hasError) {
+            return <strong>There is something wrong with one of the components defined in the json content. See
+                console.log in the browser for more detail.</strong>
+        }
+        const startTime = (new Date()).getTime(),
+            scope = this.getScope(this.props)
+
+        let resolveDataError
+
+        if (this.resolvedDataJson === undefined) {
+            try {
+                this.resolvedDataJson = JSON.parse(resolvedData)
+                if (this.resolvedDataJson.error) {
+                    resolveDataError = this.resolvedDataJson.error
+                }
+            } catch (e) {
+                resolveDataError = e.message
+            }
+
+            if (resolveDataError) {
+                return <div>Error in data resolver: <strong>{resolveDataError}</strong></div>
+            }
+        }
+        scope.data = this.resolvedDataJson
+        scope.props = _props
+        scope.renewing = renewing
+
+        // find root parent
+        let root = this, parent = this.props._parentRef
+        while (root.props._parentRef) {
+            root = root.props._parentRef
+        }
+        scope.root = root
+        scope.parent = parent
+
+        if (this.runScript) {
+            this.runScript = false
+            try {
+                this.jsOnStack = {}
+                this.scriptResult = new Function(`
+                const {scope,fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, forceUpdate, getComponent, Util, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
+                const _t = arguments[0]._t.bind(scope.data)
+                ${script}`).call(this, {
+                    scope,
+                    on: this.jsOn,
+                    clientQuery,
+                    setKeyValue,
+                    getKeyValueFromLS,
+                    setStyle: (style, preprocess) => DomUtil.createAndAddTag('style', 'head', {
+                        innerHTML: preprocess ? preprocessCss(style) : style,
+                        data: {jsonDomId: this.instanceId}
+                    }),
+                    addMetaTag: (name, content) => DomUtil.createAndAddTag('meta', 'head', {
+                        name,
+                        content,
+                        data: {jsonDomId: this.instanceId}
+                    }),
+                    fetchMore: this.handleFetchMore.bind(this),
+                    setLocal: this.jsSetLocal,
+                    getLocal: this.jsGetLocal,
+                    /* deprecated */
+                    refresh: this.jsRefresh,
+                    forceUpdate: (id, script) => {
+                        this.jsRefresh(id, !script)
+                    },
+                    getComponent: this.jsGetComponent,
+                    Util,
+                    _t,
+                    history,
+                    root,
+                    parent
+                })
+            } catch (e) {
+                console.error(e)
+                return <div>Error in the script: <strong>{e.message}</strong></div>
+            }
+            scope.script = this.scriptResult || {}
+        }
+        if (!this.runJsEvent('beforerender', false, scope)) {
+            return <div>Error in beforerender event. See details in console log</div>
+        }
+        let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope, true)
+
+        if (content && this._inHtmlComponents.length > 0) {
+            content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
+        }
+
+        console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
+        if (this.parseError) {
+            return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
+        } else {
+            if (dynamic) {
+                /* if (this.props.editMode) {
+                     return <div _key={_key}>{content}</div>
+                 }*/
+                return content
+            } else {
+                return <div className={classNameByPath(scope.page.slug, className)}>{content}</div>
+            }
+        }
     }
 
     checkResources() {
@@ -334,14 +378,8 @@ class JsonDom extends React.Component {
     }
 
     handleBindingChange(cb, e) {
-        this.setState({bindings: {...this.state.bindings, [e.target.name]: e.target.value}}, () => {
-            if (this.scope) {
-                this.scope.bindings = this.state.bindings
-            }
-            if (cb) {
-                cb.bind(this)(e)
-            }
-        })
+        this.bindings[e.target.name] = e.target.value
+        cb.bind(this)(e)
     }
 
     onSubscription(data) {
@@ -549,11 +587,10 @@ class JsonDom extends React.Component {
                         if (properties.value === undefined) {
                             properties.value = ''
                         }
-                        if (!this.state.bindings[properties.name]) {
-                            this.state.bindings[properties.name] = properties.value
-                            scope.bindings = this.state.bindings
+                        if (!this.bindings[properties.name]) {
+                            this.bindings[properties.name] = properties.value
                         } else {
-                            properties.value = this.state.bindings[properties.name]
+                            properties.value = this.bindings[properties.name]
                         }
                         properties.onChange = this.handleBindingChange.bind(this, properties.onChange)
 
@@ -616,14 +653,21 @@ class JsonDom extends React.Component {
         if (this.updateScope) {
             this.updateScope = false
 
-            const scope = JSON.parse(props.scope), keys = Object.keys(scope)
-            for (let i = 0; i < keys.length; i++) {
-                const key = keys[i]
-                this.scope[key] = scope[key]
-            }
+            // set page property
+            this.scope.page = {slug: props.slug}
+            this.scope.user = props.user
+            this.scope.editMode = props.editMode
+            this.scope.dynamic = props.dynamic
+
             // set default scope values
             this.scope.fetchingMore = false
+
+            // add a refrence to the global app object
             this.scope._app_ = _app_
+
+            // add a reference of the bindings object
+            this.scope.bindings = this.bindings
+
             this.addLocationToScope()
         }
         return this.scope
@@ -642,7 +686,7 @@ class JsonDom extends React.Component {
         this._inHtmlComponents = []
         try {
             /*
-             json is the modified version for viewing (placeholder are replaced)
+             This is the modified version of the json (placeholder are replaced)
              */
             this.json = JSON.parse(this.renderString(template, scope))
         } catch (e) {
@@ -703,18 +747,26 @@ class JsonDom extends React.Component {
     }
 
     renderString(str, scope) {
-
-        if (str.trim().startsWith('<')) {
-            //its html
+        str = str.trim()
+        // Simple content type detection
+        if (str.startsWith('<')) {
+            //It is html
             str = JSON.stringify({
                 t: 'div',
                 $c: Util.escapeForJson(str)
             })
-        } else {
-            //Escape double time
+        } else if (str.startsWith('{') || str.startsWith('[')) {
+            //It is json
             str = str.replace(/\\/g, '\\\\')
+        } else {
+            //Is other
+            str = JSON.stringify({
+                t: 'MarkDown',
+                c: Util.escapeForJson(str)
+            }).replace(/\`/g, '\\`')
         }
         try {
+            // Scope properties get destructed so they can be accessed directly by property name
             return new Function(`const {${Object.keys(scope).join(',')}} = this.scope
             const Util = this.Util
             const _i = Util.tryCatch.bind(this)
@@ -801,116 +853,91 @@ class JsonDom extends React.Component {
         this.props.serverMethod(name, args, cb)
     }
 
-    render() {
-        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key, renewing} = this.props
-        if (!template) {
-            console.warn('Template is missing.', this.props)
+
+    jsOn = (keys, cb) => {
+        if (keys.constructor !== Array) {
+            keys = [keys]
+        }
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i]
+            const keyLower = key.toLowerCase()
+            if (!this.jsOnStack[keyLower]) this.jsOnStack[keyLower] = []
+            this.jsOnStack[keyLower].push(cb)
+        }
+    }
+    jsGetLocal = (key, def) => {
+        if (typeof localStorage === 'undefined') return def
+        const value = localStorage.getItem(key)
+        if (value) {
+            try {
+                const o = JSON.parse(value)
+                return o
+            } catch (e) {
+                return value
+            }
+        }
+        return def
+    }
+    jsSetLocal = (key, value) => {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(key, JSON.stringify(value))
+        }
+    }
+    jsRootComponent = () => {
+        let p = this, root
+        while (p) {
+            root = p
+            p = p.props._parentRef
+        }
+        return root
+    }
+    jsGetComponent = (id) => {
+        if (!id) {
             return null
         }
 
-        const {hasReactError} = this.state
-
-        if (hasReactError) {
-            return <strong>There is something wrong with one of the components defined in the json content. See
-                console.log in the browser for more detail.</strong>
-        }
-        const startTime = (new Date()).getTime(),
-            scope = this.getScope(this.props)
-
-        let resolveDataError
-
-        if (this.resolvedDataJson === undefined) {
-            try {
-                this.resolvedDataJson = JSON.parse(resolvedData)
-                if (this.resolvedDataJson.error) {
-                    resolveDataError = this.resolvedDataJson.error
+        const jsGetComponentRec = (comp, id) => {
+            let res = null
+            if (comp && comp.componentRefs) {
+                let k
+                for (k of Object.keys(comp.componentRefs)) {
+                    const o = comp.componentRefs[k]
+                    if (id === k) {
+                        res = o
+                        break
+                    } else {
+                        res = jsGetComponentRec(o, id)
+                        if (res) {
+                            break
+                        }
+                    }
                 }
-            } catch (e) {
-                resolveDataError = e.message
+
             }
-
-            if (resolveDataError) {
-                return <div>Error in data resolver: <strong>{resolveDataError}</strong></div>
-            }
+            return res
         }
-        scope.data = this.resolvedDataJson
-        scope.props = _props
-        scope.renewing = renewing
-
-        // find root parent
-        let root = this, parent = this.props._parentRef
-        while (root.props._parentRef) {
-            root = root.props._parentRef
-        }
-        scope.root = root
-        scope.parent = parent
-
-        if (this.runScript) {
-            this.runScript = false
-            try {
-                this.jsOnStack = {}
-                this.scriptResult = new Function(`
-                const {scope,fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, forceUpdate, getComponent, Util, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
-                const _t = arguments[0]._t.bind(scope.data)
-                ${script}`).call(this, {
-                    scope,
-                    on: this.jsOn,
-                    clientQuery,
-                    setKeyValue,
-                    getKeyValueFromLS,
-                    setStyle: (style, preprocess) => DomUtil.createAndAddTag('style', 'head', {
-                        innerHTML: preprocess ? preprocessCss(style) : style,
-                        data: {jsonDomId: this.instanceId}
-                    }),
-                    addMetaTag: (name, content) => DomUtil.createAndAddTag('meta', 'head', {
-                        name,
-                        content,
-                        data: {jsonDomId: this.instanceId}
-                    }),
-                    fetchMore: this.handleFetchMore.bind(this),
-                    setLocal: this.jsSetLocal,
-                    getLocal: this.jsGetLocal,
-                    /* deprecated */
-                    refresh: this.jsRefresh,
-                    forceUpdate: (id, script) => {
-                        this.jsRefresh(id, !script)
-                    },
-                    getComponent: this.jsGetComponent,
-                    Util,
-                    _t,
-                    history,
-                    root,
-                    parent
-                })
-            } catch (e) {
-                console.error(e)
-                return <div>Error in the script: <strong>{e.message}</strong></div>
-            }
-            scope.script = this.scriptResult || {}
-        }
-        if (!this.runJsEvent('beforerender', false, scope)) {
-            return <div>Error in beforerender event. See details in console log</div>
-        }
-        let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope, true)
-
-        if (content && this._inHtmlComponents.length > 0) {
-            content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
-        }
-
-        console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
-        if (this.parseError) {
-            return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
+        return jsGetComponentRec(this.jsRootComponent(), id)
+    }
+    jsRefresh = (id, noScript) => {
+        let nodeToRefresh
+        if (id) {
+            nodeToRefresh = this.jsGetComponent(id)
         } else {
-            if (dynamic) {
-                /* if (this.props.editMode) {
-                     return <div _key={_key}>{content}</div>
-                 }*/
-                return content
-            } else {
-                return <div className={classNameByPath(scope.page.slug, className)}>{content}</div>
-            }
+            // if no id is defined select the current dom
+            nodeToRefresh = this
         }
 
+        if (nodeToRefresh) {
+            if (!nodeToRefresh._ismounted) {
+                console.warn(`Component ${id} is not mounted`, nodeToRefresh)
+                return false
+            }
+            nodeToRefresh.json = null
+            if (!noScript) {
+                nodeToRefresh.runScript = true
+            }
+            nodeToRefresh.forceUpdate()
+        }
     }
 
 }
@@ -921,7 +948,9 @@ JsonDom.propTypes = {
     resolvedData: PropTypes.string,
     resources: PropTypes.string,
     script: PropTypes.string,
-    scope: PropTypes.string,
+
+    slug: PropTypes.string,
+    user: PropTypes.object,
 
     /* states */
     renewing: PropTypes.bool,

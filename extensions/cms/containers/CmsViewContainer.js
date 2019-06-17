@@ -277,12 +277,6 @@ class CmsViewContainer extends React.Component {
             // it was already rendered on the server side
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
-        const scope = {
-            page: {slug},
-            user,
-            editMode,
-            dynamic
-        }
         const startTime = new Date()
         const jsonDom = <JsonDom id={id}
                                  dynamic={dynamic}
@@ -299,9 +293,10 @@ class CmsViewContainer extends React.Component {
                                  renewing={renewing}
                                  aboutToChange={aboutToChange}
                                  inlineEditor={!!settings.inlineEditor}
-                                 scope={JSON.stringify(scope)}
                                  history={history}
                                  location={location}
+                                 user={user}
+                                 slug={slug}
                                  subscriptionCallback={cb => {
                                      this._subscriptionCallback = cb
                                  }}
@@ -533,7 +528,6 @@ class CmsViewContainer extends React.Component {
                 }
             }
         }
-
     }
 
     saveUnsafedChanges() {

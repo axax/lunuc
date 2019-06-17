@@ -1,4 +1,5 @@
 import {getType, getTypes} from 'util/types'
+
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
  */
@@ -28,7 +29,7 @@ const Util = {
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str, ignoreError) {
         try {
-            return new Function('return ' +(!str.startsWith('this.') ? 'this.' : '') + str).bind(this).call()
+            return new Function('return ' + (!str.startsWith('this.') ? 'this.' : '') + str).bind(this).call()
         } catch (e) {
             if (!ignoreError)
                 console.log(e, str)
