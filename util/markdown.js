@@ -238,7 +238,7 @@ const parser = md => {
 
         /* Headings */
         [/^(#{1,6})(.*)$/gm, (m,h,p) => {
-            l = h.length;
+            const l = h.length;
             return "<h" + l + ">" + p + "</h" + l + ">"
         }],
 
@@ -253,12 +253,12 @@ const parser = md => {
         [/^---\s$/gm, "<hr/>"],
 
         [/(\n\*.*)+/gm, m => {
-            s = "";
+            let s = "";
             m.substr(1).split("\n").forEach(z => s += "<li>" + z.substr(2) + "</li>")
             return "<ul>" + s + "</ul>"
         }],
         [/(\n\d\..*)+/gm, m => {
-            s="";
+            let s="";
             m.substr(1).split("\n").forEach(z => s += "<li>" + z.substr(2) + "</li>")
             return "<ol>" + s + "</ol>"
         }],
