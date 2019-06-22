@@ -2,7 +2,8 @@ import natural from 'natural'
 import Telegraf from 'telegraf'
 import Stemmer from './Stemmer'
 import stopwords_en from 'natural/lib/natural/util/stopwords'
-import {ObjectId} from "mongodb";
+import ImageClassifier from '../util/imageClassifier'
+
 
 class Bot {
 
@@ -463,14 +464,15 @@ class Bot {
                  (async () => {
                     try {
                         const bot = this.bot
-                        const on = this.bot.on.bind(this.bot);
-                        const addExpression = this.bot.addExpression.bind(this.bot);
-                        const addAnswer = this.bot.addAnswer.bind(this.bot);
-                        const findAnswer = this.bot.findAnswer.bind(this.bot);
-                        const addContext = this.bot.addContext.bind(this.bot);
-                        const addCommand = this.bot.addCommand.bind(this.bot);
+                        const on = this.bot.on.bind(this.bot)
+                        const addExpression = this.bot.addExpression.bind(this.bot)
+                        const addAnswer = this.bot.addAnswer.bind(this.bot)
+                        const findAnswer = this.bot.findAnswer.bind(this.bot)
+                        const addContext = this.bot.addContext.bind(this.bot)
+                        const addCommand = this.bot.addCommand.bind(this.bot)
                         const natural = this.bot.natural
-                        const require = this.require;
+                        const require = this.require
+                        const ImageClassifier = this.ImageClassifier
                         ${botCommand.script}
                     } catch(e) {
                         console.log('Error in ${botCommand.name}', e);
@@ -481,6 +483,7 @@ class Bot {
                 const result = await tpl.call({
                     bot: this,
                     require,
+                    ImageClassifier,
                 })
             }
         })

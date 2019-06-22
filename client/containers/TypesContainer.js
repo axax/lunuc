@@ -192,6 +192,7 @@ class TypesContainer extends React.Component {
 
             const columnsFiltered = [], columnsMap = {}
 
+            // filter: Show only the cols that are marked as acive
             columns.forEach((col) => {
                 columnsMap[col.id] = this.isColumnActive(type, col.id)
                 if (columnsMap[col.id]) {
@@ -212,17 +213,17 @@ class TypesContainer extends React.Component {
                     }
                     fields.forEach(field => {
                         if (columnsMap[field.name]) {
-                            let v = item[field.name]
+                            let fieldValue = item[field.name]
                             if (field.reference) {
-                                if (v) {
-                                    if (v.constructor === Array) {
+                                if (fieldValue) {
+                                    if (fieldValue.constructor === Array) {
                                         if (field.type === 'Media') {
-                                            dynamic[field.name] = v.reduce((s, i) => {
+                                            dynamic[field.name] = fieldValue.reduce((s, i) => {
                                                 s.push(getImageTag(i, {key: i._id, height: 40}))
                                                 return s
                                             }, [])
                                         } else {
-                                            dynamic[field.name] = v.reduce((s, i) => {
+                                            dynamic[field.name] = fieldValue.reduce((s, i) => {
                                                 if (i) {
                                                     return s + (s !== '' ? ', ' : '') + typeDataToLabel(i, field.pickerField)
                                                 } else {
@@ -234,17 +235,17 @@ class TypesContainer extends React.Component {
 
                                     } else {
                                         if (field.type === 'Media') {
-                                            dynamic[field.name] = getImageTag(v, {height: 40})
+                                            dynamic[field.name] = getImageTag(fieldValue, {height: 40})
                                         } else {
                                             if (field.fields) {
                                                 let str = ''
                                                 field.fields.forEach(f => {
                                                     if (str) str += ', '
-                                                    str += v[f]
+                                                    str += fieldValue[f]
                                                 })
                                                 dynamic[field.name] = str
                                             } else {
-                                                dynamic[field.name] = typeDataToLabel(v, field.pickerField)
+                                                dynamic[field.name] = typeDataToLabel(fieldValue, field.pickerField)
                                             }
                                         }
                                     }
@@ -252,20 +253,20 @@ class TypesContainer extends React.Component {
                             } else if (field.type === 'Boolean') {
                                 dynamic[field.name] = <Switch name={field.name}
                                                               onChange={e => this.handleDataChange.bind(this)(e, item, field)}
-                                                              checked={!!v}/>
+                                                              checked={!!fieldValue}/>
                             } else if (field.uitype === 'image') {
                                 dynamic[field.name] =
                                     <img style={{height: '40px'}}
-                                         src={v}/>
+                                         src={fieldValue}/>
                             } else if (['json', 'editor', 'jseditor'].indexOf(field.uitype) >= 0) {
-                                if (v.length > 50) {
+                                if (fieldValue && fieldValue.length > 50) {
                                     dynamic[field.name] = <span
-                                        className={classes.script}>{v.substring(0, 20) + '...' + v.substring(v.length - 20)}</span>
+                                        className={classes.script}>{fieldValue.substring(0, 20) + '...' + fieldValue.substring(fieldValue.length - 20)}</span>
                                 } else {
-                                    dynamic[field.name] = <span className={classes.script}>{v}</span>
+                                    dynamic[field.name] = <span className={classes.script}>{fieldValue}</span>
                                 }
                             } else if (field.uitype === 'datetime') {
-                                dynamic[field.name] = Util.formattedDatetime(v)
+                                dynamic[field.name] = Util.formattedDatetime(fieldValue)
                             } else if (field.uitype === 'password') {
                                 dynamic[field.name] = '••••••'
                             } else {
@@ -278,19 +279,19 @@ class TypesContainer extends React.Component {
                                             className={classes.textLight}>{lang}:</span> <span
                                             onBlur={e => this.handleDataChange.bind(this)(e, item, field, lang)}
                                             suppressContentEditableWarning
-                                            contentEditable>{v && v[lang]}</span>
+                                            contentEditable>{fieldValue && fieldValue[lang]}</span>
                                             <br/>
                                         </div>)
                                     })
                                     dynamic[field.name] = langVar
                                 } else {
-                                    if (v && v.constructor === Array) {
-                                        dynamic[field.name] = v.map(e => <Chip key={e} label={e}/>)
+                                    if (fieldValue && fieldValue.constructor === Array) {
+                                        dynamic[field.name] = fieldValue.map(e => <Chip key={e} label={e}/>)
                                     } else {
                                         dynamic[field.name] =
                                             <div className={classes.tableLargeContent}
                                                  onBlur={e => this.handleDataChange.bind(this)(e, item, field)}
-                                                 suppressContentEditableWarning contentEditable>{v}</div>
+                                                 suppressContentEditableWarning contentEditable>{fieldValue}</div>
                                     }
                                 }
 

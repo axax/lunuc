@@ -181,8 +181,8 @@ class CmsViewContainer extends React.Component {
 
     shouldComponentUpdate(props, state) {
 
+        //const start = window.performance.now()
         if (props.cmsPage && (!this.props.cmsPage || (props.cmsPage.subscriptions !== this.props.cmsPage.subscriptions))) {
-            //console.log('renew subscriptions')
             this.removeSubscriptions()
             this.setUpSubsciptions(props)
         }
