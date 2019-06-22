@@ -63,7 +63,6 @@
     "@tensorflow-models/mobilenet": "^1.0.1",
     "@tensorflow/tfjs": "^1.2.1",
     "@tensorflow/tfjs-node": "^1.2.1",
-    "@tensorflow/tfjs-node-gpu": "^1.1.2",
     "apollo-cache-inmemory": "^1.6.2",
     "apollo-client": "^2.5.1",
     "apollo-client-preset": "^1.0.8",
