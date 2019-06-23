@@ -83,7 +83,7 @@ const Util = {
             key: {$in: keys}
         }).toArray())
 
-        console.log("load KeyValueGlobal", keys)
+        console.log('load KeyValueGlobal', keys)
         return keyvalues.reduce((map, obj) => {
             let v
             try {
