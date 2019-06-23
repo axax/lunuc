@@ -97,7 +97,6 @@
     "node-cron": "^2.0.3",
     "nodemailer": "^6.2.1",
     "nodemon": "^1.19.1",
-    "phantom": "^6.2.0",
     "prop-types": "^15.7.2",
     "puppeteer": "^1.17.0",
     "react": "^16.8.6",
