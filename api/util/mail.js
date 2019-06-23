@@ -1,6 +1,6 @@
-import Util from "./index";
-import Hook from "../../util/hook";
-import nodemailer from "nodemailer";
+import Util from './index'
+import Hook from '../../util/hook'
+import nodemailer from 'nodemailer'
 
 /*
  A very basic implementation for sending emails
