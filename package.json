@@ -33,7 +33,7 @@
     "api:local": "export MONGO_URL=mongodb://localhost:27018/lunuc;export BABEL_ENV=api;PORT=3000 nodemon ./api/index.js --watch api --watch extensions --ignore 'gensrc/*'",
     "start": "echo \"Start api and client concurrently\" && npm run api & npm run client",
     "start:dev": "echo \"Start api and client in dev mode concurrently\" && npm run api:dev & npm run client:dev",
-    "heroku-prebuild": "npm install",
+    "heroku-prebuild": "npm install && node ./clean-node-modules.js",
     "heroku-postbuild": "npm run build"
   },
   "keywords": [
@@ -97,7 +97,7 @@
     "nodemailer": "^6.2.1",
     "nodemon": "^1.19.1",
     "prop-types": "^15.7.2",
-      "puppeteer": "^1.17.0",
+    "puppeteer": "^1.17.0",
     "react": "^16.8.6",
     "react-apollo": "2.4.1",
     "react-autosuggest": "^9.4.3",
