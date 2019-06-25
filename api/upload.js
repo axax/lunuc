@@ -60,7 +60,7 @@ const authContextOrError = async (db, res, req, capability) => {
 export const handleUpload = db => async (req, res) => {
 
     // make sure upload dir exists
-    const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
+    const upload_dir = path.join(__dirname, '..' + UPLOAD_DIR)
     if (beforeUpload(res, req, upload_dir)) {
 
         let authContext = auth.decodeToken(req.headers.authorization)
@@ -72,7 +72,7 @@ export const handleUpload = db => async (req, res) => {
         }
 
 
-        if (authContext) {
+        if (authContext.id) {
 
             /* Process the uploads */
             const form = new formidable.IncomingForm()
@@ -103,6 +103,7 @@ export const handleUpload = db => async (req, res) => {
                 const _id = ObjectId()
                 fileIds.push(_id)
 
+                console.log(file.path,path.join(upload_dir, _id.toString()))
                 // store file under the name of the _id
                 fs.rename(file.path, path.join(upload_dir, _id.toString()), async () => {
 
