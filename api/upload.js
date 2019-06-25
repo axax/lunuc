@@ -105,8 +105,8 @@ export const handleUpload = db => async (req, res) => {
 
                 console.log(file.path,path.join(upload_dir, _id.toString()))
                 // store file under the name of the _id
-                fs.rename(file.path, path.join(upload_dir, _id.toString()), async () => {
-
+                fs.rename(file.path, path.join(upload_dir, _id.toString()), async (err) => {
+                    if (err) throw err
                     const mimeType = MimeType.detectByFileName(file.name)
 
                     let meta
