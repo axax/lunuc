@@ -112,7 +112,7 @@ export const handleUpload = db => async (req, res) => {
                     let meta
                     data.classifyImage = data.classifyImage === 'true'
                     if (data.classifyImage) {
-                        meta = JSON.stringify(await ImageClassfier.classifyByUrl('http://www.lunuc.com/' + UPLOAD_URL + '/' + _id)) //)
+                        meta = JSON.stringify(await ImageClassfier.classifyByUrl('http://www.lunuc.com' + UPLOAD_URL + '/' + _id.toString())) //)
                     }
 
 
