@@ -12,8 +12,9 @@ import {
     CAPABILITY_MANAGE_BACKUPS
 } from 'util/capabilities'
 import ImageClassfier from '../extensions/media/util/imageClassifierLambda'
+import mediaResolver from '../extensions/media/gensrc/resolver'
 
-const {UPLOAD_DIR, UPLOAD_URL} = config
+const {UPLOAD_DIR, UPLOAD_URL, DEFAULT_LANGUAGE} = config
 
 
 const beforeUpload = (res, req, upload_dir) => {
@@ -63,16 +64,20 @@ export const handleUpload = db => async (req, res) => {
     const upload_dir = path.join(__dirname, '..' + UPLOAD_DIR)
     if (beforeUpload(res, req, upload_dir)) {
 
-        let authContext = auth.decodeToken(req.headers.authorization)
+        let context = auth.decodeToken(req.headers.authorization)
 
-        if( !authContext.id ){
+        if (!context.id) {
             // use anonymouse user
-            const anonymousUser = await Util.userByName(db,'anonymous')
-            authContext = {id: anonymousUser._id.toString()}
+            const anonymousUser = await Util.userByName(db, 'anonymous')
+            context = {username: anonymousUser.username, id: anonymousUser._id.toString()}
         }
 
 
-        if (authContext.id) {
+        if (context.id) {
+
+            if (!context.lang) {
+                context.lang = DEFAULT_LANGUAGE
+            }
 
             /* Process the uploads */
             const form = new formidable.IncomingForm()
@@ -88,9 +93,10 @@ export const handleUpload = db => async (req, res) => {
 
             const data = {}
             form.on('field', function (key, value) {
-                if (ObjectId.isValid(value)) {
-                    data[key] = ObjectId(value)
-                } else {
+                try {
+                    data[key] = JSON.parse(value)
+                } catch (e) {
+                    console.warn(e)
                     data[key] = value
                 }
             })
@@ -99,32 +105,27 @@ export const handleUpload = db => async (req, res) => {
             // every time a file has been uploaded successfully,
             // rename it to it's orignal name
             form.on('file', function (field, file) {
-                //console.log(file.path, path.join(UPLOAD_DIR, file.name))
                 const _id = ObjectId()
                 fileIds.push(_id)
 
-                console.log(file.path,path.join(upload_dir, _id.toString()))
                 // store file under the name of the _id
                 fs.copyFile(file.path, path.join(upload_dir, _id.toString()), async (err) => {
                     if (err) throw err
                     const mimeType = MimeType.detectByFileName(file.name)
 
-                    let meta
-                    data.classifyImage = data.classifyImage === 'true'
+                    // call image classifier if requested
                     if (data.classifyImage) {
-                        meta = JSON.stringify(await ImageClassfier.classifyByUrl('http://www.lunuc.com' + UPLOAD_URL + '/' + _id.toString())) //)
+                        data.meta = JSON.stringify(await ImageClassfier.classifyByUrl('http://www.lunuc.com' + UPLOAD_URL + '/' + _id.toString())) //)
                     }
 
-
                     // save to db
-                    const insertResult = await db.collection('Media').insertOne({
+                    mediaResolver(db).Mutation.createMedia({
                         _id,
                         name: file.name,
                         mimeType: mimeType || 'application/octet-stream',
-                        createdBy: ObjectId(authContext.id),
-                        ...data,
-                        meta
-                    })
+                        ...data
+                    }, {context})
+
                 })
             })
 

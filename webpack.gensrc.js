@@ -409,11 +409,11 @@ function gensrcExtension(name, options) {
         },\n`
 
                 resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {
-            pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:{...rest}}})
+            pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:{${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}}})
             return await GenericResolver.createEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
         },
         update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {
-            pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: {...rest}}})
+            pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: {${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}}})
             return GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
         },
         delete${type.name}: async ({_id}, {context}) => {

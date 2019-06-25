@@ -631,42 +631,64 @@ class CmsViewContainer extends React.Component {
                             //console.warn('subscription data missing')
                             return
                         }
-                        const {data} = supscriptionData.data['subscribe' + subs]
+                        const {action, data} = supscriptionData.data['subscribe' + subs]
                         if (data) {
-                            const storeData = client.readQuery({
+
+                            const storedData = client.readQuery({
                                 query: gqlQuery,
                                 variables: _this.props.cmsPageVariables
                             })
 
                             // upadate data in resolvedData string
-                            if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
+                            if (storedData.cmsPage && storedData.cmsPage.resolvedData) {
 
-                                const resolvedDataJson = JSON.parse(storeData.cmsPage.resolvedData)
+                                const resolvedDataJson = JSON.parse(storedData.cmsPage.resolvedData)
                                 if (resolvedDataJson[subs] && resolvedDataJson[subs].results) {
+
+
                                     const refResults = resolvedDataJson[subs].results
-                                    const idx = refResults.findIndex(o => o._id === data._id)
-                                    if (idx > -1) {
-                                        const noNullData = Util.removeNullValues(data)
-                                        Object.keys(noNullData).map(k => {
-                                            // check for localized values
-                                            if (noNullData[k].constructor === Object && noNullData[k].__typename === 'LocalizedString') {
-                                                const v = noNullData[k][_app_.lang]
-                                                if (v) {
-                                                    noNullData[k] = v
-                                                }
+
+                                    // remove null values from new data
+                                    const noNullData = Util.removeNullValues(data)
+                                    Object.keys(noNullData).map(k => {
+                                        // check for localized values
+                                        if (noNullData[k].constructor === Object && noNullData[k].__typename === 'LocalizedString') {
+                                            const v = noNullData[k][_app_.lang]
+                                            if (v) {
+                                                noNullData[k] = v
                                             }
-                                        })
-                                        refResults[idx] = Object.assign({}, refResults[idx], noNullData)
-                                        // back to string data
-                                        const newStoreData = Object.assign({}, storeData)
-                                        newStoreData.cmsPage = Object.assign({}, storeData.cmsPage)
-                                        newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
-                                        client.writeQuery({
-                                            query: gqlQuery,
-                                            variables: _this.props.cmsPageVariables,
-                                            data: newStoreData
-                                        })
+                                        }
+                                    })
+
+                                    if ( action === 'update') {
+
+                                        // find data to update
+                                        const idx = refResults.findIndex(o => o._id === data._id)
+
+                                        if( idx > -1 ) {
+                                            // update data
+                                            refResults[idx] = Object.assign({}, refResults[idx], noNullData)
+                                        }else{
+                                            console.warn(`Data ${data._id} does not exist.`)
+                                        }
+
+                                    }else{
+                                        //create
+                                        refResults.unshift(noNullData)
+
                                     }
+
+                                    // back to string data
+                                    const newStoreData = Object.assign({}, storedData)
+                                    newStoreData.cmsPage = Object.assign({}, storedData.cmsPage)
+                                    newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
+
+                                    // save new data
+                                    client.writeQuery({
+                                        query: gqlQuery,
+                                        variables: _this.props.cmsPageVariables,
+                                        data: newStoreData
+                                    })
                                 }
                             }
                         }
