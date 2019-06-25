@@ -9,6 +9,7 @@ import {typeDataToLabel, queryStatemantForType} from 'util/types'
 
 const styles = {
     root: {
+        position: 'relative',
         height: 50
     },
     suggestions: {
@@ -48,7 +49,7 @@ class TypePicker extends React.Component {
         const {classes, placeholder, multi, error, helperText, pickerField} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
-        console.log('render TypePicker')
+        console.log(`render TypePicker | hasFocus=${hasFocus}`,data)
 
         return <div className={classes.root}>
 
