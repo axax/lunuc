@@ -87,13 +87,14 @@ class FileDrop extends React.Component {
             uploading: false,
             errorMessage: null,
             successMessage: null,
+            conversionOri: props.conversion,
             conversion: props.conversion || [{qualitiy: IMAGE_QUALITY, maxWidth: IMAGE_MAX_WIDTH}]
         }
     }
 
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.conversion !== prevState.conversion) {
+        if (nextProps.conversion !== prevState.conversionOri) {
             return FileDrop.initialState(nextProps)
         }
         return null
@@ -105,10 +106,9 @@ class FileDrop extends React.Component {
     }
 
     render() {
-        const {style, classes, multi, label, accept} = this.props
+        const {style, classes, multi, label, accept, className} = this.props
         const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage} = this.state
-
-        return <div style={style} className={classNames(classes.uploader, isHover && classes.uploaderOver)}>
+        return <div style={style} className={classNames(classes.uploader, isHover && classes.uploaderOver, className)}>
             <input className={classes.inputFile}
                    multiple={!!multi}
                    type="file"
@@ -178,7 +178,6 @@ class FileDrop extends React.Component {
 
             for (let i = 0, file; file = validFiles[i]; i++) {
                 const isImage = UploadUtil.isImage(file.name)
-
                 if (isImage) {
                     images.push(URL.createObjectURL(file))
                 }

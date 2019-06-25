@@ -2,7 +2,9 @@ import natural from 'natural'
 import Telegraf from 'telegraf'
 import Stemmer from './Stemmer'
 import stopwords_en from 'natural/lib/natural/util/stopwords'
-import ImageClassifier from '../util/imageClassifierLambda'
+
+/* dependency to media extension */
+import ImageClassifier from '../../media/util/imageClassifierLambda'
 
 
 class Bot {

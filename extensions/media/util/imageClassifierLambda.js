@@ -1,4 +1,4 @@
-var AWS = require('aws-sdk');
+var AWS = require('aws-sdk/index');
 
 AWS.config.region = 'us-east-1'
 

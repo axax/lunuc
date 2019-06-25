@@ -16,6 +16,14 @@
           "name": "mimeType"
         },
         {
+          "name": "meta",
+          "uitype": "json"
+        },
+        {
+          "name": "classifyImage",
+          "type": "Boolean"
+        },
+        {
           "name": "group",
           "type": "MediaGroup",
           "multi": true

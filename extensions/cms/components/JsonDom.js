@@ -45,7 +45,7 @@ const MarkDown = (props) => <Async {...props}
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit']
+    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit', 'Success']
 
     /*
     * Default components

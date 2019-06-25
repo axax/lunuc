@@ -11,9 +11,9 @@ import {execSync} from 'child_process'
 import {
     CAPABILITY_MANAGE_BACKUPS
 } from 'util/capabilities'
+import ImageClassfier from '../extensions/media/util/imageClassifierLambda'
 
-
-const {UPLOAD_DIR} = config
+const {UPLOAD_DIR, UPLOAD_URL} = config
 
 
 const beforeUpload = (res, req, upload_dir) => {
@@ -99,29 +99,23 @@ export const handleUpload = db => async (req, res) => {
                 fs.rename(file.path, path.join(upload_dir, _id.toString()), async () => {
 
                     const mimeType = MimeType.detectByFileName(file.name)
+
+                    let meta
+                    data.classifyImage = data.classifyImage === 'true'
+                    if (data.classifyImage) {
+                        meta = JSON.stringify(await ImageClassfier.classifyByUrl('http://www.lunuc.com/' + UPLOAD_URL + '/' + _id)) //)
+                    }
+
+
                     // save to db
                     const insertResult = await db.collection('Media').insertOne({
                         _id,
                         name: file.name,
                         mimeType: mimeType || 'application/octet-stream',
                         createdBy: ObjectId(authContext.id),
-                        ...data
+                        ...data,
+                        meta
                     })
-                    if (insertResult.insertedCount > 0) {
-                        /*const doc = insertResult.ops[0]
-
-
-                         console.log({
-                         _id: doc._id,
-                         title,
-                         body,
-                         createdBy: {
-                         _id: ObjectId(context.id),
-                         username: context.username
-                         },
-                         status: 'created'
-                         })*/
-                    }
                 })
             })
 

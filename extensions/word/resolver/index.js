@@ -1,8 +1,5 @@
 import {Translate} from '@google-cloud/translate'
 
-const GOOGLE_API_KEY = 'AIzaSyCGrDAmX6xhoBXMGbi0c3bQ8_0nxr2DbZo';
-
-
 export default db => ({
     Query: {
         translate: async ({text, toIso, fromIso}, {context}) => {
@@ -10,7 +7,7 @@ export default db => ({
                 toIso = 'en'
             }
             const translator = new Translate({
-                key: GOOGLE_API_KEY,
+                key: process.env.GOOGLE_API_KEY,
             })
 
 

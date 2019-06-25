@@ -1,5 +1,8 @@
 {
   "name": "Bot",
   "description": "Bot with telegram API integration",
-  "author": "Simon Schärer"
+  "author": "Simon Schärer",
+  "dependencies": [
+    "media"
+  ]
 }
