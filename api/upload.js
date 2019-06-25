@@ -63,7 +63,15 @@ export const handleUpload = db => async (req, res) => {
     const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
     if (beforeUpload(res, req, upload_dir)) {
 
-        const authContext = await authContextOrError(db, res, req)
+        let authContext = auth.decodeToken(req.headers.authorization)
+
+        if( !authContext.id ){
+            // use anonymouse user
+            const anonymousUser = await Util.userByName(db,'anonymous')
+            authContext = {id: anonymousUser._id.toString()}
+        }
+
+
         if (authContext) {
 
             /* Process the uploads */

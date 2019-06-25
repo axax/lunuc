@@ -144,6 +144,17 @@ const Util = {
 
         return user
     },
+    userByName: async (db, name) => {
+        const cacheKeyUser = 'User' + name
+        let user = Cache.get(cacheKeyUser)
+
+        if (!user) {
+            user = (await db.collection('User').findOne({username: name}))
+            Cache.set(cacheKeyUser, user, 6000000) // cache expires in 100 min
+        }
+
+        return user
+    },
     userHasCapability: async (db, context, capability) => {
         if (context && context.id) {
 
