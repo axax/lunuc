@@ -277,6 +277,7 @@ class JsonDom extends React.Component {
 
         if (this.runScript) {
             this.runScript = false
+            this.runJsEvent('beforerunscript', false, scope)
             try {
                 this.jsOnStack = {}
                 this.scriptResult = new Function(`

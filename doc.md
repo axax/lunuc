@@ -341,8 +341,8 @@ Here is an example of a scope object:
 * resourcesReady => Is called after JsonDom is updated and all resources are loaded
 * urlchanged => is called when the url has changed (it only makes sens if the page is not urlSensitive) 
 * subscription => on subscription event
-* reset => gets called when the current template is either removed or reset
-  
+* beforerunscript => gets called right before the script is executed
+
 ```javascript
 
 on('unmount',()=>{

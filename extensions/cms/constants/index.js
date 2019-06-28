@@ -128,6 +128,10 @@ on('urlchange',()=>{
 \t// this is called after the url changed
 })
 
+on('beforerunscript',()=>{
+\t// this is called before the script is executed
+})
+
 setStyle(\`
 .mytable {
 \twidth: 100%;
