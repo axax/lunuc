@@ -60,7 +60,6 @@ const decodeImageBuffer = (buf) => {
 }
 
 
-//classify('/Users/simonscharer/IMG_0966.JPG');
 
 const ImageClassifier = {
 

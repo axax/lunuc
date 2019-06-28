@@ -297,7 +297,7 @@ class JsonDom extends React.Component {
                         content,
                         data: {jsonDomId: this.instanceId}
                     }),
-                    fetchMore: this.handleFetchMore.bind(this),
+                    fetchMore: this.handleFetchMore,
                     setLocal: this.jsSetLocal,
                     getLocal: this.jsGetLocal,
                     /* deprecated */
@@ -688,9 +688,9 @@ class JsonDom extends React.Component {
             /*
              This is the modified version of the json (placeholder are replaced)
              */
-            this.json = JSON.parse(this.renderString(template, scope))
+            this.json = JSON.parse(this.renderTemplate(template, scope))
         } catch (e) {
-            console.log(e, this.renderString(template, scope))
+            console.log(e, this.renderTemplate(template, scope))
             this.emitJsonError(e)
         }
         return this.json
@@ -716,14 +716,6 @@ class JsonDom extends React.Component {
         return this.jsonRaw
     }
 
-    renderIntoHtml(c) {
-
-        JsonDom.instanceCounter++
-        const key = 'inHtmlComponent' + JsonDom.instanceCounter
-        this._inHtmlComponents.push(this.parseRec(c, key, this.scope))
-
-        return '<div id=' + key + '></div>'
-    }
 
     moveInHtmlComponents() {
         // move elements to right place
@@ -746,7 +738,7 @@ class JsonDom extends React.Component {
         }
     }
 
-    renderString(str, scope) {
+    renderTemplate(str, scope) {
         str = str.trim()
         // Simple content type detection
         if (str.startsWith('<')) {
@@ -774,15 +766,16 @@ class JsonDom extends React.Component {
             const _t = this._t.bind(data)
             return \`${str}\``).call({
                 scope,
-                renderIntoHtml: this.renderIntoHtml.bind(this),
+                renderIntoHtml: this.renderIntoHtml,
                 parent: this.props._parentRef,
                 Util,
-                _t
+                _t,
+                serverMethod: this.serverMethod
             }).replace(/\t/g, '\\t')
 
         } catch (e) {
             //this.emitJsonError(e)
-            console.error('Error in renderString', e)
+            console.error('Error in renderTemplate', e)
             return str
         }
     }
@@ -812,7 +805,7 @@ class JsonDom extends React.Component {
     }
 
 
-    handleFetchMore(callback) {
+    handleFetchMore = (callback) => {
         const scope = this.getScope(this.props)
         if (scope.fetchingMore || !this._ismounted) {
             return
@@ -849,10 +842,29 @@ class JsonDom extends React.Component {
         })
     }
 
-    serverMethod(name, args, cb) {
+    serverMethod = (name, args, cb) => {
+        if( !cb ){
+
+            JsonDom.instanceCounter++
+            const key = 'serverMethod' + JsonDom.instanceCounter
+
+            this.props.serverMethod(name, args, (response)=>{
+                Util.$('#'+key).innerHTML = response.data.cmsServerMethod.result
+            })
+            return '<div id=\''+key+'\'>Here goes the content</div>'
+        }
         this.props.serverMethod(name, args, cb)
     }
 
+
+    renderIntoHtml = (c) => {
+
+        JsonDom.instanceCounter++
+        const key = 'inHtmlComponent' + JsonDom.instanceCounter
+        this._inHtmlComponents.push(this.parseRec(c, key, this.scope))
+
+        return '<div id=' + key + '></div>'
+    }
 
     jsOn = (keys, cb) => {
         if (keys.constructor !== Array) {

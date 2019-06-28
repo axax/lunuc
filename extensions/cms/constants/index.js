@@ -124,6 +124,10 @@ on('unmount',()=>{
 \t// this is called before the page gets destroyed
 })
 
+on('urlchange',()=>{
+\t// this is called after the url changed
+})
+
 setStyle(\`
 .mytable {
 \twidth: 100%;
