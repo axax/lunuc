@@ -56,7 +56,7 @@ class SmartImage extends React.Component {
         const {asBackground, className, style, ...rest} = this.props
 
         if (!isVisible) {
-            return <div>hidden</div>
+            return <div>...</div>
         }
 
         if (hasError) {

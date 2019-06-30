@@ -18,7 +18,8 @@ const MIME_TYPES = {
     'mp3': 'audio/mpeg',
     'gz': 'application/gzip',
     'zip': 'application/zip',
-    'svg': 'image/svg+xml'
+    'svg': 'image/svg+xml',
+    'pdf': 'application/pdf'
 }
 
 

@@ -17,13 +17,20 @@ const createStaticFiles = async (db) => {
 
         const staticFiles = (await db.collection('StaticFile').find({active: true}).toArray())
         staticFiles.forEach(staticFile => {
-            console.log(`create file ${staticFile.name}`)
 
-            fs.writeFile(staticDir + '/' + staticFile.name, staticFile.content, function (err) {
-                if (err) {
-                    return console.log(err)
-                }
-            })
+            const pathParts = staticFile.name.split('/')
+            pathParts.pop()
+
+            if (Util.ensureDirectoryExistence(staticDir + pathParts.join('/'))) {
+
+                console.log(`create file ${staticFile.name}`)
+
+                fs.writeFile(staticDir + '/' + staticFile.name, staticFile.content, function (err) {
+                    if (err) {
+                        return console.log(err)
+                    }
+                })
+            }
         })
     }
 }

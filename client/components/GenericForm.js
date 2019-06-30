@@ -177,7 +177,6 @@ class GenericForm extends React.Component {
             if (o.readOnly) {
                 return
             }
-
             const uitype = o.uitype || (o.enum ? 'select' : 'text')
 
             if (['json', 'editor', 'jseditor'].indexOf(uitype) >= 0) {
@@ -219,7 +218,7 @@ class GenericForm extends React.Component {
                                    type={o.type} placeholder={o.placeholder}/>
             } else if (uitype === 'select') {
                 return <SimpleSelect key={k} name={k} onChange={this.handleInputChange} items={o.enum} multi={o.multi}
-                                     value={value}/>
+                                     value={value|| []}/>
             } else if (o.type === 'Boolean') {
                 return <SimpleSwitch key={k} label={o.placeholder} name={k}
                                      onChange={this.handleInputChange} checked={value ? true : false}/>

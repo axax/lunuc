@@ -25,9 +25,10 @@ export default () => {
         if (type === 'CronJob' && action && action.key === 'run') {
             this.props.client.query({
                 fetchPolicy: 'network-only',
-                query: gql`query testJob($cronjobId:String!,$script:String){testJob(cronjobId:$cronjobId,script:$script){status}}`,
+                query: gql`query testJob($cronjobId:String!,$script:String,$scriptLanguage:String){testJob(cronjobId:$cronjobId,script:$script,scriptLanguage:$scriptLanguage){status}}`,
                 variables: {
                     script: this.createEditForm.state.fields.script,
+                    scriptLanguage: this.createEditForm.state.fields.scriptLanguage,
                     cronjobId: this.state.dataToEdit ? this.state.dataToEdit._id : 'none'
                 }
             }).then(response => {
