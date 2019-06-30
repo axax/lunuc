@@ -56,11 +56,11 @@ class SmartImage extends React.Component {
         const {asBackground, className, style, ...rest} = this.props
 
         if (!isVisible) {
-            return <div>...</div>
+            return <div className="image-not-visible">...</div>
         }
 
         if (hasError) {
-            return <span>Image not available</span>
+            return <div className="image-not-available">Image not available</div>
         }
         if (asBackground) {
             return <div className={className} data-loading={!loaded}
