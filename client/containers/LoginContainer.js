@@ -13,6 +13,7 @@ import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
 import config from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
 import Util from 'client/util'
+import DomUtil from '../util/dom'
 
 class LoginContainer extends React.Component {
     state = {
@@ -21,6 +22,19 @@ class LoginContainer extends React.Component {
         error: null,
         username: '',
         password: ''
+    }
+
+    constructor(props) {
+        super(props)
+        DomUtil.createAndAddTag('meta', 'head', {
+            name: 'robots',
+            content: 'noindex, nofollow',
+            id: 'metaTagNoIndex'
+        })
+    }
+
+    componentWillUnmount() {
+        DomUtil.removeElements('#metaTagNoIndex')
     }
 
 
