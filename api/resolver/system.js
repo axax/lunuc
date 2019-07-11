@@ -272,6 +272,17 @@ export const systemResolver = (db) => ({
             }
 
             return {results: collections}
+        },
+        collectionAggregate: async ({collection, json}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            const jsonParsed = JSON.parse(json)
+            findAndReplaceObjectIds(jsonParsed)
+            const startTimeAggregate = new Date()
+
+            let a = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
+            console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)
+
+            return {result: JSON.stringify(a[0])}
         }
     },
     Mutation: {
@@ -376,17 +387,6 @@ export const systemResolver = (db) => ({
             Cache.clearStartWith('system-collections')
 
             return {status: 'success', collection: {name}}
-        },
-        collectionAggregate: async ({collection, json}, {context}) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
-            const jsonParsed = JSON.parse(json)
-            findAndReplaceObjectIds(jsonParsed)
-            const startTimeAggregate = new Date()
-
-            let a = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
-            console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)
-
-            return {result: JSON.stringify(a[0])}
         }
     },
     Subscription: {

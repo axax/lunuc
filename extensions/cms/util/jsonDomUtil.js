@@ -110,12 +110,15 @@ export const isTargetAbove = (sourceKey, targetKey) => {
 
 export const classNameByPath = (path, extraClassName) => {
     let className = 'JsonDom'
-    const p = path.split('/')
-    let classPath = ''
-    for (let i = 0; i < p.length; i++) {
-        if (classPath) classPath += '-'
-        classPath += p[i]
-        className += ' Cms-' + classPath
+    if (path) {
+
+        const p = path.split('/')
+        let classPath = ''
+        for (let i = 0; i < p.length; i++) {
+            if (classPath) classPath += '-'
+            classPath += p[i]
+            className += ' Cms-' + classPath
+        }
     }
     if (extraClassName)
         className += ' ' + extraClassName

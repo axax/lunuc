@@ -15,6 +15,7 @@ import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload} from './upload'
 import Hook from 'util/hook'
 import compression from 'compression'
 import {pubsub} from './subscription'
+//import './smtpserver'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -80,13 +81,12 @@ export const start = (done) => {
 
             // ApolloServer
             // Construct a schema, using GraphQL schema language
-            /*const typeDefs = gql(schemaString)
+           /* const typeDefs = gql(schemaString)
             const apolloServer = new ApolloServer({
                 typeDefs, resolvers, formatError,
-                context: ({req, res}) => {
-                }
+                context: ({ req }) => req
             })
-            apolloServer.applyMiddleware({app, path: '/graphql2'})*/
+            apolloServer.applyMiddleware({app, path: '/graphql'})*/
 
             // Graphql-Express
             const schema = buildSchema(schemaString)
@@ -101,9 +101,8 @@ export const start = (done) => {
 
             app.use('/graphql', (req, res, next) => {
 
-                /*var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
-                console.log(ip)*/
+                //var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+                //console.log(ip)*
 
                 // TODO: replace with ApolloServer so with can use batch queries
                 graphqlHTTP({

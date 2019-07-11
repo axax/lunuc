@@ -208,6 +208,13 @@ const Util = {
             return nodeList[0]
         }
         return nodeList
+    },
+    replacePlaceholders(template, context, name){
+        if( name ){
+            const re = new RegExp('\\$\\.' + name + '{', 'g')
+            template = template.replace(re, '${')
+        }
+        return new Function('const {' + Object.keys(context).join(',') + '} = this.obj;return `' + template + '`').call({context})
     }
 }
 export default Util

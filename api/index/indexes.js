@@ -4,7 +4,9 @@ import config from 'gen/config'
 
 const {LANGUAGES} = config
 
-
+/*
+Here all mongodb indexes are created
+ */
 export const createAllIndexes = async (db) => {
 
     console.log('Creating indexes...')

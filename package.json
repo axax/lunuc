@@ -97,7 +97,6 @@
     "nodemailer": "^6.2.1",
     "nodemon": "^1.19.1",
     "prop-types": "^15.7.2",
-    "puppeteer": "^1.18.1",
     "react": "^16.8.6",
     "react-apollo": "2.5.8",
     "react-autosuggest": "^9.4.3",
@@ -109,11 +108,13 @@
     "react-test-renderer": "^16.8.6",
     "redux": "^4.0.1",
     "request-promise": "^4.2.4",
+    "smtp-server": "^3.5.0",
     "spdy": "^4.0.0",
     "subscriptions-transport-ws": "^0.9.16",
     "telegraf": "^3.30.1",
     "url-search-params-polyfill": "^7.0.0",
-    "zip-local": "^0.3.4"
+    "zip-local": "^0.3.4",
+    "puppeteer": "^1.18.1"
   },
   "devDependencies": {
     "@babel/core": "^7.5.0",

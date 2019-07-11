@@ -14,7 +14,7 @@ export default class AggregationBuilder {
 
     getLimit() {
         let {limit} = this.options
-        return limit ? limit : 10
+        return limit ? parseInt(limit) : 10
     }
 
     getOffset() {

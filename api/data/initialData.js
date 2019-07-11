@@ -131,9 +131,4 @@ export const createUsers = async (db) => {
             }
         }, {upsert: true})
     }
-
-
-
-
-
 }

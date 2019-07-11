@@ -306,7 +306,8 @@ class JsonDom extends React.Component {
                     forceUpdate: (id, script) => {
                         this.jsRefresh(id, !script)
                     },
-                    getComponent: this.jsGetComponent,
+                    /* deprecated */
+                    getComponent: this.findComponent,
                     Util,
                     _t,
                     history,
@@ -802,6 +803,10 @@ class JsonDom extends React.Component {
                 }
             }
         }
+        // pass event to parent
+        if( this.props._parentRef ){
+            this.props._parentRef.runJsEvent(name, async, ...args)
+        }
         return !hasError
     }
 
@@ -904,7 +909,7 @@ class JsonDom extends React.Component {
         }
         return root
     }
-    jsGetComponent = (id) => {
+    findComponent = (id) => {
         if (!id) {
             return null
         }
@@ -934,7 +939,7 @@ class JsonDom extends React.Component {
     jsRefresh = (id, noScript) => {
         let nodeToRefresh
         if (id) {
-            nodeToRefresh = this.jsGetComponent(id)
+            nodeToRefresh = this.findComponent(id)
         } else {
             // if no id is defined select the current dom
             nodeToRefresh = this
