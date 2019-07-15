@@ -1,4 +1,4 @@
-import {getType, getTypes} from 'util/types'
+import {getType, getTypes, getTypeQueries} from 'util/types'
 
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
@@ -6,6 +6,7 @@ import {getType, getTypes} from 'util/types'
 const Util = {
     getType: getType,
     getTypes: getTypes,
+    getTypeQueries: getTypeQueries,
     escapeDoubleQuotes: (str) => {
         if (str && str.constructor === String) {
             return str.replace(/"/g, '\\"')
@@ -209,12 +210,12 @@ const Util = {
         }
         return nodeList
     },
-    replacePlaceholders(template, context, name){
-        if( name ){
+    replacePlaceholders(template, context, name) {
+        if (name !== undefined) {
             const re = new RegExp('\\$\\.' + name + '{', 'g')
             template = template.replace(re, '${')
         }
-        return new Function('const {' + Object.keys(context).join(',') + '} = this.obj;return `' + template + '`').call({context})
+        return new Function('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`').call({context})
     }
 }
 export default Util

@@ -659,7 +659,6 @@ class CmsViewContainer extends React.Component {
                                             }
                                         }
                                     })
-
                                     if ( action === 'update') {
 
                                         // find data to update
@@ -677,6 +676,7 @@ class CmsViewContainer extends React.Component {
                                         refResults.unshift(noNullData)
 
                                     }
+                        //TODO add delete
 
                                     // back to string data
                                     const newStoreData = Object.assign({}, storedData)

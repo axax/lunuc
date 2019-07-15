@@ -768,11 +768,13 @@ class JsonDom extends React.Component {
             const _t = this._t.bind(data)
             return \`${str}\``).call({
                 scope,
-                renderIntoHtml: this.renderIntoHtml,
                 parent: this.props._parentRef,
                 Util,
                 _t,
-                serverMethod: this.serverMethod
+                // expose some attributes
+                renderIntoHtml: this.renderIntoHtml,
+                serverMethod: this.serverMethod,
+                props: this.props
             }).replace(/\t/g, '\\t')
 
         } catch (e) {

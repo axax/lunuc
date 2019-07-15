@@ -409,8 +409,9 @@ function gensrcExtension(name, options) {
         },\n`
 
                 resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {
-            pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:{${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}}})
-            return await GenericResolver.createEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
+            const result = await GenericResolver.createEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
+            pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:result}})
+            return result
         },
         update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {
             pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: {${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}}})
