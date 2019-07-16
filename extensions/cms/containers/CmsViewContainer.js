@@ -465,12 +465,12 @@ class CmsViewContainer extends React.Component {
                               }]}
                               title="Edit Component">
 
-                        <TemplateEditor
-                            fabButtonStyle={{bottom:'3rem', right: '1rem'}}
-                            component={cmsComponentEdit}
-                            tab={settings.templateTab}
-                            onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
-                            onChange={this.handleTemplateChange.bind(this)}/>
+                    <TemplateEditor
+                        fabButtonStyle={{bottom: '3rem', right: '1rem'}}
+                        component={cmsComponentEdit}
+                        tab={settings.templateTab}
+                        onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
+                        onChange={this.handleTemplateChange.bind(this)}/>
 
                 </SimpleDialog>
 
@@ -659,24 +659,30 @@ class CmsViewContainer extends React.Component {
                                             }
                                         }
                                     })
-                                    if ( action === 'update') {
+
+
+                                    if (['update', 'delete'].indexOf(action) >= 0) {
 
                                         // find data to update
                                         const idx = refResults.findIndex(o => o._id === data._id)
 
-                                        if( idx > -1 ) {
-                                            // update data
-                                            refResults[idx] = Object.assign({}, refResults[idx], noNullData)
-                                        }else{
+                                        if (idx > -1) {
+                                            if( action === 'update') {
+                                                // update data
+                                                refResults[idx] = Object.assign({}, refResults[idx], noNullData)
+                                            }else{
+                                                // delete data
+                                                refResults.splice(idx,1)
+                                            }
+                                        } else {
                                             console.warn(`Data ${data._id} does not exist.`)
                                         }
 
-                                    }else{
+                                    } else {
                                         //create
                                         refResults.unshift(noNullData)
 
                                     }
-                        //TODO add delete
 
                                     // back to string data
                                     const newStoreData = Object.assign({}, storedData)

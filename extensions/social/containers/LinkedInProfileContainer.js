@@ -167,7 +167,7 @@ class LinkedInProfileContainer extends React.Component {
             html2canvas(pa, {
                 imageTimeout: 20000,
                 width: pageWidth,
-                height: pageHeight,
+                height: pageHeight
                 /*logging: true,*/
                 /*proxy: ( (ENV=="development" )?"linkedin/src/php/html2canvasproxy.php":"php/html2canvasproxy.php"),*/
             }).then(canvas => {
@@ -235,10 +235,9 @@ class LinkedInProfileContainer extends React.Component {
     }
 
     calculatePageBreaks($, pa, pageHeight) {
-        if (pa.clientHeight < pageHeight || pa.clientHeight === this.lastprintheight) {
+        if (pa.clientHeight < pageHeight) {
             return
         }
-        this.lastprintheight = pa.clientHeight
 
 
         console.log('calculatePageBreaks')
@@ -250,7 +249,6 @@ class LinkedInProfileContainer extends React.Component {
             n.parentNode.removeChild(n)
         })
         let marginTop = 0
-
         pai.childNodes.forEach(section => {
             let pos = this.offsetTop(section) - offsetTop + section.offsetHeight
             if (pos > marginTop + pageHeight) {
