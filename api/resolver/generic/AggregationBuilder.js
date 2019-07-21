@@ -332,16 +332,17 @@ export default class AggregationBuilder {
 
                 const data = fieldData[fieldDefinition.name]
 
-                if( data.constructor === Array) {
+                if (data.constructor === Array) {
                     // if a value is in this format {'categories':['name']}
                     // we expect that the field categories is a reference to another type
                     // so we create a lookup for this type
                     fieldDefinition.fields = data
-                }else{
-                    if( data.localized) {
+                } else {
+                    if (data.localized) {
                         fieldDefinition.projectLocal = true
                     }
-                    if( data.substr) {
+                    if (data.substr) {
+                        fieldDefinition.projectLocal = true
                         fieldDefinition.substr = data.substr
                     }
                 }
@@ -410,7 +411,6 @@ export default class AggregationBuilder {
                 match: rootMatch
             })
         }
-
         this.fields.forEach((field, i) => {
             const fieldDefinition = this.getFieldDefinition(field, this.type)
             const fieldName = fieldDefinition.name
@@ -459,10 +459,10 @@ export default class AggregationBuilder {
                                 // these filters are slow
                                 // probably it is better to do multiple queries instead
                                 if (this.createAndAddFilterToMatch({
-                                        name: fieldName + '.' + refFieldName,
-                                        reference: false,
-                                        localized: refFieldDefinition.localized && !localProjected
-                                    }, match, {exact: true})) {
+                                    name: fieldName + '.' + refFieldName,
+                                    reference: false,
+                                    localized: refFieldDefinition.localized && !localProjected
+                                }, match, {exact: true})) {
                                     hasMatchInReference = true
                                 }
                             }
@@ -510,11 +510,11 @@ export default class AggregationBuilder {
                     }
                 } else {
 
-                    if (fieldDefinition.localized && fieldDefinition.projectLocal) {
+                    if (fieldDefinition.projectLocal) {
                         // project localized field in current language
-                        if( fieldDefinition.substr){
-                            projectResultData[fieldName] =  { $substrCP: [ '$' + fieldName + '.' + lang, fieldDefinition.substr[0], fieldDefinition.substr[1] ] }
-                        }else{
+                        if (fieldDefinition.substr) {
+                            projectResultData[fieldName] = {$substrCP: ['$' + fieldName + (fieldDefinition.localized ? '.' + lang : ''), fieldDefinition.substr[0], fieldDefinition.substr[1]]}
+                        } else if (fieldDefinition.localized) {
                             projectResultData[fieldName] = '$' + fieldName + '.' + lang
                         }
 

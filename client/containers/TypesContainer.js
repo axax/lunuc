@@ -72,6 +72,14 @@ class TypesContainer extends React.Component {
     typeColumns = {}
     typesToSelect = []
     settings = {}
+    searchFields = {
+        term: {
+            autoFocus: true,
+            uitype: 'search',
+            fullWidth: true,
+            placeholder: 'Filter expression (for specifc fields use field=term)'
+        }
+    }
 
     constructor(props) {
         super(props)
@@ -452,6 +460,8 @@ class TypesContainer extends React.Component {
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
+        this.searchFields.term.value = filter
+
         if (!this.types[type]) {
             return <BaseLayout><Typography variant="subtitle1" color="error">Type {type} does not
                 exist.
@@ -553,15 +563,7 @@ class TypesContainer extends React.Component {
                                  onChange={this.handleFilter}
                                  onKeyDown={this.handelFilterKeyDown}
                                  primaryButton={false}
-                                 fields={{
-                                     term: {
-                                         autoFocus: true,
-                                         uitype: 'search',
-                                         value: filter,
-                                         fullWidth: true,
-                                         placeholder: 'Filter expression (for specifc fields use field=term)'
-                                     }
-                                 }}/>
+                                 fields={this.searchFields}/>
                 </Col>
             </Row>,
             this.renderTable(columns),

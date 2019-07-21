@@ -102,6 +102,14 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
 
                     // restriction = if it is set to 'user' only entries that belongs to the user are returned
                     if (segment.restriction && segment.restriction === 'user') {
+
+                        if (!context.id) {
+                            // use anonymouse user
+                            const anonymousUser = await Util.userByName(db, 'anonymous')
+                            context.id = anonymousUser._id.toString()
+                        }
+
+
                         match = {createdBy: ObjectId(context.id)}
                     } else {
                         match = {}

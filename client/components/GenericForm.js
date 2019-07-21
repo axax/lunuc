@@ -47,6 +47,8 @@ class GenericForm extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         if (nextProps.fields !== prevState.fieldsOri) {
+            console.log('GenericForm fields changed')
+            console.log( prevState.fieldsOri,nextProps.fields)
             return GenericForm.getInitalState(nextProps)
         }
         return null
@@ -148,6 +150,7 @@ class GenericForm extends React.Component {
             }
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
+                target.focus()
             }
             newState.isValid = this.validate(newState)
             return newState
@@ -157,7 +160,6 @@ class GenericForm extends React.Component {
 
     handleBlur = (e) => {
         const {onBlur} = this.props
-
         if (onBlur) {
             onBlur(e)
         }
@@ -171,7 +173,6 @@ class GenericForm extends React.Component {
 
     render() {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
-
         const formFields = Object.keys(fields).map((k, i) => {
             const o = fields[k], value = this.state.fields[k]
             if (o.readOnly) {

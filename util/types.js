@@ -48,10 +48,10 @@ export const getTypeQueries = (typeName) => {
 
     if (!typeName || !types[typeName]) return null
 
-    const result = {}
 
     const {name, fields, noUserRelation, selectParams, collectionClonable} = types[typeName]
     const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
+    const result = {name: nameStartLower}
 
     let query = '_id status'
     if (!noUserRelation) {
@@ -64,7 +64,7 @@ export const getTypeQueries = (typeName) => {
     if (fields) {
         fields.map(({clone, name, type, required, multi, reference, localized, readOnly, hidden, ...rest}) => {
 
-            if( hidden ) return
+            if (hidden) return
 
             if (insertParams !== '' && !readOnly) {
                 insertParams += ', '
@@ -123,7 +123,6 @@ export const getTypeQueries = (typeName) => {
     result.delete = `mutation delete${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}){delete${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.deleteMany = `mutation delete${name}s($_id: [ID]${collectionClonable ? ',$_version:String' : ''}){delete${name}s(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.clone = `mutation clone${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}${cloneParams}){clone${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}${cloneQuery}){${query}}}`
-
     typeQueries[typeName] = result
     return result
 }
@@ -328,7 +327,7 @@ Hook.on('Types', ({types}) => {
                 name: 'lastLogin',
                 label: 'Last login',
                 uitype: 'datetime',
-                readOnly:true
+                readOnly: true
             },
             {
                 name: 'password',

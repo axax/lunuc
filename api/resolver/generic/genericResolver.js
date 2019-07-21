@@ -37,7 +37,7 @@ const GenericResolver = {
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
         // Default match
-        if (!match) {
+        if (!match ) {
             // if not specific match is defined, only select items that belong to the current user
             if (Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
                 match = {}

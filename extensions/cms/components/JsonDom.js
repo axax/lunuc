@@ -45,7 +45,7 @@ const MarkDown = (props) => <Async {...props}
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit', 'Success']
+    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit', 'Success', 'ContextMenu']
 
     /*
     * Default components
@@ -625,7 +625,7 @@ class JsonDom extends React.Component {
                     eleProps._editmode = 'true'
                 }
                 if (className) {
-                    eleProps.className = className
+                    eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                 }
 
                 if (this.props.editMode && this.props.inlineEditor && (initial || !this.props.dynamic)) {
@@ -806,7 +806,7 @@ class JsonDom extends React.Component {
             }
         }
         // pass event to parent
-        if( this.props._parentRef ){
+        if (this.props._parentRef) {
             this.props._parentRef.runJsEvent(name, async, ...args)
         }
         return !hasError
@@ -851,15 +851,15 @@ class JsonDom extends React.Component {
     }
 
     serverMethod = (name, args, cb) => {
-        if( !cb ){
+        if (!cb) {
 
             JsonDom.instanceCounter++
             const key = 'serverMethod' + JsonDom.instanceCounter
 
-            this.props.serverMethod(name, args, (response)=>{
-                Util.$('#'+key).innerHTML = response.data.cmsServerMethod.result
+            this.props.serverMethod(name, args, (response) => {
+                Util.$('#' + key).innerHTML = response.data.cmsServerMethod.result
             })
-            return '<div id=\''+key+'\'>Here goes the content</div>'
+            return '<div id=\'' + key + '\'>Here goes the content</div>'
         }
         this.props.serverMethod(name, args, cb)
     }
