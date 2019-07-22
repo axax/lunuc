@@ -379,9 +379,9 @@ class JsonDom extends React.Component {
         DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`)
     }
 
-    handleBindingChange(cb, e) {
-        this.bindings[e.target.name] = e.target.value
-        cb.bind(this)(e)
+    handleBindingChange(cb, event, value) {
+        this.bindings[event.target.name] = value
+        cb.bind(this)(event)
     }
 
     onSubscription(data) {
@@ -587,7 +587,7 @@ class JsonDom extends React.Component {
                     if (properties.name) {
                         // handle controlled input here
                         if (properties.value === undefined) {
-                            properties.value = ''
+                            properties.value = (properties.type === 'checkbox' ? false : '')
                         }
                         if (!this.bindings[properties.name]) {
                             this.bindings[properties.name] = properties.value

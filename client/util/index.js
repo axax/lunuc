@@ -14,7 +14,7 @@ const Util = {
         return str
     },
     escapeForJson: (str) => {
-        if (!str) return ''
+        if (str === undefined || str === null) return ''
         if (str.constructor !== String)
             str = JSON.stringify(str)
 
