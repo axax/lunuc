@@ -40,14 +40,14 @@ export const dbConnection = (cb) => {
         const urlParams = urlParts.length > 1 ? ClientUtil.extractQueryParams(urlParts[1], true) : {}
         const options = {
             /* http://mongodb.github.io/node-mongodb-native/2.1/reference/connecting/connection-settings/ */
-            reconnectTries: 0,
+            /*reconnectTries: 99,
             autoReconnect: true,
             ssl: false,
             useNewUrlParser: true,
             poolSize: 20,
             socketTimeoutMS: 480000,
             keepAlive: 300000,
-            sslValidate: false,
+            sslValidate: false,*/
             ...urlParams
         }
         MongoClient.connect(urlParts[0],

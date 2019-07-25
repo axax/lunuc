@@ -36,15 +36,24 @@ class JsonDomInput extends React.Component {
     }
 
     render() {
-        const {value, onChange, textarea, type, ...rest} = this.props
+        const {onChange, textarea, type, ...rest} = this.props
+        const {value} = this.state
+
         if (textarea) {
-            return <textarea onChange={this.valueChange.bind(this)} value={this.state.value} {...rest} />
+            return <textarea onChange={this.valueChange.bind(this)} value={value} {...rest} />
         } else {
             const props = {type:(type || 'text')}
             if (type === 'checkbox') {
-                props.checked = !!this.state.value
+                props.checked = !!value
             }else{
-                props.value = this.state.value
+                if( value.constructor === Object){
+                    console.log(value)
+                }else  if( value.constructor === Array){
+                    console.log(value)
+
+                }else {
+                    props.value = value
+                }
             }
             return <input onChange={this.valueChange.bind(this)} {...rest} {...props} />
         }

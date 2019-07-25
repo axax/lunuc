@@ -104,6 +104,7 @@ const GenericResolver = {
             }*/
             result.total = 0
         }
+        //console.log(JSON.stringify(result, null, 4))
 
         const aggregateTime = new Date() - startTimeAggregate
         //result.meta.aggregateTime = new Date() - startTimeAggregate

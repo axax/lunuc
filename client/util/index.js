@@ -142,7 +142,9 @@ const Util = {
             let operator = 'or'
             filter.split(/ +(?=(?:(?:[^"]*"){2})*[^"]*$)/g).forEach(i => {
 
-                if (i === '&&') {
+                if( i=== ''){
+                    //ignore
+                }else if (i === '&&') {
                     operator = 'and'
                 } else {
                     const comparator = i.match(/==|>=|<=|!=|=|>|<|:/)
