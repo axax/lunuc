@@ -15,6 +15,11 @@ const PASSWORD_MIN_LENGTH = 5
  */
 
 const Util = {
+    anonymousUserContext: async (db) => {
+        // use anonymouse user
+        const anonymousUser = await Util.userByName(db, 'anonymous')
+        return {username: anonymousUser.username, id: anonymousUser._id.toString()}
+    },
     setKeyValues: async (db, context, keyvalues) => {
         for (var key in keyvalues) {
             if (keyvalues.hasOwnProperty(key)) {
@@ -34,14 +39,30 @@ const Util = {
             }, {$set: {createdBy: ObjectId(context.id), key, value}}, {upsert: true})
         }
     },
-    setKeyValueGlobal: async (db, context, key, value) => {
-        if (Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
+    setKeyValueGlobal: async (db, context, key, value, options) => {
+        let newContext, newOption
+        if(options){
+            newOption = options
+        }else{
+            newOption = {}
+        }
+        if(!newContext || !newContext.id){
+            newContext = await Util.anonymousUserContext(db)
+        }else{
+            newContext = context
+        }
+
+        if ((newOption.skipCheck) || Util.userHasCapability(db, newContext, CAPABILITY_MANAGE_KEYVALUES)) {
             Cache.remove('KeyValueGlobal_' + key)
 
             return db.collection('KeyValueGlobal').updateOne({
                 key
-            }, {$set: {createdBy: ObjectId(context.id), key, value, ispublic: false}}, {upsert: true})
+            }, {$set: {createdBy: ObjectId(newContext.id), key, value, ispublic: !!newOption.ispublic}}, {upsert: true})
         }
+    },
+    getKeyValueGlobal: async (db, context, key) => {
+        const map = await Util.keyValueGlobalMap(db,context,[key])
+        return map[key]
     },
     keyvalueMap: async (db, context, keys) => {
         if (!Util.isUserLoggedIn(context)) {

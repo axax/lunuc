@@ -12,15 +12,14 @@ export class OfflineCache extends InMemoryCache {
         super(...args)
         if (APOLLO_CACHE) {
             const startTime = new Date()
-            this.restore(JSON.parse(localStorage.getItem(CACHE_KEY+ _app_.lang)))
+            this.restore(JSON.parse(localStorage.getItem(CACHE_KEY + _app_.lang)))
             console.info(`restore local storage in ${(new Date() - startTime)}ms`)
 
+            window.addEventListener('beforeunload', (e) => {
+                clearTimeout(this.changeTimeout)
+                this.saveToLocalStorage()
+            })
         }
-
-        window.addEventListener('beforeunload', (e) => {
-            clearTimeout(this.changeTimeout)
-            this.saveToLocalStorage()
-        })
 
     }
 
@@ -31,30 +30,28 @@ export class OfflineCache extends InMemoryCache {
 
 
     saveToLocalStorage() {
-        if (APOLLO_CACHE) {
-            const startTime = new Date()
-            const state = this.extract()
-            // Filter some queries we don't want to persist
-            /*const newstate = Object.keys(state)
-             .filter(key => (
-             key.indexOf('ROOT_QUERY.login') < 0 &&
-             key.indexOf('ROOT_SUBSCRIPTION') < 0
-             )
-             )
-             .reduce((res, key) => (res[key] = state[key], res), {})*/
-            let stringified
-            try {
-                stringified = JSON.stringify(state)
-            } catch (e) {
-                stringified = '{}'
-            }
-            try {
-                window.localStorage.setItem(CACHE_KEY+ _app_.lang, stringified)
-            } catch (e) {
-                window.localStorage.setItem(CACHE_KEY+ _app_.lang, '{}')
-            }
-            console.info(`save to local storage (${(stringified.length / 1024).toFixed(2)}kB) in ${(new Date() - startTime)}ms`)
+        const startTime = new Date()
+        const state = this.extract()
+        // Filter some queries we don't want to persist
+        /*const newstate = Object.keys(state)
+         .filter(key => (
+         key.indexOf('ROOT_QUERY.login') < 0 &&
+         key.indexOf('ROOT_SUBSCRIPTION') < 0
+         )
+         )
+         .reduce((res, key) => (res[key] = state[key], res), {})*/
+        let stringified
+        try {
+            stringified = JSON.stringify(state)
+        } catch (e) {
+            stringified = '{}'
         }
+        try {
+            window.localStorage.setItem(CACHE_KEY + _app_.lang, stringified)
+        } catch (e) {
+            window.localStorage.setItem(CACHE_KEY + _app_.lang, '{}')
+        }
+        console.info(`save to local storage (${(stringified.length / 1024).toFixed(2)}kB) in ${(new Date() - startTime)}ms`)
     }
 
     broadcastWatches() {

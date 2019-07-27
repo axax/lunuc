@@ -2,6 +2,7 @@ import natural from 'natural'
 import Telegraf from 'telegraf'
 import Stemmer from './Stemmer'
 import stopwords_en from 'natural/lib/natural/util/stopwords'
+import Util from 'api/util'
 
 /* dependency to media extension */
 import ImageClassifier from '../../media/util/imageClassifierLambda'
@@ -465,6 +466,13 @@ class Bot {
                 const tpl = new Function(`
                  (async () => {
                     try {
+                        const setKeyValueGlobal = (key,value)=>{
+                            this.Util.setKeyValueGlobal(this.db,null,key,value,{ispublic:true, skipCheck:true})
+                        }
+                        
+                        const getKeyValueGlobal = (key)=>{
+                            return this.Util.getKeyValueGlobal(this.db,null,key)
+                        }
                         const bot = this.bot
                         const on = this.bot.on.bind(this.bot)
                         const addExpression = this.bot.addExpression.bind(this.bot)
@@ -486,6 +494,8 @@ class Bot {
                     bot: this,
                     require,
                     ImageClassifier,
+                    Util,
+                    db
                 })
             }
         })
