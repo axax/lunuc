@@ -250,7 +250,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, cmsPage, cmsPages, cmsComponentEdit, location, history, _parentRef, _key, _props, id, renewing, aboutToChange, loading, className, children, user, dynamic, client, fetchMore, userActions} = this.props
+        const {slug, cmsPage, cmsPages, cmsComponentEdit, location, history, match, _parentRef, _key, _props, id, renewing, aboutToChange, loading, className, children, user, dynamic, client, fetchMore, userActions} = this.props
         let {template, resources, script, serverScript, dataResolver, settings} = this.state
         const editMode = isEditMode(this.props)
 
@@ -296,6 +296,7 @@ class CmsViewContainer extends React.Component {
                                  inlineEditor={!!settings.inlineEditor}
                                  history={history}
                                  location={location}
+                                 match={match}
                                  user={user}
                                  slug={slug}
                                  subscriptionCallback={cb => {

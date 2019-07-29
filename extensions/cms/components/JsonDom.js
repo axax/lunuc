@@ -36,8 +36,12 @@ const Print = (props) => <Async {...props}
 const MarkDown = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "extra" */ '../../../client/components/MarkDown')}/>
 
-const MaterialDrawerLayout = (props) => <Async {...props} expose="ResponsiveDrawerLayout"
+const DrawerLayout = (props) => <Async {...props} expose="ResponsiveDrawerLayout"
                                        load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
+
+const TypesContainer = (props) => <Async {...props}
+                                         load={import(/* webpackChunkName: "admin" */ '../../../client/containers/TypesContainer')}/>
+
 
 class JsonDom extends React.Component {
 
@@ -49,8 +53,9 @@ class JsonDom extends React.Component {
     * new components can be added with the JsonDom hook
     * */
     static components = {
-        /* Material Design Component */
-        'MaterialDrawerLayout': MaterialDrawerLayout,
+        /* Material Design / admin Component */
+        'DrawerLayout': DrawerLayout,
+        'TypesContainer': (props) => <TypesContainer noLayout={true} title={false} baseUrl={location.pathname} {...props}/>,
 
         /* Default UI Implementation Components */
         'Col': Col,
@@ -542,19 +547,22 @@ class JsonDom extends React.Component {
 
 
             } else {
+
+                const {editMode, location, match, dynamic, history, children} = this.props
+
                 const key = rootKey + '.' + aIdx
                 let tagName, className, properties = {}
                 if (!t || t.constructor !== String) {
                     tagName = 'div'
                 } else if (t === '$children') {
-                    if (this.props.children) {
-                        h.push(this.props.children)
+                    if (children) {
+                        h.push(children)
                     }
                     return
                 } else if (t.slice(-1) === '$') {
                     // editable
                     tagName = t.slice(0, -1) // remove last char
-                    if (this.props.editMode && !this.props.dynamic) {
+                    if (editMode && !dynamic) {
                         properties.tag = tagName
                         tagName = 'ContentEditable'
                     }
@@ -607,18 +615,20 @@ class JsonDom extends React.Component {
                 }
                 const eleProps = Object.assign({
                         key,
-                        _key: key
+                        _key: key,
+                        location,
+                        history,
+                        match
                     }, properties
                 )
 
                 if (t === 'Cms') {
                     // if we have a cms component in another cms component the location props gets not refreshed
                     // that's way we pass it directly to the reactElement as a prop
-                    eleProps.location = this.props.history.location
                     eleProps._this = this
                 }
 
-                if (this.props.editMode) {
+                if (editMode) {
                     eleProps._this = this
                     eleProps._editmode = 'true'
                 }
@@ -626,7 +636,7 @@ class JsonDom extends React.Component {
                     eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                 }
 
-                if (this.props.editMode && this.props.inlineEditor && (initial || !this.props.dynamic)) {
+                if (editMode && this.props.inlineEditor && (initial || !dynamic)) {
                     const rawJson = this.getJsonRaw(this.props)
                     if (rawJson) {
                         eleProps._WrappedComponent = eleType
@@ -992,8 +1002,11 @@ JsonDom.propTypes = {
     _props: PropTypes.object,
     _parentRef: PropTypes.object,
 
+    /* Routing */
     history: PropTypes.object,
     location: PropTypes.object,
+    match: PropTypes.object,
+
     children: PropTypes.any,
     id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another JsonDom */
