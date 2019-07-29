@@ -101,10 +101,10 @@ class ResponsiveDrawer extends React.Component {
 
     handleDrawerToggle = () => {
         this.setState({mobileOpen: !this.state.mobileOpen})
-    };
+    }
 
     render() {
-        const {classes, theme, menuItems, isAuthenticated, children, headerRight, title} = this.props
+        const {classes, theme, menuItems, isAuthenticated, children, headerRight, title, toolbarStyle} = this.props
         const drawer = (
             <div>
 
@@ -140,7 +140,7 @@ class ResponsiveDrawer extends React.Component {
             <div className={classes.root}>
                 <div className={classes.appFrame}>
                     <AppBar className={classes.appBar}>
-                        <Toolbar>
+                        <Toolbar style={toolbarStyle}>
 
                             <IconButton
                                 color="inherit"
@@ -202,7 +202,8 @@ ResponsiveDrawer.propTypes = {
     menuItems: PropTypes.array.isRequired,
     isAuthenticated: PropTypes.bool,
     headerRight: PropTypes.any,
-    title: PropTypes.string
+    title: PropTypes.string,
+    toolbarStyle: PropTypes.object
 }
 
 

@@ -10,13 +10,8 @@ import Async from 'client/components/Async'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {getKeyValueFromLS} from 'client/util/keyvalue'
 import {
-    SimpleMenu,
-    Button,
-    Divider,
     Col,
     Row,
-    SimpleToolbar,
-    Card
 } from 'ui'
 import SmartImage from 'client/components/SmartImage'
 import {Link} from 'react-router-dom'
@@ -41,6 +36,8 @@ const Print = (props) => <Async {...props}
 const MarkDown = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "extra" */ '../../../client/components/MarkDown')}/>
 
+const MaterialDrawerLayout = (props) => <Async {...props} expose="ResponsiveDrawerLayout"
+                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 
 class JsonDom extends React.Component {
 
@@ -52,13 +49,20 @@ class JsonDom extends React.Component {
     * new components can be added with the JsonDom hook
     * */
     static components = {
+        /* Material Design Component */
+        'MaterialDrawerLayout': MaterialDrawerLayout,
+
+        /* Default UI Implementation Components */
+        'Col': Col,
+        'Row': Row,
+
+        /* Other components */
         'FileDrop': {component: FileDrop, label: 'File Drop'},
         'MarkDown': {component: MarkDown, label: 'Markdown parser'},
         'SmartImage': {component: SmartImage, label: 'Smart Image (lazy load, error handing...)'},
         'Print': {component: Print, label: 'Printable area'},
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
-        'SimpleMenu': SimpleMenu,
         'Link': ({to, ...rest}) => {
             if (to) {
                 return <Link to={to} {...rest}/>
@@ -74,13 +78,6 @@ class JsonDom extends React.Component {
                                      aboutToChange={_this.props.aboutToChange}
                                      dynamic={true} {...rest}/>
         },
-        'SimpleToolbar': ({_this, position, ...rest}) => <SimpleToolbar
-            position={(_this && _this.props.editMode ? 'static' : position)} {...rest} />,
-        'Button': Button,
-        'Divider': Divider,
-        'Card': Card,
-        'Col': Col,
-        'Row': Row,
         'ContentEditable': ({_this, _key, ...props}) => <ContentEditable
             onChange={(v) => _this.emitChange(_key, v)} {...props} />
     }
@@ -604,6 +601,7 @@ class JsonDom extends React.Component {
 
 
                 let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
+
                 if (eleType.constructor === Object) {
                     eleType = eleType.component
                 }
