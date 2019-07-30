@@ -55,11 +55,18 @@ export default () => {
         })
         routes.push({
             // match everything but paths that start with ADMIN_BASE_URL
-            exact: false, path: '/:slug*', render: ({match}) => {
+            exact: false, path: '/:slug*', render: ({match, location, history}) => {
                 Hook.call('CMSSlug', {match})
+                let slug = match.params.slug
+                const pos = (slug ? slug.indexOf('/-/') : -1)
+                if (pos >= 0) {
+                    slug = slug.substring(0, pos)
+                    const subpage = slug.substring(pos + 3)
+                    location.search += '&_subpage=' + subpage
+                }
 
-                if (match.params.slug === undefined || (match.params.slug && match.params.slug.split('/')[0] !== container.adminBaseUrlPlain)) {
-                    return <CmsViewContainer match={match} slug={match.params.slug || ''}/>;
+                if (slug === undefined || (slug && slug.split('/')[0] !== container.adminBaseUrlPlain)) {
+                    return <CmsViewContainer match={match} location={location} history={history} slug={slug || ''}/>;
                 }
                 return <ErrorPage/>
             }
@@ -116,17 +123,17 @@ export default () => {
 
     // add default slug
     Hook.on('TypeCreateEditDialogBlur', ({event, type}) => {
-        console.log(event.target.name , event.target.closest)
-        if (type === 'CmsPage' && event.target.name ===  'name' && event.target.closest) {
+        console.log(event.target.name, event.target.closest)
+        if (type === 'CmsPage' && event.target.name === 'name' && event.target.closest) {
             const form = event.target.closest('form')
             const slugInput = form.querySelector('input[name=slug]')
 
-            if( slugInput && !slugInput.value ){
+            if (slugInput && !slugInput.value) {
                 const value = event.target.value.trim().toLowerCase().replace(/[\W_]+/g, "_")
-                setTimeout(()=> {
+                setTimeout(() => {
                     slugInput.value = value
                     slugInput.focus()
-                },10)
+                }, 10)
             }
         }
     })

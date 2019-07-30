@@ -39,7 +39,7 @@ const GenericResolver = {
         // Default match
         if (!match ) {
             // if not specific match is defined, only select items that belong to the current user
-            if (Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
+            if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
                 match = {}
 
             } else {
@@ -50,7 +50,6 @@ const GenericResolver = {
                 }
             }
         }
-
         let cacheKey
         if (!isNaN(cache) && cache > 0) {
             cacheKey = collectionName + JSON.stringify(match) + context.lang + JSON.stringify(otherOptions)

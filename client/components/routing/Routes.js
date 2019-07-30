@@ -38,9 +38,9 @@ const UnauthorizedPage = (props) => (
 )
 
 class Routes extends React.Component {
+    static contextLang = window.location.pathname.split('/')[1].toLowerCase()
 
     adminBaseUrlPlain = ADMIN_BASE_URL.slice(1)
-    contextLang = window.location.pathname.split('/')[1].toLowerCase()
     history = createBrowserHistory()
     pathPrefix = ''
 
@@ -60,8 +60,8 @@ class Routes extends React.Component {
         super(props)
         Hook.call('Routes', {routes: this.routes, container: this})
 
-        if (this.contextLang === _app_.lang) {
-            this.pathPrefix = '/' + this.contextLang
+        if (Routes.contextLang === _app_.lang) {
+            this.pathPrefix = '/' + Routes.contextLang
         }
         // override push and replace methode to prepend language code if needed
         this.history._replace = this.history.replace

@@ -4,7 +4,6 @@ import {graphql, compose} from 'react-apollo'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 import JsonDom from '../components/JsonDom'
-import {withRouter} from 'react-router-dom'
 import config from 'gen/config'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
@@ -1191,5 +1190,5 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withApollo(withRouter(CmsViewContainerWithGql)))
+)(withApollo(CmsViewContainerWithGql))
 

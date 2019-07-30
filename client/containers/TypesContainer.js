@@ -66,6 +66,9 @@ const styles = theme => ({
 
 class TypesContainer extends React.Component {
 
+    // default labels can be repalced
+    labels = {searchPlaceholder: 'Filter expression (for specifc fields use field=term)'}
+
     types = null
     pageParams = null
     createEditForm = null
@@ -77,12 +80,14 @@ class TypesContainer extends React.Component {
             autoFocus: true,
             uitype: 'search',
             fullWidth: true,
-            placeholder: 'Filter expression (for specifc fields use field=term)'
+            placeholder: this.labels.searchPlaceholder
         }
     }
 
     constructor(props) {
         super(props)
+        const {fixType} = props
+
         this.parseSettings(props)
 
         this.types = getTypes()
@@ -103,11 +108,14 @@ class TypesContainer extends React.Component {
             collectionName: ''
         }
 
-        // prepare list with types for select box
-        Object.keys(this.types).map((k) => {
-            const t = this.types[k]
-            this.typesToSelect.push({value: k, name: k, hint: t.usedBy && 'used by ' + t.usedBy.join(',')})
-        })
+        if( !fixType ) {
+            // if it is not a fix type a selection box with all types is shown
+            // prepare list with types for select box
+            Object.keys(this.types).map((k) => {
+                const t = this.types[k]
+                this.typesToSelect.push({value: k, name: k, hint: t.usedBy && 'used by ' + t.usedBy.join(',')})
+            })
+        }
     }
 
     parseSettings(props) {
@@ -187,6 +195,7 @@ class TypesContainer extends React.Component {
         const {classes} = this.props
         const {data, selectedrows} = this.state
         if (data) {
+
             // small optimization. only render table if data changed
             if (data === this._lastData && selectedrows === this._lastSelectedRows) {
                 return this._renderedTable
@@ -200,7 +209,7 @@ class TypesContainer extends React.Component {
 
             const columnsFiltered = [], columnsMap = {}
 
-            // filter: Show only the cols that are marked as acive
+            // filter: Show only the cols that are marked as active
             columns.forEach((col) => {
                 columnsMap[col.id] = this.isColumnActive(type, col.id)
                 if (columnsMap[col.id]) {
@@ -212,13 +221,16 @@ class TypesContainer extends React.Component {
                 data.results.forEach(item => {
                     if (!item) return
                     const dynamic = {}
+
                     if (columnsMap['check']) {
+                        // add a checkbox to the first column
                         dynamic.check = <Checkbox
                             checked={!!selectedrows[item._id]}
                             onChange={this.handleRowSelect.bind(this)}
                             value={item._id}
                         />
                     }
+
                     fields.forEach(field => {
                         if (columnsMap[field.name]) {
                             let fieldValue = item[field.name]

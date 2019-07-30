@@ -1,21 +1,21 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import {withStyles} from '@material-ui/core/styles';
-import Drawer from '@material-ui/core/Drawer';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import IconButton from '@material-ui/core/IconButton';
-import Hidden from '@material-ui/core/Hidden';
-import Divider from '@material-ui/core/Divider';
-import MenuIcon from '@material-ui/icons/Menu';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
+import React from 'react'
+import PropTypes from 'prop-types'
+import {withStyles} from '@material-ui/core/styles'
+import Drawer from '@material-ui/core/Drawer'
+import AppBar from '@material-ui/core/AppBar'
+import Toolbar from '@material-ui/core/Toolbar'
+import Typography from '@material-ui/core/Typography'
+import IconButton from '@material-ui/core/IconButton'
+import Hidden from '@material-ui/core/Hidden'
+import Divider from '@material-ui/core/Divider'
+import MenuIcon from '@material-ui/icons/Menu'
+import List from '@material-ui/core/List'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemText from '@material-ui/core/ListItemText'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import {withRouter} from 'react-router-dom'
-import config from 'gen/config'
 import {connect} from 'react-redux'
+import Routes from 'client/components/routing/Routes'
 
 const drawerWidth = 300;
 
@@ -63,7 +63,7 @@ const styles = theme => ({
         padding: theme.spacing(3),
         height: 'calc(100% - 56px)',
         marginTop: 56,
-        marginLeft:0,
+        marginLeft: 0,
         [theme.breakpoints.up('lg')]: {
             height: 'calc(100% - 64px)',
             marginTop: 64,
@@ -71,7 +71,7 @@ const styles = theme => ({
             width: `calc(100% - ${drawerWidth}px)`
         },
     },
-    listItemActive:{
+    listItemActive: {
         fontWeight: 'bold'
     }
 })
@@ -83,20 +83,43 @@ class ResponsiveDrawer extends React.Component {
 
     constructor(props) {
         super(props)
-        this.currentLinkParts = this.props.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
     }
 
     componentWillReceiveProps(nextProps) {
-        this.currentLinkParts = nextProps.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
     }
 
     linkTo(item) {
         this.props.history.push(item.to)
     }
 
-    isActive(link) {
-        const linkCut = link.substring(config.ADMIN_BASE_URL.length + 1).split('/')
-        return linkCut[0] === this.currentLinkParts[0]
+    removeTrailingSlash(link){
+        if( link.endsWith('/') ){
+            link = link.substring(0, link.length-1)
+        }
+        return link
+    }
+
+    findActiveItem(){
+        let currentLink = this.removeTrailingSlash(this.props.location.pathname)
+        if (Routes.contextLang === _app_.lang) {
+            currentLink = currentLink.substring(3)
+        }
+
+        let maybeItem = null
+        for(let i=0;i<this.props.menuItems.length;i++){
+            const item = this.props.menuItems[i]
+            const to = this.removeTrailingSlash(item.to)
+            if( to===currentLink){
+                // exact match
+                return item
+            }else if(currentLink.startsWith(to)){
+                // take the longest one
+                if( !maybeItem || item.to.length > maybeItem.to.length) {
+                    maybeItem = item
+                }
+            }
+        }
+        return maybeItem
     }
 
     handleDrawerToggle = () => {
@@ -104,42 +127,42 @@ class ResponsiveDrawer extends React.Component {
     }
 
     render() {
-        const {classes, theme, menuItems, isAuthenticated, children, headerRight, title, toolbarStyle} = this.props
+        const {classes, theme, menuItems, isAuthenticated, children, headerRight, title, toolbarStyle, headerStyle} = this.props
+        const activeItem = this.findActiveItem()
         const drawer = (
             <div>
 
                 <div className={classes.drawerHeader}/>
-                <Divider />
+                <Divider/>
                 <List>
 
                     {menuItems.map((item, i) => {
                         if (item.auth && isAuthenticated || !item.auth) {
-                            const isActive = this.isActive(item.to)
                             return <ListItem onClick={this.linkTo.bind(this, item)}
                                              key={i}
                                              button>
-                                    {
-                                        item.icon &&  <ListItemIcon>
-                                            {item.icon}
-                                        </ListItemIcon>
-                                    }
+                                {
+                                    item.icon && <ListItemIcon>
+                                        {item.icon}
+                                    </ListItemIcon>
+                                }
                                 <ListItemText disableTypography
                                               primary={<Typography variant="subtitle1"
                                                                    component="h3"
-                                                                   className={(isActive ? classes.listItemActive: '')}>{item.name}</Typography>}/>
+                                                                   className={(activeItem===item ? classes.listItemActive : '')}>{item.name}</Typography>}/>
                             </ListItem>
 
                         }
                     })}
                 </List>
-                <Divider />
+                <Divider/>
             </div>
         )
 
         return (
             <div className={classes.root}>
                 <div className={classes.appFrame}>
-                    <AppBar className={classes.appBar}>
+                    <AppBar style={headerStyle} className={classes.appBar}>
                         <Toolbar style={toolbarStyle}>
 
                             <IconButton
@@ -148,7 +171,7 @@ class ResponsiveDrawer extends React.Component {
                                 onClick={this.handleDrawerToggle}
                                 className={classes.navIconHide}
                             >
-                                <MenuIcon />
+                                <MenuIcon/>
                             </IconButton>
                             <Typography className={classes.flex} variant="h6" color="inherit" noWrap>
                                 {title}
@@ -203,6 +226,7 @@ ResponsiveDrawer.propTypes = {
     isAuthenticated: PropTypes.bool,
     headerRight: PropTypes.any,
     title: PropTypes.string,
+    headerStyle: PropTypes.object,
     toolbarStyle: PropTypes.object
 }
 
