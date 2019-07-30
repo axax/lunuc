@@ -145,7 +145,7 @@ class ResponsiveDrawer extends React.Component {
                                              button>
                                 {
                                     item.icon && <ListItemIcon>
-                                        {item.icon}
+                                        {item.icon.constructor===String?<div dangerouslySetInnerHTML={{__html: item.icon}}/>:item.icon}
                                     </ListItemIcon>
                                 }
                                 <ListItemText disableTypography
