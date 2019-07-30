@@ -101,7 +101,9 @@ class ResponsiveDrawer extends React.Component {
 
     findActiveItem(){
         let currentLink = this.removeTrailingSlash(this.props.location.pathname)
-        if (Routes.contextLang === _app_.lang) {
+        const contextLang = currentLink.split('/')[1].toLowerCase()
+
+        if (contextLang === _app_.lang) {
             currentLink = currentLink.substring(3)
         }
 
