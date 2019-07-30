@@ -41,7 +41,6 @@ class Routes extends React.Component {
 
     adminBaseUrlPlain = ADMIN_BASE_URL.slice(1)
     history = createBrowserHistory()
-    pathPrefix = ''
 
     routes = [
         {exact: true, private: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
@@ -59,26 +58,21 @@ class Routes extends React.Component {
         super(props)
         Hook.call('Routes', {routes: this.routes, container: this})
 
-        const contextLang = props.location.pathname.split('/')[1].toLowerCase()
-
-        if (contextLang === _app_.lang) {
-            this.pathPrefix = '/' + contextLang
-        }
         // override push and replace methode to prepend language code if needed
         this.history._replace = this.history.replace
         this.history._push = this.history.push
         this.history.push = (path, state) => {
             let newPath
-            if (path.indexOf(this.pathPrefix + '/') < 0) {
-                newPath = this.pathPrefix + path
+            if (path.indexOf(_app_.contextPath + '/') < 0) {
+                newPath = _app_.contextPath + path
             } else {
                 newPath = path
             }
             this.history._push(newPath, state)
         }
         this.history.replace = (o, state) => {
-            if (o.pathname !== this.pathPrefix && o.pathname.indexOf(this.pathPrefix + '/') < 0) {
-                o.pathname = this.pathPrefix + o.pathname
+            if (o.pathname !== _app_.contextPath && o.pathname.indexOf(_app_.contextPath + '/') < 0) {
+                o.pathname = _app_.contextPath + o.pathname
             }
             this.history._replace(o, state)
         }
@@ -93,17 +87,17 @@ class Routes extends React.Component {
                 {this.routes.map((o, i) => {
                     if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || o.path.startsWith(ADMIN_BASE_URL + '/login') || o.path.startsWith(ADMIN_BASE_URL + '/logout') || capabilities.indexOf(CAPABILITY_ACCESS_ADMIN_PAGE) >= 0) {
                         if (o.private) {
-                            return <PrivateRoute key={i} path={this.pathPrefix + o.path}
+                            return <PrivateRoute key={i} path={_app_.contextPath + o.path}
                                                  isAuthenticated={isAuthenticated}
                                                  exact={o.exact}
                                                  component={o.component}/>
                         } else {
-                            return <Route key={i} path={this.pathPrefix + o.path} exact={o.exact}
+                            return <Route key={i} path={_app_.contextPath + o.path} exact={o.exact}
                                           component={o.component}
                                           render={o.render}/>
                         }
                     } else {
-                        return <Route key={i} path={this.pathPrefix + o.path} exact={o.exact}
+                        return <Route key={i} path={_app_.contextPath + o.path} exact={o.exact}
                                       component={UnauthorizedPage}/>
                     }
                 })}
