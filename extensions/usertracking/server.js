@@ -15,14 +15,17 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
-Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope}) => {
-    if (segment.track && req) {
-        db.collection('UserTracking').insertOne({
-            ip: clientAddress(req),
-            agent: req.headers['user-agent'],
-            event: segment.track.event,
-            slug: scope.page.slug,
-            createdBy: await Util.userOrAnonymousId(db, context)
-        })
+Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode}) => {
+    if (segment.track && req && !editmode) {
+        const ip = clientAddress(req)
+        if( ip !== '::ffff:127.0.0.1') {
+            db.collection('UserTracking').insertOne({
+                ip,
+                agent: req.headers['user-agent'],
+                event: segment.track.event,
+                slug: scope.page.slug,
+                createdBy: await Util.userOrAnonymousId(db, context)
+            })
+        }
     }
 })

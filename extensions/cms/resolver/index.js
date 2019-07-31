@@ -73,7 +73,7 @@ export default db => ({
             const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
 
-            const {resolvedData, subscriptions} = await resolveData({db, context, dataResolver, scope, nosession, req})
+            const {resolvedData, subscriptions} = await resolveData({db, context, dataResolver, scope, nosession, req, editmode})
             let html
             if (ssr) {
                 // Server side rendering
