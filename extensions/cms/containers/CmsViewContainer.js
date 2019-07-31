@@ -196,7 +196,6 @@ class CmsViewContainer extends React.Component {
             // there is no need to update
             return false
         }
-        console.log(props.location)
         // only update if it is needed
         return !props.cmsPage ||
             !this.props.cmsPage ||
