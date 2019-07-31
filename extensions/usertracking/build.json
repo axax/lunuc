@@ -1,0 +1,21 @@
+{
+  "types": [
+    {
+      "name": "UserTracking",
+      "fields": [
+        {
+          "name": "ip"
+        },
+        {
+          "name": "agent"
+        },
+        {
+          "name": "slug"
+        },
+        {
+          "name": "event"
+        }
+      ]
+    }
+  ]
+}

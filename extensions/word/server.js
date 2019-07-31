@@ -17,6 +17,6 @@ Hook.on('schema', ({schemas}) => {
 })
 
 
-Hook.on('cmsCustomResolver', ({resolver, resolvedData}) => {
+Hook.on('cmsCustomResolver', ({segment, resolvedData}) => {
     resolvedData.test = 'test custom resolver'
 })

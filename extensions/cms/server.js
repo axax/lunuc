@@ -50,7 +50,7 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
     const scope = {context: scopeContext, page: {slug}}
 
     const {template, script, dataResolver} = cmsPages.results[0]
-    const {resolvedData} = await resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope)
+    const {resolvedData} = await resolveData({db, context, dataResolver, scope})
     try {
         return ReactDOMServer.renderToString(<UIProvider>
             <JsonDom template={template}

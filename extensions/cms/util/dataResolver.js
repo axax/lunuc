@@ -24,10 +24,10 @@ const createCacheKey = (segment, name) => {
     return cacheKey
 }
 
-export const resolveData = async (db, context, dataResolver, scope, nosession) => {
+export const resolveData = async ({db, context, dataResolver, scope, nosession, req}) => {
     const resolvedData = {_meta: {}}, subscriptions = []
 
-    if (dataResolver) {
+    if (dataResolver && dataResolver.trim() !== '') {
         let debugInfo = null
         try {
             let segments = JSON.parse(dataResolver),
@@ -349,7 +349,7 @@ export const resolveData = async (db, context, dataResolver, scope, nosession) =
 
                 } else {
                     console.log('call cmsCustomResolver', segment)
-                    Hook.call('cmsCustomResolver', {resolvedData, resolver: segment})
+                    Hook.call('cmsCustomResolver', {db, resolvedData, segment, context, scope, req})
                 }
 
             }

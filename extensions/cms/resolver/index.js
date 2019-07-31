@@ -59,7 +59,9 @@ export default db => ({
             }
             return data
         },
-        cmsPage: async ({slug, query, props, nosession, editmode, _version}, {context, headers}) => {
+        cmsPage: async ({slug, query, props, nosession, editmode, _version}, req) => {
+            const {context, headers} = req
+
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
             let cmsPages = await getCmsPage({db, context, slug, _version, headers, editmode})
@@ -71,7 +73,7 @@ export default db => ({
             const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
 
-            const {resolvedData, subscriptions} = await resolveData(db, context, dataResolver ? dataResolver.trim() : '', scope, nosession)
+            const {resolvedData, subscriptions} = await resolveData({db, context, dataResolver, scope, nosession, req})
             let html
             if (ssr) {
                 // Server side rendering
@@ -202,7 +204,7 @@ export default db => ({
             // if dataResolver has changed resolveData and return it
             if (rest.dataResolver) {
                 const scope = createScopeForDataResolver(query)
-                const {resolvedData, subscriptions} = await resolveData(db, context, rest.dataResolver, scope)
+                const {resolvedData, subscriptions} = await resolveData({db, context, dataResolver: rest.dataResolver, scope})
 
                 result.resolvedData = JSON.stringify(resolvedData)
                 result.subscriptions = subscriptions

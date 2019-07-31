@@ -1,0 +1,8 @@
+{
+  "name": "User tracking",
+  "description": "Collects user data and user behaviour",
+  "author": "Simon Schärer",
+  "dependencies": [
+    "cms"
+  ]
+}

@@ -44,6 +44,9 @@
     },
     "staticfile": {
       "active": true
+    },
+    "usertracking": {
+      "active": true
     }
   },
   "ui": [

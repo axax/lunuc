@@ -20,3 +20,10 @@ export const getHostFromHeaders= (headers) => {
 
     return host
 }
+
+
+/* returns the IP from a request */
+export const clientAddress = (req) => {
+    return (req.headers['x-forwarded-for'] || '').split(',')[0]
+        || req.connection.remoteAddress
+}

@@ -15,6 +15,14 @@ const PASSWORD_MIN_LENGTH = 5
  */
 
 const Util = {
+    userOrAnonymousId: async (db, context) => {
+        if (!context || !context.id) {
+            const anonymousContext = await Util.anonymousUserContext(db)
+            return ObjectId(anonymousContext.id)
+        } else {
+            return ObjectId(context.id)
+        }
+    },
     anonymousUserContext: async (db) => {
         // use anonymouse user
         const anonymousUser = await Util.userByName(db, 'anonymous')
@@ -41,27 +49,22 @@ const Util = {
     },
     setKeyValueGlobal: async (db, context, key, value, options) => {
         let newContext, newOption
-        if(options){
+        if (options) {
             newOption = options
-        }else{
+        } else {
             newOption = {}
         }
-        if(!newContext || !newContext.id){
-            newContext = await Util.anonymousUserContext(db)
-        }else{
-            newContext = context
-        }
 
-        if ((newOption.skipCheck) || Util.userHasCapability(db, newContext, CAPABILITY_MANAGE_KEYVALUES)) {
+        if ((newOption.skipCheck) || Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
             Cache.remove('KeyValueGlobal_' + key)
 
             return db.collection('KeyValueGlobal').updateOne({
                 key
-            }, {$set: {createdBy: ObjectId(newContext.id), key, value, ispublic: !!newOption.ispublic}}, {upsert: true})
+            }, {$set: {createdBy: await Util.userOrAnonymousId(db, context), key, value, ispublic: !!newOption.ispublic}}, {upsert: true})
         }
     },
     getKeyValueGlobal: async (db, context, key) => {
-        const map = await Util.keyValueGlobalMap(db,context,[key])
+        const map = await Util.keyValueGlobalMap(db, context, [key])
         return map[key]
     },
     keyvalueMap: async (db, context, keys) => {
@@ -160,7 +163,7 @@ const Util = {
 
         if (!user) {
             user = (await db.collection('User').findOne({_id: ObjectId(id)}))
-            Cache.set(cacheKeyUser, user, 6000000) // cache expires in 100 min
+            Cache.set(cacheKeyUser, user, 86400000) // cache expires in 1 day
         }
 
         return user
@@ -171,7 +174,7 @@ const Util = {
 
         if (!user) {
             user = (await db.collection('User').findOne({username: name}))
-            Cache.set(cacheKeyUser, user, 6000000) // cache expires in 100 min
+            Cache.set(cacheKeyUser, user, 86400000) // cache expires in 1 day
         }
 
         return user
