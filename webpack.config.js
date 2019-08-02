@@ -226,9 +226,9 @@ if (DEV_MODE) {
 
 } else {
     console.log('Build for production')
-    config.mode = 'development'
+    config.mode = 'production'
 
-    /*config.plugins.push(
+    config.plugins.push(
         new CompressionPlugin({
             minRatio: 0.95
         })
@@ -238,7 +238,6 @@ if (DEV_MODE) {
     config.optimization.minimizer.push(
         new UglifyJSPlugin({
             uglifyOptions: {
-                mangle: { keep_fnames: true },
                 compress: {
                     drop_console: true
                 },
@@ -249,7 +248,7 @@ if (DEV_MODE) {
                     beautify: false
                 }
             }
-        }))*/
+        }))
 
     /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
      config.plugins.push(new BundleAnalyzerPlugin())*/
