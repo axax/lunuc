@@ -226,7 +226,7 @@ if (DEV_MODE) {
 
 } else {
     console.log('Build for production')
-    config.mode = 'production'
+    config.mode = 'development'
 
     /*config.plugins.push(
         new CompressionPlugin({
