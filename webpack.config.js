@@ -238,6 +238,7 @@ if (DEV_MODE) {
     config.optimization.minimizer.push(
         new UglifyJSPlugin({
             uglifyOptions: {
+                mangle: { keep_fnames: true },
                 compress: {
                     drop_console: true
                 },
