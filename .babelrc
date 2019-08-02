@@ -7,8 +7,7 @@
           "browsers": [
             "IE 11"
           ]
-        },
-        "useBuiltIns": "usage"
+        }
       }
     ],
     "@babel/preset-react"
