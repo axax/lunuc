@@ -232,10 +232,10 @@ if (DEV_MODE) {
         new CompressionPlugin({
             minRatio: 0.95
         })
-    )*/
+    )
 
 
-    /*config.optimization.minimizer.push(
+    config.optimization.minimizer.push(
         new UglifyJSPlugin({
             uglifyOptions: {
                 mangle: { keep_fnames: true },
@@ -255,6 +255,7 @@ if (DEV_MODE) {
      config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'
+    config.devtool = 'none'
 }
 
 module.exports = config
