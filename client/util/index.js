@@ -1,4 +1,5 @@
 import {getType, getTypes, getTypeQueries} from 'util/types'
+import DomUtil from 'client/util/dom'
 
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
@@ -217,7 +218,7 @@ const Util = {
             const re = new RegExp('\\$\\.' + name + '{', 'g')
             template = template.replace(re, '${')
         }
-        return new Function('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`').call({context})
+        return new Function(DomUtil.toES5('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`')).call({context})
     }
 }
 export default Util

@@ -8,12 +8,8 @@ import configureStore from './store/index'
 import config from 'gen/config'
 import DomUtil from 'client/util/dom'
 
-const appEl = document.getElementById('app')
-if (!('WebSocket' in window) || !('fetch' in window) || !Object.assign) {
-    const el = document.getElementById('l')
-    if (el) el.style.display = 'none'
-    appEl.innerHTML = 'Sorry your browser / device is not supported'
-} else {
+function mainInit() {
+    const appEl = document.getElementById('app')
 
     const {store} = configureStore()
 
@@ -133,4 +129,20 @@ if (!('WebSocket' in window) || !('fetch' in window) || !Object.assign) {
             console.warn('Service Worker is not supported')
         }
     }
+}
+
+
+if (!Object.assign) {
+
+    // Load polyfill and bable in order to support old browsers
+    DomUtil.addScript('https://unpkg.com/babel-standalone@6/babel.min.js', {
+        async:true
+    })
+
+    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6', {
+        async:false,
+        onload: mainInit
+    })
+} else {
+    mainInit()
 }

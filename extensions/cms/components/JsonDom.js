@@ -55,7 +55,8 @@ class JsonDom extends React.Component {
     static components = {
         /* Material Design / admin Component */
         'DrawerLayout': DrawerLayout,
-        'TypesContainer': (props) => <TypesContainer noLayout={true} title={false} baseUrl={location.pathname} {...props}/>,
+        'TypesContainer': (props) => <TypesContainer noLayout={true} title={false}
+                                                     baseUrl={location.pathname} {...props}/>,
 
         /* Default UI Implementation Components */
         'Col': Col,
@@ -236,7 +237,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {dynamic, template, script, resolvedData, history, className, setKeyValue, clientQuery, _props, _key, renewing} = this.props
+        const {dynamic, template, script, resolvedData, className, _props, _key, renewing} = this.props
         if (!template) {
             console.warn('Template is missing.', this.props)
             return null
@@ -277,43 +278,23 @@ class JsonDom extends React.Component {
         scope.root = root
         scope.parent = parent
 
-        if (this.runScript) {
+        if (this.runScript && script) {
             this.runScript = false
             this.runJsEvent('beforerunscript', false, scope)
             try {
                 this.jsOnStack = {}
-                this.scriptResult = new Function(`
-                const {serverMethod,scope,fetchMore, parent, root, history, addMetaTag, setStyle, on, setLocal, getLocal, refresh, forceUpdate, getComponent, Util, setKeyValue, getKeyValueFromLS, clientQuery}= arguments[0]
-                const _t = arguments[0]._t.bind(scope.data)
-                ${script}`).call(this, {
+                this.scriptResult = new Function(DomUtil.toES5(`
+                const   __this=this._this
+                const {serverMethod, on, setLocal, getLocal, refresh, getComponent, addMetaTag, setStyle, fetchMore} = __this
+                const {history, clientQuery, setKeyValue} = __this.props
+                const {scope, getKeyValueFromLS, parent, root, Util} = this
+                const _t = this._t.bind(scope.data),forceUpdate = refresh
+                ${script}`)).call({
+                    _this: this,
                     scope,
-                    on: this.jsOn,
-                    clientQuery,
-                    setKeyValue,
-                    getKeyValueFromLS,
-                    setStyle: (style, preprocess) => DomUtil.createAndAddTag('style', 'head', {
-                        innerHTML: preprocess ? preprocessCss(style) : style,
-                        data: {jsonDomId: this.instanceId}
-                    }),
-                    addMetaTag: (name, content) => DomUtil.createAndAddTag('meta', 'head', {
-                        name,
-                        content,
-                        data: {jsonDomId: this.instanceId}
-                    }),
-                    fetchMore: this.handleFetchMore,
-                    setLocal: this.jsSetLocal,
-                    getLocal: this.jsGetLocal,
-                    serverMethod: this.serverMethod,
-                    /* deprecated */
-                    refresh: this.jsRefresh,
-                    forceUpdate: (id, script) => {
-                        this.jsRefresh(id, !script)
-                    },
-                    /* deprecated */
-                    getComponent: this.findComponent,
                     Util,
                     _t,
-                    history,
+                    getKeyValueFromLS,
                     root,
                     parent
                 })
@@ -384,7 +365,8 @@ class JsonDom extends React.Component {
 
     handleBindingChange(cb, event, value) {
         this.bindings[event.target.name] = value
-        cb.bind(this)(event)
+        if( cb)
+            cb.bind(this)(event)
     }
 
     onSubscription(data) {
@@ -447,7 +429,7 @@ class JsonDom extends React.Component {
             if ($if) {
                 // check condition
                 try {
-                    const tpl = new Function('const {' + Object.keys(scope).join(',') + '} = this.scope;return ' + $if + ';')
+                    const tpl = new Function(DomUtil.toES5('const {' + Object.keys(scope).join(',') + '} = this.scope;return ' + $if))
                     if (!tpl.call({scope})) {
                         return
                     }
@@ -517,11 +499,11 @@ class JsonDom extends React.Component {
                         if (loopChild.constructor !== Object) {
                             loopChild = {data: loopChild}
                         }
-                        const tpl = new Function(`  const {${Object.keys(loopChild).join(',')}} = this.${s}
-                                                    const Util = this.Util
-                                                    const _i = Util.tryCatch.bind(this)
-                                                    const _t = this._t.bind(this.scope.data)
-                                                    return \`${cStr}\``)
+                        const tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},
+                                                    Util = this.Util,
+                                                    _i = Util.tryCatch.bind(this),
+                                                    _t = this._t.bind(this.scope.data)
+                                                    return \`${cStr}\``))
                         // back to json
                         loopChild._index = childIdx
                         // remove tabs and parse
@@ -770,12 +752,12 @@ class JsonDom extends React.Component {
         }
         try {
             // Scope properties get destructed so they can be accessed directly by property name
-            return new Function(`const {${Object.keys(scope).join(',')}} = this.scope
-            const Util = this.Util
-            const _i = Util.tryCatch.bind(this)
-            const _r = this.renderIntoHtml
-            const _t = this._t.bind(data)
-            return \`${str}\``).call({
+            return new Function(DomUtil.toES5(`const {${Object.keys(scope).join(',')}} = this.scope,
+            Util = this.Util,
+            _i = Util.tryCatch.bind(this),
+            _r = this.renderIntoHtml,
+            _t = this._t.bind(data)
+            return \`${str}\``)).call({
                 scope,
                 parent: this.props._parentRef,
                 Util,
@@ -822,7 +804,7 @@ class JsonDom extends React.Component {
     }
 
 
-    handleFetchMore = (callback) => {
+    fetchMore = (callback) => {
         const scope = this.getScope(this.props)
         if (scope.fetchingMore || !this._ismounted) {
             return
@@ -883,7 +865,7 @@ class JsonDom extends React.Component {
         return '<div id=' + key + '></div>'
     }
 
-    jsOn = (keys, cb) => {
+    on = (keys, cb) => {
         if (keys.constructor !== Array) {
             keys = [keys]
         }
@@ -894,7 +876,8 @@ class JsonDom extends React.Component {
             this.jsOnStack[keyLower].push(cb)
         }
     }
-    jsGetLocal = (key, def) => {
+
+    getLocal = (key, def) => {
         if (typeof localStorage === 'undefined') return def
         const value = localStorage.getItem(key)
         if (value) {
@@ -907,12 +890,12 @@ class JsonDom extends React.Component {
         }
         return def
     }
-    jsSetLocal = (key, value) => {
+    setLocal = (key, value) => {
         if (typeof localStorage !== 'undefined') {
             localStorage.setItem(key, JSON.stringify(value))
         }
     }
-    jsRootComponent = () => {
+    getRootComponent = () => {
         let p = this, root
         while (p) {
             root = p
@@ -920,7 +903,7 @@ class JsonDom extends React.Component {
         }
         return root
     }
-    findComponent = (id) => {
+    getComponent = (id) => {
         if (!id) {
             return null
         }
@@ -945,12 +928,29 @@ class JsonDom extends React.Component {
             }
             return res
         }
-        return jsGetComponentRec(this.jsRootComponent(), id)
+        return jsGetComponentRec(this.getRootComponent(), id)
     }
-    jsRefresh = (id, noScript) => {
+
+    setStyle = (style, preprocess) => DomUtil.createAndAddTag('style', 'head', {
+        innerHTML: preprocess ? preprocessCss(style) : style,
+        data: {jsonDomId: this.instanceId}
+    })
+
+    addMetaTag = (name, content) => DomUtil.createAndAddTag('meta', 'head', {
+        name,
+        content,
+        data: {jsonDomId: this.instanceId}
+    })
+
+    refresh = (id, runScript) => {
+        if( id === true){
+            runScript = true
+            id= null
+        }
+
         let nodeToRefresh
         if (id) {
-            nodeToRefresh = this.findComponent(id)
+            nodeToRefresh = this.getComponent(id)
         } else {
             // if no id is defined select the current dom
             nodeToRefresh = this
@@ -962,7 +962,7 @@ class JsonDom extends React.Component {
                 return false
             }
             nodeToRefresh.json = null
-            if (!noScript) {
+            if (runScript) {
                 nodeToRefresh.runScript = true
             }
             nodeToRefresh.forceUpdate()

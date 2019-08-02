@@ -28,7 +28,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
             const keys = Object.keys(nextProps)
             for (let i = 0; i<keys.length; i++) {
                 const key = keys[i]
-                if (!ignoreToCompare.includes(key) && nextProps[key] !== this.props[key]) {
+                if (ignoreToCompare.indexOf(key)===-1 && nextProps[key] !== this.props[key]) {
                     return true
                 }
             }

@@ -35,6 +35,7 @@ import {checkFieldType, getTypes, getTypeQueries, getFormFields, typeDataToLabel
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {deepMerge} from 'util/deepMerge'
+import DomUtil from 'client/util/dom'
 
 const {ADMIN_BASE_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
 import {COLLECTIONS_QUERY} from '../constants'
@@ -1217,7 +1218,7 @@ class TypesContainer extends React.Component {
         const newData = {}
         fields.forEach(field => {
             if (field.clone) {
-                const tpl = new Function('const {' + Object.keys(data).join(',') + '} = this.data;return `' + field.clone + '`;')
+                const tpl = new Function(DomUtil.toES5('const {' + Object.keys(data).join(',') + '} = this.data;return `' + field.clone + '`;'))
                 newData[field.name] = tpl.call({data})
             }
         })

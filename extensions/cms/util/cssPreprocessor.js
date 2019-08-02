@@ -42,7 +42,7 @@ export const preprocessCss = ncss => {
                     let deeperSelectors = []
                     token.split(/\s*,\s*/).forEach(tsel => selectors.forEach(sel =>
                         deeperSelectors.push(
-                            tsel.includes('&') ? tsel.replace(/^(.*?)\s*&/, (_, prefix) => prefix ? prefix + ' ' + sel.trim() : sel) : sel + ' ' + tsel
+                            tsel.indexOf('&')>=0 ? tsel.replace(/^(.*?)\s*&/, (_, prefix) => prefix ? prefix + ' ' + sel.trim() : sel) : sel + ' ' + tsel
                         )
                     ))
                     addRules(rules, deeperSelectors, [])

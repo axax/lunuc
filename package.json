@@ -56,7 +56,6 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@babel/polyfill": "^7.4.4",
     "@google-cloud/translate": "^4.1.2",
     "@material-ui/core": "^4.3.0",
     "@material-ui/icons": "^4.2.1",
@@ -112,7 +111,6 @@
     "spdy": "^4.0.0",
     "subscriptions-transport-ws": "^0.9.16",
     "telegraf": "^3.30.1",
-    "url-search-params-polyfill": "^7.0.0",
     "zip-local": "^0.3.4",
     "puppeteer": "^1.19.0"
   },
@@ -140,7 +138,6 @@
     "mini-css-extract-plugin": "^0.8.0",
     "style-loader": "^0.23.1",
     "uglifyjs-webpack-plugin": "^2.1.3",
-    "unfetch": "^4.1.0",
     "webpack": "^4.38.0",
     "webpack-bundle-analyzer": "^3.3.2",
     "webpack-cli": "^3.3.6",

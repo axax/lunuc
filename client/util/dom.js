@@ -2,7 +2,7 @@
  * Html dom helper methods
  */
 const DomUtil = {
-    removeElements (selector){
+    removeElements(selector) {
         const addedElements = document.querySelectorAll(selector)
         if (addedElements) {
             for (let i = 0; i < addedElements.length; ++i) {
@@ -21,8 +21,8 @@ const DomUtil = {
             }, ...attrs
         })
     },
-    createAndAddTag(name, target, attrs){
-        if( _app_.ssr ){
+    createAndAddTag(name, target, attrs) {
+        if (_app_.ssr) {
             //TODO: implmentation for server side rendering
             return
         }
@@ -47,7 +47,7 @@ const DomUtil = {
         document.getElementsByTagName(target)[0].appendChild(tag)
         return tag
     },
-    styleObjectToString(style){
+    styleObjectToString(style) {
         const styleString = (
             Object.entries(style).reduce((styleString, [propName, propValue]) => {
                 return `${styleString}${propName}:${propValue};`
@@ -95,6 +95,19 @@ const DomUtil = {
             left: xPos,
             top: yPos
         }
+    },
+    toES5: (code) => {
+        if (window.Babel) {
+            return Babel.transform(code, {
+                parserOpts: {
+                    allowReturnOutsideFunction: true,
+                },
+                presets: [
+                    ['es2015', {modules: false}]
+                ]
+            }).code
+        }
+        return code
     }
 }
 
