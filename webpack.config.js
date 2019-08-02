@@ -228,11 +228,11 @@ if (DEV_MODE) {
     console.log('Build for production')
     config.mode = 'production'
 
-    config.plugins.push(
+    /*config.plugins.push(
         new CompressionPlugin({
             minRatio: 0.95
         })
-    )
+    )*/
 
 
     /*config.optimization.minimizer.push(
