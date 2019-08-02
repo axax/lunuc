@@ -235,7 +235,7 @@ if (DEV_MODE) {
     )
 
 
-    config.optimization.minimizer.push(
+    /*config.optimization.minimizer.push(
         new UglifyJSPlugin({
             uglifyOptions: {
                 mangle: { keep_fnames: true },
@@ -249,7 +249,7 @@ if (DEV_MODE) {
                     beautify: false
                 }
             }
-        }))
+        }))*/
 
     /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
      config.plugins.push(new BundleAnalyzerPlugin())*/
