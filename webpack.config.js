@@ -59,6 +59,7 @@ if (APP_CONFIG.ui) {
     })
 }
 
+
 const excludeFunction = (path) => {
 
     for (let i = 0; i < EXCLUDE_FROM_BUILD.length; i++) {
