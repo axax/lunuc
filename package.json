@@ -6,7 +6,7 @@
   "repository": "git://github.com/axax/lunuc.git",
   "engines": {
     "node": "11.10.1",
-    "npm": "6.9.0"
+    "npm": "5.3.0"
   },
   "jest": {
     "moduleNameMapper": {

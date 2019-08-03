@@ -1,3 +1,3 @@
 #!/bin/bash
 
-npm i -g npm@^6.9.0
+npm i -g npm@^5.3.0
