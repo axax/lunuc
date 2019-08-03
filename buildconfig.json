@@ -47,6 +47,9 @@
     },
     "usertracking": {
       "active": true
+    },
+    "crm": {
+      "active": true
     }
   },
   "ui": [

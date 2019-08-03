@@ -1,0 +1,8 @@
+{
+  "name": "Customer-Relationship-Management",
+  "description": "",
+  "author": "Simon Schärer",
+  "dependencies": [
+    "cms"
+  ]
+}
