@@ -88,7 +88,7 @@ const replacePlaceholders = (content, path) => {
 
 
 const config = {
-    entry: './client/index.js',
+    entry: ['@babel/polyfill','./client/index.js'],
     target: 'web',
     output: {
         path: path.resolve(__dirname, 'build'),
