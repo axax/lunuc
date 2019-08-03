@@ -1,19 +1,7 @@
 {
   "presets": [
-    [
-      "@babel/preset-env",
-      {
-        "modules": false,
-        "targets": ">0.25%",
-        "loose": true
-      }
-    ],
-    [
-      "@babel/preset-react",
-      {
-        "useBuiltIns": true
-      }
-    ]
+    "@babel/preset-env",
+    "@babel/preset-react"
   ],
   "plugins": [
     "@babel/plugin-proposal-class-properties",
@@ -54,8 +42,23 @@
         ]
       ]
     },
-    "client": {
-      "plugins": [
+    "client": {},
+    "client_build": {
+      "presets": [
+        [
+          "@babel/preset-env",
+          {
+            "modules": false,
+            "targets": ">0.25%",
+            "loose": true
+          }
+        ],
+        [
+          "@babel/preset-react",
+          {
+            "useBuiltIns": true
+          }
+        ]
       ]
     }
   }
