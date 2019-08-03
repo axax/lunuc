@@ -88,7 +88,7 @@ const replacePlaceholders = (content, path) => {
 
 
 const config = {
-    entry: ['@babel/polyfill','./client/index.js'],
+    entry: ['./client/index.js'],
     target: 'web',
     output: {
         path: path.resolve(__dirname, 'build'),
@@ -256,6 +256,8 @@ if (DEV_MODE) {
 
     //config.devtool = 'source-map'
     config.devtool = 'none'
+
+    //config.devtool = "#eval-source-map"
 }
 
 module.exports = config
