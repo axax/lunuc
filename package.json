@@ -5,7 +5,7 @@
   "main": "index.js",
   "repository": "git://github.com/axax/lunuc.git",
   "engines": {
-    "node": "12.0.0",
+    "node": "12.x",
     "npm": "6.x"
   },
   "jest": {
@@ -112,7 +112,8 @@
     "subscriptions-transport-ws": "^0.9.16",
     "telegraf": "^3.32.0",
     "zip-local": "^0.3.4",
-    "puppeteer": "^1.19.0"
+    "puppeteer": "^1.19.0",
+    "@babel/register": "^7.5.5"
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
@@ -122,7 +123,6 @@
     "@babel/plugin-transform-runtime": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-react": "^7.0.0",
-    "@babel/register": "^7.5.5",
     "babel-eslint": "^10.0.2",
     "babel-jest": "^24.8.0",
     "babel-loader": "^8.0.6",
