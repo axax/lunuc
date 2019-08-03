@@ -132,7 +132,7 @@ function mainInit() {
 }
 
 
-if (!Object.assign) {
+if (!Object.assign || !window.fetch) {
 
     // Load polyfill and bable in order to support old browsers
     DomUtil.addScript('https://unpkg.com/babel-standalone@6/babel.min.js', {
