@@ -149,5 +149,5 @@ try {
     }
 
 }catch (e) {
-    console.log('catched', e)
+    console.error('catched', e)
 }
