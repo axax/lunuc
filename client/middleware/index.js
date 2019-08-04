@@ -120,41 +120,43 @@ export function configureMiddleware(store) {
         authLink,
         httpLink
     ])
-    console.log('xxxx',wsUri)
 
-    const wsLink = new WebSocketLink({
-        uri: wsUri,
-        options: {
-            reconnect: true, //auto-reconnect
+    let link = null, wsLink = null
+    try {
+        wsLink = new WebSocketLink({
+            uri: wsUri,
+            options: {
+                reconnect: true, //auto-reconnect
+            }
+        })
+
+
+        // create my middleware using the applyMiddleware method from subscriptions-transport-ws
+        const subscriptionMiddleware = {
+            applyMiddleware(options, next) {
+                options.auth = Util.getAuthToken()
+                options.session = _app_.session
+                next()
+            }
         }
-    })
-    console.log('xxxx',7)
+
+        // add the middleware to the web socket link via the Subscription Transport client
+        wsLink.subscriptionClient.use([subscriptionMiddleware])
 
 
-    // create my middleware using the applyMiddleware method from subscriptions-transport-ws
-    const subscriptionMiddleware = {
-        applyMiddleware(options, next) {
-            options.auth = Util.getAuthToken()
-            options.session = _app_.session
-            next()
-        }
+        // add ws link
+        link = ApolloLink.split(
+            operation => {
+                const operationAST = getOperationAST(operation.query, operation.operationName)
+                return !!operationAST && operationAST.operation === 'subscription'
+            },
+            wsLink,
+            combinedLink
+        )
+    }catch (e) {
+        // without ws
+        link = combinedLink
     }
-    console.log('xxxx',8)
-
-    // add the middleware to the web socket link via the Subscription Transport client
-    wsLink.subscriptionClient.use([subscriptionMiddleware])
-    console.log('xxxx',9)
-
-    // add ws link
-    const link = ApolloLink.split(
-        operation => {
-            const operationAST = getOperationAST(operation.query, operation.operationName)
-            return !!operationAST && operationAST.operation === 'subscription'
-        },
-        wsLink,
-        combinedLink
-    )
-    console.log('xxxx',10)
 
     const cacheOptions = {
         dataIdFromObject: (o) => {
@@ -175,11 +177,9 @@ export function configureMiddleware(store) {
         },
         addTypename: true
     }
-    console.log('xxxx',11)
 
     const cache = new OfflineCache(cacheOptions)
 
-    console.log('xxxx',12)
 
     // create the apollo client
     const client = new ApolloClient({
@@ -203,7 +203,6 @@ export function configureMiddleware(store) {
             }
         }
     })
-    console.log('xxxx',13)
 
     return client
 }

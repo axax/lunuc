@@ -137,7 +137,7 @@ if (!Object.assign || !window.fetch) {
     let counter = 0
     const onload = () => {
         counter++
-        if (counter === 3) {
+        if (counter === 2) {
             mainInit()
         }
     }
@@ -147,12 +147,7 @@ if (!Object.assign || !window.fetch) {
         onload
     })
 
-    DomUtil.addScript('https://unpkg.com/unfetch@4.1.0/polyfill/index.js', {
-        async: true,
-        onload
-    })
-
-    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=URL%2Ces6', {
+    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6', {
         async: true,
         onload
     })
