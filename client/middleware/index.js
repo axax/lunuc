@@ -155,6 +155,7 @@ export function configureMiddleware(store) {
         )
     }catch (e) {
         // without ws
+        console.warn('WS might not work')
         link = combinedLink
     }
 
