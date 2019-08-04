@@ -137,18 +137,23 @@ if (!Object.assign || !window.fetch) {
     let counter = 0
     const onload = () => {
         counter++
-        if (counter === 2) {
+        if (counter === 3) {
             mainInit()
         }
     }
     // Load polyfill and bable in order to support old browsers
     DomUtil.addScript('https://unpkg.com/babel-standalone@6.26.0/babel.min.js', {
-        async: false,
+        async: true,
         onload
     })
 
-    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6', {
-        async: false,
+    DomUtil.addScript('https://unpkg.com/unfetch@4.1.0/polyfill/index.js', {
+        async: true,
+        onload
+    })
+
+    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=URL%2Ces6', {
+        async: true,
         onload
     })
 } else {

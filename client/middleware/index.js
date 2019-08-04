@@ -121,7 +121,6 @@ export function configureMiddleware(store) {
         httpLink
     ])
     console.log('xxxx',wsUri)
-    console.log(fetch, URL)
 
     const wsLink = new WebSocketLink({
         uri: wsUri,
