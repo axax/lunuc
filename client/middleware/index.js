@@ -11,8 +11,9 @@ import {setNetworkStatus} from 'client/actions/NetworkStatusAction'
 import Util from '../util'
 import Hook from 'util/hook'
 
-const httpUri = `${window.location.protocol}//${window.location.hostname}:${window.location.port}/graphql`
-const wsUri = (window.location.protocol === 'https:' ? 'wss' : 'ws') + `://${window.location.hostname}:${window.location.port}/ws`
+const location = window.location
+const httpUri = `${location.protocol}//${location.hostname}:${location.port}/graphql`
+const wsUri = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/ws`
 
 
 // create a middleware for state handling and to attach the hook
