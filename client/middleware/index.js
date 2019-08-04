@@ -59,10 +59,8 @@ export function configureMiddleware(store) {
 
     //// TODO: batch queries is not support in graphql-express --> replace with ApolloServer
     //const httpLink = new BatchHttpLink({uri: httpUri})
-console.log('xxxx',1)
     // the link to our graphql api
     const httpLink = createHttpLink({uri: httpUri})
-    console.log('xxxx',2)
 
     // create a middleware with the authentication
     const authLink = setContext((req) => {
@@ -77,7 +75,6 @@ console.log('xxxx',1)
 
         return { headers}
     })
-    console.log('xxxx',3)
 
 
     // create a middleware for error handling
@@ -105,7 +102,6 @@ console.log('xxxx',1)
             }
         }
     })
-    console.log('xxxx',4)
 
     const statusLink = new ApolloLink((operation, forward) => {
         return forward(operation).map((data) => {
@@ -116,7 +112,6 @@ console.log('xxxx',1)
         })
     })
 
-    console.log('xxxx',5)
 
     // combine the links (the order is important)
     const combinedLink = ApolloLink.from([
@@ -125,7 +120,8 @@ console.log('xxxx',1)
         authLink,
         httpLink
     ])
-    console.log('xxxx',6)
+    console.log('xxxx',wsUri)
+    console.log(fetch, URL)
 
     const wsLink = new WebSocketLink({
         uri: wsUri,
