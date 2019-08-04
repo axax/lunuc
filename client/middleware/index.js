@@ -59,9 +59,10 @@ export function configureMiddleware(store) {
 
     //// TODO: batch queries is not support in graphql-express --> replace with ApolloServer
     //const httpLink = new BatchHttpLink({uri: httpUri})
-
+console.log('xxxx',1)
     // the link to our graphql api
     const httpLink = createHttpLink({uri: httpUri})
+    console.log('xxxx',2)
 
     // create a middleware with the authentication
     const authLink = setContext((req) => {
@@ -76,6 +77,7 @@ export function configureMiddleware(store) {
 
         return { headers}
     })
+    console.log('xxxx',3)
 
 
     // create a middleware for error handling
@@ -103,6 +105,7 @@ export function configureMiddleware(store) {
             }
         }
     })
+    console.log('xxxx',4)
 
     const statusLink = new ApolloLink((operation, forward) => {
         return forward(operation).map((data) => {
@@ -113,6 +116,7 @@ export function configureMiddleware(store) {
         })
     })
 
+    console.log('xxxx',5)
 
     // combine the links (the order is important)
     const combinedLink = ApolloLink.from([
@@ -121,6 +125,7 @@ export function configureMiddleware(store) {
         authLink,
         httpLink
     ])
+    console.log('xxxx',6)
 
     const wsLink = new WebSocketLink({
         uri: wsUri,
@@ -128,6 +133,8 @@ export function configureMiddleware(store) {
             reconnect: true, //auto-reconnect
         }
     })
+    console.log('xxxx',7)
+
 
     // create my middleware using the applyMiddleware method from subscriptions-transport-ws
     const subscriptionMiddleware = {
@@ -137,9 +144,11 @@ export function configureMiddleware(store) {
             next()
         }
     }
+    console.log('xxxx',8)
 
     // add the middleware to the web socket link via the Subscription Transport client
     wsLink.subscriptionClient.use([subscriptionMiddleware])
+    console.log('xxxx',9)
 
     // add ws link
     const link = ApolloLink.split(
@@ -150,6 +159,7 @@ export function configureMiddleware(store) {
         wsLink,
         combinedLink
     )
+    console.log('xxxx',10)
 
     const cacheOptions = {
         dataIdFromObject: (o) => {
@@ -170,9 +180,11 @@ export function configureMiddleware(store) {
         },
         addTypename: true
     }
+    console.log('xxxx',11)
 
     const cache = new OfflineCache(cacheOptions)
 
+    console.log('xxxx',12)
 
     // create the apollo client
     const client = new ApolloClient({
@@ -196,6 +208,7 @@ export function configureMiddleware(store) {
             }
         }
     })
+    console.log('xxxx',13)
 
     return client
 }
