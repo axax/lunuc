@@ -131,23 +131,26 @@ function mainInit() {
     }
 }
 
-try {
 
-    if (!Object.assign || !window.fetch) {
+if (!Object.assign || !window.fetch) {
 
-        // Load polyfill and bable in order to support old browsers
-        DomUtil.addScript('https://unpkg.com/babel-standalone@6.26.0/babel.min.js', {
-            async: true
-        })
-
-        DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6', {
-            async: false,
-            onload: mainInit
-        })
-    } else {
-        mainInit()
+    let counter = 0
+    const onload = () => {
+        counter++
+        if (counter === 2) {
+            mainInit()
+        }
     }
+    // Load polyfill and bable in order to support old browsers
+    DomUtil.addScript('https://unpkg.com/babel-standalone@6.26.0/babel.min.js', {
+        async: false,
+        onload
+    })
 
-}catch (e) {
-    console.error('catched', e)
+    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6', {
+        async: false,
+        onload
+    })
+} else {
+    mainInit()
 }
