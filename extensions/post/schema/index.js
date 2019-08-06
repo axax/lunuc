@@ -47,4 +47,13 @@ export default `
 		updatePost(_id: ID!, title: String, body: String): Post	
 		deletePost(_id: ID!): Post
 	}
+	
+type PostSubscribeResult {
+	data:Post
+	action:String
+}
+
+type Subscription{
+    subscribePost: PostSubscribeResult
+}
 `

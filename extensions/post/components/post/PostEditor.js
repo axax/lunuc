@@ -26,7 +26,7 @@ export default class PostEditor extends React.Component {
         super(props)
 
         this.plugins = []
-        const {readOnly} = props
+        const {readOnly, imageUpload} = props
 
         let decorator = null
         if (!readOnly) {
@@ -44,7 +44,7 @@ export default class PostEditor extends React.Component {
         const linkifyPlugin = createLinkifyPlugin()
         this.plugins.push(linkifyPlugin, this.imagePlugin)
 
-        if( !readOnly ){
+        if( !readOnly && imageUpload ){
             const dndFileUploadPlugin = createDndFileUploadPlugin({handleUpload: true, addImage: this.imagePlugin.addImage})
             this.plugins.push(dndFileUploadPlugin)
         }
@@ -65,10 +65,8 @@ export default class PostEditor extends React.Component {
             if (this.props.readOnly) return
             this.setState({editorState})
             if (forceSave || this.state.editorState.getCurrentContent() !== editorState.getCurrentContent()) {
-
-                console.log('state changed')
                 clearTimeout(this.changeTimeout)
-                this.changeTimeout = setTimeout(this.onChangeDelayed, 5000)
+                this.changeTimeout = setTimeout(this.onChangeDelayed, 500)
 
             }
         }
@@ -93,7 +91,7 @@ export default class PostEditor extends React.Component {
     render() {
         const startTime = new Date()
 
-        const {readOnly} = this.props
+        const {readOnly, imageUpload} = this.props
         const {editorState} = this.state
 
 
@@ -132,6 +130,7 @@ export default class PostEditor extends React.Component {
 
             content = <div className="RichEditor-root">
                 <BlockStyleControls
+                    imageUpload={imageUpload}
                     editorState={editorState}
                     onToggle={this.toggleBlockType}
                     onChange={this.onChange}
@@ -261,7 +260,8 @@ export default class PostEditor extends React.Component {
 PostEditor.propTypes = {
     onChange: PropTypes.func,
     post: PropTypes.object.isRequired,
-    readOnly: PropTypes.bool
+    readOnly: PropTypes.bool,
+    imageUpload: PropTypes.bool
 }
 
 
@@ -326,7 +326,7 @@ const BLOCK_TYPES = [
 ]
 
 const BlockStyleControls = (props) => {
-    const {editorState, onChange, imagePlugin} = props
+    const {editorState, onChange, imagePlugin, imageUpload} = props
     const selection = editorState.getSelection()
     const blockType = editorState
         .getCurrentContent()
@@ -345,11 +345,11 @@ const BlockStyleControls = (props) => {
                 />
             )}
 
-            <ImageAdd
+            {imageUpload && <ImageAdd
                 editorState={editorState}
                 onChange={onChange}
                 modifier={imagePlugin.addImage}
-            />
+            />}
 
         </div>
     )

@@ -23,6 +23,14 @@ const Util = {
             return ObjectId(context.id)
         }
     },
+    userOrAnonymousContext: async (db, context) => {
+        if (!context || !context.id) {
+            const anonymousContext = await Util.anonymousUserContext(db)
+            return anonymousContext
+        } else {
+            return context
+        }
+    },
     anonymousUserContext: async (db) => {
         // use anonymouse user
         const anonymousUser = await Util.userByName(db, 'anonymous')

@@ -1,6 +1,8 @@
 import Util from 'api/util'
 import {ObjectId} from 'mongodb'
 import GenericResolver from 'api/resolver/generic/genericResolver'
+import {withFilter} from "graphql-subscriptions";
+import {pubsub} from "../../../api/subscription";
 
 
 export default db => ({
@@ -61,7 +63,13 @@ export default db => ({
             }
         },
         updatePost: async ({_id, title, body}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
+
+            const userContext = await Util.userOrAnonymousContext(db,context)
+
+            // TODO premission management
+            if( _id !== '5d499dfdd80222b7a0556c1c') {
+                Util.checkIfUserIsLoggedIn(context)
+            }
 
             const postCollection = db.collection('Post')
 
@@ -76,13 +84,17 @@ export default db => ({
             if (result.ok !== 1) {
                 throw new ApiError('Post could not be changed')
             }
+
+            pubsub.publish('subscribePost', {userId:userContext.id,subscribePost: {action: 'update', data: {_id,body, title}}})
+
+
             return {
                 _id,
                 title,
                 body,
                 createdBy: {
-                    _id: ObjectId(context.id),
-                    username: context.username
+                    _id: ObjectId(userContext.id),
+                    username: userContext.username
                 },
                 status: 'updated'
             }
@@ -112,5 +124,15 @@ export default db => ({
                 }
             }
         }
+    },
+    Subscription:{
+        subscribePost: withFilter(() => pubsub.asyncIterator('subscribePost'),
+            (payload, context) => {
+                if( payload ) {
+                    //return payload.userId === context.id
+                    return true
+                }
+            }
+        )
     }
 })

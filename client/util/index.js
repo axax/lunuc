@@ -55,22 +55,27 @@ const Util = {
 
         return new Date(parseInt(objectId.substring(0, 8), 16) * 1000)
     },
+    getDateTimeFormat: ()=>{
+        return new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale, {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric'
+        })
+    },
     formattedDateFromObjectId: (objectId) => {
         if (objectId === 0) {
-            return new Intl.DateTimeFormat().format(new Date())
+            return new Util.getDateTimeFormat().format(new Date())
         }
-        return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId))
+        return Util.getDateTimeFormat().format(Util.dateFromObjectId(objectId))
     },
     formattedDatetimeFromObjectId: (objectId) => {
-
-        const options = {
-            hour: 'numeric', minute: 'numeric', second: 'numeric',
-            timeZoneName: 'short'
-        }
         if (objectId === 0) {
-            return new Intl.DateTimeFormat().format(new Date(), options)
+            return Util.getDateTimeFormat().format(new Date())
         }
-        return new Intl.DateTimeFormat().format(Util.dateFromObjectId(objectId), options)
+        return Util.getDateTimeFormat().format(Util.dateFromObjectId(objectId))
     },
     formattedDatetime(stamp) {
         if (!stamp) return ''
