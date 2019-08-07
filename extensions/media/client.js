@@ -81,8 +81,12 @@ export default () => {
                                         type="MediaConversion"/>
 
                             <TypePicker onChange={(e) => {
-                                setGroup(e.target.value[0]._id)
-                            }} name="conversion" placeholder="Select a group"
+                                const groups = []
+                                e.target.value.forEach(value=>{
+                                    groups.push(value._id)
+                                })
+                                setGroup(groups)
+                            }} multi={true} name="group" placeholder="Select a group"
                                         type="MediaGroup"/>
                         </div>,
                         <FileDrop key="fileDrop" multi={true} conversion={conversion} accept="*/*"
