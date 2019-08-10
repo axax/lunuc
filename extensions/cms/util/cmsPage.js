@@ -7,7 +7,6 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
     const host = getHostFromHeaders(headers)
 
     const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '')
-
     let cmsPages
     if (!editmode) {
         cmsPages = Cache.get(cacheKey)

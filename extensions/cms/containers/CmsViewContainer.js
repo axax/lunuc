@@ -230,6 +230,7 @@ class CmsViewContainer extends React.Component {
         if (isEditMode(this.props) && !this.props.dynamic) {
             this._handleWindowClose = this.saveUnsafedChanges.bind(this)
             window.addEventListener('beforeunload', this._handleWindowClose)
+            window.addEventListener('blur', this._handleWindowClose)
             this.props.history.listen(() => {
                 this.saveUnsafedChanges()
             })
@@ -243,6 +244,7 @@ class CmsViewContainer extends React.Component {
             if (isEditMode(this.props)) {
                 this.saveUnsafedChanges()
                 window.removeEventListener('beforeunload', this._handleWindowClose)
+                window.removeEventListener('blur', this._handleWindowClose)
             }
         }
         this.removeSubscriptions()
