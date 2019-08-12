@@ -3,7 +3,7 @@
 }
 .CodeMirror{
     height: 100%;
-    overflow-y: scroll;
+    overflow-y: hidden;
     background-color: #fefefe;
 }
 .cm-s-default .cm-custom {
