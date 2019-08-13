@@ -338,6 +338,9 @@ class CmsViewContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
+                            onBlur={()=>{
+                                this.saveUnsafedChanges()
+                            }}
                             onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
                     </Expandable>
 

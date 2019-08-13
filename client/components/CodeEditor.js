@@ -51,7 +51,7 @@ class CodeEditor extends React.Component {
     }
 
     render() {
-        const {onChange, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className} = this.props
+        const {onChange, onBlur, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className} = this.props
         const options = {
             mode: {},
             readOnly,
@@ -106,6 +106,11 @@ class CodeEditor extends React.Component {
                 }}
                 value={this._data}
                 options={options}
+                onBlur={(editor, e)=>{
+                    if (onBlur) {
+                        onBlur(e)
+                    }
+                }}
                 onChange={(editor, dataObject, data) => {
 
                     this._data = data
@@ -122,6 +127,7 @@ CodeEditor.propTypes = {
     lineNumbers: PropTypes.bool,
     readOnly: PropTypes.bool,
     onChange: PropTypes.func,
+    onBlur: PropTypes.func,
     type: PropTypes.string,
     children: PropTypes.string,
     actions: PropTypes.array,
