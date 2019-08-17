@@ -34,7 +34,8 @@
     "start": "echo \"Start api and client concurrently\" && npm run api & npm run client",
     "start:dev": "echo \"Start api and client in dev mode concurrently\" && npm run api:dev & npm run client:dev",
     "heroku-prebuild": "npm install && node ./clean-node-modules.js",
-    "heroku-postbuild": "npm run build"
+    "heroku-postbuild": "npm run build",
+    "preinstall": "rm -rf node_modules/less"
   },
   "keywords": [
     "React for UI",
@@ -133,6 +134,7 @@
     "compression-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^5.0.4",
     "css-loader": "^3.2.0",
+    "less": "^3.10.0",
     "jest-cli": "^24.9.0",
     "less-loader": "^5.0.0",
     "mini-css-extract-plugin": "^0.8.0",
