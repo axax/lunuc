@@ -14,7 +14,7 @@ rimrafSync(__dirname+'/node_modules/**/*.png')
 rimrafSync(__dirname+'/node_modules/**/*.md')
 rimrafSync(__dirname+'/node_modules/**/*.ts')
 rimrafSync(__dirname+'/node_modules/**/*.map')
-//rimrafSync(__dirname+'/node_modules/**/debug/*')
+rimrafSync(__dirname+'/node_modules/**/debug/*')
 rimrafSync(__dirname+'/node_modules/**/LICENSE')
 rimrafSync(__dirname+'/node_modules/**/.git/*')
 
