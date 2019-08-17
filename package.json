@@ -35,7 +35,8 @@
     "start:dev": "echo \"Start api and client in dev mode concurrently\" && npm run api:dev & npm run client:dev",
     "heroku-prebuild": "npm install && node ./clean-node-modules.js",
     "heroku-postbuild": "npm run build",
-    "preinstall": "rm -rf node_modules/less"
+    "preinstall": "rm -rf node_modules/less",
+    "postinstall": "rm -rf node_modules/less/.git"
   },
   "keywords": [
     "React for UI",
