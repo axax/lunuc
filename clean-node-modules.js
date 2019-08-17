@@ -5,7 +5,6 @@ var fs = require("fs")
 var glob = require("glob")
 var _0666 = parseInt('666', 8)
 
-
 /* this is needed to save some MBs to make sure heroku slug size don't get bigger than 500MB */
 
 rimrafSync(__dirname+'/node_modules/**/*.jpg')
@@ -17,6 +16,7 @@ rimrafSync(__dirname+'/node_modules/**/*.ts')
 rimrafSync(__dirname+'/node_modules/**/*.map')
 rimrafSync(__dirname+'/node_modules/**/debug/*')
 rimrafSync(__dirname+'/node_modules/**/LICENSE')
+rimrafSync(__dirname+'/node_modules/**/.git/*')
 
 var defaultGlobOpts = {
     nosort: true,
