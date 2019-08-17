@@ -11,7 +11,8 @@ import {
 } from 'ui/admin'
 import GenericForm from 'client/components/GenericForm'
 import extensions from 'gen/extensions'
-import {graphql, compose} from 'react-apollo'
+import {graphql} from 'react-apollo'
+import compose from 'util/compose'
 import gql from 'graphql-tag'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 

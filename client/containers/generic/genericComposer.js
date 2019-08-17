@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types'
-import {graphql, compose} from 'react-apollo'
+import {graphql} from 'react-apollo'
+import compose from 'util/compose'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
 
