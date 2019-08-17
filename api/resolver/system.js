@@ -52,11 +52,11 @@ const findAndReplaceObjectIds = function (obj) {
                         obj[i] = ObjectId(v)
                     }
                 } else {
-                    findAndReplaceObjectIds(v);
+                    findAndReplaceObjectIds(v)
                 }
         }
     }
-    return null;
+    return null
 }
 
 export const systemResolver = (db) => ({
