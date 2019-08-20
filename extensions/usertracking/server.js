@@ -3,7 +3,7 @@ import resolver from './gensrc/resolver'
 import Hook from 'util/hook'
 import {deepMergeToFirst} from 'util/deepMerge'
 import Util from '../../api/util'
-import {clientAddress} from '../../util/host'
+import {clientAddress, getHostFromHeaders} from '../../util/host'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
@@ -19,10 +19,12 @@ Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode}
     if (segment.track && req && !editmode) {
         const ip = clientAddress(req)
         if( ip !== '::ffff:127.0.0.1') {
+            const host = getHostFromHeaders(req.headers)
             db.collection('UserTracking').insertOne({
                 ip,
                 agent: req.headers['user-agent'],
                 event: segment.track.event,
+                host: host,
                 slug: scope.page.slug,
                 createdBy: await Util.userOrAnonymousId(db, context)
             })

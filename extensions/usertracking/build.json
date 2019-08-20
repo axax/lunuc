@@ -12,6 +12,10 @@
           "index": 1
         },
         {
+          "name": "host",
+          "index": 1
+        },
+        {
           "name": "slug",
           "index": 1
         },
