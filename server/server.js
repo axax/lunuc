@@ -10,6 +10,29 @@ import {getHostFromHeaders} from 'util/host'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL} = config
 
+
+// load hostrules
+const HOSTRULES_DIR = path.join(__dirname, '../hostrules/')
+const hostrules = {}
+
+fs.readdir(HOSTRULES_DIR, (err, filenames) => {
+    if (err) {
+        return;
+    }
+    filenames.forEach((filename) => {
+        if( filename.endsWith('.json')) {
+            fs.readFile(HOSTRULES_DIR + filename, 'utf-8', function (err, content) {
+                if (err) {
+                    return
+                }
+                hostrules[filename.substring(0, filename.length - 5)] = JSON.parse(content)
+            })
+        }
+    })
+})
+
+
+
 // Port to listen to
 const PORT = (process.env.PORT || 8080)
 const API_PORT = (process.env.API_PORT || 3000)
@@ -85,8 +108,20 @@ const app = httpx.createServer(options, function (req, res) {
 
 
         } else {
+            const host = getHostFromHeaders(req.headers)
 
-            const staticFile = path.join(STATIC_DIR, uri)
+            // check with and without www
+            const hostrule = hostrules[host] || hostrules[host.substring(4)]
+
+
+            let staticFile
+
+            if( hostrule && hostrule.fileMapping[uri]){
+                staticFile = path.join(__dirname, '../'+hostrule.fileMapping[uri])
+            }else{
+                staticFile = path.join(STATIC_DIR, uri)
+            }
+
 
             fs.stat(staticFile, function (errStats, staticStats) {
 
@@ -121,10 +156,7 @@ const app = httpx.createServer(options, function (req, res) {
                         let indexfile
 
                         // TODO: resolve data in advance if possible
-
                         // TODO: host rule to load host specific index files
-                        const host = getHostFromHeaders(req.headers)
-                        console.log(host, uri)
                         if (host === 'www.onyou.ch') {
                             indexfile = path.join(BUILD_DIR, '/index.min.html')
                         } else {
