@@ -155,11 +155,10 @@ const app = httpx.createServer(options, function (req, res) {
 
                         let indexfile
 
-                        // TODO: resolve data in advance if possible
-                        // TODO: host rule to load host specific index files
-                        if (host === 'www.onyou.ch') {
-                            indexfile = path.join(BUILD_DIR, '/index.min.html')
+                        if ( hostrule && hostrule.fileMapping['/index.html']) {
+                            indexfile = path.join(__dirname, '../'+hostrule.fileMapping['/index.html'])
                         } else {
+                            // default index
                             indexfile = path.join(BUILD_DIR, '/index.min.html')
                         }
 

@@ -18,17 +18,17 @@ function mainInit() {
 
     // context language
     // we expect the first part of the path to be the language when its length is 2
-    let contextLanguage = window.location.pathname.split('/')[1], basePath
+    let loc = window.location, contextLanguage = loc.pathname.split('/')[1], basePath
     if (contextLanguage && contextLanguage.length === 2) {
         contextLanguage = contextLanguage.toLowerCase()
         _app_.contextPath = '/' + contextLanguage
-        basePath = window.location.pathname.substring(3)
+        basePath = loc.pathname.substring(3)
     } else {
         _app_.contextPath = ''
         contextLanguage = false
-        basePath = window.location.pathname
+        basePath = loc.pathname
     }
-    basePath += window.location.search + window.location.hash
+    basePath += loc.search + loc.hash
 
 
     // if lang is not set already
@@ -38,7 +38,7 @@ function mainInit() {
         if (contextLanguage) {
             lang = contextLanguage
         } else {
-            if (!sessionLanguage) {
+            if (!sessionLanguage && _app_.detectLang) {
                 lang = (navigator.language || navigator.userLanguage).substr(0, 2)
             } else {
                 lang = config.DEFAULT_LANGUAGE
@@ -50,7 +50,7 @@ function mainInit() {
 
     if (!contextLanguage && config.DEFAULT_LANGUAGE !== _app_.lang) {
         // add language to url and redirect
-        window.location = window.location.origin + '/' + _app_.lang + basePath
+        window.location = loc.origin + '/' + _app_.lang + basePath
     } else {
         // keep language in session
         sessionStorage.setItem('lang', _app_.lang)
@@ -61,7 +61,7 @@ function mainInit() {
             // set canonical link
             DomUtil.createAndAddTag('link', 'head', {
                 rel: 'canonical',
-                href: window.location.origin + basePath
+                href: loc.origin + basePath
             })
         }
 
@@ -69,7 +69,7 @@ function mainInit() {
         DomUtil.createAndAddTag('link', 'head', {
             rel: 'alternate',
             hreflang: 'x-default',
-            href: window.location.origin + basePath
+            href: loc.origin + basePath
         })
         for (let i = 0; i < config.LANGUAGES.length; i++) {
             const curLang = config.LANGUAGES[i]
@@ -77,7 +77,7 @@ function mainInit() {
             DomUtil.createAndAddTag('link', 'head', {
                 rel: 'alternate',
                 hreflang: curLang,
-                href: window.location.origin + (!isDefault ? '/' + curLang : '') + basePath
+                href: loc.origin + (!isDefault ? '/' + curLang : '') + basePath
             })
         }
 
