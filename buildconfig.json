@@ -50,6 +50,9 @@
     },
     "crm": {
       "active": true
+    },
+    "genericdata": {
+      "active": true
     }
   },
   "ui": [

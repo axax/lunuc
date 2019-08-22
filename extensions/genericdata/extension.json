@@ -1,0 +1,8 @@
+{
+  "name": "Generic data",
+  "description": "Define date structures and use them in the cms",
+  "author": "Simon Schärer",
+  "dependencies": [
+    "cms"
+  ]
+}

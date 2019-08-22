@@ -1,0 +1,32 @@
+{
+  "types": [
+    {
+      "name": "GenericDataDefinition",
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "name",
+          "index": 1
+        },
+        {
+          "name": "structure",
+          "uitype": "json"
+        }
+      ]
+    },
+    {
+      "name": "GenericData",
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "data",
+          "uitype": "json"
+        },
+        {
+          "name": "definition",
+          "type": "GenericDataDefinition"
+        }
+      ]
+    }
+  ]
+}

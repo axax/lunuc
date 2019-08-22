@@ -224,7 +224,7 @@ class JsonDom extends React.Component {
         this._ismounted = false
         this.removeAddedDomElements()
         this.json = this.jsonRaw = this.componentRefs = null
-        if (this.node.oriParent) {
+        if (this.node && this.node.oriParent) {
             this.node.oriParent.appendChild(this.node)
         }
     }
@@ -561,6 +561,9 @@ class JsonDom extends React.Component {
 
 
                 if (p) {
+                    // remove properties with empty values
+                    Object.keys(p).forEach(key => p[key] === '' && delete p[key])
+
                     properties = Object.assign(properties, p)
                     // replace events with real functions and pass payload
                     JsonDom.events.forEach((e) => {
