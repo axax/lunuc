@@ -536,7 +536,7 @@ class TypesContainer extends React.Component {
                 }} primaryButton={false} fields={formFields} values={dataToEdit}/>
             }
             /* HOOK */
-            Hook.call('TypeCreateEditDialog', {type, props: editDialogProps, dataToEdit}, this)
+            Hook.call('TypeCreateEditDialog', {type, props: editDialogProps, dataToEdit, formFields}, this)
         }
 
         if (manageColDialog !== undefined) {

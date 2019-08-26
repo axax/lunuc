@@ -9,7 +9,7 @@ const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
 
 export default () => {
 
-    Hook.on('ApiResponse', ({data}) => {
+    /*Hook.on('ApiResponse', ({data}) => {
         if (data.products) {
             const results = data.products.results
             if (results) {
@@ -19,7 +19,7 @@ export default () => {
                 })
             }
         }
-    })
+    })*/
 
     Hook.on('TypeCreateEditDialogAction', function ({type, action}) {
         if (type === 'CronJob' && action && action.key === 'run') {

@@ -255,7 +255,7 @@ class GenericForm extends React.Component {
                                       helperText={this.state.fieldErrors[k]}
                                       fullWidth={o.fullWidth}
                                       type={uitype}
-                                      placeholder={o.placeholder}
+                                      placeholder={o.placeholder || o.name}
                                       value={value || ''}
                                       name={k}
                                       onKeyDown={(e) => {
