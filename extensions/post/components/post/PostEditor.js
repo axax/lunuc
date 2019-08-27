@@ -195,7 +195,7 @@ export default class PostEditor extends React.Component {
 
     _getEditorState(bodyRaw) {
         if (bodyRaw && bodyRaw != '') {
-            var parsedContent
+            let parsedContent
             try {
                 parsedContent = convertFromRaw(JSON.parse(bodyRaw))
             } catch (e) {

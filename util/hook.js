@@ -14,12 +14,12 @@ const Hook = {
     hooks: {},
     hooksOrder: {},
     on: function (names, callback, order) {
-        if( names.constructor !== Array ){
+        if (names.constructor !== Array) {
             names = [names]
         }
         names.forEach(name => {
 
-            if ('undefined' == typeof( Hook.hooks[name] )) {
+            if ('undefined' == typeof (Hook.hooks[name])) {
                 Hook.hooks[name] = []
             }
             if (!order) {
@@ -38,7 +38,7 @@ const Hook = {
 
     },
     call: function (name, args, thisRef) {
-        if ('undefined' != typeof( Hook.hooks[name] )) {
+        if ('undefined' != typeof (Hook.hooks[name])) {
             for (var i = 0; i < Hook.hooks[name].length; ++i) {
                 if (thisRef) {
                     Hook.hooks[name][i].callback.bind(thisRef)(args)

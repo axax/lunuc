@@ -13,14 +13,22 @@ export default () => {
     Hook.on('TypeCreateEditDialog', function ({type, props, formFields, dataToEdit}) {
         if (type === 'GenericData' && dataToEdit && dataToEdit.definition) {
 
-           // console.log(formFields,dataToEdit)
+            const struct = JSON.parse(dataToEdit.definition.structure),
+                data = JSON.parse(dataToEdit.data)
 
+            const newFields = Object.assign({}, formFields)
+            const newDataToEdit = Object.assign({}, dataToEdit)
 
-            const struct = JSON.parse(dataToEdit.definition.structure)
+            delete newFields.data
+            delete newDataToEdit.data
 
-            const newFields = Object.assign({}, formFields, struct.fields)
-            console.log(struct.fields)
-
+            struct.fields.forEach(field => {
+                const oriName = field.name, newName= 'data_' + oriName
+                field.fullWidth = true
+                field.name = newName
+                newFields[newName] = field
+                newDataToEdit[newName] = data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
+            })
 
             // override default
             props.children = <GenericForm autoFocus
@@ -33,13 +41,27 @@ export default () => {
                                           }}
                                           primaryButton={false}
                                           fields={newFields}
-                                          values={dataToEdit}/>
+                                          values={newDataToEdit}/>
 
-
-            //console.log(props, dataToEdit.definition.structure)
-            //props.actions.unshift({key: 'run', label: 'Run CronJob'})
         }
     })
 
+    Hook.on('TypeCreateEditDialogBeforeSave', function ({type, dataToEdit, formFields}) {
+        if (type === 'GenericData' && dataToEdit && dataToEdit.definition) {
+
+            const struct = JSON.parse(dataToEdit.definition.structure)
+
+            const data = {}
+
+            struct.fields.forEach(field => {
+                data[field.name] = dataToEdit['data_' + field.name]
+                delete dataToEdit['data_' + field.name]
+            })
+
+            dataToEdit.data = JSON.stringify(data, null, 4)
+
+
+        }
+    })
 
 }

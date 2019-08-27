@@ -109,7 +109,7 @@ class TypesContainer extends React.Component {
             collectionName: ''
         }
 
-        if( !fixType ) {
+        if (!fixType) {
             // if it is not a fix type a selection box with all types is shown
             // prepare list with types for select box
             Object.keys(this.types).map((k) => {
@@ -1256,19 +1256,21 @@ class TypesContainer extends React.Component {
                 return
             }
 
-            const fieldData = Object.assign({}, this.createEditForm.state.fields)
+            const dataToEdit = Object.assign({}, this.createEditForm.state.fields)
             const formFields = getFormFields(this.pageParams.type)
+
+            Hook.call('TypeCreateEditDialogBeforeSave', {type: this.pageParams.type, dataToEdit, formFields})
 
 
             // convert array to single value for not multivalue references
             Object.keys(formFields).forEach(key => {
                 const field = formFields[key]
-                if (field.reference && !field.multi && fieldData[key] && fieldData[key].length) {
-                    fieldData[key] = fieldData[key][0]
+                if (field.reference && !field.multi && dataToEdit[key] && dataToEdit[key].length) {
+                    dataToEdit[key] = dataToEdit[key][0]
                 }
             })
 
-            const submitData = this.referencesToIds(fieldData)
+            const submitData = this.referencesToIds(dataToEdit)
 
             const callback = ({errors}) => {
                 // server side validation
@@ -1304,14 +1306,14 @@ class TypesContainer extends React.Component {
                 })
                 if (Object.keys(updateData).length) {
                     // only send data if they have really changed
-                    this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...updateData}, fieldData).then(callback)
+                    this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...updateData}, dataToEdit).then(callback)
                 } else {
                     closeModal()
                 }
 
             } else {
                 // create a new entry
-                this.createData(this.pageParams, submitData, fieldData).then(callback)
+                this.createData(this.pageParams, submitData, dataToEdit).then(callback)
             }
 
         } else if (action && action.key === 'cancel') {

@@ -7,7 +7,7 @@ import config from 'gen/config'
 import CodeEditor from './CodeEditor'
 import {withStyles} from 'ui/admin'
 import {checkFieldType} from 'util/types'
-
+import Hook from '../../util/hook'
 
 const styles = theme => ({
     editor: {
@@ -48,7 +48,7 @@ class GenericForm extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         if (nextProps.fields !== prevState.fieldsOri) {
             console.log('GenericForm fields changed')
-            console.log( prevState.fieldsOri,nextProps.fields)
+            console.log(prevState.fieldsOri, nextProps.fields)
             return GenericForm.getInitalState(nextProps)
         }
         return null
@@ -150,10 +150,10 @@ class GenericForm extends React.Component {
             }
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
-                setTimeout(()=>{
-
-                    target.focus()
-                },600)
+                setTimeout(() => {
+                    if(target.focus)
+                        target.focus()
+                }, 600)
             }
             newState.isValid = this.validate(newState)
             return newState
@@ -177,11 +177,11 @@ class GenericForm extends React.Component {
     render() {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
         const formFields = Object.keys(fields).map((k, i) => {
-            const o = fields[k], value = this.state.fields[k]
-            if (o.readOnly) {
+            const field = fields[k], value = this.state.fields[k]
+            if (field.readOnly) {
                 return
             }
-            const uitype = o.uitype || (o.enum ? 'select' : 'text')
+            const uitype = field.uitype || (field.enum ? 'select' : 'text')
 
             if (['json', 'editor', 'jseditor'].indexOf(uitype) >= 0) {
 
@@ -207,7 +207,10 @@ class GenericForm extends React.Component {
                 })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor>
 
             } else if (uitype === 'image') {
-                return <FileDrop key={k}/>
+
+                return <FileDrop key={k} value={value}/>
+
+
             } else if (uitype === 'type_picker') {
 
                 return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
@@ -215,30 +218,41 @@ class GenericForm extends React.Component {
                                    helperText={this.state.fieldErrors[k]}
                                    onChange={this.handleInputChange} key={k}
                                    name={k}
-                                   label={o.label}
-                                   multi={o.multi}
-                                   pickerField={o.pickerField}
-                                   fields={o.fields}
-                                   type={o.type} placeholder={o.placeholder}/>
+                                   label={field.label}
+                                   multi={field.multi}
+                                   pickerField={field.pickerField}
+                                   fields={field.fields}
+                                   type={field.type} placeholder={field.placeholder}/>
             } else if (uitype === 'select') {
-                return <SimpleSelect key={k} name={k} onChange={this.handleInputChange} items={o.enum} multi={o.multi}
-                                     value={value|| []}/>
-            } else if (o.type === 'Boolean') {
-                return <SimpleSwitch key={k} label={o.placeholder} name={k}
+                return <SimpleSelect key={k} name={k} onChange={this.handleInputChange} items={field.enum}
+                                     multi={field.multi}
+                                     value={value || []}/>
+            } else if (field.type === 'Boolean') {
+                return <SimpleSwitch key={k} label={field.placeholder} name={k}
                                      onChange={this.handleInputChange} checked={value ? true : false}/>
 
+
             } else {
-                if (o.localized) {
+
+                const result = {}
+
+                Hook.call('GenericFormField', {field, result, value}, this)
+
+                if (result.component) {
+                    return result.component
+                }
+
+                if (field.localized) {
 
                     return config.LANGUAGES.reduce((a, l) => {
                         const fieldName = k + '.' + l
                         a.push(<TextField key={fieldName}
                                           error={!!this.state.fieldErrors[fieldName]}
                                           helperText={this.state.fieldErrors[fieldName]}
-                                          label={o.label}
-                                          fullWidth={o.fullWidth}
+                                          label={field.label}
+                                          fullWidth={field.fullWidth}
                                           type={uitype}
-                                          placeholder={o.placeholder + ' [' + l + ']'}
+                                          placeholder={field.placeholder + ' [' + l + ']'}
                                           value={(value && value[l] ? value[l] : '')}
                                           name={fieldName}
                                           onKeyDown={(e) => {
@@ -251,11 +265,11 @@ class GenericForm extends React.Component {
                 } else {
                     return <TextField autoFocus={autoFocus && i === 0} error={!!this.state.fieldErrors[k]}
                                       key={k}
-                                      label={o.label}
+                                      label={field.label}
                                       helperText={this.state.fieldErrors[k]}
-                                      fullWidth={o.fullWidth}
+                                      fullWidth={field.fullWidth}
                                       type={uitype}
-                                      placeholder={o.placeholder || o.name}
+                                      placeholder={field.placeholder || field.name}
                                       value={value || ''}
                                       name={k}
                                       onKeyDown={(e) => {
