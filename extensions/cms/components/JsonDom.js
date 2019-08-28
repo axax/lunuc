@@ -69,11 +69,15 @@ class JsonDom extends React.Component {
         'Print': {component: Print, label: 'Printable area'},
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
-        'Link': ({to, ...rest}) => {
-            if (to) {
-                return <Link to={to} {...rest}/>
+        'Link': ({to, href, target, ...rest}) => {
+            const url = to || href, newTarget = target && target !== 'undefined' ? target : '_self',
+                rel = target === '_blank' ? 'noopener' : ''
+
+            if (url.startsWith('https://') || url.startsWith('http://')) {
+                return <a href={url} target={newTarget} rel={rel} {...rest}/>
             } else {
-                return <a {...rest}/>
+                return <Link target={newTarget} rel={rel}
+                             to={url} {...rest}/>
             }
         },
         'Cms': ({props, _this, ...rest}) => {
@@ -365,7 +369,7 @@ class JsonDom extends React.Component {
 
     handleBindingChange(cb, event, value) {
         this.bindings[event.target.name] = value
-        if( cb)
+        if (cb)
             cb.bind(this)(event)
     }
 
@@ -946,9 +950,9 @@ class JsonDom extends React.Component {
     })
 
     refresh = (id, runScript) => {
-        if( id === true){
+        if (id === true) {
             runScript = true
-            id= null
+            id = null
         }
 
         let nodeToRefresh
