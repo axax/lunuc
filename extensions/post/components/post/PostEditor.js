@@ -44,8 +44,11 @@ export default class PostEditor extends React.Component {
         const linkifyPlugin = createLinkifyPlugin()
         this.plugins.push(linkifyPlugin, this.imagePlugin)
 
-        if( !readOnly && imageUpload ){
-            const dndFileUploadPlugin = createDndFileUploadPlugin({handleUpload: true, addImage: this.imagePlugin.addImage})
+        if (!readOnly && imageUpload) {
+            const dndFileUploadPlugin = createDndFileUploadPlugin({
+                handleUpload: true,
+                addImage: this.imagePlugin.addImage
+            })
             this.plugins.push(dndFileUploadPlugin)
         }
 
@@ -103,8 +106,16 @@ export default class PostEditor extends React.Component {
             ref: (editor) => {
                 this.editor = editor
             },
-            onChange: this.onChange
+            onChange: this.onChange,
+            blockRendererFn: this.blockRendererFn
         }
+
+        /*editorProps.blockRenderMap = {
+            unstyled: {
+                element: 'div',
+                aliasedElements: ['p']
+            }
+        }*/
 
         let content
         if (readOnly) {
@@ -115,7 +126,6 @@ export default class PostEditor extends React.Component {
             editorProps.handleKeyCommand = this.handleKeyCommand
             editorProps.onTab = this.onTab
             editorProps.spellCheck = true
-            editorProps.blockRendererFn=this.blockRendererFn
 
 
             // If the user changes block type before entering any text, we can
@@ -170,7 +180,11 @@ export default class PostEditor extends React.Component {
 
 
     blockRendererFn = (block) => {
-
+        if( block.type === 'unstyled'){
+            return {
+                component: () => <p>{block.text}</p>
+            }
+        }
         const {editorState} = this.state
         const entityKey = block.getEntityAt(0)
         if (!entityKey) {
