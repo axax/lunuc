@@ -27,7 +27,7 @@ export default () => {
                 field.fullWidth = true
                 field.name = newName
                 newFields[newName] = field
-                newDataToEdit[newName] = data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
+                newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
             })
 
             // override default

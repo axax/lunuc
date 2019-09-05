@@ -64,7 +64,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         resolvedData[k] = segment.data[k]
                     })
                 } else if (segment.t) {
-                    const {t, f, l, o, p, d, s, cache, includeCount} = segment
+                    const {t, f, l, o, p, d, s, $if, cache, includeCount} = segment
+
                     /*
                      f = filter for the query
                      t = type
@@ -77,6 +78,18 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                      cache = defines cache policy
                      includeCount = whether to return the total number of results
                      */
+
+                    if ($if) {
+                        // check condition
+                        try {
+                            const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope;const {data} = this;return ${$if}`)
+                            if (!tpl.call({scope, data: resolvedData})) {
+                                continue
+                            }
+                        } catch (e) {
+                            console.log(e, scope)
+                        }
+                    }
                     let fields
                     if (d && d.constructor === String) {
                         try {

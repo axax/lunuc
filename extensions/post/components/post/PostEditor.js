@@ -180,7 +180,9 @@ export default class PostEditor extends React.Component {
 
 
     blockRendererFn = (block) => {
-        if( block.type === 'unstyled'){
+
+        const {readOnly} = this.props
+        if (readOnly && block.type === 'unstyled') {
             return {
                 component: () => <p>{block.text}</p>
             }
