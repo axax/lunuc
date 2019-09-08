@@ -4,7 +4,6 @@ import config from 'gen/config'
 
 const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'
-import PostEditor from "./components/post/PostEditor";
 
 const PostContainerAsync = (props) => <Async {...props}
                                              load={import(/* webpackChunkName: "post" */ './containers/PostContainer')}/>
