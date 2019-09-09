@@ -2,6 +2,7 @@ import 'gen/extensions-server'
 import express from 'express'
 import {buildSchema} from 'graphql'
 import graphqlHTTP from 'express-graphql'
+import bodyParser from 'body-parser'
 //import {ApolloServer, gql} from 'apollo-server-express'
 import {createServer} from 'http'
 import {SubscriptionServer} from 'subscriptions-transport-ws'
@@ -98,6 +99,10 @@ export const start = (done) => {
                     rootValue[key] = resolvers[key]
                 }
             })
+
+
+            // fix graphql limit of 100kb body size
+            app.use(bodyParser({ limit: '1mb' }));
 
             app.use('/graphql', (req, res, next) => {
 
