@@ -23,6 +23,7 @@ Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode}
             db.collection('UserTracking').insertOne({
                 ip,
                 agent: req.headers['user-agent'],
+                referer: req.headers['referer'],
                 event: segment.track.event,
                 host: host,
                 slug: scope.page.slug,
