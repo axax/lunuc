@@ -269,7 +269,6 @@ const GenericResolver = {
         //check if this field is a reference
         const fields = getFormFields(typeName)
 
-
         // clone object but without _id, _version and undefined property
         // null is when a refrence has been removed
         const dataSet = Object.keys(data).reduce((o, k) => {
@@ -281,6 +280,9 @@ const GenericResolver = {
                         o[k + '.' + key] = data[k][key]
                     })
 
+                }else if( fields[k].type === 'Object' ){
+                    // store as object
+                    o[k] = JSON.parse(data[k])
 
                 } else {
                     o[k] = data[k]
@@ -288,7 +290,6 @@ const GenericResolver = {
             }
             return o
         }, {})
-
         // set timestamp
         dataSet.modifiedAt = new Date().getTime()
         // try with dot notation for partial update

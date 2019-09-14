@@ -139,6 +139,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         includeCount,
                         projectResult: true
                     })
+                    //console.log(JSON.stringify(result,null,4))
 
                     debugInfo += ' result=true'
 

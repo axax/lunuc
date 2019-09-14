@@ -14,7 +14,7 @@ export default () => {
         if (type === 'GenericData' && dataToEdit && dataToEdit.definition) {
 
             const struct = JSON.parse(dataToEdit.definition.structure),
-                data = JSON.parse(dataToEdit.data)
+                data = dataToEdit.data.constructor===String?JSON.parse(dataToEdit.data):dataToEdit.data
 
             const newFields = Object.assign({}, formFields)
             const newDataToEdit = Object.assign({}, dataToEdit)
@@ -58,7 +58,7 @@ export default () => {
                 delete dataToEdit['data_' + field.name]
             })
 
-            dataToEdit.data = JSON.stringify(data, null, 4)
+            dataToEdit.data = JSON.stringify(data)
 
 
         }

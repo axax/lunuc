@@ -424,7 +424,9 @@ export default class AggregationBuilder {
                 if (!refFields) {
                     projectResultData[fieldName] = 1
                     const refFieldDefinitions = getFormFields(fieldDefinition.type)
-                    refFields = Object.keys(refFieldDefinitions)
+                    if( refFieldDefinitions) {
+                        refFields = Object.keys(refFieldDefinitions)
+                    }
                 }
 
                 if (refFields) {

@@ -627,7 +627,7 @@ class JsonDom extends React.Component {
                 }
 
                 if (editMode && this.props.inlineEditor && (initial || !dynamic)) {
-                    const rawJson = this.getJsonRaw(this.props)
+                    const rawJson = this.getJsonRaw(this.props, true)
                     if (rawJson) {
                         eleProps._WrappedComponent = eleType
                         eleProps._scope = scope
@@ -696,7 +696,7 @@ class JsonDom extends React.Component {
         return this.json
     }
 
-    getJsonRaw(props) {
+    getJsonRaw(props, ignoreError) {
         if (this.jsonRaw) return this.jsonRaw
         const {template} = props
 
@@ -710,8 +710,9 @@ class JsonDom extends React.Component {
              */
             this.jsonRaw = JSON.parse(template)
         } catch (e) {
-            console.log(e)
-            this.emitJsonError(e)
+            console.log(e, template)
+            if (!ignoreError)
+                this.emitJsonError(e)
         }
         return this.jsonRaw
     }

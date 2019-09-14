@@ -20,7 +20,8 @@
       "fields": [
         {
           "name": "data",
-          "uitype": "json"
+          "uitype": "json",
+          "type": "Object"
         },
         {
           "name": "definition",

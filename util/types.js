@@ -72,7 +72,7 @@ export const getTypeQueries = (typeName) => {
                 insertUpdateQuery += ', '
             }
 
-            let t = localized ? 'LocalizedStringInput' : (type || 'String')
+            let t = localized ? 'LocalizedStringInput' : (type && type !== 'Object' ? type : 'String')
 
 
             if (reference) {
