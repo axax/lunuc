@@ -424,7 +424,7 @@ export default class AggregationBuilder {
                 if (!refFields) {
                     projectResultData[fieldName] = 1
                     const refFieldDefinitions = getFormFields(fieldDefinition.type)
-                    if( refFieldDefinitions) {
+                    if (refFieldDefinitions) {
                         refFields = Object.keys(refFieldDefinitions)
                     }
                 }
@@ -497,8 +497,6 @@ export default class AggregationBuilder {
             } else {
                 // regular field
                 if (fieldName !== '_id') {
-
-
                     groups[fieldName] = {'$first': '$' + fieldName}
                     if (typeFields[fieldName]) {
                         this.createAndAddFilterToMatch(fieldDefinition, match, {})
@@ -522,6 +520,12 @@ export default class AggregationBuilder {
 
                     } else {
                         projectResultData[fieldName] = 1
+
+                        // mongodb 4 supports convert and toString
+                        // for know we have to do it after the query
+                        /*if (fieldDefinition.type === 'Object') {
+                            projectResultData[fieldName] = {$convert: {input: '$' + fieldName, to: "string"}}
+                        }*/
                     }
                 }
             }
@@ -536,7 +540,6 @@ export default class AggregationBuilder {
             }
             groups.modifiedAt = {'$first': '$modifiedAt'}
         }
-
 
         // compose result
         let dataQuery = [], dataFacetQuery = []

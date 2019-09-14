@@ -24,6 +24,37 @@ const buildCollectionName = async (db, context, typeName, _version) => {
     return typeName + (_version && _version !== 'default' ? '_' + _version : '')
 }
 
+const manualManipulations = (data, typeName)=>{
+
+    // TODO: with mongodb 4 this can be removed as convert and toString is supported
+    if( data.results){
+        const typeDefinition = getType(typeName) || {}
+        if( typeDefinition.fields ) {
+            let hasField = false
+
+            for (let i = 0; i < data.results.length; i++) {
+                const item = data.results[i]
+                for (let y = 0; y < typeDefinition.fields.length; y++) {
+                    const field = typeDefinition.fields[y]
+                    // convert type Object to String
+                    if (field.type === 'Object' && item[field.name]) {
+
+                        hasField = true
+
+                        if (item[field.name].constructor === Object) {
+                            console.log(`convert ${typeName}.${field.name} to string`)
+                            item[field.name] = JSON.stringify(item[field.name])
+                        }
+                    }
+                }
+                if (!hasField) {
+                    break
+                }
+            }
+        }
+    }
+    return data
+}
 
 const GenericResolver = {
     entities: async (db, context, typeName, data, options) => {
@@ -70,7 +101,7 @@ const GenericResolver = {
         })
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
-        if (typeName.indexOf("Product") >= 0) {
+        if (typeName.indexOf("GenericData") >= 0) {
          //console.log(JSON.stringify(dataQuery, null, 4))
          }
         //console.log(JSON.stringify(dataQuery, null, 4))
@@ -89,8 +120,9 @@ const GenericResolver = {
                 results: null
             }
         } else {
-            result = results[0]
+            result = manualManipulations(results[0], typeName)
         }
+
 
         if (result.meta && result.meta.length) {
             result.total = result.meta[0].count
