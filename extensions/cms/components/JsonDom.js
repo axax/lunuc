@@ -70,7 +70,7 @@ class JsonDom extends React.Component {
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'Link': ({to, href, target, ...rest}) => {
-            const url = to || href, newTarget = target && target !== 'undefined' ? target : '_self',
+            const url = to || href || '', newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
 
             if (url.startsWith('https://') || url.startsWith('http://')) {
