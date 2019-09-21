@@ -69,7 +69,8 @@ Hook.on('appready', ({app, db}) => {
             } else {
 
                 res.writeHead(200, {'content-type': api.mimeType || 'application/json'})
-                res.end((await result.data).toString())
+                const data = await result.data
+                res.end(data?data.toString():data)
             }
 
         }

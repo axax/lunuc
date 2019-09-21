@@ -67,7 +67,8 @@
         {
           "name": "message",
           "type": "Object",
-          "uitype": "json"
+          "uitype": "json",
+          "index": 1
         },
         {
           "name": "bot",

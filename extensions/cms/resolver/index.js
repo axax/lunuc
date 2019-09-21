@@ -166,14 +166,31 @@ export default db => ({
 
                 }
             }
+            const result = await new Promise(resolve => {
 
-            const result = new Function(`
-            const require = this.require
-            ${serverScript}
-            return ${methodName}(this.args)`).call({args, require})
+                try {
+                    const tpl = new Function(`
+                    const require = this.require
+                    const data = (async () => {
+                        try{
+                            ${serverScript}
+                            return ${methodName}(this.args)
+                        }catch(error){
+                            this.resolve({error})
+                        }
+                    })()
+                    this.resolve({data})`)
+                    tpl.call({args,require, resolve, db})
+                }catch (error) {
+                    resolve({error})
+                }
+            })
 
+            if( result.error){
+                return {result: result.error.message}
+            }
 
-            return await {result}
+            return {result:await result.data}
         }
     },
     Mutation: {

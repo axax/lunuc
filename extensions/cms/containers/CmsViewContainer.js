@@ -866,7 +866,6 @@ class CmsViewContainer extends React.Component {
 
     serverMethod(methodName, args, cb) {
         const {slug, _version} = getSlugVersion(this.props.slug)
-
         this.props.client.query({
             fetchPolicy: 'network-only',
             forceFetch: true,
