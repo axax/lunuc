@@ -213,6 +213,7 @@ if (DEV_MODE) {
         host: '0.0.0.0',
         proxy: {
             '/graphql': {target: `http://0.0.0.0:${API_PORT}`},
+            '/api/': {target: `http://0.0.0.0:${API_PORT}`},
             '/ws': {
                 target: `ws://localhost:${API_PORT}`,
                 ws: true

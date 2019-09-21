@@ -37,7 +37,7 @@ const manualManipulations = (data, typeName)=>{
                 for (let y = 0; y < typeDefinition.fields.length; y++) {
                     const field = typeDefinition.fields[y]
                     // convert type Object to String
-                    if (field.type === 'Object' && item[field.name]) {
+                    if (field && field.type === 'Object' && item[field.name]) {
 
                         hasField = true
 
@@ -312,7 +312,7 @@ const GenericResolver = {
                         o[k + '.' + key] = data[k][key]
                     })
 
-                }else if( fields[k].type === 'Object' ){
+                }else if( fields[k] && fields[k].type === 'Object' ){
                     // store as object
                     o[k] = JSON.parse(data[k])
 

@@ -1,0 +1,35 @@
+{
+  "types": [
+    {
+      "name": "Api",
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "name",
+          "required": true,
+          "clone": "${name} (copy)",
+          "index": 1
+        },
+        {
+          "name": "slug",
+          "required": true,
+          "clone": "${name}/copy",
+          "index": 1
+        },
+        {
+          "name": "mimeType",
+          "index": 1
+        },
+        {
+          "name": "active",
+          "type": "Boolean",
+          "index": 1
+        },
+        {
+          "name": "script",
+          "uitype": "jseditor"
+        }
+      ]
+    }
+  ]
+}

@@ -62,6 +62,7 @@
       "fields": [
         {
           "name": "context",
+          "type": "Object",
           "uitype": "json"
         },
         {

@@ -20,7 +20,7 @@ fs.readdir(HOSTRULES_DIR, (err, filenames) => {
         return;
     }
     filenames.forEach((filename) => {
-        if( filename.endsWith('.json')) {
+        if (filename.endsWith('.json')) {
             fs.readFile(HOSTRULES_DIR + filename, 'utf-8', function (err, content) {
                 if (err) {
                     return
@@ -30,7 +30,6 @@ fs.readdir(HOSTRULES_DIR, (err, filenames) => {
         }
     })
 })
-
 
 
 // Port to listen to
@@ -57,7 +56,8 @@ const app = httpx.createServer(options, function (req, res) {
     }
 
     const uri = url.parse(req.url).pathname
-    if (uri.startsWith('/graphql')) {
+
+    if (uri.startsWith('/graphql') || uri.startsWith('/api/')) {
         // there is also /graphql/upload
         return proxy.web(req, res, {
             hostname: 'localhost',
@@ -116,9 +116,9 @@ const app = httpx.createServer(options, function (req, res) {
 
             let staticFile
 
-            if( hostrule && hostrule.fileMapping[uri]){
-                staticFile = path.join(__dirname, '../'+hostrule.fileMapping[uri])
-            }else{
+            if (hostrule && hostrule.fileMapping[uri]) {
+                staticFile = path.join(__dirname, '../' + hostrule.fileMapping[uri])
+            } else {
                 staticFile = path.join(STATIC_DIR, uri)
             }
 
@@ -155,8 +155,8 @@ const app = httpx.createServer(options, function (req, res) {
 
                         let indexfile
 
-                        if ( hostrule && hostrule.fileMapping['/index.html']) {
-                            indexfile = path.join(__dirname, '../'+hostrule.fileMapping['/index.html'])
+                        if (hostrule && hostrule.fileMapping['/index.html']) {
+                            indexfile = path.join(__dirname, '../' + hostrule.fileMapping['/index.html'])
                         } else {
                             // default index
                             indexfile = path.join(BUILD_DIR, '/index.min.html')

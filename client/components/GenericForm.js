@@ -150,10 +150,10 @@ class GenericForm extends React.Component {
             }
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
-                setTimeout(() => {
+                /*setTimeout(() => {
                     if(target.focus)
                         target.focus()
-                }, 600)
+                }, 600)*/
             }
             newState.isValid = this.validate(newState)
             return newState

@@ -53,6 +53,9 @@
     },
     "genericdata": {
       "active": true
+    },
+    "api": {
+      "active": true
     }
   },
   "ui": [

@@ -526,6 +526,11 @@ class TypesContainer extends React.Component {
                     key: 'save',
                     label: 'Save',
                     type: 'primary'
+                },
+                    {
+                    key: 'save_close',
+                    label: 'Save & Close',
+                    type: 'primary'
                 }],
                 children: <GenericForm autoFocus innerRef={ref => {
                     this.createEditForm = ref
@@ -1250,7 +1255,7 @@ class TypesContainer extends React.Component {
             this.setState({createEditDialog: false, createEditDialogParams: null, dataToEdit: null})
         }
 
-        if (action && action.key === 'save') {
+        if (action && ['save','save_close'].indexOf(action.key)>=0) {
 
             if (!this.createEditForm.validate()) {
                 return
@@ -1287,7 +1292,9 @@ class TypesContainer extends React.Component {
                         this.createEditForm.setState({fieldErrors})
                     }
                 } else {
-                    closeModal()
+                    if( action.key === 'save_close') {
+                        closeModal()
+                    }
                 }
             }
 
@@ -1308,7 +1315,9 @@ class TypesContainer extends React.Component {
                     // only send data if they have really changed
                     this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...updateData}, dataToEdit).then(callback)
                 } else {
-                    closeModal()
+                    if( action.key === 'save_close') {
+                        closeModal()
+                    }
                 }
 
             } else {
