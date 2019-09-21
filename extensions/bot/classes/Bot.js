@@ -169,6 +169,7 @@ class Bot {
     archiveMessage(context){
         const insertResult = this.db.collection('BotConversation').insertOne({
             context: JSON.stringify(context),
+            message: context.message,
             bot: this.data._id
         })
     }

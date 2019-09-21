@@ -65,6 +65,11 @@
           "uitype": "json"
         },
         {
+          "name": "message",
+          "type": "Object",
+          "uitype": "json"
+        },
+        {
           "name": "bot",
           "type": "Bot",
           "pickerField": "name"
