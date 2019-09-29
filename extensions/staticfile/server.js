@@ -7,12 +7,13 @@ import path from 'path'
 import Util from '../../api/util'
 import config from 'gen/config'
 
-const {STATIC_DIR} = config
+const {STATIC_DIR, STATIC_PRIVATE_DIR} = config
 
 const createStaticFiles = async (db) => {
     const staticDir = path.join(__dirname, '../../' + STATIC_DIR)
+    const staticPrivateDir = path.join(__dirname, '../../' + STATIC_PRIVATE_DIR)
 
-    if (Util.ensureDirectoryExistence(staticDir)) {
+    if (Util.ensureDirectoryExistence(staticDir) && Util.ensureDirectoryExistence(staticPrivateDir)) {
 
 
         const staticFiles = (await db.collection('StaticFile').find({active: true}).toArray())
@@ -21,11 +22,13 @@ const createStaticFiles = async (db) => {
             const pathParts = staticFile.name.split('/')
             pathParts.pop()
 
-            if (Util.ensureDirectoryExistence(staticDir + pathParts.join('/'))) {
+            const currentDir = staticFile.private ? staticPrivateDir : staticDir
+
+            if (Util.ensureDirectoryExistence(currentDir + pathParts.join('/'))) {
 
                 console.log(`create file ${staticFile.name}`)
 
-                fs.writeFile(staticDir + '/' + staticFile.name, staticFile.content, function (err) {
+                fs.writeFile(currentDir + '/' + staticFile.name, staticFile.content, function (err) {
                     if (err) {
                         return console.log(err)
                     }

@@ -24,6 +24,10 @@
           "type": "Boolean"
         },
         {
+          "name": "useCdn",
+          "type": "Boolean"
+        },
+        {
           "name": "group",
           "type": "MediaGroup",
           "multi": true

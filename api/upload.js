@@ -6,13 +6,11 @@ import path from 'path'
 import Util from './util'
 import config from 'gen/config'
 import zipper from 'zip-local'
-import MimeType from '../util/mime'
+import Hook from 'util/hook'
 import {execSync} from 'child_process'
 import {
     CAPABILITY_MANAGE_BACKUPS
 } from 'util/capabilities'
-import ImageClassfier from '../extensions/media/util/imageClassifierLambda'
-import mediaResolver from '../extensions/media/gensrc/resolver'
 
 const {UPLOAD_DIR, UPLOAD_URL, DEFAULT_LANGUAGE} = config
 
@@ -87,10 +85,10 @@ export const handleUpload = db => async (req, res) => {
             // specify that we want to allow the user to upload multiple files in a single request
             //form.multiples = true
 
-
+            // send header
             res.writeHead(200, {'content-type': 'application/json'})
 
-
+            // create map with parameters
             const data = {}
             form.on('field', function (key, value) {
                 try {
@@ -101,32 +99,24 @@ export const handleUpload = db => async (req, res) => {
                 }
             })
 
+            let endReached = false
+
+            let response = {status:'success'}, count = 0
 
             // every time a file has been uploaded successfully,
             // rename it to it's orignal name
-            form.on('file', function (field, file) {
-                const _id = ObjectId()
-                fileIds.push(_id)
-
-                // store file under the name of the _id
-                fs.copyFile(file.path, path.join(upload_dir, _id.toString()), async (err) => {
-                    if (err) throw err
-                    const mimeType = MimeType.detectByFileName(file.name)
-
-                    // call image classifier if requested
-                    if (data.classifyImage) {
-                        data.meta = JSON.stringify(await ImageClassfier.classifyByUrl('http://www.lunuc.com' + UPLOAD_URL + '/' + _id.toString())) //)
+            form.on('file', async (field, file) => {
+                count++
+                if (Hook.hooks['FileUpload'] && Hook.hooks['FileUpload'].length) {
+                    let c = Hook.hooks['FileUpload'].length
+                    for (let i = 0; i < Hook.hooks['FileUpload'].length; ++i) {
+                        await Hook.hooks['FileUpload'][i].callback({db, context, file, response, data})
                     }
-
-                    // save to db
-                    mediaResolver(db).Mutation.createMedia({
-                        _id,
-                        name: file.name,
-                        mimeType: mimeType || 'application/octet-stream',
-                        ...data
-                    }, {context})
-
-                })
+                }
+                count--
+                if( endReached && count === 0){
+                    res.end(JSON.stringify(response))
+                }
             })
 
             // log any errors that occur
@@ -144,8 +134,8 @@ export const handleUpload = db => async (req, res) => {
 
 
             // once all the files have been uploaded, send a response to the client
-            form.on('end', function () {
-                res.end('{"status":"success","ids":' + JSON.stringify(fileIds) + '}')
+            form.on('end', () =>{
+                endReached = true
             })
 
             // parse the incoming request containing the form data

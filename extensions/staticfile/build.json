@@ -17,6 +17,10 @@
           "type": "Boolean"
         },
         {
+          "name": "private",
+          "type": "Boolean"
+        },
+        {
           "name": "content",
           "uitype": "editor"
         }

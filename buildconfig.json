@@ -109,6 +109,7 @@
     "DEBUG": true,
     "ADMIN_BASE_URL": "/admin",
     "STATIC_DIR": "/static",
+    "STATIC_PRIVATE_DIR": "/static_private",
     "BACKUP_DIR": "/backups",
     "BACKUP_URL": "/backups",
     "UPLOAD_DIR": "/uploads",

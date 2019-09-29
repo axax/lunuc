@@ -9,7 +9,8 @@ const FileDrop = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
 const TypePicker = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "admin" */ '../../client/components/TypePicker')}/>
-
+const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch"
+                                       load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 export default () => {
 
@@ -72,6 +73,10 @@ export default () => {
                 const [group, setGroup] = useState(
                     []
                 )
+
+                const [useCdn, setUseCdn] = useState(
+                    true
+                )
                 return (
                     [
                         <div style={{position: 'relative', zIndex: 3}} key="typePicker">
@@ -89,9 +94,13 @@ export default () => {
                             }} multi={true} name="group" placeholder="Select a group"
                                         type="MediaGroup"/>
                         </div>,
+                        <SimpleSwitch key="useCdn" label="Upload file to CDN" name="useCdn"
+                                      onChange={(e)=>{
+                                          setUseCdn(e.target.checked)
+                                      }} checked={useCdn}/>,
                         <FileDrop key="fileDrop" multi={true} conversion={conversion} accept="*/*"
                                   uploadTo="/graphql/upload" resizeImages={true}
-                                  data={{group}}
+                                  data={{group, useCdn}}
                                   onSuccess={r => {
                                       this.setState({createEditDialog: false, createEditDialogParams: null})
 

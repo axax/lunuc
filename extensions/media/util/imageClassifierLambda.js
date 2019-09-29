@@ -21,7 +21,7 @@ const ImageClassifier = {
 
                 lambda.invoke(params, function (err, data) {
                     if (err) {
-
+                        console.log(err)
                         reject(err) // an error occurred
                     } else {
                         resolve(JSON.parse(data.Payload))           // successful response
