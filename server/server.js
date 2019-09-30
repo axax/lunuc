@@ -8,7 +8,7 @@ import config from 'gen/config'
 import MimeType from '../util/mime'
 import {getHostFromHeaders} from 'util/host'
 
-const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL} = config
+const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX} = config
 
 
 // load hostrules
@@ -57,7 +57,7 @@ const app = httpx.createServer(options, function (req, res) {
 
     const uri = url.parse(req.url).pathname
 
-    if (uri.startsWith('/graphql') || uri.startsWith('/api/')) {
+    if (uri.startsWith('/graphql') || uri.startsWith('/'+API_PREFIX)) {
         // there is also /graphql/upload
         return proxy.web(req, res, {
             hostname: 'localhost',
