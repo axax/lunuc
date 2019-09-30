@@ -142,6 +142,7 @@ const config = {
         })
     ],
     optimization: {
+        usedExports:true,
         /*splitChunks: {
          cacheGroups: {
          style: {
@@ -160,7 +161,7 @@ const config = {
          }
          },*/
         minimizer: []
-    }/*optimization: {
+    },/*optimization: {
      // We no not want to minimize our code.
      minimize: false
      }*/
@@ -213,7 +214,7 @@ if (DEV_MODE) {
         host: '0.0.0.0',
         proxy: {
             '/graphql': {target: `http://0.0.0.0:${API_PORT}`},
-            '/api/': {target: `http://0.0.0.0:${API_PORT}`},
+            ['/'+APP_VALUES.API_PREFIX]: {target: `http://0.0.0.0:${API_PORT}`},
             '/ws': {
                 target: `ws://localhost:${API_PORT}`,
                 ws: true
@@ -252,15 +253,27 @@ if (DEV_MODE) {
             }
         }))
 
-    /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-     config.plugins.push(new BundleAnalyzerPlugin())*/
+  /*  const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+    config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'
     config.devtool = 'none'
 
+
     //config.devtool = "#eval-source-map"
 }
+/*
+config.resolve = {
+    alias: {
 
+        'react': 'preact-compat',
+        'react-dom': 'preact-compat',
+        // Not necessary unless you consume a module using `createClass`
+        'create-react-class': 'preact-compat/lib/create-react-class',
+        // Not necessary unless you consume a module requiring `react-dom-factories`
+        'react-dom-factories': 'preact-compat/lib/react-dom-factories'
+    },
+}*/
 module.exports = config
 
 

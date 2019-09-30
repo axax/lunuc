@@ -1,6 +1,6 @@
 import React from 'react'
 import Hook from "../../util/hook";
-import gql from "graphql-tag";
+import config from 'gensrc/config'
 
 export default () => {
 
@@ -14,7 +14,7 @@ export default () => {
 
     Hook.on('TypeCreateEditDialogAction', function ({type, action}) {
         if (type === 'Api' && action && action.key === 'openApi') {
-            const win = window.open('/api/'+this.state.dataToEdit.slug, '_blank')
+            const win = window.open(`/${config.API_PREFIX}/${this.state.dataToEdit.slug}`, '_blank')
             win.focus()
         }
     })

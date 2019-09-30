@@ -116,6 +116,7 @@
     "UPLOAD_URL": "/uploads",
     "LANGUAGES": ["de","en"],
     "DEFAULT_LANGUAGE": "de",
-    "DEFAULT_RESULT_LIMIT": 10
+    "DEFAULT_RESULT_LIMIT": 10,
+    "API_PREFIX": "lunucapi"
   }
 }

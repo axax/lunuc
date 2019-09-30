@@ -3,6 +3,7 @@ import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
 import url from "url";
+import config from 'gensrc/config'
 
 //TODO implement cache
 const getApi = async ({slug, db}) => {
@@ -50,10 +51,11 @@ Hook.on('schema', ({schemas}) => {
 // Hook when db is ready
 Hook.on('appready', ({app, db}) => {
 
-
-    app.use('/api', async (req, res) => {
+console.log('/'+config.API_PREFIX)
+    app.use('/'+config.API_PREFIX, async (req, res) => {
 
         const slug = url.parse(req.url).pathname.substring(1)
+        console.log(slug)
 
         const api = await getApi({slug, db})
 
