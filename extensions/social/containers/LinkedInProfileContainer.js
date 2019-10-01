@@ -41,7 +41,7 @@ class LinkedInProfileContainer extends React.Component {
         }
     }
 
-    componentWillReceiveProps(props) {
+    UNSAFE_componentWillReceiveProps(props) {
         const ld = props.keyValueMap && props.keyValueMap.linkedInData
         if (ld) {
             this.setState({data: ld})

@@ -34,7 +34,7 @@ class NotificationHandler extends React.Component {
         this.setState({notificationOpen: true})
     }
 
-    componentWillReceiveProps(props) {
+    UNSAFE_componentWillReceiveProps(props) {
         this.addToNotificationStack(props)
     }
 

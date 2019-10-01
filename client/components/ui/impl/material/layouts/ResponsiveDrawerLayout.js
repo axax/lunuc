@@ -85,9 +85,6 @@ class ResponsiveDrawer extends React.Component {
         super(props)
     }
 
-    componentWillReceiveProps(nextProps) {
-    }
-
     linkTo(item) {
         this.props.history.push(item.to)
     }

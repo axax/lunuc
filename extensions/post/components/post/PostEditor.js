@@ -161,7 +161,7 @@ export default class PostEditor extends React.Component {
     }
 
 
-    componentWillReceiveProps(nextProps) {
+    UNSAFE_componentWillReceiveProps(nextProps) {
         if (nextProps.post) {
             if (this.props.post._id !== nextProps.post._id) {
                 if (this.changeTimeout) {

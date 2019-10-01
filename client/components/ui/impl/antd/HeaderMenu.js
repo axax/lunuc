@@ -13,7 +13,7 @@ class HeaderMenu extends React.Component {
             selectedKeys: []
         }
     }
-    componentWillReceiveProps() {
+    UNSAFE_componentWillReceiveProps() {
         this.setState({ selectedKeys: ['/'+this.props.location.pathname.split('/')[1]] });
     }
 

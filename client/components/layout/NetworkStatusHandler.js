@@ -18,7 +18,7 @@ class NetworkStatusHandler extends React.Component {
         }
     }
 
-    componentWillReceiveProps(props) {
+    UNSAFE_componentWillReceiveProps(props) {
         if (props.networkStatus.loading) {
             if (!this.delayTimer) {
                 this.delayTimer = setTimeout(() => {

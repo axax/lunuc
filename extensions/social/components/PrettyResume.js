@@ -19,7 +19,7 @@ class PrettyResume extends React.Component {
         }
     }
 
-    componentWillReceiveProps(props) {
+    UNSAFE_componentWillReceiveProps(props) {
         if (this.props.resumeData && props.resumeData && this.props.resumeData.pictureUrl !== props.resumeData.pictureUrl) {
             this.toDataUrl(props.resumeData.pictureUrl, d => {
                 this.setState({profileImageData: d})

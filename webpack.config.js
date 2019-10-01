@@ -253,7 +253,14 @@ if (DEV_MODE) {
             }
         }))
 
-  /*  const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+    config.resolve = {
+        alias: {
+            'react': 'preact/compat',
+            'react-dom': 'preact/compat',
+        },
+    }
+
+    /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
     config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'
@@ -262,18 +269,7 @@ if (DEV_MODE) {
 
     //config.devtool = "#eval-source-map"
 }
-/*
-config.resolve = {
-    alias: {
 
-        'react': 'preact-compat',
-        'react-dom': 'preact-compat',
-        // Not necessary unless you consume a module using `createClass`
-        'create-react-class': 'preact-compat/lib/create-react-class',
-        // Not necessary unless you consume a module requiring `react-dom-factories`
-        'react-dom-factories': 'preact-compat/lib/react-dom-factories'
-    },
-}*/
 module.exports = config
 
 

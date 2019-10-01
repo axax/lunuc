@@ -23,7 +23,7 @@ class SimpleHeaderMenu extends React.Component {
         this.currentLinkParts = this.props.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
     }
 
-    componentWillReceiveProps(nextProps) {
+    UNSAFE_componentWillReceiveProps(nextProps) {
         this.currentLinkParts = nextProps.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
     }
 

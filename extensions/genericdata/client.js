@@ -1,6 +1,7 @@
 import React from 'react'
 import Hook from 'util/hook'
 import Async from 'client/components/Async'
+import {Link} from "react-router-dom";
 
 
 const GenericForm = (props) => <Async {...props}
@@ -9,6 +10,21 @@ const GenericForm = (props) => <Async {...props}
 
 export default () => {
 
+
+    // add some extra data to the table
+    Hook.on('TypeTable', ({type, dataSource, data, container}) => {
+        if (type === 'GenericData') {
+            dataSource.forEach((d, i) => {
+
+
+                if (d.data ) {
+                    const item = data.results[i]
+                    const json = JSON.parse(item.data)
+                    d.data = json.title
+                }
+            })
+        }
+    })
 
     Hook.on('TypeCreateEditDialog', function ({type, props, formFields, dataToEdit}) {
         if (type === 'GenericData' && dataToEdit && dataToEdit.definition) {

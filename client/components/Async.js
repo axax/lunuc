@@ -5,7 +5,7 @@ class Async extends React.Component {
 
     static cache = {}
 
-    UNSAFE_componentWillMount = () => {
+    componentWillMount = () => {
         const {load, expose} = this.props
         if( expose && Async.cache[expose]){
             this.Component = Async.cache[expose]
