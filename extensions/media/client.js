@@ -6,7 +6,7 @@ import config from 'gen/config'
 const {UPLOAD_URL} = config
 
 const FileDrop = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
+                                   load={import(/* webpackChunkName: "extra" */ '../../client/components/FileDrop')}/>
 const TypePicker = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "admin" */ '../../client/components/TypePicker')}/>
 const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch"
