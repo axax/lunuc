@@ -27,7 +27,7 @@ const ContentEditable = (props) => <Async {...props}
                                           load={import(/* webpackChunkName: "admin" */ '../../../client/components/ContentEditable')}/>
 
 const FileDrop = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "extra" */ '../../../client/components/FileDrop')}/>
+                                   load={import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
 
 const Print = (props) => <Async {...props}
                                 load={import(/* webpackChunkName: "extra" */ '../../../client/components/Print')}/>
