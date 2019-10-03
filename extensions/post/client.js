@@ -5,13 +5,12 @@ import config from 'gen/config'
 const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'
 
-const PostContainerAsync = (props) => <Async {...props}
-                                             load={import(/* webpackChunkName: "post" */ './containers/PostContainer')}/>
 const PostRenderer = (props) => <Async readOnly={true} {...props}
                                        load={import(/* webpackChunkName: "post" */ './components/post/PostEditor')}/>
 const EditIcon = (props) => <Async {...props} expose="EditIcon"
-                                   load={import(/* webpackChunkName: "chat" */ '../../gensrc/ui/admin')}/>
-
+                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const PostContainerAsync = (props) => <Async {...props}
+                                             load={import(/* webpackChunkName: "admin" */ './containers/PostContainer')}/>
 
 export default () => {
 

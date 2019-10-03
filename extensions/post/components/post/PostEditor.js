@@ -13,7 +13,10 @@ import createFocusPlugin from 'draft-js-focus-plugin'
 import createDndFileUploadPlugin from './dnd-upload-plugin'
 
 
-import ImageAdd from './ImageAdd';
+import Async from 'client/components/Async'
+
+const ImageAdd = (props) => <Async {...props}
+                                             load={import(/* webpackChunkName: "admin" */ './ImageAdd')}/>
 
 /*import createImagePlugin from 'draft-js-image-plugin'
  import createAlignmentPlugin from 'draft-js-alignment-plugin'

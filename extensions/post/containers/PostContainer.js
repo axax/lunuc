@@ -4,13 +4,15 @@ import {graphql} from 'react-apollo'
 import compose from 'util/compose'
 import gql from 'graphql-tag'
 import {connect} from 'react-redux'
-import PostEditor from '../components/post/PostEditor'
 import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import GenericForm from 'client/components/GenericForm'
 import {Row, Col, Typography, SimpleList, DeleteIconButton, SimpleDialog} from 'ui/admin'
 import config from 'gen/config'
 const {ADMIN_BASE_URL, DEFAULT_RESULT_LIMIT} = config
+import Async from 'client/components/Async'
+
+const PostEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "post" */ '../components/post/PostEditor')}/>
 
 class PostContainer extends React.Component {
     constructor(props) {
