@@ -11,11 +11,14 @@ import {withStyles} from '@material-ui/core/styles'
 
 const styles = theme => ({
     paper: {
+        overflow: 'auto'
+    },
+    root: {
         overflow: 'visible'
     }
 })
 
-export const SimpleDialog = withMobileDialog()(({classes,children, onClose, actions, title, ...rest}) => {
+export const SimpleDialog = withMobileDialog()(({classes, children, onClose, actions, title, ...rest}) => {
     return <Dialog
         aria-labelledby="responsive-dialog-title"
         onClose={onClose}
@@ -24,8 +27,11 @@ export const SimpleDialog = withMobileDialog()(({classes,children, onClose, acti
         }}
         {...rest}>
         <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
-        <DialogContent>
-            { children.constructor === String ?
+        <DialogContent
+            classes={{
+                root: classes.root
+            }}>
+            {children.constructor === String ?
                 <DialogContentText>
                     {children}
                 </DialogContentText>

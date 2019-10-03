@@ -64,7 +64,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         resolvedData[k] = segment.data[k]
                     })
                 } else if (segment.t) {
-                    const {t, f, l, o, p, d, s, $if, cache, includeCount} = segment
+                    const {t, f, l, o, g, p, d, s, $if, cache, includeCount} = segment
 
                     /*
                      f = filter for the query
@@ -73,6 +73,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                      d = the data / fields you want to access
                      l = limit of results
                      o = offset
+                     g = group
                      p = page (if no offset is defined, offset is limit * (page -1) )
 
                      cache = defines cache policy
@@ -134,6 +135,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         page: p,
                         sort: s,
                         offset: o,
+                        group:g,
                         match,
                         cache,
                         includeCount,

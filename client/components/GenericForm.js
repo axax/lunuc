@@ -128,7 +128,6 @@ class GenericForm extends React.Component {
 
 
     handleInputChange = (e) => {
-
         const {fields} = this.props
 
         const target = e.target, name = target.name
@@ -212,11 +211,11 @@ class GenericForm extends React.Component {
 
 
             } else if (uitype === 'type_picker') {
-
                 return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
                                    error={!!this.state.fieldErrors[k]}
                                    helperText={this.state.fieldErrors[k]}
-                                   onChange={this.handleInputChange} key={k}
+                                   onChange={this.handleInputChange}
+                                   key={k}
                                    name={k}
                                    label={field.label}
                                    multi={field.multi}

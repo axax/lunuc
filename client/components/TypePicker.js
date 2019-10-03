@@ -50,7 +50,6 @@ class TypePicker extends React.Component {
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
         console.log(`render TypePicker | hasFocus=${hasFocus}`,data)
-
         return <div className={classes.root}>
 
             { (!value.length || multi) &&

@@ -594,7 +594,8 @@ export default class AggregationBuilder {
             {
                 $group: {
                     _id: '$_id',
-                    ...groups
+                    ...groups,
+                    ...this.options.group
                 }
             })
 

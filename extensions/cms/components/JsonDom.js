@@ -69,9 +69,13 @@ class JsonDom extends React.Component {
         'Print': {component: Print, label: 'Printable area'},
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
-        'Link': ({to, href, target, ...rest}) => {
+        'Link': ({to, href, target, gotop, ...rest}) => {
             const url = to || href || '', newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
+
+            if(gotop){
+                window.scrollTo({ top: 0 /*, behavior: 'smooth' */})
+            }
 
             if (url.startsWith('https://') || url.startsWith('http://')) {
                 return <a href={url} target={newTarget} rel={rel} {...rest}/>
@@ -567,7 +571,6 @@ class JsonDom extends React.Component {
                 if (p) {
                     // remove properties with empty values
                     Object.keys(p).forEach(key => p[key] === '' && delete p[key])
-
                     properties = Object.assign(properties, p)
                     // replace events with real functions and pass payload
                     JsonDom.events.forEach((e) => {

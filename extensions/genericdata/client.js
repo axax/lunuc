@@ -29,8 +29,10 @@ export default () => {
     Hook.on('TypeCreateEditDialog', function ({type, props, formFields, dataToEdit}) {
         if (type === 'GenericData' && dataToEdit && dataToEdit.definition) {
 
-            const struct = JSON.parse(dataToEdit.definition.structure),
-                data = dataToEdit.data.constructor===String?JSON.parse(dataToEdit.data):dataToEdit.data
+            const struct = JSON.parse(dataToEdit.definition.structure)
+
+            const data = dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data
+
 
             const newFields = Object.assign({}, formFields)
             const newDataToEdit = Object.assign({}, dataToEdit)
@@ -45,6 +47,7 @@ export default () => {
                 newFields[newName] = field
                 newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
             })
+            console.log(newFields)
 
             // override default
             props.children = <GenericForm autoFocus
@@ -65,7 +68,9 @@ export default () => {
     Hook.on('TypeCreateEditDialogBeforeSave', function ({type, dataToEdit, formFields}) {
         if (type === 'GenericData' && dataToEdit && dataToEdit.definition) {
 
-            const struct = JSON.parse(dataToEdit.definition.structure)
+            const definition = dataToEdit.definition.constructor === Array ? dataToEdit.definition[0] : dataToEdit.definition
+
+            const struct = JSON.parse(definition.structure)
 
             const data = {}
 
