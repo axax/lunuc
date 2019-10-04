@@ -528,10 +528,10 @@ class TypesContainer extends React.Component {
                     type: 'primary'
                 },
                     {
-                    key: 'save_close',
-                    label: 'Save & Close',
-                    type: 'primary'
-                }],
+                        key: 'save_close',
+                        label: 'Save & Close',
+                        type: 'primary'
+                    }],
                 children: <GenericForm autoFocus innerRef={ref => {
                     this.createEditForm = ref
                 }} onBlur={event => {
@@ -1255,7 +1255,7 @@ class TypesContainer extends React.Component {
             this.setState({createEditDialog: false, createEditDialogParams: null, dataToEdit: null})
         }
 
-        if (action && ['save','save_close'].indexOf(action.key)>=0) {
+        if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
 
             if (!this.createEditForm.validate()) {
                 return
@@ -1266,7 +1266,6 @@ class TypesContainer extends React.Component {
 
             Hook.call('TypeCreateEditDialogBeforeSave', {type: this.pageParams.type, dataToEdit, formFields})
 
-
             // convert array to single value for not multivalue references
             Object.keys(formFields).forEach(key => {
                 const field = formFields[key]
@@ -1276,7 +1275,6 @@ class TypesContainer extends React.Component {
             })
 
             const submitData = this.referencesToIds(dataToEdit)
-
             const callback = ({errors}) => {
                 // server side validation
                 if (errors && errors.length) {
@@ -1292,8 +1290,10 @@ class TypesContainer extends React.Component {
                         this.createEditForm.setState({fieldErrors})
                     }
                 } else {
-                    if( action.key === 'save_close') {
+                    if (action.key === 'save_close') {
                         closeModal()
+                    } else {
+                        this.setState({dataToEdit: {...this.state.dataToEdit, ...dataToEdit}})
                     }
                 }
             }
@@ -1315,7 +1315,7 @@ class TypesContainer extends React.Component {
                     // only send data if they have really changed
                     this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...updateData}, dataToEdit).then(callback)
                 } else {
-                    if( action.key === 'save_close') {
+                    if (action.key === 'save_close') {
                         closeModal()
                     }
                 }

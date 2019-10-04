@@ -48,7 +48,7 @@ class GenericForm extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         if (nextProps.fields !== prevState.fieldsOri) {
             console.log('GenericForm fields changed')
-            console.log(prevState.fieldsOri, nextProps.fields)
+            //console.log(prevState.fieldsOri, nextProps.fields)
             return GenericForm.getInitalState(nextProps)
         }
         return null
@@ -122,7 +122,7 @@ class GenericForm extends React.Component {
     }
 
     reset = () => {
-        this.setState(this.getInitalState(this.props))
+        this.setState(GenericForm.getInitalState(this.props))
         this.setValidateState(this.state)
     }
 
@@ -170,7 +170,7 @@ class GenericForm extends React.Component {
     onAddClick = () => {
         if (this.props.onClick)
             this.props.onClick(this.state.fields)
-        this.setState(this.getInitalState(this.props))
+        this.setState(GenericForm.getInitalState(this.props))
     }
 
     render() {
