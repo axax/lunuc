@@ -44,7 +44,10 @@ export default class PostEditor extends React.Component {
             this.plugins.push(focusPlugin, blockDndPlugin)
         }
         this.imagePlugin = createImagePlugin({decorator})
-        const linkifyPlugin = createLinkifyPlugin()
+        const linkifyPlugin = createLinkifyPlugin({target:'_blank',component: (props) => (
+                // eslint-disable-next-line no-alert, jsx-a11y/anchor-has-content
+                <a {...props} onClick={() => window.open(props.href)} />
+            )})
         this.plugins.push(linkifyPlugin, this.imagePlugin)
 
         if (!readOnly && imageUpload) {
