@@ -214,25 +214,56 @@ class JsonDom extends React.Component {
         this.forceUpdate()
     }
 
+    static keepScrollPosition() {
+        if (!JsonDom._keepScrollPosition) {
+            JsonDom._keepScrollPosition = true
+
+            if (!JsonDom._scroll) {
+                JsonDom._scrollTop = window.pageYOffset
+                JsonDom._scroll = () => {
+                    const newTop = window.pageYOffset
+                    const dif = Math.abs(newTop - JsonDom._scrollTop)
+
+                    if (JsonDom._scrollTop > 1000 && dif > 400) {
+                        window.scrollTo({top: JsonDom._scrollTop})
+                    } else {
+                        JsonDom._scrollTop = newTop
+                    }
+                }
+            }
+            document.addEventListener('scroll', JsonDom._scroll)
+        }
+    }
+
+    elementGotVisible(key) {
+        this._elementGotVisible.push(key)
+
+        JsonDom.keepScrollPosition()
+
+        this.forceUpdate()
+
+    }
+
     componentDidMount() {
 
 
         if (!!window.IntersectionObserver) {
-            let observer = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        this._elementGotVisible.push(entry.target.getAttribute('_key'))
-                        observer.unobserve(entry.target)
+            const ele = document.querySelectorAll(`[data-wait-visible='${this.instanceId}']`)
 
-                        const y = window.pageYOffset
-                        this.forceUpdate()
-                        window.scrollTo({top:y})
-                    }
+            if (ele.length) {
+                let observer = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            observer.unobserve(entry.target)
+                            this.elementGotVisible(entry.target.getAttribute('_key'))
+
+                        }
+                    })
+                }, {rootMargin: '0px 0px -50px 0px'})
+                ele.forEach(el => {
+                    observer.observe(el)
                 })
-            }, {rootMargin: '0px 0px -200px 0px'})
-            document.querySelectorAll(`[data-wait-visible='${this.instanceId}']`).forEach(el => {
-                observer.observe(el)
-            })
+            }
         }
 
         this._ismounted = true
@@ -468,7 +499,7 @@ class JsonDom extends React.Component {
                 }
             }
 
-            if ($wait === 'visible') {
+            if ($wait === 'visible' && !!window.IntersectionObserver) {
                 const key = rootKey + '.' + aIdx
                 if (this._elementGotVisible.indexOf(key) < 0) {
                     h.push(React.createElement(

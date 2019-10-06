@@ -188,7 +188,7 @@ class CmsViewContainer extends React.Component {
         }
 
         if (this.state.resources !== state.resources) {
-            console.log('refresh resources')
+            console.log('refresh resources', props.cmsPage.slug)
             this.addResources(props, state)
         }
 
