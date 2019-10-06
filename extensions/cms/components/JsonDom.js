@@ -448,16 +448,6 @@ class JsonDom extends React.Component {
             if (!item) return
 
             const {t, p, c, $c, $loop, $if, x, $wait} = item
-            if ($wait === 'visible') {
-                const key = rootKey + '.' + aIdx
-                if (this._elementGotVisible.indexOf(key) < 0) {
-                    h.push(React.createElement(
-                        'div',
-                        {key, _key: key, 'data-wait-visible': this.instanceId}
-                    ))
-                    return
-                }
-            }
             /*
              t = type
              c = children
@@ -477,6 +467,18 @@ class JsonDom extends React.Component {
                     return
                 }
             }
+
+            if ($wait === 'visible') {
+                const key = rootKey + '.' + aIdx
+                if (this._elementGotVisible.indexOf(key) < 0) {
+                    h.push(React.createElement(
+                        'div',
+                        {key, _key: key, 'data-wait-visible': this.instanceId}
+                    ))
+                    return
+                }
+            }
+
             // extend type
             if (x && x.n) {
                 const extComp = this.extendedComponents[x.t]
