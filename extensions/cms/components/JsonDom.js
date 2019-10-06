@@ -352,12 +352,13 @@ class JsonDom extends React.Component {
                 const   __this=this._this
                 const {serverMethod, on, setLocal, getLocal, refresh, getComponent, addMetaTag, setStyle, fetchMore} = __this
                 const {history, clientQuery, setKeyValue} = __this.props
-                const {scope, getKeyValueFromLS, parent, root, Util} = this
+                const {scope, getKeyValueFromLS, parent, root, Util, DomUtil} = this
                 const _t = this._t.bind(scope.data),forceUpdate = refresh
                 ${script}`)).call({
                     _this: this,
                     scope,
                     Util,
+                    DomUtil,
                     _t,
                     getKeyValueFromLS,
                     root,

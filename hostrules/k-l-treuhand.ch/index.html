@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
-    <meta name="theme-color" content="${APP_COLOR}">
-    <link rel="manifest" href="/manifest.json?v=${BUILD_NUMBER}">
     <style>
         #l {height: 4px;left: -100%;width: 100%;position: fixed;background: #2980b9;animation: l 1.3s linear infinite;animation-delay: 0.5s;}
         @keyframes l {from {left: -100%;} to {left: 100%;}}
@@ -17,6 +15,6 @@
     _app_ = {tr:{},trLoaded:true,start: new Date(),languages: ['de']}
     document.getElementById('app').innerHTML=''
 </script>
-<script async src="/main.bundle.js?v=${BUILD_NUMBER}"></script>
+<script async src="/main.bundle.js"></script>
 </body>
 </html>
