@@ -73,15 +73,15 @@ class JsonDom extends React.Component {
             const url = to || href || '', newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
 
-            if (gotop) {
-                window.scrollTo({top: 0 /*, behavior: 'smooth' */})
-            }
-
             if (url.startsWith('https://') || url.startsWith('http://')) {
                 return <a href={url} target={newTarget} rel={rel} {...rest}/>
             } else {
-                return <Link target={newTarget} rel={rel}
-                             to={url} {...rest}/>
+                return <Link target={newTarget} rel={rel} onClick={() => {
+                    if( gotop ){
+                        window.scrollTo({top: 0})
+                        JsonDom._keepScrollPosition=false
+                    }
+                }} to={url} {...rest}/>
             }
         },
         'Cms': ({props, _this, ...rest}) => {
@@ -221,13 +221,15 @@ class JsonDom extends React.Component {
             if (!JsonDom._scroll) {
                 JsonDom._scrollTop = window.pageYOffset
                 JsonDom._scroll = () => {
-                    const newTop = window.pageYOffset
-                    const dif = Math.abs(newTop - JsonDom._scrollTop)
+                    if (JsonDom._keepScrollPosition) {
+                        const newTop = window.pageYOffset
+                        const dif = Math.abs(newTop - JsonDom._scrollTop)
 
-                    if (JsonDom._scrollTop > 1000 && dif > 400) {
-                        window.scrollTo({top: JsonDom._scrollTop})
-                    } else {
-                        JsonDom._scrollTop = newTop
+                        if (JsonDom._scrollTop > 1000 && dif > 400) {
+                            window.scrollTo({top: JsonDom._scrollTop})
+                        } else {
+                            JsonDom._scrollTop = newTop
+                        }
                     }
                 }
             }
@@ -236,17 +238,16 @@ class JsonDom extends React.Component {
     }
 
     elementGotVisible(key) {
-        this._elementGotVisible.push(key)
+        if (this._elementGotVisible.indexOf(key) < 0) {
+            this._elementGotVisible.push(key)
 
-        JsonDom.keepScrollPosition()
+            JsonDom.keepScrollPosition()
 
-        this.forceUpdate()
-
+            this.forceUpdate()
+        }
     }
 
-    componentDidMount() {
-
-
+    addIntersectionObserver() {
         if (!!window.IntersectionObserver) {
             const ele = document.querySelectorAll(`[data-wait-visible='${this.instanceId}']`)
 
@@ -259,13 +260,15 @@ class JsonDom extends React.Component {
 
                         }
                     })
-                }, {rootMargin: '0px 0px -50px 0px'})
+                }, {rootMargin: '-100px -100px -100px -100px'})
                 ele.forEach(el => {
                     observer.observe(el)
                 })
             }
         }
+    }
 
+    componentDidMount() {
         this._ismounted = true
         this.node = ReactDOM.findDOMNode(this)
         this.runJsEvent('mount', true)
@@ -276,6 +279,7 @@ class JsonDom extends React.Component {
             this.runJsEvent('urlchange', false, before)
         })
         this.moveInHtmlComponents()
+        this.addIntersectionObserver()
     }
 
     componentWillUnmount() {
@@ -294,6 +298,7 @@ class JsonDom extends React.Component {
         this._ismounted = true
         this.runJsEvent('update', true)
         this.moveInHtmlComponents()
+        this.addIntersectionObserver()
     }
 
     render() {
