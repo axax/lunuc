@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {TextField, Paper, MenuItem, withStyles, Chip, Avatar} from 'ui/admin'
+import {TextField, Paper, MenuItem, withStyles, Chip, Avatar, IconButton, InputAdornment, SearchIcon} from 'ui/admin'
 import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
@@ -46,7 +46,7 @@ class TypePicker extends React.Component {
 
 
     render() {
-        const {classes, placeholder, multi, error, helperText, pickerField} = this.props
+        const {classes, placeholder, multi, error, helperText, pickerField, type} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
         console.log(`render TypePicker | hasFocus=${hasFocus}`,data)
@@ -56,7 +56,30 @@ class TypePicker extends React.Component {
             <TextField error={error} helperText={helperText} value={textValue} onChange={this.handleChange.bind(this)}
                        onKeyDown={this.handleKeyDown.bind(this)}
                        onFocus={() => this.setState({hasFocus: true})}
-                       onBlur={this.handleBlur.bind(this)} placeholder={placeholder}/> }
+                       onBlur={this.handleBlur.bind(this)}
+                       placeholder={placeholder}
+                       InputProps={{
+                           endAdornment: (
+                               <InputAdornment position="end">
+                                   <IconButton
+                                       edge="end"
+                                       aria-label="toggle password visibility"
+                                       onClick={()=>{
+
+                                           const w = screen.width/3*2, h = screen.height/3*2,left = (screen.width/2)-(w/2),top = (screen.height/2)-(h/2)
+
+                                           window.open(
+                                               `/admin/types/${type}?noLayout=true`, 'Type' ,
+                                               'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left)
+                                       }}
+                                       onMouseDown={()=>{}}
+                                   >
+                                       <SearchIcon />
+                                   </IconButton>
+                               </InputAdornment>
+                           ),
+                       }}
+            /> }
 
             { value.map((v, i) =>
                 <Chip key={i} label={typeDataToLabel(v, pickerField)} onDelete={this.handleRemovePick.bind(this, i)}

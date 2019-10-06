@@ -12,15 +12,12 @@ import {
     Chip,
     Typography,
     Switch,
-    MenuItem,
     SimpleSelect,
     TextField,
-    Input,
     SimpleDialog,
     SimpleTable,
     Row,
     Col,
-    Tooltip,
     SimpleSwitch,
     SimpleMenu
 } from 'ui/admin'
@@ -469,7 +466,7 @@ class TypesContainer extends React.Component {
     render() {
         const startTime = new Date()
         const {dataToEdit, createEditDialog, viewSettingDialog, confirmCloneColDialog, manageColDialog, dataToDelete, confirmDeletionDialog} = this.state
-        const {fixType, noLayout, title} = this.props
+        const {fixType, title} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
@@ -612,7 +609,7 @@ class TypesContainer extends React.Component {
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
-        if (noLayout) {
+        if (this.props.noLayout || this.pageParams.noLayout) {
             return content
         }
         return <BaseLayout>{content}</BaseLayout>
@@ -752,7 +749,7 @@ class TypesContainer extends React.Component {
 
     determinPageParams(props) {
         const {params} = props.match
-        const {p, l, s, f, v} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v, noLayout} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
         let type
         if (props.fixType) {
@@ -769,6 +766,7 @@ class TypesContainer extends React.Component {
         }
         const typeSettings = this.settings[type] || {}
         const result = {
+            noLayout: noLayout,
             limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',

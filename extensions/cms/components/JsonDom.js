@@ -73,8 +73,8 @@ class JsonDom extends React.Component {
             const url = to || href || '', newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
 
-            if(gotop){
-                window.scrollTo({ top: 0 /*, behavior: 'smooth' */})
+            if (gotop) {
+                window.scrollTo({top: 0 /*, behavior: 'smooth' */})
             }
 
             if (url.startsWith('https://') || url.startsWith('http://')) {
@@ -115,6 +115,7 @@ class JsonDom extends React.Component {
     json = null
     jsonRaw = null
     _inHtmlComponents = []
+    _elementGotVisible = []
     scope = {}
     updateScope = true
     parseError = null
@@ -214,6 +215,26 @@ class JsonDom extends React.Component {
     }
 
     componentDidMount() {
+
+
+        if (!!window.IntersectionObserver) {
+            let observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        this._elementGotVisible.push(entry.target.getAttribute('_key'))
+                        observer.unobserve(entry.target)
+
+                        const y = window.pageYOffset
+                        this.forceUpdate()
+                        window.scrollTo({top:y})
+                    }
+                })
+            }, {rootMargin: '0px 0px -200px 0px'})
+            document.querySelectorAll(`[data-wait-visible='${this.instanceId}']`).forEach(el => {
+                observer.observe(el)
+            })
+        }
+
         this._ismounted = true
         this.node = ReactDOM.findDOMNode(this)
         this.runJsEvent('mount', true)
@@ -426,7 +447,17 @@ class JsonDom extends React.Component {
 
             if (!item) return
 
-            const {t, p, c, $c, $loop, $if, x} = item
+            const {t, p, c, $c, $loop, $if, x, $wait} = item
+            if ($wait === 'visible') {
+                const key = rootKey + '.' + aIdx
+                if (this._elementGotVisible.indexOf(key) < 0) {
+                    h.push(React.createElement(
+                        'div',
+                        {key, _key: key, 'data-wait-visible': this.instanceId}
+                    ))
+                    return
+                }
+            }
             /*
              t = type
              c = children
