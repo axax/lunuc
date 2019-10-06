@@ -261,6 +261,15 @@ class CmsViewContainer extends React.Component {
             if (!loading && !aboutToChange) {
                 console.warn(`cmsPage ${slug} missing`)
                 if (!dynamic) {
+
+                    // add meta tag here instead of in the ErrorPage. It is faster, because for the ErrorPage we need to load extra bundles
+                    DomUtil.createAndAddTag('meta', 'head', {
+                        name:'robots',
+                        content:'noindex, nofollow',
+                        id:'errorPageNoindex'
+                    })
+
+
                     return <ErrorPage/>
                 } else {
                     return <div>Cms page {slug} doesn't exist</div>

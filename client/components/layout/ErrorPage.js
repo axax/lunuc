@@ -22,16 +22,18 @@ class ErrorPage extends React.Component {
         this.titleOri = document.title
         document.title = `${code} ${message}`
 
-        DomUtil.createAndAddTag('meta', 'head', {
-            name:'robots',
-            content:'noindex',
-            id:'errorPageNoindex'
-        })
+        if (!document.getElementById('errorPageNoindex')) {
+            DomUtil.createAndAddTag('meta', 'head', {
+                name: 'robots',
+                content: 'noindex, nofollow',
+                id: 'errorPageNoindex'
+            })
+        }
 
 
         this.css = document.createElement("style")
         this.css.type = "text/css"
-        this.css.innerHTML =`
+        this.css.innerHTML = `
 body{
     background: ${background};
     color:#fff;
@@ -247,10 +249,12 @@ hr:after {
             </div>
             <div className='c'>
                 <div className='_404'>{code}</div>
-                <hr />
+                <hr/>
                 <div className="_1">{message.toUpperCase()}</div>
                 <div className="_2">WE ARE SORRY</div>
-                <a className='btn' onClick={()=>{history.back()}} href="#">GO BACK</a>
+                <a className='btn' onClick={() => {
+                    history.back()
+                }} href="#">GO BACK</a>
             </div>
         </div>
     }
