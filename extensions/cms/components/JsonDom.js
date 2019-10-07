@@ -72,11 +72,14 @@ class JsonDom extends React.Component {
         'Link': ({to, href, target, gotop, ...rest}) => {
             const url = to || href || '', newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
-
             if (url.startsWith('https://') || url.startsWith('http://')) {
                 return <a href={url} target={newTarget} rel={rel} {...rest}/>
             } else {
                 return <Link target={newTarget} rel={rel} onClick={() => {
+                    if( url.startsWith('#')){
+                        JsonDom._keepScrollPosition=false
+                    }
+
                     if( gotop ){
                         window.scrollTo({top: 0})
                         JsonDom._keepScrollPosition=false
@@ -225,6 +228,7 @@ class JsonDom extends React.Component {
                         const newTop = window.pageYOffset
                         const dif = Math.abs(newTop - JsonDom._scrollTop)
                         if (JsonDom._scrollTop > 1000 && dif > 400) {
+                            console.log(dif)
                             window.scrollTo({top: JsonDom._scrollTop})
                             JsonDom._scrollTop = window.pageYOffset
                         } else {
