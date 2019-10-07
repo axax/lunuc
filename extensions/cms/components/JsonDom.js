@@ -224,9 +224,9 @@ class JsonDom extends React.Component {
                     if (JsonDom._keepScrollPosition) {
                         const newTop = window.pageYOffset
                         const dif = Math.abs(newTop - JsonDom._scrollTop)
-
                         if (JsonDom._scrollTop > 1000 && dif > 400) {
                             window.scrollTo({top: JsonDom._scrollTop})
+                            JsonDom._scrollTop = window.pageYOffset
                         } else {
                             JsonDom._scrollTop = newTop
                         }
@@ -823,7 +823,8 @@ class JsonDom extends React.Component {
             })
         } else if (str.startsWith('{') || str.startsWith('[')) {
             //It is json
-            str = str.replace(/\\/g, '\\\\')
+            // replace control character
+            str = str.replace(/\\/g, '\\\\').replace(/"###/g, '').replace(/###"/g, '')
         } else {
             //Is other
             str = JSON.stringify({
