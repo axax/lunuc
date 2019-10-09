@@ -188,7 +188,6 @@ class CmsViewContainer extends React.Component {
         }
 
         if (this.state.resources !== state.resources) {
-            console.log('refresh resources', props.cmsPage.slug)
             this.addResources(props, state)
         }
 
@@ -503,6 +502,8 @@ class CmsViewContainer extends React.Component {
         let {resources} = state
 
         if (!dynamic) {
+            console.log('refresh resources', props.slug)
+
             DomUtil.removeElements(`[data-cms-view]`)
             if (resources) {
                 try {

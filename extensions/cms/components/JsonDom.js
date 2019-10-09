@@ -43,6 +43,52 @@ const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../../client/containers/TypesContainer')}/>
 
 
+function waitUntilVisible({jsonDom, key, eleType, eleProps, c, $c, scope}) {
+    // ...and returns another component...
+    return class extends React.Component {
+
+
+        state = {isVisible: false}
+
+        constructor(props) {
+            super(props)
+        }
+
+        componentDidMount() {
+            this.addIntersectionObserver()
+        }
+
+        render() {
+            if (!this.state.isVisible && !!window.IntersectionObserver) {
+                return <div _key={key} data-wait-visible={jsonDom.instanceId}>...</div>
+            } else {
+                return React.createElement(
+                    eleType,
+                    eleProps,
+                    ($c ? null : jsonDom.parseRec(c, key, scope))
+                )
+            }
+        }
+
+        addIntersectionObserver() {
+            const ele = document.querySelector(`[_key='${key}']`)
+            if (ele) {
+                let observer = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            observer.unobserve(entry.target)
+                            this.setState({isVisible:true})
+
+                        }
+                    })
+                }, {rootMargin: '-100px -100px -100px -100px'})
+                observer.observe(ele)
+            }
+        }
+
+    }
+}
+
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
@@ -76,17 +122,13 @@ class JsonDom extends React.Component {
                 return <a href={url} target={newTarget} rel={rel} {...rest}/>
             } else {
                 return <Link target={newTarget} rel={rel} onClick={(e) => {
-                    if( !url ){
+                    if (!url) {
                         e.preventDefault()
                         return false
                     }
-                    if( url.startsWith('#')){
-                        JsonDom._keepScrollPosition=false
-                    }
 
-                    if( gotop ){
+                    if (gotop) {
                         window.scrollTo({top: 0})
-                        JsonDom._keepScrollPosition=false
                     }
                 }} to={url} {...rest}/>
             }
@@ -122,7 +164,6 @@ class JsonDom extends React.Component {
     json = null
     jsonRaw = null
     _inHtmlComponents = []
-    _elementGotVisible = []
     scope = {}
     updateScope = true
     parseError = null
@@ -221,60 +262,6 @@ class JsonDom extends React.Component {
         this.forceUpdate()
     }
 
-    static keepScrollPosition() {
-        if (!JsonDom._keepScrollPosition) {
-            JsonDom._keepScrollPosition = true
-
-            if (!JsonDom._scroll) {
-                JsonDom._scrollTop = window.pageYOffset
-                JsonDom._scroll = () => {
-                    if (JsonDom._keepScrollPosition) {
-                        const newTop = window.pageYOffset
-                        const dif = Math.abs(newTop - JsonDom._scrollTop)
-                        if (JsonDom._scrollTop > 1000 && dif > 400) {
-                            window.scrollTo({top: JsonDom._scrollTop})
-                            JsonDom._scrollTop = window.pageYOffset
-                        } else {
-                            JsonDom._scrollTop = newTop
-                        }
-                    }
-                }
-            }
-            document.addEventListener('scroll', JsonDom._scroll)
-        }
-    }
-
-    elementGotVisible(key) {
-        if (this._elementGotVisible.indexOf(key) < 0) {
-            this._elementGotVisible.push(key)
-
-            JsonDom.keepScrollPosition()
-
-            this.forceUpdate()
-        }
-    }
-
-    addIntersectionObserver() {
-        if (!!window.IntersectionObserver) {
-            const ele = document.querySelectorAll(`[data-wait-visible='${this.instanceId}']`)
-
-            if (ele.length) {
-                let observer = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            observer.unobserve(entry.target)
-                            this.elementGotVisible(entry.target.getAttribute('_key'))
-
-                        }
-                    })
-                }, {rootMargin: '-100px -100px -100px -100px'})
-                ele.forEach(el => {
-                    observer.observe(el)
-                })
-            }
-        }
-    }
-
     componentDidMount() {
         this._ismounted = true
         this.node = ReactDOM.findDOMNode(this)
@@ -286,7 +273,6 @@ class JsonDom extends React.Component {
             this.runJsEvent('urlchange', false, before)
         })
         this.moveInHtmlComponents()
-        this.addIntersectionObserver()
     }
 
     componentWillUnmount() {
@@ -301,11 +287,10 @@ class JsonDom extends React.Component {
     }
 
     // is called after render
-    componentDidUpdate(props) {
+    componentDidUpdate(props, state, snapshot) {
         this._ismounted = true
         this.runJsEvent('update', true)
         this.moveInHtmlComponents()
-        this.addIntersectionObserver()
     }
 
     render() {
@@ -512,17 +497,6 @@ class JsonDom extends React.Component {
                 }
             }
 
-            if ($wait === 'visible' && !!window.IntersectionObserver) {
-                const key = rootKey + '.' + aIdx
-                if (this._elementGotVisible.indexOf(key) < 0) {
-                    h.push(React.createElement(
-                        'div',
-                        {key, _key: key, 'data-wait-visible': this.instanceId}
-                    ))
-                    return
-                }
-            }
-
             // extend type
             if (x && x.n) {
                 const extComp = this.extendedComponents[x.t]
@@ -719,11 +693,21 @@ class JsonDom extends React.Component {
                 if ($c) {
                     eleProps.dangerouslySetInnerHTML = {__html: $c}
                 }
-                h.push(React.createElement(
-                    eleType,
-                    eleProps,
-                    ($c ? null : this.parseRec(c, key, scope))
-                ))
+
+
+                if ($wait === 'visible' && !!window.IntersectionObserver) {
+                    h.push(React.createElement(
+                        waitUntilVisible({jsonDom: this, key, scope, eleType, eleProps, c, $c}),
+                        {key: key}
+                    ))
+                } else {
+
+                    h.push(React.createElement(
+                        eleType,
+                        eleProps,
+                        ($c ? null : this.parseRec(c, key, scope))
+                    ))
+                }
             }
         })
         return h
@@ -886,9 +870,9 @@ class JsonDom extends React.Component {
             }
         }
         // pass event to parent
-        if (this.props._parentRef) {
+        /*if (this.props._parentRef) {
             this.props._parentRef.runJsEvent(name, async, ...args)
-        }
+        }*/
         return !hasError
     }
 
