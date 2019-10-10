@@ -745,10 +745,15 @@ class CmsViewContainer extends React.Component {
 
 
     handleClientScriptChange = (script) => {
-        /*clearTimeout(this._scriptTimeout)
-        this._scriptTimeout = setTimeout(() => {*/
-        this.setState({script})
-        /*}, 500)*/
+        if(script.length>3000) {
+            // delay change for bigger script
+            clearTimeout(this._scriptTimeout)
+            this._scriptTimeout = setTimeout(() => {
+                this.setState({script})
+            }, 200)
+        }else{
+            this.setState({script})
+        }
 
         this._autoSaveScript = () => {
             clearTimeout(this._autoSaveScriptTimeout)
