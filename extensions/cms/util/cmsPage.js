@@ -24,8 +24,9 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         }
 
 
-        let tmpSlug = slug
         ors.push({slug})
+
+        ors.push({slug: `${slug.split('/')[0]}/*`})
 
         if (!Util.isUserLoggedIn(context)) {
             // if no user only match public entries

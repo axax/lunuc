@@ -11,6 +11,7 @@ export const createAllIndexes = async (db) => {
 
     console.log('Creating indexes...')
     db.collection('KeyValue').createIndex({createdBy: 1, key: 1}, {unique: true})
+    db.collection('KeyValueGlobal').createIndex({key: 1}, {unique: true})
 
     const types = getTypes()
 

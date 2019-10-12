@@ -59,6 +59,17 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                 if (segment._data) {
                     resolvedData._data = segment._data
+                } else if (segment.resolveFrom) {
+                    if (segment.resolveFrom.KeyValueGlobal) {
+                        const dataFromKey = await Util.getKeyValueGlobal(db, context, segment.resolveFrom.KeyValueGlobal, false)
+
+                        const resolvedFromKey = await resolveData({db, context, dataResolver: dataFromKey, scope, nosession, req, editmode})
+
+                        Object.keys(resolvedFromKey.resolvedData).forEach(k => {
+                            resolvedData[k] = resolvedFromKey.resolvedData[k]
+                        })
+                    }
+
                 } else if (segment.data) {
                     Object.keys(segment.data).forEach(k => {
                         resolvedData[k] = segment.data[k]
@@ -135,7 +146,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         page: p,
                         sort: s,
                         offset: o,
-                        group:g,
+                        group: g,
                         match,
                         cache,
                         includeCount,

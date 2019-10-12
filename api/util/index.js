@@ -68,11 +68,18 @@ const Util = {
 
             return db.collection('KeyValueGlobal').updateOne({
                 key
-            }, {$set: {createdBy: await Util.userOrAnonymousId(db, context), key, value, ispublic: !!newOption.ispublic}}, {upsert: true})
+            }, {
+                $set: {
+                    createdBy: await Util.userOrAnonymousId(db, context),
+                    key,
+                    value,
+                    ispublic: !!newOption.ispublic
+                }
+            }, {upsert: true})
         }
     },
-    getKeyValueGlobal: async (db, context, key) => {
-        const map = await Util.keyValueGlobalMap(db, context, [key])
+    getKeyValueGlobal: async (db, context, key, parse) => {
+        const map = await Util.keyValueGlobalMap(db, context, [key], true, parse)
         return map[key]
     },
     keyvalueMap: async (db, context, keys) => {
@@ -92,10 +99,10 @@ const Util = {
         }, {})
 
     },
-    keyValueGlobalMap: async (db, context, keys, nocache) => {
+    keyValueGlobalMap: async (db, context, keys, cache = true, parse = true) => {
 
         // check if all keys are in the cache
-        if (!nocache) {
+        if (cache) {
             let map = {}
             for (const k of keys) {
                 const fromCache = Cache.get('KeyValueGlobal_' + k)
@@ -118,13 +125,17 @@ const Util = {
         console.log('load KeyValueGlobal', keys)
         return keyvalues.reduce((map, obj) => {
             let v
-            try {
-                v = JSON.parse(obj.value)
-            } catch (e) {
+            if (parse) {
+                try {
+                    v = JSON.parse(obj.value)
+                } catch (e) {
+                    v = obj.value
+                }
+            } else {
                 v = obj.value
             }
             map[obj.key] = v
-            if (!nocache) {
+            if (cache) {
                 Cache.set('KeyValueGlobal_' + obj.key, v)
             }
             return map
