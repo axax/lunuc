@@ -192,7 +192,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                             pubsubDelayed.publish('cmsPageData', {
                                 userId: context.id,
                                 session: context.session,
-                                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: {error}})}
+                                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: {error:error.message}})}
                             }, context)
                         })
                         addDataResolverSubsription = true

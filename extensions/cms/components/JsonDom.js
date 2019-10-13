@@ -77,7 +77,7 @@ function waitUntilVisible({jsonDom, key, eleType, eleProps, c, $c, scope}) {
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
                             observer.unobserve(entry.target)
-                            this.setState({isVisible:true})
+                            this.setState({isVisible: true})
 
                         }
                     })
@@ -115,13 +115,21 @@ class JsonDom extends React.Component {
         'Print': {component: Print, label: 'Printable area'},
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
-        'Link': ({to, href, target, gotop, ...rest}) => {
+        'Link': ({to, href, target, gotop, onClick, ...rest}) => {
             const url = to || href || '', newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
+
             if (url.startsWith('https://') || url.startsWith('http://')) {
-                return <a href={url} target={newTarget} rel={rel} {...rest}/>
+                return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
+
+                    if (onClick) {
+                        onClick(e)
+                    }
+                }
+                } {...rest}/>
             } else {
                 return <Link target={newTarget} rel={rel} onClick={(e) => {
+
                     if (!url) {
                         e.preventDefault()
                         return false
@@ -130,6 +138,11 @@ class JsonDom extends React.Component {
                     if (gotop) {
                         window.scrollTo({top: 0})
                     }
+
+                    if (onClick) {
+                        onClick(e)
+                    }
+
                 }} to={url} {...rest}/>
             }
         },

@@ -83,7 +83,10 @@ export const keyvalueResolver = (db) => ({
         },
         updateKeyValueGlobal: async ({_id, key, value, ispublic}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
-            Cache.remove('KeyValueGlobal_' + key)
+
+            // TODO: we don't have the key here (sometimes we only have the id)
+            // so let clear all KeyValueGlobal
+            Cache.clearStartWith('KeyValueGlobal_')
 
             return await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {_id, key, value, ispublic})
         },
