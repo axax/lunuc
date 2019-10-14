@@ -373,7 +373,12 @@ export default class AggregationBuilder {
         // extend it with default definition
         if (typeFields[fieldDefinition.name]) {
             fieldDefinition = {...typeFields[fieldDefinition.name], ...fieldDefinition}
+        } else if (fieldDefinition.name === 'createdBy') {
+            fieldDefinition.reference = true
+            fieldDefinition.type = 'User'
         }
+
+
         return fieldDefinition
 
     }
