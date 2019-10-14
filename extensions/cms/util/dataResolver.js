@@ -47,8 +47,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
                                               const {data} = this
                                               return \`${JSON.stringify(segments[i])}\``)
-
-                const replacedSegmentStr = tpl.call({scope, data: resolvedData})
+                const replacedSegmentStr = tpl.call({scope, data: resolvedData, context})
                 const segment = JSON.parse(replacedSegmentStr)
 
 
@@ -140,6 +139,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         match = {}
                     }
                     debugInfo += ' type=' + type
+
                     const result = await GenericResolver.entities(db, context, type, fields, {
                         filter: f,
                         limit: l,

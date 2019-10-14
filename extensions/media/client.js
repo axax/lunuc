@@ -81,7 +81,7 @@ export default () => {
                     [
                         <div style={{position: 'relative', zIndex: 3}} key="typePicker">
                             <TypePicker onChange={(e) => {
-                                setConversion(JSON.parse(e.target.value[0].conversion))
+                                setConversion(e.target.value && e.target.value.length?JSON.parse(e.target.value[0].conversion):null)
                             }} name="conversion" placeholder="Select a conversion"
                                         type="MediaConversion"/>
 
