@@ -754,9 +754,11 @@ class JsonDom extends React.Component {
     }
 
     addLocationToScope() {
-        this.scope.pathname = this.props.history.location.pathname
-        this.scope.params = Util.extractQueryParams()
-        this.scope.hashParams = (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})
+        if( typeof window !== 'undefined') {
+            this.scope.pathname = this.props.history.location.pathname
+            this.scope.params = Util.extractQueryParams()
+            this.scope.hashParams = (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})
+        }
     }
 
     getJson(props) {

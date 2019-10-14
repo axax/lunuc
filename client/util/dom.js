@@ -97,7 +97,7 @@ const DomUtil = {
         }
     },
     toES5: (code) => {
-        if (window.Babel) {
+        if (typeof window !== 'undefined' && window.Babel) {
             return Babel.transform(code, {
                 parserOpts: {
                     allowReturnOutsideFunction: true,
