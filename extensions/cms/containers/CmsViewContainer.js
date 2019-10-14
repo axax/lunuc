@@ -1037,6 +1037,7 @@ CmsViewContainer.propTypes = {
     /* actions */
     _cmsActions: PropTypes.object.isRequired,
     userActions: PropTypes.object.isRequired,
+    fetchPolicy: PropTypes.string
 }
 
 
@@ -1048,7 +1049,7 @@ const CmsViewContainerWithGql = compose(
         options(ownProps) {
             return {
                 variables: getGqlVariables(ownProps),
-                fetchPolicy: isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network'
+                fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network')
             }
         },
         props: ({data: {loading, cmsPage, variables, fetchMore}, ownProps}) => {
