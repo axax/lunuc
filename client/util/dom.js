@@ -26,7 +26,7 @@ const DomUtil = {
             //TODO: implmentation for server side rendering
             return
         }
-        let tag = document.createElement(name)
+        let tag
         if (attrs.id) {
             tag = document.getElementById(attrs.id)
         }

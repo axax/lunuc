@@ -1,0 +1,27 @@
+{
+  "types": [
+    {
+      "name": "Rating",
+      "creation": "allow",
+      "access": {
+        "create": "anonymous"
+      },
+      "fields": [
+        {
+          "name": "key",
+          "required": true,
+          "index": 1
+        },
+        {
+          "name": "rating",
+          "required": true,
+          "type": "Float",
+          "index": 1
+        },
+        {
+          "name": "comment"
+        }
+      ]
+    }
+  ]
+}

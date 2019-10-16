@@ -888,9 +888,9 @@ class JsonDom extends React.Component {
             }
         }
         // pass event to parent
-        /*if (this.props._parentRef) {
+        if (this.props._parentRef && args.length && args[0]._passEvent) {
             this.props._parentRef.runJsEvent(name, async, ...args)
-        }*/
+        }
         return !hasError
     }
 
@@ -1022,9 +1022,10 @@ class JsonDom extends React.Component {
         return jsGetComponentRec(this.getRootComponent(), id)
     }
 
-    setStyle = (style, preprocess) => DomUtil.createAndAddTag('style', 'head', {
+    setStyle = (style, preprocess, id) => DomUtil.createAndAddTag('style', 'head', {
         innerHTML: preprocess ? preprocessCss(style) : style,
-        data: {jsonDomId: this.instanceId}
+        data: {jsonDomId: this.instanceId},
+        id
     })
 
     addMetaTag = (name, content) => DomUtil.createAndAddTag('meta', 'head', {

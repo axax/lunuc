@@ -30,6 +30,7 @@ A Type can be define in the build.json of an extension. Types can also have refe
 * entryClonable = If true a single data record is cloneable
 * genResolver = If set to false the resolver is not generated automatically
 * mutationResult = The type that is returned after a mutation (default is {TypeName}Status)
+* access = Control who has access -> Object {create: 'anonymous'}
 
 **Field properties**
 
@@ -129,6 +130,7 @@ It is a simple json structure to select data on the server. The json is never ex
 + l = limit of results
 + o = offset
 + p = page (if no offset is defined, offset is limit * (page -1) )
++ g = group
 
 you can subcribe to data changes with $ character placed in front of the type.
                     

@@ -24,12 +24,12 @@ const buildCollectionName = async (db, context, typeName, _version) => {
     return typeName + (_version && _version !== 'default' ? '_' + _version : '')
 }
 
-const manualManipulations = (data, typeName)=>{
+const manualManipulations = (data, typeName) => {
 
     // TODO: with mongodb 4 this can be removed as convert and toString is supported
-    if( data.results){
+    if (data.results) {
         const typeDefinition = getType(typeName) || {}
-        if( typeDefinition.fields ) {
+        if (typeDefinition.fields) {
             let hasField = false
 
             for (let i = 0; i < data.results.length; i++) {
@@ -68,7 +68,7 @@ const GenericResolver = {
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
         // Default match
-        if (!match ) {
+        if (!match) {
             // if not specific match is defined, only select items that belong to the current user
             if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
                 match = {}
@@ -93,17 +93,16 @@ const GenericResolver = {
                 return resultFromCache
             }
         }
-
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
             match,
-            includeCount: (includeCount!==false),
+            includeCount: (includeCount !== false),
             lang: context.lang, ...otherOptions
         })
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
-        if (typeName.indexOf("GenericData") >= 0) {
-         //console.log(JSON.stringify(dataQuery, null, 4))
-         }
+        if (typeName.indexOf("Rating") >= 0) {
+            //console.log(JSON.stringify(dataQuery, null, 4))
+        }
         //console.log(JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
@@ -149,7 +148,16 @@ const GenericResolver = {
         return result
     },
     createEnity: async (db, context, typeName, {_version, ...data}) => {
-        Util.checkIfUserIsLoggedIn(context)
+
+        const typeDefinition = getType(typeName)
+
+        let userContext = context
+
+        if (typeDefinition && typeDefinition.access && typeDefinition.access.create === 'anonymous') {
+            userContext = await Util.userOrAnonymousContext(db, context)
+        }
+
+        Util.checkIfUserIsLoggedIn(userContext)
 
         if (!context.lang) {
             throw new Error('lang on context is missing')
@@ -165,8 +173,8 @@ const GenericResolver = {
             // TODO: resolve username
             username = data.createdBy
         } else {
-            createdBy = context.id
-            username = context.id
+            createdBy = userContext.id
+            username = userContext.id
         }
         const collection = db.collection(collectionName)
         const insertResult = await collection.insertOne({
@@ -312,7 +320,7 @@ const GenericResolver = {
                         o[k + '.' + key] = data[k][key]
                     })
 
-                }else if( fields[k] && fields[k].type === 'Object' ){
+                } else if (fields[k] && fields[k].type === 'Object') {
                     // store as object
                     o[k] = JSON.parse(data[k])
 

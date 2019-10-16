@@ -26,6 +26,7 @@ const Util = {
     userOrAnonymousContext: async (db, context) => {
         if (!context || !context.id) {
             const anonymousContext = await Util.anonymousUserContext(db)
+            anonymousContext.lang = context.lang
             return anonymousContext
         } else {
             return context

@@ -637,6 +637,11 @@ export default class AggregationBuilder {
             if (!projectResultData._id) {
                 projectResultData._id = 0
             }
+            if( this.options.group ){
+                Object.keys(this.options.group).forEach((k)=>{
+                    projectResultData[k]=1
+                })
+            }
             dataFacetQuery.push({$project: projectResultData})
         }
 
