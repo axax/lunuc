@@ -92,7 +92,7 @@ function waitUntilVisible({jsonDom, key, eleType, eleProps, c, $c, scope}) {
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit', 'Success', 'ContextMenu']
+    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit', 'Success', 'ContextMenu', 'CustomEvent']
 
     /*
     * Default components
@@ -754,7 +754,7 @@ class JsonDom extends React.Component {
     }
 
     addLocationToScope() {
-        if( typeof window !== 'undefined') {
+        if (typeof window !== 'undefined') {
             this.scope.pathname = this.props.history.location.pathname
             this.scope.params = Util.extractQueryParams()
             this.scope.hashParams = (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})

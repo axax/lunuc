@@ -1,7 +1,7 @@
 import React from 'react'
 import Hook from 'util/hook'
 import Async from 'client/components/Async'
-import {Link} from "react-router-dom";
+import {Typography} from 'ui/admin'
 
 
 const GenericForm = (props) => <Async {...props}
@@ -27,40 +27,66 @@ export default () => {
     })
 
     Hook.on('TypeCreateEditDialog', function ({type, props, formFields, dataToEdit}) {
-        if (type === 'GenericData' && dataToEdit && dataToEdit.definition) {
 
-            const struct = JSON.parse(dataToEdit.definition.structure)
+        if (type === 'GenericData') {
 
-            const data = dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data
+            if(  dataToEdit && dataToEdit.definition ) {
+
+                const struct = JSON.parse(dataToEdit.definition.structure)
+
+                const data = dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data
 
 
-            const newFields = Object.assign({}, formFields)
-            const newDataToEdit = Object.assign({}, dataToEdit)
+                const newFields = Object.assign({}, formFields)
+                const newDataToEdit = Object.assign({}, dataToEdit)
 
-            delete newFields.data
-            delete newDataToEdit.data
+                delete newFields.data
+                delete newDataToEdit.data
 
-            struct.fields.forEach(field => {
-                const oriName = field.name, newName= 'data_' + oriName
-                field.fullWidth = true
-                field.name = newName
-                newFields[newName] = field
-                newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
-            })
-            console.log(newFields)
+                struct.fields.forEach(field => {
+                    const oriName = field.name, newName = 'data_' + oriName
+                    field.fullWidth = true
+                    field.name = newName
+                    newFields[newName] = field
+                    newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
+                })
 
-            // override default
-            props.children = <GenericForm autoFocus
-                                          innerRef={ref => {
-                                              this.createEditForm = ref
-                                          }}
-                                          onBlur={event => {
-                                          }}
-                                          onChange={field => {
-                                          }}
-                                          primaryButton={false}
-                                          fields={newFields}
-                                          values={newDataToEdit}/>
+                // override default
+                props.children = <GenericForm autoFocus
+                                              innerRef={ref => {
+                                                  this.createEditForm = ref
+                                              }}
+                                              onBlur={event => {
+                                              }}
+                                              onChange={field => {
+                                              }}
+                                              primaryButton={false}
+                                              fields={newFields}
+                                              values={newDataToEdit}/>
+            }else{
+
+
+                const newFields = Object.assign({}, formFields)
+
+                delete newFields.data
+
+                // override default
+                props.children = [<Typography key="GenericDataLabel" variant="subtitle1" gutterBottom>Please select a generic type you want to create.</Typography>,
+                    <GenericForm
+                                            key="GenericDataForm"
+                                            autoFocus
+                                              innerRef={ref => {
+                                                  this.createEditForm = ref
+                                              }}
+                                              onBlur={event => {
+                                              }}
+                                              onChange={field => {
+                                                  console.log(field)
+                                                  this.forceUpdate()
+                                              }}
+                                              primaryButton={false}
+                                              fields={newFields} />]
+            }
 
         }
     })

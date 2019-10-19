@@ -516,6 +516,7 @@ class TypesContainer extends React.Component {
             editDialogProps = {
                 title: type,
                 fullWidth: true,
+                fullScreen:false,
                 maxWidth: 'xl',
                 open: this.state.createEditDialog,
                 onClose: this.handleCreateEditData,

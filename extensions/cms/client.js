@@ -11,6 +11,8 @@ import CmsViewContainer from './containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
 import CmsReducer from './reducers/CmsReducer'
 import Util from 'client/util'
+import {Typography} from 'ui/admin'
+import GenericForm from "../../client/components/GenericForm";
 
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
@@ -31,6 +33,10 @@ Util.xx = () => {
 Hook.on('reducer', ({reducers}) => {
     reducers.cms = CmsReducer
 })
+
+const cmsPageEditorUrl = (slug, _version) => {
+    return `/${(_version && _version !== 'default' ? '@' + _version + '/' : '')}${slug}`
+}
 
 export default () => {
 
@@ -78,10 +84,9 @@ export default () => {
         if (type === 'CmsPage') {
             dataSource.forEach((d, i) => {
                 if (d.slug) {
-                    const {_version} = container.pageParams
                     const item = data.results[i]
                     d.slug = <Link
-                        to={'/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug}>
+                        to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
                         <span
                             style={{
                                 fontWeight: 'bold',
@@ -100,8 +105,7 @@ export default () => {
             actions.push({
                 name: 'View cms page',
                 onClick: () => {
-                    const {_version} = container.pageParams
-                    container.props.history.push('/' + (_version && _version !== 'default' ? '@' + _version + '/' : '') + item.slug)
+                    container.props.history.push(cmsPageEditorUrl(item.slug, container.pageParams._version))
                 },
                 icon: <WebIcon/>
             })
@@ -137,6 +141,40 @@ export default () => {
             }
         }
     })
+
+
+    Hook.on('TypeCreateEditDialog', function ({type, props, formFields, dataToEdit}) {
+
+        if (type === 'CmsPage') {
+
+            const newFields = Object.assign({}, formFields)
+
+            delete newFields.template
+            delete newFields.script
+            delete newFields.serverScript
+            delete newFields.dataResolver
+
+            // override default
+            props.children = [dataToEdit && <Typography key="CmsPageLabel" variant="subtitle1" gutterBottom>
+                <Link
+                    to={cmsPageEditorUrl(dataToEdit.slug, this.pageParams._version)}>
+                        <span
+                            style={{
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                color: '#663366',
+                                textDecoration: 'underline'
+                            }}>Go to CMS Editor</span></Link>
+            </Typography>,
+                <GenericForm key="CmsPageForm" autoFocus innerRef={ref => {
+                    this.createEditForm = ref
+                }} onBlur={event => {
+                    Hook.call('TypeCreateEditDialogBlur', {type, event}, this)
+                }}
+                             primaryButton={false} fields={newFields} values={dataToEdit}/>]
+        }
+    })
+
 
     // add a click event
     /*Hook.on('TypeTableEntryClick', ({type, item, container}) => {

@@ -12,3 +12,17 @@ Hook.on('resolver', ({db, resolvers}) => {
 Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
+
+
+// Hook to create mongodb index
+Hook.on('index', ({db}) => {
+
+    console.log('Creating indexes for rating...')
+
+
+    // create indexes
+    const collection = db.collection('Rating')
+    collection.createIndex({key: 1, createdBy: 1}, {unique: true})
+
+
+})
