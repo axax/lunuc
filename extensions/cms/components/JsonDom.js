@@ -19,6 +19,7 @@ import JsonDomInput from './JsonDomInput'
 import {deepMergeConcatArrays} from 'util/deepMerge'
 import {classNameByPath} from '../util/jsonDomUtil'
 import {preprocessCss} from '../util/cssPreprocessor'
+import {parseStyles} from 'client/util/style'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
@@ -649,6 +650,10 @@ class JsonDom extends React.Component {
                             }
                         }
                     })
+                    if(properties.style && properties.style.constructor === String){
+                        //Parses a string of inline styles into a javascript object with casing for react
+                        properties.style = parseStyles(properties.style)
+                    }
                     if (properties.name) {
                         // handle controlled input here
                         if (properties.value === undefined) {
