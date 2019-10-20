@@ -21,8 +21,10 @@ export default () => {
 
                 if (d.data ) {
                     const item = data.results[i]
-                    const json = JSON.parse(item.data)
-                    d.data = json.title
+                    try {
+                        const json = JSON.parse(item.data)
+                        d.data = json.title
+                    }catch(e){}
                 }
             })
         }
@@ -74,20 +76,13 @@ export default () => {
 
                 // override default
                 props.children = [<Typography key="GenericDataLabel" variant="subtitle1" gutterBottom>Please select a generic type you want to create.</Typography>,
-                    <GenericForm
-                                            key="GenericDataForm"
-                                            autoFocus
-                                              innerRef={ref => {
-                                                  this.createEditForm = ref
-                                              }}
-                                              onBlur={event => {
-                                              }}
-                                              onChange={field => {
-                                                  console.log(field)
-                                                  this.forceUpdate()
-                                              }}
-                                              primaryButton={false}
-                                              fields={newFields} />]
+                    <GenericForm autoFocus innerRef={ref => {
+                        this.createEditForm = ref
+                    }} onBlur={event => {
+                        Hook.call('TypeCreateEditDialogBlur', {type, event}, this)
+                    }} onChange={field => {
+                        //Hook.call('TypeCreateEditDialogChange', {field, type, props: editDialogProps, dataToEdit}, this)
+                    }} primaryButton={false} fields={newFields} values={dataToEdit}/>]
             }
 
         }
