@@ -1,11 +1,13 @@
 import React from 'react'
 import Hook from 'util/hook'
 import Async from 'client/components/Async'
-import {Typography} from 'ui/admin'
 
 
 const GenericForm = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
+
+const Typography = (props) => <Async {...props} expose="Typography"
+                                     load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 
 export default () => {

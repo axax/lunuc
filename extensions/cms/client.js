@@ -11,8 +11,6 @@ import CmsViewContainer from './containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
 import CmsReducer from './reducers/CmsReducer'
 import Util from 'client/util'
-import {Typography} from 'ui/admin'
-import GenericForm from "../../client/components/GenericForm";
 
 const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../client/containers/TypesContainer')}/>
@@ -20,8 +18,15 @@ const TypesContainer = (props) => <Async {...props}
 const WebIcon = (props) => <Async {...props} expose="WebIcon"
                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
+const Typography = (props) => <Async {...props} expose="Typography"
+                                  load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+
+
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../client/components/layout/ErrorPage')}/>
+
+const GenericForm = (props) => <Async {...props}
+                                    load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
 
 // Extend Util to use in template
 Util.xx = () => {
