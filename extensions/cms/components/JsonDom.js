@@ -566,11 +566,14 @@ class JsonDom extends React.Component {
                  s = scope in loop to access data
                  */
                 try {
-                    const re = new RegExp('\\$\\.' + s + '{', 'g')
+                    const re = new RegExp('\\$\\.' + s + '{', 'g'),
+                        re2 = new RegExp('"' + s + '###', 'g'),
+                        re3 = new RegExp('###' + s + '"', 'g')
                     const cStr = JSON.stringify(c).replace(re, '${') /* $.loop{ --> ${ */
-                        .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
-
                     /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
+                        .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
+                        .replace(re2, '').replace(re3, '')
+
                     data.forEach((loopChild, childIdx) => {
                         if (loopChild.constructor !== Object) {
                             loopChild = {data: loopChild}
@@ -650,7 +653,7 @@ class JsonDom extends React.Component {
                             }
                         }
                     })
-                    if(properties.style && properties.style.constructor === String){
+                    if (properties.style && properties.style.constructor === String) {
                         //Parses a string of inline styles into a javascript object with casing for react
                         properties.style = parseStyles(properties.style)
                     }

@@ -13,7 +13,6 @@ import {
     CAPABILITY_ACCESS_ADMIN_PAGE
 } from 'util/capabilities'
 
-
 const LoginContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../containers/LoginContainer')}/>
 const SignUpContainer = (props) => <Async {...props}
