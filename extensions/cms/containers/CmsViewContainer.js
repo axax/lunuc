@@ -58,8 +58,9 @@ const NetworkStatusHandler = (props) => <Async {...props}
 // the graphql query is also need to access and update the cache when data arrive from a subscription
 const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
-const gqlQueryKeyValue = gql`query{keyValue(key:"CmsViewContainerSettings"){key value createdBy{_id}}}`
+const gqlQueryKeyValue = gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`
 
+const settingKeyPrefix = 'CmsViewContainerSettings'
 
 const isPreview = () => {
     const params = new URLSearchParams(window.location.search)
@@ -263,9 +264,9 @@ class CmsViewContainer extends React.Component {
 
                     // add meta tag here instead of in the ErrorPage. It is faster, because for the ErrorPage we need to load extra bundles
                     DomUtil.createAndAddTag('meta', 'head', {
-                        name:'robots',
-                        content:'noindex, nofollow',
-                        id:'errorPageNoindex'
+                        name: 'robots',
+                        content: 'noindex, nofollow',
+                        id: 'errorPageNoindex'
                     })
 
 
@@ -347,7 +348,7 @@ class CmsViewContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
-                            onBlur={()=>{
+                            onBlur={() => {
                                 this.saveUnsafedChanges()
                             }}
                             onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
@@ -683,12 +684,12 @@ class CmsViewContainer extends React.Component {
                                         const idx = refResults.findIndex(o => o._id === data._id)
 
                                         if (idx > -1) {
-                                            if( action === 'update') {
+                                            if (action === 'update') {
                                                 // update data
                                                 refResults[idx] = Object.assign({}, refResults[idx], noNullData)
-                                            }else{
+                                            } else {
                                                 // delete data
-                                                refResults.splice(idx,1)
+                                                refResults.splice(idx, 1)
                                             }
                                         } else {
                                             console.warn(`Data ${data._id} does not exist.`)
@@ -745,13 +746,13 @@ class CmsViewContainer extends React.Component {
 
 
     handleClientScriptChange = (script) => {
-        if(script.length>3000) {
+        if (script.length > 3000) {
             // delay change for bigger script
             clearTimeout(this._scriptTimeout)
             this._scriptTimeout = setTimeout(() => {
                 this.setState({script})
             }, 200)
-        }else{
+        } else {
             this.setState({script})
         }
 
@@ -854,7 +855,7 @@ class CmsViewContainer extends React.Component {
     }
 
     saveSettings() {
-        this.setKeyValue('CmsViewContainerSettings', this.state.settings, false, true)
+        this.setKeyValue(settingKeyPrefix + this.props.slug, this.state.settings, false, true)
     }
 
     clientQuery(query, options) {
@@ -934,7 +935,7 @@ class CmsViewContainer extends React.Component {
         if (!key || !value) {
             return
         }
-        const {client, user, cmsPage} = this.props
+        const {client, user, cmsPage, slug} = this.props
         const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
         const kvk = resolvedDataJson._meta && resolvedDataJson._meta.keyValueKey
         if (kvk) {
@@ -959,7 +960,10 @@ class CmsViewContainer extends React.Component {
                 update: (store, {data: {setKeyValue}}) => {
                     if (internal) {
 
-                        const storedData = store.readQuery({query: gqlQueryKeyValue})
+                        const storedData = store.readQuery({
+                            query: gqlQueryKeyValue,
+                            variables: {key: settingKeyPrefix + slug}
+                        })
 
                         let newData = {keyValue: null}
                         if (storedData.keyValue) {
@@ -969,7 +973,11 @@ class CmsViewContainer extends React.Component {
                         }
 
                         // Write our data back to the cache.
-                        store.writeQuery({query: gqlQueryKeyValue, data: newData})
+                        store.writeQuery({
+                            query: gqlQueryKeyValue,
+                            variables: {key: settingKeyPrefix + slug},
+                            data: newData
+                        })
 
                     } else {
                         this.updateResolvedData(resolvedDataJson)
@@ -1115,7 +1123,11 @@ const CmsViewContainerWithGql = compose(
     graphql(gqlQueryKeyValue, {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {
+            console.log(ownProps.slug)
             return {
+                variables: {
+                    key: settingKeyPrefix + ownProps.slug
+                },
                 fetchPolicy: 'network-only'
             }
         },
