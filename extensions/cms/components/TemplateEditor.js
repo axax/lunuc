@@ -125,7 +125,7 @@ class TemplateEditor extends React.Component {
     }
 
     render() {
-        const {classes, component, fabButtonStyle} = this.props
+        const {classes, component, fabButtonStyle, onScroll, scrollPosition} = this.props
         const {tab, data, type} = this.state
 
         const currentTab = (!component && this.state.tab === 2 ? 0 : this.state.tab) || 0
@@ -148,7 +148,7 @@ class TemplateEditor extends React.Component {
                 <Tab icon={<SubjectIcon/>} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
             </Tabs>
             {currentTab === 0 && <TabContainer>
-                <CodeEditor fabButtonStyle={fabButtonStyle} onChange={this.handleChange.bind(this)} showFab lineNumbers type={type}>{data}</CodeEditor>
+                <CodeEditor onScroll={onScroll} scrollPosition={scrollPosition} fabButtonStyle={fabButtonStyle} onChange={this.handleChange.bind(this)} showFab lineNumbers type={type}>{data}</CodeEditor>
 
             </TabContainer>}
             {currentTab === 1 && <TabContainer>

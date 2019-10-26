@@ -348,6 +348,8 @@ class CmsViewContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
+                            onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll')}
+                            scrollPosition={settings.dataResolverScroll}
                             onBlur={() => {
                                 this.saveUnsafedChanges()
                             }}
@@ -358,6 +360,8 @@ class CmsViewContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
                                 expanded={settings.serverScriptExpanded}>
                         <ScriptEditor
+                            onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll')}
+                            scrollPosition={settings.serverScriptScroll}
                             onChange={this.handleServerScriptChange.bind(this)}>{serverScript}</ScriptEditor>
                     </Expandable>
 
@@ -365,6 +369,8 @@ class CmsViewContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
                                 expanded={settings.templateExpanded}>
                         <TemplateEditor
+                            onScroll={this.handleSettingChange.bind(this, 'templateScroll')}
+                            scrollPosition={settings.templateScroll}
                             tab={settings.templateTab}
                             onTabChange={(tab) => {
                                 if (this._autoSaveTemplate) {
@@ -379,6 +385,8 @@ class CmsViewContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
                                 expanded={settings.scriptExpanded}>
                         <ScriptEditor
+                            onScroll={this.handleSettingChange.bind(this, 'scriptScroll')}
+                            scrollPosition={settings.scriptScroll}
                             onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
                     </Expandable>
 
@@ -553,6 +561,10 @@ class CmsViewContainer extends React.Component {
         document.activeElement.blur()
 
         // clear timeouts
+        if (this.saveSettingsTimeout) {
+            this._saveSettings()
+        }
+
         if (this._autoSaveScriptTimeout) {
             this._autoSaveScript()
         }
@@ -855,7 +867,16 @@ class CmsViewContainer extends React.Component {
     }
 
     saveSettings() {
-        this.setKeyValue(settingKeyPrefix + this.props.slug, this.state.settings, false, true)
+        const key = settingKeyPrefix + this.props.slug, settings = this.state.settings
+
+        this._saveSettings = () => {
+            clearTimeout(this.saveSettingsTimeout)
+            this.saveSettingsTimeout = 0
+            this.setKeyValue(key, settings, false, true)
+        }
+
+        clearTimeout(this.saveSettingsTimeout)
+        this.saveSettingsTimeout = setTimeout(this._saveSettings, 5000)
     }
 
     clientQuery(query, options) {

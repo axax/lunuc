@@ -328,7 +328,15 @@ class JsonDom extends React.Component {
 
         if (this.resolvedDataJson === undefined) {
             try {
-                this.resolvedDataJson = JSON.parse(resolvedData)
+
+                if (resolvedData.indexOf('${') >= 0) {
+                    this.resolvedDataJson = JSON.parse(new Function(`const {${Object.keys(scope).join(',')}} = this.scope; return \`${resolvedData}\``).call({
+                        scope
+                    }))
+                } else {
+                    this.resolvedDataJson = JSON.parse(resolvedData)
+                }
+
                 if (this.resolvedDataJson.error) {
                     resolveDataError = this.resolvedDataJson.error
                 }
@@ -382,6 +390,7 @@ class JsonDom extends React.Component {
         if (!this.runJsEvent('beforerender', false, scope)) {
             return <div>Error in beforerender event. See details in console log</div>
         }
+
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope, true)
 
         if (content && this._inHtmlComponents.length > 0) {
@@ -474,15 +483,6 @@ class JsonDom extends React.Component {
         onError(e)
     }
 
-    scopeByPath(path, scope) {
-        try {
-            // get data from scope by path (foo.bar)
-            return path.split('.').reduce((res, prop) => res[prop], scope)
-        } catch (e) {
-            this.emitJsonError(e)
-        }
-    }
-
     parseRec(a, rootKey, scope, initial) {
         if (!a) return null
         if (a.constructor === String) return a
@@ -493,7 +493,7 @@ class JsonDom extends React.Component {
 
             if (!item) return
 
-            const {t, p, c, $c, $loop, $if, x, $wait} = item
+            const {t, p, c, $c, $loop, $if, $ifexist, x, $wait} = item
             /*
              t = type
              c = children
@@ -501,8 +501,18 @@ class JsonDom extends React.Component {
              $if = condition (only parse if condition is fullfilled)
              p = prop
              */
+            if( $ifexist ){
+                try {
+                    if(Util.propertyByPath($ifexist, scope) === undefined){
+                        return
+                    }
+                }catch (e) {
+                    return
+                }
+            }
+
             if ($if) {
-                // check condition
+                // check condition --> slower than to check with $ifexist
                 try {
                     const tpl = new Function(DomUtil.toES5('const {' + Object.keys(scope).join(',') + '} = this.scope;return ' + $if))
                     if (!tpl.call({scope})) {
@@ -533,7 +543,12 @@ class JsonDom extends React.Component {
                 const {$d, d, c} = $loop
                 let data
                 if ($d) {
-                    data = this.scopeByPath($d, scope)
+                    try {
+                        // get data from scope by path (foo.bar)
+                        data = Util.propertyByPath($d,scope)
+                    } catch (e) {
+                        this.emitJsonError(e)
+                    }
                 } else {
                     if (d && d.constructor === String) {
                         try {

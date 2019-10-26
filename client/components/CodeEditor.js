@@ -50,8 +50,16 @@ class CodeEditor extends React.Component {
         }
     }
 
+    /*var editor = CodeMirror.fromTextArea(...);
+
+    function jumpToLine(i) {
+        var t = editor.charCoords({line: i, ch: 0}, "local").top;
+        var middleHeight = editor.getScrollerElement().offsetHeight / 2;
+        editor.scrollTo(null, t - middleHeight - 5);
+    }*/
+
     render() {
-        const {onChange, onBlur, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className} = this.props
+        const {onChange, onBlur, onScroll, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition} = this.props
         const options = {
             mode: {},
             readOnly,
@@ -102,11 +110,19 @@ class CodeEditor extends React.Component {
                 key="editor"
                 editorDidMount={editor => {
                     this._editor = editor
+                    if (scrollPosition) {
+                        editor.scrollTo(scrollPosition.left, scrollPosition.top)
+                    }
                     //  editor.setSize(width, height);
                 }}
                 value={this._data}
                 options={options}
-                onBlur={(editor, e)=>{
+                onScroll={(editor, e) => {
+                    if (onScroll) {
+                        onScroll(e)
+                    }
+                }}
+                onBlur={(editor, e) => {
                     if (onBlur) {
                         onBlur(e)
                     }
@@ -127,6 +143,7 @@ CodeEditor.propTypes = {
     lineNumbers: PropTypes.bool,
     readOnly: PropTypes.bool,
     onChange: PropTypes.func,
+    onScroll: PropTypes.func,
     onBlur: PropTypes.func,
     type: PropTypes.string,
     children: PropTypes.string,
@@ -134,7 +151,8 @@ CodeEditor.propTypes = {
     showFab: PropTypes.bool,
     style: PropTypes.object,
     fabButtonStyle: PropTypes.object,
-    className: PropTypes.string
+    className: PropTypes.string,
+    scrollPosition: PropTypes.object
 }
 
 
