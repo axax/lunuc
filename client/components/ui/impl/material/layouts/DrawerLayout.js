@@ -12,7 +12,7 @@ import MenuIcon from '@material-ui/icons/Menu'
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft'
 import ChevronRightIcon from '@material-ui/icons/ChevronRight'
 
-const DRAWER_WIDTH_DEFAULT = 400
+const DRAWER_WIDTH_DEFAULT = 540
 
 const styles = theme => ({
     /*'@global': {
@@ -143,11 +143,28 @@ class DrawerLayout extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            open: this.props.open || false,
-            drawerWidth: this.props.drawerWidth || DRAWER_WIDTH_DEFAULT
+            open: !!this.props.open,
+            drawerWidth: this.props.drawerWidth || DRAWER_WIDTH_DEFAULT,
+            drawerWidthOriginal: this.props.drawerWidth,
+            openOriginal: this.props.open
         }
     }
 
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.open !== prevState.openOriginal || nextProps.drawerWidth !== prevState.drawerWidthOriginal) {
+            return {
+                open: !!nextProps.open,
+                drawerWidth: nextProps.drawerWidth,
+                drawerWidthOriginal: nextProps.drawerWidth,
+                openOriginal: nextProps.open
+            }
+        }
+        return null
+    }
+
+    shouldComponentUpdate(nextProps, nextState) {
+        return nextProps !== this.props || this.state.open !== nextState.open || this.state.drawerWidth !== nextState.drawerWidth
+    }
 
     handleDrawerOpen = () => {
         this.setState({open: true}, () => {
@@ -209,7 +226,6 @@ class DrawerLayout extends React.Component {
     render() {
         const {classes, theme, title, sidebar, toolbarRight, children, fixedLayout} = this.props
         const {open, drawerWidth} = this.state
-
         const contentFixed = {}
         if (fixedLayout && open) {
             contentFixed.marginLeft = drawerWidth + 'px'

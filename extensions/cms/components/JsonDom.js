@@ -223,7 +223,6 @@ class JsonDom extends React.Component {
         const propsChanged = this.props._props !== props._props
         const slugChanged = this.props.slug !== props.slug
 
-
         const updateIsNeeded = resolvedDataChanged ||
             locationChanged ||
             scriptChanged ||
@@ -330,8 +329,9 @@ class JsonDom extends React.Component {
             try {
 
                 if (resolvedData.indexOf('${') >= 0) {
-                    this.resolvedDataJson = JSON.parse(new Function(`const {${Object.keys(scope).join(',')}} = this.scope; return \`${resolvedData}\``).call({
-                        scope
+                    this.resolvedDataJson = JSON.parse(new Function(`const Util = this.Util; const {${Object.keys(scope).join(',')}} = this.scope; return \`${resolvedData.replace(/\\/g, '\\\\')}\``).call({
+                        scope,
+                        Util
                     }))
                 } else {
                     this.resolvedDataJson = JSON.parse(resolvedData)
@@ -342,6 +342,7 @@ class JsonDom extends React.Component {
                 }
             } catch (e) {
                 resolveDataError = e.message
+                console.log(resolvedData)
             }
 
             if (resolveDataError) {
@@ -593,6 +594,7 @@ class JsonDom extends React.Component {
                         if (loopChild.constructor !== Object) {
                             loopChild = {data: loopChild}
                         }
+
                         const tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},
                                                     Util = this.Util,
                                                     _i = Util.tryCatch.bind(this),

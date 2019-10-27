@@ -451,11 +451,10 @@ class CmsViewContainer extends React.Component {
 
                 </div>
             </div>
-
             content = <UIProvider><DrawerLayout sidebar={sidebar()}
                                                 open={settings.drawerOpen}
                                                 fixedLayout={settings.fixedLayout}
-                                                drawerWidth={settings.drawerWidth || 800}
+                                                drawerWidth={settings.drawerWidth}
                                                 onDrawerOpenClose={this.drawerOpenClose}
                                                 onDrawerWidthChange={this.drawerWidthChange}
                                                 toolbarRight={[

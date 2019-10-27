@@ -39,13 +39,15 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
             limit: 1,
             _version
         })
-
         // minify template if no user is logged in
         if (cmsPages.results && cmsPages.results.length) {
 
             if (!editmode) {
 
                 //console.log(template)
+
+                //minify script
+                //cmsPages.results[0].script = cmsPages.results[0].script.replace(/\t/g, ' ').replace(/ +(?= )/g,'')
 
                 try {
                     // TODO: Include sub CMS component to reduce number of requests
