@@ -40,24 +40,25 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
     if (!cmsPages.results) {
         throw new Error(`Template ${slug} doesn't exist`)
     }
-    let scopeContext
+    let mailContext
     try {
-        scopeContext = JSON.parse(body)
+        mailContext = JSON.parse(body)
     } catch (e) {
         throw new Error(`Error in body: ${e.message}`)
-        scopeContext = {}
+        mailContext = {}
     }
-    const scope = {context: scopeContext, page: {slug}}
-
+    const scope = {context: mailContext, page: {slug}}
     const {template, script, dataResolver} = cmsPages.results[0]
     const {resolvedData} = await resolveData({db, context, dataResolver, scope})
+
     try {
         return ReactDOMServer.renderToString(<UIProvider>
             <JsonDom template={template}
                      script={script}
                      resolvedData={JSON.stringify(resolvedData)}
                      editMode={false}
-                     scope={JSON.stringify(scope)}/>
+                     slug={slug}
+                     _props={{context: mailContext}}/>
         </UIProvider>)
     } catch (e) {
         throw new Error(`Error in template: ${e.message}`)
