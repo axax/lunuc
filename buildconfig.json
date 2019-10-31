@@ -59,6 +59,9 @@
     },
     "rating": {
       "active": true
+    },
+    "mailclient": {
+      "active": true
     }
   },
   "ui": [

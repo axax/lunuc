@@ -202,7 +202,7 @@ const GenericResolver = {
                 return o
             }, {})
 
-            return {
+            const allData = {
                 _id: doc._id,
                 status: 'created',
                 createdBy: {
@@ -211,6 +211,10 @@ const GenericResolver = {
                 },
                 ...newData
             }
+
+            Hook.call('typeCreated_' + typeName, {data, db})
+
+            return allData
         }
     },
     deleteEnity: async (db, context, typeName, {_version, ...data}) => {

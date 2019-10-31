@@ -1,0 +1,8 @@
+{
+  "name": "Mail client",
+  "description": "",
+  "author": "Simon Schärer",
+  "dependencies": [
+    "mailclient"
+  ]
+}

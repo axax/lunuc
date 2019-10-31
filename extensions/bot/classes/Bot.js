@@ -3,6 +3,7 @@ import Telegraf from 'telegraf'
 import Stemmer from './Stemmer'
 import stopwords_en from 'natural/lib/natural/util/stopwords'
 import Util from 'api/util'
+import Hook from 'util/hook'
 
 /* dependency to media extension */
 import ImageClassifier from '../../media/util/imageClassifierLambda'
@@ -483,6 +484,7 @@ class Bot {
                         const addCommand = this.bot.addCommand.bind(this.bot)
                         const natural = this.bot.natural
                         const require = this.require
+                        const Hook = this.Hook
                         const ImageClassifier = this.ImageClassifier
                         ${botCommand.script}
                     } catch(e) {
@@ -496,7 +498,8 @@ class Bot {
                     require,
                     ImageClassifier,
                     Util,
-                    db
+                    db,
+                    Hook
                 })
             }
         })
