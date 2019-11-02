@@ -280,6 +280,7 @@ class GenericForm extends React.Component {
 
             }
         })
+        console.log('render GenericForm')
 
         return (
             <form>

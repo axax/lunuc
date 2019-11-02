@@ -18,6 +18,10 @@
           "required": true
         },
         {
+          "name": "execfilter",
+          "label": "Execution filter"
+        },
+        {
           "name": "active",
           "type": "Boolean"
         }

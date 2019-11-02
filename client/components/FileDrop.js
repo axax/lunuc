@@ -106,13 +106,13 @@ class FileDrop extends React.Component {
     }
 
     render() {
-        const {style, classes, multi, label, accept, className} = this.props
+        const {style, classes, multi, label, accept, className, name} = this.props
         const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage} = this.state
         return <div style={style} className={classNames(classes.uploader, isHover && classes.uploaderOver, className)}>
             <input className={classes.inputFile}
                    multiple={!!multi}
                    type="file"
-                   name="fileUpload"
+                   name={name || 'fileUpload'}
                    accept={accept || DEFAULT_ACCEPT}
                    onDragLeave={this.handelDragLeave.bind(this)}
                    onDragOver={this.handelDragOver.bind(this)}

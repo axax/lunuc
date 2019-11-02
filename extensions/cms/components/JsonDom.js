@@ -449,7 +449,8 @@ class JsonDom extends React.Component {
     }
 
     handleBindingChange(cb, event, value) {
-        this.bindings[event.target.name] = value
+        const target = event.target
+        this.bindings[target.name] = value || target.value
         if (cb)
             cb.bind(this)(event)
     }

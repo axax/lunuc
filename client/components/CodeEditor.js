@@ -31,7 +31,6 @@ class CodeEditor extends React.Component {
                 data: nextProps.children
             }
         }
-        return null
     }
 
     shouldComponentUpdate(nextProps, nextState) {
@@ -49,14 +48,6 @@ class CodeEditor extends React.Component {
             this._editor.autoFormatRange(from, to)
         }
     }
-
-    /*var editor = CodeMirror.fromTextArea(...);
-
-    function jumpToLine(i) {
-        var t = editor.charCoords({line: i, ch: 0}, "local").top;
-        var middleHeight = editor.getScrollerElement().offsetHeight / 2;
-        editor.scrollTo(null, t - middleHeight - 5);
-    }*/
 
     render() {
         const {onChange, onBlur, onScroll, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition} = this.props
@@ -107,6 +98,7 @@ class CodeEditor extends React.Component {
                 right: '8px', ...fabButtonStyle
             }} items={allActions}/>}
             <CodeMirror
+                autoCursor={false}
                 key="editor"
                 editorDidMount={editor => {
                     this._editor = editor
