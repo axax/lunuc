@@ -38,28 +38,34 @@
       "name": "CronJobExecution",
       "fields": [
         {
-          "name": "state"
+          "name": "state",
+          "index": 1
         },
         {
           "name": "endTime",
           "type": "Float",
-          "uitype": "datetime"
+          "uitype": "datetime",
+          "index": 1
         },
         {
           "name": "scriptLog",
-          "uitype": "editor"
+          "uitype": "editor",
+          "index": 1
         },
         {
           "name": "scriptDebug",
-          "uitype": "editor"
+          "uitype": "editor",
+          "index": 1
         },
         {
           "name": "scriptError",
-          "uitype": "editor"
+          "uitype": "editor",
+          "index": 1
         },
         {
           "name": "cronjob",
-          "type": "CronJob"
+          "type": "CronJob",
+          "index": 1
         }
       ]
     }

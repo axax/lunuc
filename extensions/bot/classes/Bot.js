@@ -472,8 +472,8 @@ class Bot {
                             this.Util.setKeyValueGlobal(this.db,null,key,value,{ispublic:true, skipCheck:true})
                         }
                         
-                        const getKeyValueGlobal = (key)=>{
-                            return this.Util.getKeyValueGlobal(this.db,null,key)
+                        const getKeyValueGlobal = (key, parse)=>{
+                            return this.Util.getKeyValueGlobal(this.db,null,key, parse)
                         }
                         const bot = this.bot
                         const on = this.bot.on.bind(this.bot)
