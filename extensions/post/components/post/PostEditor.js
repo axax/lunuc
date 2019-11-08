@@ -188,11 +188,7 @@ export default class PostEditor extends React.Component {
     blockRendererFn = (block) => {
 
         const {readOnly} = this.props
-        if (readOnly && block.type === 'unstyled') {
-            return {
-                component: () => <p>{block.text}</p>
-            }
-        }
+
         const {editorState} = this.state
         const entityKey = block.getEntityAt(0)
         if (!entityKey) {
@@ -205,13 +201,20 @@ export default class PostEditor extends React.Component {
         }
 
         const {height, src, width} = entity.getData()
-        // don't render block text; it's still in content state though
-        return {
-            component: () => (<img
-                height={height}
-                src={src}
-                width={width}
-            />)
+
+        if( src ) {
+            // don't render block text; it's still in content state though
+            return {
+                component: () => (<img
+                    height={height}
+                    src={src}
+                    width={width}
+                />)
+            }
+        }else{
+            return {
+                component: () => <p>{block.text}</p>
+            }
         }
     }
 
