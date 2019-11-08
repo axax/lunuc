@@ -7,9 +7,9 @@ export const getHostFromHeaders= (headers) => {
     if (headers) {
         if (headers.forwarded) {
             // if request comes from proxy server
-            const match = headers.forwarded.match(/(?<=(^|; )host=).*(?=(;|$))/)
-            if (match) {
-                host = match[0].split(':')[0]
+            const aHost = headers.forwarded.split(';').filter(e => e.startsWith('host='))
+            if (aHost.length>0) {
+                host = aHost[0].substring(5)
             }
         }
 
@@ -17,8 +17,6 @@ export const getHostFromHeaders= (headers) => {
             host = headers.host.split(':')[0]
         }
     }
-console.log(host)
-    console.log(headers)
     return host
 }
 
