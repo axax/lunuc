@@ -31,6 +31,7 @@ class CodeEditor extends React.Component {
                 data: nextProps.children
             }
         }
+        return null
     }
 
     shouldComponentUpdate(nextProps, nextState) {
