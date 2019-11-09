@@ -516,7 +516,7 @@ class TypesContainer extends React.Component {
             editDialogProps = {
                 title: type,
                 fullWidth: true,
-                fullScreen:false,
+                fullScreen: false,
                 maxWidth: 'xl',
                 open: this.state.createEditDialog,
                 onClose: this.handleCreateEditData,
@@ -1206,8 +1206,19 @@ class TypesContainer extends React.Component {
         }
 
         if (value !== data[key]) {
-            this.updateData(this.pageParams, {_id: data._id, [key]: value})
+            const changedData = {_id: data._id, [key]: value}
+            this.addAlwaysUpdateData(data, changedData, data.__typename)
+            this.updateData(this.pageParams, changedData)
         }
+    }
+
+    addAlwaysUpdateData(data, changedData, type) {
+        const typeDef = getFormFields(type)
+        Object.keys(typeDef).forEach((key) => {
+            if (typeDef[key].alwaysUpdate) {
+                changedData[key] = data[key]
+            }
+        })
     }
 
     handleDeleteDataClick = (data) => {
@@ -1312,6 +1323,8 @@ class TypesContainer extends React.Component {
                 })
                 if (Object.keys(updateData).length) {
                     // only send data if they have really changed
+                    this.addAlwaysUpdateData(dataToEdit, updateData, this.pageParams.type)
+
                     this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...updateData}, dataToEdit).then(callback)
                 } else {
                     if (action.key === 'save_close') {

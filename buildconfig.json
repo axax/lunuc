@@ -62,6 +62,12 @@
     },
     "mailclient": {
       "active": true
+    },
+    "proxy": {
+      "active": false
+    },
+    "dns": {
+      "active": false
     }
   },
   "ui": [

@@ -31,6 +31,7 @@ A Type can be define in the build.json of an extension. Types can also have refe
 * genResolver = If set to false the resolver is not generated automatically
 * mutationResult = The type that is returned after a mutation (default is {TypeName}Status)
 * access = Control who has access -> Object {create: 'anonymous'}
+* noUserRelation = if true the createdBy field won't be created
 
 **Field properties**
 
@@ -45,6 +46,7 @@ A Type can be define in the build.json of an extension. Types can also have refe
 * uitype = It can be datetime, number, editor, jseditor. If the value is set you can force the type editor to use a certain ui element
 * readOnly = The value is read only. It is not defined whether the field exist in the database or is only dynamic
 * pickerField = When the type is a reference you can define which field you want to show in the frontend for type picking
+* alwaysUpdate = always sends the data even if there was no change
 
 **An example of a type definition**
 ```json

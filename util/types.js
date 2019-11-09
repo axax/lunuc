@@ -207,6 +207,7 @@ export const getFormFields = (type) => {
             uitype,
             multi: !!field.multi,
             readOnly: !!field.readOnly,
+            alwaysUpdate: !!field.alwaysUpdate,
             type: field.type,
             required: !!field.required,
             localized: !!field.localized,
