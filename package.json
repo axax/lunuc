@@ -129,6 +129,7 @@
     "spdy": "^4.0.1",
     "subscriptions-transport-ws": "^0.9.16",
     "telegraf": "^3.33.3",
+    "compression": "^1.7.4",
     "zip-local": "^0.3.4"
   },
   "devDependencies": {
@@ -137,7 +138,6 @@
     "babel-loader": "^8.0.6",
     "compression-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^5.0.5",
-    "compression": "^1.7.4",
     "css-loader": "^3.2.0",
     "jest-cli": "^24.9.0",
     "less-loader": "^5.0.0",
