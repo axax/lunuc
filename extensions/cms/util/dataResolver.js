@@ -47,7 +47,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
                                               const {data} = this
                                               return \`${JSON.stringify(segments[i])}\``)
-                const replacedSegmentStr = tpl.call({scope, data: resolvedData, context})
+                const replacedSegmentStr = tpl.call({scope, data: resolvedData, context, editmode})
                 const segment = JSON.parse(replacedSegmentStr)
 
 
@@ -215,6 +215,12 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
 
                 } else if (segment.tr) {
+
+                    if (segment.if === false || segment.if === 'false') {
+                        continue
+                    }
+
+
                     if (!resolvedData.tr)
                         resolvedData.tr = {}
                     if (segment.tr.constructor === Array) {

@@ -7,6 +7,7 @@ import * as os from 'os'
 import {
     CAPABILITY_MANAGE_KEYVALUES
 } from 'util/capabilities'
+import {ApiError} from '../error'
 
 const PASSWORD_MIN_LENGTH = 5
 
@@ -165,7 +166,7 @@ const Util = {
     checkIfUserIsLoggedIn: (context) => {
 
         if (!context || !context.username) {
-            throw new Error('User is not logged in (or authenticated).')
+            throw new ApiError('User is not logged in (or authenticated).', 'authentication_error')
         }
     },
     isUserLoggedIn: (context) => {
