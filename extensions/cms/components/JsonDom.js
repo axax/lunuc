@@ -93,7 +93,7 @@ function waitUntilVisible({jsonDom, key, eleType, eleProps, c, $c, scope}) {
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit', 'Success', 'ContextMenu', 'CustomEvent']
+    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit', 'Success', 'ContextMenu', 'CustomEvent', 'FileContent']
 
     /*
     * Default components
@@ -592,7 +592,7 @@ class JsonDom extends React.Component {
                         .replace(re2, '').replace(re3, '')
 
                     data.forEach((loopChild, childIdx) => {
-                        if (loopChild.constructor !== Object) {
+                        if (!loopChild || loopChild.constructor !== Object) {
                             loopChild = {data: loopChild}
                         }
 
@@ -665,9 +665,9 @@ class JsonDom extends React.Component {
                     JsonDom.events.forEach((e) => {
                         if (properties['on' + e] && properties['on' + e].constructor === Object) {
                             const payload = properties['on' + e]
-                            properties['on' + e] = (eo) => {
+                            properties['on' + e] = (...args) => {
                                 const eLower = e.toLowerCase()
-                                this.runJsEvent(eLower, false, payload, eo)
+                                this.runJsEvent(eLower, false, payload, ...args)
                             }
                         }
                     })

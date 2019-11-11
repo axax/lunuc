@@ -307,6 +307,17 @@ class JsonDomHelper extends React.Component {
 
     }
 
+
+    handleAddChildClick(e) {
+        e.stopPropagation()
+        e.preventDefault()
+        const {_cmsActions, _key, _json, _scope, _onchange} = this.props
+
+        addComponent({key: _key, json: _json, index: 0})
+        _onchange(_json)
+    }
+
+
     getDropArea(rest, index) {
         return <div
             onMouseOver={(e) => {
@@ -361,7 +372,7 @@ class JsonDomHelper extends React.Component {
                     }}
                     className={classes.toolbarMenu} mini items={[
                     {name: 'Edit', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)},
-                    {name: 'Add component', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)}
+                    {name: 'Add child component', icon: <EditIcon/>, onClick: this.handleAddChildClick.bind(this)}
                     ]}/>
             </div>
 
