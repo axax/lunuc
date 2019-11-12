@@ -93,7 +93,7 @@ function waitUntilVisible({jsonDom, key, eleType, eleProps, c, $c, scope}) {
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit', 'Success', 'ContextMenu', 'CustomEvent', 'FileContent']
+    static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit', 'Success', 'ContextMenu', 'CustomEvent', 'FileContent', 'Files']
 
     /*
     * Default components

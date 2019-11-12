@@ -7,7 +7,7 @@ class Expandable extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            expanded: props.expanded
+            expanded: !!props.expanded
         }
     }
 
