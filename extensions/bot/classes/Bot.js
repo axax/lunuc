@@ -51,6 +51,15 @@ class Bot {
         this.data = data
         try {
             const settings = JSON.parse(data.settings)
+
+            // remove blocked chats
+            for (let i = settings.telegramChats.length - 1; i >= 0; i--) {
+                const chat = settings.telegramChats[i]
+                if (chat.blocked) {
+                    settings.telegramChats.splice(i, 1);
+                }
+            }
+
             this.settings = settings
         } catch (e) {
             console.warn(`Bot settings invalid ${data.settings}`, e)
@@ -465,7 +474,9 @@ class Bot {
 
         botCommands.forEach(async botCommand => {
             if (botCommand.script) {
-                const tpl = new Function(`
+                try {
+
+                    const tpl = new Function(`
                  (async () => {
                     try {
                         const setKeyValueGlobal = (key,value)=>{
@@ -493,14 +504,17 @@ class Bot {
                 })();
                 `)
 
-                const result = await tpl.call({
-                    bot: this,
-                    require,
-                    ImageClassifier,
-                    Util,
-                    db,
-                    Hook
-                })
+                    const result = await tpl.call({
+                        bot: this,
+                        require,
+                        ImageClassifier,
+                        Util,
+                        db,
+                        Hook
+                    })
+                }catch (e) {
+                    console.error(botCommand.name,e)
+                }
             }
         })
     }

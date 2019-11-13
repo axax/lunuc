@@ -16,7 +16,8 @@
           "name": "languages"
         },
         {
-          "name": "settings"
+          "name": "settings",
+          "uitype": "json"
         },
         {
           "name": "execfilter",
