@@ -142,9 +142,10 @@ class Bot {
         let chat = this.getTelegramChat(id)
         let lastActive = (new Date()).getTime()
         if (!chat) {
-            this.settings.telegramChats.push({id, lastActive})
+            this.settings.telegramChats.push({id, lastActive, title: ctx.chat.title, blocked: false})
         } else {
             chat.lastActive = lastActive
+            chat.title = ctx.chat.title
         }
         this.saveSettings()
     }
