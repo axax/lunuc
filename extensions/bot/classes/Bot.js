@@ -166,7 +166,7 @@ class Bot {
 
             if (command.startsWith('/') && this.commands[command.substring(1)]) {
                 // its a command
-                this.commands[command.substring(1)].bind(this)({api: ctx})
+                this.commands[command.substring(1)].bind(this)({api: ctx, bot:this})
                 return
             } else {
 
