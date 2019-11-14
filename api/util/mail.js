@@ -43,6 +43,7 @@ export const sendMail = async (db, context, {recipient, subject, body, slug}) =>
         service: mailSettings.service,
         host: mailSettings.host,
         port: mailSettings.port,
+        secure: !!mailSettings.secure,
         auth: {
             user: mailSettings.user,
             pass: mailSettings.password
