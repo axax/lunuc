@@ -104,7 +104,7 @@ class Bot {
             Object.keys(this.commands).forEach(key => {
                 this.telegramBot.command(key, (ctx) => {
                     this.addTelegramChat(ctx)
-                    this.commands[key].bind(this)({api: ctx})
+                    this.commands[key].bind(this)({api: ctx, bot:this})
                 })
             })
 
