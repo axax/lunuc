@@ -41,6 +41,8 @@ export const sendMail = async (db, context, {recipient, subject, body, slug}) =>
 
     var transporter = nodemailer.createTransport({
         service: mailSettings.service,
+        host: mailSettings.host,
+        port: mailSettings.port,
         auth: {
             user: mailSettings.user,
             pass: mailSettings.password
