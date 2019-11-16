@@ -46,6 +46,28 @@ const styles = theme => ({
         margin: '0 auto 0.5rem auto',
         pointerEvents: 'none'
     },
+    imageDelete: {
+        position: 'absolute',
+        top: '-0.5rem',
+        right: '-0.5rem',
+        borderRadius: '50%',
+        height: '1.5rem',
+        width: '1.5rem',
+        color: 'red',
+        backgroundColor: '#fff',
+        border:'solid 1px #e1e1e1',
+        padding: 0,
+        fontSize: '1rem',
+        textAlign: 'center',
+        cursor: 'pointer',
+        zIndex:3,
+        '&:hover': {
+            fontWeight:'bold'
+        }
+    },
+    imageWrap: {
+        position: 'relative'
+    },
     progress: {
         position: 'absolute',
         bottom: -1,
@@ -106,7 +128,7 @@ class FileDrop extends React.Component {
     }
 
     render() {
-        const {style, classes, multi, label, accept, className, name} = this.props
+        const {style, classes, multi, label, accept, className, name, onChange} = this.props
         const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage} = this.state
         return <div style={style} className={classNames(classes.uploader, isHover && classes.uploaderOver, className)}>
             <input className={classes.inputFile}
@@ -119,7 +141,14 @@ class FileDrop extends React.Component {
                    onChange={this.handelDrop.bind(this)}/>
             {
                 images.map(i => {
-                    return <img className={classes.image} key={i} src={i}/>
+                    return <div className={classes.imageWrap}><img className={classes.image} key={i} src={i}/>
+                        <button className={classes.imageDelete} onClick={
+                            (e)=>{
+                                this.setState({images:[]})
+                                onChange({target: {name, value: ''}})
+                            }
+                        }>×</button>
+                    </div>
                 })
             }
 
@@ -130,7 +159,7 @@ class FileDrop extends React.Component {
 
             {!uploading &&
             <Typography component="div"
-                variant="caption">{label || 'Drop files here, or click to select files to upload.'}</Typography>}
+                        variant="caption">{label || 'Drop files here, or click to select files to upload.'}</Typography>}
 
             {errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography>}
             {successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography>}

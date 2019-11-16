@@ -495,7 +495,7 @@ class JsonDom extends React.Component {
 
             if (!item) return
 
-            const {t, p, c, $c, $loop, $if, $ifexist, x, $wait} = item
+            const {t, p, c, $c, $loop, $if, $ifexist, x, $wait, $for} = item
             /*
              t = type
              c = children
@@ -541,8 +541,17 @@ class JsonDom extends React.Component {
                     }
                 }
             }
-            if ($loop) {
-                const {$d, d, c} = $loop
+
+            // loop is deprecated. Use "for" instead, as it is better performance-wise
+            let loopOrFor
+            if( $for ){
+                loopOrFor = $for
+            }else{
+                loopOrFor = $loop
+            }
+
+            if (loopOrFor) {
+                const {$d, d, c} = loopOrFor
                 let data
                 if ($d) {
                     try {
@@ -574,7 +583,7 @@ class JsonDom extends React.Component {
                 }
 
                 if (data.constructor !== Array) return ''
-                let {s} = $loop
+                let {s} = loopOrFor
                 if (!s) s = 'loop'
                 /*
                  d = data in loop
@@ -591,16 +600,28 @@ class JsonDom extends React.Component {
                         .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
                         .replace(re2, '').replace(re3, '')
 
+                    let tpl
+
+                    if ( $for ) {
+                        tpl = new Function(DomUtil.toES5(`const ${s} = this.${s},
+                                                    Util = this.Util,
+                                                    _i = Util.tryCatch.bind(this),
+                                                    _t = this._t.bind(this.scope.data)
+                                                    return \`${cStr}\``))
+                    }
                     data.forEach((loopChild, childIdx) => {
                         if (!loopChild || loopChild.constructor !== Object) {
                             loopChild = {data: loopChild}
                         }
 
-                        const tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},
+                        if ( $loop ) {
+
+                            tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},
                                                     Util = this.Util,
                                                     _i = Util.tryCatch.bind(this),
                                                     _t = this._t.bind(this.scope.data)
                                                     return \`${cStr}\``))
+                        }
                         // back to json
                         loopChild._index = childIdx
                         // remove tabs and parse

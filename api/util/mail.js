@@ -8,8 +8,7 @@ import nodemailer from 'nodemailer'
  */
 
 
-export const sendMail = async (db, context, {recipient, subject, body, text, slug}) =>
-{
+export const sendMail = async (db, context, {recipient, subject, body, text, slug}) => {
     const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
 
     const mailSettings = values.MailSettings
@@ -27,7 +26,7 @@ export const sendMail = async (db, context, {recipient, subject, body, text, slu
             body,
             slug
         })
-    } else if(body){
+    } else if (body) {
         html = body
     }
 
@@ -53,3 +52,4 @@ export const sendMail = async (db, context, {recipient, subject, body, text, slu
     const response = await transporter.sendMail(message)
     return response
 }
+
