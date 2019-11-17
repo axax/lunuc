@@ -31,9 +31,9 @@ const Util = {
     /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str, ignoreError) {
         try {
-            return new Function('return ' + (!str.startsWith('this.') ? 'this.' : '') + str).bind(this).call()
+            return new Function(`const {${Object.keys(this).join(',')}} = this; return ${str}`).bind(this).call()
         } catch (e) {
-            if (!ignoreError)
+           if (!ignoreError)
                 console.log(e, str)
         }
 
