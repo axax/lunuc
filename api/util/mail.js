@@ -8,7 +8,7 @@ import nodemailer from 'nodemailer'
  */
 
 
-export const sendMail = async (db, context, {recipient, subject, body, text, slug}) => {
+export const sendMail = async (db, context, {recipient, subject, body, html, text, slug, attachments}) => {
     const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
 
     const mailSettings = values.MailSettings
@@ -16,9 +16,9 @@ export const sendMail = async (db, context, {recipient, subject, body, text, slu
         throw new Error('Mail settings are missing. Please add MailSettings as a global value')
     }
 
-    let html
+    let finalHtml
     if (slug && 'undefined' != typeof (Hook.hooks['cmsTemplateRenderer']) && Hook.hooks['cmsTemplateRenderer'].length) {
-        html = await Hook.hooks['cmsTemplateRenderer'][0].callback({
+        finalHtml = await Hook.hooks['cmsTemplateRenderer'][0].callback({
             context,
             db,
             recipient,
@@ -26,8 +26,10 @@ export const sendMail = async (db, context, {recipient, subject, body, text, slu
             body,
             slug
         })
+    } else if (html) {
+        finalHtml = html
     } else if (body) {
-        html = body
+        finalHtml = body
     }
 
     const message = {
@@ -35,7 +37,8 @@ export const sendMail = async (db, context, {recipient, subject, body, text, slu
         to: recipient,
         subject: subject,
         text, //'Plaintext version of the message'
-        html
+        html: finalHtml,
+        attachments
     }
 
     var transporter = nodemailer.createTransport({

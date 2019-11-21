@@ -218,8 +218,7 @@ class FileDrop extends React.Component {
                         onSuccess: (dataUrl) => {
                             if (uploadTo) {
                                 this.uploadData(dataUrl, file, uploadTo)
-                            }
-                            if (onChange) {
+                            }else if (onChange) {
 
                                 // call with target
                                 onChange({target: {name, value: dataUrl}})
@@ -265,9 +264,15 @@ class FileDrop extends React.Component {
                 if (status === 'success') {
                     this.setState({successMessage: 'upload was successfull', uploading: false})
 
-                    const {onSuccess} = this.props
+                    const {onSuccess, onChange, name} = this.props
                     if (onSuccess) {
                         onSuccess(e.target.response, this)
+                    }
+
+                    if (onChange) {
+
+                        // call with target
+                        onChange({target: {name, value: e.target.response}})
                     }
 
                 } else {
