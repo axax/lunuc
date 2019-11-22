@@ -14,7 +14,7 @@ import {
     Row,
 } from 'ui'
 import SmartImage from 'client/components/SmartImage'
-import {Link} from 'react-router-dom'
+import {Link, Redirect} from 'react-router-dom'
 import JsonDomInput from './JsonDomInput'
 import {deepMergeConcatArrays} from 'util/deepMerge'
 import {classNameByPath} from '../util/jsonDomUtil'
@@ -116,6 +116,9 @@ class JsonDom extends React.Component {
         'Print': {component: Print, label: 'Printable area'},
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
+        'Redirect': ({to}) =>{
+            return <Redirect to={{pathname: to}} push={false}/>
+        },
         'Link': ({to, href, target, gotop, onClick, ...rest}) => {
             const url = to || href || '', newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
