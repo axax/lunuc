@@ -32,7 +32,7 @@ export default db => ({
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
             const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv']
-            if( filter ){
+            if (filter) {
                 // search in fields
                 fields.push('dataResolver')
                 fields.push('script')
@@ -70,10 +70,19 @@ export default db => ({
                 throw new Error('Cms page doesn\'t exist')
             }
             const scope = {...createScopeForDataResolver(query, props), page: {slug}}
+
             const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
 
-            const {resolvedData, subscriptions} = await resolveData({db, context, dataResolver, scope, nosession, req, editmode})
+            const {resolvedData, subscriptions} = await resolveData({
+                db,
+                context,
+                dataResolver,
+                scope,
+                nosession,
+                req,
+                editmode
+            })
             let html
             if (ssr) {
                 // Server side rendering
@@ -159,10 +168,10 @@ export default db => ({
 
             const {serverScript} = cmsPages.results[0]
 
-            if( args ){
-                try{
+            if (args) {
+                try {
                     args = JSON.parse(args)
-                }catch(e){
+                } catch (e) {
 
                 }
             }
@@ -180,17 +189,17 @@ export default db => ({
                         }
                     })()
                     this.resolve({data})`)
-                    tpl.call({args,require, resolve, db})
-                }catch (error) {
+                    tpl.call({args, require, resolve, db})
+                } catch (error) {
                     resolve({error})
                 }
             })
 
-            if( result.error){
+            if (result.error) {
                 return {result: result.error.message}
             }
 
-            return {result:await result.data}
+            return {result: await result.data}
         }
     },
     Mutation: {
@@ -220,8 +229,13 @@ export default db => ({
 
             // if dataResolver has changed resolveData and return it
             if (rest.dataResolver) {
-                const scope = createScopeForDataResolver(query)
-                const {resolvedData, subscriptions} = await resolveData({db, context, dataResolver: rest.dataResolver, scope})
+                const scope = {...createScopeForDataResolver(query, props), page: {slug: rest.slug}}
+                const {resolvedData, subscriptions} = await resolveData({
+                    db,
+                    context,
+                    dataResolver: rest.dataResolver,
+                    scope
+                })
 
                 result.resolvedData = JSON.stringify(resolvedData)
                 result.subscriptions = subscriptions

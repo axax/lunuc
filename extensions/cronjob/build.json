@@ -36,6 +36,7 @@
     },
     {
       "name": "CronJobExecution",
+      "entryClonable": true,
       "fields": [
         {
           "name": "state",

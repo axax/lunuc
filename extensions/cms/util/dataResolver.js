@@ -4,6 +4,7 @@ import Cache from '../../../util/cache'
 import request from 'request-promise'
 import translations from 'gensrc/tr'
 import Util from '../../../api/util'
+import ClientUtil from 'client/util'
 import {CAPABILITY_MANAGE_KEYVALUES} from '../../../util/capabilities'
 import {processWebsiteQueue} from './browser'
 import Hook from '../../../util/hook'
@@ -46,8 +47,9 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 }
                 const tpl = new Function(`const {${Object.keys(scope).join(',')}} = this.scope
                                               const {data} = this
+                                              const Util = this.ClientUtil
                                               return \`${JSON.stringify(segments[i])}\``)
-                const replacedSegmentStr = tpl.call({scope, data: resolvedData, context, editmode})
+                const replacedSegmentStr = tpl.call({scope, data: resolvedData, context, editmode, ClientUtil})
                 const segment = JSON.parse(replacedSegmentStr)
 
 
@@ -61,14 +63,12 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 } else if (segment.resolveFrom) {
                     if (segment.resolveFrom.KeyValueGlobal) {
                         const dataFromKey = await Util.getKeyValueGlobal(db, context, segment.resolveFrom.KeyValueGlobal, false)
-
                         const resolvedFromKey = await resolveData({db, context, dataResolver: dataFromKey, scope, nosession, req, editmode})
 
                         Object.keys(resolvedFromKey.resolvedData).forEach(k => {
                             resolvedData[k] = resolvedFromKey.resolvedData[k]
                         })
                     }
-
                 } else if (segment.data) {
                     Object.keys(segment.data).forEach(k => {
                         resolvedData[k] = segment.data[k]
