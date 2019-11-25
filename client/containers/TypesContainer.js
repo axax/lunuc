@@ -576,6 +576,7 @@ class TypesContainer extends React.Component {
                 }
                 <Col xs={12} md={(fixType ? 12 : 3)} align="right">
                     <GenericForm key="searchType"
+                                 autoFocus={true}
                                  onChange={this.handleFilter}
                                  onKeyDown={this.handelFilterKeyDown}
                                  primaryButton={false}
@@ -639,7 +640,13 @@ class TypesContainer extends React.Component {
         const {data} = this.state
 
         const item = data.results[index]
-        Hook.call('TypeTableEntryClick', {type, event, item, container: this})
+        if (event.detail === 2) {
+            // it was a double click
+            this.handleEditDataClick(item)
+        }else {
+
+            Hook.call('TypeTableEntryClick', {type, event, item, container: this})
+        }
     }
 
 
@@ -1260,7 +1267,6 @@ class TypesContainer extends React.Component {
 
 
     handleCreateEditData = (action) => {
-
         const closeModal = () => {
             this.setState({createEditDialog: false, createEditDialogParams: null, dataToEdit: null})
         }
@@ -1337,7 +1343,7 @@ class TypesContainer extends React.Component {
                 this.createData(this.pageParams, submitData, dataToEdit).then(callback)
             }
 
-        } else if (action && action.key === 'cancel') {
+        } else if (action && (action.key === 'cancel' || action.key === 'Escape') ) {
             closeModal()
         } else {
             Hook.call('TypeCreateEditDialogAction', {type: this.pageParams.type, closeModal, action}, this)

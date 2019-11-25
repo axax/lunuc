@@ -73,7 +73,6 @@
     "@material-ui/icons": "^4.5.1",
     "apollo-cache-inmemory": "^1.6.3",
     "apollo-client": "^2.6.4",
-    "apollo-client-preset": "^1.0.8",
     "apollo-link-batch-http": "^1.2.13",
     "apollo-link-context": "^1.0.19",
     "apollo-link-error": "^1.1.12",

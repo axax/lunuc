@@ -143,7 +143,6 @@ const Util = {
     parseFilter: filter => {
         const parts = {}, rest = []
         let restString = ''
-
         if (filter) {
             let operator = 'or'
             filter.split(/ +(?=(?:(?:[^"]*"){2})*[^"]*$)/g).forEach(i => {
@@ -168,7 +167,9 @@ const Util = {
                             key = key.substring(0, key.length - 4)
                         }
                         if (parts[key]) {
-                            parts[key] = [parts[key]]
+                            if( parts[key].constructor !== Array) {
+                                parts[key] = [parts[key]]
+                            }
                             parts[key].push({value, operator, comparator: comparator[0]})
                         } else {
                             parts[key] = {value, operator, comparator: comparator[0]}

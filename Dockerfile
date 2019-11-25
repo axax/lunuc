@@ -1,4 +1,4 @@
-FROM node:7.7.4
+FROM node:12.0.0
 MAINTAINER simonschaerer
 
 # Create app directory

@@ -18,11 +18,6 @@ import Async from 'client/components/Async'
 const ImageAdd = (props) => <Async {...props}
                                              load={import(/* webpackChunkName: "admin" */ './ImageAdd')}/>
 
-/*import createImagePlugin from 'draft-js-image-plugin'
- import createAlignmentPlugin from 'draft-js-alignment-plugin'
- import createFocusPlugin from 'draft-js-focus-plugin'
- import createResizeablePlugin from 'draft-js-resizeable-plugin'
- import createBlockDndPlugin from 'draft-js-drag-n-drop-plugin'*/
 
 export default class PostEditor extends React.Component {
     constructor(props) {
@@ -58,12 +53,10 @@ export default class PostEditor extends React.Component {
             this.plugins.push(dndFileUploadPlugin)
         }
 
-
-        this._currentRawData = this.props.post.body
-
         this.state = {
             isHover: false,
-            editorState: this._getEditorState(this.props.post.body)
+            editorState: PostEditor._getEditorState(this.props.post.body),
+            post: this.props.post
         }
 
         this.focus = () => this.editor.focus()
@@ -85,7 +78,6 @@ export default class PostEditor extends React.Component {
             const contentState = this.state.editorState.getCurrentContent()
             const rawContentJson = convertToRaw(contentState)
             const rawContent = JSON.stringify(rawContentJson)
-            this._currentRawData = rawContent
 
             this.props.onChange(rawContent)
         }
@@ -96,6 +88,36 @@ export default class PostEditor extends React.Component {
         this.toggleInlineStyle = (style) => this._toggleInlineStyle(style)
     }
 
+
+    static _getEditorState(bodyRaw) {
+        if (bodyRaw && bodyRaw != '') {
+            let parsedContent
+            try {
+                parsedContent = convertFromRaw(JSON.parse(bodyRaw))
+            } catch (e) {
+                console.warn('Can not convert body', e)
+                const blocksFromHTML = convertFromHTML(bodyRaw)
+                parsedContent = ContentState.createFromBlockArray(
+                    blocksFromHTML.contentBlocks,
+                    blocksFromHTML.entityMap
+                )
+            }
+            return EditorState.createWithContent(parsedContent)
+        } else {
+            return EditorState.createEmpty()
+        }
+    }
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.post && nextProps.post._id !== prevState.post._id) {
+            return {
+                isHover: false,
+                editorState: PostEditor._getEditorState(nextProps.post.body),
+                post: nextProps.post
+            }
+        }
+        return null
+    }
 
     render() {
         const startTime = new Date()
@@ -167,7 +189,7 @@ export default class PostEditor extends React.Component {
     }
 
 
-    UNSAFE_componentWillReceiveProps(nextProps) {
+    /*UNSAFE_componentWillReceiveProps(nextProps) {
         if (nextProps.post) {
             if (this.props.post._id !== nextProps.post._id) {
                 if (this.changeTimeout) {
@@ -182,7 +204,7 @@ export default class PostEditor extends React.Component {
                 this._currentRawData = nextProps.post.body
             }
         }
-    }
+    }*/
 
 
     blockRendererFn = (block) => {
@@ -215,25 +237,6 @@ export default class PostEditor extends React.Component {
             return {
                 component: () => <p>{block.text}</p>
             }
-        }
-    }
-
-    _getEditorState(bodyRaw) {
-        if (bodyRaw && bodyRaw != '') {
-            let parsedContent
-            try {
-                parsedContent = convertFromRaw(JSON.parse(bodyRaw))
-            } catch (e) {
-                console.warn('Can not convert body', e)
-                const blocksFromHTML = convertFromHTML(bodyRaw)
-                parsedContent = ContentState.createFromBlockArray(
-                    blocksFromHTML.contentBlocks,
-                    blocksFromHTML.entityMap
-                )
-            }
-            return EditorState.createWithContent(parsedContent)
-        } else {
-            return EditorState.createEmpty()
         }
     }
 
