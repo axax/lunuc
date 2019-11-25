@@ -52,7 +52,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 const replacedSegmentStr = tpl.call({scope, data: resolvedData, context, editmode, ClientUtil})
                 const segment = JSON.parse(replacedSegmentStr)
 
-
                 if (tempBrowser) {
                     segment.website.pipeline = tempBrowser
                 }
@@ -64,7 +63,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     if (segment.resolveFrom.KeyValueGlobal) {
                         const dataFromKey = await Util.getKeyValueGlobal(db, context, segment.resolveFrom.KeyValueGlobal, false)
                         const resolvedFromKey = await resolveData({db, context, dataResolver: dataFromKey, scope, nosession, req, editmode})
-
                         Object.keys(resolvedFromKey.resolvedData).forEach(k => {
                             resolvedData[k] = resolvedFromKey.resolvedData[k]
                         })
@@ -393,6 +391,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 subscriptions.push('{"cmsPageData":"resolvedData"}')
             }
         } catch (e) {
+            console.log(e)
             resolvedData.error = e.message + ' -> scope=' + JSON.stringify(scope) + debugInfo
         }
     }

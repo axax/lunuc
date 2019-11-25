@@ -33,7 +33,7 @@ const Util = {
         try {
             return new Function(`const {${Object.keys(this).join(',')}} = this; return ${str}`).bind(this).call()
         } catch (e) {
-           if (!ignoreError)
+            if (!ignoreError)
                 console.log(e, str)
         }
 
@@ -55,7 +55,7 @@ const Util = {
 
         return new Date(parseInt(objectId.substring(0, 8), 16) * 1000)
     },
-    getDateTimeFormat: ()=>{
+    getDateTimeFormat: () => {
         return new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale, {
             year: 'numeric',
             month: 'numeric',
@@ -140,6 +140,7 @@ const Util = {
         }
         return b
     },
+    /* TODO: remove from here. It is currently used in the cms component /shop/component/toolbar */
     parseFilter: filter => {
         const parts = {}, rest = []
         let restString = ''
@@ -147,9 +148,9 @@ const Util = {
             let operator = 'or'
             filter.split(/ +(?=(?:(?:[^"]*"){2})*[^"]*$)/g).forEach(i => {
 
-                if( i=== ''){
+                if (i === '') {
                     //ignore
-                }else if (i === '&&') {
+                } else if (i === '&&') {
                     operator = 'and'
                 } else {
                     const comparator = i.match(/==|>=|<=|!=|=|>|<|:/)
@@ -167,7 +168,7 @@ const Util = {
                             key = key.substring(0, key.length - 4)
                         }
                         if (parts[key]) {
-                            if( parts[key].constructor !== Array) {
+                            if (parts[key].constructor !== Array) {
                                 parts[key] = [parts[key]]
                             }
                             parts[key].push({value, operator, comparator: comparator[0]})
@@ -228,6 +229,16 @@ const Util = {
     },
     propertyByPath(path, obj) {
         return path.split('.').reduce((res, prop) => res[prop], obj)
+    },
+    translateUrl(lang) {
+        if (lang === _app_.lang) return
+        const p = window.location.pathname.split('/')
+        if (p[1].length === 2 && p[1] !== lang) {
+            p[1] = lang
+        } else {
+            p.splice(1, 0, lang);
+        }
+        return p.join('/') + window.location.search + window.location.hash
     }
 }
 export default Util

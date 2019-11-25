@@ -48,6 +48,7 @@ export const dbConnection = (cb) => {
             socketTimeoutMS: 480000,
             keepAlive: 300000,
             sslValidate: false,*/
+            useUnifiedTopology: true,
             ...urlParams
         }
         MongoClient.connect(urlParts[0],
