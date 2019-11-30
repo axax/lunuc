@@ -7,6 +7,23 @@ import zlib from 'zlib'
 import config from 'gen/config'
 import MimeType from '../util/mime'
 import {getHostFromHeaders} from 'util/host'
+import finalhandler from 'finalhandler'
+
+
+const defaultWebHandler = (err, req, res) => {
+    if (err) {
+        console.error('proxy error', err)
+        finalhandler(req, res)(err)
+    }
+}
+
+const defaultWSHandler = (err, req, socket, head) => {
+    if (err) {
+        console.error('proxy error', err)
+        socket.destroy()
+    }
+}
+
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX} = config
 
@@ -63,7 +80,7 @@ const app = httpx.createServer(options, function (req, res) {
             hostname: 'localhost',
             port: API_PORT,
             path: uri
-        })
+        }, defaultWebHandler)
 
     } else {
 
@@ -217,7 +234,7 @@ const webSocket = function (req, socket, head) {
         hostname: 'localhost',
         port: API_PORT,
         path: '/ws'
-    })
+    }, defaultWSHandler)
 }
 
 //
