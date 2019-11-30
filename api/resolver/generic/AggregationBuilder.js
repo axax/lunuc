@@ -155,7 +155,6 @@ export default class AggregationBuilder {
 
         if (parsedFilter) {
             let filterPart = parsedFilter.parts[name]
-
             if (!filterPart && !exact) {
                 filterPart = parsedFilter.parts[name.split('.')[0]]
             }
@@ -186,6 +185,24 @@ export default class AggregationBuilder {
                     } else {
                         //TODO add debugging infos for search. this here is only a test
                         this.searchHint = error
+                    }
+                }
+            }else if( type === 'Object'){
+
+                // filter in an Object without definition
+                for (const filterKey in parsedFilter.parts) {
+                    if( filterKey.startsWith(name+'.') ){
+
+                        const part = parsedFilter.parts[filterKey]
+                        const {added} = this.addFilterToMatch({
+                            filterKey,
+                            filterValue: part.value,
+                            filterOptions: part,
+                            match
+                        })
+                        if (added) {
+                            hasAtLeastOneMatch = true
+                        }
                     }
                 }
             }
@@ -226,7 +243,7 @@ export default class AggregationBuilder {
             '>': '$gt',
             '>=': '$gte',
             '<': '$lt',
-            '>=': '$lte',
+            '<=': '$lte',
             '!=': '$ne'
         }
         if (filterOptions && filterOptions.comparator && comparatorMap[filterOptions.comparator]) {

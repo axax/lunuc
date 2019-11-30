@@ -116,6 +116,7 @@ class JsonDom extends React.Component {
         'Print': {component: Print, label: 'Printable area'},
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
+        'select': (props) => <JsonDomInput select={true} {...props}/>,
         'Redirect': ({to}) =>{
             return <Redirect to={{pathname: to}} push={false}/>
         },
@@ -712,8 +713,11 @@ class JsonDom extends React.Component {
                         properties.onChange = this.handleBindingChange.bind(this, properties.onChange)
 
                         properties.time = new Date()
-                    } else if (properties.value) {
+                    } else if (properties.value && tagName !== 'option') {
                         console.warn(`Don't use property value without name in ${scope.page.slug}`)
+                    }
+                    if( properties.props && properties.props.$data ){
+                        properties.props.data = Object.assign(Util.propertyByPath(properties.props.$data , scope),properties.props.data)
                     }
                 }
 

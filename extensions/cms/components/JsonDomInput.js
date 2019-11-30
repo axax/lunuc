@@ -36,9 +36,11 @@ class JsonDomInput extends React.Component {
     }
 
     render() {
-        const {onChange, textarea, type, value, ...rest} = this.props
+        const {onChange, textarea, select, type, value, ...rest} = this.props
         const stateValue = this.state.value
-        if (textarea) {
+        if( select ){
+            return <select onChange={this.valueChange.bind(this)} {...rest} value={stateValue} />
+        }else if (textarea) {
             return <textarea onChange={this.valueChange.bind(this)} {...rest} value={stateValue} />
         } else {
             const props = {type:(type || 'text')}
@@ -65,7 +67,8 @@ JsonDomInput.propTypes = {
     type: PropTypes.string,
     value: PropTypes.any,
     onChange: PropTypes.func,
-    textarea: PropTypes.bool
+    textarea: PropTypes.bool,
+    select: PropTypes.bool,
 }
 
 export default JsonDomInput

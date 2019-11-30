@@ -26,6 +26,7 @@ const createCacheKey = (segment, name) => {
 }
 
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode}) => {
+    const startTime= new Date().getTime()
     const resolvedData = {_meta: {}}, subscriptions = []
 
     if (dataResolver && dataResolver.trim() !== '') {
@@ -395,5 +396,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             resolvedData.error = e.message + ' -> scope=' + JSON.stringify(scope) + debugInfo
         }
     }
+    console.log(`dataResolver in ${new Date().getTime()-startTime}ms`)
     return {resolvedData, subscriptions}
 }

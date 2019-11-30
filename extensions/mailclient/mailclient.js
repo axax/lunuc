@@ -33,6 +33,10 @@ const startListening = async (db) => {
                         /*attachmentOptions: { directory: "attachments/" }*/ // specify a download directory for attachments
                     })
 
+                    mailListener.on('error', err => {
+                        console.error(err)
+                    })
+
                     mailListener.on('mail', mail => {
                         Hook.call('OnMail', {mail, db})
                     }).start()
