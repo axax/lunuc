@@ -50,7 +50,8 @@ function mainInit() {
             } else {
                 if (!sessionLanguage && _app_.detectLang) {
                     lang = (navigator.language || navigator.userLanguage).substr(0, 2)
-                } else {
+                }
+                if (!lang || config.LANGUAGES.indexOf(lang) < 0) {
                     lang = config.DEFAULT_LANGUAGE
                 }
             }
