@@ -22,7 +22,10 @@ const createStaticFiles = async (db) => {
             const pathParts = staticFile.name.split('/')
             pathParts.pop()
 
-            const currentDir = staticFile.private ? staticPrivateDir : staticDir
+            let currentDir = staticFile.private ? staticPrivateDir : staticDir
+            if( !currentDir.endsWith('/')){
+                currentDir += '/'
+            }
 
             if (Util.ensureDirectoryExistence(currentDir + pathParts.join('/'))) {
 
