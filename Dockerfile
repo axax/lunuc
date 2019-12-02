@@ -12,6 +12,8 @@ RUN npm install
 # Bundle app source
 COPY . /usr/src/app
 
+RUN npm run build
+
 # Expose port
 EXPOSE 8000
 

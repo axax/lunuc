@@ -546,7 +546,7 @@ export default class AggregationBuilder {
                         // mongodb 4 supports convert and toString
                         // for know we have to do it after the query
                         /*if (fieldDefinition.type === 'Object') {
-                            projectResultData[fieldName] = {$convert: {input: '$' + fieldName, to: "string"}}
+                            projectResultData[fieldName] = {$convert: {input: '$' + fieldName, to: "string", onError: "error" }}
                         }*/
                     }
                 }
