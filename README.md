@@ -28,10 +28,10 @@ https://lunuc.herokuapp.com/
 * Depolymet to heroku
 * Use of Service worker
 * Template / Page builder
+* Docker integration
 
 *Todos*
 * Push notification
-* Docker integration
 * Use of AWS lambda
 
 ## Installation & Usage
@@ -54,6 +54,16 @@ Url to access the mongo database:
 * `npm start`
 * visit `http://localhost:8080`
 
+### Run as docker container
+#### Building docker image
+`docker build -t axax06/lunuc .`
+
+#### Running docker image
+You need to pass the environment variable MONGO_URL with the path to the mongodb
+`docker run -e MONGO_URL=mongodb://user:password@mongodb/ -p 49160:8080 -d axax06/lunuc`
+ 
+Now the app should be accessable through the port 49160
+http://localhost:49160/
  
 ## Implementation
 

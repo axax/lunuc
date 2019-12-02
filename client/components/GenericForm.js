@@ -27,16 +27,16 @@ class GenericForm extends React.Component {
     static getInitalState = (props) => {
         const initalState = {fieldsOri: props.fields, fields: {}, fieldErrors: {}, isValid: true}
         Object.keys(props.fields).map(k => {
-            const item = props.fields[k]
+            const field = props.fields[k]
             let fieldValue
-            if (item.localized) {
+            if (field.localized) {
                 fieldValue = props.values && props.values[k] ? Object.assign({}, props.values[k]) : null
             } else {
                 if (props.values) {
                     fieldValue = props.values[k]
                 } else {
                     // value must be null instead of undefined
-                    fieldValue = item.value === undefined ? null : item.value
+                    fieldValue = field.value === undefined ? null : field.value
                 }
             }
             initalState.fields[k] = fieldValue
@@ -80,28 +80,28 @@ class GenericForm extends React.Component {
         const {fields, onValidate} = this.props
 
         const fieldErrors = {}
-        Object.keys(fields).forEach(k => {
-            const field = fields[k]
+        Object.keys(fields).forEach(fieldKey => {
+            const field = fields[fieldKey]
             if (field.required) {
 
                 if (field.reference) {
-                    let fieldValue = theState.fields[k]
+                    let fieldValue = theState.fields[fieldKey]
                     if (fieldValue && fieldValue.length) {
                         fieldValue = fieldValue[0]
                     }
                     if (!fieldValue || !fieldValue._id) {
-                        fieldErrors[k] = 'Field is required'
+                        fieldErrors[fieldKey] = 'Field is required'
                     }
                 } else {
                     if (field.localized) {
                         config.LANGUAGES.forEach(lang => {
-                            if (!theState.fields[k] || !theState.fields[k][lang] || !theState.fields[k][lang].trim() === '') {
-                                fieldErrors[k + '.' + lang] = 'Field is required'
+                            if (!theState.fields[fieldKey] || !theState.fields[fieldKey][lang] || !theState.fields[fieldKey][lang].trim() === '') {
+                                fieldErrors[fieldKey + '.' + lang] = 'Field is required'
                             }
                         })
                     } else {
-                        if (!theState.fields[k] || theState.fields[k].trim() === '') {
-                            fieldErrors[k] = 'Field is required'
+                        if (!theState.fields[fieldKey] || theState.fields[fieldKey].trim() === '') {
+                            fieldErrors[fieldKey] = 'Field is required'
                         }
                     }
                 }
@@ -175,8 +175,8 @@ class GenericForm extends React.Component {
 
     render() {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
-        const formFields = Object.keys(fields).map((k, i) => {
-            const field = fields[k], value = this.state.fields[k]
+        const formFields = Object.keys(fields).map((fieldKey, fieldIndex) => {
+            const field = fields[fieldKey], value = this.state.fields[fieldKey]
             if (field.readOnly) {
                 return
             }
@@ -198,36 +198,36 @@ class GenericForm extends React.Component {
 
                     }
                 }
-                return <CodeEditor className={classes.editor} key={k} onChange={(v) => this.handleInputChange({
+                return <CodeEditor className={classes.editor} key={fieldKey} onChange={(newValue) => this.handleInputChange({
                     target: {
-                        name: k,
-                        value: v
+                        name: fieldKey,
+                        value: newValue
                     }
                 })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor>
 
             } else if (uitype === 'image') {
 
-                return <FileDrop key={k} value={value}/>
+                return <FileDrop key={fieldKey} value={value}/>
 
 
             } else if (uitype === 'type_picker') {
                 return <TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
-                                   error={!!this.state.fieldErrors[k]}
-                                   helperText={this.state.fieldErrors[k]}
+                                   error={!!this.state.fieldErrors[fieldKey]}
+                                   helperText={this.state.fieldErrors[fieldKey]}
                                    onChange={this.handleInputChange}
-                                   key={k}
-                                   name={k}
+                                   key={fieldKey}
+                                   name={fieldKey}
                                    label={field.label}
                                    multi={field.multi}
                                    pickerField={field.pickerField}
                                    fields={field.fields}
                                    type={field.type} placeholder={field.placeholder}/>
             } else if (uitype === 'select') {
-                return <SimpleSelect key={k} name={k} onChange={this.handleInputChange} items={field.enum}
+                return <SimpleSelect key={fieldKey} name={fieldKey} onChange={this.handleInputChange} items={field.enum}
                                      multi={field.multi}
                                      value={value || []}/>
             } else if (field.type === 'Boolean') {
-                return <SimpleSwitch key={k} label={field.placeholder} name={k}
+                return <SimpleSwitch key={fieldKey} label={field.placeholder} name={fieldKey}
                                      onChange={this.handleInputChange} checked={value ? true : false}/>
 
 
@@ -243,34 +243,36 @@ class GenericForm extends React.Component {
 
                 if (field.localized) {
 
-                    return config.LANGUAGES.reduce((a, l) => {
-                        const fieldName = k + '.' + l
-                        a.push(<TextField key={fieldName}
+                    return config.LANGUAGES.reduce((arr, languageCode) => {
+                        const fieldName = fieldKey + '.' + languageCode
+                        arr.push(<TextField key={fieldName}
                                           error={!!this.state.fieldErrors[fieldName]}
                                           helperText={this.state.fieldErrors[fieldName]}
                                           label={field.label}
+                                          multiline={uitype==='textarea'}
                                           fullWidth={field.fullWidth}
                                           type={uitype}
-                                          placeholder={field.placeholder + ' [' + l + ']'}
-                                          value={(value && value[l] ? value[l] : '')}
+                                          placeholder={field.placeholder + ' [' + languageCode + ']'}
+                                          value={(value && value[languageCode] ? value[languageCode] : '')}
                                           name={fieldName}
                                           onKeyDown={(e) => {
-                                              onKeyDown && onKeyDown(e, value[l])
+                                              onKeyDown && onKeyDown(e, value[languageCode])
                                           }}
                                           onBlur={this.handleBlur}
                                           onChange={this.handleInputChange}/>)
-                        return a
+                        return arr
                     }, [])
                 } else {
-                    return <TextField autoFocus={autoFocus && i === 0} error={!!this.state.fieldErrors[k]}
-                                      key={k}
+                    return <TextField autoFocus={autoFocus && fieldIndex === 0} error={!!this.state.fieldErrors[fieldKey]}
+                                      key={fieldKey}
                                       label={field.label}
-                                      helperText={this.state.fieldErrors[k]}
+                                      helperText={this.state.fieldErrors[fieldKey]}
                                       fullWidth={field.fullWidth}
                                       type={uitype}
+                                      multiline={uitype==='textarea'}
                                       placeholder={field.placeholder || field.name}
                                       value={value || ''}
-                                      name={k}
+                                      name={fieldKey}
                                       onKeyDown={(e) => {
                                           onKeyDown && onKeyDown(e, value)
                                       }}
