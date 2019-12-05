@@ -1143,7 +1143,6 @@ const CmsViewContainerWithGql = compose(
     graphql(gqlQueryKeyValue, {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {
-            console.log(ownProps.slug)
             return {
                 variables: {
                     key: settingKeyPrefix + ownProps.slug

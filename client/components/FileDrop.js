@@ -207,6 +207,8 @@ class FileDrop extends React.Component {
             // TODO show message of all files
             this.setState({errorMessage: invalidFiles[0].message})
         } else {
+            // reset error message
+            this.setState({errorMessage: null})
 
             const images = []
 

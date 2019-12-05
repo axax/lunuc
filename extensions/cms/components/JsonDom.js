@@ -117,8 +117,8 @@ class JsonDom extends React.Component {
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'select': (props) => <JsonDomInput select={true} {...props}/>,
-        'Redirect': ({to}) =>{
-            return <Redirect to={{pathname: to}} push={false}/>
+        'Redirect': ({to, push}) => {
+            return <Redirect to={{pathname: to}} push={push}/>
         },
         'Link': ({to, href, target, gotop, onClick, ...rest}) => {
             const url = to || href || '', newTarget = target && target !== 'undefined' ? target : '_self',
@@ -252,6 +252,12 @@ class JsonDom extends React.Component {
                 this.resolvedDataJson = undefined
                 this.json = null
 
+            }
+
+            if( slugChanged && this._ismounted){
+                // componentWillUnmount is not triggered for the root JsonDom when it is reused be another component
+                // So if the slug has changed and the component is still mounted we have to call unmount
+                this.runJsEvent('unmount')
             }
 
             if (slugChanged || locationChanged || templateChanged || propsChanged || scriptChanged) {
@@ -507,12 +513,12 @@ class JsonDom extends React.Component {
              $if = condition (only parse if condition is fullfilled)
              p = prop
              */
-            if( $ifexist ){
+            if ($ifexist) {
                 try {
-                    if(Util.propertyByPath($ifexist, scope) === undefined){
+                    if (Util.propertyByPath($ifexist, scope) === undefined) {
                         return
                     }
-                }catch (e) {
+                } catch (e) {
                     return
                 }
             }
@@ -548,9 +554,9 @@ class JsonDom extends React.Component {
 
             // loop is deprecated. Use "for" instead, as it is better performance-wise
             let loopOrFor
-            if( $for ){
+            if ($for) {
                 loopOrFor = $for
-            }else{
+            } else {
                 loopOrFor = $loop
             }
 
@@ -560,7 +566,7 @@ class JsonDom extends React.Component {
                 if ($d) {
                     try {
                         // get data from scope by path (foo.bar)
-                        data = Util.propertyByPath($d,scope)
+                        data = Util.propertyByPath($d, scope)
                     } catch (e) {
                         this.emitJsonError(e)
                     }
@@ -606,7 +612,7 @@ class JsonDom extends React.Component {
 
                     let tpl
 
-                    if ( $for ) {
+                    if ($for) {
                         tpl = new Function(DomUtil.toES5(`const ${s} = this.${s},
                                                     Util = this.Util,
                                                     _i = Util.tryCatch.bind(this),
@@ -618,7 +624,7 @@ class JsonDom extends React.Component {
                             loopChild = {data: loopChild}
                         }
 
-                        if ( $loop ) {
+                        if ($loop) {
 
                             tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},
                                                     Util = this.Util,
@@ -716,8 +722,8 @@ class JsonDom extends React.Component {
                     } else if (properties.value && tagName !== 'option') {
                         console.warn(`Don't use property value without name in ${scope.page.slug}`)
                     }
-                    if( properties.props && properties.props.$data ){
-                        properties.props.data = Object.assign(Util.propertyByPath(properties.props.$data , scope),properties.props.data)
+                    if (properties.props && properties.props.$data) {
+                        properties.props.data = Object.assign(Util.propertyByPath(properties.props.$data, scope), properties.props.data)
                     }
                 }
 
@@ -922,6 +928,7 @@ class JsonDom extends React.Component {
 
     runJsEvent(name, async, ...args) {
         let hasError = false, t = this.jsOnStack[name]
+
         if (t && t.length) {
             for (let i = 0; i < t.length; i++) {
                 const cb = t[i]
@@ -941,6 +948,7 @@ class JsonDom extends React.Component {
                 }
             }
         }
+
         // pass event to parent
         if (this.props._parentRef && args.length && args[0]._passEvent) {
             this.props._parentRef.runJsEvent(name, async, ...args)
@@ -1112,7 +1120,7 @@ class JsonDom extends React.Component {
                 nodeToRefresh.runScript = true
             }
             nodeToRefresh.forceUpdate()
-        }else{
+        } else {
             console.warn(`Component ${id} does not exist`, nodeToRefresh)
         }
     }
