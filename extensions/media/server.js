@@ -12,7 +12,7 @@ import ImageClassfier from './util/imageClassifierLambda'
 import {ObjectId} from 'mongodb'
 import mediaResolver from './gensrc/resolver'
 
-const {UPLOAD_DIR} = config
+const {UPLOAD_DIR, UPLOAD_URL} = config
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {

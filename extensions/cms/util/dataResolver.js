@@ -26,7 +26,7 @@ const createCacheKey = (segment, name) => {
 }
 
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode}) => {
-    const startTime= new Date().getTime()
+    const startTime = new Date().getTime()
     const resolvedData = {_meta: {}}, subscriptions = []
 
     if (dataResolver && dataResolver.trim() !== '') {
@@ -63,7 +63,15 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 } else if (segment.resolveFrom) {
                     if (segment.resolveFrom.KeyValueGlobal) {
                         const dataFromKey = await Util.getKeyValueGlobal(db, context, segment.resolveFrom.KeyValueGlobal, false)
-                        const resolvedFromKey = await resolveData({db, context, dataResolver: dataFromKey, scope, nosession, req, editmode})
+                        const resolvedFromKey = await resolveData({
+                            db,
+                            context,
+                            dataResolver: dataFromKey,
+                            scope,
+                            nosession,
+                            req,
+                            editmode
+                        })
                         Object.keys(resolvedFromKey.resolvedData).forEach(k => {
                             resolvedData[k] = resolvedFromKey.resolvedData[k]
                         })
@@ -189,7 +197,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                             pubsubDelayed.publish('cmsPageData', {
                                 userId: context.id,
                                 session: context.session,
-                                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: {error:error.message}})}
+                                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: {error: error.message}})}
                             }, context)
                         })
                         addDataResolverSubsription = true
@@ -259,6 +267,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         subscriptions.push(JSON.stringify(segment.subscription))
                     }
                 } else if (segment.system) {
+
+
                     const data = {}
                     if (segment.system.properties) {
                         data.properties = Util.systemProperties()
@@ -271,6 +281,17 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         }
                         if (segment.system.cache.count) {
                             data.cache.count = Object.keys(Cache.cache).length
+                        }
+                    }
+                    if (segment.system.client) {
+                        data.client = {
+                            agent: req.header('user-agent'), // User Agent we get from headers
+                            referrer: req.header('referrer'), //  Likewise for referrer
+                            ip: req.header('x-forwarded-for') || req.connection.remoteAddress, // Get IP - allow for proxy
+                            screen: { // Get screen info that we passed in url post data
+                                width: req.param('width'),
+                                height: req.param('height')
+                            }
                         }
                     }
                     resolvedData._meta.system = segment.key || 'system'
@@ -396,6 +417,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             resolvedData.error = e.message + ' -> scope=' + JSON.stringify(scope) + debugInfo
         }
     }
-    console.log(`dataResolver in ${new Date().getTime()-startTime}ms`)
+    console.log(`dataResolver in ${new Date().getTime() - startTime}ms`)
     return {resolvedData, subscriptions}
 }

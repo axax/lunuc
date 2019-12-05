@@ -1112,6 +1112,8 @@ class JsonDom extends React.Component {
                 nodeToRefresh.runScript = true
             }
             nodeToRefresh.forceUpdate()
+        }else{
+            console.warn(`Component ${id} does not exist`, nodeToRefresh)
         }
     }
 

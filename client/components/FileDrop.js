@@ -4,6 +4,9 @@ import {Button, TextField, withStyles, CloudUploadIcon, Typography, LinearProgre
 import classNames from 'classnames'
 import UploadUtil from 'client/util/upload'
 
+//expose
+_app_.UploadUtil = UploadUtil
+
 /* TODO: make it configurable */
 const MAX_FILE_SIZE_MB = 10,
     IMAGE_QUALITY = 0.6,
@@ -141,11 +144,13 @@ class FileDrop extends React.Component {
                    onChange={this.handelDrop.bind(this)}/>
             {
                 images.map(i => {
-                    return <div className={classes.imageWrap}><img className={classes.image} key={i} src={i}/>
+                    return <div key={'uploadImage'+i} className={classes.imageWrap}><img className={classes.image} src={i}/>
                         <button className={classes.imageDelete} onClick={
                             (e)=>{
                                 this.setState({images:[]})
-                                onChange({target: {name, value: ''}})
+                                if( onChange ) {
+                                    onChange({target: {name, value: ''}})
+                                }
                             }
                         }>×</button>
                     </div>
@@ -241,7 +246,7 @@ class FileDrop extends React.Component {
 
 
             if (onFiles) {
-                onFiles(validFiles)
+                onFiles(validFiles, images)
             }
             this.setState({images})
         }
