@@ -84,6 +84,13 @@ const Util = {
         }
         return new Date(stamp).toLocaleString()
     },
+    formatDate(d, options) {
+        return (new Date(d)).toLocaleString(_app_.lang, Object.assign({
+            year: 'numeric',
+            month: '2-digit',
+            day: 'numeric'
+        }, options))
+    },
     escapeHtml: (str) => {
         const entityMap = {
             '&': '&amp;',
@@ -234,10 +241,10 @@ const Util = {
         if (lang === _app_.lang) return
         const p = window.location.pathname.split('/')
         if (p[1].length === 2 && p[1] !== lang) {
-            if( lang === ''){
+            if (lang === '') {
                 //default language
                 p.splice(1, 1)
-            }else {
+            } else {
                 p[1] = lang
             }
         } else {

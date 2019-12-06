@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {Button, TextField, withStyles, CloudUploadIcon, Typography, LinearProgress} from 'ui/admin'
+import {withStyles, CloudUploadIcon, Typography, LinearProgress} from 'ui/admin'
 import classNames from 'classnames'
 import UploadUtil from 'client/util/upload'
 

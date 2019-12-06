@@ -180,7 +180,7 @@ class GenericForm extends React.Component {
             if (field.readOnly) {
                 return
             }
-            const uitype = field.uitype || (field.enum ? 'select' : 'text')
+            const uitype = (field.uitype === 'datetime' ? 'datetime-local' : 0) || field.uitype || (field.enum ? 'select' : 'text')
 
             if (['json', 'editor', 'jseditor'].indexOf(uitype) >= 0) {
 
@@ -198,12 +198,13 @@ class GenericForm extends React.Component {
 
                     }
                 }
-                return <CodeEditor className={classes.editor} key={fieldKey} onChange={(newValue) => this.handleInputChange({
-                    target: {
-                        name: fieldKey,
-                        value: newValue
-                    }
-                })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor>
+                return <CodeEditor className={classes.editor} key={fieldKey}
+                                   onChange={(newValue) => this.handleInputChange({
+                                       target: {
+                                           name: fieldKey,
+                                           value: newValue
+                                       }
+                                   })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor>
 
             } else if (uitype === 'image') {
 
@@ -246,30 +247,31 @@ class GenericForm extends React.Component {
                     return config.LANGUAGES.reduce((arr, languageCode) => {
                         const fieldName = fieldKey + '.' + languageCode
                         arr.push(<TextField key={fieldName}
-                                          error={!!this.state.fieldErrors[fieldName]}
-                                          helperText={this.state.fieldErrors[fieldName]}
-                                          label={field.label}
-                                          multiline={uitype==='textarea'}
-                                          fullWidth={field.fullWidth}
-                                          type={uitype}
-                                          placeholder={field.placeholder + ' [' + languageCode + ']'}
-                                          value={(value && value[languageCode] ? value[languageCode] : '')}
-                                          name={fieldName}
-                                          onKeyDown={(e) => {
-                                              onKeyDown && onKeyDown(e, value[languageCode])
-                                          }}
-                                          onBlur={this.handleBlur}
-                                          onChange={this.handleInputChange}/>)
+                                            error={!!this.state.fieldErrors[fieldName]}
+                                            helperText={this.state.fieldErrors[fieldName]}
+                                            label={field.label}
+                                            multiline={uitype === 'textarea'}
+                                            fullWidth={field.fullWidth}
+                                            type={uitype}
+                                            placeholder={field.placeholder + ' [' + languageCode + ']'}
+                                            value={(value && value[languageCode] ? value[languageCode] : '')}
+                                            name={fieldName}
+                                            onKeyDown={(e) => {
+                                                onKeyDown && onKeyDown(e, value[languageCode])
+                                            }}
+                                            onBlur={this.handleBlur}
+                                            onChange={this.handleInputChange}/>)
                         return arr
                     }, [])
                 } else {
-                    return <TextField autoFocus={autoFocus && fieldIndex === 0} error={!!this.state.fieldErrors[fieldKey]}
+                    return <TextField autoFocus={autoFocus && fieldIndex === 0}
+                                      error={!!this.state.fieldErrors[fieldKey]}
                                       key={fieldKey}
                                       label={field.label}
                                       helperText={this.state.fieldErrors[fieldKey]}
                                       fullWidth={field.fullWidth}
                                       type={uitype}
-                                      multiline={uitype==='textarea'}
+                                      multiline={uitype === 'textarea'}
                                       placeholder={field.placeholder || field.name}
                                       value={value || ''}
                                       name={fieldKey}

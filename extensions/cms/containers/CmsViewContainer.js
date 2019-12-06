@@ -757,7 +757,7 @@ class CmsViewContainer extends React.Component {
 
 
     handleClientScriptChange = (script) => {
-        if (script.length > 3000) {
+        if (script.length > 10000) {
             // delay change for bigger script
             clearTimeout(this._scriptTimeout)
             this._scriptTimeout = setTimeout(() => {

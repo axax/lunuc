@@ -689,8 +689,15 @@ class JsonDom extends React.Component {
 
 
                 if (p) {
-                    // remove properties with empty values
-                    Object.keys(p).forEach(key => p[key] === '' && delete p[key])
+                    // remove properties with empty values unless they start with $
+                    Object.keys(p).forEach(key => {
+                        if(key.startsWith('$')){
+                            p[key.substring(1)] = p[key]
+                            delete p[key]
+                        }else {
+                            p[key] === '' && delete p[key]
+                        }
+                    })
                     properties = Object.assign(properties, p)
                     // replace events with real functions and pass payload
                     JsonDom.events.forEach((e) => {
