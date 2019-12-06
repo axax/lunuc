@@ -341,6 +341,7 @@ Here is an example of a scope object:
 * change => input change
 * click => simple click event
 * mount => JsonDom is mounted
+* childmount => A child JsonDom is mounted
 * unmount => JsonDom is unmounted
 * update => Is called after JsonDom is updated
 * resourcesReady => Is called after JsonDom is updated and all resources are loaded

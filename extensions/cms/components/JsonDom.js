@@ -292,6 +292,17 @@ class JsonDom extends React.Component {
         this._ismounted = true
         this.node = ReactDOM.findDOMNode(this)
         this.runJsEvent('mount', true)
+
+        let pr = this.props._parentRef
+        while(pr){
+            pr.runJsEvent('childmount', false, {id:this.props.id})
+            if(pr.props._parentRef){
+                pr = pr.props._parentRef
+            }else{
+                break
+            }
+        }
+
         this.checkResources()
         this._historyUnlisten = this.props.history.listen(() => {
             const before = {pathname: this.scope.pathname, params: this.scope.params, hashParams: this.scope.params}
@@ -339,7 +350,7 @@ class JsonDom extends React.Component {
             try {
 
                 if (resolvedData.indexOf('${') >= 0) {
-                    this.resolvedDataJson = JSON.parse(new Function(`const Util = this.Util; const {${Object.keys(scope).join(',')}} = this.scope; return \`${resolvedData.replace(/\\/g, '\\\\')}\``).call({
+                    this.resolvedDataJson = JSON.parse(new Function(DomUtil.toES5(`const Util = this.Util; const {${Object.keys(scope).join(',')}} = this.scope; return \`${resolvedData.replace(/\\/g, '\\\\')}\``)).call({
                         scope,
                         Util
                     }))
@@ -352,7 +363,7 @@ class JsonDom extends React.Component {
                 }
             } catch (e) {
                 resolveDataError = e.message
-                console.log(resolvedData)
+                console.log(e, resolvedData)
             }
 
             if (resolveDataError) {
@@ -428,17 +439,18 @@ class JsonDom extends React.Component {
         let allloaded = true, counter = 0
         const resources = document.querySelectorAll(`script[data-cms-view="true"]`)
         if (resources) {
+            const check =() => {
+                counter--
+                if (counter === 0) {
+                    this.runJsEvent('resourcesready')
+                }
+            }
             for (let i = 0; i < resources.length; ++i) {
                 const resource = resources[i]
                 if (!resource.getAttribute('loaded')) {
                     allloaded = false
                     counter++
-                    resource.addEventListener('load', () => {
-                        counter--
-                        if (counter === 0) {
-                            this.runJsEvent('resourcesready')
-                        }
-                    })
+                    resource.addEventListener('load', check)
                 }
             }
         }
