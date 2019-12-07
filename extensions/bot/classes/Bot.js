@@ -86,6 +86,7 @@ class Bot {
     }
 
     destroy() {
+        this.ons = {}
         clearInterval(this.interval)
         if (this.telegramBot) {
             this.telegramBot.stop()
@@ -449,7 +450,7 @@ class Bot {
         if (arr) {
             for (let i = 0; i < arr.length; i++) {
                 const res = await
-                    arr[i]({api, ...this.result, bot: this, telegram: this.telegramBot.telegram})
+                    arr[i].callback({api, ...this.result, bot: this, telegram: this.telegramBot.telegram})
                 if (res) {
                     return res
                 }
@@ -457,7 +458,7 @@ class Bot {
         }
     }
 
-    on(keys, cb) {
+    on(keys, callback) {
         if (keys.constructor !== Array) {
             keys = [keys]
         }
@@ -465,7 +466,7 @@ class Bot {
             if (!this.ons[key]) {
                 this.ons[key] = []
             }
-            this.ons[key].push(cb)
+            this.ons[key].push({callback})
         })
     }
 
