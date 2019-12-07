@@ -96,6 +96,11 @@ A Type can be define in the build.json of an extension. Types can also have refe
 Hook.on('Routes', ({routes}) => {
     routes.push({exact: true, path: ADMIN_BASE_URL+'/post/:id*', component: PostContainer})
 })
+
+// use with key (after .) so if it executed multiple times the function is only called once
+Hook.on('Routes.myroute', ({routes}) => {
+    routes.push({exact: true, path: ADMIN_BASE_URL+'/post/:id*', component: PostContainer})
+})
 ```
 
 **Client hooks**

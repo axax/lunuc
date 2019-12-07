@@ -17,7 +17,10 @@ const Hook = {
         if (names.constructor !== Array) {
             names = [names]
         }
-        names.forEach(name => {
+        names.forEach(nameWithKey => {
+            const parts = nameWithKey.split('.'),
+                name=parts[0],
+                key=parts.length>1?parts[1]:undefined
 
             if ('undefined' == typeof (Hook.hooks[name])) {
                 Hook.hooks[name] = []
@@ -33,7 +36,16 @@ const Hook = {
                     return
                 }
             }
-            Hook.hooks[name].push({callback, order})
+            if( key ){
+                for(let i=0; i<Hook.hooks[name].length; i++)
+                {
+                    if(Hook.hooks[name][i].key===key) {
+                        console.log(`remove hook ${name} with key ${key}`)
+                        Hook.hooks[name].splice(i)
+                    }
+                }
+            }
+            Hook.hooks[name].push({callback, order, key})
         })
 
     },

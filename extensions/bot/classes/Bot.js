@@ -502,7 +502,7 @@ class Bot {
                         const ImageClassifier = this.ImageClassifier
                         ${botCommand.script}
                     } catch(e) {
-                        console.log('Error in ${botCommand.name}', e);
+                        console.log('Error in ${botCommand.name}', e)
                     }
                 })();
                 `)
