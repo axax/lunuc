@@ -4,6 +4,7 @@ import Stemmer from './Stemmer'
 import stopwords_en from 'natural/lib/natural/util/stopwords'
 import Util from 'api/util'
 import Hook from 'util/hook'
+import GenericResolver from 'api/resolver/generic/genericResolver'
 
 /* dependency to media extension */
 import ImageClassifier from '../../media/util/imageClassifierLambda'
@@ -496,6 +497,7 @@ class Bot {
                         const addCommand = this.bot.addCommand.bind(this.bot)
                         const natural = this.bot.natural
                         const require = this.require
+                        const GenericResolver = this.GenericResolver
                         const Hook = this.Hook
                         const ImageClassifier = this.ImageClassifier
                         ${botCommand.script}
@@ -509,6 +511,7 @@ class Bot {
                         bot: this,
                         require,
                         ImageClassifier,
+                        GenericResolver,
                         Util,
                         db,
                         Hook
