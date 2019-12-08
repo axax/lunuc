@@ -538,7 +538,7 @@ class JsonDom extends React.Component {
             if ($if) {
                 // check condition --> slower than to check with $ifexist
                 try {
-                    const tpl = new Function(DomUtil.toES5('const {' + Object.keys(scope).join(',') + '} = this.scope;return ' + $if))
+                    const tpl = new Function(`${Object.keys(scope).reduce((str,key)=>str+'\nconst '+key+'=this.scope.'+key,'')};return  ${$if}`)
                     if (!tpl.call({scope})) {
                         return
                     }
@@ -585,7 +585,7 @@ class JsonDom extends React.Component {
                 } else {
                     if (d && d.constructor === String) {
                         try {
-                            data = Function(DomUtil.toES5(`const {${Object.keys(scope).join(',')}} = this.scope;const Util = this.Util;return ${d}`)).call({
+                            data = Function(`${Object.keys(scope).reduce((str,key)=>str+'\nconst '+key+'=this.scope.'+key,'')};const Util = this.Util;return ${d}`).call({
                                 scope,
                                 Util
                             })
@@ -637,7 +637,6 @@ class JsonDom extends React.Component {
                         }
 
                         if ($loop) {
-
                             tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},
                                                     Util = this.Util,
                                                     _i = Util.tryCatch.bind(this),

@@ -22,7 +22,7 @@ const UploadUtil = {
             const fd = new FormData()
             if (data) {
                 Object.keys(data).forEach(key => {
-                    fd.set(key, JSON.stringify(data[key]))
+                    fd.append(key, JSON.stringify(data[key]))
                 })
             }
             fd.append('blob', blob, fileName)

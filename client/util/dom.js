@@ -98,7 +98,11 @@ const DomUtil = {
     },
     toES5: (code) => {
         if (typeof window !== 'undefined' && window.Babel) {
-            return Babel.transform(code, {
+            if(code.length<500 && DomUtil.es5Cache && DomUtil.es5Cache[code]){
+                return DomUtil.es5Cache[code]
+            }
+            const startTime = new Date().getTime()
+            const result= Babel.transform(code, {
                 parserOpts: {
                     allowReturnOutsideFunction: true,
                 },
@@ -106,6 +110,16 @@ const DomUtil = {
                     ['es2015', {modules: false}]
                 ]
             }).code
+
+            if( code.length<500 ) {
+                if (!DomUtil.es5Cache) {
+                    DomUtil.es5Cache = {}
+                }
+                DomUtil.es5Cache[code] = result
+            }
+
+            console.log(`Js to es5 in ${new Date().getTime()-startTime}ms for ${code.substring(0,20)}...`)
+            return result
         }
         return code
     }

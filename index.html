@@ -32,7 +32,7 @@
 <div id="l"></div>
 <div id="app">Javascript is not supported</div>
 <script>
-    document.getElementById('app').innerHTML = ''
+    document.getElementById('app').innerHTML = window.Map?'':'Browser is not supported';
     var ls = null
     try {
         ls = JSON.parse(localStorage.getItem('localSettings'))
