@@ -11,6 +11,7 @@ import {
 } from 'util/capabilities'
 import Cache from 'util/cache'
 import {pubsub} from 'api/subscription'
+import {clientIps} from 'api/util/connection'
 import {withFilter} from 'graphql-subscriptions'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail'
@@ -98,6 +99,14 @@ export const systemResolver = (db) => ({
                     pubsub.publish('subscribeRun', {
                         userId: context.id,
                         subscribeRun: {event: 'end', response: memusage, id: currentId}
+                    })
+
+
+                } else if (command === 'connectedclients') {
+
+                    pubsub.publish('subscribeRun', {
+                        userId: context.id,
+                        subscribeRun: {event: 'end', response: clientIps().join('\n'), id: currentId}
                     })
 
                 } else {

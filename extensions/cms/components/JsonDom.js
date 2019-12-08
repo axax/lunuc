@@ -331,7 +331,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {dynamic, template, script, resolvedData, className, _props, _key, renewing} = this.props
+        const {dynamic, template, script, resolvedData, parseResolvedData, className, _props, _key, renewing} = this.props
         if (!template) {
             console.warn('Template is missing.', this.props)
             return null
@@ -349,7 +349,9 @@ class JsonDom extends React.Component {
         if (this.resolvedDataJson === undefined) {
             try {
 
-                if (resolvedData.indexOf('${') >= 0) {
+                if (parseResolvedData) {
+                    // if there are placeholders ${} in the resolvedData String that needs to be parsed with the client scope
+                    // the flag parseResolvedData needs to be set to true
                     this.resolvedDataJson = JSON.parse(new Function(DomUtil.toES5(`const Util = this.Util; const {${Object.keys(scope).join(',')}} = this.scope; return \`${resolvedData.replace(/\\/g, '\\\\')}\``)).call({
                         scope,
                         Util

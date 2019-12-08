@@ -31,7 +31,7 @@ export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv']
+            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv', 'parseResolvedData']
             if (filter) {
                 // search in fields
                 fields.push('dataResolver')
@@ -71,7 +71,8 @@ export default db => ({
             }
             const scope = {...createScopeForDataResolver(query, props), page: {slug}}
 
-            const {_id, createdBy, template, script, resources, dataResolver, ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
+            const {_id, createdBy, template, script, resources, dataResolver, parseResolvedData,
+                ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
 
             const {resolvedData, subscriptions} = await resolveData({
@@ -121,6 +122,7 @@ export default db => ({
                     public: ispublic, // if public the content is visible to everyone
                     online: _version === 'default',  // if true it is the active _version that is online
                     resolvedData: JSON.stringify(resolvedData),
+                    parseResolvedData,
                     html,
                     subscriptions,
                     urlSensitiv,
@@ -150,6 +152,7 @@ export default db => ({
                     resources,
                     html,
                     resolvedData: JSON.stringify(resolvedData),
+                    parseResolvedData,
                     subscriptions,
                     urlSensitiv,
                     cacheKey: clientCacheKey

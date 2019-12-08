@@ -88,6 +88,9 @@ export const keyvalueResolver = (db) => ({
             // so let clear all KeyValueGlobal
             Cache.clearStartWith('KeyValueGlobal_')
 
+            // clear caches from dataResolver --> see method createCacheKey
+            Cache.clearStartWith('dataresolver_keyValueGlobals')
+
             return await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {_id, key, value, ispublic})
         },
         deleteKeyValueGlobal: async ({_id}, {context}) => {

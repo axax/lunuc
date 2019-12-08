@@ -56,7 +56,7 @@ const NetworkStatusHandler = (props) => <Async {...props}
                                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/NetworkStatusHandler')}/>
 
 // the graphql query is also need to access and update the cache when data arrive from a subscription
-const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
+const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData parseResolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
 const gqlQueryKeyValue = gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`
 
@@ -252,7 +252,9 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, cmsPage, cmsPages, cmsComponentEdit, location, history, match, _parentRef, _key, _props, id, renewing, aboutToChange, loading, className, children, user, dynamic, client, fetchMore, userActions} = this.props
+        const {slug, cmsPage, cmsPages, cmsComponentEdit, location, history,
+            match, _parentRef, _key, _props, id, renewing, aboutToChange, loading,
+            className, children, user, dynamic, client, fetchMore, userActions} = this.props
         let {template, resources, script, serverScript, dataResolver, settings} = this.state
         const editMode = isEditMode(this.props)
 
@@ -300,6 +302,7 @@ class CmsViewContainer extends React.Component {
                                  script={script}
                                  userActions={userActions}
                                  resolvedData={cmsPage.resolvedData}
+                                 parseResolvedData={cmsPage.parseResolvedData}
                                  resources={cmsPage.resources}
                                  editMode={editMode}
                                  renewing={renewing}

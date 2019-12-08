@@ -16,7 +16,6 @@ import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload} from './upload'
 import Hook from 'util/hook'
 import compression from 'compression'
 import {pubsub} from './subscription'
-//import './smtpserver'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -43,6 +42,8 @@ process.on('SIGINT', () => {
     console.log('Goodbye')
 })*/
 
+// holds the reference to the server
+export let server
 
 export const start = (done) => {
 
@@ -136,11 +137,11 @@ export const start = (done) => {
 
 
             // Create WebSocket listener server
-            const appWs = createServer(app)
+            server = createServer(app)
 
 
             // Bind it to port and start listening
-            const server = appWs.listen(PORT, () => {
+            server.listen(PORT, () => {
                 console.log(`Server/Websocket is now running on http://localhost:${PORT}`)
                 if (typeof done === 'function') {
                     done(server)
@@ -158,6 +159,9 @@ export const start = (done) => {
                     execute,
                     subscribe,
                     rootValue,
+                    onConnect: (connectionParams, webSocket, context) => {
+                       // const host = webSocket.upgradeReq.headers.host
+                    },
                     onOperation: ({payload}) => {
                         // now if auth is needed we can check if the context is available
                         const context = auth.decodeToken(payload.auth)
@@ -166,7 +170,7 @@ export const start = (done) => {
                     }
                 },
                 {
-                    server: appWs
+                    server
                 }
             )
         }
