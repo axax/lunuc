@@ -55,15 +55,15 @@ const Util = {
 
         return new Date(parseInt(objectId.substring(0, 8), 16) * 1000)
     },
-    getDateTimeFormat: () => {
-        return new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale, {
+    getDateTimeFormat: (options) => {
+        return new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale, Object.assign({
             year: 'numeric',
             month: 'numeric',
             day: 'numeric',
             hour: 'numeric',
             minute: 'numeric',
-            second: 'numeric'
-        })
+            second: 'numeric',
+        },options))
     },
     formattedDateFromObjectId: (objectId) => {
         if (objectId === 0) {
@@ -85,7 +85,7 @@ const Util = {
         return new Date(stamp).toLocaleString()
     },
     formatDate(d, options) {
-        return (new Date(d)).toLocaleString(_app_.lang, Object.assign({
+        return (new Date(d)).toLocaleString(options && options.lang?options.lang:_app_.lang, Object.assign({
             year: 'numeric',
             month: '2-digit',
             day: 'numeric'
@@ -218,6 +218,25 @@ const Util = {
     },
     getMediaSrc(media, src) {
         return src ? src : (media.src ? media.src : '/uploads/' + media._id)
+    },
+    getImageObject(raw) {
+        if (!raw) {
+            //TODO replace image placeholder
+            return {src: 'https://www.savory.global/wp-content/uploads/2018/07/placeholder.png'}
+        }
+
+        let image = raw.constructor === String ? JSON.parse(raw) : raw
+        if (image.constructor === Array) {
+            image = image[0]
+        }
+        const data = {alt: image.name}
+        if (!image.src) {
+            data.src = _app_.config.UPLOAD_URL + '/' + image._id
+        } else {
+            data.src = image.src
+        }
+
+        return data
     },
     // mini jQuery
     $(expr, p) {
