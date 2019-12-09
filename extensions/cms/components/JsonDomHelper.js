@@ -7,7 +7,8 @@ import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import {
     SimpleMenu,
-    EditIcon
+    EditIcon,
+    DeleteIcon
 } from 'ui/admin'
 import classNames from 'classnames'
 import AddToBody from './AddToBody'
@@ -20,7 +21,7 @@ const styles = theme => ({
         position: 'fixed',
         bottom: 0,
         left: 0,
-        opacity: 0.5,
+        opacity: 0.1,
         minWidth: '10px',
         minHeight: '10px',
         display: 'block',
@@ -48,6 +49,7 @@ const styles = theme => ({
     toolbar: {
         zIndex: 999,
         position: 'fixed',
+        maxHeight:'200px'
     },
     toolbarHovered: {},
     toolbarMenu: {
@@ -64,6 +66,8 @@ const styles = theme => ({
         zIndex: 99999
     }
 })
+
+const ALLOW_DROP = ['div']
 
 class JsonDomHelper extends React.Component {
     static currentDragElement
@@ -83,6 +87,27 @@ class JsonDomHelper extends React.Component {
         super(props)
     }
 
+    componentDidMount() {
+        this.scrollHandler = () => {
+            const {hovered, toolbarHovered, toolbarMenuOpen} = this.state
+            if (hovered || toolbarHovered || toolbarMenuOpen) {
+                const node = ReactDOM.findDOMNode(this)
+                this.setState({
+                    height: node.offsetHeight,
+                    width: node.offsetWidth,
+                    ...DomUtil.elemOffset(node)
+                })
+            }
+        }
+
+        document.addEventListener('scroll', this.scrollHandler)
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener('scroll', this.scrollHandler)
+    }
+
+
     shouldComponentUpdate(props, state) {
         if (JsonDomHelper.currentDragElement && JsonDomHelper.currentDragElement != this) {
             return false
@@ -90,6 +115,7 @@ class JsonDomHelper extends React.Component {
         return props._json !== this.props._json ||
             state.hovered !== this.state.hovered ||
             state.dragging !== this.state.dragging ||
+            state.top !== this.state.top ||
             state.toolbarHovered !== this.state.toolbarHovered
     }
 
@@ -102,7 +128,6 @@ class JsonDomHelper extends React.Component {
 
         // take this node instead of e.target becuase it might be a child of it
         const node = ReactDOM.findDOMNode(this)
-
         if (dragging) {
             return
         }
@@ -144,7 +169,7 @@ class JsonDomHelper extends React.Component {
     onToolbarMouseOver(e) {
         e.stopPropagation()
 
-        if( !this.state.toolbarMenuOpen ) {
+        if (!this.state.toolbarMenuOpen) {
             this.setState({toolbarHovered: true})
         }
     }
@@ -152,7 +177,7 @@ class JsonDomHelper extends React.Component {
     onToolbarMouseOut(className, e) {
         e.stopPropagation()
 
-        if( !this.state.toolbarMenuOpen ) {
+        if (!this.state.toolbarMenuOpen) {
             let el = e.toElement || e.relatedTarget
             while (el && el.parentNode && el.parentNode != window) {
                 if (el.classList.contains(className)) {
@@ -317,6 +342,15 @@ class JsonDomHelper extends React.Component {
         _onchange(_json)
     }
 
+    handleDeleteClick(e) {
+        e.stopPropagation()
+        e.preventDefault()
+        const {_cmsActions, _key, _json, _scope, _onchange} = this.props
+
+        removeComponent(_key,_json)
+        _onchange(_json)
+    }
+
 
     getDropArea(rest, index) {
         return <div
@@ -338,6 +372,7 @@ class JsonDomHelper extends React.Component {
         const {classes, _WrappedComponent, _json, _cmsActions, _onchange, children, ...rest} = this.props
 
         const subJson = getComponentByKey(rest._key, _json)
+
         if (!subJson) return null
 
         const {hovered, toolbarHovered, toolbarMenuOpen} = this.state
@@ -372,8 +407,9 @@ class JsonDomHelper extends React.Component {
                     }}
                     className={classes.toolbarMenu} mini items={[
                     {name: 'Edit', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)},
-                    {name: 'Add child component', icon: <EditIcon/>, onClick: this.handleAddChildClick.bind(this)}
-                    ]}/>
+                    {name: 'Add child component', icon: <EditIcon/>, onClick: this.handleAddChildClick.bind(this)},
+                    {name: 'Remove component', icon: <DeleteIcon/>, onClick: this.handleDeleteClick.bind(this)}
+                ]}/>
             </div>
 
             highlighter = <span
@@ -383,7 +419,7 @@ class JsonDomHelper extends React.Component {
         }
 
         let kids
-        if (children && children.constructor === Array) {
+        if (children && children.constructor === Array && ALLOW_DROP.indexOf(subJson.t) >= 0) {
             kids = []
             for (let i = 0; i < children.length; i++) {
                 kids.push(this.getDropArea(rest, i))
@@ -396,9 +432,11 @@ class JsonDomHelper extends React.Component {
         }
         let comp
 
-        if(_WrappedComponent.name === 'Cms'){
-            comp = <div {...events}><_WrappedComponent key={rest._key} {...rest} children={kids}/></div>
-        }else{
+        if (_WrappedComponent.name === 'Cms') {
+            comp = <div {...events}>
+                <_WrappedComponent key={rest._key} {...rest} children={kids}/>
+            </div>
+        } else {
             comp = <_WrappedComponent key={rest._key} {...events} {...rest} children={kids}/>
         }
 

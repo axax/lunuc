@@ -48,7 +48,6 @@ class GenericForm extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         if (nextProps.fields !== prevState.fieldsOri) {
             console.log('GenericForm fields changed')
-            //console.log(prevState.fieldsOri, nextProps.fields)
             return GenericForm.getInitalState(nextProps)
         }
         return null

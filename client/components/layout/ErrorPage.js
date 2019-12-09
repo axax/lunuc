@@ -91,10 +91,11 @@ body{
     width: 358px;
     max-width:100%;
     padding: 5px;
+    line-height:1;
     z-index: 5;
     font-size: 25px;
     margin:0 auto;
-    color:#33cc99;
+    color:${background};
     text-decoration: none;
     margin-right: 10px
 }
@@ -123,7 +124,7 @@ hr:after {
     top: -0.75em;
     font-size: 2em;
     padding: 0 0.2em;
-    background: #33cc99;
+    background: ${background};
 }
 
 #clouds{
