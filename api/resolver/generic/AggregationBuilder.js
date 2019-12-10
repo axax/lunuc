@@ -152,9 +152,11 @@ export default class AggregationBuilder {
         }
 
         const parsedFilter = this.getParsedFilter()
-
         if (parsedFilter) {
             let filterPart = parsedFilter.parts[name]
+            if( !filterPart && reference){
+                filterPart = parsedFilter.parts[name+'._id']
+            }
             if (!filterPart && !exact) {
                 filterPart = parsedFilter.parts[name.split('.')[0]]
             }

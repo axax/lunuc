@@ -81,16 +81,22 @@ class TypesContainer extends React.Component {
             placeholder: this.labels.searchPlaceholder
         }
     }
+    fixType = null
+    noLayout = false
 
     constructor(props) {
         super(props)
-        const {fixType} = props
 
         this.parseSettings(props)
 
         this.types = getTypes()
         this.pageParams = this.determinPageParams(props)
         this.baseFilter = props.baseFilter
+
+        // store on object instance to preserve value when url change
+        this.noLayout = this.pageParams.noLayout
+        this.fixType = this.pageParams.fixType
+
         this.state = {
             selectAllRows: false,
             selectedrows: {},
@@ -106,7 +112,7 @@ class TypesContainer extends React.Component {
             collectionName: ''
         }
 
-        if (!fixType) {
+        if (!this.fixType) {
             // if it is not a fix type a selection box with all types is shown
             // prepare list with types for select box
             Object.keys(this.types).map((k) => {
@@ -324,7 +330,7 @@ class TypesContainer extends React.Component {
                     if (columnsMap['date']) {
                         dynamic.date = <span><span>{Util.formattedDateFromObjectId(item._id)}</span><br/><small>{item._id}</small></span>
                     }
-                    if (columnsMap['action']) {
+                    if (columnsMap['_action']) {
 
                         const entryActions = [{
                             name: 'Delete entry',
@@ -349,7 +355,7 @@ class TypesContainer extends React.Component {
                         }
                         Hook.call('TypeTableEntryAction', {type, actions: entryActions, item, container: this})
 
-                        dynamic.action = <SimpleMenu mini items={entryActions}/>
+                        dynamic._action = <SimpleMenu mini items={entryActions}/>
 
                     }
                     dataSource.push(dynamic)
@@ -466,7 +472,7 @@ class TypesContainer extends React.Component {
     render() {
         const startTime = new Date()
         const {dataToEdit, createEditDialog, viewSettingDialog, confirmCloneColDialog, manageColDialog, dataToDelete, confirmDeletionDialog} = this.state
-        const {fixType, title} = this.props
+        const {title} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
@@ -561,11 +567,11 @@ class TypesContainer extends React.Component {
         const content = [
             title === false ? '' :
                 <Typography key="typeTitle" variant="h3"
-                            gutterBottom>{title || (fixType ? fixType : 'Types')}</Typography>,
+                            gutterBottom>{title || (this.fixType ? this.fixType : 'Types')}</Typography>,
             description ?
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : '',
             <Row spacing={2} key="typeHeader">
-                {!fixType &&
+                {!this.fixType &&
                 <Col md={9}>
                     <SimpleSelect
                         value={type}
@@ -574,12 +580,13 @@ class TypesContainer extends React.Component {
                     />
                 </Col>
                 }
-                <Col xs={12} md={(fixType ? 12 : 3)} align="right">
+                <Col xs={12} md={(this.fixType ? 12 : 3)} align="right">
                     <GenericForm key="searchType"
                                  autoFocus={true}
                                  onChange={this.handleFilter}
                                  onKeyDown={this.handelFilterKeyDown}
                                  primaryButton={false}
+                                 updatekey={type}
                                  fields={this.searchFields}/>
                 </Col>
             </Row>,
@@ -611,7 +618,7 @@ class TypesContainer extends React.Component {
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
-        if (this.props.noLayout || this.pageParams.noLayout) {
+        if (this.noLayout) {
             return content
         }
         return <BaseLayout>{content}</BaseLayout>
@@ -642,7 +649,13 @@ class TypesContainer extends React.Component {
         const item = data.results[index]
         if (event.detail === 2) {
             // it was a double click
-            this.handleEditDataClick(item)
+            if( window.opener ){
+                window.resultValue = item
+                window.close()
+            }else {
+
+                this.handleEditDataClick(item)
+            }
         }else {
 
             Hook.call('TypeTableEntryClick', {type, event, item, container: this})
@@ -746,7 +759,7 @@ class TypesContainer extends React.Component {
             },
             {
                 title: 'Actions',
-                id: 'action'
+                id: '_action'
             })
 
         /* HOOK */
@@ -757,11 +770,15 @@ class TypesContainer extends React.Component {
 
     determinPageParams(props) {
         const {params} = props.match
-        const {p, l, s, f, v, noLayout} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v, noLayout, fixType} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
+
+        const finalFixType =fixType || props.fixType,
+            finalNoLayout =noLayout || props.noLayout
+
         let type
-        if (props.fixType) {
-            type = props.fixType
+        if (finalFixType) {
+            type = finalFixType
         } else if (params.type) {
             type = params.type
         } else if (this.settings.lastType) {
@@ -774,7 +791,8 @@ class TypesContainer extends React.Component {
         }
         const typeSettings = this.settings[type] || {}
         const result = {
-            noLayout: noLayout,
+            fixType: finalFixType,
+            noLayout: finalNoLayout,
             limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',
@@ -1094,8 +1112,8 @@ class TypesContainer extends React.Component {
     }
 
     goTo(type, page, limit, sort, filter, _version) {
-        const {baseUrl, fixType} = this.props
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type + '/'}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}`)
+        const {baseUrl} = this.props
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${this.fixType?'':'/types/'+type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}`)
     }
 
 

@@ -137,7 +137,7 @@ export const typeDataToLabel = (item, pickerField) => {
         pickers.push(pickerField)
     } else {
         for (const key of Object.keys(item)) {
-            if (['_id', 'createdBy', '__typename'].indexOf(key) < 0) {
+            if (['_id', 'createdBy', '__typename', 'status'].indexOf(key) < 0) {
                 pickers.push(key)
                 break
             }

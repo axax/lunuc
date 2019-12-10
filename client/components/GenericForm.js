@@ -25,7 +25,13 @@ class GenericForm extends React.Component {
     }
 
     static getInitalState = (props) => {
-        const initalState = {fieldsOri: props.fields, fields: {}, fieldErrors: {}, isValid: true}
+        const initalState = {
+            updatekey: props.updatekey,
+            fieldsOri: props.fields,
+            fields: {},
+            fieldErrors: {},
+            isValid: true
+        }
         Object.keys(props.fields).map(k => {
             const field = props.fields[k]
             let fieldValue
@@ -46,7 +52,7 @@ class GenericForm extends React.Component {
 
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.fields !== prevState.fieldsOri) {
+        if (nextProps.updatekey!==prevState.updatekey || (!nextProps.updatekey && nextProps.fields !== prevState.fieldsOri)) {
             console.log('GenericForm fields changed')
             return GenericForm.getInitalState(nextProps)
         }
@@ -54,7 +60,7 @@ class GenericForm extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        return props.fields !== this.props.fields || state !== this.state
+        return state !== this.state
     }
 
     componentDidMount() {
@@ -298,6 +304,7 @@ class GenericForm extends React.Component {
 }
 
 GenericForm.propTypes = {
+    updatekey: PropTypes.string,
     fields: PropTypes.object.isRequired,
     values: PropTypes.object,
     onClick: PropTypes.func,

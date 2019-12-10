@@ -169,11 +169,6 @@ const Util = {
                         if (value.length > 1 && value.endsWith('"') && value.startsWith('"')) {
                             value = value.substring(1, value.length - 1)
                         }
-
-                        if (key.endsWith('._id')) {
-                            // user._id=id is equivalent to juser user=id
-                            key = key.substring(0, key.length - 4)
-                        }
                         if (parts[key]) {
                             if (parts[key].constructor !== Array) {
                                 parts[key] = [parts[key]]

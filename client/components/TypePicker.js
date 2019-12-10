@@ -44,7 +44,6 @@ class TypePicker extends React.Component {
         return state.value !== this.state.value || state.textValue !== this.state.textValue || state.data !== this.state.data || state.selIdx !== this.state.selIdx
     }
 
-
     render() {
         const {classes, placeholder, multi, error, helperText, pickerField, type} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
@@ -68,9 +67,13 @@ class TypePicker extends React.Component {
 
                                            const w = screen.width/3*2, h = screen.height/3*2,left = (screen.width/2)-(w/2),top = (screen.height/2)-(h/2)
 
-                                           window.open(
-                                               `/admin/types/${type}?noLayout=true`, 'Type' ,
-                                               'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left)
+                                           const newwindow = window.open(
+                                               `/admin/types/?noLayout=true&fixType=${type}`, '_blank' ,
+                                               'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left)
+
+                                           newwindow.onbeforeunload = ()=>{
+                                               this.selectValue(newwindow.resultValue)
+                                           }
                                        }}
                                        onMouseDown={()=>{}}
                                    >
@@ -81,9 +84,9 @@ class TypePicker extends React.Component {
                        }}
             /> }
 
-            { value.map((v, i) =>
-                <Chip key={i} label={typeDataToLabel(v, pickerField)} onDelete={this.handleRemovePick.bind(this, i)}
-                      avatar={v.__typename === 'Media' ? <Avatar src={getImageSrc(v, {height: 30})}/> : null}/>)
+            { value.map((value, i) =>
+                <Chip key={i} label={typeDataToLabel(value, pickerField)} onDelete={this.handleRemovePick.bind(this, i)}
+                      avatar={value.__typename === 'Media' ? <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>)
             }
 
             <Paper className={classes.suggestions} square>
@@ -117,11 +120,16 @@ class TypePicker extends React.Component {
     }
 
     handlePick(idx) {
-        const value = (this.state.value ? this.state.value.slice(0) : []), item = this.state.data.results[idx]
-        value.push({__typename: this.props.type, ...item})
-        this.props.onChange({target: {value, name: this.props.name}})
-        this.setState({value, textValue: '', hastFocus: false, data: null})
+        this.selectValue(this.state.data.results[idx])
+    }
 
+    selectValue(item){
+        if(item) {
+            const value = (this.state.value ? this.state.value.slice(0) : [])
+            value.push({__typename: this.props.type, ...item})
+            this.props.onChange({target: {value, name: this.props.name}})
+            this.setState({value, textValue: '', hastFocus: false, data: null})
+        }
     }
 
     handleChange(e) {

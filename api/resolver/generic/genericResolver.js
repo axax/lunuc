@@ -354,6 +354,7 @@ const GenericResolver = {
             status: 'updated'
         }
 
+        Hook.call('typeUpdated', {type: typeName, data, db, context})
         Hook.call('typeUpdated_' + typeName, {result: returnValue, db})
 
         return returnValue

@@ -68,6 +68,9 @@
     },
     "dns": {
       "active": false
+    },
+    "history": {
+      "active": true
     }
   },
   "ui": [

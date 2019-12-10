@@ -53,7 +53,7 @@ const Hook = {
     },
     call: function (name, args, thisRef) {
         if ('undefined' != typeof (Hook.hooks[name])) {
-            for (var i = 0; i < Hook.hooks[name].length; ++i) {
+            for (let i = 0; i < Hook.hooks[name].length; ++i) {
                 if (thisRef) {
                     Hook.hooks[name][i].callback.bind(thisRef)(args)
                 } else {

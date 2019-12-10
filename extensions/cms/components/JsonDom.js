@@ -20,6 +20,7 @@ import {deepMergeConcatArrays} from 'util/deepMerge'
 import {classNameByPath} from '../util/jsonDomUtil'
 import {preprocessCss} from '../util/cssPreprocessor'
 import {parseStyles} from 'client/util/style'
+import elementWatcher from './elementWatcher'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
@@ -44,51 +45,6 @@ const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../../client/containers/TypesContainer')}/>
 
 
-function waitUntilVisible({jsonDom, key, eleType, eleProps, c, $c, scope}) {
-    // ...and returns another component...
-    return class extends React.Component {
-
-
-        state = {isVisible: false}
-
-        constructor(props) {
-            super(props)
-        }
-
-        componentDidMount() {
-            this.addIntersectionObserver()
-        }
-
-        render() {
-            if (!this.state.isVisible && !!window.IntersectionObserver) {
-                return <div _key={key} data-wait-visible={jsonDom.instanceId}>...</div>
-            } else {
-                return React.createElement(
-                    eleType,
-                    eleProps,
-                    ($c ? null : jsonDom.parseRec(c, key, scope))
-                )
-            }
-        }
-
-        addIntersectionObserver() {
-            const ele = document.querySelector(`[_key='${key}']`)
-            if (ele) {
-                let observer = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            observer.unobserve(entry.target)
-                            this.setState({isVisible: true})
-
-                        }
-                    })
-                }, {rootMargin: '-100px -100px -100px -100px'})
-                observer.observe(ele)
-            }
-        }
-
-    }
-}
 
 class JsonDom extends React.Component {
 
@@ -519,7 +475,7 @@ class JsonDom extends React.Component {
 
             if (!item) return
 
-            const {t, p, c, $c, $loop, $if, $ifexist, x, $wait, $for} = item
+            const {t, p, c, $c, $loop, $if, $ifexist, x, $observe, $for} = item
             /*
              t = type
              c = children
@@ -791,9 +747,9 @@ class JsonDom extends React.Component {
                 }
 
 
-                if ($wait === 'visible' && !!window.IntersectionObserver) {
+                if ($observe && !!window.IntersectionObserver) {
                     h.push(React.createElement(
-                        waitUntilVisible({jsonDom: this, key, scope, eleType, eleProps, c, $c}),
+                        elementWatcher({jsonDom: this, key, scope, eleType, eleProps, c, $c}, $observe),
                         {key: key}
                     ))
                 } else {

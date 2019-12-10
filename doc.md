@@ -124,6 +124,7 @@ Hook.on('Routes.myroute', ({routes}) => {
 | ------------- |-------------| -------------|
 | appready      |  db, app  | Is called as soon as connection and db is ready  |   
 | appexit      |    |Is called on precess exit  |  
+| typeUpdated      | type,data, db   |Is called when any type gets updated  |  
 | typeUpdated_{typeName}      | result, db   |Is called when a type gets updated  |  
 | typeDeleted_{typeName}      | _id, db   |Is called when a type gets deleted  |  
 

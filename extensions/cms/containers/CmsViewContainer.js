@@ -14,12 +14,11 @@ import {getType} from 'util/types'
 import * as CmsActions from '../actions/CmsAction'
 import {bindActionCreators} from 'redux'
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
-import {
-    CAPABILITY_MANAGE_CMS_PAGES
-} from '../constants'
 import Async from 'client/components/Async'
-import * as UserActions from "../../../client/actions/UserAction";
-import {classNameByPath} from "../util/jsonDomUtil";
+import * as UserActions from '../../../client/actions/UserAction'
+import {classNameByPath} from '../util/jsonDomUtil'
+import {isEditMode, getSlugVersion, getGqlVariables, urlSensitivMap, settingKeyPrefix, gqlQueryKeyValue, gqlQuery} from '../util/cmsView'
+import withCmsEditor from './withCmsEditor'
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}
@@ -55,69 +54,7 @@ const ErrorHandler = (props) => <Async {...props}
 const NetworkStatusHandler = (props) => <Async {...props}
                                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/NetworkStatusHandler')}/>
 
-// the graphql query is also need to access and update the cache when data arrive from a subscription
-const gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData parseResolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
-const gqlQueryKeyValue = gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`
-
-const settingKeyPrefix = 'CmsViewContainerSettings'
-
-const isPreview = () => {
-    const params = new URLSearchParams(window.location.search)
-    return params.get('preview')
-}
-
-const isEditMode = (props) => {
-    const {user} = props
-    return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_PAGES) && !isPreview())
-}
-
-const getSlugVersion = (slug) => {
-    const ret = {}
-    if (slug.indexOf('@') === 0) {
-        const pos = slug.indexOf('/')
-        ret.slug = pos >= 0 ? slug.substring(pos + 1) : ''
-        ret._version = pos >= 0 ? slug.substring(1, pos) : slug.substring(1)
-
-    } else {
-        ret.slug = slug
-    }
-
-    return ret
-}
-
-
-const getGqlVariables = props => {
-    const {slug, urlSensitiv, dynamic, user, _props} = props,
-        variables = {
-            ...getSlugVersion(slug)
-        }
-
-    if (_props && _props.$) {
-        variables.props = JSON.stringify(_props.$)
-    }
-
-    if (!dynamic && isEditMode(props)) {
-        variables.editmode = true
-    }
-
-    // add settings from local storage if user is not logged in
-    if (!user.isAuthenticated) {
-        const kv = localStorage.getItem(NO_SESSION_KEY_VALUES_SERVER)
-        if (kv) {
-            variables.nosession = kv
-        }
-    }
-
-    // add query if page is url sensitiv
-    if (urlSensitiv === true || (!dynamic && urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
-        const q = window.location.search.substring(1)
-        if (q)
-            variables.query = q
-    }
-
-    return variables
-}
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -136,7 +73,8 @@ class CmsViewContainer extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if ((nextProps.cmsPage !== prevState.cmsPage && (nextProps.cmsPage && nextProps.cmsPage.status !== 'updating')) || nextProps.keyValue !== prevState.keyValue) {
+        if ((nextProps.cmsPage !== prevState.cmsPage && nextProps.cmsPage && nextProps.cmsPage.status !== 'updating')
+            || nextProps.keyValue !== prevState.keyValue) {
             return CmsViewContainer.propsToState(nextProps, prevState)
         }
         return null
@@ -1048,7 +986,6 @@ CmsViewContainer.propTypes = {
     cmsPages: PropTypes.object,
     cmsComponentEdit: PropTypes.object,
     keyValue: PropTypes.object,
-    updateCmsPage: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
     user: PropTypes.object.isRequired,
     /* with Router */
@@ -1072,7 +1009,6 @@ CmsViewContainer.propTypes = {
 }
 
 
-const urlSensitivMap = {}
 
 const CmsViewContainerWithGql = compose(
     graphql(gqlQuery, {
@@ -1122,98 +1058,6 @@ const CmsViewContainerWithGql = compose(
             }
             return result
         }
-    }),
-    graphql(gql`query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug}}}`, {
-        skip: props => props.dynamic || !isEditMode(props),
-        options(ownProps) {
-            const {slug, _version} = getSlugVersion(ownProps.slug),
-                variables = {
-                    _version,
-                    limit: 99,
-                    filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`
-                }
-            return {
-                variables,
-                fetchPolicy: 'network-only'
-            }
-        },
-        props: ({data: {cmsPages}}) => {
-            return {
-                cmsPages
-            }
-        }
-    }),
-    graphql(gqlQueryKeyValue, {
-        skip: props => props.dynamic || !isEditMode(props),
-        options(ownProps) {
-            return {
-                variables: {
-                    key: settingKeyPrefix + ownProps.slug
-                },
-                fetchPolicy: 'network-only'
-            }
-        },
-        props: ({data: {keyValue}}) => {
-            return {
-                keyValue
-            }
-        }
-    }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$serverScript:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,query:$query,props:$props){slug template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
-        props: ({ownProps, mutate}) => ({
-            updateCmsPage: ({_id, ...rest}, key, cb) => {
-
-                const variables = getGqlVariables(ownProps)
-                const variablesWithNewValue = {...variables, _id, [key]: rest[key]}
-
-
-                return mutate({
-                    variables: variablesWithNewValue,
-                    optimisticResponse: {
-                        __typename: 'Mutation',
-                        // Optimistic message
-                        updateCmsPage: {
-                            _id,
-                            ...rest,
-                            status: 'updating',
-                            modifiedAt: new Date().getTime(),
-                            createdBy: {
-                                _id: ownProps.user.userData._id,
-                                username: ownProps.user.userData.username,
-                                __typename: 'UserPublic'
-                            },
-                            __typename: 'CmsPage'
-                        }
-                    },
-                    update: (store, {data: {updateCmsPage}}) => {
-
-                        const data = store.readQuery({
-                            query: gqlQuery,
-                            variables
-                        })
-                        if (data.cmsPage) {
-                            // update cmsPage
-                            data.cmsPage = {
-                                _id,
-                                [key]: updateCmsPage[key], ...rest,
-                                modifiedAt: updateCmsPage.modifiedAt,
-                                status: updateCmsPage.status
-                            }
-
-                            // update resolvedData
-                            if (updateCmsPage.resolvedData) {
-                                data.cmsPage.resolvedData = updateCmsPage.resolvedData
-                                data.cmsPage.subscriptions = updateCmsPage.subscriptions
-                            }
-                            store.writeQuery({query: gqlQuery, variables, data})
-                        }
-                        if (cb) {
-                            cb()
-                        }
-                    }
-                })
-            }
-        }),
     })
 )(CmsViewContainer)
 
@@ -1245,5 +1089,5 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withApollo(CmsViewContainerWithGql))
+)(withApollo(withCmsEditor(CmsViewContainerWithGql)))
 
