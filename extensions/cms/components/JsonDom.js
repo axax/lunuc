@@ -13,7 +13,6 @@ import {
     Col,
     Row,
 } from 'ui'
-import SmartImage from 'client/components/SmartImage'
 import {Link, Redirect} from 'react-router-dom'
 import JsonDomInput from './JsonDomInput'
 import {deepMergeConcatArrays} from 'util/deepMerge'
@@ -68,7 +67,7 @@ class JsonDom extends React.Component {
         /* Other components */
         'FileDrop': {component: FileDrop, label: 'File Drop'},
         'MarkDown': {component: MarkDown, label: 'Markdown parser'},
-        'SmartImage': {component: SmartImage, label: 'Smart Image (lazy load, error handing...)'},
+        'SmartImage': {component: 'img', label: 'Smart Image (lazy load, error handling...)'},
         'Print': {component: Print, label: 'Printable area'},
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
@@ -749,7 +748,7 @@ class JsonDom extends React.Component {
 
                 if ($observe && !!window.IntersectionObserver) {
                     h.push(React.createElement(
-                        elementWatcher({jsonDom: this, key, scope, eleType, eleProps, c, $c}, $observe),
+                        elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
                         {key: key}
                     ))
                 } else {
