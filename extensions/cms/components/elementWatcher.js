@@ -51,6 +51,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                             if (this.state.initialVisible) {
                                 ele.classList.add(options.visibleClass)
                             } else {
+                                ele.setAttribute('data-loading', true);
                                 if (tagName === 'SmartImage') {
                                     const img = new Image()
 
