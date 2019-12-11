@@ -47,9 +47,13 @@ self.addEventListener('activate', event => {
 // If no response is found, it populates the runtime cache with the response
 // from the network before returning it to the page.
 self.addEventListener('fetch', event => {
+
+    if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') {
+        return;
+    }
+
     // Skip cross-origin requests, like those for Google Analytics.
     if (event.request.method == 'GET' && (event.request.url.startsWith(self.location.origin) ||
-        event.request.destination === 'image' ||
         HOSTS.some((host) => event.request.url.startsWith(host))
         )) {
         event.respondWith(
