@@ -114,7 +114,7 @@ function mainInit() {
 
 
     /* Register serviceworker only on production. only works with https */
-    if (false && 'serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator) {
         console.log('Service Worker is supported')
 
         if ('PushManager' in window) {

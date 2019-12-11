@@ -53,7 +53,6 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                             } else {
                                 if (tagName === 'SmartImage') {
                                     const img = new Image()
-                                    img.src = eleProps.src
 
                                     const timeout = setTimeout(()=>{
                                         // gifs can be show even if they are not fully loaded
@@ -65,6 +64,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                                         clearTimeout(timeout)
                                         this.setState({madeVisible: true})
                                     }
+                                    img.src = eleProps.src
 
                                 } else {
                                     this.setState({madeVisible: true})
