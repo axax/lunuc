@@ -73,7 +73,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
 
                         }
                     })
-                }, {rootMargin: '10%'})
+                }, {rootMargin: options.rootMargin||'0px'})
                 observer.observe(ele)
             }
         }

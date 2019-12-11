@@ -5,6 +5,7 @@ import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
 import config from 'gen/config'
 import CodeEditor from './CodeEditor'
+import QuillEditor from './QuillEditor'
 import {withStyles} from 'ui/admin'
 import {checkFieldType} from 'util/types'
 import Hook from '../../util/hook'
@@ -210,6 +211,14 @@ class GenericForm extends React.Component {
                                            value: newValue
                                        }
                                    })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor>
+
+            } else if (uitype === 'html') {
+                return <QuillEditor key={fieldKey} style={{marginBottom:'2rem',marginTop:'2rem'}} onChange={(newValue) => this.handleInputChange({
+                    target: {
+                        name: fieldKey,
+                        value: newValue
+                    }
+                })}>{value}</QuillEditor>
 
             } else if (uitype === 'image') {
 

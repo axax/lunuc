@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import Hook from 'util/hook'
 import _t from 'util/i18n'
 import Util from 'client/util'
+import QuillEditor from 'client/components/QuillEditor'
 import {getComponentByKey} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
 import Async from 'client/components/Async'
@@ -71,6 +72,7 @@ class JsonDom extends React.Component {
         'Print': {component: Print, label: 'Printable area'},
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
+        'QuillEditor': (props) => <QuillEditor {...props}/>,
         'select': (props) => <JsonDomInput select={true} {...props}/>,
         'Redirect': ({to, push}) => {
             return <Redirect to={{pathname: to}} push={push}/>
@@ -745,8 +747,9 @@ class JsonDom extends React.Component {
                     eleProps.dangerouslySetInnerHTML = {__html: $c}
                 }
 
+                if ($observe && $observe.if !== 'false' && !!window.IntersectionObserver) {
 
-                if ($observe && !!window.IntersectionObserver) {
+
                     h.push(React.createElement(
                         elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
                         {key: key}
