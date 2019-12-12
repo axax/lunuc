@@ -63,7 +63,7 @@ const Util = {
             hour: 'numeric',
             minute: 'numeric',
             second: 'numeric',
-        },options))
+        }, options))
     },
     formattedDateFromObjectId: (objectId) => {
         if (objectId === 0) {
@@ -85,11 +85,14 @@ const Util = {
         return new Date(stamp).toLocaleString()
     },
     formatDate(d, options) {
-        return (new Date(d)).toLocaleString(options && options.lang?options.lang:_app_.lang, Object.assign({
+        return (new Date(d)).toLocaleString(options && options.lang ? options.lang : _app_.lang, Object.assign({
             year: 'numeric',
             month: '2-digit',
             day: 'numeric'
         }, options))
+    },
+    textFromHtml: str => {
+        return str.replace(/<[^>]+>/g, ' ').replace(/\s/g,' ')
     },
     escapeHtml: (str) => {
         const entityMap = {

@@ -4,17 +4,25 @@ import {CAPABILITY_RUN_SCRIPT} from '../../../util/capabilities'
 
 export default db => ({
     Query: {
-        runCronJob: async ({script, scriptLanguage}, {context}) => {
+        runCronJob: async (props, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_SCRIPT)
+            let result
+            if (props.sync) {
+                await new Promise(resolve => {
+                    cronjobUtil.runCronJob({db, context, ...props}, (_result) => {
+                        result = _result
+                        resolve()
+                    })
+                })
+            } else {
+                result = await cronjobUtil.runCronJob({db, context, ...props})
+            }
 
-           // const id = await cronjobUtil.runCronJob({cronjobId, script, scriptLanguage, context, db})
-            return {status: `Job started. CronJobExecution`}
-        },
-        testJob: async ({script, scriptLanguage, cronjobId}, {context}) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_SCRIPT)
 
-            const id = await cronjobUtil.runCronJob({cronjobId, script, scriptLanguage, context, db})
-            return {status: `Job started. CronJobExecution id is ${id}`}
+            return {
+                status: props.sync ? 'Job finished' : `Job started. CronJobExecution id is ${result._id}`,
+                result: JSON.stringify(result)
+            }
         },
         testExecFilter: ({filter}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)

@@ -1,9 +1,5 @@
 export default `
 
-    type TestJobResult {
-        status: String
-    }
-    
     type RunScriptResult {
         status: String
         result: String
@@ -14,9 +10,7 @@ export default `
     }
     
     type Query {
-    	runCronJob(script: String, scriptLanguage: String): RunScriptResult
-    	runScript(script: String, scriptLanguage: String): RunScriptResult
-    	testJob(cronjobId: String!, script: String, scriptLanguage: String): TestJobResult
+    	runCronJob(cronjobId: String, script: String, scriptLanguage: String, sync: Boolean, noEntry: Boolean): RunScriptResult
     	testExecFilter(filter: String!): TestExecFilterResult
     }
 `

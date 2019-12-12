@@ -22,14 +22,17 @@ export default () => {
     })*/
 
     Hook.on('TypeCreateEditDialogAction', function ({type, action}) {
-        if (type === 'CronJob' && action && action.key === 'run') {
+        if (type === 'CronJob' && action && action.key.startsWith('run')) {
+            const runOnlyScript = action.key==='run_script'
             this.props.client.query({
                 fetchPolicy: 'network-only',
-                query: gql`query testJob($cronjobId:String!,$script:String,$scriptLanguage:String){testJob(cronjobId:$cronjobId,script:$script,scriptLanguage:$scriptLanguage){status}}`,
+                query: gql`query runCronJob($cronjobId:String,$script:String,$scriptLanguage:String,$sync:Boolean,$noEntry:Boolean){runCronJob(cronjobId:$cronjobId,script:$script,scriptLanguage:$scriptLanguage,sync:$sync,noEntry:$noEntry){status result}}`,
                 variables: {
                     script: this.createEditForm.state.fields.script,
                     scriptLanguage: this.createEditForm.state.fields.scriptLanguage,
-                    cronjobId: this.state.dataToEdit ? this.state.dataToEdit._id : 'none'
+                    cronjobId: this.state.dataToEdit ? this.state.dataToEdit._id : 'none',
+                    sync: runOnlyScript,
+                    noEntry: runOnlyScript
                 }
             }).then(response => {
                 this.setState({cronjobResponse: response})
@@ -43,6 +46,7 @@ export default () => {
     Hook.on('TypeCreateEditDialog', ({type, props}) => {
         if (type === 'CronJob') {
             props.actions.unshift({key: 'run', label: 'Run CronJob'})
+            props.actions.unshift({key: 'run_script', label: 'Run Script'})
         }
     })
 
@@ -69,13 +73,19 @@ export default () => {
 
     Hook.on('TypesContainerRender', function ({type, content}) {
         if (type === 'CronJob') {
-            if (this.state.cronjobResponse && this.state.cronjobResponse.data.testJob && this.state.cronjobResponse.data.testJob.status) {
+            if (this.state.cronjobResponse && this.state.cronjobResponse.data.runCronJob && this.state.cronjobResponse.data.runCronJob.status) {
                 content.push(<SimpleDialog key="cronjobDialog" open={true} onClose={() => {
                     this.setState({cronjobResponse: null})
                 }}
                                            actions={[{key: 'ok', label: 'Ok'}]}
                                            title="CronJob response">
-                    {this.state.cronjobResponse.data.testJob.status}
+                    <h3 key="status">{this.state.cronjobResponse.data.runCronJob.status}</h3>
+                    {this.state.cronjobResponse.data.runCronJob.result &&
+                    <pre key="result">
+                        {JSON.stringify(JSON.parse(this.state.cronjobResponse.data.runCronJob.result),null,4)}
+                    </pre>
+                    }
+
                 </SimpleDialog>)
 
             }
