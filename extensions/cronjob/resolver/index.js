@@ -26,7 +26,7 @@ export default db => ({
         },
         testExecFilter: ({filter}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const match = cronjobUtil.execFilter(filter)
+            const match = !filter || Util.execFilter(filter)
             return {match}
         }
     }

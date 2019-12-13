@@ -45,6 +45,10 @@ const cmsPageEditorUrl = (slug, _version) => {
 
 export default () => {
 
+    Hook.on('HomeContainerRender', ({content}) => {
+        content.push(<div>CMSComponent</div>)
+    })
+
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
         menuItems.push({name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true, icon: <WebIcon/>})

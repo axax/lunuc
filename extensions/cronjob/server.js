@@ -30,14 +30,9 @@ const processCronJobQueue = async (job) => {
 const registerCronJobs = async (db) => {
     const cronJobs = (await db.collection('CronJob').find({active: true}).toArray())
     cronJobs.forEach(cronJob => {
+        if (!cronJob.execfilter || Util.execFilter(cronJob.execfilter)) {
 
-        let match = true
-        if (cronJob.execfilter) {
-            match = Util.execFilter(cronJob.execfilter)
-        }
-
-        if (match) {
-
+            console.log(`register cronjob ${cronJob.name}`)
             registeredCronJobs.push(cron.schedule(cronJob.expression, () => {
 
                 const context = {lang: 'en', id: cronJob.createdBy, username: 'unknown'}

@@ -8,9 +8,10 @@ const registerBots = async (db) => {
 
     bots.forEach(async botData => {
             // only if execfilter matches connect bot to messangers
-            if (botData.execfilter && !Util.matchFilterExpression(botData.execfilter, Util.systemProperties())) {
+            if (botData.execfilter && !Util.execFilter(botData.execfilter)) {
                 botData.telegramToken = null
             }
+            console.log(`register bot ${botData.name} with telegramToken ${botData.telegramToken}`)
             const bot = new Bot(botData, db)
 
             await bot.loadCommands(db)

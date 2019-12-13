@@ -11,7 +11,8 @@ const startListening = async (db) => {
 
         arr.forEach(async data => {
                 // only if execfilter matches connect bot to messangers
-                if (!data.execfilter || Util.matchFilterExpression(data.execfilter, Util.systemProperties())) {
+                if (!data.execfilter || Util.execFilter(data.execfilter)) {
+                    console.log(`register MailClient ${data.username}`)
 
 
                     const mailListener = notifier({

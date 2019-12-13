@@ -3,36 +3,39 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {Typography, Card, Divider, Row, Col} from 'ui/admin'
+import Hook from '../../util/hook'
 
 class HomeContainer extends React.Component {
     render() {
         const {user} = this.props
+
+        let content
+
+        if (user.isAuthenticated) {
+            content = [<Row key="mainRow">
+                <Col md={4}>
+                    <Card>
+
+                        <Typography color="textSecondary" gutterBottom>
+                            System information
+                        </Typography>
+                        <Divider style={{margin: '5px 0'}} light/>
+
+                        <Typography variant="h5">
+
+                            User: <span>{user.userData.username}</span>
+                        </Typography>
+                    </Card>
+                </Col>
+            </Row>]
+        } else {
+            content = <Typography gutterBottom><span>Please login!</span></Typography>
+        }
+        Hook.call('HomeContainerRender', {user, content})
+
         return <BaseLayout>
             <Typography variant="h3" component="h1" gutterBottom>Administration console</Typography>
-
-            {
-                user.isAuthenticated ?
-                    <Row>
-                        <Col md={4}>
-                            <Card>
-
-                                <Typography color="textSecondary" gutterBottom>
-                                    System information
-                                </Typography>
-                                <Divider style={{margin: '5px 0'}} light/>
-
-                                <Typography variant="h5">
-
-                                    User:  <span>{user.userData.username}</span>
-                                </Typography>
-                            </Card>
-                        </Col>
-                    </Row>
-                    : <Typography gutterBottom><span>Please login!</span></Typography>
-            }
-
-
-        </BaseLayout>
+            {content}</BaseLayout>
     }
 }
 

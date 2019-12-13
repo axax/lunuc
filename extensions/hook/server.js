@@ -7,16 +7,11 @@ import Util from '../../api/util'
 const registeredHook = []
 
 const register = async (db) => {
-    console.log('register hooks')
     unregister()
     const results = (await db.collection('Hook').find({active: true}).toArray())
     results.forEach(entry => {
-        let match = true
-        if (entry.execfilter) {
-            match = Util.execFilter(entry.execfilter)
-        }
-
-        if (match) {
+        if (!entry.execfilter || Util.execFilter(entry.execfilter)) {
+            console.log(`register hook ${entry.name} (${entry.hook})`)
 
             try {
                 const fun = new Function(`const require = this.require;${entry.script}`),
