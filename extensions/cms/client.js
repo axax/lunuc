@@ -61,8 +61,11 @@ export default () => {
             private: true,
             exact: true,
             path: ADMIN_BASE_URL + '/cms/:page*',
-            component: (p) => <TypesContainer baseUrl={ADMIN_BASE_URL + "/cms/"} fixType="CmsPage"
-                                              title="Content Management" {...p} />
+            component: (p) => {
+                _app_._cmsLastSearch = p.location.search
+                return <TypesContainer baseUrl={ADMIN_BASE_URL + "/cms/"} fixType="CmsPage"
+                                       title="Content Management" {...p} />
+            }
         })
         routes.push({
             // match everything but paths that start with ADMIN_BASE_URL
@@ -132,15 +135,25 @@ export default () => {
 
     // add default slug
     Hook.on('TypeCreateEditDialogBlur', ({event, type}) => {
-        console.log(event.target.name, event.target.closest)
         if (type === 'CmsPage' && event.target.name === 'name' && event.target.closest) {
             const form = event.target.closest('form')
             const slugInput = form.querySelector('input[name=slug]')
 
             if (slugInput && !slugInput.value) {
                 const value = event.target.value.trim().toLowerCase().replace(/[\W_]+/g, "_")
+
+                const lastValue = slugInput.value
+
                 setTimeout(() => {
+                    const event = new Event('input', { bubbles: true })
+
                     slugInput.value = value
+                    let tracker = slugInput._valueTracker
+                    if (tracker) {
+                        tracker.setValue(lastValue)
+                    }
+                    slugInput.dispatchEvent(event)
+
                     slugInput.focus()
                 }, 10)
             }

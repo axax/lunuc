@@ -13,6 +13,16 @@ Hook.on('Types', ({types}) => {
 const Hook = {
     hooks: {},
     hooksOrder: {},
+    remove: (name ,key)=>{
+        if(Hook.hooks[name]) {
+            for (let i = Hook.hooks[name].length - 1; i >= 0; i--) {
+                if (Hook.hooks[name][i].key === key) {
+                    console.log(`remove hook ${name} with key ${key}`)
+                    Hook.hooks[name].splice(i, 1)
+                }
+            }
+        }
+    },
     on: function (names, callback, order) {
         if (names.constructor !== Array) {
             names = [names]
@@ -27,12 +37,7 @@ const Hook = {
             }
 
             if (key) {
-                for (let i = Hook.hooks[name].length - 1; i >= 0; i--) {
-                    if (Hook.hooks[name][i].key === key) {
-                        console.log(`remove hook ${name} with key ${key}`)
-                        Hook.hooks[name].splice(i,1)
-                    }
-                }
+                Hook.remove(name, key)
             }
 
             if (!order) {

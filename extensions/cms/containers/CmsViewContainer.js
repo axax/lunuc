@@ -411,7 +411,7 @@ class CmsViewContainer extends React.Component {
                                                                   label="Fixed"/>,
 
                                                     <Button key="button" size="small" color="inherit" onClick={e => {
-                                                        this.props.history.push(config.ADMIN_BASE_URL + '/cms')
+                                                        this.props.history.push(config.ADMIN_BASE_URL + '/cms'+(_app_._cmsLastSearch?_app_._cmsLastSearch:''))
                                                     }}>Back</Button>
                                                 ]
                                                 }
@@ -740,6 +740,7 @@ class CmsViewContainer extends React.Component {
 
         clearTimeout(this._autoSaveDataResolverTimeout)
         if (instantSave) {
+            this.saveSettings()
             this._autoSaveDataResolver()
         } else {
             this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, 5000)

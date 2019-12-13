@@ -27,7 +27,7 @@ Hook.on('schema', ({schemas}) => {
 
 // Hook when an entry of the type Media was deleted
 Hook.on('typeDeleted_Media', ({ids}) => {
-    // delete filea
+    // delete files
     for(const id of ids) {
         const fileName = path.join(__dirname, '../../' + UPLOAD_DIR + '/' + id)
         if (fs.existsSync(fileName)) {

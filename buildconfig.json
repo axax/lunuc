@@ -71,6 +71,9 @@
     },
     "history": {
       "active": true
+    },
+    "hook": {
+      "active": true
     }
   },
   "ui": [

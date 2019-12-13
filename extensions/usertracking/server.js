@@ -5,6 +5,7 @@ import {deepMergeToFirst} from 'util/deepMerge'
 import Util from '../../api/util'
 import {clientAddress, getHostFromHeaders} from '../../util/host'
 
+
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
     deepMergeToFirst(resolvers, resolver(db))
@@ -20,7 +21,7 @@ Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode}
         const ip = clientAddress(req)
         if( ip !== '::ffff:127.0.0.1') {
             const host = getHostFromHeaders(req.headers)
-            db.collection('UserTracking').insertOne({
+            const data = {
                 ip,
                 agent: req.headers['user-agent'],
                 referer: req.headers['referer'],
@@ -28,7 +29,9 @@ Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode}
                 host: host,
                 slug: scope.page.slug,
                 createdBy: await Util.userOrAnonymousId(db, context)
-            })
+            }
+            db.collection('UserTracking').insertOne(data)
+            Hook.call('tracking', {data, db, context})
         }
     }
 })

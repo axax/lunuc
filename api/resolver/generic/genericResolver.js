@@ -212,6 +212,7 @@ const GenericResolver = {
                 ...newData
             }
 
+            Hook.call('typeCreated', {type:typeName, data, db, context})
             Hook.call('typeCreated_' + typeName, {data, db})
 
             return allData
@@ -240,7 +241,7 @@ const GenericResolver = {
         const deletedResult = await collection.deleteOne(options)
 
         if (deletedResult.deletedCount > 0) {
-
+            Hook.call('typeDeleted', {type: typeName, ids: [data._id], db})
             Hook.call('typeDeleted_' + typeName, {ids: [data._id], db})
 
             return {
@@ -285,7 +286,8 @@ const GenericResolver = {
         const deletedResult = await collection.deleteMany(options)
 
         if (deletedResult.deletedCount > 0) {
-            Hook.call('typeDeleted_' + typeName, {ids: data._id, db})
+            Hook.call('typeDeleted', {type: typeName, ids: [data._id], db})
+            Hook.call('typeDeleted_' + typeName, {ids: [data._id], db})
             return result
         } else {
             throw new Error('Error deleting entries. You might not have premissions to manage other users')
@@ -406,6 +408,10 @@ const GenericResolver = {
                     }
                 })
             }
+
+
+            Hook.call('typeCloned', {type: typeName, db, context})
+            Hook.call('typeCloned_' + typeName, {db, context})
 
             return result
         }

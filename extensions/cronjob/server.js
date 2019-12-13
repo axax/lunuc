@@ -6,6 +6,7 @@ import resolver from './resolver'
 import cron from 'node-cron'
 import cronjobUtil from './cronjobUtil'
 import {deepMergeToFirst} from 'util/deepMerge'
+import Util from 'api/util'
 
 let registeredCronJobs = []
 let cronJobQueue = []
@@ -32,7 +33,7 @@ const registerCronJobs = async (db) => {
 
         let match = true
         if (cronJob.execfilter) {
-            match = cronjobUtil.execFilter(cronJob.execfilter)
+            match = Util.execFilter(cronJob.execfilter)
         }
 
         if (match) {

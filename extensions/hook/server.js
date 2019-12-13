@@ -1,0 +1,66 @@
+import Hook from 'util/hook'
+import schemaGen from './gensrc/schema'
+import resolverGen from './gensrc/resolver'
+import {deepMergeToFirst} from 'util/deepMerge'
+import Util from '../../api/util'
+
+const registeredHook = []
+
+const register = async (db) => {
+    console.log('register hooks')
+    unregister()
+    const results = (await db.collection('Hook').find({active: true}).toArray())
+    results.forEach(entry => {
+        let match = true
+        if (entry.execfilter) {
+            match = Util.execFilter(entry.execfilter)
+        }
+
+        if (match) {
+
+            try {
+                const fun = new Function(`const require = this.require;${entry.script}`),
+                    name = entry.hook,
+                    key = entry._id.toString()
+                Hook.on(`${name}.${key}`, (args) => {
+                    fun.call({require,...args})
+                })
+
+                registeredHook.push({name, key, fun})
+            }catch (e) {
+                console.log(e)
+            }
+        }
+    })
+}
+
+
+const unregister = () => {
+    for (let i = registeredHook.length - 1; i >= 0; i--) {
+        const entry = registeredHook[i]
+        Hook.remove(entry.name,entry.key)
+        delete entry.fun
+        registeredHook.splice(i, 1)
+    }
+}
+
+// Hook to add mongodb resolver
+Hook.on('resolver', ({db, resolvers}) => {
+    deepMergeToFirst(resolvers, resolverGen(db))
+})
+
+// Hook to add mongodb schema
+Hook.on('schema', ({schemas}) => {
+    schemas.push(schemaGen)
+})
+
+
+// Hook when db is ready
+Hook.on('dbready', ({db}) => {
+    register(db)
+})
+
+// Hook when the type CronJob has changed
+Hook.on(['typeUpdated_Hook', 'typeCreated_Hook', 'typeDeleted_Hook','typeCloned_Hook'], ({db}) => {
+    register(db)
+})

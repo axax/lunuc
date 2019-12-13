@@ -105,9 +105,6 @@ const cronjobUtil = {
         })
 
 
-    },
-    execFilter: (filter) => {
-        return Util.matchFilterExpression(filter, Util.systemProperties())
     }
 }
 

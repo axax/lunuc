@@ -1,0 +1,32 @@
+{
+  "types": [
+    {
+      "name": "Hook",
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "name",
+          "required": true,
+          "clone": "${name} (copy)"
+        },
+        {
+          "name": "hook",
+          "required": true,
+          "enum": ["appready","typeCreated","typeUpdated","typeDeleted","typeCloned","index","tracking"]
+        },
+        {
+          "name": "script",
+          "uitype": "jseditor"
+        },
+        {
+          "name": "execfilter",
+          "label": "Execution filter"
+        },
+        {
+          "name": "active",
+          "type": "Boolean"
+        }
+      ]
+    }
+  ]
+}

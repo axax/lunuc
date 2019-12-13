@@ -2,6 +2,7 @@ import {MongoClient} from 'mongodb'
 import {createAllInitialData} from './data/initialData'
 import {createAllIndexes} from './index/indexes'
 import ClientUtil from 'client/util'
+import Hook from '../util/hook'
 
 const MONGO_URL = (process.env.MONGO_URL || process.env.LUNUC_MONGO_URL)
 
@@ -60,6 +61,7 @@ export const dbConnection = (cb) => {
                     console.log(`Connection to db ${MONGO_URL} established. 🚀`)
                     const parts = urlParts[0].split('/')
                     const db = client.db(parts[parts.length - 1])
+                    Hook.call('dbready', {db})
 
                     cb(err, db, client)
                 }

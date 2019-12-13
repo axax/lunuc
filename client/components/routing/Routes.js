@@ -69,6 +69,8 @@ class Routes extends React.Component {
             } else {
                 newPath = path
             }
+            this.history._last = newPath
+
             this.history._push(newPath, state)
         }
         this.history.replace = (o, state) => {
