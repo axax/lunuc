@@ -26,14 +26,14 @@ class QuillEditor extends React.Component {
     initEditor(){
         if( window.Quill && !this.isInit ) {
             this.isInit = true
-
+            const toolbar = this.props.toolbar || [
+                [{ header: [1, 2, false] }],
+                ['bold', 'italic', 'underline'],
+                ['image', 'code-block']
+            ]
             const quill = new Quill('#quilleditor' + this.instanceId, {
                 modules: {
-                    toolbar: [
-                        [{ header: [1, 2, false] }],
-                        ['bold', 'italic', 'underline'],
-                        ['image', 'code-block']
-                    ],
+                    toolbar,
                     history: {
                         delay: 2000,
                         maxStack: 500,
@@ -75,7 +75,8 @@ QuillEditor.propTypes = {
     onChange: PropTypes.func,
     className: PropTypes.string,
     name: PropTypes.string,
-    style: PropTypes.object
+    style: PropTypes.object,
+    toolbar: PropTypes.array
 }
 
 export default QuillEditor

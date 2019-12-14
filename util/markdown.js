@@ -48,7 +48,7 @@ const parser = md => {
         }],
         [/\n\n/gm, "</p><p>"]
     ]
-    return '<p>'+[mdRules.forEach(mdRule => md = md.replace(mdRule[0], mdRule[1])), md][1]+'</p>'
+    return ('<p>'+[mdRules.forEach(mdRule => md = md.replace(mdRule[0], mdRule[1])), md][1]+'</p>').replace(/<p><h([0-6])/g,'<h$1').replace(/<\/h([0-6])><\/p>/g,'</h$1>')
 }
 
 

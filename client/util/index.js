@@ -92,6 +92,7 @@ const Util = {
         }, options))
     },
     textFromHtml: str => {
+        if(str.constructor !== String) return str
         return str.replace(/<[^>]+>/g, ' ').replace(/\s/g, ' ')
     },
     escapeHtml: (str) => {
