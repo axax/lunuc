@@ -68,7 +68,7 @@ export const preprocessCss = (ncss, sub) => {
         .replace(new RegExp(quoteToken + '(\\d+)', 'g'), (_, n) => quotes[n - 1]) // restore quotes
 
     if( !sub ) {
-        console.log(`css preprocessed in ${new Date() - startTime}ms with size ncss=${ncss.length} and css=${result.length}`)
+        console.log(`css preprocessed in ${new Date() - startTime}ms`)
     }
     return result
 

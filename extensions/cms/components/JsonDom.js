@@ -475,7 +475,7 @@ class JsonDom extends React.Component {
 
             if (!item) return
 
-            const {t, p, c, $c, $loop, $if, $ifexist, x, $observe, $for} = item
+            const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop} = item
             /*
              t = type
              c = children
@@ -493,7 +493,32 @@ class JsonDom extends React.Component {
                 }
             }
 
-            if ($if) {
+
+            if ($is && $is !== 'true') {
+                if($is==='false'){
+                    return
+                }
+                const match = $is.match(/([\w|\.]*)(==|\!=)(.*)/)
+                if( match && match.length===4) {
+                    let prop
+                    try {
+                        prop = Util.propertyByPath(match[1], scope)
+                    }catch (e) {}
+
+                    if(match[2]==='=='){
+                        if(match[3]!==String(prop)){
+                            return
+                        }
+                    }
+                    if(match[2]==='!='){
+                        if(match[3]===String(prop)){
+                            return
+                        }
+                    }
+                }
+            }
+
+            if ($if ){
                 // check condition --> slower than to check with $ifexist
                 try {
                     const tpl = new Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};return  ${$if}`)
