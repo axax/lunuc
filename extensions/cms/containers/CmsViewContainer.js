@@ -195,7 +195,6 @@ class CmsViewContainer extends React.Component {
             className, children, user, dynamic, client, fetchMore, userActions} = this.props
         let {template, resources, script, serverScript, dataResolver, settings} = this.state
         const editMode = isEditMode(this.props)
-
         if (!cmsPage) {
 
             if (!loading && !aboutToChange) {

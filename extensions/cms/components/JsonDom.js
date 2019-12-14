@@ -45,7 +45,6 @@ const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../../client/containers/TypesContainer')}/>
 
 
-
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
@@ -211,7 +210,7 @@ class JsonDom extends React.Component {
 
             }
 
-            if( slugChanged && this._ismounted){
+            if (slugChanged && this._ismounted) {
                 // componentWillUnmount is not triggered for the root JsonDom when it is reused be another component
                 // So if the slug has changed and the component is still mounted we have to call unmount
                 this.runJsEvent('unmount')
@@ -251,11 +250,11 @@ class JsonDom extends React.Component {
         this.runJsEvent('mount', true)
 
         let pr = this.props._parentRef
-        while(pr){
-            pr.runJsEvent('childmount', false, {id:this.props.id})
-            if(pr.props._parentRef){
+        while (pr) {
+            pr.runJsEvent('childmount', false, {id: this.props.id})
+            if (pr.props._parentRef) {
                 pr = pr.props._parentRef
-            }else{
+            } else {
                 break
             }
         }
@@ -398,7 +397,7 @@ class JsonDom extends React.Component {
         let allloaded = true, counter = 0
         const resources = document.querySelectorAll(`script[data-cms-view="true"]`)
         if (resources) {
-            const check =() => {
+            const check = () => {
                 counter--
                 if (counter === 0) {
                     this.runJsEvent('resourcesready')
@@ -497,7 +496,7 @@ class JsonDom extends React.Component {
             if ($if) {
                 // check condition --> slower than to check with $ifexist
                 try {
-                    const tpl = new Function(`${Object.keys(scope).reduce((str,key)=>str+'\nconst '+key+'=this.scope.'+key,'')};return  ${$if}`)
+                    const tpl = new Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};return  ${$if}`)
                     if (!tpl.call({scope})) {
                         return
                     }
@@ -544,7 +543,7 @@ class JsonDom extends React.Component {
                 } else {
                     if (d && d.constructor === String) {
                         try {
-                            data = Function(`${Object.keys(scope).reduce((str,key)=>str+'\nconst '+key+'=this.scope.'+key,'')};const Util = this.Util;return ${d}`).call({
+                            data = Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};const Util = this.Util;return ${d}`).call({
                                 scope,
                                 Util
                             })
@@ -661,10 +660,10 @@ class JsonDom extends React.Component {
                 if (p) {
                     // remove properties with empty values unless they start with $
                     Object.keys(p).forEach(key => {
-                        if(key.startsWith('$')){
+                        if (key.startsWith('$')) {
                             p[key.substring(1)] = p[key]
                             delete p[key]
-                        }else {
+                        } else {
                             p[key] === '' && delete p[key]
                         }
                     })
@@ -1062,11 +1061,29 @@ class JsonDom extends React.Component {
         return jsGetComponentRec(this.getRootComponent(), id)
     }
 
-    setStyle = (style, preprocess, id) => DomUtil.createAndAddTag('style', 'head', {
-        innerHTML: preprocess ? preprocessCss(style) : style,
-        data: {jsonDomId: this.instanceId},
-        id
-    })
+    setStyle = (style, preprocess, id, inworker) => {
+        const addTag = (css) => {
+            DomUtil.createAndAddTag('style', 'head', {
+                innerHTML: css,
+                data: {jsonDomId: this.instanceId},
+                id
+            })
+        }
+        if( preprocess ){
+
+            if( inworker ) {
+                // process in web worker
+                Util.createWorker(preprocessCss).run(style).then(e => {
+                    addTag(e.data)
+                })
+            }else{
+                addTag(preprocessCss(style))
+            }
+
+        }else{
+            addTag(style)
+        }
+    }
 
     addMetaTag = (name, content) => DomUtil.createAndAddTag('meta', 'head', {
         name,

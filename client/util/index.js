@@ -92,7 +92,7 @@ const Util = {
         }, options))
     },
     textFromHtml: str => {
-        return str.replace(/<[^>]+>/g, ' ').replace(/\s/g,' ')
+        return str.replace(/<[^>]+>/g, ' ').replace(/\s/g, ' ')
     },
     escapeHtml: (str) => {
         const entityMap = {
@@ -268,6 +268,23 @@ const Util = {
             p.splice(1, 0, lang);
         }
         return p.join('/') + window.location.search + window.location.hash
+    },
+    createWorker(fn) {
+        const blob = new Blob([`self.onmessage = (args)=>{
+                ${fn.toString()}
+                self.postMessage(${fn.name}(args))
+            }`], {type: 'text/javascript'}),
+            url = URL.createObjectURL(blob)
+
+        const worker = new Worker(url)
+
+        return {
+            run: (data) => new Promise((resolve) => {
+                    worker.addEventListener('message', resolve, false)
+                    worker.postMessage(data)
+                }
+            )
+        }
     }
 }
 export default Util

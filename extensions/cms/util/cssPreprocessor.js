@@ -1,50 +1,58 @@
 /*
  A very basic css preprocessor (support for nested css)
  */
-function flattenRules(tokens) {
-    function addRules(rules, selectors, styles) {
-        rules.push([selectors, styles])
-        const get = () => tokens.shift()
-        let atRule = null
-        let ll
-        for (let token = get(); token; token = get()) {
-            if (/^@/.test(token)) {
-                atRule = '';
-                ll = 0;
-            }
-            if (atRule !== null) {
-                if (token !== ';') atRule += ' '
-                atRule += token
-                if (token === '{') ++ll
-                if ((token === '}' && --ll === 0) || (token === ';' && ll === 0)) {
-                    const parts = /^([^{]+){([\s\S]*)}$/.exec(atRule)
-                    if (parts && /^\s*@(media|supports|document)/.test(parts[0])) atRule = parts[1] + '{' + preprocessCss(parts[2], true).replace(/\n/g, ' ') + ' }'
-                    rules.push([[], [atRule.replace(/ *\n */g, ' ')]])
-                    atRule = null
-                }
-            } else if (token === '}') break; else if (tokens[0] === '{') { // next token is {
-                get(); // skip {
-                let deeperSelectors = []
-                token.split(/\s*,\s*/).forEach(tsel => selectors.forEach(sel =>
-                    deeperSelectors.push(
-                        tsel.indexOf('&') >= 0 ? tsel.replace(/^(.*?)\s*&/, (_, prefix) => prefix ? prefix + ' ' + sel.trim() : sel) : sel + ' ' + tsel
-                    )
-                ))
-                addRules(rules, deeperSelectors, [])
-            } else
-                styles.push(token)
-        }
-        return rules
-    }
 
-    const result = addRules([], [''], [])
-        .filter(([selectors, styles]) => styles[0])
-        .map(([selectors, styles]) => selectors + (selectors[0] ? ` { ${styles.join(' ')} }` : styles.join('\n')).replace(/ ;/g, ';'))
-        .join('\n')
-    return result
-}
 
 export const preprocessCss = (ncss, sub) => {
+
+    if( ncss instanceof MessageEvent){
+        // if it is called directly from a web worker
+        ncss = ncss.data
+    }
+
+    const flattenRules = (tokens) => {
+        function addRules(rules, selectors, styles) {
+            rules.push([selectors, styles])
+            const get = () => tokens.shift()
+            let atRule = null
+            let ll
+            for (let token = get(); token; token = get()) {
+                if (/^@/.test(token)) {
+                    atRule = '';
+                    ll = 0;
+                }
+                if (atRule !== null) {
+                    if (token !== ';') atRule += ' '
+                    atRule += token
+                    if (token === '{') ++ll
+                    if ((token === '}' && --ll === 0) || (token === ';' && ll === 0)) {
+                        const parts = /^([^{]+){([\s\S]*)}$/.exec(atRule)
+                        if (parts && /^\s*@(media|supports|document)/.test(parts[0])) atRule = parts[1] + '{' + preprocessCss(parts[2], true).replace(/\n/g, ' ') + ' }'
+                        rules.push([[], [atRule.replace(/ *\n */g, ' ')]])
+                        atRule = null
+                    }
+                } else if (token === '}') break; else if (tokens[0] === '{') { // next token is {
+                    get(); // skip {
+                    let deeperSelectors = []
+                    token.split(/\s*,\s*/).forEach(tsel => selectors.forEach(sel =>
+                        deeperSelectors.push(
+                            tsel.indexOf('&') >= 0 ? tsel.replace(/^(.*?)\s*&/, (_, prefix) => prefix ? prefix + ' ' + sel.trim() : sel) : sel + ' ' + tsel
+                        )
+                    ))
+                    addRules(rules, deeperSelectors, [])
+                } else
+                    styles.push(token)
+            }
+            return rules
+        }
+
+        const result = addRules([], [''], [])
+            .filter(a => a[1][0])
+            .map(a => a[0] + (a[0][0] ? ` { ${a[1].join(' ')} }` : a[1].join('\n')).replace(/ ;/g, ';'))
+            .join('\n')
+        return result
+    }
+
     const startTime = new Date()
     const tokens = []
     const quotes = []
@@ -60,9 +68,8 @@ export const preprocessCss = (ncss, sub) => {
         .replace(new RegExp(quoteToken + '(\\d+)', 'g'), (_, n) => quotes[n - 1]) // restore quotes
 
     if( !sub ) {
-        console.log(`css preprocessed in ${new Date() - startTime}ms`)
+        console.log(`css preprocessed in ${new Date() - startTime}ms with size ncss=${ncss.length} and css=${result.length}`)
     }
     return result
-
 
 }
