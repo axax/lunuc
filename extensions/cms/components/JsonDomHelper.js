@@ -389,7 +389,14 @@ class JsonDomHelper extends React.Component {
         }
 
         if (hovered || toolbarHovered || toolbarMenuOpen) {
+            const menuItems = [
+                {name: 'Edit', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)},
+                {name: 'Remove component', icon: <DeleteIcon/>, onClick: this.handleDeleteClick.bind(this)}
+            ]
 
+            if( !subJson.t || subJson.t.indexOf('$')<0){
+                menuItems.splice(1, 0,{name: 'Add child component', icon: <EditIcon/>, onClick: this.handleAddChildClick.bind(this)})
+            }
 
             toolbar = <div
                 key={rest._key + '.toolbar'}
@@ -405,11 +412,7 @@ class JsonDomHelper extends React.Component {
                     onClose={() => {
                         this.setState({hovered: false, toolbarHovered: false, toolbarMenuOpen: false})
                     }}
-                    className={classes.toolbarMenu} mini items={[
-                    {name: 'Edit', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)},
-                    {name: 'Add child component', icon: <EditIcon/>, onClick: this.handleAddChildClick.bind(this)},
-                    {name: 'Remove component', icon: <DeleteIcon/>, onClick: this.handleDeleteClick.bind(this)}
-                ]}/>
+                    className={classes.toolbarMenu} mini items={menuItems}/>
             </div>
 
             highlighter = <span

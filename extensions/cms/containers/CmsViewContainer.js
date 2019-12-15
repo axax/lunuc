@@ -1,60 +1,15 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from 'react-apollo'
-import compose from 'util/compose'
 import gql from 'graphql-tag'
-import {connect} from 'react-redux'
 import JsonDom from '../components/JsonDom'
 import config from 'gen/config'
-import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import Util from 'client/util'
 import DomUtil from 'client/util/dom'
 import {getType} from 'util/types'
-import * as CmsActions from '../actions/CmsAction'
-import {bindActionCreators} from 'redux'
-import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
-import Async from 'client/components/Async'
-import * as UserActions from '../../../client/actions/UserAction'
 import {classNameByPath} from '../util/jsonDomUtil'
-import {isEditMode, getSlugVersion, getGqlVariables, urlSensitivMap, settingKeyPrefix, gqlQueryKeyValue, gqlQuery} from '../util/cmsView'
-import withCmsEditor from './withCmsEditor'
-
-// admin pack
-const ErrorPage = (props) => <Async {...props}
-                                    load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorPage')}/>
-const Expandable = (props) => <Async {...props}
-                                     load={import(/* webpackChunkName: "admin" */ '../../../client/components/Expandable')}/>
-const DataResolverEditor = (props) => <Async {...props}
-                                             load={import(/* webpackChunkName: "admin" */ '../components/DataResolverEditor')}/>
-const TemplateEditor = (props) => <Async {...props}
-                                         load={import(/* webpackChunkName: "admin" */ '../components/TemplateEditor')}/>
-const ScriptEditor = (props) => <Async {...props}
-                                       load={import(/* webpackChunkName: "admin" */ '../components/ScriptEditor')}/>
-const ResourceEditor = (props) => <Async {...props}
-                                         load={import(/* webpackChunkName: "admin" */ '../components/ResourceEditor')}/>
-const DrawerLayout = (props) => <Async {...props} expose="DrawerLayout"
-                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const MenuList = (props) => <Async {...props} expose="MenuList"
-                                   load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const Button = (props) => <Async {...props} expose="Button"
-                                 load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const MenuListItem = (props) => <Async {...props} expose="MenuListItem"
-                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch"
-                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
-                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const Divider = (props) => <Async {...props} expose="Divider"
-                                  load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const UIProvider = (props) => <Async {...props} expose="UIProvider"
-                                     load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const ErrorHandler = (props) => <Async {...props}
-                                       load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorHandler')}/>
-const NetworkStatusHandler = (props) => <Async {...props}
-                                               load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/NetworkStatusHandler')}/>
-
-
+import {isEditMode, getSlugVersion, getGqlVariables, urlSensitivMap, gqlQuery} from '../util/cmsView'
+import withCms from './withCms'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -63,88 +18,43 @@ class CmsViewContainer extends React.Component {
     constructor(props) {
         super(props)
 
-        this.state = CmsViewContainer.propsToState(props, null)
-
         if (!props.dynamic && props.slug)
             document.title = props.slug
 
         this.setUpSubsciptions(props)
-        this.addResources(props, this.state)
+        this.addResources(props)
     }
 
-    static getDerivedStateFromProps(nextProps, prevState) {
-        if ((nextProps.cmsPage !== prevState.cmsPage && nextProps.cmsPage && nextProps.cmsPage.status !== 'updating')
-            || nextProps.keyValue !== prevState.keyValue) {
-            return CmsViewContainer.propsToState(nextProps, prevState)
-        }
-        return null
-    }
+    shouldComponentUpdate(props) {
 
-    static propsToState(props, state) {
-        const {template, script, serverScript, resources, dataResolver, ssr, urlSensitiv, status} = props.cmsPage || {}
-        let settings = null
-        if (props.keyValue) {
-            // TODO optimize so JSON.parse is only called once
-            try {
-                settings = JSON.parse(props.keyValue.value)
-            } catch (e) {
-                settings = {}
+        const {cmsPage} = props
+        const cmsPageOld = this.props.cmsPage
+        if (cmsPage) {
+            if (!cmsPageOld || (cmsPage.subscriptions !== cmsPageOld.subscriptions)) {
+                this.removeSubscriptions()
+                this.setUpSubsciptions(props)
             }
-        } else {
-            settings = {}
+
+            if (!cmsPageOld || cmsPage.resources !== cmsPageOld.resources) {
+                this.addResources(props)
+            }
         }
 
-        const result = {
-            keyValue: props.keyValue,
-            cmsPage: props.cmsPage,
-            settings,
-            template,
-            resources,
-            script,
-            serverScript,
-            dataResolver,
-            ssr,
-            urlSensitiv,
-            public: props.cmsPage && props.cmsPage.public
-        }
-        if (state && ['updating', 'updated'].indexOf(status) >= 0) {
-            // take value from state if there is any because it might be more up to date
-            result.template = state.template
-            result.script = state.script
-            result.serverScript = state.serverScript
-            result.dataResolver = state.dataResolver
-            result.resources = state.resources
-        }
-        return result
-    }
-
-    shouldComponentUpdate(props, state) {
-
-        //const start = window.performance.now()
-        if (props.cmsPage && (!this.props.cmsPage || (props.cmsPage.subscriptions !== this.props.cmsPage.subscriptions))) {
-            this.removeSubscriptions()
-            this.setUpSubsciptions(props)
-        }
-
-        if (this.state.resources !== state.resources) {
-            this.addResources(props, state)
-        }
-
-        if (!props.cmsPage && props.loading && this.props.loading) {
+        if (!cmsPage && props.loading && this.props.loading) {
             // if there is still no cmsPage and it is still loading
             // there is no need to update
             return false
         }
+        console.log(this.props.settings.inlineEditor !== props.settings.inlineEditor)
         // only update if it is needed
-        return !props.cmsPage ||
-            !this.props.cmsPage ||
-            props.cmsPage.slug !== this.props.cmsPage.slug ||
-            props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
-            props.cmsComponentEdit !== this.props.cmsComponentEdit ||
-            props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
+        return !cmsPage ||
+            !cmsPageOld ||
+            cmsPage.slug !== cmsPageOld.slug ||
+            cmsPage.modifiedAt !== cmsPageOld.modifiedAt ||
+            cmsPage.resolvedData !== cmsPageOld.resolvedData ||
             (!props.renewing && this.props.renewing) ||
             (
-                props.cmsPage.urlSensitiv && (
+                cmsPage.urlSensitiv && (
                     props.location.search !== this.props.location.search ||
                     props.location.hash !== this.props.location.hash)
             ) ||
@@ -153,70 +63,31 @@ class CmsViewContainer extends React.Component {
             props._props !== this.props._props ||
             /* only if in edit mode */
             (!props.dynamic && isEditMode(props) && (
-                state.template !== this.state.template ||
-                state.script !== this.state.script ||
-                state.serverScript !== this.state.serverScript ||
-                this.props.cmsPages !== props.cmsPages ||
-                this.state.settings.fixedLayout !== state.settings.fixedLayout ||
-                this.state.settings.inlineEditor !== state.settings.inlineEditor ||
-                this.state.settings.templateTab !== state.settings.templateTab ||
-                this.state.settings.drawerWidth !== state.settings.drawerWidth))
+                cmsPage.template !== cmsPageOld.template ||
+                cmsPage.script !== cmsPageOld.script ||
+                /* becuase it is passed to the JsonDom */
+                this.props.settings.inlineEditor !== props.settings.inlineEditor))
 
     }
 
     componentDidMount() {
         this.setUpSubsciptions(this.props)
-        if (isEditMode(this.props) && !this.props.dynamic) {
-            this._handleWindowClose = this.saveUnsafedChanges.bind(this)
-            window.addEventListener('beforeunload', this._handleWindowClose)
-            window.addEventListener('blur', this._handleWindowClose)
-            this.props.history.listen(() => {
-                this.saveUnsafedChanges()
-            })
-        }
     }
 
     componentWillUnmount() {
         if (!this.props.dynamic) {
             document.title = this.oriTitle
-
-            if (isEditMode(this.props)) {
-                this.saveUnsafedChanges()
-                window.removeEventListener('beforeunload', this._handleWindowClose)
-                window.removeEventListener('blur', this._handleWindowClose)
-            }
         }
         this.removeSubscriptions()
     }
 
     render() {
-        const {slug, cmsPage, cmsPages, cmsComponentEdit, location, history,
-            match, _parentRef, _key, _props, id, renewing, aboutToChange, loading,
-            className, children, user, dynamic, client, fetchMore, userActions} = this.props
-        let {template, resources, script, serverScript, dataResolver, settings} = this.state
+        const {slug, cmsPage, children, dynamic, fetchMore, settings, setKeyValue, onTemplateChange, ...props} = this.props
         const editMode = isEditMode(this.props)
+
         if (!cmsPage) {
-
-            if (!loading && !aboutToChange) {
-                console.warn(`cmsPage ${slug} missing`)
-                if (!dynamic) {
-
-                    // add meta tag here instead of in the ErrorPage. It is faster, because for the ErrorPage we need to load extra bundles
-                    DomUtil.createAndAddTag('meta', 'head', {
-                        name: 'robots',
-                        content: 'noindex, nofollow',
-                        id: 'errorPageNoindex'
-                    })
-
-
-                    return <ErrorPage/>
-                } else {
-                    return <div>Cms page {slug} doesn't exist</div>
-                }
-            }
             // show a loader here
-            return !dynamic && editMode ? <NetworkStatusHandler/> :
-                <div className={classNameByPath(slug, 'Cms--loading')}/>
+            return <div className={classNameByPath(slug, 'Cms--loading')}/>
         } else {
             // set page title
             // TODO: make tile localized
@@ -228,28 +99,21 @@ class CmsViewContainer extends React.Component {
             // it was already rendered on the server side
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
+
         const startTime = new Date()
-        const jsonDom = <JsonDom id={id}
-                                 dynamic={dynamic}
+        const content = <JsonDom
                                  clientQuery={this.clientQuery.bind(this)}
                                  serverMethod={this.serverMethod.bind(this)}
-                                 setKeyValue={this.setKeyValue.bind(this)}
-                                 className={className}
-                                 template={template}
-                                 script={script}
-                                 userActions={userActions}
+                                 setKeyValue={setKeyValue}
+                                 template={cmsPage.template}
+                                 script={cmsPage.script}
                                  resolvedData={cmsPage.resolvedData}
                                  parseResolvedData={cmsPage.parseResolvedData}
                                  resources={cmsPage.resources}
                                  editMode={editMode}
-                                 renewing={renewing}
-                                 aboutToChange={aboutToChange}
-                                 inlineEditor={!!settings.inlineEditor}
-                                 history={history}
-                                 location={location}
-                                 match={match}
-                                 user={user}
+                                 inlineEditor={settings && !!settings.inlineEditor}
                                  slug={slug}
+                                 dynamic={dynamic}
                                  subscriptionCallback={cb => {
                                      this._subscriptionCallback = cb
                                  }}
@@ -263,197 +127,24 @@ class CmsViewContainer extends React.Component {
                                          }
                                      })
                                  }}
-                                 onChange={this.handleTemplateChange}
-                                 _parentRef={_parentRef}
-                                 _key={_key}
-                                 _props={_props}>{children}</JsonDom>
-        let content
-
-        if (!editMode || dynamic) {
-            content = jsonDom
-        } else {
-            const sidebar = () => <div>
-
-                <MenuList>
-                    <MenuListItem onClick={e => {
-                        const win = window.open(location.pathname + '?preview=true', '_blank')
-                        win.focus()
-                    }} button primary="Preview"/>
-                </MenuList>
-                <Divider/>
-
-                <div style={{padding: '10px'}}>
-
-                    <Expandable title="Data resolver"
-                                onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
-                                expanded={settings.dataResolverExpanded}>
-                        <DataResolverEditor
-                            onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll')}
-                            scrollPosition={settings.dataResolverScroll}
-                            onBlur={() => {
-                                this.saveUnsafedChanges()
-                            }}
-                            onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
-                    </Expandable>
-
-                    <Expandable title="Server Script"
-                                onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
-                                expanded={settings.serverScriptExpanded}>
-                        <ScriptEditor
-                            onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll')}
-                            scrollPosition={settings.serverScriptScroll}
-                            onChange={this.handleServerScriptChange.bind(this)}>{serverScript}</ScriptEditor>
-                    </Expandable>
-
-                    <Expandable title="Template"
-                                onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
-                                expanded={settings.templateExpanded}>
-                        <TemplateEditor
-                            onScroll={this.handleSettingChange.bind(this, 'templateScroll')}
-                            scrollPosition={settings.templateScroll}
-                            tab={settings.templateTab}
-                            onTabChange={(tab) => {
-                                if (this._autoSaveTemplate) {
-                                    this._autoSaveTemplate()
-                                }
-                                this.handleSettingChange('templateTab', tab)
-                            }}
-                            onChange={this.handleTemplateChange.bind(this)}>{template}</TemplateEditor>
-                    </Expandable>
-
-                    <Expandable title="Script"
-                                onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
-                                expanded={settings.scriptExpanded}>
-                        <ScriptEditor
-                            onScroll={this.handleSettingChange.bind(this, 'scriptScroll')}
-                            scrollPosition={settings.scriptScroll}
-                            onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
-                    </Expandable>
+                                 onChange={onTemplateChange} {...props}>{children}</JsonDom>
 
 
-                    <Expandable title="Static assets"
-                                onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
-                                expanded={settings.resourceExpanded}>
-
-                        <ResourceEditor resources={resources}
-                                        onChange={this.handleResourceChange.bind(this)}></ResourceEditor>
-                    </Expandable>
-
-
-                    <Expandable title="Settings"
-                                onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
-                                expanded={settings.settingsExpanded}>
-
-                        <SimpleSwitch
-                            label="SSR (Server side Rendering)"
-                            checked={!!this.state.ssr}
-                            onChange={this.handleFlagChange.bind(this, 'ssr')}
-                        />
-                        <SimpleSwitch
-                            label="Public (is visible to everyone)"
-                            checked={!!this.state.public}
-                            onChange={this.handleFlagChange.bind(this, 'public')}
-                        />
-                        <SimpleSwitch
-                            label="Url sensitive (refresh component on url change)"
-                            checked={!!this.state.urlSensitiv}
-                            onChange={this.handleFlagChange.bind(this, 'urlSensitiv')}
-                        />
-                    </Expandable>
-
-                    <Expandable title="Revisions"
-                                onChange={this.handleSettingChange.bind(this, 'revisionsExpanded')}
-                                expanded={settings.revisionsExpanded}>
-                        To be implemented
-                    </Expandable>
-
-
-                    {cmsPages && cmsPages.results && cmsPages.results.length > 1 &&
-
-                    <Expandable title="Related pages"
-                                onChange={this.handleSettingChange.bind(this, 'relatedPagesExpanded')}
-                                expanded={settings.relatedPagesExpanded}>
-                        <MenuList>
-                            {
-                                cmsPages.results.map(i => {
-                                        if (i.slug !== slug) {
-                                            return <MenuListItem key={i.slug} onClick={e => {
-                                                history.push('/' + i.slug)
-                                            }} button primary={i.slug}/>
-                                        }
-                                    }
-                                )
-                            }
-
-                        </MenuList>
-                    </Expandable>
-                    }
-
-                </div>
-            </div>
-            content = <UIProvider><DrawerLayout sidebar={sidebar()}
-                                                open={settings.drawerOpen}
-                                                fixedLayout={settings.fixedLayout}
-                                                drawerWidth={settings.drawerWidth}
-                                                onDrawerOpenClose={this.drawerOpenClose}
-                                                onDrawerWidthChange={this.drawerWidthChange}
-                                                toolbarRight={[
-                                                    <SimpleSwitch key="inlineEditorSwitch" color="default"
-                                                                  checked={!!settings.inlineEditor}
-                                                                  onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
-                                                                  contrast
-                                                                  label="Inline Editor"/>,
-                                                    <SimpleSwitch key="fixedLayoutSwitch" color="default"
-                                                                  checked={!!settings.fixedLayout}
-                                                                  onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
-                                                                  contrast
-                                                                  label="Fixed"/>,
-
-                                                    <Button key="button" size="small" color="inherit" onClick={e => {
-                                                        this.props.history.push(config.ADMIN_BASE_URL + '/cms'+(_app_._cmsLastSearch?_app_._cmsLastSearch:''))
-                                                    }}>Back</Button>
-                                                ]
-                                                }
-                                                title={`Edit Page "${slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
-                {jsonDom}
-                <ErrorHandler snackbar/>
-                <NetworkStatusHandler/>
-
-                <SimpleDialog open={!!cmsComponentEdit.key} onClose={this.handleComponentEditClose.bind(this)}
-                              actions={[{
-                                  key: 'ok',
-                                  label: 'Ok',
-                                  type: 'primary'
-                              }]}
-                              title="Edit Component">
-
-                    <TemplateEditor
-                        fabButtonStyle={{bottom: '3rem', right: '1rem'}}
-                        component={cmsComponentEdit}
-                        tab={settings.templateTab}
-                        onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
-                        onChange={this.handleTemplateChange.bind(this)}/>
-
-                </SimpleDialog>
-
-
-            </DrawerLayout></UIProvider>
-        }
-
-        console.info(`render ${this.constructor.name} for ${slug} (loading=${loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
+        console.info(`render ${this.constructor.name} for ${slug} (loading=${this.props.loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
         return content
     }
 
 
-    addResources(props, state) {
-        const {dynamic} = props
-        let {resources} = state
+    addResources(props) {
+        const {dynamic, cmsPage} = props
 
-        if (!dynamic) {
-            console.log('refresh resources', props.slug)
+        if (!dynamic && cmsPage) {
+            const {resources} = cmsPage
 
             DomUtil.removeElements(`[data-cms-view]`)
             if (resources) {
+                console.log('refresh resources', props.slug)
+
                 try {
                     const a = JSON.parse(resources)
                     for (let i = 0; i < a.length; i++) {
@@ -495,32 +186,7 @@ class CmsViewContainer extends React.Component {
         }
     }
 
-    saveUnsafedChanges() {
-        // blur on unload to make sure everything gets saved
-        document.activeElement.blur()
 
-        // clear timeouts
-        if (this.saveSettingsTimeout) {
-            this._saveSettings()
-        }
-
-        if (this._autoSaveScriptTimeout) {
-            this._autoSaveScript()
-        }
-
-        if (this._autoSaveServerScriptTimeout) {
-            this._autoSaveServerScript()
-        }
-
-        clearTimeout(this._templateTimeout)
-        if (this._autoSaveTemplateTimeout) {
-            this._autoSaveTemplate()
-        }
-        if (this._autoSaveDataResolverTimeout) {
-            this._autoSaveDataResolver()
-        }
-        return true
-    }
 
     removeSubscriptions() {
         // remove all subscriptions
@@ -675,155 +341,7 @@ class CmsViewContainer extends React.Component {
         })
     }
 
-    saveCmsPage = (value, data, key) => {
-        if (value !== data[key]) {
 
-            console.log('save cms', key)
-
-            const {updateCmsPage} = this.props
-
-            updateCmsPage(
-                Object.assign({}, data, {[key]: value}), key, () => {
-                    console.log('done')
-                }
-            )
-        }
-    }
-
-    handleFlagChange = (key, e, flag) => {
-        this.setState({[key]: flag})
-        this.saveCmsPage(flag, this.props.cmsPage, key)
-    }
-
-
-    handleClientScriptChange = (script) => {
-        if (script.length > 10000) {
-            // delay change for bigger script
-            clearTimeout(this._scriptTimeout)
-            this._scriptTimeout = setTimeout(() => {
-                this._scriptTimeout=null
-                this.setState({script})
-            }, 200)
-
-        } else {
-            this.setState({script})
-        }
-
-        this._autoSaveScript = () => {
-            if(this._scriptTimeout){
-                this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
-            }else {
-                clearTimeout(this._autoSaveScriptTimeout)
-                this._autoSaveScriptTimeout = 0
-                this.saveCmsPage(script, this.props.cmsPage, 'script')
-            }
-        }
-
-        clearTimeout(this._autoSaveScriptTimeout)
-        this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
-    }
-
-    handleServerScriptChange = (serverScript) => {
-        this.setState({serverScript})
-        this._autoSaveServerScript = () => {
-            clearTimeout(this._autoSaveServerScriptTimeout)
-            this._autoSaveServerScriptTimeout = 0
-            this.saveCmsPage(serverScript, this.props.cmsPage, 'serverScript')
-        }
-
-        clearTimeout(this._autoSaveServerScriptTimeout)
-        this._autoSaveServerScriptTimeout = setTimeout(this._autoSaveServerScript, 5000)
-    }
-
-    handleDataResolverChange = (str, instantSave) => {
-        this.setState({dataResolver: str})
-        this._autoSaveDataResolver = () => {
-            clearTimeout(this._autoSaveDataResolverTimeout)
-            this._autoSaveDataResolverTimeout = 0
-            this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
-        }
-
-        clearTimeout(this._autoSaveDataResolverTimeout)
-        if (instantSave) {
-            this.saveSettings()
-            this._autoSaveDataResolver()
-        } else {
-            this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, 5000)
-        }
-    }
-
-    handleTemplateChange = (str, instantSave) => {
-        clearTimeout(this._templateTimeout)
-        this._templateTimeout = setTimeout(() => {
-
-            if (str.constructor !== String) {
-                str = JSON.stringify(str, null, 2)
-            }
-
-            this.setState({template: str, templateError: null})
-            this._autoSaveTemplate = () => {
-                clearTimeout(this._autoSaveTemplateTimeout)
-                this._autoSaveTemplateTimeout = 0
-                this._autoSaveTemplate = null
-                this.saveCmsPage(str, this.props.cmsPage, 'template')
-            }
-
-            clearTimeout(this._autoSaveTemplateTimeout)
-            if (instantSave) {
-                this._autoSaveTemplate()
-            } else {
-                this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 5000)
-            }
-
-        }, instantSave ? 0 : 250)
-    }
-
-    handleResourceChange = (str) => {
-        this.setState({resources: str})
-        this.saveCmsPage(str, this.props.cmsPage, 'resources')
-    }
-
-    drawerWidthChange = (newWidth) => {
-        this.handleSettingChange('drawerWidth', newWidth)
-    }
-
-    drawerOpenClose = (open) => {
-        this.handleSettingChange('drawerOpen', open)
-    }
-
-    handleComponentEditClose() {
-        const {_cmsActions, cmsComponentEdit} = this.props
-        this.saveCmsPage(this.state.template, this.props.cmsPage, 'template')
-        _cmsActions.editCmsComponent(null, cmsComponentEdit.component, cmsComponentEdit.scope)
-    }
-
-    handleSettingChange(key, any) {
-        let value
-
-        if (any.target) {
-            if (any.target.type === 'checkbox') {
-                value = any.target.checked
-            } else {
-                value = any.target.value
-            }
-        } else {
-            value = any
-        }
-        this.setState({settings: Object.assign({}, this.state.settings, {[key]: value})}, this.saveSettings)
-    }
-
-    saveSettings() {
-        const key = settingKeyPrefix + this.props.slug, settings = this.state.settings
-
-        this._saveSettings = () => {
-            clearTimeout(this.saveSettingsTimeout)
-            this.saveSettingsTimeout = 0
-            this.setKeyValue(key, settings, false, true)
-        }
-
-        clearTimeout(this.saveSettingsTimeout)
-        this.saveSettingsTimeout = setTimeout(this._saveSettings, 5000)
-    }
 
     clientQuery(query, options) {
         const {client} = this.props
@@ -862,125 +380,10 @@ class CmsViewContainer extends React.Component {
         }).then(cb).catch(cb)
     }
 
-    updateResolvedData(json) {
-
-        const {client, cmsPageVariables} = this.props
-
-        const storeData = client.readQuery({
-            query: gqlQuery,
-            variables: cmsPageVariables
-        })
-
-        // upadate data in resolvedData string
-        if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
-
-            storeData.cmsPage.resolvedData = JSON.stringify(json)
-            client.writeQuery({
-                query: gqlQuery,
-                variables: cmsPageVariables,
-                data: storeData
-            })
-        }
-    }
-
-
-    setKeyValue(arg1, arg2, arg3, arg4) {
-        let key, value, server, internal
-        if (arg1.constructor === String) {
-            key = arg1
-            value = arg2
-            server = arg3
-            internal = arg4
-        } else if (arg1.constructor === Object) {
-            key = arg1.key
-            value = arg1.value
-            server = arg1.server
-            internal = arg1.internal
-        }
-
-
-        if (!key || !value) {
-            return
-        }
-        const {client, user, cmsPage, slug} = this.props
-        const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
-        const kvk = resolvedDataJson._meta && resolvedDataJson._meta.keyValueKey
-        if (kvk) {
-            if (!resolvedDataJson[kvk]) {
-                resolvedDataJson[kvk] = {}
-            }
-            resolvedDataJson[kvk][key] = value
-        }
-
-        if (value.constructor === Object) {
-            value = JSON.stringify(value)
-        }
-        const variables = {
-            key,
-            value
-        }
-
-        if (user.isAuthenticated) {
-            client.mutate({
-                mutation: gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`,
-                variables,
-                update: (store, {data: {setKeyValue}}) => {
-                    if (internal) {
-
-                        const storedData = store.readQuery({
-                            query: gqlQueryKeyValue,
-                            variables: {key: settingKeyPrefix + slug}
-                        })
-
-                        let newData = {keyValue: null}
-                        if (storedData.keyValue) {
-                            newData.keyValue = Object.assign({}, storedData.keyValue, {value: setKeyValue.value})
-                        } else {
-                            newData.keyValue = setKeyValue
-                        }
-
-                        // Write our data back to the cache.
-                        store.writeQuery({
-                            query: gqlQueryKeyValue,
-                            variables: {key: settingKeyPrefix + slug},
-                            data: newData
-                        })
-
-                    } else {
-                        this.updateResolvedData(resolvedDataJson)
-                    }
-                },
-            })
-            // clear local key values as there is a user session now
-            localStorage.removeItem(NO_SESSION_KEY_VALUES)
-            localStorage.removeItem(NO_SESSION_KEY_VALUES_SERVER)
-        } else {
-            const localStorageKey = server ? NO_SESSION_KEY_VALUES_SERVER : NO_SESSION_KEY_VALUES
-            // if there is no user session store key value temporary in the localStorage
-            const kv = localStorage.getItem(localStorageKey)
-            let json
-            if (kv) {
-                try {
-                    json = JSON.parse(kv)
-                } catch (e) {
-                    json = {}
-                }
-            } else {
-                json = {}
-            }
-            json[key] = value
-            localStorage.setItem(localStorageKey, JSON.stringify(json))
-            if (!internal) {
-                this.updateResolvedData(resolvedDataJson)
-            }
-        }
-
-    }
 }
 
 
 CmsViewContainer.propTypes = {
-    className: PropTypes.string,
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
     renewing: PropTypes.bool,
@@ -990,110 +393,20 @@ CmsViewContainer.propTypes = {
     cmsPageVariables: PropTypes.object,
     cmsPage: PropTypes.object,
     cmsPages: PropTypes.object,
-    cmsComponentEdit: PropTypes.object,
     keyValue: PropTypes.object,
+    setKeyValue: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
     user: PropTypes.object.isRequired,
     /* with Router */
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
     match: PropTypes.object.isRequired,
-    /* Reference to the parent JsonDom */
-    _parentRef: PropTypes.object,
-    _key: PropTypes.string,
     /* Object is passed to JsonDom */
     _props: PropTypes.object,
-    id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another CmsViewContainer */
     dynamic: PropTypes.bool,
     /* if true data gets refetched with query on url change*/
-    urlSensitiv: PropTypes.bool,
-    /* actions */
-    _cmsActions: PropTypes.object.isRequired,
-    userActions: PropTypes.object.isRequired,
-    fetchPolicy: PropTypes.string
+    urlSensitiv: PropTypes.bool
 }
 
-
-
-const CmsViewContainerWithGql = compose(
-    graphql(gqlQuery, {
-        skip: props => props.aboutToChange,
-        options(ownProps) {
-            return {
-                variables: getGqlVariables(ownProps),
-                fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network')
-            }
-        },
-        props: ({data: {loading, cmsPage, variables, fetchMore}, ownProps}) => {
-            const result = {
-                cmsPageVariables: variables,
-                loading,
-                fetchMore,
-                cmsPage,
-                renewing: false,
-                aboutToChange: false
-            }
-
-            if (cmsPage) {
-                if (variables.slug !== cmsPage.slug) {
-                    // we define a new state here when component is reused with a new slug
-                    result.aboutToChange = true
-                } else {
-                    // check if query changed
-                    let query = cmsPage.cacheKey.split('#')[0]
-                    if (!query) query = undefined
-                    if (query !== variables.query) {
-                        // renewing is another state
-                        // the difference to loading is that it is set to true if the page has already been loading before
-                        result.renewing = true
-                    }
-                }
-                urlSensitivMap[cmsPage.slug] = !!cmsPage.urlSensitiv
-
-                if (!loading && !cmsPage.urlSensitiv && variables.query) {
-                    // update cache to avoid second unneeded request
-                    const data = ownProps.client.readQuery({
-                        query: gqlQuery,
-                        variables
-                    })
-                    delete variables.query
-                    ownProps.client.writeQuery({query: gqlQuery, variables, data})
-                }
-
-            }
-            return result
-        }
-    })
-)(CmsViewContainer)
-
-
-/**
- * Map the state to props.
- */
-const mapStateToProps = (store) => {
-    return {
-        cmsComponentEdit: store.cms.edit,
-        user: store.user
-    }
-}
-
-
-/**
- * Map the actions to props.
- */
-const mapDispatchToProps = (dispatch) => ({
-    userActions: bindActionCreators(UserActions, dispatch),
-    _cmsActions: bindActionCreators(CmsActions, dispatch)
-})
-
-
-/**
- * Connect the component to
- * the Redux store.
- */
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(withApollo(withCmsEditor(CmsViewContainerWithGql)))
-
+export default withCms(CmsViewContainer)

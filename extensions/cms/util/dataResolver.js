@@ -289,8 +289,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                             referrer: req.header('referrer'), //  Likewise for referrer
                             ip: req.header('x-forwarded-for') || req.connection.remoteAddress, // Get IP - allow for proxy
                             screen: { // Get screen info that we passed in url post data
-                                width: req.param('width'),
-                                height: req.param('height')
+                                width: req.params.width,
+                                height: req.params.height
                             }
                         }
                     }

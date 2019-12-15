@@ -127,9 +127,13 @@ function mainInit() {
                     }
                 })
             } else {
+
+                //window.Notification.requestPermission()
+
+
                 navigator.serviceWorker.register('/serviceworker.js')
                     .then(function (swReg) {
-                        console.log('Service Worker is registered', swReg)
+                        console.log('Service Worker is registered')
                     })
                     .catch(function (error) {
                         console.error('Service Worker Error', error)

@@ -1187,8 +1187,7 @@ JsonDom.propTypes = {
     children: PropTypes.any,
     id: PropTypes.string,
     /* if dynamic is set to true that means it is a child of another JsonDom */
-    dynamic: PropTypes.bool,
-    userActions: PropTypes.object.isRequired,
+    dynamic: PropTypes.bool
 }
 
 export default JsonDom
