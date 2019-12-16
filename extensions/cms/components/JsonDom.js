@@ -372,7 +372,6 @@ class JsonDom extends React.Component {
         }
 
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope, true)
-
         if (content && this._inHtmlComponents.length > 0) {
             content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
         }
@@ -454,15 +453,13 @@ class JsonDom extends React.Component {
     }
 
 
-    emitJsonError(e) {
+    emitJsonError(e, meta) {
         const {onError} = this.props
-
-        this.parseError = e
 
         if (!onError)
             return
 
-        onError(e)
+        onError(e, meta)
     }
 
     parseRec(a, rootKey, scope, initial) {
@@ -475,7 +472,7 @@ class JsonDom extends React.Component {
 
             if (!item) return
 
-            const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop} = item
+            const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $edit} = item
             /*
              t = type
              c = children
@@ -495,30 +492,31 @@ class JsonDom extends React.Component {
 
 
             if ($is && $is !== 'true') {
-                if($is==='false'){
+                if ($is === 'false') {
                     return
                 }
                 const match = $is.match(/([\w|\.]*)(==|\!=)(.*)/)
-                if( match && match.length===4) {
+                if (match && match.length === 4) {
                     let prop
                     try {
                         prop = Util.propertyByPath(match[1], scope)
-                    }catch (e) {}
+                    } catch (e) {
+                    }
 
-                    if(match[2]==='=='){
-                        if(match[3]!==String(prop)){
+                    if (match[2] === '==') {
+                        if (match[3] !== String(prop)) {
                             return
                         }
                     }
-                    if(match[2]==='!='){
-                        if(match[3]===String(prop)){
+                    if (match[2] === '!=') {
+                        if (match[3] === String(prop)) {
                             return
                         }
                     }
                 }
             }
 
-            if ($if ){
+            if ($if) {
                 // check condition --> slower than to check with $ifexist
                 try {
                     const tpl = new Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};return  ${$if}`)
@@ -563,7 +561,8 @@ class JsonDom extends React.Component {
                         // get data from scope by path (foo.bar)
                         data = Util.propertyByPath($d, scope)
                     } catch (e) {
-                        this.emitJsonError(e)
+                        //this.parseError = e
+                        this.emitJsonError(e, {loc: 'Loop Datasrouce'})
                     }
                 } else {
                     if (d && d.constructor === String) {
@@ -574,20 +573,20 @@ class JsonDom extends React.Component {
                             })
                         } catch (e) {
                             console.log(e, d)
-                            return 'Error in parseRec (in data source for loop): ' + e.message
+                            this.emitJsonError(e, {loc: 'Loop Datasource'})
                         }
                     } else {
                         data = d
                     }
                 }
-                if (!data) return ''
+                if (!data) return
                 if (data.constructor === Object) {
                     data = Object.keys(data).map((k) => {
                         return {key: k, value: data[k]}
                     })
                 }
 
-                if (data.constructor !== Array) return ''
+                if (data.constructor !== Array) return
                 let {s} = loopOrFor
                 if (!s) s = 'loop'
                 /*
@@ -643,11 +642,14 @@ class JsonDom extends React.Component {
 
                     })
                 } catch (ex) {
+
+                    this.emitJsonError(ex, {loc: "Loop"})
+
                     console.log(ex, c)
                     if (ex.message.startsWith('Unexpected token')) {
                         console.error('There is an error in the Json. Try to use Util.escapeForJson')
                     }
-                    return 'Error in parseRec: ' + ex.message
+                    return
                 }
 
 
@@ -655,8 +657,8 @@ class JsonDom extends React.Component {
 
                 const {editMode, location, match, dynamic, history, children} = this.props
 
-                const key = rootKey + '.' + aIdx
-                let tagName, className, properties = {}
+                const key = rootKey + '.' + aIdx, eleProps = {}
+                let tagName, className
                 if (!t || t.constructor !== String) {
                     tagName = 'div'
                 } else if (t === '$children') {
@@ -668,7 +670,7 @@ class JsonDom extends React.Component {
                     // editable
                     tagName = t.slice(0, -1) // remove last char
                     if (editMode && !dynamic) {
-                        properties.tag = tagName
+                        eleProps.tag = tagName
                         tagName = 'ContentEditable'
                     }
                 } else {
@@ -692,60 +694,57 @@ class JsonDom extends React.Component {
                             p[key] === '' && delete p[key]
                         }
                     })
-                    properties = Object.assign(properties, p)
+                    Object.assign(eleProps, p)
                     // replace events with real functions and pass payload
                     JsonDom.events.forEach((e) => {
-                        if (properties['on' + e] && properties['on' + e].constructor === Object) {
-                            const payload = properties['on' + e]
-                            properties['on' + e] = (...args) => {
+                        if (eleProps['on' + e] && eleProps['on' + e].constructor === Object) {
+                            const payload = eleProps['on' + e]
+                            eleProps['on' + e] = (...args) => {
                                 const eLower = e.toLowerCase()
                                 this.runJsEvent(eLower, false, payload, ...args)
                             }
                         }
                     })
-                    if (properties.style && properties.style.constructor === String) {
+                    if (eleProps.style && eleProps.style.constructor === String) {
                         //Parses a string of inline styles into a javascript object with casing for react
-                        properties.style = parseStyles(properties.style)
+                        eleProps.style = parseStyles(eleProps.style)
                     }
-                    if (properties.name) {
+                    if (eleProps.name) {
                         // handle controlled input here
-                        if (properties.value === undefined) {
-                            properties.value = (properties.type === 'checkbox' ? false : '')
+                        if (eleProps.value === undefined) {
+                            eleProps.value = (eleProps.type === 'checkbox' ? false : '')
                         }
-                        if (!this.bindings[properties.name]) {
-                            this.bindings[properties.name] = properties.value
+                        if (!this.bindings[eleProps.name]) {
+                            this.bindings[eleProps.name] = eleProps.value
                         } else {
-                            properties.value = this.bindings[properties.name]
+                            eleProps.value = this.bindings[eleProps.name]
                         }
-                        properties.onChange = this.handleBindingChange.bind(this, properties.onChange)
+                        eleProps.onChange = this.handleBindingChange.bind(this, eleProps.onChange)
 
-                        properties.time = new Date()
-                    } else if (properties.value && tagName !== 'option') {
+                        eleProps.time = new Date()
+                    } else if (eleProps.value && tagName !== 'option') {
                         console.warn(`Don't use property value without name in ${scope.page.slug}`)
                     }
-                    if (properties.props && properties.props.$data) {
-                        properties.props.data = Object.assign(Util.propertyByPath(properties.props.$data, scope), properties.props.data)
+                    if (eleProps.props && eleProps.props.$data) {
+                        eleProps.props.data = Object.assign(Util.propertyByPath(eleProps.props.$data, scope), eleProps.props.data)
                     }
                 }
 
 
                 let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
+                eleProps.key = eleProps._key = key
+
                 if (eleType.constructor === Object) {
                     eleType = eleType.component
                 }
-                const eleProps = Object.assign({
-                        key,
-                        _key: key,
-                        location,
-                        history,
-                        match
-                    }, properties
-                )
 
                 if (t === 'Cms') {
                     // if we have a cms component in another cms component the location props gets not refreshed
                     // that's way we pass it directly to the reactElement as a prop
+                    eleProps.location = location
+                    eleProps.history = history
+                    eleProps.match = match
                     eleProps._this = this
                 }
 
@@ -757,10 +756,11 @@ class JsonDom extends React.Component {
                     eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                 }
 
-                if (editMode && this.props.inlineEditor && (initial || !dynamic)) {
+                if (editMode && this.props.inlineEditor && (initial || !dynamic || $edit)) {
                     const rawJson = this.getJsonRaw(this.props, true)
                     if (rawJson) {
                         eleProps._WrappedComponent = eleType
+                        eleProps._edit = $edit
                         eleProps._scope = scope
                         eleProps._json = rawJson
                         eleProps._onchange = this.props.onChange
@@ -779,7 +779,6 @@ class JsonDom extends React.Component {
                         {key: key}
                     ))
                 } else {
-
                     h.push(React.createElement(
                         eleType,
                         eleProps,
@@ -835,7 +834,7 @@ class JsonDom extends React.Component {
             this.json = JSON.parse(this.renderTemplate(template, scope))
         } catch (e) {
             console.log(e, this.renderTemplate(template, scope))
-            this.emitJsonError(e)
+            this.parseError = e
         }
         return this.json
     }
@@ -855,8 +854,9 @@ class JsonDom extends React.Component {
             this.jsonRaw = JSON.parse(template)
         } catch (e) {
             console.log(e, template)
-            if (!ignoreError)
-                this.emitJsonError(e)
+            if (!ignoreError) {
+                this.parseError = e
+            }
         }
         return this.jsonRaw
     }
@@ -922,7 +922,7 @@ class JsonDom extends React.Component {
             }).replace(/\t/g, '\\t')
 
         } catch (e) {
-            //this.emitJsonError(e)
+            this.emitJsonError(e, {loc: 'Template'})
             console.error('Error in renderTemplate', e)
             return str
         }
@@ -1094,18 +1094,18 @@ class JsonDom extends React.Component {
                 id
             })
         }
-        if( preprocess ){
+        if (preprocess) {
 
-            if( inworker ) {
+            if (inworker) {
                 // process in web worker
                 Util.createWorker(preprocessCss).run(style).then(e => {
                     addTag(e.data)
                 })
-            }else{
+            } else {
                 addTag(preprocessCss(style))
             }
 
-        }else{
+        } else {
             addTag(style)
         }
     }

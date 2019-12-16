@@ -5,7 +5,8 @@ import {withApollo} from 'react-apollo'
 import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
 import {getImageTag, getImageSrc} from 'client/util/media'
-import {typeDataToLabel, queryStatemantForType} from 'util/types'
+import {queryStatemantForType} from 'util/types'
+import {typeDataToLabel} from 'util/typesAdmin'
 
 const styles = {
     root: {

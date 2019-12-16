@@ -20,6 +20,14 @@ import ResourceEditor from '../components/ResourceEditor'
 import {DrawerLayout, MenuList, MenuListItem, Button, SimpleSwitch, SimpleDialog, Divider, UIProvider} from 'ui/admin'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import config from 'gen/config'
+import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
+import {connect} from 'react-redux'
+import {bindActionCreators} from 'redux'
+import * as CmsActions from '../actions/CmsAction'
+import {getTypeQueries} from 'util/types'
+import {Query} from 'react-apollo'
+import TypeEdit from '../../../client/components/types/TypeEdit'
+import withType from '../../../client/components/types/withType'
 
 
 class CmsViewEditorContainer extends React.Component {
@@ -106,6 +114,7 @@ class CmsViewEditorContainer extends React.Component {
             props.cmsPage.slug !== this.props.cmsPage.slug ||
             props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
             props.cmsComponentEdit !== this.props.cmsComponentEdit ||
+            props.cmsEditData !== this.props.cmsEditData ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             (!props.renewing && this.props.renewing) ||
             (
@@ -116,21 +125,19 @@ class CmsViewEditorContainer extends React.Component {
             props.user !== this.props.user ||
             props.children != this.props.children ||
             props._props !== this.props._props ||
-            /* only if in edit mode */
-            (!props.dynamic && isEditMode(props) && (
-                state.template !== this.state.template ||
-                state.script !== this.state.script ||
-                state.serverScript !== this.state.serverScript ||
-                this.props.cmsPages !== props.cmsPages ||
-                this.state.settings.fixedLayout !== state.settings.fixedLayout ||
-                this.state.settings.inlineEditor !== state.settings.inlineEditor ||
-                this.state.settings.templateTab !== state.settings.templateTab ||
-                this.state.settings.drawerWidth !== state.settings.drawerWidth))
+            state.template !== this.state.template ||
+            state.script !== this.state.script ||
+            state.serverScript !== this.state.serverScript ||
+            this.props.cmsPages !== props.cmsPages ||
+            this.state.settings.fixedLayout !== state.settings.fixedLayout ||
+            this.state.settings.inlineEditor !== state.settings.inlineEditor ||
+            this.state.settings.templateTab !== state.settings.templateTab ||
+            this.state.settings.drawerWidth !== state.settings.drawerWidth
 
     }
 
     render() {
-        const {WrappedComponent, cmsPages, cmsPage, cmsComponentEdit, ...props} = this.props
+        const {WrappedComponent, cmsPages, cmsPage, cmsEditData, cmsComponentEdit, ...props} = this.props
 
         const {template, resources, script, settings, dataResolver, serverScript } = this.state
 
@@ -290,7 +297,8 @@ class CmsViewEditorContainer extends React.Component {
                           ]
                           }
                           title={`Edit Page "${props.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
-                {settings._ready && <WrappedComponent settings={settings} cmsPage={cmsPageWithState} onTemplateChange={this.handleTemplateChange} {...props} />}
+                {settings._ready && <WrappedComponent  onChange={this.handleTemplateChange}
+                                                       onError={this.handleCmsError.bind(this)} settings={settings} cmsPage={cmsPageWithState}  {...props} />}
                 <ErrorHandler snackbar/>
                 <NetworkStatusHandler/>
 
@@ -311,10 +319,53 @@ class CmsViewEditorContainer extends React.Component {
 
                 </SimpleDialog>
 
+                <SimpleDialog open={!!cmsEditData} onClose={this.handleEditDataClose.bind(this)}
+                              actions={[{
+                                  key: 'ok',
+                                  label: 'Ok',
+                                  type: 'primary'
+                              }]}
+                              title="Edit Data">
+                    {cmsEditData? <Query query={gql(getTypeQueries(cmsEditData.type).query)}
+                                         variables={{filter:`_id=${cmsEditData._id}`}}
+                           fetchPolicy="network-only">
+
+                        {({loading, error, data}) => {
+                            if (loading) {
+                                return 'Loading...'
+                            }
+
+                            if (error) return `Error! ${error.message}`
+                            if (data.genericDatas.results.length===0) return 'No data'
+
+                            const editDialogProps = {
+                                type: cmsEditData.type,
+                                title: cmsEditData.type,
+                                open: true,
+                                onClose: ()=>{},
+                                dataToEdit:data.genericDatas.results[0],
+                                parentRef:this
+                            }
+                            return React.createElement(
+                                withType(TypeEdit),
+                                editDialogProps,
+                                null
+                            )
+                        }}
+
+                    </Query>:''}
+
+                </SimpleDialog>
+
 
             </DrawerLayout>
         </UIProvider>
 
+    }
+
+
+    handleCmsError(e, meta){
+        this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message}`})
     }
 
     saveUnsafedChanges() {
@@ -471,6 +522,11 @@ class CmsViewEditorContainer extends React.Component {
         _cmsActions.editCmsComponent(null, cmsComponentEdit.component, cmsComponentEdit.scope)
     }
 
+    handleEditDataClose() {
+        const {_cmsActions} = this.props
+        _cmsActions.editCmsData(null)
+    }
+
     handleSettingChange(key, any) {
         let value
 
@@ -515,6 +571,7 @@ CmsViewEditorContainer.propTypes = {
     cmsPage: PropTypes.object,
     cmsPages: PropTypes.object,
     cmsComponentEdit: PropTypes.object,
+    cmsEditData: PropTypes.object,
     keyValue: PropTypes.object,
     setKeyValue: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
@@ -533,6 +590,7 @@ CmsViewEditorContainer.propTypes = {
     _cmsActions: PropTypes.object.isRequired,
     /* udate data */
     updateCmsPage: PropTypes.func.isRequired,
+    errorHandlerAction: PropTypes.object.isRequired
 }
 
 
@@ -631,9 +689,33 @@ const CmsViewEditorContainerWithGql = compose(
 )(CmsViewEditorContainer)
 
 
+
+
+
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = (store) => {
+    return {
+        cmsComponentEdit: store.cms.edit,
+        cmsEditData: store.cms.editData
+    }
+}
+
+/**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => ({
+    _cmsActions: bindActionCreators(CmsActions, dispatch),
+    errorHandlerAction: bindActionCreators(ErrorHandlerAction, dispatch)
+})
+
 /**
  * Connect the component to
  * the Redux store.
  */
-export default CmsViewEditorContainerWithGql
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(CmsViewEditorContainerWithGql)
 

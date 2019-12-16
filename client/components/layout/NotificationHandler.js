@@ -6,7 +6,7 @@ import * as Actions from 'client/actions/NotificationAction'
 import {graphql} from 'react-apollo'
 import compose from 'util/compose'
 import gql from 'graphql-tag'
-import {Snackbar, Button, CloseIconButton, theme} from 'ui/admin'
+import {Snackbar, CloseIconButton, theme} from 'ui/admin'
 import {Link} from 'react-router-dom'
 
 class NotificationHandler extends React.Component {

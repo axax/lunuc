@@ -7,7 +7,7 @@ import config from 'gen/config'
 import CodeEditor from './CodeEditor'
 import QuillEditor from './QuillEditor'
 import {withStyles} from 'ui/admin'
-import {checkFieldType} from 'util/types'
+import {checkFieldType} from 'util/typesAdmin'
 import Hook from '../../util/hook'
 
 const styles = theme => ({
@@ -155,10 +155,10 @@ class GenericForm extends React.Component {
             }
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
-                setTimeout(() => {
+                /*setTimeout(() => {
                     if(target.focus)
                         target.focus()
-                }, 500)
+                }, 500)*/
             }
             newState.isValid = this.validate(newState)
             return newState

@@ -2,10 +2,9 @@ import extensions from 'gen/extensions'
 import Hook from 'util/hook'
 import config from 'gen/config'
 import {getAllCapabilites} from 'util/capabilities'
-
 const {LANGUAGES} = config
 
-const types = {}, typeQueries = {}, typeFormFields = {}
+export const types = {}, typeQueries = {}
 
 export const getTypes = () => {
 
@@ -127,37 +126,6 @@ export const getTypeQueries = (typeName) => {
     return result
 }
 
-
-export const typeDataToLabel = (item, pickerField) => {
-    let label = []
-
-    let pickers = []
-
-    if (pickerField) {
-        pickers.push(pickerField)
-    } else {
-        for (const key of Object.keys(item)) {
-            if (['_id', 'createdBy', '__typename', 'status'].indexOf(key) < 0) {
-                pickers.push(key)
-                break
-            }
-        }
-    }
-
-    pickers.forEach(key => {
-        if (item[key]) {
-            if (item[key].constructor === Object) {
-                if (item[key][_app_.lang]) {
-                    label.push(item[key][_app_.lang])
-                }
-            } else {
-                label.push(item[key])
-            }
-        }
-    })
-    return label.join(' ')
-}
-
 export const queryStatemantForType = (type) => {
     let query = ''
     const typeDate = getType(type)
@@ -183,62 +151,6 @@ export const queryStatemantForType = (type) => {
     }
     return query
 }
-
-export const getFormFields = (type) => {
-    if (typeFormFields[type]) return typeFormFields[type]
-    const types = getTypes()
-    if (!types[type]) {
-        return null
-        //throw new Error('Cannot find type "'+type+'" in getFormFields')
-    }
-
-    typeFormFields[type] = {}
-    types[type].fields.map(field => {
-        let uitype = field.uitype, placeholder = ''
-        // if uitype is not defined and if it is a reference to another type use type_picker
-        if (!uitype && field.reference) {
-            uitype = 'type_picker'
-            placeholder = `${field.name} -> ${field.type}`
-        } else {
-            placeholder = `Enter ${field.name}`
-        }
-        typeFormFields[type][field.name] = {
-            placeholder,
-            uitype,
-            multi: !!field.multi,
-            readOnly: !!field.readOnly,
-            alwaysUpdate: !!field.alwaysUpdate,
-            type: field.type,
-            required: !!field.required,
-            localized: !!field.localized,
-            pickerField: field.pickerField,
-            fields: field.fields,
-            reference: !!field.reference,
-            enum: field.enum,
-            name: field.name
-        }
-    })
-
-    return typeFormFields[type]
-}
-
-export const checkFieldType = (value, field) => {
-
-    if (field.type === 'Float') {
-        value = parseFloat(value)
-        if (isNaN(value)) {
-            value = null
-        }
-    } else if (field.type === 'Int') {
-        value = parseInt(value)
-        if (isNaN(value)) {
-            value = null
-        }
-    }
-
-    return value
-}
-
 
 /* Register manually created types */
 

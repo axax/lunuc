@@ -5,6 +5,7 @@ const webpack = require('webpack')
 
 // webpack plugins
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
+const TerserPlugin = require('terser-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CompressionPlugin = require("compression-webpack-plugin")
 const GenSourceCode = require('./webpack.gensrc')
@@ -252,6 +253,21 @@ if (DEV_MODE) {
                 }
             }
         }))
+
+    /*config.optimization.minimizer.push(new TerserPlugin({
+        terserOptions: {
+            extractComments: 'all',
+            compress: {
+                drop_console: true
+            },
+            output: {
+                comments: false,
+                semicolons: true,
+                shebang: true,
+                beautify: false
+            }
+        },
+    }))*/
 
     config.resolve = {
         alias: {

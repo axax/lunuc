@@ -23,14 +23,16 @@ export default () => {
                     const item = data.results[i]
                     try {
                         const json = JSON.parse(item.data)
-                        d.data = json.title
+                        if( json.title.constructor===String) {
+                            d.data = json.title
+                        }
                     }catch(e){}
                 }
             })
         }
     })
 
-    Hook.on('TypeCreateEditDialog', function ({type, props, formFields, dataToEdit}) {
+    Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, parentRef}) {
 
         if (type === 'GenericData') {
 
@@ -39,7 +41,6 @@ export default () => {
                 const struct = JSON.parse(dataToEdit.definition.structure)
 
                 const data = dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data
-
 
                 const newFields = Object.assign({}, formFields)
                 const newDataToEdit = Object.assign({}, dataToEdit)
@@ -58,7 +59,7 @@ export default () => {
                 // override default
                 props.children = <GenericForm autoFocus
                                               innerRef={ref => {
-                                                  this.createEditForm = ref
+                                                  parentRef.createEditForm = ref
                                               }}
                                               onBlur={event => {
                                               }}
@@ -76,19 +77,18 @@ export default () => {
 
                 // override default
                 props.children = [<Typography key="GenericDataLabel" variant="subtitle1" gutterBottom>Please select a generic type you want to create.</Typography>,
-                    <GenericForm autoFocus innerRef={ref => {
-                        this.createEditForm = ref
+                    <GenericForm key="genericForm" autoFocus innerRef={ref => {
+                        parentRef.createEditForm = ref
                     }} onBlur={event => {
-                        Hook.call('TypeCreateEditDialogBlur', {type, event}, this)
+                        Hook.call('TypeCreateEditBlur', {type, event})
                     }} onChange={field => {
-                        //Hook.call('TypeCreateEditDialogChange', {field, type, props: editDialogProps, dataToEdit}, this)
                     }} primaryButton={false} fields={newFields} values={dataToEdit}/>]
             }
 
         }
     })
 
-    Hook.on('TypeCreateEditDialogBeforeSave', function ({type, dataToEdit, formFields}) {
+    Hook.on('TypeCreateEditBeforeSave', function ({type, dataToEdit, formFields}) {
         if (type === 'GenericData' && dataToEdit && dataToEdit.definition) {
 
             const definition = dataToEdit.definition.constructor === Array ? dataToEdit.definition[0] : dataToEdit.definition

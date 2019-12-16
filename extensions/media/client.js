@@ -52,7 +52,7 @@ export default () => {
             actions.unshift({
                 name: 'Upload new Media', onClick: () => {
                     setTimeout(() => {
-                        this.setState({createEditDialog: true, createEditDialogParams: 'upload'})
+                        this.setState({createEditDialog: true, createEditDialogOption: 'upload'})
                     }, 300)
                 }
             })
@@ -60,8 +60,8 @@ export default () => {
     })
 
     // add some extra data to the table
-    Hook.on('TypeCreateEditDialog', function ({type, props, dataToEdit}) {
-        if (type === 'Media' && !dataToEdit && this.state.createEditDialogParams === 'upload') {
+    Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, meta}) {
+        if (type === 'Media' && !dataToEdit && meta.option === 'upload') {
             // remove save button
             props.actions.splice(1, 1)
 
@@ -102,9 +102,11 @@ export default () => {
                                   uploadTo="/graphql/upload" resizeImages={true}
                                   data={{group, useCdn}}
                                   onSuccess={r => {
-                                      this.setState({createEditDialog: false, createEditDialogParams: null})
+                                      if(meta._this) {
+                                          meta._this.setState({createEditDialog: false, createEditDialogOption: null})
 
-                                      this.getData(this.pageParams, false)
+                                          meta._this.getData(meta, false)
+                                      }
                                       // TODO: but it directly into the store instead of reload
                                       //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
 

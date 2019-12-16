@@ -45,7 +45,6 @@ class CmsViewContainer extends React.Component {
             // there is no need to update
             return false
         }
-        console.log(this.props.settings.inlineEditor !== props.settings.inlineEditor)
         // only update if it is needed
         return !cmsPage ||
             !cmsPageOld ||
@@ -82,7 +81,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, cmsPage, children, dynamic, fetchMore, settings, setKeyValue, onTemplateChange, ...props} = this.props
+        const {slug, cmsPage, children, dynamic, fetchMore, settings, setKeyValue, ...props} = this.props
         const editMode = isEditMode(this.props)
 
         if (!cmsPage) {
@@ -127,7 +126,7 @@ class CmsViewContainer extends React.Component {
                                          }
                                      })
                                  }}
-                                 onChange={onTemplateChange} {...props}>{children}</JsonDom>
+                                 {...props}>{children}</JsonDom>
 
 
         console.info(`render ${this.constructor.name} for ${slug} (loading=${this.props.loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)

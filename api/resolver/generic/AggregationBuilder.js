@@ -1,5 +1,6 @@
 import ClientUtil from 'client/util'
-import {getFormFields, getType} from 'util/types'
+import {getType} from 'util/types'
+import {getFormFields} from 'util/typesAdmin'
 import {ObjectId} from 'mongodb'
 import config from 'gen/config'
 

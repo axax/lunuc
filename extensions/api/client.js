@@ -5,16 +5,16 @@ import config from 'gensrc/config'
 export default () => {
 
 
-    Hook.on('TypeCreateEditDialog', ({type, props}) => {
+    Hook.on('TypeCreateEdit', ({type, props}) => {
         if (type === 'Api') {
             props.actions.unshift({key: 'openApi', label: 'Open API URL'})
         }
     })
 
 
-    Hook.on('TypeCreateEditDialogAction', function ({type, action}) {
+    Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit}) {
         if (type === 'Api' && action && action.key === 'openApi') {
-            const win = window.open(`/${config.API_PREFIX}/${this.state.dataToEdit.slug}`, '_blank')
+            const win = window.open(`/${config.API_PREFIX}/${dataToEdit.slug}`, '_blank')
             win.focus()
         }
     })

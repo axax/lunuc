@@ -8,7 +8,8 @@ import {connect} from 'react-redux'
 import {
     SimpleMenu,
     EditIcon,
-    DeleteIcon
+    DeleteIcon,
+    AddIcon
 } from 'ui/admin'
 import classNames from 'classnames'
 import AddToBody from './AddToBody'
@@ -333,6 +334,16 @@ class JsonDomHelper extends React.Component {
     }
 
 
+    handleEditDataClick(e) {
+        e.stopPropagation()
+        e.preventDefault()
+        const {_cmsActions, _edit} = this.props
+
+        _cmsActions.editCmsData(_edit)
+
+    }
+
+
     handleAddChildClick(e) {
         e.stopPropagation()
         e.preventDefault()
@@ -369,7 +380,7 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {classes, _WrappedComponent, _json, _cmsActions, _onchange, children, ...rest} = this.props
+        const {classes, _WrappedComponent, _json, _cmsActions, _onchange, children, _edit, ...rest} = this.props
 
         const subJson = getComponentByKey(rest._key, _json)
 
@@ -389,13 +400,19 @@ class JsonDomHelper extends React.Component {
         }
 
         if (hovered || toolbarHovered || toolbarMenuOpen) {
+            const isLoop = rest._key.indexOf('$loop')>=0
             const menuItems = [
-                {name: 'Edit', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)},
-                {name: 'Remove component', icon: <DeleteIcon/>, onClick: this.handleDeleteClick.bind(this)}
+                {name: 'Edit template', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)},
+                {name:  `Remove ${isLoop?'Loop':'Component'}`, icon: <DeleteIcon/>, onClick: this.handleDeleteClick.bind(this)}
             ]
 
-            if( !subJson.t || subJson.t.indexOf('$')<0){
-                menuItems.splice(1, 0,{name: 'Add child component', icon: <EditIcon/>, onClick: this.handleAddChildClick.bind(this)})
+            if( !isLoop && (!subJson.t || subJson.t.indexOf('$')<0)){
+                menuItems.splice(1, 0,{name: 'Add child component', icon: <AddIcon/>, onClick: this.handleAddChildClick.bind(this)})
+            }
+
+
+            if( _edit ){
+                menuItems.splice(0, 0,{name: 'Edit data', icon: <EditIcon/>, onClick: this.handleEditDataClick.bind(this)})
             }
 
             toolbar = <div
@@ -404,7 +421,7 @@ class JsonDomHelper extends React.Component {
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height}}
                 className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}>
-                <div className={classes.info}>{subJson.t} - {rest.id || rest._key}</div>
+                <div className={classes.info}>{_edit?_edit.type+': ':''}{subJson.t} - {rest.id || rest._key}</div>
                 <SimpleMenu
                     onOpen={() => {
                         this.setState({toolbarMenuOpen: true})
@@ -459,6 +476,7 @@ JsonDomHelper.propTypes = {
     _key: PropTypes.string.isRequired,
     _json: PropTypes.any.isRequired,
     _scope: PropTypes.object.isRequired,
+    _edit: PropTypes.object,
     _onchange: PropTypes.func.isRequired
 }
 

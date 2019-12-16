@@ -1,6 +1,7 @@
 import Util from '../../util'
 import {ObjectId} from 'mongodb'
-import {getFormFields, getType} from 'util/types'
+import {getType} from 'util/types'
+import {getFormFields} from 'util/typesAdmin'
 import config from 'gen/config'
 import {
     CAPABILITY_MANAGE_TYPES,

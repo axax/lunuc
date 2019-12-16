@@ -9,7 +9,6 @@ import {getGqlVariables, gqlQuery, isEditMode, urlSensitivMap,
     gqlQueryKeyValue} from '../util/cmsView'
 import Async from 'client/components/Async'
 import compose from '../../../util/compose'
-import * as CmsActions from '../actions/CmsAction'
 import DomUtil from '../../../client/util/dom'
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
 
@@ -233,27 +232,16 @@ export default function(WrappedComponent) {
      */
     const mapStateToProps = (store) => {
         return {
-            cmsComponentEdit: store.cms.edit,
             user: store.user
         }
     }
-
-
-    /**
-     * Map the actions to props.
-     */
-    const mapDispatchToProps = (dispatch) => ({
-        _cmsActions: bindActionCreators(CmsActions, dispatch)
-    })
-
 
     /**
      * Connect the component to
      * the Redux store.
      */
     return  connect(
-        mapStateToProps,
-        mapDispatchToProps
+        mapStateToProps
     )(withApollo(withGql))
 
 }

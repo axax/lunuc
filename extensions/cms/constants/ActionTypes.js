@@ -1,1 +1,2 @@
 export const CMS_EDIT_COMPONENT = 'CMS_EDIT_COMPONENT'
+export const CMS_EDIT_DATA = 'CMS_EDIT_DATA'

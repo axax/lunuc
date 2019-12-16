@@ -6,13 +6,12 @@ import crypto from 'crypto'
 
 const {DEFAULT_LANGUAGE} = config
 
-//TODO put SECRET_KEY to a save place
 const AUTH_HEADER = 'authorization',
     SESSION_HEADER = 'x-session',
     CONTENT_LANGUAGE_HEADER = 'content-language',
     AUTH_SCHEME = 'JWT',
-    SECRET_KEY = 'fa-+3452sdfas!ä$$34dää$',
-    AUTH_EXPIRES_IN = '999y'
+    SECRET_KEY = process.env.LUNUC_SECRET_KEY || 'fa-+3452sdfas!ä$$34dää$', /* set your own SECRET_KEY here. Only the server must know it */
+    AUTH_EXPIRES_IN = process.env.LUNUC_AUTH_EXPIRES_IN || '999y'
 
 
 export const auth = {

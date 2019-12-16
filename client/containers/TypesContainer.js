@@ -26,9 +26,19 @@ import ApolloClient from 'apollo-client'
 import gql from 'graphql-tag'
 import Util from 'client/util'
 import GenericForm from 'client/components/GenericForm'
+import TypeEdit from 'client/components/types/TypeEdit'
 import config from 'gen/config'
 import Hook from 'util/hook'
-import {checkFieldType, getTypes, getTypeQueries, getFormFields, typeDataToLabel} from 'util/types'
+import {
+    getTypes,
+    getTypeQueries,
+} from 'util/types'
+import {
+    checkFieldType,
+    getFormFields,
+    typeDataToLabel,
+    addAlwaysUpdateData
+} from 'util/typesAdmin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {deepMerge} from 'util/deepMerge'
@@ -106,7 +116,7 @@ class TypesContainer extends React.Component {
             confirmCloneColDialog: undefined,
             dataToDelete: null,
             createEditDialog: undefined,
-            createEditDialogParams: null,
+            createEditDialogOption: null,
             dataToEdit: null,
             data: null,
             collectionName: ''
@@ -223,6 +233,7 @@ class TypesContainer extends React.Component {
 
             if (data.results) {
                 data.results.forEach(item => {
+
                     if (!item) return
                     const dynamic = {}
 
@@ -372,7 +383,7 @@ class TypesContainer extends React.Component {
                     name: 'Add new ' + type, onClick: () => {
                         setTimeout(() => {
                             this.setState({createEditDialog: true})
-                        }, 300)
+                        }, 0)
 
                     }
                 }, {
@@ -472,7 +483,7 @@ class TypesContainer extends React.Component {
     render() {
         const startTime = new Date()
         const {dataToEdit, createEditDialog, viewSettingDialog, confirmCloneColDialog, manageColDialog, dataToDelete, confirmDeletionDialog} = this.state
-        const {title} = this.props
+        const {title, client} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
@@ -520,32 +531,16 @@ class TypesContainer extends React.Component {
 
         if (createEditDialog !== undefined) {
             editDialogProps = {
+                client,
+                type,
                 title: type,
-                fullWidth: true,
-                fullScreen: false,
-                maxWidth: 'xl',
-                open: this.state.createEditDialog,
-                onClose: this.handleCreateEditData,
-                actions: [{key: 'cancel', label: 'Cancel'}, {
-                    key: 'save',
-                    label: 'Save',
-                    type: 'primary'
-                },
-                    {
-                        key: 'save_close',
-                        label: 'Save & Close',
-                        type: 'primary'
-                    }],
-                children: <GenericForm autoFocus innerRef={ref => {
-                    this.createEditForm = ref
-                }} onBlur={event => {
-                    Hook.call('TypeCreateEditDialogBlur', {type, event}, this)
-                }} onChange={field => {
-                    Hook.call('TypeCreateEditDialogChange', {field, type, props: editDialogProps, dataToEdit}, this)
-                }} primaryButton={false} fields={formFields} values={dataToEdit}/>
+                open: createEditDialog,
+                onClose: this.handleCreateEditData.bind(this),
+                updateData: this.updateData.bind(this),
+                createData: this.createData.bind(this),
+                dataToEdit,
+                meta: {_this: this, option: this.state.createEditDialogOption, ...this.pageParams}
             }
-            /* HOOK */
-            Hook.call('TypeCreateEditDialog', {type, props: editDialogProps, dataToEdit, formFields}, this)
         }
 
         if (manageColDialog !== undefined) {
@@ -609,7 +604,7 @@ class TypesContainer extends React.Component {
                     this.setState({collectionName: e.target.value})
                 }} placeholder="Enter a name (optional)"/>
             </SimpleDialog>,
-            createEditDialog !== undefined && <SimpleDialog key="editDialog" {...editDialogProps}/>,
+            createEditDialog !== undefined && <TypeEdit key="editDialog" {...editDialogProps}/>,
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,
             manageColDialog !== undefined && <SimpleDialog key="collectionDialog" {...manageColDialogProps}/>
         ]
@@ -649,14 +644,14 @@ class TypesContainer extends React.Component {
         const item = data.results[index]
         if (event.detail === 2) {
             // it was a double click
-            if( window.opener ){
+            if (window.opener) {
                 window.resultValue = item
                 window.close()
-            }else {
+            } else {
 
                 this.handleEditDataClick(item)
             }
-        }else {
+        } else {
 
             Hook.call('TypeTableEntryClick', {type, event, item, container: this})
         }
@@ -773,8 +768,8 @@ class TypesContainer extends React.Component {
         const {p, l, s, f, v, noLayout, fixType} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
-        const finalFixType =fixType || props.fixType,
-            finalNoLayout =noLayout || props.noLayout
+        const finalFixType = fixType || props.fixType,
+            finalNoLayout = noLayout || props.noLayout
 
         let type
         if (finalFixType) {
@@ -1113,7 +1108,7 @@ class TypesContainer extends React.Component {
 
     goTo(type, page, limit, sort, filter, _version) {
         const {baseUrl} = this.props
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${this.fixType?'':'/types/'+type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${this.fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}`)
     }
 
 
@@ -1175,42 +1170,6 @@ class TypesContainer extends React.Component {
         this.goTo(type, 1, limit, sort, filter, _version)
     }
 
-
-    referencesToIds = (input) => {
-        const formFields = getFormFields(this.pageParams.type)
-        // make sure if it is a reference only id gets passed as imput to craeteData
-        const ipt2 = {}
-        Object.keys(input).map(k => {
-            const item = input[k]
-
-            if (item !== undefined) {
-                const fieldInfo = formFields[k]
-                if (fieldInfo.localized) {
-                    ipt2[k] = item
-                    if (item) {
-                        delete ipt2[k].__typename //= 'LocalizedStringInput'
-                    }
-                } else if (item && !fieldInfo.enum && item.constructor === Array) {
-
-                    if (item.length > 0) {
-                        if (fieldInfo.multi) {
-                            ipt2[k] = item.map(i => i._id)
-                        } else {
-                            ipt2[k] = item[0]._id
-                        }
-                    } else {
-                        ipt2[k] = null
-                    }
-                } else if (item && item.constructor === Object && fieldInfo.reference) {
-                    ipt2[k] = item._id
-                } else {
-                    ipt2[k] = item
-                }
-            }
-        })
-        return ipt2
-    }
-
     handleDataChange = (event, data, field, lang) => {
         let key = field.name + (lang ? '.' + lang : '')
         let value
@@ -1232,19 +1191,11 @@ class TypesContainer extends React.Component {
 
         if (value !== data[key]) {
             const changedData = {_id: data._id, [key]: value}
-            this.addAlwaysUpdateData(data, changedData, data.__typename)
+            addAlwaysUpdateData(data, changedData, data.__typename)
             this.updateData(this.pageParams, changedData)
         }
     }
 
-    addAlwaysUpdateData(data, changedData, type) {
-        const typeDef = getFormFields(type)
-        Object.keys(typeDef).forEach((key) => {
-            if (typeDef[key].alwaysUpdate) {
-                changedData[key] = data[key]
-            }
-        })
-    }
 
     handleDeleteDataClick = (data) => {
         this.setState({confirmDeletionDialog: true, dataToDelete: [data]})
@@ -1285,87 +1236,7 @@ class TypesContainer extends React.Component {
 
 
     handleCreateEditData = (action) => {
-        const closeModal = () => {
-            this.setState({createEditDialog: false, createEditDialogParams: null, dataToEdit: null})
-        }
-
-        if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
-
-            if (!this.createEditForm.validate()) {
-                return
-            }
-
-            const dataToEdit = Object.assign({}, this.createEditForm.state.fields)
-            const formFields = getFormFields(this.pageParams.type)
-
-            Hook.call('TypeCreateEditDialogBeforeSave', {type: this.pageParams.type, dataToEdit, formFields})
-
-            // convert array to single value for not multivalue references
-            Object.keys(formFields).forEach(key => {
-                const field = formFields[key]
-                if (field.reference && !field.multi && dataToEdit[key] && dataToEdit[key].length) {
-                    dataToEdit[key] = dataToEdit[key][0]
-                }
-            })
-
-            const submitData = this.referencesToIds(dataToEdit)
-            const callback = ({errors}) => {
-                // server side validation
-                if (errors && errors.length) {
-                    const fieldErrors = {}
-                    errors.forEach(e => {
-                        if (e.state) {
-                            Object.keys(e.state).forEach(k => {
-                                fieldErrors[k.substring(0, k.length - 5)] = e.state[k]
-                            })
-                        }
-                    })
-                    if (Object.keys(fieldErrors).length) {
-                        this.createEditForm.setState({fieldErrors})
-                    }
-                } else {
-                    if (action.key === 'save_close') {
-                        closeModal()
-                    } else {
-                        this.setState({dataToEdit: {...this.state.dataToEdit, ...dataToEdit}})
-                    }
-                }
-            }
-
-            if (this.state.dataToEdit) {
-                // if dataToEdit is set we are in edit mode
-                const updateData = {}
-                Object.keys(submitData).forEach(k => {
-                    const before = this.state.dataToEdit[k]
-                    if (before && before.constructor === Object) {
-                        if (before._id !== submitData[k]) {
-                            updateData[k] = submitData[k]
-                        }
-                    } else if (submitData[k] !== before) {
-                        updateData[k] = submitData[k]
-                    }
-                })
-                if (Object.keys(updateData).length) {
-                    // only send data if they have really changed
-                    this.addAlwaysUpdateData(dataToEdit, updateData, this.pageParams.type)
-
-                    this.updateData(this.pageParams, {_id: this.state.dataToEdit._id, ...updateData}, dataToEdit).then(callback)
-                } else {
-                    if (action.key === 'save_close') {
-                        closeModal()
-                    }
-                }
-
-            } else {
-                // create a new entry
-                this.createData(this.pageParams, submitData, dataToEdit).then(callback)
-            }
-
-        } else if (action && (action.key === 'cancel' || action.key === 'Escape') ) {
-            closeModal()
-        } else {
-            Hook.call('TypeCreateEditDialogAction', {type: this.pageParams.type, closeModal, action}, this)
-        }
+        this.setState({createEditDialog: false, createEditDialogOption: null, dataToEdit: null})
     }
 
     handleViewSettingClose = (action) => {

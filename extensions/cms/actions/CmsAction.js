@@ -6,3 +6,8 @@ export const editCmsComponent = (key, json, scope) => ({
     json,
     scope
 })
+
+export const editCmsData = (editData) => ({
+	type: types.CMS_EDIT_DATA,
+    editData
+})

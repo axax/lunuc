@@ -138,7 +138,7 @@ export default () => {
     })
 
     // add default slug
-    Hook.on('TypeCreateEditDialogBlur', ({event, type}) => {
+    Hook.on('TypeCreateEditBlur', ({event, type}) => {
         if (type === 'CmsPage' && event.target.name === 'name' && event.target.closest) {
             const form = event.target.closest('form')
             const slugInput = form.querySelector('input[name=slug]')
@@ -165,7 +165,7 @@ export default () => {
     })
 
 
-    Hook.on('TypeCreateEditDialog', function ({type, props, formFields, dataToEdit}) {
+    Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, meta}) {
 
         if (type === 'CmsPage') {
 
@@ -179,7 +179,7 @@ export default () => {
             // override default
             props.children = [dataToEdit && <Typography key="CmsPageLabel" variant="subtitle1" gutterBottom>
                 <Link
-                    to={cmsPageEditorUrl(dataToEdit.slug, this.pageParams._version)}>
+                    to={cmsPageEditorUrl(dataToEdit.slug, meta._version)}>
                         <span
                             style={{
                                 fontWeight: 'bold',
@@ -191,9 +191,8 @@ export default () => {
                 <GenericForm key="CmsPageForm" autoFocus innerRef={ref => {
                     this.createEditForm = ref
                 }} onBlur={event => {
-                    Hook.call('TypeCreateEditDialogBlur', {type, event}, this)
-                }}
-                             primaryButton={false} fields={newFields} values={dataToEdit}/>]
+                    Hook.call('TypeCreateEditBlur', {type, event})
+                }} primaryButton={false} fields={newFields} values={dataToEdit}/>]
         }
     })
 

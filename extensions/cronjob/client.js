@@ -21,21 +21,23 @@ export default () => {
         }
     })*/
 
-    Hook.on('TypeCreateEditDialogAction', function ({type, action}) {
+    Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, createEditForm, client, meta}) {
         if (type === 'CronJob' && action && action.key.startsWith('run')) {
             const runOnlyScript = action.key==='run_script'
-            this.props.client.query({
+            client.query({
                 fetchPolicy: 'network-only',
                 query: gql`query runCronJob($cronjobId:String,$script:String,$scriptLanguage:String,$sync:Boolean,$noEntry:Boolean){runCronJob(cronjobId:$cronjobId,script:$script,scriptLanguage:$scriptLanguage,sync:$sync,noEntry:$noEntry){status result}}`,
                 variables: {
-                    script: this.createEditForm.state.fields.script,
-                    scriptLanguage: this.createEditForm.state.fields.scriptLanguage,
-                    cronjobId: this.state.dataToEdit ? this.state.dataToEdit._id : 'none',
+                    script: createEditForm.state.fields.script,
+                    scriptLanguage: createEditForm.state.fields.scriptLanguage,
+                    cronjobId: dataToEdit ? dataToEdit._id : 'none',
                     sync: runOnlyScript,
                     noEntry: runOnlyScript
                 }
             }).then(response => {
-                this.setState({cronjobResponse: response})
+                if( meta && meta._this) {
+                    meta._this.setState({cronjobResponse: response})
+                }
             }).catch(error => {
                 console.log(error.message)
             })
@@ -43,7 +45,7 @@ export default () => {
     })
 
 
-    Hook.on('TypeCreateEditDialog', ({type, props}) => {
+    Hook.on('TypeCreateEdit', ({type, props}) => {
         if (type === 'CronJob') {
             props.actions.unshift({key: 'run', label: 'Run CronJob'})
             props.actions.unshift({key: 'run_script', label: 'Run Script'})
@@ -51,10 +53,10 @@ export default () => {
     })
 
 
-    Hook.on('TypeCreateEditDialogChange', function ({field, type}) {
+    Hook.on('TypeCreateEditChange', function ({field, type, client}) {
         if (type === 'CronJob' && field.name === 'execfilter') {
 
-            this.props.client.query({
+            client.query({
                 fetchPolicy: 'network-only',
                 query: gql`query testExecFilter($filter:String!){testExecFilter(filter:$filter){match}}`,
                 variables: {
