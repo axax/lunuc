@@ -1,5 +1,4 @@
 import Hook from '../../util/hook'
-import {Link} from 'react-router-dom'
 import React from 'react'
 
 export default () => {
@@ -8,16 +7,16 @@ export default () => {
             dataSource.forEach((d, i) => {
                 if (d.ip) {
                     const item = data.results[i]
-                    d.ip = <Link
+                    d.ip = <a
                         target="_blank"
-                        to={`/system/iplocation?ip=${item.ip}`}>
+                        href={`/system/iplocation?ip=${item.ip}`}>
                         <span
                             style={{
                                 fontWeight: 'bold',
                                 cursor: 'pointer',
                                 color: '#663366',
                                 textDecoration: 'underline'
-                            }}>{item.ip}</span></Link>
+                            }}>{item.ip}</span></a>
                 }
             })
         }

@@ -25,7 +25,7 @@ export const userSchemaRaw = `
         emailConfirmed: Boolean!
         note: [Note]
         meta: String
-        role: UserRole!
+        role: UserRole
     }
     
     type UserResult {
@@ -115,6 +115,9 @@ export const userSchemaRaw = `
 		
     	deleteUser(_id: ID!): User
 	    deleteUsers (_id:[ID]):[User]
+
+    	deleteUserRole(_id: ID!): UserRole
+	    deleteUserRoles (_id:[ID]):[UserRole]
 
 						
 		updateMe (

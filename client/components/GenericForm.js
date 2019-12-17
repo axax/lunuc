@@ -257,7 +257,6 @@ class GenericForm extends React.Component {
                 }
 
                 if (field.localized) {
-
                     return config.LANGUAGES.reduce((arr, languageCode) => {
                         const fieldName = fieldKey + '.' + languageCode
                         arr.push(<TextField key={fieldName}
@@ -267,7 +266,7 @@ class GenericForm extends React.Component {
                                             multiline={uitype === 'textarea'}
                                             fullWidth={field.fullWidth}
                                             type={uitype}
-                                            placeholder={field.placeholder + ' [' + languageCode + ']'}
+                                            placeholder={(field.placeholder?field.placeholder+' ':'') + '[' + languageCode + ']'}
                                             value={(value && value[languageCode] ? value[languageCode] : '')}
                                             name={fieldName}
                                             onKeyDown={(e) => {

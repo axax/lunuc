@@ -53,7 +53,11 @@ export default () => {
                     field.fullWidth = true
                     field.name = newName
                     newFields[newName] = field
-                    newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
+                    if( field.localized){
+                        newDataToEdit[newName] = data[oriName]
+                    }else{
+                        newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
+                    }
                 })
 
                 // override default
@@ -96,7 +100,6 @@ export default () => {
             const struct = JSON.parse(definition.structure)
 
             const data = {}
-
             struct.fields.forEach(field => {
                 data[field.name] = dataToEdit['data_' + field.name]
                 delete dataToEdit['data_' + field.name]

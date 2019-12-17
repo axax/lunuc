@@ -28,6 +28,8 @@ import {getTypeQueries} from 'util/types'
 import {Query} from 'react-apollo'
 import TypeEdit from '../../../client/components/types/TypeEdit'
 import withType from '../../../client/components/types/withType'
+import Util from "../../../client/util";
+import {CAPABILITY_MANAGE_CMS_PAGES} from "../constants";
 
 
 class CmsViewEditorContainer extends React.Component {
@@ -48,6 +50,7 @@ class CmsViewEditorContainer extends React.Component {
     static propsToState(props, state) {
         const {template, script, serverScript, resources, dataResolver, ssr, urlSensitiv, status} = props.cmsPage || {}
         let settings = null
+
         if (props.keyValue) {
             // TODO optimize so JSON.parse is only called once
             try {
@@ -55,7 +58,6 @@ class CmsViewEditorContainer extends React.Component {
             } catch (e) {
                 settings = {}
             }
-            settings._ready = true
         } else {
             settings = {}
         }
@@ -64,6 +66,7 @@ class CmsViewEditorContainer extends React.Component {
             keyValue: props.keyValue,
             cmsPage: props.cmsPage,
             settings,
+            loadingSettings: props.keyValue === undefined,
             template,
             resources,
             script,
@@ -139,232 +142,235 @@ class CmsViewEditorContainer extends React.Component {
     render() {
         const {WrappedComponent, cmsPages, cmsPage, cmsEditData, cmsComponentEdit, ...props} = this.props
 
-        const {template, resources, script, settings, dataResolver, serverScript } = this.state
+        const {template, resources, script, settings, dataResolver, serverScript, loadingSettings} = this.state
 
         if (!cmsPage) {
             // show a loader here
-            if( !props.dynamic){
+            if (!props.dynamic) {
                 return <NetworkStatusHandler/>
             }
         }
 
         // extend with value from state because they are more update to date
-        const cmsPageWithState = Object.assign({},cmsPage,{script, template})
+        const cmsPageWithState = Object.assign({}, cmsPage, {script, template})
 
         console.log('render CmsViewEditorContainer')
-        const sidebar = <div>
-            <MenuList>
-                <MenuListItem onClick={e => {
-                    const win = window.open(location.pathname + '?preview=true', '_blank')
-                    win.focus()
-                }} button primary="Preview"/>
-            </MenuList>
-            <Divider/>
 
-            <div style={{padding: '10px'}}>
+        const inEditor = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_PAGES)
 
-                <Expandable title="Data resolver"
-                            onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
-                            expanded={settings.dataResolverExpanded}>
-                    <DataResolverEditor
-                        onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll')}
-                        scrollPosition={settings.dataResolverScroll}
-                        onBlur={() => {
-                            this.saveUnsafedChanges()
-                        }}
-                        onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
-                </Expandable>
+        const inner = [!loadingSettings &&
+        <WrappedComponent key="cmsView" cmsEditData={cmsEditData} onChange={this.handleTemplateChange}
+                          inEditor={inEditor}
+                          onError={this.handleCmsError.bind(this)} settings={settings}
+                          cmsPage={cmsPageWithState}  {...props} />
+            ,
+            <ErrorHandler key="errorHandler" snackbar/>,
+            <NetworkStatusHandler key="networkStatus"/>,
+            <SimpleDialog key="templateEditor" open={!!cmsComponentEdit.key} onClose={this.handleComponentEditClose.bind(this)}
+                          actions={[{
+                              key: 'ok',
+                              label: 'Ok',
+                              type: 'primary'
+                          }]}
+                          title="Edit Component">
 
-                <Expandable title="Server Script"
-                            onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
-                            expanded={settings.serverScriptExpanded}>
-                    <ScriptEditor
-                        onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll')}
-                        scrollPosition={settings.serverScriptScroll}
-                        onChange={this.handleServerScriptChange.bind(this)}>{serverScript}</ScriptEditor>
-                </Expandable>
+                <TemplateEditor
+                    fabButtonStyle={{bottom: '3rem', right: '1rem'}}
+                    component={cmsComponentEdit}
+                    tab={settings.templateTab}
+                    onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
+                    onChange={this.handleTemplateChange.bind(this)}/>
 
-                <Expandable title="Template"
-                            onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
-                            expanded={settings.templateExpanded}>
-                    <TemplateEditor
-                        onScroll={this.handleSettingChange.bind(this, 'templateScroll')}
-                        scrollPosition={settings.templateScroll}
-                        tab={settings.templateTab}
-                        onTabChange={(tab) => {
-                            if (this._autoSaveTemplate) {
-                                this._autoSaveTemplate()
-                            }
-                            this.handleSettingChange('templateTab', tab)
-                        }}
-                        onChange={this.handleTemplateChange.bind(this)}>{template}</TemplateEditor>
-                </Expandable>
+            </SimpleDialog>,
 
-                <Expandable title="Script"
-                            onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
-                            expanded={settings.scriptExpanded}>
-                    <ScriptEditor
-                        onScroll={this.handleSettingChange.bind(this, 'scriptScroll')}
-                        scrollPosition={settings.scriptScroll}
-                        onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
-                </Expandable>
+            cmsEditData && <Query key="dataEditor" query={gql(getTypeQueries(cmsEditData.type).query)}
+                                  variables={{filter: `_id=${cmsEditData._id}`}}
+                                  fetchPolicy="network-only">
 
+                {({loading, error, data}) => {
+                    if (loading) {
+                        return 'Loading...'
+                    }
 
-                <Expandable title="Static assets"
-                            onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
-                            expanded={settings.resourceExpanded}>
+                    if (error) return `Error! ${error.message}`
+                    if (data.genericDatas.results.length === 0) return 'No data'
 
-                    <ResourceEditor resources={resources}
-                                    onChange={this.handleResourceChange.bind(this)}></ResourceEditor>
-                </Expandable>
+                    const editDialogProps = {
+                        type: cmsEditData.type,
+                        title: cmsEditData.type,
+                        open: !!cmsEditData,
+                        onClose: this.handleEditDataClose.bind(this),
+                        dataToEdit: data.genericDatas.results[0],
+                        parentRef: this
+                    }
+                    return React.createElement(
+                        withType(TypeEdit),
+                        editDialogProps,
+                        null
+                    )
+                }}
+            </Query>
+
+        ]
 
 
-                <Expandable title="Settings"
-                            onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
-                            expanded={settings.settingsExpanded}>
+        if( !inEditor ) {
+            return inner
+        }else{
+            const sidebar = <div>
+                <MenuList>
+                    <MenuListItem onClick={e => {
+                        const win = window.open(location.pathname + '?preview=true', '_blank')
+                        win.focus()
+                    }} button primary="Preview"/>
+                </MenuList>
+                <Divider/>
 
-                    <SimpleSwitch
-                        label="SSR (Server side Rendering)"
-                        checked={!!this.state.ssr}
-                        onChange={this.handleFlagChange.bind(this, 'ssr')}
-                    />
-                    <SimpleSwitch
-                        label="Public (is visible to everyone)"
-                        checked={!!this.state.public}
-                        onChange={this.handleFlagChange.bind(this, 'public')}
-                    />
-                    <SimpleSwitch
-                        label="Url sensitive (refresh component on url change)"
-                        checked={!!this.state.urlSensitiv}
-                        onChange={this.handleFlagChange.bind(this, 'urlSensitiv')}
-                    />
-                </Expandable>
+                <div style={{padding: '10px'}}>
 
-                <Expandable title="Revisions"
-                            onChange={this.handleSettingChange.bind(this, 'revisionsExpanded')}
-                            expanded={settings.revisionsExpanded}>
-                    To be implemented
-                </Expandable>
+                    <Expandable title="Data resolver"
+                                onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
+                                expanded={settings.dataResolverExpanded}>
+                        <DataResolverEditor
+                            onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll')}
+                            scrollPosition={settings.dataResolverScroll}
+                            onBlur={() => {
+                                this.saveUnsafedChanges()
+                            }}
+                            onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
+                    </Expandable>
 
+                    <Expandable title="Server Script"
+                                onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
+                                expanded={settings.serverScriptExpanded}>
+                        <ScriptEditor
+                            onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll')}
+                            scrollPosition={settings.serverScriptScroll}
+                            onChange={this.handleServerScriptChange.bind(this)}>{serverScript}</ScriptEditor>
+                    </Expandable>
 
-                {cmsPages && cmsPages.results && cmsPages.results.length > 1 &&
-
-                <Expandable title="Related pages"
-                            onChange={this.handleSettingChange.bind(this, 'relatedPagesExpanded')}
-                            expanded={settings.relatedPagesExpanded}>
-                    <MenuList>
-                        {
-                            cmsPages.results.map(i => {
-                                    if (i.slug !== props.slug) {
-                                        return <MenuListItem key={i.slug} onClick={e => {
-                                            history.push('/' + i.slug)
-                                        }} button primary={i.slug}/>
-                                    }
+                    <Expandable title="Template"
+                                onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
+                                expanded={settings.templateExpanded}>
+                        <TemplateEditor
+                            onScroll={this.handleSettingChange.bind(this, 'templateScroll')}
+                            scrollPosition={settings.templateScroll}
+                            tab={settings.templateTab}
+                            onTabChange={(tab) => {
+                                if (this._autoSaveTemplate) {
+                                    this._autoSaveTemplate()
                                 }
-                            )
-                        }
+                                this.handleSettingChange('templateTab', tab)
+                            }}
+                            onChange={this.handleTemplateChange.bind(this)}>{template}</TemplateEditor>
+                    </Expandable>
 
-                    </MenuList>
-                </Expandable>
-                }
+                    <Expandable title="Script"
+                                onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
+                                expanded={settings.scriptExpanded}>
+                        <ScriptEditor
+                            onScroll={this.handleSettingChange.bind(this, 'scriptScroll')}
+                            scrollPosition={settings.scriptScroll}
+                            onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
+                    </Expandable>
 
+
+                    <Expandable title="Static assets"
+                                onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
+                                expanded={settings.resourceExpanded}>
+
+                        <ResourceEditor resources={resources}
+                                        onChange={this.handleResourceChange.bind(this)}></ResourceEditor>
+                    </Expandable>
+
+
+                    <Expandable title="Settings"
+                                onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
+                                expanded={settings.settingsExpanded}>
+
+                        <SimpleSwitch
+                            label="SSR (Server side Rendering)"
+                            checked={!!this.state.ssr}
+                            onChange={this.handleFlagChange.bind(this, 'ssr')}
+                        />
+                        <SimpleSwitch
+                            label="Public (is visible to everyone)"
+                            checked={!!this.state.public}
+                            onChange={this.handleFlagChange.bind(this, 'public')}
+                        />
+                        <SimpleSwitch
+                            label="Url sensitive (refresh component on url change)"
+                            checked={!!this.state.urlSensitiv}
+                            onChange={this.handleFlagChange.bind(this, 'urlSensitiv')}
+                        />
+                    </Expandable>
+
+                    <Expandable title="Revisions"
+                                onChange={this.handleSettingChange.bind(this, 'revisionsExpanded')}
+                                expanded={settings.revisionsExpanded}>
+                        To be implemented
+                    </Expandable>
+
+
+                    {cmsPages && cmsPages.results && cmsPages.results.length > 1 &&
+
+                    <Expandable title="Related pages"
+                                onChange={this.handleSettingChange.bind(this, 'relatedPagesExpanded')}
+                                expanded={settings.relatedPagesExpanded}>
+                        <MenuList>
+                            {
+                                cmsPages.results.map(i => {
+                                        if (i.slug !== props.slug) {
+                                            return <MenuListItem key={i.slug} onClick={e => {
+                                                history.push('/' + i.slug)
+                                            }} button primary={i.slug}/>
+                                        }
+                                    }
+                                )
+                            }
+
+                        </MenuList>
+                    </Expandable>
+                    }
+
+                </div>
             </div>
-        </div>
 
+            return <UIProvider>
+                <DrawerLayout sidebar={sidebar}
+                              open={settings.drawerOpen}
+                              fixedLayout={settings.fixedLayout}
+                              drawerWidth={settings.drawerWidth}
+                              onDrawerOpenClose={this.drawerOpenClose}
+                              onDrawerWidthChange={this.drawerWidthChange}
+                              toolbarRight={[
+                                  <SimpleSwitch key="inlineEditorSwitch" color="default"
+                                                checked={!!settings.inlineEditor}
+                                                onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
+                                                contrast
+                                                label="Inline Editor"/>,
+                                  <SimpleSwitch key="fixedLayoutSwitch" color="default"
+                                                checked={!!settings.fixedLayout}
+                                                onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
+                                                contrast
+                                                label="Fixed"/>,
 
-        return <UIProvider>
-            <DrawerLayout sidebar={sidebar}
-                          open={settings.drawerOpen}
-                          fixedLayout={settings.fixedLayout}
-                          drawerWidth={settings.drawerWidth}
-                          onDrawerOpenClose={this.drawerOpenClose}
-                          onDrawerWidthChange={this.drawerWidthChange}
-                          toolbarRight={[
-                              <SimpleSwitch key="inlineEditorSwitch" color="default"
-                                            checked={!!settings.inlineEditor}
-                                            onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
-                                            contrast
-                                            label="Inline Editor"/>,
-                              <SimpleSwitch key="fixedLayoutSwitch" color="default"
-                                            checked={!!settings.fixedLayout}
-                                            onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
-                                            contrast
-                                            label="Fixed"/>,
+                                  <Button key="button" size="small" color="inherit" onClick={e => {
+                                      this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
+                                  }}>Back</Button>
+                              ]
+                              }
+                              title={`Edit Page "${props.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
+                    {inner}
 
-                              <Button key="button" size="small" color="inherit" onClick={e => {
-                                  this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
-                              }}>Back</Button>
-                          ]
-                          }
-                          title={`Edit Page "${props.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
-                {settings._ready && <WrappedComponent  onChange={this.handleTemplateChange}
-                                                       onError={this.handleCmsError.bind(this)} settings={settings} cmsPage={cmsPageWithState}  {...props} />}
-                <ErrorHandler snackbar/>
-                <NetworkStatusHandler/>
-
-                <SimpleDialog open={!!cmsComponentEdit.key} onClose={this.handleComponentEditClose.bind(this)}
-                              actions={[{
-                                  key: 'ok',
-                                  label: 'Ok',
-                                  type: 'primary'
-                              }]}
-                              title="Edit Component">
-
-                    <TemplateEditor
-                        fabButtonStyle={{bottom: '3rem', right: '1rem'}}
-                        component={cmsComponentEdit}
-                        tab={settings.templateTab}
-                        onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
-                        onChange={this.handleTemplateChange.bind(this)}/>
-
-                </SimpleDialog>
-
-                <SimpleDialog open={!!cmsEditData} onClose={this.handleEditDataClose.bind(this)}
-                              actions={[{
-                                  key: 'ok',
-                                  label: 'Ok',
-                                  type: 'primary'
-                              }]}
-                              title="Edit Data">
-                    {cmsEditData? <Query query={gql(getTypeQueries(cmsEditData.type).query)}
-                                         variables={{filter:`_id=${cmsEditData._id}`}}
-                           fetchPolicy="network-only">
-
-                        {({loading, error, data}) => {
-                            if (loading) {
-                                return 'Loading...'
-                            }
-
-                            if (error) return `Error! ${error.message}`
-                            if (data.genericDatas.results.length===0) return 'No data'
-
-                            const editDialogProps = {
-                                type: cmsEditData.type,
-                                title: cmsEditData.type,
-                                open: true,
-                                onClose: ()=>{},
-                                dataToEdit:data.genericDatas.results[0],
-                                parentRef:this
-                            }
-                            return React.createElement(
-                                withType(TypeEdit),
-                                editDialogProps,
-                                null
-                            )
-                        }}
-
-                    </Query>:''}
-
-                </SimpleDialog>
-
-
-            </DrawerLayout>
-        </UIProvider>
+                </DrawerLayout>
+            </UIProvider>
+        }
 
     }
 
 
-    handleCmsError(e, meta){
+    handleCmsError(e, meta) {
         this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message}`})
     }
 
@@ -417,13 +423,13 @@ class CmsViewEditorContainer extends React.Component {
 
 
     handleClientScriptChange = (script) => {
-        if( this._saveSettings)
+        if (this._saveSettings)
             this._saveSettings()
         if (script.length > 10000) {
             // delay change for bigger script
             clearTimeout(this._scriptTimeout)
             this._scriptTimeout = setTimeout(() => {
-                this._scriptTimeout=null
+                this._scriptTimeout = null
                 this.setState({script})
             }, 200)
 
@@ -432,9 +438,9 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         this._autoSaveScript = () => {
-            if(this._scriptTimeout){
+            if (this._scriptTimeout) {
                 this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
-            }else {
+            } else {
                 clearTimeout(this._autoSaveScriptTimeout)
                 this._autoSaveScriptTimeout = 0
                 this.saveCmsPage(script, this.props.cmsPage, 'script')
@@ -446,7 +452,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleServerScriptChange = (serverScript) => {
-        if( this._saveSettings)
+        if (this._saveSettings)
             this._saveSettings()
         this.setState({serverScript})
         this._autoSaveServerScript = () => {
@@ -460,7 +466,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleDataResolverChange = (str, instantSave) => {
-        if( this._saveSettings)
+        if (this._saveSettings)
             this._saveSettings()
         this.setState({dataResolver: str})
         this._autoSaveDataResolver = () => {
@@ -483,7 +489,7 @@ class CmsViewEditorContainer extends React.Component {
             if (str.constructor !== String) {
                 str = JSON.stringify(str, null, 2)
             }
-            if( this._saveSettings)
+            if (this._saveSettings)
                 this._saveSettings()
             this.setState({template: str, templateError: null})
             this._autoSaveTemplate = () => {
@@ -522,8 +528,22 @@ class CmsViewEditorContainer extends React.Component {
         _cmsActions.editCmsComponent(null, cmsComponentEdit.component, cmsComponentEdit.scope)
     }
 
-    handleEditDataClose() {
-        const {_cmsActions} = this.props
+    handleEditDataClose(action, {editedData, dataToEdit, type}) {
+        const {_cmsActions, cmsPage, updateResolvedData} = this.props
+
+        if (editedData && dataToEdit) {
+            const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
+
+            if (resolvedDataJson[type]) {
+                const results = resolvedDataJson[type].results
+                const idx = results.findIndex(x => x._id === dataToEdit._id)
+                if (idx >= 0) {
+                    results[idx] = Object.assign(results[idx], editedData)
+                    updateResolvedData(resolvedDataJson)
+                }
+            }
+        }
+
         _cmsActions.editCmsData(null)
     }
 
@@ -559,8 +579,6 @@ class CmsViewEditorContainer extends React.Component {
 }
 
 
-
-
 CmsViewEditorContainer.propTypes = {
     loading: PropTypes.bool,
     renewing: PropTypes.bool,
@@ -590,7 +608,8 @@ CmsViewEditorContainer.propTypes = {
     _cmsActions: PropTypes.object.isRequired,
     /* udate data */
     updateCmsPage: PropTypes.func.isRequired,
-    errorHandlerAction: PropTypes.object.isRequired
+    errorHandlerAction: PropTypes.object.isRequired,
+    updateResolvedData: PropTypes.func.isRequired
 }
 
 
@@ -687,9 +706,6 @@ const CmsViewEditorContainerWithGql = compose(
         }),
     })
 )(CmsViewEditorContainer)
-
-
-
 
 
 /**

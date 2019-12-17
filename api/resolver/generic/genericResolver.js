@@ -5,7 +5,7 @@ import {getFormFields} from 'util/typesAdmin'
 import config from 'gen/config'
 import {
     CAPABILITY_MANAGE_TYPES,
-    CAPABILITY_MANAGE_OTHER_USERS
+    CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_KEYVALUES
 } from 'util/capabilities'
 import Hook from 'util/hook'
 import AggregationBuilder from './AggregationBuilder'
@@ -75,9 +75,21 @@ const GenericResolver = {
                 match = {}
 
             } else {
-                const typeDefinition = getType(typeName) || {}
+                const typeDefinition = getType(typeName)
+                let userFilter = true
+                if( typeDefinition ) {
+                    if(typeDefinition.noUserRelation){
+                        userFilter=false
+                    }
+                    if (typeDefinition.access && typeDefinition.access.read) {
+                        if(await Util.userHasCapability(db, context, typeDefinition.access.read)){
+                            match = {}
+                            userFilter=false
+                        }
+                    }
+                }
 
-                if (!typeDefinition.noUserRelation) {
+                if (userFilter) {
                     match = {createdBy: ObjectId(context.id)}
                 }
             }
@@ -154,6 +166,7 @@ const GenericResolver = {
 
         let userContext = context
 
+        //TODO change to role check
         if (typeDefinition && typeDefinition.access && typeDefinition.access.create === 'anonymous') {
             userContext = await Util.userOrAnonymousContext(db, context)
         }
@@ -307,8 +320,24 @@ const GenericResolver = {
         const params = {
             _id: ObjectId(data._id)
         }
+
+
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            params.createdBy = ObjectId(context.id)
+
+
+            const typeDefinition = getType(typeName)
+            let userFilter = true
+            if( typeDefinition ) {
+                if (typeDefinition.access && typeDefinition.access.update) {
+                    if(await Util.userHasCapability(db, context, typeDefinition.access.update)){
+                        userFilter=false
+                    }
+                }
+            }
+
+            if( userFilter ) {
+                params.createdBy = ObjectId(context.id)
+            }
         }
 
         const collection = db.collection(collectionName)

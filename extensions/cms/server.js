@@ -8,7 +8,8 @@ import resolver from './resolver'
 import Hook from 'util/hook'
 import {deepMergeToFirst} from 'util/deepMerge'
 import {
-    CAPABILITY_MANAGE_CMS_PAGES
+    CAPABILITY_MANAGE_CMS_PAGES,
+    CAPABILITY_MANAGE_CMS_CONTENT
 } from './constants'
 import {getCmsPage} from './util/cmsPage'
 import {resolveData} from './util/dataResolver'
@@ -27,9 +28,12 @@ Hook.on('schema', ({schemas}) => {
 // Hook to add or modify user roles
 Hook.on('createUserRoles', ({userRoles}) => {
     userRoles.forEach(userRole => {
-        if (['administrator', 'contributor', 'demo'].indexOf(userRole.name) >= 0) {
-            console.log(`Add capability "${CAPABILITY_MANAGE_CMS_PAGES}" for user role "${userRole.name}"`)
-            userRole.capabilities.push(CAPABILITY_MANAGE_CMS_PAGES)
+        if (['administrator', 'editor', 'demo'].indexOf(userRole.name) >= 0) {
+            console.log(`Add capabilities "${CAPABILITY_MANAGE_CMS_PAGES}" and ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
+            userRole.capabilities.push(CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT)
+        }else if( userRole.name === 'contributor'){
+            console.log(`Add capability ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
+            userRole.capabilities.push(CAPABILITY_MANAGE_CMS_CONTENT)
         }
     })
 })

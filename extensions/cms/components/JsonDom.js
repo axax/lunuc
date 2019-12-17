@@ -172,7 +172,6 @@ class JsonDom extends React.Component {
 
     shouldComponentUpdate(props, state) {
         const resolvedDataChanged = this.props.resolvedData !== props.resolvedData
-
         const locationChanged = this.props.location.search !== props.location.search ||
             this.props.location.hash !== props.location.hash
 
@@ -315,7 +314,6 @@ class JsonDom extends React.Component {
                 } else {
                     this.resolvedDataJson = JSON.parse(resolvedData)
                 }
-
                 if (this.resolvedDataJson.error) {
                     resolveDataError = this.resolvedDataJson.error
                 }
@@ -370,7 +368,6 @@ class JsonDom extends React.Component {
         if (!this.runJsEvent('beforerender', false, scope)) {
             return <div>Error in beforerender event. See details in console log</div>
         }
-
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope, true)
         if (content && this._inHtmlComponents.length > 0) {
             content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
@@ -470,323 +467,343 @@ class JsonDom extends React.Component {
         let h = []
         a.forEach((item, aIdx) => {
 
-            if (!item) return
+                if (!item) return
 
-            const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $edit} = item
-            /*
-             t = type
-             c = children
-             $c = children as html
-             $if = condition (only parse if condition is fullfilled)
-             p = prop
-             */
-            if ($ifexist) {
-                try {
-                    if (Util.propertyByPath($ifexist, scope) === undefined) {
-                        return
-                    }
-                } catch (e) {
-                    return
-                }
-            }
-
-
-            if ($is && $is !== 'true') {
-                if ($is === 'false') {
-                    return
-                }
-                const match = $is.match(/([\w|\.]*)(==|\!=)(.*)/)
-                if (match && match.length === 4) {
-                    let prop
-                    try {
-                        prop = Util.propertyByPath(match[1], scope)
-                    } catch (e) {
-                    }
-
-                    if (match[2] === '==') {
-                        if (match[3] !== String(prop)) {
-                            return
-                        }
-                    }
-                    if (match[2] === '!=') {
-                        if (match[3] === String(prop)) {
-                            return
-                        }
-                    }
-                }
-            }
-
-            if ($if) {
-                // check condition --> slower than to check with $ifexist
-                try {
-                    const tpl = new Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};return  ${$if}`)
-                    if (!tpl.call({scope})) {
-                        return
-                    }
-                } catch (e) {
-                    console.log(e, scope)
-                    return
-                }
-            }
-
-            // extend type
-            if (x && x.n) {
-                const extComp = this.extendedComponents[x.t]
-                if (!extComp) {
-                    let comp = JsonDom.components[x.t]
-                    if (comp) {
-                        if (comp.constructor === Object) {
-                            comp = comp.component
-                        }
-                        this.extendedComponents[x.n] = (props) => {
-                            return comp({...x.p, ...props})
-                        }
-                    }
-                }
-            }
-
-            // loop is deprecated. Use "for" instead, as it is better performance-wise
-            let loopOrFor
-            if ($for) {
-                loopOrFor = $for
-            } else {
-                loopOrFor = $loop
-            }
-
-            if (loopOrFor) {
-                const {$d, d, c} = loopOrFor
-                let data
-                if ($d) {
-                    try {
-                        // get data from scope by path (foo.bar)
-                        data = Util.propertyByPath($d, scope)
-                    } catch (e) {
-                        //this.parseError = e
-                        this.emitJsonError(e, {loc: 'Loop Datasrouce'})
-                    }
-                } else {
-                    if (d && d.constructor === String) {
-                        try {
-                            data = Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};const Util = this.Util;return ${d}`).call({
-                                scope,
-                                Util
-                            })
-                        } catch (e) {
-                            console.log(e, d)
-                            this.emitJsonError(e, {loc: 'Loop Datasource'})
-                        }
-                    } else {
-                        data = d
-                    }
-                }
-                if (!data) return
-                if (data.constructor === Object) {
-                    data = Object.keys(data).map((k) => {
-                        return {key: k, value: data[k]}
-                    })
-                }
-
-                if (data.constructor !== Array) return
-                let {s} = loopOrFor
-                if (!s) s = 'loop'
+                const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $edit} = item
                 /*
-                 d = data in loop
-                 $d = data (json as string) in loop
-                 c = children in loop
-                 s = scope in loop to access data
+                 t = type
+                 c = children
+                 $c = children as html
+                 $if = condition (only parse if condition is fullfilled)
+                 p = prop
                  */
-                try {
-                    const re = new RegExp('\\$\\.' + s + '{', 'g'),
-                        re2 = new RegExp('"' + s + '###', 'g'),
-                        re3 = new RegExp('###' + s + '"', 'g')
-                    const cStr = JSON.stringify(c).replace(re, '${') /* $.loop{ --> ${ */
-                    /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
-                        .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
-                        .replace(re2, '').replace(re3, '')
-
-                    let tpl
-
-                    if ($for) {
-                        tpl = new Function(DomUtil.toES5(`const ${s} = this.${s},
-                                                    Util = this.Util,
-                                                    _i = Util.tryCatch.bind(this),
-                                                    _t = this._t.bind(this.scope.data)
-                                                    return \`${cStr}\``))
-                    }
-                    data.forEach((loopChild, childIdx) => {
-                        if (!loopChild || loopChild.constructor !== Object) {
-                            loopChild = {data: loopChild}
+                if ($ifexist) {
+                    try {
+                        if (Util.propertyByPath($ifexist, scope) === undefined) {
+                            return
                         }
-
-                        if ($loop) {
-                            tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},
-                                                    Util = this.Util,
-                                                    _i = Util.tryCatch.bind(this),
-                                                    _t = this._t.bind(this.scope.data)
-                                                    return \`${cStr}\``))
-                        }
-                        // back to json
-                        loopChild._index = childIdx
-                        // remove tabs and parse
-                        const json = JSON.parse(tpl.call({
-                            [s]: loopChild,
-                            scope,
-                            Util: Util,
-                            _t
-                        }).replace(/\t/g, '\\t'))
-
-                        const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
-                        scope[s] = loopChild
-                        h.push(this.parseRec(json, key, scope))
-
-
-                    })
-                } catch (ex) {
-
-                    this.emitJsonError(ex, {loc: "Loop"})
-
-                    console.log(ex, c)
-                    if (ex.message.startsWith('Unexpected token')) {
-                        console.error('There is an error in the Json. Try to use Util.escapeForJson')
+                    } catch (e) {
+                        return
                     }
-                    return
                 }
 
 
-            } else {
-
-                const {editMode, location, match, dynamic, history, children} = this.props
-
-                const key = rootKey + '.' + aIdx, eleProps = {}
-                let tagName, className
-                if (!t || t.constructor !== String) {
-                    tagName = 'div'
-                } else if (t === '$children') {
-                    if (children) {
-                        h.push(children)
+                if ($is && $is !== 'true') {
+                    if ($is === 'false') {
+                        return
                     }
-                    return
-                } else if (t.slice(-1) === '$') {
-                    // editable
-                    tagName = t.slice(0, -1) // remove last char
-                    if (editMode && !dynamic) {
-                        eleProps.tag = tagName
-                        tagName = 'ContentEditable'
-                    }
-                } else {
-                    tagName = t
-                }
-                if (tagName.indexOf('.') >= 0) {
-                    const arr = tagName.split('.')
-                    tagName = arr[0]
-                    arr.shift()
-                    className = arr.join(' ')
-                }
-
-
-                if (p) {
-                    // remove properties with empty values unless they start with $
-                    Object.keys(p).forEach(key => {
-                        if (key.startsWith('$')) {
-                            p[key.substring(1)] = p[key]
-                            delete p[key]
-                        } else {
-                            p[key] === '' && delete p[key]
+                    const match = $is.match(/([\w|\.]*)(==|\!=)(.*)/)
+                    if (match && match.length === 4) {
+                        let prop
+                        try {
+                            prop = Util.propertyByPath(match[1], scope)
+                        } catch (e) {
                         }
-                    })
-                    Object.assign(eleProps, p)
-                    // replace events with real functions and pass payload
-                    JsonDom.events.forEach((e) => {
-                        if (eleProps['on' + e] && eleProps['on' + e].constructor === Object) {
-                            const payload = eleProps['on' + e]
-                            eleProps['on' + e] = (...args) => {
-                                const eLower = e.toLowerCase()
-                                this.runJsEvent(eLower, false, payload, ...args)
+
+                        if (match[2] === '==') {
+                            if (match[3] !== String(prop)) {
+                                return
                             }
                         }
-                    })
-                    if (eleProps.style && eleProps.style.constructor === String) {
-                        //Parses a string of inline styles into a javascript object with casing for react
-                        eleProps.style = parseStyles(eleProps.style)
-                    }
-                    if (eleProps.name) {
-                        // handle controlled input here
-                        if (eleProps.value === undefined) {
-                            eleProps.value = (eleProps.type === 'checkbox' ? false : '')
+                        if (match[2] === '!=') {
+                            if (match[3] === String(prop)) {
+                                return
+                            }
                         }
-                        if (!this.bindings[eleProps.name]) {
-                            this.bindings[eleProps.name] = eleProps.value
-                        } else {
-                            eleProps.value = this.bindings[eleProps.name]
+                    }
+                }
+
+                if ($if) {
+                    // check condition --> slower than to check with $ifexist
+                    try {
+                        const tpl = new Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};return  ${$if}`)
+                        if (!tpl.call({scope})) {
+                            return
                         }
-                        eleProps.onChange = this.handleBindingChange.bind(this, eleProps.onChange)
-
-                        eleProps.time = new Date()
-                    } else if (eleProps.value && tagName !== 'option') {
-                        console.warn(`Don't use property value without name in ${scope.page.slug}`)
-                    }
-                    if (eleProps.props && eleProps.props.$data) {
-                        eleProps.props.data = Object.assign(Util.propertyByPath(eleProps.props.$data, scope), eleProps.props.data)
+                    } catch (e) {
+                        console.log(e, scope)
+                        return
                     }
                 }
 
-
-                let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
-
-                eleProps.key = eleProps._key = key
-
-                if (eleType.constructor === Object) {
-                    eleType = eleType.component
-                }
-
-                if (t === 'Cms') {
-                    // if we have a cms component in another cms component the location props gets not refreshed
-                    // that's way we pass it directly to the reactElement as a prop
-                    eleProps.location = location
-                    eleProps.history = history
-                    eleProps.match = match
-                    eleProps._this = this
-                }
-
-                if (editMode) {
-                    eleProps._this = this
-                    eleProps._editmode = 'true'
-                }
-                if (className) {
-                    eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
-                }
-
-                if (editMode && this.props.inlineEditor && (initial || !dynamic || $edit)) {
-                    const rawJson = this.getJsonRaw(this.props, true)
-                    if (rawJson) {
-                        eleProps._WrappedComponent = eleType
-                        eleProps._edit = $edit
-                        eleProps._scope = scope
-                        eleProps._json = rawJson
-                        eleProps._onchange = this.props.onChange
-                        eleType = JsonDomHelper
+                // extend type
+                if (x && x.n) {
+                    const extComp = this.extendedComponents[x.t]
+                    if (!extComp) {
+                        let comp = JsonDom.components[x.t]
+                        if (comp) {
+                            if (comp.constructor === Object) {
+                                comp = comp.component
+                            }
+                            this.extendedComponents[x.n] = (props) => {
+                                return comp({...x.p, ...props})
+                            }
+                        }
                     }
                 }
-                if ($c) {
-                    eleProps.dangerouslySetInnerHTML = {__html: $c}
-                }
 
-                if ($observe && $observe.if !== 'false' && !!window.IntersectionObserver) {
-
-
-                    h.push(React.createElement(
-                        elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
-                        {key: key}
-                    ))
+                // loop is deprecated. Use "for" instead, as it is better performance-wise
+                let loopOrFor
+                if ($for) {
+                    loopOrFor = $for
                 } else {
-                    h.push(React.createElement(
-                        eleType,
-                        eleProps,
-                        ($c ? null : this.parseRec(c, key, scope))
-                    ))
+                    loopOrFor = $loop
+                }
+
+                if (loopOrFor) {
+                    const {$d, d, c} = loopOrFor
+                    let data
+                    if ($d) {
+                        try {
+                            // get data from scope by path (foo.bar)
+                            data = Util.propertyByPath($d, scope)
+                        } catch (e) {
+                            //this.parseError = e
+                            this.emitJsonError(e, {loc: 'Loop Datasrouce'})
+                        }
+                    } else {
+                        if (d && d.constructor === String) {
+                            try {
+                                data = Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};const Util = this.Util;return ${d}`).call({
+                                    scope,
+                                    Util
+                                })
+                            } catch (e) {
+                                console.log(e, d)
+                                this.emitJsonError(e, {loc: 'Loop Datasource'})
+                            }
+                        } else {
+                            data = d
+                        }
+                    }
+                    if (!data) return
+                    if (data.constructor === Object) {
+                        data = Object.keys(data).map((k) => {
+                            return {key: k, value: data[k]}
+                        })
+                    }
+
+                    if (data.constructor !== Array) return
+                    let {s} = loopOrFor
+                    if (!s) s = 'loop'
+                    /*
+                     d = data in loop
+                     $d = data (json as string) in loop
+                     c = children in loop
+                     s = scope in loop to access data
+                     */
+                    try {
+                        const re = new RegExp('\\$\\.' + s + '{', 'g'),
+                            re2 = new RegExp('"' + s + '###', 'g'),
+                            re3 = new RegExp('###' + s + '"', 'g')
+                        const cStr = JSON.stringify(c).replace(re, '${') /* $.loop{ --> ${ */
+                        /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
+                            .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
+                            .replace(re2, '').replace(re3, '')
+
+                        let tpl
+                        if ($for) {
+                            tpl = new Function(DomUtil.toES5(`const ${s} = this.${s},
+                                                    Util = this.Util,
+                                                    _i = Util.tryCatch.bind(this),
+                                                    _t = this._t.bind(this.scope.data)
+                                                    return \`${cStr}\``))
+                        }
+                        data.forEach((loopChild, childIdx) => {
+                            if (!loopChild || loopChild.constructor !== Object) {
+                                loopChild = {data: loopChild}
+                            }
+
+                            if ($loop) {
+                                tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},
+                                                    Util = this.Util,
+                                                    _i = Util.tryCatch.bind(this),
+                                                    _t = this._t.bind(this.scope.data)
+                                                    return \`${cStr}\``))
+                            }
+                            // back to json
+                            loopChild._index = childIdx
+                            // remove tabs and parse
+                            const json = JSON.parse(tpl.call({
+                                [s]: loopChild,
+                                scope,
+                                Util: Util,
+                                _t
+                            }).replace(/\t/g, '\\t'))
+
+                            const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
+                            scope[s] = loopChild
+                            h.push(this.parseRec(json, key, scope))
+
+
+                        })
+                    } catch (ex) {
+
+                        this.emitJsonError(ex, {loc: "Loop"})
+
+                        console.log(ex, c)
+                        if (ex.message.startsWith('Unexpected token')) {
+                            console.error('There is an error in the Json. Try to use Util.escapeForJson')
+                        }
+                        return
+                    }
+
+
+                } else {
+
+                    const {editMode, location, match, dynamic, history, children} = this.props
+
+                    const key = rootKey + '.' + aIdx, eleProps = {}
+                    let tagName, className
+                    if (!t || t.constructor !== String) {
+                        tagName = 'div'
+                    } else if (t === '$children') {
+                        if (children) {
+                            h.push(children)
+                        }
+                        return
+                    } else if (t.slice(-1) === '$') {
+                        // editable
+                        tagName = t.slice(0, -1) // remove last char
+                        if (editMode && !dynamic) {
+                            eleProps.tag = tagName
+                            tagName = 'ContentEditable'
+                        }
+                    } else {
+                        tagName = t
+                    }
+                    if (tagName.indexOf('.') >= 0) {
+                        const arr = tagName.split('.')
+                        tagName = arr[0]
+                        arr.shift()
+                        className = arr.join(' ')
+                    }
+
+
+                    if (p) {
+                        // remove properties with empty values unless they start with $
+                        Object.keys(p).forEach(key => {
+                            if (key.startsWith('$')) {
+                                p[key.substring(1)] = p[key]
+                                delete p[key]
+                            } else {
+                                p[key] === '' && delete p[key]
+                            }
+                        })
+                        Object.assign(eleProps, p)
+                        // replace events with real functions and pass payload
+                        JsonDom.events.forEach((e) => {
+                            if (eleProps['on' + e] && eleProps['on' + e].constructor === Object) {
+                                const payload = eleProps['on' + e]
+                                eleProps['on' + e] = (...args) => {
+                                    const eLower = e.toLowerCase()
+                                    this.runJsEvent(eLower, false, payload, ...args)
+                                }
+                            }
+                        })
+                        if (eleProps.style && eleProps.style.constructor === String) {
+                            //Parses a string of inline styles into a javascript object with casing for react
+                            eleProps.style = parseStyles(eleProps.style)
+                        }
+                        if (eleProps.name) {
+                            // handle controlled input here
+                            if (eleProps.value === undefined) {
+                                eleProps.value = (eleProps.type === 'checkbox' ? false : '')
+                            }
+                            if (!this.bindings[eleProps.name]) {
+                                this.bindings[eleProps.name] = eleProps.value
+                            } else {
+                                eleProps.value = this.bindings[eleProps.name]
+                            }
+                            eleProps.onChange = this.handleBindingChange.bind(this, eleProps.onChange)
+
+                            eleProps.time = new Date()
+                        } else if (eleProps.value && tagName !== 'option') {
+                            console.warn(`Don't use property value without name in ${scope.page.slug}`)
+                        }
+                        if (eleProps.props && eleProps.props.$data) {
+                            eleProps.props.data = Object.assign(Util.propertyByPath(eleProps.props.$data, scope), eleProps.props.data)
+                        }
+                    }
+
+
+                    let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
+
+                    eleProps.key = eleProps._key = key
+
+                    if (eleType.constructor === Object) {
+                        eleType = eleType.component
+                    }
+
+                    if (t === 'Cms') {
+                        // if we have a cms component in another cms component the location props gets not refreshed
+                        // that's way we pass it directly to the reactElement as a prop
+                        eleProps.location = location
+                        eleProps.history = history
+                        eleProps.match = match
+                        eleProps._this = this
+                    }
+
+                    if (editMode) {
+                        eleProps._this = this
+                        eleProps._editmode = 'true'
+                    }
+                    if (className) {
+                        eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
+                    }
+
+                    if (editMode) {
+
+                        if (this.props.inlineEditor && (initial || !dynamic)) {
+                            const rawJson = this.getJsonRaw(this.props, true)
+                            if (rawJson) {
+
+                                eleProps._json = rawJson
+                            }
+                        }
+
+                        if ($edit) {
+                            let _edit
+                            if ($edit && $edit.constructor === String) {
+                                const parts = $edit.split(':')
+                                if (parts.length === 2) {
+                                    _edit = {type: parts[0], _id: parts[1]}
+                                }
+                            } else {
+                                _edit = $edit
+                            }
+                            eleProps._edit = _edit
+                        }
+
+                        if (eleProps._edit || eleProps._json) {
+                            eleProps._WrappedComponent = eleType
+                            eleProps._scope = scope
+                            eleProps._onchange = this.props.onChange
+                            eleType = JsonDomHelper
+                        }
+
+                    }
+                    if ($c) {
+                        eleProps.dangerouslySetInnerHTML = {__html: $c}
+                    }
+
+                    if ($observe && $observe.if !== 'false' && !!window.IntersectionObserver) {
+
+
+                        h.push(React.createElement(
+                            elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
+                            {key: key}
+                        ))
+                    } else {
+                        h.push(React.createElement(
+                            eleType,
+                            eleProps,
+                            ($c ? null : this.parseRec(c, key, scope))
+                        ))
+                    }
                 }
             }
-        })
+        )
         return h
     }
 
@@ -798,6 +815,7 @@ class JsonDom extends React.Component {
             this.scope.page = {slug: props.slug}
             this.scope.user = props.user
             this.scope.editMode = props.editMode
+            this.scope.inEditor = props.inEditor
             this.scope.dynamic = props.dynamic
 
             // set default scope values
@@ -1172,6 +1190,7 @@ JsonDom.propTypes = {
 
     /* editMode */
     editMode: PropTypes.bool,
+    inEditor: PropTypes.bool,
     inlineEditor: PropTypes.bool,
     _key: PropTypes.string,
 

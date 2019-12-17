@@ -63,8 +63,12 @@ export const createUserRoles = async (db) => {
                 CAPABILITY_MANAGE_BACKUPS, CAPABILITY_RUN_COMMAND, CAPABILITY_RUN_SCRIPT]
         },
         {
-            name: 'contributor',
+            name: 'editor',
             capabilities: [CAPABILITY_VIEW_APP, CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES]
+        },
+        {
+            name: 'contributor',
+            capabilities: [CAPABILITY_VIEW_APP]
         },
         {
             name: 'subscriber',

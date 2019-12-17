@@ -31,7 +31,7 @@ export default function(WrappedComponent) {
         }
 
         render() {
-            const {slug, dynamic, cmsPage, loading, aboutToChange} = this.props
+            const {slug, dynamic, cmsPage, loading, aboutToChange, networkStatus} = this.props
             if (!cmsPage) {
                 if (!loading && !aboutToChange) {
                     console.warn(`cmsPage ${slug} missing`)
@@ -44,6 +44,12 @@ export default function(WrappedComponent) {
                             id: 'errorPageNoindex'
                         })
 
+                        if( networkStatus === 8){
+                            setTimeout(()=>{
+                                window.location.href = window.location.href
+                            },5000)
+                            return <ErrorPage code="504" message="We are sorry. Please try again in a moment" title="Maintenance" background="#f4a742"/>
+                        }
                         return <ErrorPage/>
                     } else {
                         return <div>Cms page {slug} doesn't exist</div>
@@ -51,9 +57,9 @@ export default function(WrappedComponent) {
                 }
             }
             if(!dynamic && isEditMode(this.props)){
-                return <CmsViewEditorContainer setKeyValue={this.setKeyValue.bind(this)} WrappedComponent={WrappedComponent} {...this.props}/>
+                return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)} setKeyValue={this.setKeyValue.bind(this)} WrappedComponent={WrappedComponent} {...this.props}/>
             }else{
-                return <WrappedComponent setKeyValue={this.setKeyValue.bind(this)} {...this.props}/>
+                return <WrappedComponent setKeyValue={this.setKeyValue.bind(this)} {...this.props} cmsPage={cmsPage}/>
             }
         }
 
@@ -155,7 +161,7 @@ export default function(WrappedComponent) {
 
         updateResolvedData(json) {
 
-            const {client, cmsPageVariables} = this.props
+            const {client, cmsPageVariables, cmsPage} = this.props
 
             const storeData = client.readQuery({
                 query: gqlQuery,
@@ -165,12 +171,14 @@ export default function(WrappedComponent) {
             // upadate data in resolvedData string
             if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
 
-                storeData.cmsPage.resolvedData = JSON.stringify(json)
+                cmsPage.resolvedData = storeData.cmsPage.resolvedData = JSON.stringify(json)
+
                 client.writeQuery({
                     query: gqlQuery,
                     variables: cmsPageVariables,
                     data: storeData
                 })
+
             }
         }
     }
@@ -184,14 +192,15 @@ export default function(WrappedComponent) {
                     fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network')
                 }
             },
-            props: ({data: {loading, cmsPage, variables, fetchMore}, ownProps}) => {
+            props: ({data: {loading, cmsPage, variables, fetchMore, networkStatus}, ownProps}) => {
                 const result = {
                     cmsPageVariables: variables,
                     loading,
                     fetchMore,
                     cmsPage,
                     renewing: false,
-                    aboutToChange: false
+                    aboutToChange: false,
+                    networkStatus
                 }
 
                 if (cmsPage) {

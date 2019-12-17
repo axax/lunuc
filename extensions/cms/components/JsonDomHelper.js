@@ -50,7 +50,7 @@ const styles = theme => ({
     toolbar: {
         zIndex: 999,
         position: 'fixed',
-        maxHeight:'200px'
+        maxHeight: '200px'
     },
     toolbarHovered: {},
     toolbarMenu: {
@@ -69,6 +69,7 @@ const styles = theme => ({
 })
 
 const ALLOW_DROP = ['div']
+const ALLOW_CHILDREN = ['div', 'ul']
 
 class JsonDomHelper extends React.Component {
     static currentDragElement
@@ -114,6 +115,7 @@ class JsonDomHelper extends React.Component {
             return false
         }
         return props._json !== this.props._json ||
+            props.children !== this.props.children ||
             state.hovered !== this.state.hovered ||
             state.dragging !== this.state.dragging ||
             state.top !== this.state.top ||
@@ -358,7 +360,7 @@ class JsonDomHelper extends React.Component {
         e.preventDefault()
         const {_cmsActions, _key, _json, _scope, _onchange} = this.props
 
-        removeComponent(_key,_json)
+        removeComponent(_key, _json)
         _onchange(_json)
     }
 
@@ -381,38 +383,59 @@ class JsonDomHelper extends React.Component {
 
     render() {
         const {classes, _WrappedComponent, _json, _cmsActions, _onchange, children, _edit, ...rest} = this.props
-
-        const subJson = getComponentByKey(rest._key, _json)
-
-        if (!subJson) return null
-
         const {hovered, toolbarHovered, toolbarMenuOpen} = this.state
-        let toolbar, highlighter, dropAreaAbove, dropAreaBelow
 
         const events = {
             onMouseOver: this.onHelperMouseOver.bind(this),
-            onMouseOut: this.onHelperMouseOut.bind(this),
-            draggable: 'true',
-            onDragStart: this.onDragStart.bind(this),
-            onDragEnd: this.onDragEnd.bind(this),
-            onDrag: this.onDrag.bind(this),
-            onDrop: this.onDrop.bind(this)
+            onMouseOut: this.onHelperMouseOut.bind(this)
+        }
+
+        let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow
+
+        if (isTempalteEdit) {
+            subJson = getComponentByKey(rest._key, _json)
+
+            if (!subJson) {
+                isTempalteEdit = false
+            }
+        }
+
+        if (isTempalteEdit) {
+            events.draggable = 'true'
+            events.onDragStart = this.onDragStart.bind(this)
+            events.onDragEnd = this.onDragEnd.bind(this)
+            events.onDrag = this.onDrag.bind(this)
+            events.onDrop = this.onDrop.bind(this)
         }
 
         if (hovered || toolbarHovered || toolbarMenuOpen) {
-            const isLoop = rest._key.indexOf('$loop')>=0
-            const menuItems = [
-                {name: 'Edit template', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)},
-                {name:  `Remove ${isLoop?'Loop':'Component'}`, icon: <DeleteIcon/>, onClick: this.handleDeleteClick.bind(this)}
-            ]
+            const menuItems = []
 
-            if( !isLoop && (!subJson.t || subJson.t.indexOf('$')<0)){
-                menuItems.splice(1, 0,{name: 'Add child component', icon: <AddIcon/>, onClick: this.handleAddChildClick.bind(this)})
+            if (isTempalteEdit) {
+                const isLoop = rest._key.indexOf('$loop') >= 0
+
+                menuItems.push({name: 'Edit template', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)},
+                    {
+                        name: `Remove ${isLoop ? 'Loop' : 'Component'}`,
+                        icon: <DeleteIcon/>,
+                        onClick: this.handleDeleteClick.bind(this)
+                    })
+
+                if (!isLoop && ALLOW_CHILDREN.indexOf(subJson.t) >= 0) {
+                    menuItems.splice(1, 0, {
+                        name: 'Add child component',
+                        icon: <AddIcon/>,
+                        onClick: this.handleAddChildClick.bind(this)
+                    })
+                }
             }
 
-
-            if( _edit ){
-                menuItems.splice(0, 0,{name: 'Edit data', icon: <EditIcon/>, onClick: this.handleEditDataClick.bind(this)})
+            if (_edit) {
+                menuItems.splice(0, 0, {
+                    name: 'Edit data',
+                    icon: <EditIcon/>,
+                    onClick: this.handleEditDataClick.bind(this)
+                })
             }
 
             toolbar = <div
@@ -421,7 +444,7 @@ class JsonDomHelper extends React.Component {
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height}}
                 className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}>
-                <div className={classes.info}>{_edit?_edit.type+': ':''}{subJson.t} - {rest.id || rest._key}</div>
+                <div className={classes.info}>{_edit ? _edit.type + ': ' : ''}{subJson?subJson.t+' - ':''}{rest.id || rest._key}</div>
                 <SimpleMenu
                     onOpen={() => {
                         this.setState({toolbarMenuOpen: true})
@@ -439,7 +462,7 @@ class JsonDomHelper extends React.Component {
         }
 
         let kids
-        if (children && children.constructor === Array && ALLOW_DROP.indexOf(subJson.t) >= 0) {
+        if (isTempalteEdit && children && children.constructor === Array && ALLOW_DROP.indexOf(subJson.t) >= 0) {
             kids = []
             for (let i = 0; i < children.length; i++) {
                 kids.push(this.getDropArea(rest, i))
@@ -451,10 +474,9 @@ class JsonDomHelper extends React.Component {
             kids = children
         }
         let comp
-
         if (_WrappedComponent.name === 'Cms') {
-            comp = <div {...events}>
-                <_WrappedComponent key={rest._key} {...rest} children={kids}/>
+            comp = <div key={rest._key} {...events}>
+                <_WrappedComponent {...rest} children={kids}/>
             </div>
         } else {
             comp = <_WrappedComponent key={rest._key} {...events} {...rest} children={kids}/>
@@ -474,10 +496,10 @@ JsonDomHelper.propTypes = {
     _WrappedComponent: PropTypes.any.isRequired,
     _cmsActions: PropTypes.object.isRequired,
     _key: PropTypes.string.isRequired,
-    _json: PropTypes.any.isRequired,
     _scope: PropTypes.object.isRequired,
+    _json: PropTypes.any,
     _edit: PropTypes.object,
-    _onchange: PropTypes.func.isRequired
+    _onchange: PropTypes.func
 }
 
 

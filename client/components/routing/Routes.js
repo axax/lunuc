@@ -33,7 +33,7 @@ const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../components/layout/ErrorPage')}/>
 
 const UnauthorizedPage = (props) => (
-    <ErrorPage code="401" message="Unauthorized" background="#f4a742"/>
+    <ErrorPage code="401" title="Unauthorized" background="#f4a742"/>
 )
 
 class Routes extends React.Component {

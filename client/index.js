@@ -121,6 +121,7 @@ function mainInit() {
             console.log('Push is supported')
 
             if (config.DEV_MODE) {
+
                 navigator.serviceWorker.getRegistrations().then(function (registrations) {
                     for (let registration of registrations) {
                         registration.unregister()

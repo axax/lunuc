@@ -46,7 +46,7 @@ const cmsPageEditorUrl = (slug, _version) => {
 export default () => {
 
     Hook.on('HomeContainerRender', ({content}) => {
-        content.push(<div>CMSComponent</div>)
+        content.push(<div key="test">CMSComponent</div>)
     })
 
     // add entry to main menu
@@ -165,7 +165,7 @@ export default () => {
     })
 
 
-    Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, meta}) {
+    Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, meta, parentRef}) {
 
         if (type === 'CmsPage') {
 
@@ -189,7 +189,7 @@ export default () => {
                             }}>Go to CMS Editor</span></Link>
             </Typography>,
                 <GenericForm key="CmsPageForm" autoFocus innerRef={ref => {
-                    this.createEditForm = ref
+                    parentRef.createEditForm = ref
                 }} onBlur={event => {
                     Hook.call('TypeCreateEditBlur', {type, event})
                 }} primaryButton={false} fields={newFields} values={dataToEdit}/>]

@@ -13,10 +13,11 @@ class QuillEditor extends React.Component {
         QuillEditor.instanceCounter++
         this.instanceId = QuillEditor.instanceCounter
 
+        DomUtil.addStyle('https://cdn.quilljs.com/1.3.6/quill.snow.css')
+
         DomUtil.addScript('https://cdn.quilljs.com/1.3.6/quill.js',{onload:()=>{
                 this.initEditor()
             }})
-        DomUtil.addStyle('https://cdn.quilljs.com/1.3.6/quill.snow.css')
     }
 
     shouldComponentUpdate() {

@@ -74,8 +74,10 @@ class TypeEdit extends React.Component {
         const {onClose, type, updateData, createData, meta, client} = this.props
         const {dataToEdit} = this.state
 
+        let editedData
+
         const closeModal = () => {
-            onClose(action)
+            onClose(action,{editedData,dataToEdit,type})
         }
 
         if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
@@ -84,9 +86,8 @@ class TypeEdit extends React.Component {
                 return
             }
 
-            const editedData = Object.assign({}, this.createEditForm.state.fields)
+            editedData = Object.assign({}, this.createEditForm.state.fields)
             const formFields = getFormFields(type)
-
             Hook.call('TypeCreateEditBeforeSave', {type, dataToEdit: editedData, formFields})
 
             // convert array to single value for not multivalue references
@@ -140,7 +141,7 @@ class TypeEdit extends React.Component {
                     // only send data if they have really changed
                     addAlwaysUpdateData(editedData, editedDataToUpdate, type)
 
-                    updateData(meta, {_id: dataToEdit._id, ...editedDataToUpdate}, editedData).then(callback)
+                    updateData({_id: dataToEdit._id, ...editedDataToUpdate}, editedData, meta).then(callback)
                 } else {
                     if (action.key === 'save_close') {
                         closeModal()
@@ -149,7 +150,7 @@ class TypeEdit extends React.Component {
 
             } else {
                 // create a new entry
-                createData(meta, editedDataWithRefs, editedData).then(callback)
+                createData(editedDataWithRefs, editedData, meta).then(callback)
             }
 
         } else if (action && (action.key === 'cancel' || action.key === 'Escape')) {

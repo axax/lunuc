@@ -1,4 +1,5 @@
 export const CAPABILITY_MANAGE_CMS_PAGES = 'manage_cms_pages'
+export const CAPABILITY_MANAGE_CMS_CONTENT = 'manage_cms_content'
 
 export const DEFAULT_DATA_RESOLVER = `[
   {

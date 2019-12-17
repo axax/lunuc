@@ -423,5 +423,11 @@ export const userResolver = (db) => ({
         deleteUsers: async ({_id}, {context}) => {
             return GenericResolver.deleteEnities(db, context, 'User', {_id})
         },
+        deleteUserRole: async ({_id}, {context}) => {
+            return GenericResolver.deleteEnity(db, context, 'UserRole', {_id})
+        },
+        deleteUserRoles: async ({_id}, {context}) => {
+            return GenericResolver.deleteEnities(db, context, 'UserRole', {_id})
+        }
     }
 })

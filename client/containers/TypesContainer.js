@@ -859,7 +859,7 @@ class TypesContainer extends React.Component {
         }
     }
 
-    createData({type, page, limit, sort, filter, _version}, input, optimisticInput) {
+    createData(input, optimisticInput, {type, page, limit, sort, filter, _version}) {
         const {client, user} = this.props
         if (type) {
             const queries = getTypeQueries(type)
@@ -913,7 +913,7 @@ class TypesContainer extends React.Component {
         }
     }
 
-    updateData({type, page, limit, sort, filter, _version}, changedData, optimisticData) {
+    updateData(changedData, optimisticData, {type, page, limit, sort, filter, _version}) {
         const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
@@ -1192,7 +1192,7 @@ class TypesContainer extends React.Component {
         if (value !== data[key]) {
             const changedData = {_id: data._id, [key]: value}
             addAlwaysUpdateData(data, changedData, data.__typename)
-            this.updateData(this.pageParams, changedData)
+            this.updateData(changedData, null, this.pageParams)
         }
     }
 

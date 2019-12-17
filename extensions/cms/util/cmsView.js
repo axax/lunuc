@@ -1,5 +1,5 @@
 import Util from '../../../client/util'
-import {CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
+import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants'
 import {NO_SESSION_KEY_VALUES_SERVER} from "../../../client/constants";
 import gql from "graphql-tag";
 
@@ -22,7 +22,7 @@ export const isPreview = () => {
 
 export const isEditMode = (props) => {
     const {user} = props
-    return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_PAGES) && !isPreview())
+    return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_CONTENT) && !isPreview())
 }
 
 

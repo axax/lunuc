@@ -9,7 +9,8 @@ class ErrorPage extends React.Component {
 
         return {
             code: props.code || '404',
-            message: props.message || 'Page not found',
+            title: props.title || 'Page not found',
+            message: props.message || 'WE ARE SORRY',
             background: props.background || '#33cc99'
         }
 
@@ -17,10 +18,9 @@ class ErrorPage extends React.Component {
 
     constructor(props) {
         super(props)
-
-        const {code, message, background} = this.getErrorStatus(props)
+        const {code, title, message, background} = this.getErrorStatus(props)
         this.titleOri = document.title
-        document.title = `${code} ${message}`
+        document.title = `${code} ${title}`
 
         if (!document.getElementById('errorPageNoindex')) {
             DomUtil.createAndAddTag('meta', 'head', {
@@ -237,7 +237,7 @@ hr:after {
 
     render() {
 
-        const {code, message} = this.getErrorStatus(this.props)
+        const {code, title, message} = this.getErrorStatus(this.props)
 
         return <div>
             <div id="clouds">
@@ -251,8 +251,8 @@ hr:after {
             <div className='c'>
                 <div className='_404'>{code}</div>
                 <hr/>
-                <div className="_1">{message.toUpperCase()}</div>
-                <div className="_2">WE ARE SORRY</div>
+                <div className="_1">{title.toUpperCase()}</div>
+                <div className="_2">{message.toUpperCase()}</div>
                 <a className='btn' onClick={() => {
                     history.back()
                 }} href="#">GO BACK</a>

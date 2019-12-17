@@ -45,6 +45,7 @@ class CmsViewContainer extends React.Component {
             // there is no need to update
             return false
         }
+
         // only update if it is needed
         return !cmsPage ||
             !cmsPageOld ||
@@ -64,6 +65,7 @@ class CmsViewContainer extends React.Component {
             (!props.dynamic && isEditMode(props) && (
                 cmsPage.template !== cmsPageOld.template ||
                 cmsPage.script !== cmsPageOld.script ||
+                props.cmsEditData !== this.props.cmsEditData ||
                 /* becuase it is passed to the JsonDom */
                 this.props.settings.inlineEditor !== props.settings.inlineEditor))
 
@@ -98,7 +100,6 @@ class CmsViewContainer extends React.Component {
             // it was already rendered on the server side
             return <span dangerouslySetInnerHTML={{__html: cmsPage.html}}/>
         }
-
         const startTime = new Date()
         const content = <JsonDom
                                  clientQuery={this.clientQuery.bind(this)}
@@ -405,7 +406,8 @@ CmsViewContainer.propTypes = {
     /* if dynamic is set to true that means it is a child of another CmsViewContainer */
     dynamic: PropTypes.bool,
     /* if true data gets refetched with query on url change*/
-    urlSensitiv: PropTypes.bool
+    urlSensitiv: PropTypes.bool,
+    inEditor: PropTypes.bool
 }
 
 export default withCms(CmsViewContainer)
