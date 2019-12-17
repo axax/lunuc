@@ -132,6 +132,7 @@ class CmsViewEditorContainer extends React.Component {
             state.script !== this.state.script ||
             state.serverScript !== this.state.serverScript ||
             this.props.cmsPages !== props.cmsPages ||
+            this.state.loadingSettings !== state.loadingSettings ||
             this.state.settings.fixedLayout !== state.settings.fixedLayout ||
             this.state.settings.inlineEditor !== state.settings.inlineEditor ||
             this.state.settings.templateTab !== state.settings.templateTab ||
