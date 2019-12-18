@@ -333,6 +333,14 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         Cache.set(cacheKey, map, segment.cache.expiresIn)
                     }
                     resolvedData[dataKey] = map
+                } else if (segment.user) {
+
+                    resolvedData.user = {id: context.id}
+                    if (context.id && segment.user.roles) {
+                        const user = await Util.userById(db, context.id)
+
+                        resolvedData.user.roles = await Util.getUserRoles(db, user.role)
+                    }
                 } else if (segment.keyValues) {
 
                     const map = {}

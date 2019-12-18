@@ -106,7 +106,8 @@ class GenericForm extends React.Component {
                             }
                         })
                     } else {
-                        if (!theState.fields[fieldKey] || theState.fields[fieldKey].trim() === '') {
+                        const value =theState.fields[fieldKey]
+                        if (!value || (value.constructor === String && value.trim()=== '')) {
                             fieldErrors[fieldKey] = 'Field is required'
                         }
                     }
@@ -116,7 +117,6 @@ class GenericForm extends React.Component {
         if (Object.keys(fieldErrors).length || Object.keys(this.state.fieldErrors).length) {
             this.setState({fieldErrors})
         }
-
         if (Object.keys(fieldErrors).length) {
             return false
         }
@@ -213,12 +213,13 @@ class GenericForm extends React.Component {
                                    })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor>
 
             } else if (uitype === 'html') {
-                return <QuillEditor key={fieldKey} style={{marginBottom:'2rem',marginTop:'2rem'}} onChange={(newValue) => this.handleInputChange({
+                return [<QuillEditor key={fieldKey} style={{marginBottom:'2rem',marginTop:'2rem'}} onChange={(newValue) => this.handleInputChange({
                     target: {
                         name: fieldKey,
                         value: newValue
                     }
-                })}>{value}</QuillEditor>
+                })}>{value}</QuillEditor>,
+                    (!!this.state.fieldErrors[fieldKey]?<div style={{marginTop:'-2rem',marginBottom:'2rem',color:'red'}}>Bitte ausfüllen</div>:'')]
 
             } else if (uitype === 'image') {
 

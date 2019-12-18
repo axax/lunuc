@@ -18,3 +18,9 @@ Hook.on('schema', ({schemas}) => {
 Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
     Cache.clearStartWith('GenericDataDefinition')
 })
+
+Hook.on('typeBeforeCreate', ({type, data}) => {
+    if( type==='GenericData'){
+        //TODO
+    }
+})

@@ -567,7 +567,7 @@ class TypesContainer extends React.Component {
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : '',
             <Row spacing={2} key="typeHeader">
                 {!this.fixType &&
-                <Col md={9}>
+                <Col md={6}>
                     <SimpleSelect
                         value={type}
                         onChange={this.handleTypeChange}
@@ -575,7 +575,7 @@ class TypesContainer extends React.Component {
                     />
                 </Col>
                 }
-                <Col xs={12} md={(this.fixType ? 12 : 3)} align="right">
+                <Col xs={12} md={(this.fixType ? 12 : 6)} align="right">
                     <GenericForm key="searchType"
                                  autoFocus={true}
                                  onChange={this.handleFilter}

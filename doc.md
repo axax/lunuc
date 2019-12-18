@@ -38,6 +38,7 @@ A Type can be define in the build.json of an extension. Types can also have refe
 * name = Name of the field
 * label = The label that is show in the frontend editor
 * required = If set to true the filed must have a value
+* default = Default value if no value is provided (TODO)
 * multi = If true multiple values can be selected
 * type = The type of the field. It can be String (default), Boolean, Float or the name of another type
 * index = Creates a database index. For FTS the value can be text
@@ -127,6 +128,7 @@ Hook.on('Routes.myroute', ({routes}) => {
 | typeUpdated      | type,data, db   |Is called when any type gets updated  |  
 | typeUpdated_{typeName}      | result, db   |Is called when a type gets updated  |  
 | typeDeleted_{typeName}      | _id, db   |Is called when a type gets deleted  |  
+| typeBeforeCreate      | type, _version, data, db, context   |Is called before data gets inserted into type collection  |  
 
 ## Content Management
 ### Data Resolver

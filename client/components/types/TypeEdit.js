@@ -65,7 +65,6 @@ class TypeEdit extends React.Component {
             }} primaryButton={false} fields={formFields} values={dataToEdit}/>
         }
         Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, parentRef: this})
-
         return <SimpleDialog {...props}/>
     }
 
@@ -81,7 +80,6 @@ class TypeEdit extends React.Component {
         }
 
         if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
-
             if (!this.createEditForm.validate()) {
                 return
             }
@@ -89,7 +87,6 @@ class TypeEdit extends React.Component {
             editedData = Object.assign({}, this.createEditForm.state.fields)
             const formFields = getFormFields(type)
             Hook.call('TypeCreateEditBeforeSave', {type, dataToEdit: editedData, formFields})
-
             // convert array to single value for not multivalue references
             Object.keys(formFields).forEach(key => {
                 const field = formFields[key]

@@ -60,7 +60,7 @@ export const start = (done) => {
             app.use(compression())
 
             // delay response
-            /* app.use(function (req, res, next) {
+             /*app.use(function (req, res, next) {
               setTimeout(next, 1000)
               })*/
 

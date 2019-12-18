@@ -162,6 +162,9 @@ const GenericResolver = {
     },
     createEnity: async (db, context, typeName, {_version, ...data}) => {
 
+
+        Hook.call('typeBeforeCreate', {type:typeName, _version, data, db, context})
+
         const typeDefinition = getType(typeName)
 
         let userContext = context

@@ -161,6 +161,8 @@ const Util = {
 
                 if (i === '') {
                     //ignore
+                } else if (i === '||') {
+                    operator = 'or'
                 } else if (i === '&&') {
                     operator = 'and'
                 } else {

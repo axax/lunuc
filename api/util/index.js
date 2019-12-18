@@ -65,7 +65,7 @@ const Util = {
             newOption = {}
         }
 
-        if ((newOption.skipCheck) || Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
+        if ((newOption.skipCheck) || await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
             Cache.remove('KeyValueGlobal_' + key)
 
             return db.collection('KeyValueGlobal').updateOne({
@@ -205,26 +205,25 @@ const Util = {
 
             const user = await Util.userById(db, context.id)
             if (user && user.role) {
-                const cacheKeyUserRole = 'UserRole' + user.role
-                let userRole = Cache.get(cacheKeyUserRole)
-
-                if (!userRole) {
-                    userRole = (await db.collection('UserRole').findOne({_id: ObjectId(user.role)}))
-                    Cache.set(cacheKeyUserRole, userRole, 6000000) // cache expires in 100 min
-                }
-
+                const userRole = await Util.getUserRoles(db,user.role)
                 return userRole.capabilities.includes(capability)
             }
         }
         return false
     },
     getUserRoles: async (db, id) => {
-        // TODO: Add Cache for roles
-        let userRole = (await db.collection('UserRole').findOne({_id: ObjectId(id)}))
+        const cacheKeyUserRole = 'UserRole' + id
+        let userRole = Cache.get(cacheKeyUserRole)
 
-        // fallback to default user role
-        if (userRole === null) {
-            userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
+        if (!userRole) {
+            if( id) {
+                userRole = (await db.collection('UserRole').findOne({_id: ObjectId(id)}))
+            }
+            // fallback to minimal user role
+            if (userRole === null) {
+                userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
+            }
+            Cache.set(cacheKeyUserRole, userRole, 6000000) // cache expires in 100 min
         }
         return userRole
     },

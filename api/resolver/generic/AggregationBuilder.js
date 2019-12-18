@@ -196,16 +196,29 @@ export default class AggregationBuilder {
                 for (const filterKey in parsedFilter.parts) {
                     if( filterKey.startsWith(name+'.') ){
 
-                        const part = parsedFilter.parts[filterKey]
-                        const {added} = this.addFilterToMatch({
-                            filterKey,
-                            filterValue: part.value,
-                            filterOptions: part,
-                            match
-                        })
-                        if (added) {
-                            hasAtLeastOneMatch = true
+
+                        filterPart = parsedFilter.parts[filterKey]
+
+                        let filterPartArray
+                        if (filterPart.constructor !== Array) {
+                            filterPartArray = [filterPart]
+                        } else {
+                            filterPartArray = filterPart
                         }
+
+                        for (const filterPartOfArray of filterPartArray) {
+                            const {added} = this.addFilterToMatch({
+                                filterKey,
+                                filterValue: filterPartOfArray.value,
+                                filterOptions: filterPartOfArray,
+                                match
+                            })
+                            if (added) {
+                                hasAtLeastOneMatch = true
+                            }
+                        }
+
+
                     }
                 }
             }
@@ -434,6 +447,18 @@ export default class AggregationBuilder {
                 filterOptions: parsedFilter.parts._id,
                 type: 'ID',
                 match: rootMatch
+            })
+        }
+        // if there is filter like createdBy=12323213
+        if (parsedFilter && parsedFilter.parts.createdBy) {
+            // if there is a filter on _id
+            // handle it here
+            this.addFilterToMatch({
+                filterKey: 'createdBy',
+                filterValue: parsedFilter.parts.createdBy.value,
+                filterOptions: parsedFilter.parts.createdBy,
+                type: 'ID',
+                match: match
             })
         }
         this.fields.forEach((field, i) => {

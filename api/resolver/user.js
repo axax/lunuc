@@ -312,7 +312,8 @@ export const userResolver = (db) => ({
 
 
             // clear cache
-            Cache.set(null, 'User' + _id)
+            Cache.remove( 'User'+username)
+            Cache.remove( 'User'+_id)
 
             return result.value
 
