@@ -46,6 +46,9 @@ const APP_VALUES = {
     ...APP_CONFIG.options
 }
 
+if (process.env.LUNUC_UPLOAD_DIR) {
+    APP_VALUES.UPLOAD_DIR = process.env.LUNUC_UPLOAD_DIR
+}
 if (APP_CONFIG.extensions) {
     for (const extensionName in APP_CONFIG.extensions) {
         if (APP_CONFIG.extensions[extensionName].active) {
@@ -143,7 +146,7 @@ const config = {
         })
     ],
     optimization: {
-        usedExports:true,
+        usedExports: true,
         /*splitChunks: {
          cacheGroups: {
          style: {
@@ -206,7 +209,7 @@ if (DEV_MODE) {
 
 
     config.devServer = {
-        contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static')],
+        contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],
         historyApiFallback: true,
         inline: true,
         hot: true,
@@ -215,7 +218,7 @@ if (DEV_MODE) {
         host: '0.0.0.0',
         proxy: {
             '/graphql': {target: `http://0.0.0.0:${API_PORT}`},
-            ['/'+APP_VALUES.API_PREFIX]: {target: `http://0.0.0.0:${API_PORT}`},
+            ['/' + APP_VALUES.API_PREFIX]: {target: `http://0.0.0.0:${API_PORT}`},
             '/ws': {
                 target: `ws://localhost:${API_PORT}`,
                 ws: true

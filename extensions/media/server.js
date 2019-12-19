@@ -1,6 +1,8 @@
 import Hook from 'util/hook'
 import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
+import schema from './schema'
+import resolver from './resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
 import fs from 'fs'
 import path from 'path'
@@ -16,12 +18,13 @@ const {UPLOAD_DIR, UPLOAD_URL} = config
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
-    deepMergeToFirst(resolvers, resolverGen(db))
+    deepMergeToFirst(resolvers, resolver(db), resolverGen(db))
 })
 
 // Hook to add mongodb schema
 Hook.on('schema', ({schemas}) => {
     schemas.push(schemaGen)
+    schemas.push(schema)
 })
 
 

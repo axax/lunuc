@@ -281,6 +281,7 @@ class GenericForm extends React.Component {
                     return <TextField autoFocus={autoFocus && fieldIndex === 0}
                                       error={!!this.state.fieldErrors[fieldKey]}
                                       key={fieldKey}
+                                      id={fieldKey}
                                       label={field.label}
                                       helperText={this.state.fieldErrors[fieldKey]}
                                       fullWidth={field.fullWidth}

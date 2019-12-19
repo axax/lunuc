@@ -2,6 +2,7 @@ import React, {useState} from 'react'
 import Hook from 'util/hook'
 import Async from 'client/components/Async'
 import config from 'gen/config'
+import gql from 'graphql-tag'
 
 const {UPLOAD_URL} = config
 
@@ -26,7 +27,7 @@ export default () => {
         if (type === 'Media') {
             dataSource.forEach((d, i) => {
                 const item = data.results[i]
-                if( item ) {
+                if (item) {
                     const mimeType = item.mimeType ? item.mimeType.split('/') : ['file']
 
                     d.data =
@@ -50,12 +51,25 @@ export default () => {
         if (type === 'Media') {
 
             actions.unshift({
-                name: 'Upload new Media', onClick: () => {
-                    setTimeout(() => {
-                        this.setState({createEditDialog: true, createEditDialogOption: 'upload'})
-                    }, 300)
-                }
-            })
+                    name: 'CleanUp Medias', onClick: () => {
+                        this.props.client.query({
+                            fetchPolicy: 'network-only',
+                            forceFetch: true,
+                            query: gql('{cleanUpMedia{status}}')
+                        }).then(response => {
+                            if(response.data && response.data.cleanUpMedia) {
+                                this.setState({simpleDialog: response.data.cleanUpMedia.status})
+                            }
+                        })
+                    }
+                },
+                {
+                    name: 'Upload new Media', onClick: () => {
+                        setTimeout(() => {
+                            this.setState({createEditDialog: true, createEditDialogOption: 'upload'})
+                        }, 300)
+                    }
+                })
         }
     })
 
@@ -81,13 +95,13 @@ export default () => {
                     [
                         <div style={{position: 'relative', zIndex: 3}} key="typePicker">
                             <TypePicker onChange={(e) => {
-                                setConversion(e.target.value && e.target.value.length?JSON.parse(e.target.value[0].conversion):null)
+                                setConversion(e.target.value && e.target.value.length ? JSON.parse(e.target.value[0].conversion) : null)
                             }} name="conversion" placeholder="Select a conversion"
                                         type="MediaConversion"/>
 
                             <TypePicker onChange={(e) => {
                                 const groups = []
-                                e.target.value.forEach(value=>{
+                                e.target.value.forEach(value => {
                                     groups.push(value._id)
                                 })
                                 setGroup(groups)
@@ -95,14 +109,14 @@ export default () => {
                                         type="MediaGroup"/>
                         </div>,
                         <SimpleSwitch key="useCdn" label="Upload file to CDN" name="useCdn"
-                                      onChange={(e)=>{
+                                      onChange={(e) => {
                                           setUseCdn(e.target.checked)
                                       }} checked={useCdn}/>,
                         <FileDrop key="fileDrop" multi={true} conversion={conversion} accept="*/*"
                                   uploadTo="/graphql/upload" resizeImages={true}
                                   data={{group, useCdn}}
                                   onSuccess={r => {
-                                      if(meta._this) {
+                                      if (meta._this) {
                                           meta._this.setState({createEditDialog: false, createEditDialogOption: null})
 
                                           meta._this.getData(meta, false)

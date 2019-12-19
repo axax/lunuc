@@ -119,7 +119,8 @@ class TypesContainer extends React.Component {
             createEditDialogOption: null,
             dataToEdit: null,
             data: null,
-            collectionName: ''
+            collectionName: '',
+            simpleDialog: false
         }
 
         if (!this.fixType) {
@@ -482,7 +483,7 @@ class TypesContainer extends React.Component {
 
     render() {
         const startTime = new Date()
-        const {dataToEdit, createEditDialog, viewSettingDialog, confirmCloneColDialog, manageColDialog, dataToDelete, confirmDeletionDialog} = this.state
+        const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, confirmCloneColDialog, manageColDialog, dataToDelete, confirmDeletionDialog} = this.state
         const {title, client} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
@@ -603,6 +604,12 @@ class TypesContainer extends React.Component {
                 <TextField value={this.state.collectionName} onChange={(e) => {
                     this.setState({collectionName: e.target.value})
                 }} placeholder="Enter a name (optional)"/>
+            </SimpleDialog>,
+            simpleDialog &&
+            <SimpleDialog key="simpleDialog" open={!!simpleDialog} onClose={()=>{this.setState({simpleDialog:false})}}
+                          actions={[{key: 'ok', label: 'OK'}]}
+                          title="Message">
+                {simpleDialog}
             </SimpleDialog>,
             createEditDialog !== undefined && <TypeEdit key="editDialog" {...editDialogProps}/>,
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,

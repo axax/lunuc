@@ -1,4 +1,3 @@
-import GenericResolver from "../../../api/resolver/generic/genericResolver";
 import {ObjectId} from "mongodb";
 
 export default db => ({
