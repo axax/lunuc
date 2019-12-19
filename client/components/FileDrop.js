@@ -305,6 +305,7 @@ FileDrop.propTypes = {
     uploadTo: PropTypes.string,
     name: PropTypes.string,
     value: PropTypes.string,
+    className: PropTypes.string,
     style: PropTypes.object,
     data: PropTypes.object,
     resizeImages: PropTypes.bool,
