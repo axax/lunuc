@@ -288,6 +288,16 @@ const Util = {
                 }
             )
         }
+    },
+    // a simple implementation of the shallowCompare.
+    // only compares the first level properties and hence shallow.
+    shallowCompare(newObj, prevObj) {
+        if( newObj !== prevObj) return true
+        if( !newObj && !prevObj) return false
+        for (const key in newObj){
+            if(newObj[key] !== prevObj[key]) return true
+        }
+        return false
     }
 }
 export default Util

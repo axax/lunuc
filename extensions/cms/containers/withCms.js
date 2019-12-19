@@ -3,7 +3,6 @@ import {graphql} from 'react-apollo'
 import {connect} from 'react-redux'
 import {withApollo} from 'react-apollo'
 import gql from 'graphql-tag'
-import {bindActionCreators} from 'redux'
 import {getGqlVariables, gqlQuery, isEditMode, urlSensitivMap,
     settingKeyPrefix,
     gqlQueryKeyValue} from '../util/cmsView'
@@ -47,7 +46,7 @@ export default function(WrappedComponent) {
                         if( networkStatus === 8){
                             setTimeout(()=>{
                                 window.location.href = window.location.href
-                            },5000)
+                            },10000)
                             return <ErrorPage code="504" message="We are sorry. Please try again in a moment" title="Maintenance" background="#f4a742"/>
                         }
                         return <ErrorPage/>

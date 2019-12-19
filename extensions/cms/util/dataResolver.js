@@ -82,7 +82,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     })
                 } else if (segment.t) {
                     const {t, f, l, o, g, p, d, s, $if, cache, includeCount} = segment
-
                     /*
                      f = filter for the query
                      t = type
@@ -425,6 +424,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             resolvedData.error = e.message + ' -> scope=' + JSON.stringify(scope) + debugInfo
         }
     }
-    console.log(`dataResolver in ${new Date().getTime() - startTime}ms`)
+    console.log(`dataResolver for ${scope.page.slug} in ${new Date().getTime() - startTime}ms`)
     return {resolvedData, subscriptions}
 }

@@ -48,9 +48,8 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, serverScript, resources, dataResolver, ssr, urlSensitiv, status} = props.cmsPage || {}
+        const {template, script, serverScript, resources, dataResolver, ssr, urlSensitiv, status, parseResolvedData, alwaysLoadAssets} = props.cmsPage || {}
         let settings = null
-
         if (props.keyValue) {
             // TODO optimize so JSON.parse is only called once
             try {
@@ -74,6 +73,8 @@ class CmsViewEditorContainer extends React.Component {
             dataResolver,
             ssr,
             urlSensitiv,
+            parseResolvedData,
+            alwaysLoadAssets,
             public: props.cmsPage && props.cmsPage.public
         }
         if (state && ['updating', 'updated'].indexOf(status) >= 0) {
@@ -303,6 +304,16 @@ class CmsViewEditorContainer extends React.Component {
                             label="Url sensitive (refresh component on url change)"
                             checked={!!this.state.urlSensitiv}
                             onChange={this.handleFlagChange.bind(this, 'urlSensitiv')}
+                        />
+                        <SimpleSwitch
+                            label="Always load assets (even when component is loaded dynamically)"
+                            checked={!!this.state.alwaysLoadAssets}
+                            onChange={this.handleFlagChange.bind(this, 'alwaysLoadAssets')}
+                        />
+                        <SimpleSwitch
+                            label="Parse resolvedData in frontend (replace placeholders)"
+                            checked={!!this.state.parseResolvedData}
+                            onChange={this.handleFlagChange.bind(this, 'parseResolvedData')}
                         />
                     </Expandable>
 
@@ -651,7 +662,7 @@ const CmsViewEditorContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$serverScript:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,query:$query,props:$props){slug template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$serverScript:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key, cb) => {
 

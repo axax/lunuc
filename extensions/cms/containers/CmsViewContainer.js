@@ -60,7 +60,7 @@ class CmsViewContainer extends React.Component {
             ) ||
             props.user !== this.props.user ||
             props.children != this.props.children ||
-            props._props !== this.props._props ||
+            Util.shallowCompare(props._props, this.props._props) ||
             /* only if in edit mode */
             (!props.dynamic && isEditMode(props) && (
                 cmsPage.template !== cmsPageOld.template ||
@@ -102,32 +102,32 @@ class CmsViewContainer extends React.Component {
         }
         const startTime = new Date()
         const content = <JsonDom
-                                 clientQuery={this.clientQuery.bind(this)}
-                                 serverMethod={this.serverMethod.bind(this)}
-                                 setKeyValue={setKeyValue}
-                                 template={cmsPage.template}
-                                 script={cmsPage.script}
-                                 resolvedData={cmsPage.resolvedData}
-                                 parseResolvedData={cmsPage.parseResolvedData}
-                                 resources={cmsPage.resources}
-                                 editMode={editMode}
-                                 inlineEditor={settings && !!settings.inlineEditor}
-                                 slug={slug}
-                                 dynamic={dynamic}
-                                 subscriptionCallback={cb => {
-                                     this._subscriptionCallback = cb
-                                 }}
-                                 onFetchMore={(query, cb) => {
-                                     fetchMore({
-                                         variables: {
-                                             query
-                                         },
-                                         updateQuery: (prev, {fetchMoreResult}) => {
-                                             cb(fetchMoreResult)
-                                         }
-                                     })
-                                 }}
-                                 {...props}>{children}</JsonDom>
+            clientQuery={this.clientQuery.bind(this)}
+            serverMethod={this.serverMethod.bind(this)}
+            setKeyValue={setKeyValue}
+            template={cmsPage.template}
+            script={cmsPage.script}
+            resolvedData={cmsPage.resolvedData}
+            parseResolvedData={cmsPage.parseResolvedData}
+            resources={cmsPage.resources}
+            editMode={editMode}
+            inlineEditor={settings && !!settings.inlineEditor}
+            slug={slug}
+            dynamic={dynamic}
+            subscriptionCallback={cb => {
+                this._subscriptionCallback = cb
+            }}
+            onFetchMore={(query, cb) => {
+                fetchMore({
+                    variables: {
+                        query
+                    },
+                    updateQuery: (prev, {fetchMoreResult}) => {
+                        cb(fetchMoreResult)
+                    }
+                })
+            }}
+            {...props}>{children}</JsonDom>
 
 
         console.info(`render ${this.constructor.name} for ${slug} (loading=${this.props.loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
@@ -138,7 +138,7 @@ class CmsViewContainer extends React.Component {
     addResources(props) {
         const {dynamic, cmsPage} = props
 
-        if (!dynamic && cmsPage) {
+        if (cmsPage && (!dynamic || cmsPage.alwaysLoadAssets)) {
             const {resources} = cmsPage
 
             DomUtil.removeElements(`[data-cms-view]`)
@@ -185,7 +185,6 @@ class CmsViewContainer extends React.Component {
             }
         }
     }
-
 
 
     removeSubscriptions() {
@@ -340,7 +339,6 @@ class CmsViewContainer extends React.Component {
             }
         })
     }
-
 
 
     clientQuery(query, options) {

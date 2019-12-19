@@ -35,10 +35,19 @@
         {
           "name": "urlSensitiv",
           "label": "Url sensitiv",
+          "hidden": true,
           "type": "Boolean"
-        },        {
+        },
+        {
           "name": "parseResolvedData",
           "label": "Parse resolved data",
+          "hidden": true,
+          "type": "Boolean"
+        },
+        {
+          "name": "alwaysLoadAssets",
+          "label": "Always load assets",
+          "hidden": true,
           "type": "Boolean"
         },
         {
