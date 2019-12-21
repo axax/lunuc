@@ -2,7 +2,7 @@ import React from 'react'
 import Hook from 'util/hook'
 import config from 'gen/config'
 
-const {ADMIN_BASE_URL} = config
+const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
 import {
     CAPABILITY_MANAGE_CMS_PAGES
 } from './constants'
@@ -19,14 +19,14 @@ const WebIcon = (props) => <Async {...props} expose="WebIcon"
                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 const Typography = (props) => <Async {...props} expose="Typography"
-                                  load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                     load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../client/components/layout/ErrorPage')}/>
 
 const GenericForm = (props) => <Async {...props}
-                                    load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
+                                      load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
 
 // Extend Util to use in template
 Util.xx = () => {
@@ -76,11 +76,11 @@ export default () => {
             exact: false, path: '/:slug*', render: ({match, location, history}) => {
                 Hook.call('CMSSlug', {match})
                 let slug = match.params.slug
-                const pos = (slug ? slug.indexOf('/-/') : -1)
+                const pos = (slug ? slug.indexOf('/' + PRETTYURL_SEPERATOR + '/') : -1)
                 if (pos >= 0) {
                     slug = slug.substring(0, pos)
-                    const subpage = slug.substring(pos + 3)
-                    location.search += '&_subpage=' + subpage
+                    /*const subpage = slug.substring(pos + 3)
+                    location.search += '&_subpage=' + subpage*/
                 }
 
                 if (slug === undefined || (slug && slug.split('/')[0] !== container.adminBaseUrlPlain)) {
@@ -149,7 +149,7 @@ export default () => {
                 const lastValue = slugInput.value
 
                 setTimeout(() => {
-                    const event = new Event('input', { bubbles: true })
+                    const event = new Event('input', {bubbles: true})
 
                     slugInput.value = value
                     let tracker = slugInput._valueTracker

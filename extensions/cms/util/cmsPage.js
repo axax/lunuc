@@ -22,11 +22,13 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
             hostRule = {$regex: `(^|;)${host.replace(/\./g, '\\.')}=${slug}($|;)`, $options: 'i'}
             ors.push({hostRule})
         }
-
-
         ors.push({slug})
 
-        ors.push({slug: `${slug.split('/')[0]}/*`})
+        /*const parts = slug.split('/')
+        for(let i = parts.length; i>0;i--){
+            ors.push({slug: `${parts.join('/')}/*`})
+            parts.splice(-1,1)
+        }*/
 
         if (!Util.isUserLoggedIn(context)) {
             // if no user only match public entries

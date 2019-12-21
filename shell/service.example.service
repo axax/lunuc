@@ -1,0 +1,13 @@
+[Unit]
+Description=Lunuc Api
+
+[Service]
+Environment="PATH=/root/.nvm/versions/node/v13.5.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+EnvironmentFile=/etc/lunuc.env
+WorkingDirectory=/opt/lunuc/
+ExecStart=/opt/lunuc/shell/start.sh
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target

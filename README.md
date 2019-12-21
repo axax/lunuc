@@ -65,6 +65,14 @@ You need to pass the environment variable MONGO_URL with the path to the mongodb
 Now the app should be accessable through the port 49160
 http://localhost:49160/
  
+### Start as service
+
+create lunuc-api.service file under /etc/systemd/system
+
+`systemctl daemon-reload`
+`sudo systemctl restart lunuc-api`
+`journalctl -lf -u lunuc-api`
+
 ## Implementation
 
 ### Folder structure
