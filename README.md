@@ -69,6 +69,7 @@ http://localhost:49160/
 
 create lunuc-api.service file under /etc/systemd/system
 
+`chmod +x /opt/lunuc/shell/start-api.sh`
 `systemctl daemon-reload`
 `sudo systemctl restart lunuc-api`
 `journalctl -lf -u lunuc-api`
