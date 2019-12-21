@@ -11,6 +11,7 @@ var sw = process.binding('stream_wrap')
 https.handle.prototype._flow = function flow () {
     var self = this
     this._stream.on('data', function (chunk) {
+        sw.streamBaseState[sw.kReadBytesOrError] = uv.UV_EOF
         self.onread(chunk.length, chunk)
     })
 
@@ -23,6 +24,7 @@ https.handle.prototype._flow = function flow () {
     this._stream.on('close', function () {
         setImmediate(function () {
             if (self._reading) {
+                sw.streamBaseState[sw.kReadBytesOrError] = uv.UV_EOF
                 self.onread(uv.UV_ECONNRESET, Buffer.alloc(0))
             }
         })
