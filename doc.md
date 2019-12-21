@@ -384,7 +384,7 @@ _tr()
 
 ### Config environment vars
 
-APP_FORCE_HTTPS=true 
+LUNUC_FORCE_HTTPS=true 
 
 ### Security
 

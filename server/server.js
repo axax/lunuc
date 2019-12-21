@@ -64,8 +64,9 @@ const options = {
 }
 // Initialize http api
 const app = httpx.createServer(options, function (req, res) {
+
     if (!config.DEV_MODE && req.headers.host !== 'localhost:' + PORT && req.headers['x-forwarded-proto'] !== 'https') {
-        if (process.env.APP_FORCE_HTTPS) {
+        if (process.env.LUNUC_FORCE_HTTPS) {
             console.log('Redirect to https' + req.headers.host)
             res.writeHead(301, {"Location": "https://" + req.headers.host + req.url})
             res.end()
@@ -126,7 +127,6 @@ const app = httpx.createServer(options, function (req, res) {
 
         } else {
             const host = getHostFromHeaders(req.headers)
-
             // check with and without www
             const hostrule = hostrules[host] || hostrules[host.substring(4)]
 
@@ -138,9 +138,12 @@ const app = httpx.createServer(options, function (req, res) {
             } else {
                 staticFile = path.join(STATIC_DIR, uri)
             }
-
-
+            res.writeHead(404, {'Content-Type': 'text/plain'})
+            res.write('404 Not Found\n')
+            res.end()
+            return
             fs.stat(staticFile, function (errStats, staticStats) {
+                console.log(errStats)
 
                 if (errStats || !staticStats.isFile()) {
                     // it is not a static file so check in build dir
@@ -178,7 +181,6 @@ const app = httpx.createServer(options, function (req, res) {
                             // default index
                             indexfile = path.join(BUILD_DIR, '/index.min.html')
                         }
-
                         sendFile(req, res, headers, indexfile);
                     }
                 } else {
@@ -203,7 +205,6 @@ let sendFile = function (req, res, headerExtra, filename) {
     if (!acceptEncoding) {
         acceptEncoding = ''
     }
-
     if (acceptEncoding.match(/\bgzip\b/)) {
         res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
 

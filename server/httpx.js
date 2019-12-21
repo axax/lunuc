@@ -3,6 +3,33 @@ let net = require('net')
 let http = require('http')
 let https = require('spdy')
 
+
+/* TEMP FIX --> Remove once it is fixed */
+var uv = process.binding('uv')
+var sw = process.binding('stream_wrap')
+
+https.handle.prototype._flow = function flow () {
+    var self = this
+    this._stream.on('data', function (chunk) {
+        self.onread(chunk.length, chunk)
+    })
+
+    this._stream.on('end', function () {
+
+        sw.streamBaseState[sw.kReadBytesOrError] = uv.UV_EOF
+        self.onread(uv.UV_EOF, Buffer.alloc(0))
+    })
+
+    this._stream.on('close', function () {
+        setImmediate(function () {
+            if (self._reading) {
+                self.onread(uv.UV_ECONNRESET, Buffer.alloc(0))
+            }
+        })
+    })
+}
+
+
 exports.createServer = (opts, handler) => {
 
     let server = net.createServer(socket => {
