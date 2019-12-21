@@ -138,10 +138,7 @@ const app = httpx.createServer(options, function (req, res) {
             } else {
                 staticFile = path.join(STATIC_DIR, uri)
             }
-            res.writeHead(404, {'Content-Type': 'text/plain'})
-            res.write('404 Not Found\n')
-            res.end()
-            return
+
             fs.stat(staticFile, function (errStats, staticStats) {
                 console.log(errStats)
 
