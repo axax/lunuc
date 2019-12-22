@@ -68,6 +68,7 @@ const options = {
 // Initialize http api
 const app = httpx.createServer(options, function (req, res) {
 
+    console.log(this)
     if (!config.DEV_MODE && req.socket.encrypted===false && req.headers.host !== 'localhost:' + PORT && req.headers['x-forwarded-proto'] !== 'https') {
         if (process.env.LUNUC_FORCE_HTTPS) {
             console.log(req)
