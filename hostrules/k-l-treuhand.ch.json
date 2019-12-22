@@ -2,5 +2,6 @@
   "fileMapping": {
     "/favicon.ico": "/hostrules/k-l-treuhand.ch/favicon.ico",
     "/index.html": "/hostrules/k-l-treuhand.ch/index.html"
-  }
+  },
+  "forceWWW": true
 }

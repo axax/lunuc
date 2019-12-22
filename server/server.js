@@ -20,7 +20,7 @@ const defaultWebHandler = (err, req, res) => {
 
 const defaultWSHandler = (err, req, socket, head) => {
     if (err) {
-        console.error('proxy error ws ', err)
+        //console.error('proxy error ws ', err)
         socket.destroy()
     }
 }
@@ -78,11 +78,13 @@ const app = httpx.createServer(options, function (req, res) {
 
     if (host !== 'localhost' && !net.isIP(host)) {
 
-        // TODO make it configurable
         // force www
         let newhost = host
         if (!newhost.startsWith('www.')) {
-            newhost = 'www.' + newhost
+            const hostrule = hostrules[host]
+            if( hostrule && hostrule.forceWWW) {
+                newhost = 'www.' + newhost
+            }
         }
 
         if (!config.DEV_MODE && this.constructor.name === 'Server') {
