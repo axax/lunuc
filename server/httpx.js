@@ -1,5 +1,6 @@
 'use strict'
 let net = require('net')
+let http = require('http')
 let http2 = require('http2')
 
 exports.createServer = (opts, handler) => {
@@ -40,7 +41,7 @@ exports.createServer = (opts, handler) => {
         })
     })
 
-    server.http = http2.createServer({},handler)
+    server.http = http.createServer(handler)
     server.https = http2.createSecureServer(opts, handler)
     return server
 }
