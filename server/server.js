@@ -13,14 +13,14 @@ import finalhandler from 'finalhandler'
 
 const defaultWebHandler = (err, req, res) => {
     if (err) {
-        console.error('proxy error', err)
+        //console.error('proxy error', err)
         finalhandler(req, res)(err)
     }
 }
 
 const defaultWSHandler = (err, req, socket, head) => {
     if (err) {
-        console.error('proxy error', err)
+        console.error('proxy error ws ', err)
         socket.destroy()
     }
 }
@@ -71,7 +71,7 @@ const app = httpx.createServer(options, function (req, res) {
 
     const host = getHostFromHeaders(req.headers)
 
-    if( host !== 'localhost' && !net.isIP(host) ) {
+    if (host !== 'localhost' && !net.isIP(host)) {
 
         // TODO make it configurable
         // force www
@@ -84,7 +84,6 @@ const app = httpx.createServer(options, function (req, res) {
             if (process.env.LUNUC_FORCE_HTTPS) {
 
 
-
                 console.log('Redirect to https ' + newhost)
                 res.writeHead(301, {"Location": "https://" + newhost + req.url})
                 res.end()
@@ -92,9 +91,9 @@ const app = httpx.createServer(options, function (req, res) {
             }
         }
 
-        if (newhost != host){
+        if (newhost != host) {
             console.log('Redirect to ' + newhost)
-            res.writeHead(301, {"Location": "https://" + newhost + req.url})
+            res.writeHead(301, {"Location": (this.constructor.name === 'Server' ? 'http' : 'https') + "://" + newhost + req.url})
             res.end()
             return
         }
