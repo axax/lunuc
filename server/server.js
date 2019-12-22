@@ -166,7 +166,7 @@ const app = httpx.createServer(options, function (req, res) {
 
             let staticFile
 
-            if (hostrule && hostrule.fileMapping[uri]) {
+            if (hostrule && hostrule.fileMapping && hostrule.fileMapping[uri]) {
                 staticFile = path.join(__dirname, '../' + hostrule.fileMapping[uri])
             } else {
                 staticFile = path.join(STATIC_DIR, uri)
