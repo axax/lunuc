@@ -108,7 +108,7 @@ const app = httpx.createServer(options, function (req, res) {
 
     const uri = url.parse(req.url).pathname
 
-    console.log(uri)
+    console.log(`${req.connection.remoteAddress}: ${uri}`)
 
     if (uri.startsWith('/graphql') || uri.startsWith('/' + API_PREFIX)) {
         // there is also /graphql/upload
