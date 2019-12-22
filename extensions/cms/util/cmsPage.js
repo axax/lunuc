@@ -4,7 +4,12 @@ import {getHostFromHeaders} from 'util/host'
 import Cache from 'util/cache'
 
 export const getCmsPage = async ({db, context, slug, editmode, _version, headers}) => {
-    const host = getHostFromHeaders(headers)
+    let host = getHostFromHeaders(headers)
+
+    if (host.startsWith('www.')) {
+        host = host.substring(4)
+    }
+
 
     const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '')
     let cmsPages
@@ -19,6 +24,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         const ors = []
 
         if (host) {
+
             hostRule = {$regex: `(^|;)${host.replace(/\./g, '\\.')}=${slug}($|;)`, $options: 'i'}
             ors.push({hostRule})
         }
@@ -36,7 +42,6 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         } else {
             match = {$or: ors}
         }
-        console.log(ors)
 
         cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets'], {
             match,
@@ -65,7 +70,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         }
 
         //only cache if public
-        if( cmsPages.results[0].public ) {
+        if (cmsPages.results[0].public) {
             Cache.set(cacheKey, cmsPages, 600000) // cache expires in 10 min
         }
     }
