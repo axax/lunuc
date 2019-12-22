@@ -5,7 +5,10 @@ Util to extract hostname from http headers
 export const getHostFromHeaders= (headers) => {
     let host
     if (headers) {
-        if (headers.forwarded) {
+        if( headers[':authority']){
+            //http2
+            host = headers[':authority'].split(':')[0]
+        }else if (headers.forwarded) {
             // if request comes from proxy server
             const aHost = headers.forwarded.split(';').filter(e => e.startsWith('host='))
             if (aHost.length>0) {

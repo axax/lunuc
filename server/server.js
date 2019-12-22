@@ -56,11 +56,13 @@ const API_PORT = (process.env.API_PORT || 3000)
 // Build dir
 const BUILD_DIR = path.join(__dirname, '../build')
 const STATIC_DIR = path.join(__dirname, '../' + config.STATIC_DIR)
+const CERT_PATH = process.env.LUNUC_CERT_PATH || __dirname
 
 
 const options = {
-    key: fs.readFileSync(path.join(__dirname, './server.key')),
-    cert: fs.readFileSync(path.join(__dirname, './server.cert'))
+    key: fs.readFileSync(path.join(CERT_PATH, './server.key')),
+    cert: fs.readFileSync(path.join(CERT_PATH, './server.cert')),
+    allowHTTP1: true
 }
 // Initialize http api
 const app = httpx.createServer(options, function (req, res) {
@@ -140,8 +142,6 @@ const app = httpx.createServer(options, function (req, res) {
             }
 
             fs.stat(staticFile, function (errStats, staticStats) {
-                console.log(errStats)
-
                 if (errStats || !staticStats.isFile()) {
                     // it is not a static file so check in build dir
 
