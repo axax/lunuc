@@ -68,8 +68,9 @@ const options = {
 // Initialize http api
 const app = httpx.createServer(options, function (req, res) {
 
-    if (!config.DEV_MODE && req.headers.host !== 'localhost:' + PORT && req.headers['x-forwarded-proto'] !== 'https') {
+    if (!config.DEV_MODE && req.socket.encrypted===false && req.headers.host !== 'localhost:' + PORT && req.headers['x-forwarded-proto'] !== 'https') {
         if (process.env.LUNUC_FORCE_HTTPS) {
+            console.log(req)
             const host = getHostFromHeaders(req.headers)
 
             console.log('Redirect to https' + host)
