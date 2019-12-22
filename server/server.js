@@ -75,6 +75,7 @@ const app = httpx.createServer(options, function (req, res) {
             console.log('Redirect to https' + host)
             res.writeHead(301, {"Location": "https://" + host + req.url})
             res.end()
+            return
         }
     }
 
