@@ -13,14 +13,14 @@ import finalhandler from 'finalhandler'
 
 const defaultWebHandler = (err, req, res) => {
     if (err) {
-        //console.error('proxy error', err)
+        console.error('proxy error', err)
         finalhandler(req, res)(err)
     }
 }
 
 const defaultWSHandler = (err, req, socket, head) => {
     if (err) {
-        //console.error('proxy error ws ', err)
+        console.error('proxy error ws ', err)
         socket.destroy()
     }
 }
@@ -107,6 +107,8 @@ const app = httpx.createServer(options, function (req, res) {
     }
 
     const uri = url.parse(req.url).pathname
+
+    console.log(uri)
 
     if (uri.startsWith('/graphql') || uri.startsWith('/' + API_PREFIX)) {
         // there is also /graphql/upload
@@ -226,6 +228,20 @@ const app = httpx.createServer(options, function (req, res) {
         }
     }
 })
+
+
+
+//app.https.on('error', (err) => console.error(err));
+
+/*app.https.on('stream', (stream, headers) => {
+    // stream is a Duplex
+    stream.respond({
+        'content-type': 'text/html',
+        ':status': 200
+    });
+    stream.end('<h1>Hello World</h1>');
+});*/
+
 
 
 let sendFile = function (req, res, headerExtra, filename) {

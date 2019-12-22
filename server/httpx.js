@@ -36,12 +36,23 @@ exports.createServer = (opts, handler) => {
             process.nextTick(() => socket.resume())
         })
 
-        socket.once('end', () => {
-            //console.log('server socket end')
+        socket.once('end', (e) => {
+            console.log('server socket end')
         })
+
     })
+
 
     server.http = http.createServer(handler)
     server.https = http2.createSecureServer(opts, handler)
+
+
+    server.on('error',err=>{
+        console.log('net err', err)
+    })
+
+    server.https.on('error',err=>{
+        console.log('https err', err)
+    })
     return server
 }
