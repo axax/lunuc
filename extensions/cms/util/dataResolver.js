@@ -162,7 +162,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                     resolvedData[segment.key || type] = result
                 } else if (segment.request) {
-
+                    console.log(`resolve request ${segment.request.url}`)
                     const dataKey = segment.key || 'request'
                     const cacheKey = createCacheKey(segment, 'request')
                     if (cacheKey) {
@@ -193,10 +193,14 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                             }, context)
 
                         }).catch(function (error) {
+                            const result = {error: error.message}
+                            if (segment.meta) {
+                                result.meta = segment.meta
+                            }
                             pubsubDelayed.publish('cmsPageData', {
                                 userId: context.id,
                                 session: context.session,
-                                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: {error: error.message}})}
+                                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: result})}
                             }, context)
                         })
                         addDataResolverSubsription = true
