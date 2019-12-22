@@ -70,8 +70,10 @@ const app = httpx.createServer(options, function (req, res) {
 
     if (!config.DEV_MODE && req.headers.host !== 'localhost:' + PORT && req.headers['x-forwarded-proto'] !== 'https') {
         if (process.env.LUNUC_FORCE_HTTPS) {
-            console.log('Redirect to https' + req.headers.host)
-            res.writeHead(301, {"Location": "https://" + req.headers.host + req.url})
+            const host = getHostFromHeaders(req.headers)
+
+            console.log('Redirect to https' + host)
+            res.writeHead(301, {"Location": "https://" + host + req.url})
             res.end()
         }
     }
