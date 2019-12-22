@@ -60,8 +60,9 @@ const CERT_DIR = process.env.LUNUC_CERT_DIR|| __dirname
 
 
 const options = {
-    key: fs.readFileSync(path.join(CERT_DIR, './server.key')),
-    cert: fs.readFileSync(path.join(CERT_DIR, './server.cert')),
+    key: fs.readFileSync(path.join(CERT_DIR, './privkey.pem')),
+    cert: fs.readFileSync(path.join(CERT_DIR, './cert.pem')),
+    ca: fs.readFileSync(path.join(CERT_DIR, './chain.pem')),
     allowHTTP1: true
 }
 // Initialize http api
