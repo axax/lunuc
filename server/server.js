@@ -15,6 +15,8 @@ const defaultWebHandler = (err, req, res) => {
     if (err) {
         console.error('proxy error', err)
         finalhandler(req, res)(err)
+    }else{
+        res.end()
     }
 }
 
@@ -90,8 +92,8 @@ const app = httpx.createServer(options, function (req, res) {
         if (!config.DEV_MODE && this.constructor.name === 'Server') {
             if (process.env.LUNUC_FORCE_HTTPS) {
 
+                console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost}`)
 
-                console.log('Redirect to https ' + newhost)
                 res.writeHead(301, {"Location": "https://" + newhost + req.url})
                 res.end()
                 return
@@ -99,7 +101,7 @@ const app = httpx.createServer(options, function (req, res) {
         }
 
         if (newhost != host) {
-            console.log('Redirect to ' + newhost)
+            console.log(`${req.connection.remoteAddress}: Redirect to ${newhost}`)
             res.writeHead(301, {"Location": (this.constructor.name === 'Server' ? 'http' : 'https') + "://" + newhost + req.url})
             res.end()
             return
