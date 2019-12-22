@@ -1,7 +1,6 @@
 'use strict'
 let net = require('net')
-let http = require('http')
-let https = require('http2')
+let http2 = require('http2')
 
 exports.createServer = (opts, handler) => {
 
@@ -35,9 +34,13 @@ exports.createServer = (opts, handler) => {
             // the socket may be resumed synchronously.
             process.nextTick(() => socket.resume())
         })
+
+        socket.once('end', () => {
+            //console.log('server socket end')
+        })
     })
 
-    server.http = http.createServer(handler)
-    server.https = https.createSecureServer(opts, handler)
+    server.http = http2.createServer(handler)
+    server.https = http2.createSecureServer(opts, handler)
     return server
 }
