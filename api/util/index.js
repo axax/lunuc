@@ -305,10 +305,13 @@ const Util = {
         return match
     },
     systemProperties: () => {
-        return ['hostname', 'arch', 'homedir', 'freemem', 'loadavg', 'platform', 'release', 'tmpdir', 'totalmem', 'type', 'uptime'].reduce((a, key) => {
+        const props = ['hostname', 'arch', 'homedir', 'freemem', 'loadavg', 'platform', 'release', 'tmpdir', 'totalmem', 'type', 'uptime'].reduce((a, key) => {
             a[key] = os[key]()
             return a
         }, {})
+
+        props.lunuc_group = process.env.LUNUC_GROUP || ''
+        return props
     },
     sleep: (time) => {
         return new Promise((resolve) => setTimeout(resolve, time))
