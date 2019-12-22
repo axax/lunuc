@@ -50,18 +50,18 @@ fs.readdir(HOSTRULES_DIR, (err, filenames) => {
 
 
 // Port to listen to
-const PORT = (process.env.PORT || 8080)
-const API_PORT = (process.env.API_PORT || 3000)
+const PORT = (process.env.LUNUC_PORT || process.env.PORT || 8080)
+const API_PORT = (process.env.LUNUC_API_PORT || process.env.API_PORT || 3000)
 
 // Build dir
 const BUILD_DIR = path.join(__dirname, '../build')
 const STATIC_DIR = path.join(__dirname, '../' + config.STATIC_DIR)
-const CERT_PATH = process.env.LUNUC_CERT_PATH || __dirname
+const CERT_DIR = process.env.LUNUC_CERT_DIR|| __dirname
 
 
 const options = {
-    key: fs.readFileSync(path.join(CERT_PATH, './server.key')),
-    cert: fs.readFileSync(path.join(CERT_PATH, './server.cert')),
+    key: fs.readFileSync(path.join(CERT_DIR, './server.key')),
+    cert: fs.readFileSync(path.join(CERT_DIR, './server.cert')),
     allowHTTP1: true
 }
 // Initialize http api
