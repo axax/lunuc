@@ -40,7 +40,7 @@ exports.createServer = (opts, handler) => {
         })
     })
 
-    server.http = http2.createServer(handler)
+    server.http = http2.createServer({},handler)
     server.https = http2.createSecureServer(opts, handler)
     return server
 }
