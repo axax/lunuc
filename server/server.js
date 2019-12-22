@@ -203,7 +203,7 @@ const app = httpx.createServer(options, function (req, res) {
 
                         let indexfile
 
-                        if (hostrule && hostrule.fileMapping['/index.html']) {
+                        if (hostrule && hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
                             indexfile = path.join(__dirname, '../' + hostrule.fileMapping['/index.html'])
                         } else {
                             // default index
