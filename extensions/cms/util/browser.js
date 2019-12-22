@@ -47,7 +47,7 @@ const openInBrowser = async (options, scope, resolvedData) => {
     })
     const page = await browserInstance.newPage()
 
-
+    console.log(`Open in headless browser ${url}`)
     try {
 
         if (images === false) {
