@@ -131,7 +131,6 @@ const app = httpx.createServer(options, function (req, res) {
         } else {
             const host = getHostFromHeaders(req.headers)
 
-            console.log(host)
             // check with and without www
             const hostrule = hostrules[host] || hostrules[host.substring(4)]
 

@@ -20,6 +20,7 @@ export const getHostFromHeaders= (headers) => {
             host = headers.host.split(':')[0]
         }
     }
+    console.log(host, headers)
     return host
 }
 
