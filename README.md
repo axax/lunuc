@@ -74,6 +74,11 @@ create lunuc-api.service file under /etc/systemd/system
 `sudo systemctl restart lunuc-api`
 `journalctl -lf -u lunuc-api`
 
+### Port forwarding
+
+`sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080`
+`sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 8080`
+
 ## Implementation
 
 ### Folder structure

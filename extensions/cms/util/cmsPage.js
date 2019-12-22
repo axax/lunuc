@@ -36,6 +36,8 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         } else {
             match = {$or: ors}
         }
+
+        console.log(context,match)
         cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets'], {
             match,
             limit: 1,
