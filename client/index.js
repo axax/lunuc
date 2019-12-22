@@ -67,7 +67,6 @@ function mainInit() {
         // keep language in session
         sessionStorage.setItem('lang', _app_.lang)
 
-        document.documentElement.setAttribute('lang', _app_.lang)
 
         if (contextLanguage === config.DEFAULT_LANGUAGE) {
             // set canonical link
@@ -94,8 +93,10 @@ function mainInit() {
         }
     } else {
         _app_.contextPath = ''
+        _app_.lang = config.DEFAULT_LANGUAGE
     }
 
+    document.documentElement.setAttribute('lang', _app_.lang)
 
     const start = () => {
         render(
