@@ -2,6 +2,7 @@ import proxy from 'http2-proxy'
 import httpx from './httpx'
 import url from 'url'
 import path from 'path'
+import net from 'net'
 import fs from 'fs'
 import zlib from 'zlib'
 import config from 'gen/config'
@@ -56,7 +57,7 @@ const API_PORT = (process.env.LUNUC_API_PORT || process.env.API_PORT || 3000)
 // Build dir
 const BUILD_DIR = path.join(__dirname, '../build')
 const STATIC_DIR = path.join(__dirname, '../' + config.STATIC_DIR)
-const CERT_DIR = process.env.LUNUC_CERT_DIR|| __dirname
+const CERT_DIR = process.env.LUNUC_CERT_DIR || __dirname
 
 
 const options = {
@@ -68,12 +69,32 @@ const options = {
 // Initialize http api
 const app = httpx.createServer(options, function (req, res) {
 
-    if (!config.DEV_MODE && this.constructor.name === 'Server' && req.headers.host !== 'localhost:' + PORT) {
-        if (process.env.LUNUC_FORCE_HTTPS) {
-            const host = getHostFromHeaders(req.headers)
+    const host = getHostFromHeaders(req.headers)
 
-            console.log('Redirect to https' + host)
-            res.writeHead(301, {"Location": "https://" + host + req.url})
+    if( host !== 'localhost' && !net.isIP(host) ) {
+
+        // TODO make it configurable
+        // force www
+        let newhost = host
+        if (!newhost.startsWith('www.')) {
+            newhost = 'www.' + newhost
+        }
+
+        if (!config.DEV_MODE && this.constructor.name === 'Server') {
+            if (process.env.LUNUC_FORCE_HTTPS) {
+
+
+
+                console.log('Redirect to https ' + newhost)
+                res.writeHead(301, {"Location": "https://" + newhost + req.url})
+                res.end()
+                return
+            }
+        }
+
+        if (newhost != host){
+            console.log('Redirect to ' + newhost)
+            res.writeHead(301, {"Location": "https://" + newhost + req.url})
             res.end()
             return
         }
@@ -81,7 +102,7 @@ const app = httpx.createServer(options, function (req, res) {
 
     const uri = url.parse(req.url).pathname
 
-    if (uri.startsWith('/graphql') || uri.startsWith('/'+API_PREFIX)) {
+    if (uri.startsWith('/graphql') || uri.startsWith('/' + API_PREFIX)) {
         // there is also /graphql/upload
         return proxy.web(req, res, {
             hostname: 'localhost',
@@ -132,7 +153,6 @@ const app = httpx.createServer(options, function (req, res) {
 
 
         } else {
-            const host = getHostFromHeaders(req.headers)
 
             // check with and without www
             const hostrule = hostrules[host] || hostrules[host.substring(4)]
