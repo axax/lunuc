@@ -64,20 +64,6 @@ You need to pass the environment variable MONGO_URL with the path to the mongodb
  
 Now the app should be accessable through the port 49160
 http://localhost:49160/
- 
-### Start as service
-
-create lunuc-api.service file under /etc/systemd/system
-
-`chmod +x /opt/lunuc/shell/start-api.sh`
-`systemctl daemon-reload`
-`sudo systemctl restart lunuc-api`
-`journalctl -lf -u lunuc-api`
-
-### Port forwarding
-
-`sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080`
-`sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 8080`
 
 ## Implementation
 
@@ -164,6 +150,26 @@ Feedback, issues, etc. are more than welcome!
 check with `ncu` 
 
 update with `ncu -u `
+
+
+### Start as service
+
+create lunuc-api.service file under /etc/systemd/system
+
+`chmod +x /opt/lunuc/shell/start-api.sh`
+`systemctl daemon-reload`
+`sudo systemctl restart lunuc-api`
+`journalctl -lf -u lunuc-api`
+
+### Port forwarding
+
+`sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080`
+`sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 8080`
+
+### Create cert with letsencrypt
+
+`sudo certbot certonly --manual`
+
 
 ### Rebuild bcrypt
 `npm rebuild bcrypt --update-binary`
