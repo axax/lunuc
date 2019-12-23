@@ -11,6 +11,7 @@ import {pubsub} from 'api/subscription'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
 import Cache from 'util/cache'
 import {withFilter} from 'graphql-subscriptions'
+import {getHostFromHeaders} from 'util/host'
 
 const createScopeForDataResolver = (query, _props) => {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
@@ -69,7 +70,7 @@ export default db => ({
             if (!cmsPages.results || cmsPages.results.length === 0) {
                 throw new Error('Cms page doesn\'t exist')
             }
-            const scope = {...createScopeForDataResolver(query, props), page: {slug}}
+            const scope = {...createScopeForDataResolver(query, props), page: {slug, host: getHostFromHeaders(headers)}}
 
             const {_id, createdBy, template, script, resources, dataResolver, parseResolvedData,alwaysLoadAssets,
                 ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
@@ -221,7 +222,9 @@ export default db => ({
                 script: DEFAULT_SCRIPT
             })
         },
-        updateCmsPage: async ({_id, query, props, ...rest}, {context}) => {
+        updateCmsPage: async ({_id, query, props, ...rest}, req) => {
+            const {context, headers} = req
+
             Util.checkIfUserIsLoggedIn(context)
 
             const {_version} = rest
@@ -234,12 +237,13 @@ export default db => ({
 
             // if dataResolver has changed resolveData and return it
             if (rest.dataResolver) {
-                const scope = {...createScopeForDataResolver(query, props), page: {slug: rest.slug}}
+                const scope = {...createScopeForDataResolver(query, props), page: {slug: rest.slug, host: getHostFromHeaders(headers)}}
                 const {resolvedData, subscriptions} = await resolveData({
                     db,
                     context,
                     dataResolver: rest.dataResolver,
-                    scope
+                    scope,
+                    req
                 })
 
                 result.resolvedData = JSON.stringify(resolvedData)
