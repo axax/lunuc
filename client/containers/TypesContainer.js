@@ -315,7 +315,10 @@ class TypesContainer extends React.Component {
                                             className={classes.textLight}>{lang}:</span> <span
                                             onBlur={e => this.handleDataChange.bind(this)(e, item, field, lang)}
                                             suppressContentEditableWarning
-                                            contentEditable>{fieldValue && fieldValue[lang]}</span>
+                                            dangerouslySetInnerHTML={{
+                                                __html: fieldValue && fieldValue[lang]
+                                            }}
+                                            contentEditable />
                                             <br/>
                                         </div>)
                                     })
@@ -327,7 +330,10 @@ class TypesContainer extends React.Component {
                                         dynamic[field.name] =
                                             <div className={classes.tableLargeContent}
                                                  onBlur={e => this.handleDataChange.bind(this)(e, item, field)}
-                                                 suppressContentEditableWarning contentEditable>{fieldValue}</div>
+                                                 suppressContentEditableWarning contentEditable
+                                                 dangerouslySetInnerHTML={{
+                                                     __html: fieldValue
+                                                 }} />
                                     }
                                 }
 
