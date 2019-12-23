@@ -64,7 +64,7 @@ class Routes extends React.Component {
             let newPath
             if( path.constructor === Object)
                 path = path.pathname
-            if (path.indexOf(_app_.contextPath + '/') < 0) {
+            if (path!==_app_.contextPath && path.indexOf(_app_.contextPath + '/') < 0) {
                 newPath = _app_.contextPath + path
             } else {
                 newPath = path
