@@ -223,7 +223,7 @@ const Util = {
     getImageObject(raw) {
         if (!raw) {
             //TODO replace image placeholder
-            return {src: 'https://www.savory.global/wp-content/uploads/2018/07/placeholder.png'}
+            return {src: 'https://www.savory.global/wp-content/uploads/2018/07/placeholder.png', alt:'Placeholder image'}
         }
 
         let image = raw.constructor === String ? JSON.parse(raw) : raw

@@ -6,7 +6,7 @@ import Cache from 'util/cache'
 export const getCmsPage = async ({db, context, slug, editmode, _version, headers}) => {
     let host = getHostFromHeaders(headers)
 
-    if (host.startsWith('www.')) {
+    if (host && host.startsWith('www.')) {
         host = host.substring(4)
     }
 
