@@ -109,7 +109,6 @@ export const userResolver = (db) => ({
                 //enhanceUserSettings(user)
 
             }
-            console.log(user)
             return user
         },
         publicUsers: async ({limit, offset}, {context, query}) => {
@@ -267,7 +266,7 @@ export const userResolver = (db) => ({
                 user.emailConfirmed = emailConfirmed
             }
             if( picture !== undefined){
-                user.picture = ObjectId(picture)
+                user.picture = picture?ObjectId(picture):null
             }
 
             if (username) {
@@ -354,9 +353,8 @@ export const userResolver = (db) => ({
 
 
                 if( user.picture !== undefined){
-                    user.picture = ObjectId(user.picture)
+                    user.picture = user.picture ? ObjectId(user.picture) :null
                 }
-
 
                 const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}, {returnOriginal: false}))
                 if (result.ok !== 1) {

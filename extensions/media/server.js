@@ -1,4 +1,4 @@
-import Hook from 'util/hook'
+    import Hook from 'util/hook'
 import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import schema from './schema'
