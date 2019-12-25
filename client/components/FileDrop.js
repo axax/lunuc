@@ -4,6 +4,9 @@ import {withStyles, CloudUploadIcon, Typography, LinearProgress} from 'ui/admin'
 import classNames from 'classnames'
 import UploadUtil from 'client/util/upload'
 
+import config from 'gen/config'
+const {UPLOAD_URL} = config
+
 //expose
 _app_.UploadUtil = UploadUtil
 
@@ -103,7 +106,19 @@ class FileDrop extends React.Component {
     static initialState(props) {
         const images = []
         if (props.value) {
-            images.push(props.value)
+            let value
+            try{
+                value = JSON.parse(props.value)
+            }catch (e) {
+                value = props.value
+            }
+            if( value.constructor === Object){
+                if( value._id ){
+                    images.push(UPLOAD_URL+'/'+value._id.toString())
+                }
+            }else {
+                images.push(value)
+            }
         }
         return {
             isHover: false,

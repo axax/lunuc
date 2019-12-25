@@ -12,7 +12,7 @@ import {sendMail} from 'api/util/mail'
 import crypto from 'crypto'
 
 
-const createUser = async ({username, role, password, email, db, context}) => {
+const createUser = async ({username, role, password, email, picture, db, context}) => {
 
     const errors = []
 
@@ -62,6 +62,7 @@ const createUser = async ({username, role, password, email, db, context}) => {
         email: email,
         username: username,
         password: hashedPw,
+        picture,
         signupToken: signupToken
     })
     return insertResult
@@ -73,7 +74,7 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'email', 'emailConfirmed', 'role$UserRole', 'lastLogin'], {
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'picture', 'email', 'emailConfirmed', 'role$UserRole', 'lastLogin'], {
                 limit,
                 page,
                 offset,
@@ -99,9 +100,16 @@ export const userResolver = (db) => ({
             } else {
                 user.role = Util.getUserRoles(db, user.role)
 
+                if( user.picture){
+                    user.picture = {_id: user.picture}
+                }
+                /*if( user.picture){
+                    user.picture = await db.collection('Media').findOne({_id: ObjectId(user.picture)})
+                }*/
                 //enhanceUserSettings(user)
 
             }
+            console.log(user)
             return user
         },
         publicUsers: async ({limit, offset}, {context, query}) => {
@@ -220,8 +228,8 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, emailConfirmed, role}, {context}) => {
-            const insertResult = await createUser({db, context, username, email, emailConfirmed, password})
+        createUser: async ({username, password, email, picture, emailConfirmed, role}, {context}) => {
+            const insertResult = await createUser({db, context, username, picture, email, emailConfirmed, password})
 
             if (insertResult.insertedCount) {
                 const doc = insertResult.ops[0]
@@ -248,7 +256,7 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, emailConfirmed, role}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, emailConfirmed, role}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             const user = {}
@@ -257,6 +265,9 @@ export const userResolver = (db) => ({
 
             if( emailConfirmed !== undefined){
                 user.emailConfirmed = emailConfirmed
+            }
+            if( picture !== undefined){
+                user.picture = ObjectId(picture)
             }
 
             if (username) {
@@ -340,6 +351,13 @@ export const userResolver = (db) => ({
             if (existingUser != null && existingUser._id.toString() !== context.id) {
                 throw new ApiError(`Username ${user.username} already taken`, 'username.taken', {x: 'sss'})
             } else {
+
+
+                if( user.picture !== undefined){
+                    user.picture = ObjectId(user.picture)
+                }
+
+
                 const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}, {returnOriginal: false}))
                 if (result.ok !== 1) {
                     throw new ApiError('User could not be changed')

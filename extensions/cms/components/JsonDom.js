@@ -238,7 +238,8 @@ class JsonDom extends React.Component {
         return false
     }
 
-    componentDidCatch() {
+    componentDidCatch(err,info) {
+        console.error(err, info)
         this.hasError = true
         this.forceUpdate()
     }

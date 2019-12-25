@@ -140,6 +140,8 @@ export const checkFieldType = (value, field) => {
     return value
 }
 
+
+
 /* Register manually created types */
 
 Hook.on('Types', ({types}) => {
@@ -219,6 +221,11 @@ Hook.on('Types', ({types}) => {
             {
                 name: 'email',
                 required: true
+            },
+            {
+                name: 'picture',
+                type: 'Media',
+                reference: true
             },
             {
                 name: 'emailConfirmed',
