@@ -55,7 +55,7 @@ export default function(WrappedComponent) {
                     }
                 }
             }
-            if(!dynamic && isEditMode(this.props)){
+            if(!dynamic && isEditMode(this.props) && window.self === window.top){
                 return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)} setKeyValue={this.setKeyValue.bind(this)} WrappedComponent={WrappedComponent} {...this.props}/>
             }else{
                 return <WrappedComponent setKeyValue={this.setKeyValue.bind(this)} {...this.props} cmsPage={cmsPage}/>
