@@ -56,13 +56,14 @@ server.on('request', (req, res) => {
 
     if( !block ){
         //check subdomains
-        const pos = hostname.indexOf('.')
+        let pos = hostname.indexOf('.')
         while(pos>=0){
             hostname = hostname.substring(pos+1)
             if(hosts[hostname] && hosts[hostname].block === true && hosts[hostname].subdomains === true){
                 block = true
                 break
             }
+            pos = hostname.indexOf('.')
         }
     }
 
