@@ -59,7 +59,7 @@ server.on('request', (req, res) => {
         const pos = hostname.indexOf('.')
         while(pos>=0){
             hostname = hostname.substring(pos+1)
-            if(hosts[hostname].block === true && hosts[hostname].subdomains === true){
+            if(hosts[hostname] && hosts[hostname].block === true && hosts[hostname].subdomains === true){
                 block = true
                 break
             }
