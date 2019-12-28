@@ -93,6 +93,15 @@ server.on('error', (err, buff, req, res) => {
     console.log(err.stack)
 })
 
+
+server.on('listening', ()=> {
+    console.log('dns listening')
+})
+
+server.on('listening', ()=> {
+    console.log('dns close')
+})
+
 server.serve(3053, '*')
 
 
