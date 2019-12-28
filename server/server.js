@@ -121,7 +121,7 @@ const app = httpx.createServer(options, function (req, res) {
             onReq: (req, { headers }) => {
                 headers['x-forwarded-for'] = req.socket.remoteAddress
                 headers['x-forwarded-proto'] = req.socket.encrypted ? 'https' : 'http'
-                headers['x-forwarded-host'] = req.headers['host']
+                headers['x-forwarded-host'] = getHostFromHeaders(req.headers)
             }
         }, defaultWebHandler)
 
