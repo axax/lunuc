@@ -70,6 +70,10 @@ export const systemSchemaRaw = `
         result: String
     }
         
+    type ImportCollectionResult {
+        result: String
+    }
+        
     type Query {
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!, scope: String, id: String, sync: Boolean): RunResult
@@ -80,6 +84,7 @@ export const systemSchemaRaw = `
     	ping: PingResult
     	collections (filter: String): CollectionResult
     	collectionAggregate (collection: String!, json: String!): CollectionAggregateResult
+    	importCollection (collection: String!, json: String!): ImportCollectionResult
     }
     
       

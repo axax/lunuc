@@ -15,6 +15,7 @@ import {clientIps} from 'api/util/connection'
 import {withFilter} from 'graphql-subscriptions'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail'
+import {getType} from 'util/types'
 
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
@@ -292,6 +293,44 @@ export const systemResolver = (db) => ({
             console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)
 
             return {result: JSON.stringify(a[0])}
+        },
+        importCollection: async ({collection, json}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
+            const jsonParsed = JSON.parse(json)
+
+            const col = db.collection(collection)
+            const typeDefinition = getType(collection)
+            if( typeDefinition ) {
+
+                jsonParsed.forEach(entry => {
+
+                    const match={}, set ={}
+
+                    if( entry._id ){
+                        match._id=ObjectId(entry._id)
+                    }
+                    typeDefinition.fields.forEach(field=>{
+
+
+                        if( field.unique ){
+                            match[field.name]= entry[field.name]
+                        }else{
+                            set[field.name] = entry[field.name]
+                        }
+                    })
+
+                    console.log(match,set)
+                    col.updateOne(match, {$set: set}, {upsert: true})
+
+                })
+            }
+            /*findAndReplaceObjectIds(jsonParsed)
+            const startTimeAggregate = new Date()
+
+            let a = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
+            console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)*/
+
+            return {result:'imported'}
         }
     },
     Mutation: {

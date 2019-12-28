@@ -14,6 +14,10 @@
         {
           "name": "block",
           "type": "Boolean"
+        },
+        {
+          "name": "subdomains",
+          "type": "Boolean"
         }
       ]
     }

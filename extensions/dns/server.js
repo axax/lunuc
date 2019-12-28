@@ -33,28 +33,41 @@ Hook.on('appready', ({db}) => {
 // Hook when the type CronJob has changed
 Hook.on('typeUpdated_DnsHost', ({result}) => {
     if (result.name) {
-        console.log(result)
-        hosts[result.name] = result.block
+        hosts[result.name] = {...hosts[result.name], ...result}
     }
 })
 
 
 server.on('request', (req, res) => {
 
-    const hostname = req.question[0].name
+    let hostname = req.question[0].name
 
     if (database != null) {
 
         if (hosts[hostname] === undefined) {
-            hosts[hostname] = false
+            hosts[hostname] = {block:false}
             database.collection('DnsHost').insertOne({
                 name: hostname
             })
         }
-
     }
 
-    if(hosts[hostname] === true){
+    let block = hosts[hostname].block === true
+
+    if( !block ){
+        //check subdomains
+        const pos = hostname.indexOf('.')
+        while(pos>=0){
+            hostname = hostname.substring(pos+1)
+            if(hosts[hostname].block === true && hosts[hostname].subdomains === true){
+                block = true
+                break
+            }
+        }
+    }
+
+
+    if(block){
         console.log(`block host ${hostname}`)
         res.answer.push(dns.A({
             name: hostname,
@@ -107,6 +120,6 @@ server.serve(53)
 
 const readHosts = async (db) => {
     (await db.collection('DnsHost').find().forEach(o => {
-        hosts[o.name] = !!o.block
+        hosts[o.name] = o
     }))
 }

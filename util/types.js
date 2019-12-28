@@ -34,7 +34,6 @@ export const getTypes = () => {
 }
 
 export const getType = (typeName) => {
-    // todo: optimise so that not all types need to be loaded
     const types = getTypes()
     return types[typeName]
 }

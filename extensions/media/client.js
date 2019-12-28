@@ -58,7 +58,7 @@ export default () => {
                             query: gql('{cleanUpMedia{status}}')
                         }).then(response => {
                             if(response.data && response.data.cleanUpMedia) {
-                                this.setState({simpleDialog: response.data.cleanUpMedia.status})
+                                this.setState({simpleDialog: {children:response.data.cleanUpMedia.status}})
                             }
                         })
                     }

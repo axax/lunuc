@@ -207,7 +207,7 @@ class TypesContainer extends React.Component {
 
 
     renderTable(columns) {
-        const {classes} = this.props
+        const {classes,client} = this.props
         const {data, selectedrows} = this.state
         if (data) {
 
@@ -393,11 +393,41 @@ class TypesContainer extends React.Component {
                         }, 0)
 
                     }
-                }, {
+                },
+                {
+                    name: 'Export', onClick: () => {
+                        this.setState({simpleDialog: {title:'Export',children: <textarea style={{width:'20rem',height:'20rem'}}>{JSON.stringify(this.state.data.results,null,4)}</textarea>}})
+                    }
+                },
+                {
+                    name: 'Import', onClick: () => {
+                        this.setState({simpleDialog: {title:'Import',
+                                actions:[{key: 'import', label: 'Import'}],
+                                onClose:(e)=>{
+                                    if(e.key==='import'){
+                                        client.query({
+                                            fetchPolicy: 'network-only',
+                                            query: gql`query importCollection($collection: String!, $json: String!){importCollection(collection:$collection,json:$json){result}}`,
+                                            variables: {
+                                                collection: type,
+                                                json: document.getElementById('importData').value
+                                            }
+                                        }).then(response => {
+                                            this.setState({simpleDialog:{children:JSON.stringify(response.data.importCollection)}})
+                                        })
+                                    }else{
+                                        this.setState({simpleDialog:false})
+                                    }
+                                },
+                                children: <textarea id="importData" style={{width:'20rem',height:'20rem'}}></textarea>}})
+                    }
+                },
+                {
                     name: 'View settings', onClick: () => {
                         this.setState({viewSettingDialog: true})
                     }
-                }, {
+                },
+                {
                     name: 'Refresh', onClick: () => {
                         this.getData(this.pageParams, false)
                     }
@@ -612,10 +642,10 @@ class TypesContainer extends React.Component {
                 }} placeholder="Enter a name (optional)"/>
             </SimpleDialog>,
             simpleDialog &&
-            <SimpleDialog key="simpleDialog" open={!!simpleDialog} onClose={()=>{this.setState({simpleDialog:false})}}
-                          actions={[{key: 'ok', label: 'OK'}]}
-                          title="Message">
-                {simpleDialog}
+            <SimpleDialog key="simpleDialog" open={!!simpleDialog} onClose={simpleDialog.onClose || (()=>{this.setState({simpleDialog:false})})}
+                          actions={simpleDialog.actions || [{key: 'ok', label: 'OK'}]}
+                          title={simpleDialog.title || 'Message'}>
+                {simpleDialog.children}
             </SimpleDialog>,
             createEditDialog !== undefined && <TypeEdit key="editDialog" {...editDialogProps}/>,
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,

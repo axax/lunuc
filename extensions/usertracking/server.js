@@ -20,13 +20,12 @@ Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode}
     if (segment.track && req && !editmode) {
         const ip = clientAddress(req)
 
-        console.log(ip)
 
-        if( ip !== '::ffff:127.0.0.1') {
+        if( ip && ip !== '::ffff:127.0.0.1') {
             const host = getHostFromHeaders(req.headers)
-            console.log(host)
+
             const data = {
-                ip,
+                ip: ip.replace('::ffff:',''),
                 agent: req.headers['user-agent'],
                 referer: req.headers['referer'],
                 event: segment.track.event,
