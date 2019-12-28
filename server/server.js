@@ -117,7 +117,12 @@ const app = httpx.createServer(options, function (req, res) {
         return proxy.web(req, res, {
             hostname: 'localhost',
             port: API_PORT,
-            path: uri
+            path: uri,
+            onReq: (req, { headers }) => {
+                headers['x-forwarded-for'] = req.socket.remoteAddress
+                headers['x-forwarded-proto'] = req.socket.encrypted ? 'https' : 'http'
+                headers['x-forwarded-host'] = req.headers['host']
+            }
         }, defaultWebHandler)
 
     } else {
