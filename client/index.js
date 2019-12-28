@@ -121,7 +121,8 @@ function mainInit() {
         if ('PushManager' in window) {
             console.log('Push is supported')
 
-            if (config.DEV_MODE || location.host.startsWith('localhost')) {
+
+            if ( config.DEV_MODE || location.host.startsWith('localhost')) {
 
                 navigator.serviceWorker.getRegistrations().then(function (registrations) {
                     for (let registration of registrations) {
