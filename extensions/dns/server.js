@@ -40,7 +40,7 @@ Hook.on('typeUpdated_DnsHost', ({result}) => {
 
 server.on('request', (req, res) => {
 
-    let hostname = req.question[0].name
+    const hostname = req.question[0].name
 
     if (database != null) {
 
@@ -56,14 +56,15 @@ server.on('request', (req, res) => {
 
     if( !block ){
         //check subdomains
-        let pos = hostname.indexOf('.')
+        let subname = hostname
+        let pos = subname.indexOf('.')
         while(pos>=0){
-            hostname = hostname.substring(pos+1)
-            if(hosts[hostname] && hosts[hostname].block === true && hosts[hostname].subdomains === true){
+            subname = subname.substring(pos+1)
+            if(hosts[subname] && hosts[subname].block === true && hosts[subname].subdomains === true){
                 block = true
                 break
             }
-            pos = hostname.indexOf('.')
+            pos = subname.indexOf('.')
         }
     }
 
