@@ -93,7 +93,7 @@ server.on('error', (err, buff, req, res) => {
     console.log(err.stack)
 })
 
-server.serve(53, '0.0.0.0')
+server.serve(53, '*')
 
 
 const readHosts = async (db) => {
