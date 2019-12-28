@@ -102,7 +102,7 @@ server.on('listening', ()=> {
     console.log('dns close')
 })
 
-server.serve(3053)
+server.serve(53)
 
 
 const readHosts = async (db) => {
