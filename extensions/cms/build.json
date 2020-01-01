@@ -10,6 +10,7 @@
         {
           "name": "name",
           "label": "Name",
+          "localized": true,
           "index": 1
         },
         {

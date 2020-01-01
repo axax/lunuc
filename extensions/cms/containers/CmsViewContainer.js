@@ -91,9 +91,8 @@ class CmsViewContainer extends React.Component {
             return <div className={classNameByPath(slug, 'Cms--loading')}/>
         } else {
             // set page title
-            // TODO: make tile localized
             if (!dynamic && cmsPage.name)
-                document.title = cmsPage.name
+                document.title = cmsPage.name[_app_.lang]
         }
 
         if (cmsPage.ssr && !editMode) {

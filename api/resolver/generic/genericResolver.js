@@ -47,6 +47,19 @@ const manualManipulations = (data, typeName) => {
                             item[field.name] = JSON.stringify(item[field.name])
                         }
                     }
+
+                    // in case a field changed to localized
+                    if( field.localized ){
+                        hasField = true
+                        if (item[field.name].constructor !== Object) {
+                            const translations = {}
+                            config.LANGUAGES.forEach(lang => {
+                                translations[lang] = item[field.name]
+                            })
+                            item[field.name] = translations
+                        }
+                    }
+
                 }
                 if (!hasField) {
                     break
@@ -116,7 +129,7 @@ const GenericResolver = {
         if (typeName.indexOf("Rating") >= 0) {
             //console.log(JSON.stringify(dataQuery, null, 4))
         }
-        //console.log(JSON.stringify(dataQuery, null, 4))
+       // console.log(JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
