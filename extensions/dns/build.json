@@ -22,6 +22,15 @@
         {
           "name": "count",
           "type": "Float"
+        },
+        {
+          "name": "lastIp",
+          "type": "String"
+        },
+        {
+          "name": "lastUsed",
+          "type": "Float",
+          "uitype":"datetime"
         }
       ]
     }

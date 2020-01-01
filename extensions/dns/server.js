@@ -9,6 +9,7 @@ const server = dns.createServer()
 
 let database = null
 let hosts = {}
+let dbBuffer = []
 
 
 // Hook to add mongodb resolver
@@ -29,8 +30,7 @@ Hook.on('appready', ({db}) => {
 
 // Hook when the type CronJob has changed
 Hook.on('typeUpdated_DnsHost', ({result}) => {
-    if (result.name) {
-        console.log('Upodate dns',result)
+    if (result.name && hosts[result.name]) {
         if( result.block !== undefined) {
             hosts[result.name].block = result.block
         }
@@ -40,9 +40,11 @@ Hook.on('typeUpdated_DnsHost', ({result}) => {
     }
 })
 
+Hook.on('appexit', async () => {
+    await insertBuffer()
+})
 
 server.on('request', (req, res) => {
-
     const hostname = req.question[0].name
 
 
@@ -54,16 +56,6 @@ server.on('request', (req, res) => {
         hosts[hostname].count=0
     }
     hosts[hostname].count++
-    if (database) {
-        database.collection('DnsHost').updateOne({
-            name: hostname
-        }, {
-            $set: {
-                name: hostname,
-                count: hosts[hostname].count
-            }
-        }, {upsert: true})
-    }
 
     let block = hosts[hostname].block === true
 
@@ -114,6 +106,28 @@ server.on('request', (req, res) => {
         })
 
         dnsRequest.send()
+
+
+
+        dbBuffer.push({
+            updateOne: {
+                filter: { name: hostname },
+                update: {
+                    $set: {
+                        lastIp: req._socket._remote.address,
+                        lastUsed: new Date().getTime(),
+                        name: hostname,
+                        count: hosts[hostname].count
+                    }
+                },
+                upsert: true
+            }
+        })
+
+        if( dbBuffer.length > 100) {
+            insertBuffer()
+        }
+
     }
 })
 
@@ -138,3 +152,13 @@ const readHosts = async (db) => {
         hosts[o.name] = {block: o.block, subdomains: o.subdomains}
     }))
 }
+
+
+const insertBuffer= async () => {
+    if (database) {
+        console.log('insert buffer')
+        await database.collection('DnsHost').bulkWrite(dbBuffer, { ordered: false })
+        dbBuffer = []
+    }
+}
+
