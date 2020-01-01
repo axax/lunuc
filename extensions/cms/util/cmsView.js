@@ -25,7 +25,6 @@ export const isEditMode = (props) => {
     return (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_CONTENT) && !isPreview())
 }
 
-
 export const getSlugVersion = (slug) => {
     const ret = {}
     if (slug.indexOf('@') === 0) {
