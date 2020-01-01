@@ -149,7 +149,7 @@ server.serve(53)
 
 const readHosts = async (db) => {
     (await db.collection('DnsHost').find().forEach(o => {
-        hosts[o.name] = {block: o.block, subdomains: o.subdomains}
+        hosts[o.name] = {block: o.block, subdomains: o.subdomains, count: o.count}
     }))
 }
 
