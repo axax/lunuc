@@ -18,6 +18,10 @@
         {
           "name": "subdomains",
           "type": "Boolean"
+        },
+        {
+          "name": "count",
+          "type": "Float"
         }
       ]
     }

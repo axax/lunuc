@@ -1,11 +1,8 @@
 import Hook from '../../util/hook'
 import dns from 'native-dns'
-
 import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
-import resolver from "../cronjob/resolver";
-import schema from "../cronjob/schema";
 
 console.log('create dns server')
 const server = dns.createServer()
@@ -42,25 +39,35 @@ server.on('request', (req, res) => {
 
     const hostname = req.question[0].name
 
-    if (database != null) {
 
-        if (hosts[hostname] === undefined) {
-            hosts[hostname] = {block:false}
-            database.collection('DnsHost').insertOne({
-                name: hostname
-            })
-        }
+    if (hosts[hostname] === undefined) {
+        hosts[hostname] = {block: false, subdomains:false}
+    }
+
+    if(!hosts[hostname].count){
+        hosts[hostname].count=0
+    }
+    hosts[hostname].count++
+    if (database) {
+        database.collection('DnsHost').updateOne({
+            name: hostname
+        }, {
+            $set: {
+                name: hostname,
+                count: hosts[hostname].count
+            }
+        }, {upsert: true})
     }
 
     let block = hosts[hostname].block === true
 
-    if( !block ){
+    if (!block) {
         //check subdomains
         let subname = hostname
         let pos = subname.indexOf('.')
-        while(pos>=0){
-            subname = subname.substring(pos+1)
-            if(hosts[subname] && hosts[subname].block === true && hosts[subname].subdomains === true){
+        while (pos >= 0) {
+            subname = subname.substring(pos + 1)
+            if (hosts[subname] && hosts[subname].block === true && hosts[subname].subdomains === true) {
                 block = true
                 break
             }
@@ -69,7 +76,7 @@ server.on('request', (req, res) => {
     }
 
 
-    if(block){
+    if (block) {
         console.log(`block host ${hostname}`)
         res.answer.push(dns.A({
             name: hostname,
@@ -77,7 +84,7 @@ server.on('request', (req, res) => {
             ttl: 1,
         }))
         res.send()
-    }else {
+    } else {
 
         console.log(`resolve host ${hostname}`)
         const dnsRequest = dns.Request({
@@ -109,11 +116,11 @@ server.on('error', (err, buff, req, res) => {
 })
 
 
-server.on('listening', ()=> {
+server.on('listening', () => {
     console.log('dns listening')
 })
 
-server.on('listening', ()=> {
+server.on('listening', () => {
     console.log('dns close')
 })
 
@@ -122,6 +129,6 @@ server.serve(53)
 
 const readHosts = async (db) => {
     (await db.collection('DnsHost').find().forEach(o => {
-        hosts[o.name] = o
+        hosts[o.name] = {block: o.block, subdomains: o.subdomains}
     }))
 }
