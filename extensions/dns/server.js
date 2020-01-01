@@ -30,7 +30,13 @@ Hook.on('appready', ({db}) => {
 // Hook when the type CronJob has changed
 Hook.on('typeUpdated_DnsHost', ({result}) => {
     if (result.name) {
-        hosts[result.name] = {...hosts[result.name], ...result}
+        console.log('Upodate dns',result)
+        if( result.block !== undefined) {
+            hosts[result.name].block = result.block
+        }
+        if( result.subdomains !== undefined) {
+            hosts[result.name].subdomains = result.subdomains
+        }
     }
 })
 
