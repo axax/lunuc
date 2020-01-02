@@ -139,7 +139,7 @@ export default () => {
 
     // add default slug
     Hook.on('TypeCreateEditBlur', ({event, type}) => {
-        if (type === 'CmsPage' && event.target.name === 'name' && event.target.closest) {
+        if (type === 'CmsPage' && event.target.name === 'name.'+_app_.lang && event.target.closest) {
             const form = event.target.closest('form')
             const slugInput = form.querySelector('input[name=slug]')
 

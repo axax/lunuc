@@ -11,7 +11,6 @@ import compose from '../../../util/compose'
 import DomUtil from '../../../client/util/dom'
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
 
-
 // admin pack
 const ErrorPage = (props) => <Async {...props}
                                     load={import(/* webpackChunkName: "admin" */ '../../../client/components/layout/ErrorPage')}/>
@@ -163,7 +162,7 @@ export default function(WrappedComponent) {
             const {client, cmsPageVariables, cmsPage} = this.props
 
             const storeData = client.readQuery({
-                query: gqlQuery,
+                query: gqlQuery(),
                 variables: cmsPageVariables
             })
 
@@ -173,7 +172,7 @@ export default function(WrappedComponent) {
                 cmsPage.resolvedData = storeData.cmsPage.resolvedData = JSON.stringify(json)
 
                 client.writeQuery({
-                    query: gqlQuery,
+                    query: gqlQuery(),
                     variables: cmsPageVariables,
                     data: storeData
                 })
@@ -183,7 +182,7 @@ export default function(WrappedComponent) {
     }
 
     const withGql = compose(
-        graphql(gqlQuery, {
+        graphql(gqlQuery(), {
             skip: props => props.aboutToChange,
             options(ownProps) {
                 return {
@@ -221,11 +220,11 @@ export default function(WrappedComponent) {
                     if (!loading && !cmsPage.urlSensitiv && variables.query) {
                         // update cache to avoid second unneeded request
                         const data = ownProps.client.readQuery({
-                            query: gqlQuery,
+                            query: gqlQuery(),
                             variables
                         })
                         delete variables.query
-                        ownProps.client.writeQuery({query: gqlQuery, variables, data})
+                        ownProps.client.writeQuery({query: gqlQuery(), variables, data})
                     }
 
                 }

@@ -49,7 +49,7 @@ const manualManipulations = (data, typeName) => {
                     }
 
                     // in case a field changed to localized
-                    if( field.localized ){
+                    /*if( field.localized ){
                         hasField = true
                         if (item[field.name].constructor !== Object) {
                             const translations = {}
@@ -58,7 +58,7 @@ const manualManipulations = (data, typeName) => {
                             })
                             item[field.name] = translations
                         }
-                    }
+                    }*/
 
                 }
                 if (!hasField) {

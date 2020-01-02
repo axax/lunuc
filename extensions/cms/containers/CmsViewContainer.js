@@ -267,7 +267,7 @@ class CmsViewContainer extends React.Component {
                         if (data) {
 
                             const storedData = client.readQuery({
-                                query: gqlQuery,
+                                query: gqlQuery(),
                                 variables: _this.props.cmsPageVariables
                             })
 
@@ -323,7 +323,7 @@ class CmsViewContainer extends React.Component {
 
                                     // save new data
                                     client.writeQuery({
-                                        query: gqlQuery,
+                                        query: gqlQuery(),
                                         variables: _this.props.cmsPageVariables,
                                         data: newStoreData
                                     })

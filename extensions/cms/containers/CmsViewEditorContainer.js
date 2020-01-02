@@ -77,7 +77,7 @@ class CmsViewEditorContainer extends React.Component {
             alwaysLoadAssets,
             public: props.cmsPage && props.cmsPage.public
         }
-        if (state && ['updating', 'updated'].indexOf(status) >= 0) {
+        if (state && (['updating', 'updated'].indexOf(status) >= 0 || props.cmsPage && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug) ) {
             // take value from state if there is any because it might be more up to date
             result.template = state.template
             result.script = state.script
@@ -422,7 +422,6 @@ class CmsViewEditorContainer extends React.Component {
 
             updateCmsPage(
                 Object.assign({}, data, {[key]: value}), key, () => {
-                    console.log('done')
                 }
             )
         }
@@ -690,7 +689,7 @@ const CmsViewEditorContainerWithGql = compose(
                     update: (store, {data: {updateCmsPage}}) => {
 
                         const data = store.readQuery({
-                            query: gqlQuery,
+                            query: gqlQuery(),
                             variables
                         })
                         if (data.cmsPage) {
@@ -707,7 +706,7 @@ const CmsViewEditorContainerWithGql = compose(
                                 data.cmsPage.resolvedData = updateCmsPage.resolvedData
                                 data.cmsPage.subscriptions = updateCmsPage.subscriptions
                             }
-                            store.writeQuery({query: gqlQuery, variables, data})
+                            store.writeQuery({query: gqlQuery(), variables, data})
                         }
                         if (cb) {
                             cb()

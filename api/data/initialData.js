@@ -31,6 +31,23 @@ export const createAllInitialData = async (db) => {
     console.log('Inserting data...')
     await createUserRoles(db)
     await createUsers(db)
+
+
+    // Update from non localized field to localized
+    /*db.collection('CmsPage').find().forEach((x) => {
+        let name = x.name
+        if( name=== undefined){
+            name= x.slug
+        }
+
+        if( name.constructor !== Object){
+            db.collection('CmsPage').updateOne({
+                _id: x._id
+            }, {$set: {name:{en:name,de:name}}})
+        }
+
+
+    })*/
     createUploads()
 }
 

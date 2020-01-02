@@ -948,6 +948,7 @@ class TypesContainer extends React.Component {
                             variables,
                             data: storeData
                         })
+                        this._lastData= null
                         this.setState({data: storeData[storeKey]})
                     }
 
@@ -983,7 +984,6 @@ class TypesContainer extends React.Component {
                         // find entry in result list
                         const refResults = storeData[storeKey].results
                         const idx = refResults.findIndex(x => x._id === responseItem._id)
-
                         if (idx > -1) {
                             // update entry with new data
                             refResults[idx] = deepMerge({}, refResults[idx], changedData, optimisticData)
@@ -994,6 +994,7 @@ class TypesContainer extends React.Component {
                                 variables,
                                 data: storeData
                             })
+                            this._lastData= null
                             this.setState({data: storeData[storeKey]})
                         }
                     }
@@ -1048,6 +1049,7 @@ class TypesContainer extends React.Component {
                             variables,
                             data: storeData
                         })
+                        this._lastData= null
                         this.setState({data: storeData[storeKey]})
 
                     }
