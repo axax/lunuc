@@ -320,7 +320,31 @@ class CmsViewEditorContainer extends React.Component {
                     <Expandable title="Revisions"
                                 onChange={this.handleSettingChange.bind(this, 'revisionsExpanded')}
                                 expanded={settings.revisionsExpanded}>
-                        To be implemented
+                        <MenuList>
+                            <Query query={gql`query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action}}}`}
+                                   fetchPolicy="cache-and-network"
+                                   variables={{
+                                       limit: 99,
+                                       filter: `data._id=${cmsPage._id}`}}>
+                                {({loading, error, data}) => {
+                                    if (loading) return 'Loading...'
+                                    if (error) return `Error! ${error.message}`
+
+
+                                    const menuItems = []
+
+                                    data.historys.results.forEach(i => {
+                                            if (i.slug !== props.slug) {
+                                                menuItems.push(<MenuListItem key={'history'+i._id} onClick={e => {
+                                                }} button primary={Util.formattedDateFromObjectId(i._id)+' - '+i.action}/>)
+                                            }
+                                        }
+                                    )
+                                    if (data.historys.results===0) return 'No history entries'
+                                    return menuItems
+                                }}
+                            </Query>
+                        </MenuList>
                     </Expandable>
 
 

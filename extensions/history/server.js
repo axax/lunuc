@@ -23,3 +23,17 @@ Hook.on('typeUpdated', async ({db, data, type, context}) => {
         createdBy: await Util.userOrAnonymousId(db, context)
     })
 })
+
+
+
+// Hook to create mongodb index
+Hook.on('index', ({db}) => {
+
+    console.log('Creating indexes for history...')
+
+    // create indexes
+    const collection = db.collection('History')
+    collection.createIndex({'data._id': 1})
+
+
+})
