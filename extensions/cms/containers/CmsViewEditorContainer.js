@@ -8,7 +8,7 @@ import {
     gqlQuery
 } from '../util/cmsView'
 import PropTypes from 'prop-types'
-import {graphql} from 'react-apollo'
+import {graphql, Query} from 'react-apollo'
 import compose from 'util/compose'
 import gql from 'graphql-tag'
 import Expandable from 'client/components/Expandable'
@@ -25,11 +25,10 @@ import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
 import * as CmsActions from '../actions/CmsAction'
 import {getTypeQueries} from 'util/types'
-import {Query} from 'react-apollo'
 import TypeEdit from '../../../client/components/types/TypeEdit'
 import withType from '../../../client/components/types/withType'
 import Util from "../../../client/util";
-import {CAPABILITY_MANAGE_CMS_PAGES} from "../constants";
+import {CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
 
 
 class CmsViewEditorContainer extends React.Component {
@@ -132,7 +131,6 @@ class CmsViewEditorContainer extends React.Component {
             state.template !== this.state.template ||
             state.script !== this.state.script ||
             state.serverScript !== this.state.serverScript ||
-            this.props.cmsPages !== props.cmsPages ||
             this.state.loadingSettings !== state.loadingSettings ||
             this.state.settings.fixedLayout !== state.settings.fixedLayout ||
             this.state.settings.inlineEditor !== state.settings.inlineEditor ||
@@ -142,7 +140,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     render() {
-        const {WrappedComponent, cmsPages, cmsPage, cmsEditData, cmsComponentEdit, ...props} = this.props
+        const {WrappedComponent, cmsPage, cmsEditData, cmsComponentEdit, ...props} = this.props
 
         const {template, resources, script, settings, dataResolver, serverScript, loadingSettings} = this.state
 
@@ -219,6 +217,8 @@ class CmsViewEditorContainer extends React.Component {
         if( !inEditor ) {
             return inner
         }else{
+
+            const {slug, _version} = getSlugVersion(props.slug)
             const sidebar = <div>
                 <MenuList>
                     <MenuListItem onClick={e => {
@@ -324,26 +324,37 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>
 
 
-                    {cmsPages && cmsPages.results && cmsPages.results.length > 1 &&
-
                     <Expandable title="Related pages"
                                 onChange={this.handleSettingChange.bind(this, 'relatedPagesExpanded')}
                                 expanded={settings.relatedPagesExpanded}>
                         <MenuList>
-                            {
-                                cmsPages.results.map(i => {
-                                        if (i.slug !== props.slug) {
-                                            return <MenuListItem key={i.slug} onClick={e => {
-                                                history.push('/' + i.slug)
-                                            }} button primary={i.slug}/>
-                                        }
-                                    }
-                                )
-                            }
+                            <Query query={gql`query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug}}}`}
+                                   fetchPolicy="cache-and-network"
+                                   variables={{
+                                       _version,
+                                       limit: 99,
+                                       filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`}}>
+                                {({loading, error, data}) => {
+                                    if (loading) return 'Loading...'
+                                    if (error) return `Error! ${error.message}`
 
+
+                                    const menuItems = []
+
+                                    data.cmsPages.results.forEach(i => {
+                                            if (i.slug !== props.slug) {
+                                                menuItems.push(<MenuListItem key={i.slug} onClick={e => {
+                                                    history.push('/' + i.slug)
+                                                }} button primary={i.slug}/>)
+                                            }
+                                        }
+                                    )
+                                    if (menuItems.length===0) return 'No related pages'
+                                    return menuItems
+                                }}
+                            </Query>
                         </MenuList>
                     </Expandable>
-                    }
 
                 </div>
             </div>
@@ -598,7 +609,6 @@ CmsViewEditorContainer.propTypes = {
     children: PropTypes.any,
     cmsPageVariables: PropTypes.object,
     cmsPage: PropTypes.object,
-    cmsPages: PropTypes.object,
     cmsComponentEdit: PropTypes.object,
     cmsEditData: PropTypes.object,
     keyValue: PropTypes.object,
@@ -625,26 +635,6 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(gql`query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug}}}`, {
-        skip: props => props.dynamic || !isEditMode(props),
-        options(ownProps) {
-            const {slug, _version} = getSlugVersion(ownProps.slug),
-                variables = {
-                    _version,
-                    limit: 99,
-                    filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`
-                }
-            return {
-                variables,
-                fetchPolicy: 'network-only'
-            }
-        },
-        props: ({data: {cmsPages}}) => {
-            return {
-                cmsPages
-            }
-        }
-    }),
     graphql(gqlQueryKeyValue, {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {

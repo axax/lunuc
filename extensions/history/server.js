@@ -2,7 +2,7 @@ import schema from './gensrc/schema'
 import resolver from './gensrc/resolver'
 import Hook from 'util/hook'
 import {deepMergeToFirst} from 'util/deepMerge'
-import Util from "../../api/util";
+import Util from '../../api/util'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
