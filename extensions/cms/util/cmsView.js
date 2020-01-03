@@ -13,7 +13,7 @@ export const settingKeyPrefix = 'CmsViewContainerSettings'
 let _gqlQuery
 export const gqlQuery = ()=>{
     if(!_gqlQuery) {
-        _gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name{${_app_.lang}} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData parseResolvedData alwaysLoadAssets html subscriptions _id modifiedAt createdBy{_id username} status}}`
+        _gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name{en de} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData parseResolvedData alwaysLoadAssets html subscriptions _id modifiedAt createdBy{_id username} status}}`
     }
     return _gqlQuery
 }
