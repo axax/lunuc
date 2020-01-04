@@ -615,6 +615,9 @@ class JsonDom extends React.Component {
                                 loopChild = {data: loopChild}
                             }
 
+                            // back to json
+                            loopChild._index = childIdx
+
                             if ($loop) {
                                 tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},
                                                     Util = this.Util,
@@ -622,8 +625,6 @@ class JsonDom extends React.Component {
                                                     _t = this._t.bind(this.scope.data)
                                                     return \`${cStr}\``))
                             }
-                            // back to json
-                            loopChild._index = childIdx
                             // remove tabs and parse
                             const json = JSON.parse(tpl.call({
                                 [s]: loopChild,

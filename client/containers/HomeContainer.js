@@ -7,7 +7,7 @@ import Hook from '../../util/hook'
 
 class HomeContainer extends React.Component {
     render() {
-        const {user} = this.props
+        const {user, match, location, history} = this.props
 
         let content
 
@@ -31,7 +31,7 @@ class HomeContainer extends React.Component {
         } else {
             content = <Typography gutterBottom><span>Please login!</span></Typography>
         }
-        Hook.call('HomeContainerRender', {user, content})
+        Hook.call('HomeContainerRender', {user, content, match, location, history})
 
         return <BaseLayout>
             <Typography variant="h3" component="h1" gutterBottom>Administration console</Typography>
@@ -40,7 +40,10 @@ class HomeContainer extends React.Component {
 }
 
 HomeContainer.propTypes = {
-    user: PropTypes.object.isRequired
+    user: PropTypes.object.isRequired,
+    history: PropTypes.object.isRequired,
+    location: PropTypes.object.isRequired,
+    match: PropTypes.object.isRequired
 }
 
 

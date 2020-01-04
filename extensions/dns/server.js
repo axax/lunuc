@@ -87,7 +87,7 @@ server.on('request', (req, res) => {
         console.log(`resolve host ${hostname}`)
         const dnsRequest = dns.Request({
             question: req.question[0],
-            server: {address: '8.8.8.8', port: 53, type: 'udp'},
+            server: {address: '1.1.1.1', port: 53, type: 'udp'},
             timeout: 1000
         })
 

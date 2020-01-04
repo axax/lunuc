@@ -45,8 +45,9 @@ const cmsPageEditorUrl = (slug, _version) => {
 
 export default () => {
 
-    Hook.on('HomeContainerRender', ({content}) => {
-        content.push(<div key="test">CMSComponent</div>)
+    Hook.on('HomeContainerRender', ({content, match, location, history}) => {
+        content.splice(0,content.length)
+        content.push(<CmsViewContainer match={match} dynamic={true} location={location} history={history} slug={'core/widget'}/>)
     })
 
     // add entry to main menu

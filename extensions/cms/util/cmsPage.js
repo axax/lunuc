@@ -42,7 +42,6 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         } else {
             match = {$or: ors}
         }
-
         cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets'], {
             match,
             limit: 1,
@@ -67,12 +66,14 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
                 } catch (e) {
                 }
             }
+
+
+            //only cache if public
+            if (cmsPages.results[0].public) {
+                Cache.set(cacheKey, cmsPages, 600000) // cache expires in 10 min
+            }
         }
 
-        //only cache if public
-        if (cmsPages.results[0].public) {
-            Cache.set(cacheKey, cmsPages, 600000) // cache expires in 10 min
-        }
     }
     return cmsPages
 }
