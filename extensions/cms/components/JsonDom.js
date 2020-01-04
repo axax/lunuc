@@ -111,8 +111,16 @@ class JsonDom extends React.Component {
             if (!rest.id) {
                 console.warn(`There is no id set for included Cms Component ${rest.slug}`, props)
             }
+            let _props = props
+            if(_props && _props.constructor===String){
+                try {
+                    _props = JSON.parse(_props)
+                }catch (e) {
+                    console.log(e)
+                }
+            }
             return <CmsViewContainer key={rest.id}
-                                     _props={props}
+                                     _props={_props}
                                      _parentRef={_this}
                                      fetchPolicy="cache-first"
                                      aboutToChange={_this.props.aboutToChange}
