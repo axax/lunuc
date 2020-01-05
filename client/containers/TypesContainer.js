@@ -1164,13 +1164,14 @@ class TypesContainer extends React.Component {
     }
 
     handleFilterTimeout = null
-    handleFilter = ({value}, immediate) => {
+    handleFilter = ({value, target}, immediate) => {
         clearTimeout(this.handleFilterTimeout)
         if (immediate) {
             this.runFilter(value)
         } else {
             this.handleFilterTimeout = setTimeout(() => {
                 this.runFilter(value)
+                target.focus()
             }, 500)
         }
     }
