@@ -183,7 +183,9 @@ class CmsViewEditorContainer extends React.Component {
 
             </SimpleDialog>,
 
-            cmsEditData && <Query key="dataEditor" query={gql(getTypeQueries(cmsEditData.type).query)}
+            cmsEditData ?
+                cmsEditData.type ?
+                <Query key="dataEditor" query={gql(getTypeQueries(cmsEditData.type).query)}
                                   variables={{filter: `_id=${cmsEditData._id}`}}
                                   fetchPolicy="network-only">
 
@@ -209,7 +211,19 @@ class CmsViewEditorContainer extends React.Component {
                         null
                     )
                 }}
-            </Query>
+            </Query>: <SimpleDialog key="propertyEditor" open={true} onClose={()=>{props._cmsActions.editCmsData(null)}}
+                                    actions={[{
+                                        key: 'ok',
+                                        label: 'Ok',
+                                        type: 'primary'
+                                    }]}
+                                    title="Edit Value">
+
+                        {cmsEditData._id}
+
+                    </SimpleDialog>
+
+                    :null
 
         ]
 

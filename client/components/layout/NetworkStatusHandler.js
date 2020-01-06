@@ -10,27 +10,53 @@ class NetworkStatusHandler extends React.Component {
 
     delayTimer = null
 
-    constructor(props) {
-        super(props)
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (nextProps.networkStatus.loading !== prevState.showLoader) {
+            return NetworkStatusHandler.propsToState(nextProps)
+        }
+        return null
+    }
 
-        this.state = {
+    static propsToState(props) {
+        return {
             showLoader: props.networkStatus.loading
         }
     }
 
-    UNSAFE_componentWillReceiveProps(props) {
-        if (props.networkStatus.loading) {
-            if (!this.delayTimer) {
-                this.delayTimer = setTimeout(() => {
-                    this.setState({showLoader: true})
-                }, LOADER_DELAY)
-            }
-        } else {
+
+    constructor(props) {
+        super(props)
+
+        this.state = NetworkStatusHandler.propsToState(props)
+    }
+
+
+    componentDidMount() {
+        if (this.state.showLoader) {
+            this.showLoaderDelayed()
+        }
+    }
+
+    componentWillUnmount(){
+        clearTimeout(this.delayTimer)
+        this.delayTimer = null
+    }
+
+    shouldComponentUpdate(nextProps, nextState) {
+        if (nextState.showLoader) {
+            this.showLoaderDelayed()
+        }else{
             clearTimeout(this.delayTimer)
             this.delayTimer = null
-            if (this.state.showLoader) {
-                this.setState({showLoader: false})
-            }
+        }
+        return this.state.showLoader !== nextState.showLoader
+    }
+
+    showLoaderDelayed() {
+        if (!this.delayTimer) {
+            this.delayTimer = setTimeout(() => {
+                this.setState({showLoader: true})
+            }, LOADER_DELAY)
         }
     }
 
