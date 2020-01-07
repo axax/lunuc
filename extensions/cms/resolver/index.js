@@ -181,7 +181,8 @@ export default db => ({
 
                 }
             }
-            const result = await new Promise(resolve => {
+
+            const script = await new Promise(resolve => {
 
                 try {
                     const tpl = new Function(`
@@ -189,23 +190,31 @@ export default db => ({
                     const data = (async () => {
                         try{
                             ${serverScript}
-                            return ${methodName}(this.args)
+                            let result = ${methodName}(this.args)
+                            this.resolve({result: result})
                         }catch(error){
                             this.resolve({error})
                         }
-                    })()
-                    this.resolve({data})`)
-                    tpl.call({args, require, resolve, db})
+                    })()`)
+
+                    tpl.call({args, require, resolve, db, __dirname, context})
                 } catch (error) {
                     resolve({error})
                 }
             })
 
-            if (result.error) {
-                return {result: result.error.message}
+            let result
+            if (script.error) {
+                result = {error: script.error.message}
+            }else{
+                result = await script.result
             }
 
-            return {result: await result.data}
+            if( result && result.constructor !== String){
+                result= JSON.stringify(result)
+            }
+
+            return {result}
         }
     },
     Mutation: {
@@ -275,6 +284,11 @@ export default db => ({
     },
     Subscription: {
         cmsPageData: withFilter(() => pubsub.asyncIterator('cmsPageData'),
+            (payload, context) => {
+                return payload && payload.session === context.session //payload.userId === context.id
+            }
+        ),
+        cmsCustomData: withFilter(() => pubsub.asyncIterator('cmsCustomData'),
             (payload, context) => {
                 return payload && payload.session === context.session //payload.userId === context.id
             }

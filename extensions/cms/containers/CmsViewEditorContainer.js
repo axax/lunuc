@@ -262,6 +262,9 @@ class CmsViewEditorContainer extends React.Component {
                         <ScriptEditor
                             onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll')}
                             scrollPosition={settings.serverScriptScroll}
+                            onBlur={() => {
+                                this.saveUnsafedChanges()
+                            }}
                             onChange={this.handleServerScriptChange.bind(this)}>{serverScript}</ScriptEditor>
                     </Expandable>
 
@@ -511,7 +514,7 @@ class CmsViewEditorContainer extends React.Component {
         this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
     }
 
-    handleServerScriptChange = (serverScript) => {
+    handleServerScriptChange = (serverScript, instantSave) => {
         if (this._saveSettings)
             this._saveSettings()
         this.setState({serverScript})
@@ -522,7 +525,11 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         clearTimeout(this._autoSaveServerScriptTimeout)
-        this._autoSaveServerScriptTimeout = setTimeout(this._autoSaveServerScript, 5000)
+        if( instantSave ){
+            this._autoSaveServerScript()
+        }else {
+            this._autoSaveServerScriptTimeout = setTimeout(this._autoSaveServerScript, 5000)
+        }
     }
 
     handleDataResolverChange = (str, instantSave) => {

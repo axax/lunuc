@@ -258,7 +258,6 @@ class CmsViewContainer extends React.Component {
                             _this._subscriptionCallback(supscriptionData)
                             return
                         }
-
                         if (!supscriptionData.data) {
                             //console.warn('subscription data missing')
                             return

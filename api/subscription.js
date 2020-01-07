@@ -27,5 +27,4 @@ setInterval(()=>{
 	pubsub.publish('newNotification', {newNotification: {key: 'test.notification', message: `Notification Nr. ${counter}`}} )
 },5000)*/
 
-
 export {pubsub, pubsubDelayed}
