@@ -106,28 +106,24 @@ server.on('request', (req, res) => {
         })
 
         dnsRequest.send()
-
-
-
-        dbBuffer.push({
-            updateOne: {
-                filter: { name: hostname },
-                update: {
-                    $set: {
-                        lastIp: req._socket._remote.address,
-                        lastUsed: new Date().getTime(),
-                        name: hostname,
-                        count: hosts[hostname].count
-                    }
-                },
-                upsert: true
-            }
-        })
-
-        if( dbBuffer.length > 100) {
-            insertBuffer()
+    }
+    dbBuffer.push({
+        updateOne: {
+            filter: { name: hostname },
+            update: {
+                $set: {
+                    lastIp: req._socket._remote.address,
+                    lastUsed: new Date().getTime(),
+                    name: hostname,
+                    count: hosts[hostname].count
+                }
+            },
+            upsert: true
         }
+    })
 
+    if( dbBuffer.length > 100) {
+        insertBuffer()
     }
 })
 

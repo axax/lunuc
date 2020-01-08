@@ -171,6 +171,9 @@ const app = httpx.createServer(options, function (req, res) {
 
                         if( ext === 'mp3' || ext === 'mp4'){
                             delete headerExtra['Cache-Control']
+                            if( ext === 'mp4'){
+                                delete headerExtra['Content-Length']
+                            }
                         }
                     }
 
