@@ -203,7 +203,7 @@ export default db => ({
                 })
                 result = await script.result
             } catch (error) {
-                result = {error: script.error.message}
+                result = {error: error.message}
             }
 
             if( result && result.constructor !== String){
