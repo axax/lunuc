@@ -52,7 +52,7 @@ self.addEventListener('fetch', event => {
     }
 
     if ( event.request.url.indexOf( '/uploads/' ) >= 0 ) {
-        return false
+        return
     }
 
     // Skip cross-origin requests, like those for Google Analytics.
