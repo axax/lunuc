@@ -169,7 +169,7 @@ const app = httpx.createServer(options, function (req, res) {
 
                         headerExtra['Content-Type'] = mimeType
 
-                        if( ext === 'mp3'){
+                        if( ext === 'mp3' || ext === 'mp4'){
                             delete headerExtra['Cache-Control']
                         }
                     }
