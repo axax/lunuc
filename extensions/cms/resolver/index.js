@@ -182,9 +182,10 @@ export default db => ({
                 }
             }
 
-            const script = await new Promise(resolve => {
+            let result
+            try {
+                const script = await new Promise(resolve => {
 
-                try {
                     const tpl = new Function(`
                     const require = this.require
                     const data = (async () => {
@@ -198,16 +199,11 @@ export default db => ({
                     })()`)
 
                     tpl.call({args, require, resolve, db, __dirname, context})
-                } catch (error) {
-                    resolve({error})
-                }
-            })
 
-            let result
-            if (script.error) {
-                result = {error: script.error.message}
-            }else{
+                })
                 result = await script.result
+            } catch (error) {
+                result = {error: script.error.message}
             }
 
             if( result && result.constructor !== String){
