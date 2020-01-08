@@ -154,8 +154,10 @@ const app = httpx.createServer(options, function (req, res) {
 
             fs.exists(filename, (exists) => {
                 if (exists) {
+                    const stat = fs.statSync(filename)
+
                     const fileStream = fs.createReadStream(filename,{highWaterMark : 256 * 1024})
-                    const headerExtra = {'Cache-Control': 'public, max-age=31536000'}
+                    const headerExtra = {'Cache-Control': 'public, max-age=31536000','Content-Length': stat.size}
                     res.writeHead(200, {...headerExtra})
                     fileStream.pipe(res)
                 } else {
