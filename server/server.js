@@ -168,11 +168,6 @@ const app = httpx.createServer(options, function (req, res) {
                         const mimeType = MimeType.detectByExtension(ext)
 
                         headerExtra['Content-Type'] = mimeType
-
-                        if( ext === 'mp3' || ext === 'mp4'){
-                            delete headerExtra['Cache-Control']
-                            delete headerExtra['Content-Length']
-                        }
                     }
 
 
