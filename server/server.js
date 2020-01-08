@@ -157,17 +157,22 @@ const app = httpx.createServer(options, function (req, res) {
                     const stat = fs.statSync(filename)
 
 
-                    const fileStream = fs.createReadStream(filename, {highWaterMark: 256 * 1024})
+                    const fileStream = fs.createReadStream(filename)
                     const headerExtra = {'Cache-Control': 'public, max-age=31536000', 'Content-Length': stat.size}
 
 
                     const pos = filename.lastIndexOf('.')
                     if (pos >= 0) {
 
-                        const ext = filename.substring(pos + 1)
+                        const ext = filename.substring(pos + 1).toLocaleLowerCase()
                         const mimeType = MimeType.detectByExtension(ext)
 
                         headerExtra['Content-Type'] = mimeType
+
+                        if( ext === 'mp3' || ext === 'mp4'){
+                            delete headerExtra['Cache-Control']
+                            delete headerExtra['Content-Length']
+                        }
                     }
 
 
