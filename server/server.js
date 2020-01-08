@@ -15,7 +15,7 @@ const defaultWebHandler = (err, req, res) => {
     if (err) {
         console.error('proxy error', err)
         finalhandler(req, res)(err)
-    }else{
+    } else {
         res.end()
     }
 }
@@ -68,7 +68,7 @@ const options = {
     allowHTTP1: true
 }
 
-if( fs.existsSync(path.join(CERT_DIR, './chain.pem'))){
+if (fs.existsSync(path.join(CERT_DIR, './chain.pem'))) {
     options.ca = fs.readFileSync(path.join(CERT_DIR, './chain.pem'))
 }
 
@@ -84,7 +84,7 @@ const app = httpx.createServer(options, function (req, res) {
         let newhost = host
         if (!newhost.startsWith('www.')) {
             const hostrule = hostrules[host]
-            if( hostrule && hostrule.forceWWW) {
+            if (hostrule && hostrule.forceWWW) {
                 newhost = 'www.' + newhost
             }
         }
@@ -118,7 +118,7 @@ const app = httpx.createServer(options, function (req, res) {
             hostname: 'localhost',
             port: API_PORT,
             path: uri,
-            onReq: (req, { headers }) => {
+            onReq: (req, {headers}) => {
                 headers['x-forwarded-for'] = req.socket.remoteAddress
                 headers['x-forwarded-proto'] = req.socket.encrypted ? 'https' : 'http'
                 headers['x-forwarded-host'] = getHostFromHeaders(req.headers)
@@ -156,8 +156,21 @@ const app = httpx.createServer(options, function (req, res) {
                 if (exists) {
                     const stat = fs.statSync(filename)
 
-                    const fileStream = fs.createReadStream(filename,{highWaterMark : 256 * 1024})
-                    const headerExtra = {'Cache-Control': 'public, max-age=31536000','Content-Length': stat.size}
+
+                    const fileStream = fs.createReadStream(filename, {highWaterMark: 256 * 1024})
+                    const headerExtra = {'Cache-Control': 'public, max-age=31536000', 'Content-Length': stat.size}
+
+
+                    const pos = filename.lastIndexOf('.')
+                    if (pos >= 0) {
+
+                        const ext = filename.substring(pos + 1)
+                        const mimeType = MimeType.detectByExtension(ext)
+
+                        headerExtra['Content-Type'] = mimeType
+                    }
+
+
                     res.writeHead(200, {...headerExtra})
                     fileStream.pipe(res)
                 } else {
@@ -239,7 +252,6 @@ const app = httpx.createServer(options, function (req, res) {
 })
 
 
-
 //app.https.on('error', (err) => console.error(err));
 
 /*app.https.on('stream', (stream, headers) => {
@@ -250,7 +262,6 @@ const app = httpx.createServer(options, function (req, res) {
     });
     stream.end('<h1>Hello World</h1>');
 });*/
-
 
 
 let sendFile = function (req, res, headerExtra, filename) {
