@@ -9,7 +9,9 @@ import {CAPABILITY_MANAGE_KEYVALUES} from '../../../util/capabilities'
 import {processWebsiteQueue} from './browser'
 import Hook from '../../../util/hook'
 import {pubsubDelayed} from '../../../api/subscription'
-
+import fs from 'fs'
+import config from 'gen/config'
+import path from 'path'
 
 const createCacheKey = (segment, name) => {
     let cacheKey
@@ -50,7 +52,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                               const {data} = this
                                               const Util = this.ClientUtil
                                               return \`${JSON.stringify(segments[i])}\``)
-                const replacedSegmentStr = tpl.call({scope, data: resolvedData, context, editmode, ClientUtil})
+                const replacedSegmentStr = tpl.call({scope, data: resolvedData, context, editmode, ClientUtil, config})
                 const segment = JSON.parse(replacedSegmentStr)
 
                 if (tempBrowser) {
@@ -276,6 +278,21 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     if (segment.system.properties) {
                         data.properties = Util.systemProperties()
                         //Object.keys(Cache.cache).length
+                    }
+                    if (segment.system.ls) {
+                        data.ls = {}
+                        segment.system.ls.forEach(ls=>{
+                            if( ls.key ) {
+                                const files = []
+                                fs.readdirSync(path.join(__dirname, ls.path)).forEach(file => {
+                                    files.push(file)
+                                })
+                                data.ls[ls.key]=files
+                            }else{
+                                console.warn('key for ls is missing')
+                            }
+
+                        })
                     }
                     if (segment.system.cache) {
                         data.cache = {}
