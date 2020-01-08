@@ -16,6 +16,7 @@ const MIME_TYPES = {
     'json': 'application/json',
     'css': 'text/css',
     'mp3': 'audio/mpeg',
+    'mp4': 'video/mpeg',
     'gz': 'application/gzip',
     'zip': 'application/zip',
     'svg': 'image/svg+xml',
