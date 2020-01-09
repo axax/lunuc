@@ -775,9 +775,13 @@ class JsonDom extends React.Component {
                         if ($edit) {
                             let _edit
                             if ($edit && $edit.constructor === String) {
+                                const pos = $edit.indexOf(':'), pos2 = $edit.indexOf(':',pos+1)
+
+                                const type = $edit.substring(0,pos), _id=$edit.substring(pos+1,pos2>=0?pos2:$edit.length)
+
                                 const parts = $edit.split(':')
-                                if (parts.length === 2) {
-                                    _edit = {type: parts[0], _id: parts[1]}
+                                if (parts.length >= 2) {
+                                    _edit = {type,_id, props: pos2>=0?$edit.substring(pos2+1):null}
                                 }
                             } else {
                                 _edit = $edit

@@ -17,7 +17,7 @@ import DataResolverEditor from '../components/DataResolverEditor'
 import TemplateEditor from '../components/TemplateEditor'
 import ScriptEditor from '../components/ScriptEditor'
 import ResourceEditor from '../components/ResourceEditor'
-import {DrawerLayout, MenuList, MenuListItem, Button, SimpleSwitch, SimpleDialog, Divider, UIProvider} from 'ui/admin'
+import {DrawerLayout, MenuList, MenuListItem, Button, SimpleSwitch, SimpleDialog, Divider, UIProvider, TextField} from 'ui/admin'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import config from 'gen/config'
 import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
@@ -158,6 +158,12 @@ class CmsViewEditorContainer extends React.Component {
 
         const inEditor = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_PAGES)
 
+        let cmsEditDataProps
+
+        if(cmsEditData && !cmsEditData.type){
+            cmsEditDataProps = this.getDataResolverProperty(cmsEditData)
+        }
+
         const inner = [!loadingSettings &&
         <WrappedComponent key="cmsView" cmsEditData={cmsEditData} onChange={this.handleTemplateChange}
                           inEditor={inEditor}
@@ -219,7 +225,8 @@ class CmsViewEditorContainer extends React.Component {
                                     }]}
                                     title="Edit Value">
 
-                        {cmsEditData._id}
+                            <TextField {...cmsEditDataProps} />
+
 
                     </SimpleDialog>
 
@@ -433,6 +440,32 @@ class CmsViewEditorContainer extends React.Component {
 
     }
 
+    getDataResolverProperty(cmsEditData){
+        const {dataResolver} = this.state
+        try{
+            const jsonArray = JSON.parse(dataResolver)
+            let path = cmsEditData._id
+
+            const first = path.substring(0,path.indexOf('.'))
+            for(let i=0;i< jsonArray.length;i++){
+                const json = jsonArray[i]
+                if(json[first]){
+                    let props
+                    if( cmsEditData.props){
+                        const correctJson = cmsEditData.props.replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ');
+                        props = JSON.parse(correctJson)
+                    }
+                    console.log( props)
+                    return {value:Util.propertyByPath(path,json),...props}
+                }
+            }
+        }catch(e){
+            console.log(e)
+            return {value:'', error: true, helperText: e.message}
+        }
+        return {value:''}
+        //Util.propertyByPath(cmsEditData._id,)
+    }
 
     handleCmsError(e, meta) {
         this.props.errorHandlerAction.addError({key: 'cmsError', msg: `${meta.loc}: ${e.message}`})
