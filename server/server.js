@@ -139,9 +139,7 @@ const app = httpx.createServer(options, function (req, res) {
                     fileStream.pipe(res)
                 } else {
                     console.log('not exists: ' + filename)
-                    res.writeHead(404, {'Content-Type': 'text/plain'})
-                    res.write('404 Not Found\n')
-                    res.end()
+                    sendError(res, 404)
                 }
             })
 
@@ -156,10 +154,8 @@ const app = httpx.createServer(options, function (req, res) {
                 if (exists) {
                     const stat = fs.statSync(filename)
 
-
-                    const fileStream = fs.createReadStream(filename)
                     const headerExtra = {'Cache-Control': 'public, max-age=31536000', 'Content-Length': stat.size}
-
+                    let code = 200, streamOption
 
                     const pos = filename.lastIndexOf('.')
                     if (pos >= 0) {
@@ -170,21 +166,38 @@ const app = httpx.createServer(options, function (req, res) {
                         headerExtra['Content-Type'] = mimeType
 
                         if( ext === 'mp3' || ext === 'mp4'){
+
                             delete headerExtra['Cache-Control']
-                            if( ext === 'mp4'){
-                                delete headerExtra['Content-Length']
+
+                            const range = req.headers.range
+
+                            if (req.headers.range) {
+
+                                const parts = range.replace(/bytes=/, "").split("-"),
+                                    partialstart = parts[0],
+                                    partialend = parts[1],
+                                    start = parseInt(partialstart, 10),
+                                    end = partialend ? parseInt(partialend, 10) : stat.size-1,
+                                    chunksize = (end-start)+1
+
+                                code = 206
+                                streamOption={start, end}
+                                headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
+                                headerExtra['Accept-Ranges']= 'bytes'
                             }
+
+                            /*if( ext === 'mp4'){
+                                delete headerExtra['Content-Length']
+                            }*/
                         }
                     }
 
-
-                    res.writeHead(200, {...headerExtra})
+                    const fileStream = fs.createReadStream(filename,streamOption)
+                    res.writeHead(code, {...headerExtra})
                     fileStream.pipe(res)
                 } else {
                     console.log('not exists: ' + filename)
-                    res.writeHead(404, {'Content-Type': 'text/plain'})
-                    res.write('404 Not Found\n')
-                    res.end()
+                    sendError(res, 404)
                 }
             })
 
@@ -213,9 +226,7 @@ const app = httpx.createServer(options, function (req, res) {
                         fs.stat(filename, function (err, stats) {
                             if (err || !stats.isFile()) {
                                 console.log('not exists: ' + filename)
-                                res.writeHead(404, {'Content-Type': 'text/plain'})
-                                res.write('404 Not Found\n')
-                                res.end()
+                                sendError(res,404)
                             } else {
                                 const mimeType = MimeType.detectByExtension(ext),
                                     headerExtra = {
@@ -271,7 +282,18 @@ const app = httpx.createServer(options, function (req, res) {
 });*/
 
 
-let sendFile = function (req, res, headerExtra, filename) {
+const sendError = (res, code)=>{
+    let msg = ''
+    if(code === 404){
+        msg = 'Not Found'
+    }
+
+    res.writeHead(code, {'Content-Type': 'text/plain'})
+    res.write(`${code} ${msg}\n`)
+    res.end()
+}
+
+const sendFile = function (req, res, headerExtra, filename) {
     let acceptEncoding = req.headers['accept-encoding']
     if (!acceptEncoding) {
         acceptEncoding = ''
