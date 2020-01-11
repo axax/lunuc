@@ -11,7 +11,7 @@ const {UPLOAD_URL} = config
 _app_.UploadUtil = UploadUtil
 
 /* TODO: make it configurable */
-const MAX_FILE_SIZE_MB = 10,
+const DEFAULT_MAX_FILE_SIZE_MB = 10,
     IMAGE_QUALITY = 0.6,
     IMAGE_MAX_WIDTH = 1000,
     IMAGE_MAX_HEIGHT = 1000,
@@ -205,7 +205,7 @@ class FileDrop extends React.Component {
     }
 
     handelDrop(e) {
-        const {onFileContent, onFiles, onChange, name, accept, uploadTo, resizeImages} = this.props
+        const {onFileContent, onFiles, onChange, name, accept, uploadTo, resizeImages, maxSize} = this.props
         const {conversion} = this.state
         this.setDragState(e, false)
 
@@ -215,7 +215,7 @@ class FileDrop extends React.Component {
         const {validFiles, invalidFiles} = UploadUtil.validateFiles({
             files,
             accept: (accept || DEFAULT_ACCEPT),
-            maxFileSize: MAX_FILE_SIZE_MB * 1024 * 1024
+            maxFileSize: (maxSize || DEFAULT_MAX_FILE_SIZE_MB) * 1024 * 1024
         })
 
         if (invalidFiles.length) {
@@ -325,7 +325,8 @@ FileDrop.propTypes = {
     data: PropTypes.object,
     resizeImages: PropTypes.bool,
     multi: PropTypes.bool,
-    conversion: PropTypes.array
+    conversion: PropTypes.array,
+    maxSize: PropTypes.number
 }
 
 export default withStyles(styles)(FileDrop)

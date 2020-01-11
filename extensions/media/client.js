@@ -89,7 +89,7 @@ export default () => {
                 )
 
                 const [useCdn, setUseCdn] = useState(
-                    true
+                    false
                 )
                 return (
                     [
@@ -115,6 +115,7 @@ export default () => {
                         <FileDrop key="fileDrop" multi={true} conversion={conversion} accept="*/*"
                                   uploadTo="/graphql/upload" resizeImages={true}
                                   data={{group, useCdn}}
+                                  maxSize={3000}
                                   onSuccess={r => {
                                       if (meta._this) {
                                           meta._this.setState({createEditDialog: false, createEditDialogOption: null})
