@@ -17,6 +17,7 @@
         },
         {
           "name": "meta",
+          "type": "Object",
           "uitype": "json"
         },
         {

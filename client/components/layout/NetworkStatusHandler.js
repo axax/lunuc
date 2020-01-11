@@ -65,7 +65,7 @@ class NetworkStatusHandler extends React.Component {
         if (!this.state.showLoader) return null
         return <div
             style={{height: '10px', position: 'fixed', bottom: '0px', left: '0px', width: '100%', zIndex: 9999}}>
-            <LinearProgress style={{height: '10px'}} mode="query" color="secondary"/>
+            <LinearProgress style={{height: '10px'}} variant="query" color="secondary"/>
         </div>
     }
 }

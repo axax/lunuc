@@ -184,8 +184,8 @@ class FileDrop extends React.Component {
             {errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography>}
             {successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography>}
 
-            {uploading && <Typography variant="body2">uploading data...</Typography>}
-            {uploading && <LinearProgress className={classes.progress} mode="determinate" value={uploadCompleted}/>}
+            {uploading && <Typography variant="body2">uploading data ({uploadCompleted}%)...</Typography>}
+            {uploading && <LinearProgress className={classes.progress} variant="determinate" value={uploadCompleted}/>}
 
         </div>
     }
@@ -282,23 +282,27 @@ class FileDrop extends React.Component {
             uploadTo,
             onProgress: this.updateFileProgress.bind(this),
             onLoad: (e) => {
-                const {status, message} = e.target.response
-                if (status === 'success') {
-                    this.setState({successMessage: 'upload was successfull', uploading: false})
+                if(e.target.response) {
+                    const {status, message} = e.target.response
+                    if (status === 'success') {
+                        this.setState({successMessage: 'upload was successfull', uploading: false})
 
-                    const {onSuccess, onChange, name} = this.props
-                    if (onSuccess) {
-                        onSuccess(e.target.response, this)
+                        const {onSuccess, onChange, name} = this.props
+                        if (onSuccess) {
+                            onSuccess(e.target.response, this)
+                        }
+
+                        if (onChange) {
+
+                            // call with target
+                            onChange({target: {name, value: e.target.response}})
+                        }
+
+                    } else {
+                        this.setState({errorMessage: message, uploading: false})
                     }
-
-                    if (onChange) {
-
-                        // call with target
-                        onChange({target: {name, value: e.target.response}})
-                    }
-
-                } else {
-                    this.setState({errorMessage: message, uploading: false})
+                }else{
+                    this.setState({errorMessage: e.target.statusText, uploading: false})
                 }
             },
             onError: (e) => {
