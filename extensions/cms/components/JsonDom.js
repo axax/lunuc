@@ -616,6 +616,7 @@ class JsonDom extends React.Component {
                                                     Util = this.Util,
                                                     _i = Util.tryCatch.bind(this),
                                                     _t = this._t.bind(this.scope.data)
+                                                    ${loopOrFor.eval?loopOrFor.eval:''}
                                                     return \`${cStr}\``))
                         }
                         data.forEach((loopChild, childIdx) => {
