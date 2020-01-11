@@ -160,10 +160,10 @@ const app = httpx.createServer(options, function (req, res) {
                     const pos = filename.lastIndexOf('.')
                     if (pos >= 0) {
 
-                        const ext = filename.substring(pos + 1).toLocaleLowerCase()
+                        const ext = filename.substring(pos + 1).toLocaleLowerCase() || req.query.type
                         const mimeType = MimeType.detectByExtension(ext)
 
-                        headerExtra['Content-Type'] = mimeType || req.query.type
+                        headerExtra['Content-Type'] = mimeType
 
                         if( ext === 'mp3' || ext === 'mp4'){
 
