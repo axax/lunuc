@@ -108,7 +108,7 @@ const app = httpx.createServer(options, function (req, res) {
         }
     }
 
-    const uri = url.parse(req.url).pathname
+    const parsedUrl =url.parse(req.url, true), uri = parsedUrl.pathname
 
     console.log(`${req.connection.remoteAddress}: ${uri}`)
 
@@ -157,7 +157,7 @@ const app = httpx.createServer(options, function (req, res) {
                     const headerExtra = {'Cache-Control': 'public, max-age=31536000', 'Content-Length': stat.size}
                     let code = 200, streamOption
 
-                    let ext = req.query.ext
+                    let ext = parsedUrl.query.ext
 
                     if( !ext) {
                         const pos = filename.lastIndexOf('.')
@@ -165,7 +165,6 @@ const app = httpx.createServer(options, function (req, res) {
                             ext = filename.substring(pos + 1).toLocaleLowerCase()
                         }
                     }
-
                     if(ext){
                         const mimeType = MimeType.detectByExtension(ext)
 
