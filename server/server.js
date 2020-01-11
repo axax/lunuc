@@ -189,11 +189,9 @@ const app = httpx.createServer(options, function (req, res) {
                                 streamOption={start, end}
                                 headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
                                 headerExtra['Accept-Ranges']= 'bytes'
-                            }
+                                headerExtra['Content-Length'] = chunksize
 
-                            /*if( ext === 'mp4'){
-                                delete headerExtra['Content-Length']
-                            }*/
+                            }
                         }
                     }
 
