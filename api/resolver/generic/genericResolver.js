@@ -27,6 +27,7 @@ const buildCollectionName = async (db, context, typeName, _version) => {
 
 const manualManipulations = (data, typeName) => {
 
+
     // TODO: with mongodb 4 this can be removed as convert and toString is supported
     if (data.results) {
         const typeDefinition = getType(typeName) || {}
@@ -35,14 +36,15 @@ const manualManipulations = (data, typeName) => {
 
             for (let i = 0; i < data.results.length; i++) {
                 const item = data.results[i]
+
                 for (let y = 0; y < typeDefinition.fields.length; y++) {
                     const field = typeDefinition.fields[y]
                     // convert type Object to String
-                    if (field && field.type === 'Object' && item[field.name]) {
+                    if (field && field.type === 'Object' ) {
 
                         hasField = true
 
-                        if (item[field.name].constructor === Object) {
+                        if (item[field.name] && item[field.name].constructor === Object) {
                             console.log(`convert ${typeName}.${field.name} to string`)
                             item[field.name] = JSON.stringify(item[field.name])
                         }
@@ -136,6 +138,7 @@ const GenericResolver = {
 
         const results = await collection.aggregate(dataQuery, {allowDiskUse: true}).toArray()
         let result
+
         if (results.length === 0) {
             return {
                 page: aggregationBuilder.getPage(),
