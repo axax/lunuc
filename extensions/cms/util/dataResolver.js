@@ -232,7 +232,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         continue
                     }
 
-
                     if (!resolvedData.tr)
                         resolvedData.tr = {}
                     if (segment.tr.constructor === Array) {
@@ -253,6 +252,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         } else {
                             resolvedData.tr = Object.assign(resolvedData.tr, segment.tr[context.lang])
                         }
+
                     }
 
 

@@ -984,6 +984,10 @@ class JsonDom extends React.Component {
             }
         }
 
+        if(args[0]._track){
+
+        }
+
         // pass event to parent
         if (this.props._parentRef && args.length && args[0]._passEvent) {
             this.props._parentRef.runJsEvent(name, async, ...args)

@@ -130,10 +130,10 @@ export const handleUpload = db => async (req, res) => {
                 res.end('{"status":"aborted","message":"Upload was aborted"}')
             })
 
-            form.on('progress', function (bytesReceived, bytesExpected) {
+            /*form.on('progress', function (bytesReceived, bytesExpected) {
                 const percent = (bytesReceived / bytesExpected * 100) | 0
                 console.log('Uploading: ' + percent + '%')
-            })
+            })*/
 
 
             // once all the files have been uploaded, send a response to the client
