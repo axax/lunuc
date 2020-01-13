@@ -176,10 +176,10 @@ const GenericResolver = {
         console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${new Date() - startTime}ms`)
         return result
     },
-    createEnity: async (db, context, typeName, {_version, ...data}) => {
+    createEntity: async (db, req, typeName, {_version, ...data}) => {
+        const {context} = req
 
-
-        Hook.call('typeBeforeCreate', {type:typeName, _version, data, db, context})
+        Hook.call('typeBeforeCreate', {type:typeName, _version, data, db, req})
 
         const typeDefinition = getType(typeName)
 

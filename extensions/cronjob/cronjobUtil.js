@@ -16,7 +16,7 @@ const cronjobUtil = {
         const result = {scriptLog: '', scriptDebug: '', scriptError: ''}
         let dbResult
         if( !noEntry ) {
-            dbResult = await GenericResolver.createEnity(db, context, 'CronJobExecution', {
+            dbResult = await GenericResolver.createEntity(db, {context}, 'CronJobExecution', {
                 state: 'running',
                 cronjob: ObjectId(cronjobId)
             })

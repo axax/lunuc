@@ -112,10 +112,10 @@ class JsonDom extends React.Component {
                 console.warn(`There is no id set for included Cms Component ${rest.slug}`, props)
             }
             let _props = props
-            if(_props && _props.constructor===String){
+            if (_props && _props.constructor === String) {
                 try {
                     _props = JSON.parse(_props)
-                }catch (e) {
+                } catch (e) {
                     console.log(e)
                 }
             }
@@ -246,7 +246,7 @@ class JsonDom extends React.Component {
         return false
     }
 
-    componentDidCatch(err,info) {
+    componentDidCatch(err, info) {
         console.error(err, info)
         this.hasError = true
         this.forceUpdate()
@@ -616,7 +616,7 @@ class JsonDom extends React.Component {
                                                     Util = this.Util,
                                                     _i = Util.tryCatch.bind(this),
                                                     _t = this._t.bind(this.scope.data)
-                                                    ${loopOrFor.eval?loopOrFor.eval:''}
+                                                    ${loopOrFor.eval ? loopOrFor.eval : ''}
                                                     return \`${cStr}\``))
                         }
                         data.forEach((loopChild, childIdx) => {
@@ -708,6 +708,7 @@ class JsonDom extends React.Component {
                                 const payload = eleProps['on' + e]
                                 eleProps['on' + e] = (...args) => {
                                     const eLower = e.toLowerCase()
+                                    Hook.call('JsonDomUserEvent', {event: eLower, payload, container: this})
                                     this.runJsEvent(eLower, false, payload, ...args)
                                 }
                             }
@@ -776,13 +777,14 @@ class JsonDom extends React.Component {
                         if ($edit) {
                             let _edit
                             if ($edit && $edit.constructor === String) {
-                                const pos = $edit.indexOf(':'), pos2 = $edit.indexOf(':',pos+1)
+                                const pos = $edit.indexOf(':'), pos2 = $edit.indexOf(':', pos + 1)
 
-                                const type = $edit.substring(0,pos), _id=$edit.substring(pos+1,pos2>=0?pos2:$edit.length)
+                                const type = $edit.substring(0, pos),
+                                    _id = $edit.substring(pos + 1, pos2 >= 0 ? pos2 : $edit.length)
 
                                 const parts = $edit.split(':')
                                 if (parts.length >= 2) {
-                                    _edit = {type,_id, props: pos2>=0?$edit.substring(pos2+1):null}
+                                    _edit = {type, _id, props: pos2 >= 0 ? $edit.substring(pos2 + 1) : null}
                                 }
                             } else {
                                 _edit = $edit
@@ -982,10 +984,6 @@ class JsonDom extends React.Component {
                     }
                 }
             }
-        }
-
-        if(args[0]._track){
-
         }
 
         // pass event to parent

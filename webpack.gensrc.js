@@ -411,9 +411,9 @@ function gensrcExtension(name, options) {
             return await GenericResolver.entities(db, context, '${type.name}', [${resolverFields}], {limit, offset, page, filter, sort${(type.collectionClonable ? ', _version' : '')}})
         },\n`
 
-                resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {
-            const result = await GenericResolver.createEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
-            pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'create',data:result}})
+                resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, req) => {
+            const result = await GenericResolver.createEntity(db, req, '${type.name}', {...rest,${refResolversObjectId}})
+            pubsub.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:result}})
             return result
         },
         update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {

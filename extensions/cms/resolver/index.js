@@ -214,12 +214,12 @@ export default db => ({
         }
     },
     Mutation: {
-        createCmsPage: async ({slug, ...rest}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
+        createCmsPage: async ({slug, ...rest}, req) => {
+            Util.checkIfUserIsLoggedIn(req.context)
             if (!slug) slug = ''
             slug = encodeURI(slug.trim())
 
-            return await GenericResolver.createEnity(db, context, 'CmsPage', {
+            return await GenericResolver.createEntity(db, req, 'CmsPage', {
                 slug,
                 ...rest,
                 dataResolver: DEFAULT_DATA_RESOLVER,

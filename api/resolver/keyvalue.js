@@ -29,7 +29,7 @@ export const keyvalueResolver = (db) => ({
                 match
             })
         },
-        keyValueGlobals: async ({keys, limit, sort, offset}, {context}) => {
+        keyValueGlobals: async ({keys, limit, sort, offset, page, filter}, {context}) => {
             const match = {}
             if (keys) {
                 match.key = {$in: keys}
@@ -43,6 +43,8 @@ export const keyvalueResolver = (db) => ({
                 limit,
                 offset,
                 sort,
+                page,
+                filter,
                 match
             })
         },
@@ -58,10 +60,10 @@ export const keyvalueResolver = (db) => ({
         }
     },
     Mutation: {
-        createKeyValue: async ({key, value, createdBy}, {context}) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+        createKeyValue: async ({key, value, createdBy}, req) => {
+            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_TYPES)
 
-            return await GenericResolver.createEnity(db, context, 'KeyValue', {key, value, createdBy})
+            return await GenericResolver.createEntity(db, req, 'KeyValue', {key, value, createdBy})
         },
         updateKeyValue: async ({_id, key, value, createdBy}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
@@ -77,9 +79,9 @@ export const keyvalueResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
             return GenericResolver.deleteEnity(db, context, 'KeyValue', {_id})
         },
-        createKeyValueGlobal: async ({key, value, ispublic}, {context}) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
-            return await GenericResolver.createEnity(db, context, 'KeyValueGlobal', {key, value, ispublic})
+        createKeyValueGlobal: async ({key, value, ispublic}, req) => {
+            await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_TYPES)
+            return await GenericResolver.createEntity(db, req, 'KeyValueGlobal', {key, value, ispublic})
         },
         updateKeyValueGlobal: async ({_id, key, value, ispublic}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)

@@ -38,3 +38,22 @@ Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode}
         }
     }
 })
+
+
+Hook.on('typeBeforeCreate', ({type, data, req}) => {
+    if( type==='UserTracking'){
+        if( !data.ip ){
+            const ip = clientAddress(req)
+            data.ip=ip.replace('::ffff:','')
+        }
+        if( !data.agent ){
+            data.agent=req.headers['user-agent']
+        }
+        if( !data.referer ){
+            data.referer=req.headers['referer']
+        }
+        if( !data.host ){
+            data.host=getHostFromHeaders(req.headers)
+        }
+    }
+})

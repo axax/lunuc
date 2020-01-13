@@ -131,6 +131,7 @@ const Util = {
                 try {
                     v = JSON.parse(obj.value)
                 } catch (e) {
+                    console.log('keyValueGlobalMap',e)
                     v = obj.value
                 }
             } else {
@@ -291,7 +292,6 @@ const Util = {
             if (pos >= 0) {
                 const key = filter.substring(0, pos).trim()
                 const value = filter.substring(pos + 1).trim()
-
                 const re = new RegExp(value, 'i')
 
                 if (re.test(data[key])) {
