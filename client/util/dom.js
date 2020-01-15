@@ -12,7 +12,8 @@ const DomUtil = {
         }
     },
     addStyle(href, attrs) {
-        const style = DomUtil.createAndAddTag('link', 'head', {type: 'text/css', rel: 'stylesheet', href, ...attrs})
+        const style = DomUtil.createAndAddTag('link', 'head', {type: 'text/css', rel:'preload',
+            as:'style', onload:()=>{style.rel='stylesheet'}, href, ...attrs})
     },
     addScript(src, attrs) {
         const script = DomUtil.createAndAddTag('script', 'head', {
