@@ -208,12 +208,12 @@ const app = httpx.createServer(options, function (req, res) {
         } else {
 
             // check with and without www
-            const hostrule = hostrules[host] || hostrules[host.substring(4)]
+            const hostrule = {...hostrules.general, ...(hostrules[host] || hostrules[host.substring(4)])}
 
 
             let staticFile
 
-            if (hostrule && hostrule.fileMapping && hostrule.fileMapping[uri]) {
+            if (hostrule.fileMapping && hostrule.fileMapping[uri]) {
                 staticFile = path.join(__dirname, '../' + hostrule.fileMapping[uri])
             } else {
                 staticFile = path.join(STATIC_DIR, uri)
@@ -235,7 +235,8 @@ const app = httpx.createServer(options, function (req, res) {
                                     headerExtra = {
                                         'Cache-Control': 'public, max-age=31536000',
                                         'Content-Type': mimeType,
-                                        'Last-Modified': stats.mtime.toUTCString()
+                                        'Last-Modified': stats.mtime.toUTCString(),
+                                        ...hostrule.headers[uri]
                                     }
                                 sendFile(req, res, headerExtra, filename);
                             }
@@ -243,12 +244,13 @@ const app = httpx.createServer(options, function (req, res) {
                     } else {
                         const headers = {
                             'Cache-Control': 'public, max-age=60',
-                            'content-type': MimeType.detectByExtension('html')
+                            'content-type': MimeType.detectByExtension('html'),
+                            ...hostrule.headers[uri]
                         }
 
                         let indexfile
 
-                        if (hostrule && hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
+                        if ( hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
                             indexfile = path.join(__dirname, '../' + hostrule.fileMapping['/index.html'])
                         } else {
                             // default index
@@ -263,7 +265,8 @@ const app = httpx.createServer(options, function (req, res) {
                         headerExtra = {
                             'Cache-Control': 'public, max-age=31536000',
                             'Content-Type': mimeType,
-                            'Last-Modified': staticStats.mtime.toUTCString()
+                            'Last-Modified': staticStats.mtime.toUTCString(),
+                            ...hostrule.headers[uri]
                         }
                     sendFile(req, res, headerExtra, staticFile);
                 }
