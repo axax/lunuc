@@ -134,7 +134,7 @@ function mainInit() {
                 //window.Notification.requestPermission()
 
 
-                navigator.serviceWorker.register('/serviceworker.js')
+                navigator.serviceWorker.register('/serviceworker.js?v='+config.BUILD_NUMBER)
                     .then(function (swReg) {
                         console.log('Service Worker is registered')
                     })

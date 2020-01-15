@@ -83,7 +83,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         resolvedData[k] = segment.data[k]
                     })
                 } else if (segment.t) {
-                    const {t, f, l, o, g, p, d, s, $if, cache, includeCount} = segment
+                    const {t, f, l, o, g, p, d, s, $if, cache, includeCount,...other} = segment
                     /*
                      f = filter for the query
                      t = type
@@ -147,7 +147,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         match = {}
                     }
                     debugInfo += ' type=' + type
-
                     const result = await GenericResolver.entities(db, context, type, fields, {
                         filter: f,
                         limit: l,
@@ -158,7 +157,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         match,
                         cache,
                         includeCount,
-                        projectResult: true
+                        projectResult: true,
+                        ...other,
                     })
                     debugInfo += ' result=true'
 

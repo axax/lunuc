@@ -392,7 +392,7 @@ class CmsViewEditorContainer extends React.Component {
                                     data.cmsPages.results.forEach(i => {
                                             if (i.slug !== props.slug) {
                                                 menuItems.push(<MenuListItem key={i.slug} onClick={e => {
-                                                    history.push('/' + i.slug)
+                                                    props.history.push('/' + i.slug)
                                                 }} button primary={i.slug}/>)
                                             }
                                         }

@@ -697,7 +697,8 @@ export default class AggregationBuilder {
 
         const facet = {
             $facet: {
-                results: dataFacetQuery
+                results: dataFacetQuery,
+                ...this.options.$facet
             }
         }
 
@@ -712,7 +713,7 @@ export default class AggregationBuilder {
 
         // return offset and limit
         dataQuery.push({
-            $addFields: {limit, offset, page, searchHint: this.searchHint}
+            $addFields: {limit, offset, page, searchHint: this.searchHint,...this.options.$addFields}
         })
 
 

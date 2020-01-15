@@ -128,7 +128,7 @@ const GenericResolver = {
         })
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
-        if (typeName.indexOf("Rating") >= 0) {
+        if (typeName.indexOf("Product") >= 0) {
             //console.log(JSON.stringify(dataQuery, null, 4))
         }
         //console.log(JSON.stringify(dataQuery, null, 4))
