@@ -285,6 +285,7 @@ export const systemResolver = (db) => ({
         },
         collectionAggregate: async ({collection, json}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+
             const jsonParsed = JSON.parse(json)
             findAndReplaceObjectIds(jsonParsed)
             const startTimeAggregate = new Date()

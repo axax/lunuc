@@ -228,6 +228,10 @@ class JsonDom extends React.Component {
                 this.updateScope = true
             }
 
+            if( this.props.renewing !== props.renewing ){
+                this.json = null
+            }
+
             if (slugChanged || scriptChanged || this.runScript) {
                 this.removeAddedDomElements()
                 this.scriptResult = null

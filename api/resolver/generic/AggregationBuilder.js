@@ -67,14 +67,10 @@ export default class AggregationBuilder {
     }
 
 
-    getParsedFilter() {
-        if (!this._parsedFilter) {
-            const {filter} = this.options
-            if (filter) {
-                this._parsedFilter = ClientUtil.parseFilter(filter)
-            }
+    getParsedFilter(filterStr) {
+        if (filterStr) {
+            return ClientUtil.parseFilter(filterStr)
         }
-        return this._parsedFilter
     }
 
 
@@ -100,7 +96,6 @@ export default class AggregationBuilder {
             } else {
                 $expr.$eq = ['$_id', '$$' + name]
             }
-
 
             lookup = {
                 $lookup: {
@@ -141,25 +136,25 @@ export default class AggregationBuilder {
 
 
     // filter where clause
-    createAndAddFilterToMatch({name, reference, type, multi, localized}, match, {exact}) {
+    createAndAddFilterToMatch({name, reference, type, multi, localized}, match, {exact, filters}) {
         let hasAtLeastOneMatch = false
-        if (localized) {
-            config.LANGUAGES.forEach(lang => {
-                if (this.createAndAddFilterToMatch({name: name + '.' + lang, reference}, match, {exact})) {
-                    hasAtLeastOneMatch = true
-                }
-            })
-            return hasAtLeastOneMatch
-        }
 
-        const parsedFilter = this.getParsedFilter()
-        if (parsedFilter) {
-            let filterPart = parsedFilter.parts[name]
-            if( !filterPart && reference){
-                filterPart = parsedFilter.parts[name+'._id']
+        if (filters) {
+            if (localized) {
+                config.LANGUAGES.forEach(lang => {
+                    if (this.createAndAddFilterToMatch({name: name + '.' + lang, reference}, match, {exact, filters})) {
+                        hasAtLeastOneMatch = true
+                    }
+                })
+                return hasAtLeastOneMatch
+            }
+
+            let filterPart = filters.parts[name]
+            if (!filterPart && reference) {
+                filterPart = filters.parts[name + '._id']
             }
             if (!filterPart && !exact) {
-                filterPart = parsedFilter.parts[name.split('.')[0]]
+                filterPart = filters.parts[name.split('.')[0]]
             }
 
             // explicit search for this field
@@ -190,14 +185,14 @@ export default class AggregationBuilder {
                         this.searchHint = error
                     }
                 }
-            }else if( type === 'Object'){
+            } else if (type === 'Object') {
 
                 // filter in an Object without definition
-                for (const filterKey in parsedFilter.parts) {
-                    if( filterKey.startsWith(name+'.') ){
+                for (const filterKey in filters.parts) {
+                    if (filterKey.startsWith(name + '.')) {
 
 
-                        filterPart = parsedFilter.parts[filterKey]
+                        filterPart = filters.parts[filterKey]
 
                         let filterPartArray
                         if (filterPart.constructor !== Array) {
@@ -225,7 +220,7 @@ export default class AggregationBuilder {
 
 
             if (!exact && !reference && ['Boolean'].indexOf(type) < 0) {
-                parsedFilter.rest.forEach(e => {
+                filters.rest.forEach(e => {
                     hasAtLeastOneMatch = true
                     const {added} = this.addFilterToMatch({
                         filterKey: name,
@@ -319,13 +314,13 @@ export default class AggregationBuilder {
         }
 
 
-        if( comparator === '$eq'  ) {
+        if (comparator === '$eq') {
             if (multi && filterValue && filterValue.constructor !== Array) {
                 comparator = '$in'
                 filterValue = [filterValue]
-            }else if(!filterValue){
+            } else if (!filterValue) {
                 comparator = '$in'
-                filterValue = [ null, "" ]
+                filterValue = [null, ""]
             }
         }
 
@@ -432,10 +427,12 @@ export default class AggregationBuilder {
             page = this.getPage(),
             sort = this.getSort(),
             typeFields = getFormFields(this.type),
-            parsedFilter = this.getParsedFilter()
+            filters = this.getParsedFilter(this.options.filter),
+            resultFilters = this.getParsedFilter(this.options.resultFilter)
 
         let rootMatch = Object.assign({}, this.options.match),
             match = {},
+            resultMatch = {},
             groups = {},
             lookups = [],
             projectResultData = {},
@@ -443,27 +440,27 @@ export default class AggregationBuilder {
 
 
         // if there is filter like _id=12323213
-        if (parsedFilter && parsedFilter.parts._id) {
+        if (filters && filters.parts._id) {
             // if there is a filter on _id
             // handle it here
             this.addFilterToMatch({
                 filterKey: '_id',
-                filterValue: parsedFilter.parts._id.value,
-                filterOptions: parsedFilter.parts._id,
+                filterValue: filters.parts._id.value,
+                filterOptions: filters.parts._id,
                 type: 'ID',
                 match: rootMatch
             })
         }
         // if there is filter like createdBy=12323213
-        if (parsedFilter && parsedFilter.parts.createdBy) {
+        if (filters && filters.parts.createdBy) {
             // if there is a filter on _id
             // handle it here
             this.addFilterToMatch({
                 filterKey: 'createdBy',
-                filterValue: parsedFilter.parts.createdBy.value,
-                filterOptions: parsedFilter.parts.createdBy,
+                filterValue: filters.parts.createdBy.value,
+                filterOptions: filters.parts.createdBy,
                 type: 'ID',
-                match: match
+                match
             })
         }
         this.fields.forEach((field, i) => {
@@ -519,7 +516,7 @@ export default class AggregationBuilder {
                                     name: fieldName + '.' + refFieldName,
                                     reference: false,
                                     localized: refFieldDefinition.localized && !localProjected
-                                }, match, {exact: true})) {
+                                }, match, {exact: true, filters})) {
                                     hasMatchInReference = true
                                 }
                             }
@@ -547,14 +544,15 @@ export default class AggregationBuilder {
                 }
 
                 groups[fieldName] = this.createGroup(fieldDefinition)
-                this.createAndAddFilterToMatch(fieldDefinition, hasMatchInReference ? match : rootMatch, {})
+                this.createAndAddFilterToMatch(fieldDefinition, hasMatchInReference ? match : rootMatch, {filters})
 
             } else {
                 // regular field
                 if (fieldName !== '_id') {
                     groups[fieldName] = {'$first': '$' + fieldName}
                     if (typeFields[fieldName]) {
-                        this.createAndAddFilterToMatch(fieldDefinition, match, {})
+                        this.createAndAddFilterToMatch(fieldDefinition, match, {filters})
+                        this.createAndAddFilterToMatch(fieldDefinition, resultMatch, {filters: resultFilters})
                     }
 
 
@@ -602,7 +600,6 @@ export default class AggregationBuilder {
         const hasMatch = Object.keys(match).length > 0
         const doMatchAfterLookup = (hasMatch && hasMatchInReference)
 
-
         if (Object.keys(rootMatch).length > 0) {
             if (!hasMatchInReference) {
                 dataQuery.push({
@@ -617,6 +614,10 @@ export default class AggregationBuilder {
             dataQuery.push({
                 $match: match
             })
+        }
+
+        if (Object.keys(resultMatch).length > 0) {
+            dataFacetQuery.push({$match: resultMatch})
         }
 
 
@@ -687,9 +688,9 @@ export default class AggregationBuilder {
             if (!projectResultData._id) {
                 projectResultData._id = 0
             }
-            if( this.options.group ){
-                Object.keys(this.options.group).forEach((k)=>{
-                    projectResultData[k]=1
+            if (this.options.group) {
+                Object.keys(this.options.group).forEach((k) => {
+                    projectResultData[k] = 1
                 })
             }
             dataFacetQuery.push({$project: projectResultData})
@@ -706,6 +707,11 @@ export default class AggregationBuilder {
             facet.$facet.meta = [
                 {$count: 'count'}
             ]
+
+
+            if (Object.keys(resultMatch).length > 0) {
+                facet.$facet.meta.unshift({$match: resultMatch})
+            }
         }
 
         //wrap in a facet
@@ -713,7 +719,7 @@ export default class AggregationBuilder {
 
         // return offset and limit
         dataQuery.push({
-            $addFields: {limit, offset, page, searchHint: this.searchHint,...this.options.$addFields}
+            $addFields: {limit, offset, page, searchHint: this.searchHint, ...this.options.$addFields}
         })
 
 
