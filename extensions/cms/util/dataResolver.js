@@ -405,7 +405,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 } else if (segment.website) {
 
                     // headless browser
-                    if (segment.if === false) {
+                    if (segment.if === false || !segment.website.url) {
                         continue
                     }
 
