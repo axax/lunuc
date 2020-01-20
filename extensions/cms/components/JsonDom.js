@@ -439,7 +439,7 @@ class JsonDom extends React.Component {
 
     handleBindingChange(cb, event, value) {
         const target = event.target
-        this.bindings[target.name] = value || target.value
+        this.bindings[target.name] = (target.type === 'checkbox' ? target.checked :  value || target.value)
         if (cb)
             cb.bind(this)(event)
     }
