@@ -594,11 +594,21 @@ export default class AggregationBuilder {
             groups.modifiedAt = {'$first': '$modifiedAt'}
         }
 
+
+        // remove or if it is only a single value
+        if(rootMatch.$or && rootMatch.$or.length===1){
+            const key=Object.keys(rootMatch.$or[0])[0]
+            rootMatch[key]=rootMatch.$or[0][key]
+            delete rootMatch.$or
+        }
+
         // compose result
         let dataQuery = [], dataFacetQuery = []
 
-        const hasMatch = Object.keys(match).length > 0
-        const doMatchAfterLookup = (hasMatch && hasMatchInReference)
+
+        const hasMatch = Object.keys(match).length > 0,
+            hasResultMatch = Object.keys(resultMatch).length > 0,
+            doMatchAfterLookup = (hasMatch && hasMatchInReference)
 
         if (Object.keys(rootMatch).length > 0) {
             if (!hasMatchInReference) {
@@ -616,7 +626,7 @@ export default class AggregationBuilder {
             })
         }
 
-        if (Object.keys(resultMatch).length > 0) {
+        if (hasResultMatch) {
             dataFacetQuery.push({$match: resultMatch})
         }
 
@@ -709,7 +719,7 @@ export default class AggregationBuilder {
             ]
 
 
-            if (Object.keys(resultMatch).length > 0) {
+            if (hasResultMatch) {
                 facet.$facet.meta.unshift({$match: resultMatch})
             }
         }

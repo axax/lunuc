@@ -29,10 +29,11 @@ function mainInit() {
         // context language
         // we expect the first part of the path to be the language when its length is 2
         contextLanguage = loc.pathname.split('/')[1]
-        if (contextLanguage && contextLanguage.length === 2) {
+
+        if (contextLanguage && config.LANGUAGES.indexOf(contextLanguage)>=0) {
             contextLanguage = contextLanguage.toLowerCase()
             _app_.contextPath = '/' + contextLanguage
-            basePath = loc.pathname.substring(3)
+            basePath = loc.pathname.substring(contextLanguage.length+1)
         } else {
             _app_.contextPath = ''
             contextLanguage = false
@@ -40,9 +41,8 @@ function mainInit() {
         }
         basePath += loc.search + loc.hash
 
-
         // if lang is not set already
-        if (!_app_.lang) {
+        if (!_app_.lang || config.LANGUAGES.indexOf(_app_.lang)<0) {
             let lang
             const sessionLanguage = sessionStorage.getItem('lang')
             if (contextLanguage) {
@@ -58,6 +58,7 @@ function mainInit() {
             _app_.langBefore = sessionLanguage
             _app_.lang = lang
         }
+
         if (!contextLanguage && config.DEFAULT_LANGUAGE !== _app_.lang) {
             // add language to url and redirect
             window.location = loc.origin + '/' + _app_.lang + basePath
