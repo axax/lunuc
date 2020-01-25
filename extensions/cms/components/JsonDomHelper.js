@@ -114,7 +114,8 @@ class JsonDomHelper extends React.Component {
         if (JsonDomHelper.currentDragElement && JsonDomHelper.currentDragElement != this) {
             return false
         }
-        return props._json !== this.props._json ||
+        return props.dangerouslySetInnerHTML !== this.props.dangerouslySetInnerHTML ||
+            props._json !== this.props._json ||
             props.children !== this.props.children ||
             state.hovered !== this.state.hovered ||
             state.dragging !== this.state.dragging ||
@@ -460,7 +461,6 @@ class JsonDomHelper extends React.Component {
                 style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}
                 className={classes.highlighter}/>
         }
-
         let kids
         if (isTempalteEdit && children && children.constructor === Array && ALLOW_DROP.indexOf(subJson.t) >= 0) {
             kids = []

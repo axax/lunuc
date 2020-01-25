@@ -17,7 +17,17 @@ import DataResolverEditor from '../components/DataResolverEditor'
 import TemplateEditor from '../components/TemplateEditor'
 import ScriptEditor from '../components/ScriptEditor'
 import ResourceEditor from '../components/ResourceEditor'
-import {DrawerLayout, MenuList, MenuListItem, Button, SimpleSwitch, SimpleDialog, Divider, UIProvider, TextField} from 'ui/admin'
+import {
+    DrawerLayout,
+    MenuList,
+    MenuListItem,
+    Button,
+    SimpleSwitch,
+    SimpleDialog,
+    Divider,
+    UIProvider,
+    TextField
+} from 'ui/admin'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import config from 'gen/config'
 import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
@@ -76,7 +86,7 @@ class CmsViewEditorContainer extends React.Component {
             alwaysLoadAssets,
             public: props.cmsPage && props.cmsPage.public
         }
-        if (state && (['updating', 'updated'].indexOf(status) >= 0 || props.cmsPage && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug) ) {
+        if (state && (['updating', 'updated'].indexOf(status) >= 0 || props.cmsPage && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug)) {
             // take value from state if there is any because it might be more up to date
             result.template = state.template
             result.script = state.script
@@ -160,9 +170,9 @@ class CmsViewEditorContainer extends React.Component {
 
         let cmsEditDataProps, cmsEditDataValue
 
-        if(cmsEditData && !cmsEditData.type){
+        if (cmsEditData && !cmsEditData.type) {
             cmsEditDataProps = this.getDataResolverProperty(cmsEditData)
-            cmsEditDataValue =  cmsEditData.value
+            cmsEditDataValue = cmsEditData.value
         }
 
         const inner = [!loadingSettings &&
@@ -173,7 +183,8 @@ class CmsViewEditorContainer extends React.Component {
             ,
             <ErrorHandler key="errorHandler" snackbar/>,
             <NetworkStatusHandler key="networkStatus"/>,
-            <SimpleDialog key="templateEditor" open={!!cmsComponentEdit.key} onClose={this.handleComponentEditClose.bind(this)}
+            <SimpleDialog key="templateEditor" open={!!cmsComponentEdit.key}
+                          onClose={this.handleComponentEditClose.bind(this)}
                           actions={[{
                               key: 'ok',
                               label: 'Ok',
@@ -192,53 +203,58 @@ class CmsViewEditorContainer extends React.Component {
 
             cmsEditData ?
                 cmsEditData.type ?
-                <Query key="dataEditor" query={gql(getTypeQueries(cmsEditData.type).query)}
-                                  variables={{filter: `_id=${cmsEditData._id}`}}
-                                  fetchPolicy="network-only">
+                    <Query key="dataEditor" query={gql(getTypeQueries(cmsEditData.type).query)}
+                           variables={{filter: `_id=${cmsEditData._id}`}}
+                           fetchPolicy="network-only">
 
-                {({loading, error, data}) => {
-                    if (loading) {
-                        return 'Loading...'
-                    }
+                        {({loading, error, data}) => {
+                            if (loading) {
+                                return 'Loading...'
+                            }
 
-                    if (error) return `Error! ${error.message}`
-                    if (data.genericDatas.results.length === 0) return 'No data'
+                            if (error) return `Error! ${error.message}`
+                            if (data.genericDatas.results.length === 0) return 'No data'
 
-                    const editDialogProps = {
-                        type: cmsEditData.type,
-                        title: cmsEditData.type,
-                        open: !!cmsEditData,
-                        onClose: this.handleEditDataClose.bind(this),
-                        dataToEdit: data.genericDatas.results[0],
-                        parentRef: this
-                    }
-                    return React.createElement(
-                        withType(TypeEdit),
-                        editDialogProps,
-                        null
-                    )
-                }}
-            </Query>: <SimpleDialog key="propertyEditor" open={true} onClose={()=>{console.log(cmsEditDataValue);props._cmsActions.editCmsData(null)}}
-                                    actions={[{
-                                        key: 'save',
-                                        label: 'Save',
-                                        type: 'primary'
-                                    }]}
-                                    title="Edit Value">
-                        <TextField onChange={(e)=>{
+                            const editDialogProps = {
+                                type: cmsEditData.type,
+                                title: cmsEditData.type,
+                                open: !!cmsEditData,
+                                onClose: this.handleEditDataClose.bind(this),
+                                dataToEdit: data.genericDatas.results[0],
+                                parentRef: this
+                            }
+                            return React.createElement(
+                                withType(TypeEdit),
+                                editDialogProps,
+                                null
+                            )
+                        }}
+                    </Query> : <SimpleDialog key="propertyEditor" open={true} onClose={(e) => {
+                        if( e.key === 'save') {
+                            this.handlePropertySave(cmsEditDataValue)
+                        }
+                        this.props._cmsActions.editCmsData(null)
+                    }}
+                                             actions={[{
+                                                 key: 'save',
+                                                 label: 'Save',
+                                                 type: 'primary'
+                                             }]}
+                                             title="Edit Value">
+                        <TextField onChange={(e) => {
                             cmsEditDataValue = e.target.value
                         }} {...cmsEditDataProps} />
 
                     </SimpleDialog>
 
-                    :null
+                : null
 
         ]
 
 
-        if( !inEditor ) {
+        if (!inEditor) {
             return inner
-        }else{
+        } else {
 
             const {slug, _version} = getSlugVersion(props.slug)
             const sidebar = <div>
@@ -346,11 +362,13 @@ class CmsViewEditorContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'revisionsExpanded')}
                                 expanded={settings.revisionsExpanded}>
                         <MenuList>
-                            <Query query={gql`query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action}}}`}
-                                   fetchPolicy="cache-and-network"
-                                   variables={{
-                                       limit: 99,
-                                       filter: `data._id=${cmsPage._id}`}}>
+                            <Query
+                                query={gql`query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action}}}`}
+                                fetchPolicy="cache-and-network"
+                                variables={{
+                                    limit: 99,
+                                    filter: `data._id=${cmsPage._id}`
+                                }}>
                                 {({loading, error, data}) => {
                                     if (loading) return 'Loading...'
                                     if (error) return `Error! ${error.message}`
@@ -360,12 +378,13 @@ class CmsViewEditorContainer extends React.Component {
 
                                     data.historys.results.forEach(i => {
                                             if (i.slug !== props.slug) {
-                                                menuItems.push(<MenuListItem key={'history'+i._id} onClick={e => {
-                                                }} button primary={Util.formattedDateFromObjectId(i._id)+' - '+i.action}/>)
+                                                menuItems.push(<MenuListItem key={'history' + i._id} onClick={e => {
+                                                }} button
+                                                                             primary={Util.formattedDateFromObjectId(i._id) + ' - ' + i.action}/>)
                                             }
                                         }
                                     )
-                                    if (data.historys.results===0) return 'No history entries'
+                                    if (data.historys.results === 0) return 'No history entries'
                                     return menuItems
                                 }}
                             </Query>
@@ -377,12 +396,14 @@ class CmsViewEditorContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'relatedPagesExpanded')}
                                 expanded={settings.relatedPagesExpanded}>
                         <MenuList>
-                            <Query query={gql`query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug}}}`}
-                                   fetchPolicy="cache-and-network"
-                                   variables={{
-                                       _version,
-                                       limit: 99,
-                                       filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`}}>
+                            <Query
+                                query={gql`query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug}}}`}
+                                fetchPolicy="cache-and-network"
+                                variables={{
+                                    _version,
+                                    limit: 99,
+                                    filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`
+                                }}>
                                 {({loading, error, data}) => {
                                     if (loading) return 'Loading...'
                                     if (error) return `Error! ${error.message}`
@@ -398,7 +419,7 @@ class CmsViewEditorContainer extends React.Component {
                                             }
                                         }
                                     )
-                                    if (menuItems.length===0) return 'No related pages'
+                                    if (menuItems.length === 0) return 'No related pages'
                                     return menuItems
                                 }}
                             </Query>
@@ -441,30 +462,67 @@ class CmsViewEditorContainer extends React.Component {
 
     }
 
-    getDataResolverProperty(cmsEditData){
-        const {dataResolver} = this.state
-        try{
-            const jsonArray = JSON.parse(dataResolver)
-            let path = cmsEditData._id
 
-            const first = path.substring(0,path.indexOf('.'))
-            for(let i=0;i< jsonArray.length;i++){
-                const json = jsonArray[i]
-                if(json[first]){
-                    let props
-                    if( cmsEditData.props){
-                        const correctJson = cmsEditData.props.replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ');
-                        props = JSON.parse(correctJson)
-                    }
+    handlePropertySave(value) {
+        const path = this.props.cmsEditData._id
 
-                    return {defaultValue:Util.propertyByPath(path,json),...props}
+        const {segment, dataResolver} = this.findSegementInDataResolver(path)
+
+        if( segment) {
+            const fields = path.split('.')
+            let result = segment
+            for (let i = 0, n = fields.length; i < n && result !== undefined; i++) {
+                let field = fields[i]
+                if (i === n - 1) {
+                    result[field] = value
+                } else {
+                    result = result[field]
                 }
             }
-        }catch(e){
-            console.log(e)
-            return {defaultValue:'', error: true, helperText: e.message}
+
+            this.handleDataResolverChange(JSON.stringify(dataResolver,null,4),true)
         }
-        return {defaultValue:''}
+    }
+
+    getDataResolverProperty(cmsEditData) {
+        const path = cmsEditData._id
+        const {segment} = this.findSegementInDataResolver(path)
+
+
+        if (segment) {
+            try {
+                let props
+                if (cmsEditData.props) {
+                    const correctJson = cmsEditData.props.replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ');
+                    props = JSON.parse(correctJson)
+                }
+
+                return {defaultValue: Util.propertyByPath(path, segment), ...props}
+
+            } catch (e) {
+                console.log(e)
+                return {defaultValue: '', error: true, helperText: e.message}
+            }
+
+
+        }
+        return {defaultValue: ''}
+    }
+
+
+    findSegementInDataResolver(path) {
+        const dataResolver = JSON.parse(this.state.dataResolver),
+            first = path.substring(0, path.indexOf('.'))
+        let segment
+        for (let i = 0; i < dataResolver.length; i++) {
+            const json = dataResolver[i]
+            if (json[first]) {
+                segment = json
+                break
+            }
+        }
+
+        return {dataResolver, segment}
     }
 
     handleCmsError(e, meta) {
@@ -558,9 +616,9 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         clearTimeout(this._autoSaveServerScriptTimeout)
-        if( instantSave ){
+        if (instantSave) {
             this._autoSaveServerScript()
-        }else {
+        } else {
             this._autoSaveServerScriptTimeout = setTimeout(this._autoSaveServerScript, 5000)
         }
     }
