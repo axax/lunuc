@@ -158,10 +158,11 @@ class CmsViewEditorContainer extends React.Component {
 
         const inEditor = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_PAGES)
 
-        let cmsEditDataProps
+        let cmsEditDataProps, cmsEditDataValue
 
         if(cmsEditData && !cmsEditData.type){
             cmsEditDataProps = this.getDataResolverProperty(cmsEditData)
+            cmsEditDataValue =  cmsEditData.value
         }
 
         const inner = [!loadingSettings &&
@@ -217,16 +218,16 @@ class CmsViewEditorContainer extends React.Component {
                         null
                     )
                 }}
-            </Query>: <SimpleDialog key="propertyEditor" open={true} onClose={()=>{props._cmsActions.editCmsData(null)}}
+            </Query>: <SimpleDialog key="propertyEditor" open={true} onClose={()=>{console.log(cmsEditDataValue);props._cmsActions.editCmsData(null)}}
                                     actions={[{
-                                        key: 'ok',
-                                        label: 'Ok',
+                                        key: 'save',
+                                        label: 'Save',
                                         type: 'primary'
                                     }]}
                                     title="Edit Value">
-
-                            <TextField {...cmsEditDataProps} />
-
+                        <TextField onChange={(e)=>{
+                            cmsEditDataValue = e.target.value
+                        }} {...cmsEditDataProps} />
 
                     </SimpleDialog>
 
@@ -455,16 +456,15 @@ class CmsViewEditorContainer extends React.Component {
                         const correctJson = cmsEditData.props.replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ');
                         props = JSON.parse(correctJson)
                     }
-                    console.log( props)
-                    return {value:Util.propertyByPath(path,json),...props}
+
+                    return {defaultValue:Util.propertyByPath(path,json),...props}
                 }
             }
         }catch(e){
             console.log(e)
-            return {value:'', error: true, helperText: e.message}
+            return {defaultValue:'', error: true, helperText: e.message}
         }
-        return {value:''}
-        //Util.propertyByPath(cmsEditData._id,)
+        return {defaultValue:''}
     }
 
     handleCmsError(e, meta) {

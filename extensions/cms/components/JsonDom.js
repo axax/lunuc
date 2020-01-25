@@ -379,7 +379,7 @@ class JsonDom extends React.Component {
             scope.script = this.scriptResult || {}
         }
         if (!this.runJsEvent('beforerender', false, scope)) {
-            return <div>Error in beforerender event. See details in console log</div>
+            return <div>Error in beforerender event. See details in console log: <span dangerouslySetInnerHTML={{__html: this.lastEventError}}/></div>
         }
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope, true)
         if (content && this._inHtmlComponents.length > 0) {
@@ -983,7 +983,10 @@ class JsonDom extends React.Component {
                             cb(...args)
                         }
                     } catch (e) {
-                        console.log(name, e)
+                        const line = e.stack.split('\n')[1]
+                        const [, lineNrStr, column ] = line.match(/:(\d*):(\d*)/)
+
+                        this.lastEventError= this.prettyErrorMessage(e,cb.toString())
                         hasError = true
                     }
                 }
@@ -995,6 +998,30 @@ class JsonDom extends React.Component {
             this.props._parentRef.runJsEvent(name, async, ...args)
         }
         return !hasError
+    }
+
+    prettyErrorMessage =(e,code)=>{
+        const line = e.stack.split('\n')[1]
+        const [, lineNrStr, column ] = line.match(/:(\d*):(\d*)/)
+
+        let errorMsg= '<pre style="margin-top:2rem">'
+        if( lineNrStr){
+            const lineNr = parseInt(lineNrStr)
+            const cbLines = code.split('\n'),
+                start = Math.max(0, lineNr - 3),
+                end = Math.min(cbLines.length, lineNr + 4)
+            for(let i=start;i<end;i++){
+
+                const str = cbLines[i-10]
+                if( i === lineNr) {
+                    errorMsg+=`<i style="background:red;color:#fff">Line ${i-10}: ${e.message}</i>\n<i style="background:yellow">${str}</i>\n`
+                }else{
+                    errorMsg+=str+'\n'
+                }
+            }
+        }
+        errorMsg+='</pre>'
+        return errorMsg
     }
 
 
