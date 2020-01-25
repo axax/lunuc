@@ -9,8 +9,6 @@ import config from 'gen/config'
 import DomUtil from 'client/util/dom'
 
 function mainInit() {
-    const appEl = document.getElementById('app')
-
     const {store} = configureStore()
 
     // override config
@@ -21,19 +19,20 @@ function mainInit() {
     // add config to the global app object
     _app_.config = config
 
-    let contextLanguage, loc = window.location, basePath
+    let contextLanguage, loc = window.location, basePath,
+        hasMultiLanguages = config.LANGUAGES && config.LANGUAGES.length > 1
 
     // if multi languages
-    if (config.LANGUAGES && config.LANGUAGES.length > 1) {
+    if (hasMultiLanguages) {
 
         // context language
         // we expect the first part of the path to be the language when its length is 2
         contextLanguage = loc.pathname.split('/')[1]
 
-        if (contextLanguage && config.LANGUAGES.indexOf(contextLanguage)>=0) {
+        if (contextLanguage && config.LANGUAGES.indexOf(contextLanguage) >= 0) {
             contextLanguage = contextLanguage.toLowerCase()
             _app_.contextPath = '/' + contextLanguage
-            basePath = loc.pathname.substring(contextLanguage.length+1)
+            basePath = loc.pathname.substring(contextLanguage.length + 1)
         } else {
             _app_.contextPath = ''
             contextLanguage = false
@@ -42,7 +41,7 @@ function mainInit() {
         basePath += loc.search + loc.hash
 
         // if lang is not set already
-        if (!_app_.lang || config.LANGUAGES.indexOf(_app_.lang)<0) {
+        if (!_app_.lang || config.LANGUAGES.indexOf(_app_.lang) < 0) {
             let lang
             const sessionLanguage = sessionStorage.getItem('lang')
             if (contextLanguage) {
@@ -68,7 +67,29 @@ function mainInit() {
         // keep language in session
         sessionStorage.setItem('lang', _app_.lang)
 
+    } else {
+        _app_.contextPath = ''
+        _app_.lang = config.DEFAULT_LANGUAGE
+    }
 
+    const start = () => {
+        render(
+            <App store={store}/>,
+            document.getElementById('app')
+        )
+    }
+
+    // make sure translations are loaded before start rendering
+    if (_app_.trLoaded) {
+        start()
+    } else {
+        // trCallback gets called as soon as translations are loaded
+        _app_.trCallback = start
+    }
+
+    document.documentElement.setAttribute('lang', _app_.lang)
+
+    if(hasMultiLanguages){
         if (contextLanguage === config.DEFAULT_LANGUAGE) {
             // set canonical link
             DomUtil.createAndAddTag('link', 'head', {
@@ -92,29 +113,7 @@ function mainInit() {
                 href: loc.origin + (!isDefault ? '/' + curLang : '') + basePath
             })
         }
-    } else {
-        _app_.contextPath = ''
-        _app_.lang = config.DEFAULT_LANGUAGE
     }
-
-    document.documentElement.setAttribute('lang', _app_.lang)
-
-    const start = () => {
-        render(
-            <App store={store}/>,
-            appEl
-        )
-    }
-
-    // make sure translations are loaded before start rendering
-    if (_app_.trLoaded) {
-        start()
-    } else {
-        // trCallback gets called as soon as translations are loaded
-        _app_.trCallback = start
-    }
-
-
     /* Register serviceworker only on production. only works with https */
     if ('serviceWorker' in navigator) {
         console.log('Service Worker is supported')
@@ -123,7 +122,7 @@ function mainInit() {
             console.log('Push is supported')
 
 
-            if ( config.DEV_MODE || location.host.startsWith('localhost')) {
+            if (config.DEV_MODE || location.host.startsWith('localhost')) {
 
                 navigator.serviceWorker.getRegistrations().then(function (registrations) {
                     for (let registration of registrations) {
@@ -135,7 +134,7 @@ function mainInit() {
                 //window.Notification.requestPermission()
 
 
-                navigator.serviceWorker.register('/serviceworker.js?v='+config.BUILD_NUMBER)
+                navigator.serviceWorker.register('/serviceworker.js?v=' + config.BUILD_NUMBER)
                     .then(function (swReg) {
                         console.log('Service Worker is registered')
                     })
