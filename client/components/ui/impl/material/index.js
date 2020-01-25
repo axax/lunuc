@@ -40,7 +40,7 @@ export const theme = createMuiTheme({
                 margin: defaultTheme.spacing(1)
             },
             fullWidth: {
-                margin: `${defaultTheme.spacing(1)}px 0`
+                margin: `${defaultTheme.spacing(1)}px`
             }
         },
         MuiChip: {
@@ -90,6 +90,7 @@ export Button from '@material-ui/core/Button'
 export Fab from '@material-ui/core/Fab'
 export Input from '@material-ui/core/Input'
 export TextField from '@material-ui/core/TextField'
+export InputLabel from '@material-ui/core/InputLabel'
 export InputAdornment from '@material-ui/core/InputAdornment'
 export IconButton from '@material-ui/core/IconButton'
 export Select from '@material-ui/core/Select'

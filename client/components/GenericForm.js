@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {Button, TextField, SimpleSwitch, SimpleSelect} from 'ui/admin'
+import {Button, TextField, SimpleSwitch, SimpleSelect, InputLabel, FormHelperText, FormControl} from 'ui/admin'
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
 import config from 'gen/config'
@@ -53,7 +53,7 @@ class GenericForm extends React.Component {
 
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.updatekey!==prevState.updatekey || (!nextProps.updatekey && nextProps.fields !== prevState.fieldsOri)) {
+        if (nextProps.updatekey !== prevState.updatekey || (!nextProps.updatekey && nextProps.fields !== prevState.fieldsOri)) {
             console.log('GenericForm fields changed')
             return GenericForm.getInitalState(nextProps)
         }
@@ -106,8 +106,8 @@ class GenericForm extends React.Component {
                             }
                         })
                     } else {
-                        const value =theState.fields[fieldKey]
-                        if (!value || (value.constructor === String && value.trim()=== '')) {
+                        const value = theState.fields[fieldKey]
+                        if (!value || (value.constructor === String && value.trim() === '')) {
                             fieldErrors[fieldKey] = 'Field is required'
                         }
                     }
@@ -213,13 +213,19 @@ class GenericForm extends React.Component {
                                    })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor>
 
             } else if (uitype === 'html') {
-                return [<QuillEditor key={fieldKey} style={{marginBottom:'2rem',marginTop:'2rem'}} onChange={(newValue) => this.handleInputChange({
-                    target: {
-                        name: fieldKey,
-                        value: newValue
-                    }
-                })}>{value}</QuillEditor>,
-                    (!!this.state.fieldErrors[fieldKey]?<div style={{marginTop:'-2rem',marginBottom:'2rem',color:'red'}}>Bitte ausfüllen</div>:'')]
+                return <FormControl fullWidth>
+                    <InputLabel htmlFor="my-input" shrink>{field.label}</InputLabel>
+                    <QuillEditor key={fieldKey} id={fieldKey} style={{marginTop: '1.5rem'}}
+                                 onChange={(newValue) => this.handleInputChange({
+                                     target: {
+                                         name: fieldKey,
+                                         value: newValue
+                                     }
+                                 })}>{value}</QuillEditor>
+                    {(!!this.state.fieldErrors[fieldKey] ?
+                    <FormHelperText>Bitte
+                        ausfüllen</FormHelperText> : '')}
+                </FormControl>
 
             } else if (uitype === 'image') {
 
@@ -241,6 +247,10 @@ class GenericForm extends React.Component {
             } else if (uitype === 'select') {
                 return <SimpleSelect key={fieldKey} name={fieldKey} onChange={this.handleInputChange} items={field.enum}
                                      multi={field.multi}
+                                     label={field.label}
+                                     InputLabelProps={{
+                                         shrink: true,
+                                     }}
                                      value={value || []}/>
             } else if (field.type === 'Boolean') {
                 return <SimpleSwitch key={fieldKey} label={field.placeholder} name={fieldKey}
@@ -264,10 +274,13 @@ class GenericForm extends React.Component {
                                             error={!!this.state.fieldErrors[fieldName]}
                                             helperText={this.state.fieldErrors[fieldName]}
                                             label={field.label}
+                                            InputLabelProps={{
+                                                shrink: true,
+                                            }}
                                             multiline={uitype === 'textarea'}
                                             fullWidth={field.fullWidth}
                                             type={uitype}
-                                            placeholder={(field.placeholder?field.placeholder+' ':'') + '[' + languageCode + ']'}
+                                            placeholder={(field.placeholder ? field.placeholder + ' ' : '') + '[' + languageCode + ']'}
                                             value={(value && value[languageCode] ? value[languageCode] : '')}
                                             name={fieldName}
                                             onKeyDown={(e) => {
@@ -283,6 +296,9 @@ class GenericForm extends React.Component {
                                       key={fieldKey}
                                       id={fieldKey}
                                       label={field.label}
+                                      InputLabelProps={{
+                                          shrink: true,
+                                      }}
                                       helperText={this.state.fieldErrors[fieldKey]}
                                       fullWidth={field.fullWidth}
                                       type={uitype}

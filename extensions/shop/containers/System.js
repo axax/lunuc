@@ -6,10 +6,9 @@ import {
     Typography,
     Button
 } from 'ui/admin'
-import Util from 'client/util'
 import {withApollo} from 'react-apollo'
 import PropTypes from 'prop-types'
-import ApolloClient from 'apollo-client'
+import { ApolloClient } from 'apollo-client'
 import * as NotificationAction from 'client/actions/NotificationAction'
 
 class System extends React.Component {

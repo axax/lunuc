@@ -11,7 +11,7 @@ import {
 import Util from 'client/util'
 import {withApollo, Query} from 'react-apollo'
 import gql from 'graphql-tag'
-import ApolloClient from 'apollo-client'
+import { ApolloClient } from 'apollo-client'
 import {COLLECTIONS_QUERY} from '../../constants'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {theme} from 'ui/admin'

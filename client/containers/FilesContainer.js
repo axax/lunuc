@@ -17,7 +17,7 @@ import CodeEditor from 'client/components/CodeEditor'
 import {Query, withApollo} from 'react-apollo'
 import {COMMAND_QUERY} from '../constants'
 import PropTypes from 'prop-types'
-import ApolloClient from 'apollo-client'
+import { ApolloClient } from 'apollo-client'
 import * as NotificationAction from 'client/actions/NotificationAction'
 
 class FilesContainer extends React.Component {

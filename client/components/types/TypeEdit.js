@@ -4,7 +4,7 @@ import GenericForm from '../GenericForm'
 import Hook from '../../../util/hook'
 import {getFormFields, addAlwaysUpdateData, referencesToIds} from '../../../util/typesAdmin'
 import {SimpleDialog} from 'ui/admin'
-import ApolloClient from 'apollo-client'
+import { ApolloClient } from 'apollo-client'
 
 class TypeEdit extends React.Component {
 

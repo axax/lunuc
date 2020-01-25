@@ -5,7 +5,8 @@ import {onError} from 'apollo-link-error'
 import {WebSocketLink} from 'apollo-link-ws'
 import {ApolloLink} from 'apollo-link'
 import {getOperationAST} from 'graphql/utilities/getOperationAST'
-import {OfflineCache} from './cache'
+//import {OfflineCache} from './cache'
+import {InMemoryCache} from 'apollo-cache-inmemory'
 import {addError} from 'client/actions/ErrorHandlerAction'
 import {setNetworkStatus} from 'client/actions/NetworkStatusAction'
 import Util from '../util'
@@ -179,14 +180,11 @@ export function configureMiddleware(store) {
         addTypename: true
     }
 
-    const cache = new OfflineCache(cacheOptions)
-
-
     // create the apollo client
     const client = new ApolloClient({
         link,
         // use restore on the cache instead of initialState
-        cache: cache,
+        cache: new InMemoryCache(cacheOptions),
         ssrMode: false,
         /* if this is set to greater than 0 and fetch-policy is network-only, the policy gets changed to cache-first before the time im ms has passed */
         ssrForceFetchDelay: 0,

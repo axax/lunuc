@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {TextField, Paper, MenuItem, withStyles, Chip, Avatar, IconButton, InputAdornment, SearchIcon} from 'ui/admin'
+import {InputLabel, TextField, Paper, MenuItem, withStyles, Chip, Avatar, IconButton, InputAdornment, SearchIcon} from 'ui/admin'
 import {withApollo} from 'react-apollo'
-import ApolloClient from 'apollo-client'
+import { ApolloClient } from 'apollo-client'
 import gql from 'graphql-tag'
 import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'
@@ -46,18 +46,22 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {classes, placeholder, multi, error, helperText, pickerField, type} = this.props
+        const {classes, placeholder, multi, error, helperText, pickerField, type, label} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
         console.log(`render TypePicker | hasFocus=${hasFocus}`,data)
         return <div className={classes.root}>
 
-            { (!value.length || multi) &&
+            { !value.length || multi ?
             <TextField error={error} helperText={helperText} value={textValue} onChange={this.handleChange.bind(this)}
                        onKeyDown={this.handleKeyDown.bind(this)}
                        onFocus={() => this.setState({hasFocus: true})}
                        onBlur={this.handleBlur.bind(this)}
                        placeholder={placeholder}
+                       label={label}
+                       InputLabelProps={{
+                           shrink: true,
+                       }}
                        InputProps={{
                            endAdornment: (
                                <InputAdornment position="end">
@@ -83,7 +87,8 @@ class TypePicker extends React.Component {
                                </InputAdornment>
                            ),
                        }}
-            /> }
+            /> : <InputLabel shrink>{label}</InputLabel> }
+
 
             { value.map((value, i) =>
                 <Chip key={i} label={typeDataToLabel(value, pickerField)} onDelete={this.handleRemovePick.bind(this, i)}

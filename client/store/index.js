@@ -1,9 +1,9 @@
-import {createStore, compose, applyMiddleware} from 'redux'
+import {createStore} from 'redux'
 import rootReducer from '../reducers/index'
 
 
 // A middleware logger
-function reduxLogger({ getState }) {
+/*function reduxLogger({ getState }) {
 	return (next) => (action) => {
 		//console.log('will dispatch', action)
 
@@ -16,25 +16,27 @@ function reduxLogger({ getState }) {
 		// a middleware further in chain changed it.
 		return returnValue
 	}
-}
+}*/
 
 
 // Enhander for Redux DevTools Extension
-const composeEnhancers =
+/*const composeEnhancers =
 	typeof window === 'object' &&
 	window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ ?
 		window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({
 			// Specify extension’s options like name, actionsBlacklist, actionsCreators, serialize...
 		}) : compose
-
+*/
 
 export default function configureStore(initialState) {
 
-	const store = createStore(rootReducer, initialState, composeEnhancers(
+	/*const store = createStore(rootReducer, initialState, composeEnhancers(
 		applyMiddleware(
             reduxLogger
 		)
-	))
+	))*/
+
+	const store = createStore(rootReducer, initialState)
 
     return {store}
 }

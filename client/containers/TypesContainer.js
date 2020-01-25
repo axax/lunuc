@@ -22,7 +22,7 @@ import {
     SimpleMenu
 } from 'ui/admin'
 import {withApollo, Query} from 'react-apollo'
-import ApolloClient from 'apollo-client'
+import { ApolloClient } from 'apollo-client'
 import gql from 'graphql-tag'
 import Util from 'client/util'
 import GenericForm from 'client/components/GenericForm'

@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {withApollo} from 'react-apollo'
-import ApolloClient from 'apollo-client'
+import { ApolloClient } from 'apollo-client'
 import {graphql} from 'react-apollo'
 import compose from 'util/compose'
 import gql from 'graphql-tag'
