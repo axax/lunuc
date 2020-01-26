@@ -87,7 +87,7 @@ class CmsViewContainer extends React.Component {
         const editMode = isEditMode(this.props)
         if (!cmsPage) {
             // show a loader here
-            return <div className={classNameByPath(slug, 'Cms--loading')}/>
+            return null //<div className={classNameByPath(slug, 'Cms--loading')}/>
         } else {
             // set page title
             if (!dynamic && cmsPage.name)

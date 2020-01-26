@@ -1,5 +1,5 @@
 const path = require('path')
-const fs = require('fs');
+const fs = require('fs')
 const glob = require('glob')
 const webpack = require('webpack')
 
@@ -9,7 +9,7 @@ const TerserPlugin = require('terser-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CompressionPlugin = require("compression-webpack-plugin")
 const GenSourceCode = require('./webpack.gensrc')
-const WebpackI18nPlugin = require("./webpack.i18n");
+const WebpackI18nPlugin = require('./webpack.i18n')
 
 const date = new Date()
 const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1,
@@ -275,13 +275,13 @@ if (DEV_MODE) {
     config.resolve = {
         alias: {
             'react': 'preact/compat',
-            'react-dom': 'preact/compat',
+            'react-dom': 'preact/compat'
         },
     }
 
-  /*  const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-    config.plugins.push(new BundleAnalyzerPlugin())*/
-
+   /* const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+    config.plugins.push(new BundleAnalyzerPlugin())
+*/
     //config.devtool = 'source-map'
     config.devtool = 'none'
 

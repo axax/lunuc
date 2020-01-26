@@ -9,7 +9,7 @@
     <link rel="manifest" href="/manifest.json?v=${BUILD_NUMBER}">
     <link rel="apple-touch-icon" href="/favicon-192x192.png">
     <style>
-        #l {
+        #app:empty {
             height: 4px;
             left: -100%;
             width: 100%;
@@ -17,6 +17,14 @@
             background: #2980b9;
             animation: l 1.3s linear infinite;
             animation-delay: 0.5s;
+        }
+        #app:empty:before {
+            position: fixed;
+            left:0;
+            top:20px;
+            width:100%;
+            text-align: center;
+            content: 'loading...';
         }
 
         @keyframes l {
@@ -30,10 +38,15 @@
     </style>
 </head>
 <body>
-<div id="l"></div>
 <div id="app">Javascript is not supported</div>
 <script>
-    document.getElementById('app').innerHTML = window.Map?'':'Browser is not supported';
+    document.getElementById('app').innerHTML=''
+
+    if( !window.Map){
+        // support even older browser i.e. Android 2.1-4.4
+        document.write('<scr'+'ipt type="text/javascript" src="https://polyfill.io/v3/polyfill.min.js?features=Set%2CMap"></sc'+'ript>')
+    }
+    //document.getElementById('app').innerHTML = window.Map?'':'Browser is not supported';
     var ls = null
     try {
         ls = JSON.parse(localStorage.getItem('localSettings'))
