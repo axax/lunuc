@@ -173,6 +173,7 @@ const app = httpx.createServer(options, function (req, res) {
                         if( ext === 'mp3' || ext === 'mp4'){
 
                             delete headerExtra['Cache-Control']
+                            headerExtra['Accept-Ranges']= 'bytes'
 
                             const range = req.headers.range
 
@@ -188,7 +189,6 @@ const app = httpx.createServer(options, function (req, res) {
                                 code = 206
                                 streamOption={start, end}
                                 headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
-                                headerExtra['Accept-Ranges']= 'bytes'
                                 headerExtra['Content-Length'] = chunksize
 
                             }
