@@ -202,7 +202,11 @@ class LiveSpeechTranslaterContainer extends React.Component {
 
         if (start && this.mounted) {
             if (!this.recognition.recognizing) {
-                this.recognition.start()
+                try {
+                    this.recognition.start()
+                }catch (e) {
+                    console.error(e)
+                }
             }
         } else {
             this.recognition.abort()

@@ -153,7 +153,7 @@ function mainInit() {
 }
 
 
-if (!Object.assign || !window.fetch) {
+if (!Object.assign || !window.fetch || !window.Map) {
 
     let counter = 0
     const onload = () => {
@@ -168,7 +168,7 @@ if (!Object.assign || !window.fetch) {
         onload
     })
 
-    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6', {
+    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CMap', {
         async: true,
         onload
     })

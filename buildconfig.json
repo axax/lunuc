@@ -7,7 +7,7 @@
       "active": true
     },
     "chat": {
-      "active": true
+      "active": false
     },
     "finance": {
       "active": true
@@ -19,10 +19,10 @@
       "active": true
     },
     "livetranslator": {
-      "active": true
+      "active": false
     },
     "speechsearch": {
-      "active": true
+      "active": false
     },
     "social": {
       "active": true

@@ -1,4 +1,4 @@
-import {Translate} from '@google-cloud/translate'
+import {v2} from '@google-cloud/translate'
 
 export default db => ({
     Query: {
@@ -6,7 +6,7 @@ export default db => ({
             if (!toIso) {
                 toIso = 'en'
             }
-            const translator = new Translate({
+            const translator = new v2.Translate({
                 key: process.env.GOOGLE_API_KEY,
             })
 
