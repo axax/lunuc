@@ -154,7 +154,7 @@ const app = httpx.createServer(options, function (req, res) {
                 if (exists) {
                     const stat = fs.statSync(filename)
 
-                    const headerExtra = {'Cache-Control': 'public, max-age=31536000', 'Content-Length': stat.size}
+                    const headerExtra = {'Connection': 'Keep-Alive','Cache-Control': 'public, max-age=31536000', 'Content-Length': stat.size}
                     let code = 200, streamOption
 
                     let ext = parsedUrl.query.ext
