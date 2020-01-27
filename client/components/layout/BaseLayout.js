@@ -21,6 +21,7 @@ import {withRouter} from 'react-router-dom'
 import config from 'gen/config'
 import * as UserActions from 'client/actions/UserAction'
 import {UIProvider} from 'ui/admin'
+import 'gen/extensions-client-admin'
 
 const {ADMIN_BASE_URL, APP_NAME} = config
 

@@ -455,13 +455,13 @@ export default class AggregationBuilder {
         if (filters && filters.parts.createdBy) {
             // if there is a filter on _id
             // handle it here
-            this.addFilterToMatch({
+            /*this.addFilterToMatch({
                 filterKey: 'createdBy',
                 filterValue: filters.parts.createdBy.value,
                 filterOptions: filters.parts.createdBy,
                 type: 'ID',
                 match
-            })
+            })*/
         }
         this.fields.forEach((field, i) => {
             const fieldDefinition = this.getFieldDefinition(field, this.type)
@@ -594,14 +594,6 @@ export default class AggregationBuilder {
             groups.modifiedAt = {'$first': '$modifiedAt'}
         }
 
-
-        // remove or if it is only a single value
-        if(rootMatch.$or && rootMatch.$or.length===1){
-            const key=Object.keys(rootMatch.$or[0])[0]
-            rootMatch[key]=rootMatch.$or[0][key]
-            delete rootMatch.$or
-        }
-
         // compose result
         let dataQuery = [], dataFacetQuery = []
 
@@ -612,6 +604,13 @@ export default class AggregationBuilder {
 
         if (Object.keys(rootMatch).length > 0) {
             if (!hasMatchInReference) {
+
+                // merge ors
+                if(rootMatch.$or && match.$or){
+                    match.$or.push(...rootMatch.$or)
+                    delete rootMatch.$or
+                }
+
                 dataQuery.push({
                     $match: {...rootMatch, ...match}
                 })

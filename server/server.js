@@ -178,7 +178,6 @@ const app = httpx.createServer(options, function (req, res) {
                             const range = req.headers.range
 
                             if (req.headers.range) {
-                                console.log(req.headers.range)
                                 const parts = range.replace(/bytes=/, "").split("-"),
                                     partialstart = parts[0],
                                     partialend = parts[1],

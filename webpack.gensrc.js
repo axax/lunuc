@@ -34,9 +34,10 @@ GenSourceCode.prototype.apply = function (compiler) {
 
         const exteionsion = fs.readdirSync(EXTENSION_PATH)
 
-        let clientContent = GENSRC_HEADER, serverContent = GENSRC_HEADER, manifestJson = {}
+        let clientContent = GENSRC_HEADER, serverContent = GENSRC_HEADER, manifestJson = {}, clientAdminContent = GENSRC_HEADER
 
         clientContent += '\nconst settings = (_app_.localSettings && _app_.localSettings.extensions) || {}\n\n'
+        clientAdminContent += '\nconst settings = (_app_.localSettings && _app_.localSettings.extensions) || {}\n\n'
 
         for (const file of exteionsion) {
             if (fs.statSync(EXTENSION_PATH + file).isDirectory()) {
@@ -107,7 +108,9 @@ GenSourceCode.prototype.apply = function (compiler) {
                          const buildOptions = extensionBuild()
                          gensrcExtension(file,buildOptions)
                          }*/
-
+                        if (fs.existsSync(EXTENSION_PATH + file + '/client-admin.js')) {
+                            clientAdminContent += `import ${file} from '.${EXTENSION_PATH}${file}/client-admin.js'\nif(typeof ${file} === "function" && (!settings['${file}'] || settings['${file}'].enabled)){\n\t${file}()\n}\n`
+                        }
                         if (fs.existsSync(EXTENSION_PATH + file + '/client.js')) {
                             if (manifestJson[file].lazyLoad) {
                                 clientContent += `//load lazy
@@ -136,6 +139,11 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         })
 
         fs.writeFile(GENSRC_PATH + "/extensions-client.js", clientContent, function (err) {
+            if (err) {
+                return console.log(err)
+            }
+        })
+        fs.writeFile(GENSRC_PATH + "/extensions-client-admin.js", clientAdminContent, function (err) {
             if (err) {
                 return console.log(err)
             }

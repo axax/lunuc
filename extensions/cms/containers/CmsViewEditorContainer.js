@@ -230,7 +230,7 @@ class CmsViewEditorContainer extends React.Component {
                             )
                         }}
                     </Query> : <SimpleDialog key="propertyEditor" open={true} onClose={(e) => {
-                        if( e.key === 'save') {
+                        if( e.key === 'save' && cmsEditDataValue) {
                             this.handlePropertySave(cmsEditDataValue)
                         }
                         this.props._cmsActions.editCmsData(null)
