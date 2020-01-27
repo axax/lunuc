@@ -19,14 +19,15 @@ export default () => {
             dataSource.forEach((d, i) => {
 
 
-                if (d.data ) {
+                if (d.data) {
                     const item = data.results[i]
                     try {
                         const json = JSON.parse(item.data)
-                        if( json.title.constructor===String) {
+                        if (json.title.constructor === String) {
                             d.data = json.title
                         }
-                    }catch(e){}
+                    } catch (e) {
+                    }
                 }
             })
         }
@@ -36,7 +37,7 @@ export default () => {
 
         if (type === 'GenericData') {
 
-            if(  dataToEdit && dataToEdit.definition ) {
+            if (dataToEdit && dataToEdit.definition) {
 
                 const struct = JSON.parse(dataToEdit.definition.structure)
 
@@ -48,39 +49,46 @@ export default () => {
                 delete newFields.data
                 delete newDataToEdit.data
 
+                newFields.definition.readOnly=true
+                props.title=newDataToEdit.definition.name
+
                 struct.fields.forEach(field => {
                     const oriName = field.name, newName = 'data_' + oriName
                     field.fullWidth = true
                     field.name = newName
                     newFields[newName] = field
-                    if( field.localized){
+                    if (field.localized) {
                         newDataToEdit[newName] = data[oriName]
-                    }else{
+                    } else {
                         newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
                     }
                 })
 
                 // override default
-                props.children = <GenericForm autoFocus
-                                              innerRef={ref => {
-                                                  parentRef.createEditForm = ref
-                                              }}
-                                              onBlur={event => {
-                                              }}
-                                              onChange={field => {
-                                              }}
-                                              primaryButton={false}
-                                              fields={newFields}
-                                              values={newDataToEdit}/>
-            }else{
+                props.children = <React.Fragment>
+                    <GenericForm autoFocus
+                                innerRef={ref => {
+                                    parentRef.createEditForm = ref
+                                }}
+                                onBlur={event => {
+                                }}
+                                onChange={field => {
+                                }}
+                                primaryButton={false}
+                                fields={newFields}
+                                values={newDataToEdit}/>
+                </React.Fragment>
+            } else {
 
 
                 const newFields = Object.assign({}, formFields)
+                newFields.definition.readOnly=false
 
                 delete newFields.data
 
                 // override default
-                props.children = [<Typography key="GenericDataLabel" variant="subtitle1" gutterBottom>Please select a generic type you want to create.</Typography>,
+                props.children = [<Typography key="GenericDataLabel" variant="subtitle1" gutterBottom>Please select a
+                    generic type you want to create and press save.</Typography>,
                     <GenericForm key="genericForm" autoFocus innerRef={ref => {
                         parentRef.createEditForm = ref
                     }} onBlur={event => {
