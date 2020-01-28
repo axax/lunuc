@@ -64,10 +64,8 @@ export const removeComponent = (key, json) => {
     const parent = getComponentByKey(parentKey, json),
         child = getComponentByKey(key, json)
     if (parent && child) {
-        let c = parent['c']
-        if (!c) {
-            return false
-        } else if (c.constructor !== Array) {
+        let c = parent.constructor===Array?parent:parent['c']
+        if (c.constructor !== Array) {
             c = ''
         } else {
             c.splice(c.indexOf(child), 1)
@@ -79,6 +77,8 @@ export const removeComponent = (key, json) => {
 
         parent.c = c
         return true
+    }else{
+        console.warn(`Can't remove component ${key}`)
     }
 
     return false

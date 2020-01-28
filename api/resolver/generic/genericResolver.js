@@ -82,7 +82,6 @@ const GenericResolver = {
         let {match, _version, cache, includeCount, ...otherOptions} = options
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
-
         // Default match
         if (!match) {
             // if not specific match is defined, only select items that belong to the current user
@@ -109,6 +108,7 @@ const GenericResolver = {
                 }
             }
         }
+
         let cacheKey
         if (!isNaN(cache) && cache > 0) {
             cacheKey = collectionName + JSON.stringify(match) + context.lang + JSON.stringify(otherOptions)
@@ -128,8 +128,8 @@ const GenericResolver = {
         })
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
-        if (typeName.indexOf("Product") >= 0) {
-            //console.log(JSON.stringify(dataQuery, null, 4))
+        if (typeName.indexOf("GenericData") >= 0) {
+            console.log(JSON.stringify(dataQuery, null, 4))
         }
         //console.log(JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)

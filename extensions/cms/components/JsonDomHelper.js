@@ -68,8 +68,8 @@ const styles = theme => ({
     }
 })
 
-const ALLOW_DROP = ['div']
-const ALLOW_CHILDREN = ['div', 'ul']
+const ALLOW_DROP = ['div','Col']
+const ALLOW_CHILDREN = ['div', 'ul', 'Col']
 
 class JsonDomHelper extends React.Component {
     static currentDragElement
@@ -299,6 +299,7 @@ class JsonDomHelper extends React.Component {
         // 1. get element from json structure by key
         const source = getComponentByKey(sourceKey, _json)
 
+
         if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
             //2. remove it from json
             if (removeComponent(sourceKey, _json)) {
@@ -383,15 +384,17 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {classes, _WrappedComponent, _json, _cmsActions, _onchange, children, _edit, ...rest} = this.props
+        const {classes, _WrappedComponent, _json, _cmsActions, _onchange, children, _edit, _tagName, _inlineEditor, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen} = this.state
-
         const events = {
             onMouseOver: this.onHelperMouseOver.bind(this),
             onMouseOut: this.onHelperMouseOut.bind(this)
         }
-
         let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow
+
+        if( _inlineEditor.allowDrop === undefined) {
+            _inlineEditor.allowDrop = children && children.constructor === Array && ALLOW_DROP.indexOf(_tagName) >= 0
+        }
 
         if (isTempalteEdit) {
             subJson = getComponentByKey(rest._key, _json)
@@ -422,7 +425,7 @@ class JsonDomHelper extends React.Component {
                         onClick: this.handleDeleteClick.bind(this)
                     })
 
-                if (!isLoop && ALLOW_CHILDREN.indexOf(subJson.t) >= 0) {
+                if (!isLoop && ALLOW_CHILDREN.indexOf(_tagName) >= 0) {
                     menuItems.splice(1, 0, {
                         name: 'Add child component',
                         icon: <AddIcon/>,
@@ -462,13 +465,17 @@ class JsonDomHelper extends React.Component {
                 className={classes.highlighter}/>
         }
         let kids
-        if (isTempalteEdit && children && children.constructor === Array && ALLOW_DROP.indexOf(subJson.t) >= 0) {
+        if (isTempalteEdit && _inlineEditor.allowDrop ) {
             kids = []
-            for (let i = 0; i < children.length; i++) {
-                kids.push(this.getDropArea(rest, i))
-                kids.push(children[i])
+            if( children && children.length ) {
+                for (let i = 0; i < children.length; i++) {
+                    kids.push(this.getDropArea(rest, i))
+                    kids.push(children[i])
+                }
+                kids.push(this.getDropArea(rest, children.length))
+            }else{
+                kids.push(this.getDropArea(rest, 0))
             }
-            kids.push(this.getDropArea(rest, children.length))
 
         } else {
             kids = children

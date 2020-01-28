@@ -230,7 +230,7 @@ class CmsViewEditorContainer extends React.Component {
                             )
                         }}
                     </Query> : <SimpleDialog key="propertyEditor" open={true} onClose={(e) => {
-                        if( e.key === 'save' && cmsEditDataValue) {
+                        if (e.key === 'save' && cmsEditDataValue) {
                             this.handlePropertySave(cmsEditDataValue)
                         }
                         this.props._cmsActions.editCmsData(null)
@@ -468,19 +468,21 @@ class CmsViewEditorContainer extends React.Component {
 
         const {segment, dataResolver} = this.findSegementInDataResolver(path)
 
-        if( segment) {
+        if (segment) {
             const fields = path.split('.')
             let result = segment
-            for (let i = 0, n = fields.length; i < n && result !== undefined; i++) {
+            for (let i = 0, n = fields.length; i < n; i++) {
                 let field = fields[i]
                 if (i === n - 1) {
                     result[field] = value
                 } else {
+                    if( result[field]==undefined){
+                        result[field] = {}
+                    }
                     result = result[field]
                 }
             }
-
-            this.handleDataResolverChange(JSON.stringify(dataResolver,null,4),true)
+            this.handleDataResolverChange(JSON.stringify(dataResolver, null, 4), true)
         }
     }
 
@@ -511,8 +513,20 @@ class CmsViewEditorContainer extends React.Component {
 
 
     findSegementInDataResolver(path) {
-        const dataResolver = JSON.parse(this.state.dataResolver),
-            first = path.substring(0, path.indexOf('.'))
+        let dataResolver
+        if (this.state.dataResolver) {
+            try {
+                dataResolver = JSON.parse(this.state.dataResolver)
+            } catch (e) {
+                console.log(e)
+                return {}
+            }
+        } else {
+            dataResolver = []
+        }
+
+
+        const first = path.substring(0, path.indexOf('.'))
         let segment
         for (let i = 0; i < dataResolver.length; i++) {
             const json = dataResolver[i]
@@ -520,6 +534,10 @@ class CmsViewEditorContainer extends React.Component {
                 segment = json
                 break
             }
+        }
+        if (!segment) {
+            segment = {[first]: {}}
+            dataResolver.push(segment)
         }
 
         return {dataResolver, segment}

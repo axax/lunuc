@@ -13,7 +13,6 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
   "background_color": "${APP_COLOR}",
   "display": "standalone",
   "scope": "/",

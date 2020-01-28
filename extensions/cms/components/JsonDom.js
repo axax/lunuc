@@ -187,7 +187,7 @@ class JsonDom extends React.Component {
         const resourcesChanged = (this.props.resources !== props.resources)
         const templateChanged = !props.template || (this.props.template !== props.template)
 
-        const propsChanged = this.props._props !== props._props
+        const propsChanged = this.props._props !== props._props || this.props.inlineEditor !== props.inlineEditor
         const slugChanged = this.props.slug !== props.slug
 
         const updateIsNeeded = resolvedDataChanged ||
@@ -199,8 +199,7 @@ class JsonDom extends React.Component {
             slugChanged ||
             props.children !== this.props.children ||
             this.props.user !== props.user ||
-            this.props.renewing !== props.renewing ||
-            this.props.inlineEditor !== props.inlineEditor
+            this.props.renewing !== props.renewing
 
         if (updateIsNeeded) {
 
@@ -482,7 +481,7 @@ class JsonDom extends React.Component {
 
                 if (!item) return
 
-                const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $edit} = item
+                const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $edit, $inlineEditor} = item
                 /*
                  t = type
                  c = children
@@ -797,6 +796,8 @@ class JsonDom extends React.Component {
                         }
 
                         if (eleProps._edit || eleProps._json) {
+                            eleProps._tagName = tagName
+                            eleProps._inlineEditor = $inlineEditor|| {}
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
                             eleProps._onchange = this.props.onChange
@@ -837,6 +838,7 @@ class JsonDom extends React.Component {
             this.scope.user = props.user
             this.scope.editMode = props.editMode
             this.scope.inEditor = props.inEditor
+            this.scope.inlineEditor = props.inlineEditor
             this.scope.dynamic = props.dynamic
 
             // set default scope values
