@@ -39,6 +39,7 @@ import TypeEdit from '../../../client/components/types/TypeEdit'
 import withType from '../../../client/components/types/withType'
 import Util from "../../../client/util";
 import {CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
+import CodeEditor from 'client/components/CodeEditor'
 
 
 class CmsViewEditorContainer extends React.Component {
@@ -57,7 +58,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, serverScript, resources, dataResolver, ssr, urlSensitiv, status, parseResolvedData, alwaysLoadAssets} = props.cmsPage || {}
+        const {template, script, style, serverScript, resources, dataResolver, ssr, urlSensitiv, status, parseResolvedData, alwaysLoadAssets} = props.cmsPage || {}
         let settings = null
         if (props.keyValue) {
             // TODO optimize so JSON.parse is only called once
@@ -78,6 +79,7 @@ class CmsViewEditorContainer extends React.Component {
             template,
             resources,
             script,
+            style,
             serverScript,
             dataResolver,
             ssr,
@@ -90,6 +92,7 @@ class CmsViewEditorContainer extends React.Component {
             // take value from state if there is any because it might be more up to date
             result.template = state.template
             result.script = state.script
+            result.style = state.style
             result.serverScript = state.serverScript
             result.dataResolver = state.dataResolver
             result.resources = state.resources
@@ -140,6 +143,7 @@ class CmsViewEditorContainer extends React.Component {
             props._props !== this.props._props ||
             state.template !== this.state.template ||
             state.script !== this.state.script ||
+            state.style !== this.state.style ||
             state.serverScript !== this.state.serverScript ||
             this.state.loadingSettings !== state.loadingSettings ||
             this.state.settings.fixedLayout !== state.settings.fixedLayout ||
@@ -152,7 +156,7 @@ class CmsViewEditorContainer extends React.Component {
     render() {
         const {WrappedComponent, cmsPage, cmsEditData, cmsComponentEdit, ...props} = this.props
 
-        const {template, resources, script, settings, dataResolver, serverScript, loadingSettings} = this.state
+        const {template, resources, script, style, settings, dataResolver, serverScript, loadingSettings} = this.state
 
         if (!cmsPage) {
             // show a loader here
@@ -162,7 +166,7 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         // extend with value from state because they are more update to date
-        const cmsPageWithState = Object.assign({}, cmsPage, {script, template})
+        const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template})
 
         console.log('render CmsViewEditorContainer')
 
@@ -319,6 +323,16 @@ class CmsViewEditorContainer extends React.Component {
                             onScroll={this.handleSettingChange.bind(this, 'scriptScroll')}
                             scrollPosition={settings.scriptScroll}
                             onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
+                    </Expandable>
+
+                    <Expandable title="Style"
+                                onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
+                                expanded={settings.styleExpanded}>
+
+                        <CodeEditor showFab lineNumbers type="css" onScroll={this.handleSettingChange.bind(this, 'styleScroll')}
+                                    scrollPosition={settings.styleScroll}
+                                    onChange={this.handleStyleChange.bind(this)}>{style}</CodeEditor>
+
                     </Expandable>
 
 
@@ -563,6 +577,10 @@ class CmsViewEditorContainer extends React.Component {
             this._autoSaveScript()
         }
 
+        if (this._autoSaveStyleTimeout) {
+            this._autoSaveStyle()
+        }
+
         if (this._autoSaveServerScriptTimeout) {
             this._autoSaveServerScript()
         }
@@ -624,6 +642,22 @@ class CmsViewEditorContainer extends React.Component {
 
         clearTimeout(this._autoSaveScriptTimeout)
         this._autoSaveScriptTimeout = setTimeout(this._autoSaveScript, 5000)
+    }
+
+    handleStyleChange = (style) => {
+        if (this._saveSettings)
+            this._saveSettings()
+
+        this.setState({style})
+
+        this._autoSaveStyle = () => {
+            clearTimeout(this._autoSaveStyleTimeout)
+            this._autoSaveStyleTimeout = 0
+            this.saveCmsPage(style, this.props.cmsPage, 'style')
+        }
+
+        clearTimeout(this._autoSaveStyleTimeout)
+        this._autoSaveStyleTimeout = setTimeout(this._autoSaveStyle, 5000)
     }
 
     handleServerScriptChange = (serverScript, instantSave) => {
@@ -808,7 +842,7 @@ const CmsViewEditorContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$serverScript:String,$resources:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key, cb) => {
 

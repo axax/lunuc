@@ -65,6 +65,7 @@ class CmsViewContainer extends React.Component {
             (!props.dynamic && isEditMode(props) && (
                 cmsPage.template !== cmsPageOld.template ||
                 cmsPage.script !== cmsPageOld.script ||
+                cmsPage.style !== cmsPageOld.style ||
                 props.cmsEditData !== this.props.cmsEditData ||
                 /* becuase it is passed to the JsonDom */
                 this.props.settings.inlineEditor !== props.settings.inlineEditor))
@@ -105,6 +106,7 @@ class CmsViewContainer extends React.Component {
             setKeyValue={setKeyValue}
             template={cmsPage.template}
             script={cmsPage.script}
+            style={cmsPage.style}
             resolvedData={cmsPage.resolvedData}
             parseResolvedData={cmsPage.parseResolvedData}
             resources={cmsPage.resources}

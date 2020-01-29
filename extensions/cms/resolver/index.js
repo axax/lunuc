@@ -72,7 +72,7 @@ export default db => ({
             }
             const scope = {...createScopeForDataResolver(query, props), page: {slug, host: getHostFromHeaders(headers)}}
 
-            const {_id, createdBy, template, script, resources, dataResolver, parseResolvedData,alwaysLoadAssets,
+            const {_id, createdBy, template, script, style, resources, dataResolver, parseResolvedData,alwaysLoadAssets,
                 ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
 
@@ -117,6 +117,7 @@ export default db => ({
                     template,
                     script,
                     resources,
+                    style,
                     dataResolver,
                     serverScript,
                     ssr,
@@ -152,6 +153,7 @@ export default db => ({
                     template,
                     script,
                     resources,
+                    style,
                     html,
                     resolvedData: JSON.stringify(resolvedData),
                     parseResolvedData,

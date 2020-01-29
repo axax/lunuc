@@ -201,6 +201,10 @@ class JsonDom extends React.Component {
             this.props.user !== props.user ||
             this.props.renewing !== props.renewing
 
+        if (this.props.style !== props.style) {
+            this.addStyle(props.style)
+        }
+
         if (updateIsNeeded) {
 
             // set error to false before render
@@ -227,7 +231,7 @@ class JsonDom extends React.Component {
                 this.updateScope = true
             }
 
-            if( this.props.renewing !== props.renewing ){
+            if (this.props.renewing !== props.renewing) {
                 this.json = null
             }
 
@@ -270,6 +274,7 @@ class JsonDom extends React.Component {
             }
         }
 
+        this.addStyle(this.props.style)
         this.checkResources()
         this._historyUnlisten = this.props.history.listen(() => {
             const before = {pathname: this.scope.pathname, params: this.scope.params, hashParams: this.scope.params}
@@ -378,7 +383,8 @@ class JsonDom extends React.Component {
             scope.script = this.scriptResult || {}
         }
         if (!this.runJsEvent('beforerender', false, scope)) {
-            return <div>Error in beforerender event. See details in console log: <span dangerouslySetInnerHTML={{__html: this.lastEventError}}/></div>
+            return <div>Error in beforerender event. See details in console log: <span
+                dangerouslySetInnerHTML={{__html: this.lastEventError}}/></div>
         }
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope, true)
         if (content && this._inHtmlComponents.length > 0) {
@@ -396,6 +402,19 @@ class JsonDom extends React.Component {
                 return content
             } else {
                 return <div className={classNameByPath(scope.page.slug, className)}>{content}</div>
+            }
+        }
+    }
+
+    addStyle(style) {
+        const id = 'style' + this.instanceId
+        if (style) {
+            this.setStyle(style, true, id)
+        } else {
+            const el = document.getElementById(id)
+
+            if (el) {
+                el.parentNode.removeChild(el)
             }
         }
     }
@@ -438,7 +457,7 @@ class JsonDom extends React.Component {
 
     handleBindingChange(cb, event, value) {
         const target = event.target
-        this.bindings[target.name] = (target.type === 'checkbox' ? target.checked :  value || target.value)
+        this.bindings[target.name] = (target.type === 'checkbox' ? target.checked : value || target.value)
         if (cb)
             cb.bind(this)(event)
     }
@@ -792,11 +811,11 @@ class JsonDom extends React.Component {
                             } else {
                                 _edit = $edit
                             }
-                            if( !_edit.type && this.props.onPropertyEdit){
+                            if (!_edit.type && this.props.onPropertyEdit) {
                                 const _onChange = eleProps.onChange
-                                eleProps.onChange =(e, ...args)=>{
-                                    this.props.onPropertyEdit(e.target.value,_edit._id)
-                                    _onChange(e,...args)
+                                eleProps.onChange = (e, ...args) => {
+                                    this.props.onPropertyEdit(e.target.value, _edit._id)
+                                    _onChange(e, ...args)
                                 }
                             }
                             eleProps._edit = _edit
@@ -804,7 +823,7 @@ class JsonDom extends React.Component {
 
                         if (eleProps._edit || eleProps._json) {
                             eleProps._tagName = tagName
-                            eleProps._inlineEditor = $inlineEditor|| {}
+                            eleProps._inlineEditor = $inlineEditor || {}
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
                             eleProps._onchange = this.props.onChange
@@ -993,9 +1012,9 @@ class JsonDom extends React.Component {
                         }
                     } catch (e) {
                         const line = e.stack.split('\n')[1]
-                        const [, lineNrStr, column ] = line.match(/:(\d*):(\d*)/)
+                        const [, lineNrStr, column] = line.match(/:(\d*):(\d*)/)
 
-                        this.lastEventError= this.prettyErrorMessage(e,cb.toString())
+                        this.lastEventError = this.prettyErrorMessage(e, cb.toString())
                         hasError = true
                     }
                 }
@@ -1009,27 +1028,27 @@ class JsonDom extends React.Component {
         return !hasError
     }
 
-    prettyErrorMessage =(e,code)=>{
+    prettyErrorMessage = (e, code) => {
         const line = e.stack.split('\n')[1]
-        const [, lineNrStr, column ] = line.match(/:(\d*):(\d*)/)
+        const [, lineNrStr, column] = line.match(/:(\d*):(\d*)/)
 
-        let errorMsg= '<pre style="margin-top:2rem">'
-        if( lineNrStr){
+        let errorMsg = '<pre style="margin-top:2rem">'
+        if (lineNrStr) {
             const lineNr = parseInt(lineNrStr)
             const cbLines = code.split('\n'),
                 start = Math.max(0, lineNr - 3),
                 end = Math.min(cbLines.length, lineNr + 4)
-            for(let i=start;i<end;i++){
+            for (let i = start; i < end; i++) {
 
-                const str = cbLines[i-10]
-                if( i === lineNr) {
-                    errorMsg+=`<i style="background:red;color:#fff">Line ${i-10}: ${e.message}</i>\n<i style="background:yellow">${str}</i>\n`
-                }else{
-                    errorMsg+=str+'\n'
+                const str = cbLines[i - 10]
+                if (i === lineNr) {
+                    errorMsg += `<i style="background:red;color:#fff">Line ${i - 10}: ${e.message}</i>\n<i style="background:yellow">${str}</i>\n`
+                } else {
+                    errorMsg += str + '\n'
                 }
             }
         }
-        errorMsg+='</pre>'
+        errorMsg += '</pre>'
         return errorMsg
     }
 
@@ -1228,6 +1247,7 @@ JsonDom.propTypes = {
     resolvedData: PropTypes.string,
     resources: PropTypes.string,
     script: PropTypes.string,
+    style: PropTypes.string,
 
     slug: PropTypes.string,
     user: PropTypes.object,
