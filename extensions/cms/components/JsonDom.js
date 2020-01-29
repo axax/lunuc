@@ -792,6 +792,13 @@ class JsonDom extends React.Component {
                             } else {
                                 _edit = $edit
                             }
+                            if( !_edit.type && this.props.onPropertyEdit){
+                                const _onChange = eleProps.onChange
+                                eleProps.onChange =(e, ...args)=>{
+                                    this.props.onPropertyEdit(e.target.value,_edit._id)
+                                    _onChange(e,...args)
+                                }
+                            }
                             eleProps._edit = _edit
                         }
 

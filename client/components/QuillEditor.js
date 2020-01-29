@@ -13,13 +13,31 @@ class QuillEditor extends React.Component {
         super(props)
         QuillEditor.instanceCounter++
         this.instanceId = QuillEditor.instanceCounter
+        this.state = QuillEditor.propsToState(props)
     }
 
-    shouldComponentUpdate(props) {
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (prevState.value !== nextProps.children) {
+            return QuillEditor.propsToState(nextProps)
+        }
+        return null
+    }
+
+    static propsToState(props) {
+        return {value:props.children}
+    }
+
+    shouldComponentUpdate(props, state) {
         const readOnlyChanged = props.readOnly !== this.props.readOnly
         if (readOnlyChanged) {
             this.isInit = false
+        }else if(this.state.value !== state.value){
+            setTimeout(()=>{
+                this.quill.setContents([])
+                this.quill.clipboard.dangerouslyPasteHTML(0,state.value)
+            },0)
         }
+
         return readOnlyChanged
     }
 
@@ -38,7 +56,7 @@ class QuillEditor extends React.Component {
                     ['bold', 'italic', 'underline'],
                     ['image', 'code-block']
                 ]
-                const quill = new Quill('#quilleditor' + this.instanceId, {
+                this.quill = new Quill('#quilleditor' + this.instanceId, {
                     modules: {
                         toolbar,
                         history: {
@@ -50,13 +68,13 @@ class QuillEditor extends React.Component {
                     theme: 'snow'
                 })
 
-                quill.on('text-change', (e) => {
+                this.quill.on('text-change', (e) => {
                     const {onChange, name} = this.props
                     if (onChange) {
                         if (name) {
-                            onChange({target: {name, value: quill.root.innerHTML}})
+                            onChange({target: {name, value: this.quill.root.innerHTML}})
                         } else {
-                            onChange(quill.root.innerHTML)
+                            onChange(this.quill.root.innerHTML)
                         }
                     }
                 })
@@ -65,7 +83,7 @@ class QuillEditor extends React.Component {
             if (!window.Quill) {
                 DomUtil.addStyle('https://cdn.quilljs.com/1.3.6/quill.snow.css')
 
-                DomUtil.addScript('https://cdn.quilljs.com/1.3.6/quill.js', {
+                DomUtil.addScript('https://cdn.quilljs.com/1.3.6/quill.min.js', {
                     onload: quillIsReady
                 })
             } else {
@@ -88,10 +106,10 @@ class QuillEditor extends React.Component {
         const {children, readOnly, toolbar, required, name, placeholder, value, ...rest} = this.props
         console.log('render QuillEditor')
         if (this.isReadOnly(this.props)) {
-            return <div dangerouslySetInnerHTML={{__html: children}} {...rest}></div>
+            return <div dangerouslySetInnerHTML={{__html: this.state.value}} {...rest}></div>
         }
         return <div {...rest}>
-            <div id={'quilleditor' + this.instanceId} dangerouslySetInnerHTML={{__html: children}}/>
+            <div id={'quilleditor' + this.instanceId} dangerouslySetInnerHTML={{__html: this.state.value}}/>
         </div>
 
     }

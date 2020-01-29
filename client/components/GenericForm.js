@@ -240,6 +240,7 @@ class GenericForm extends React.Component {
                                    key={fieldKey}
                                    name={fieldKey}
                                    label={field.label}
+                                   filter={field.filter}
                                    multi={field.multi}
                                    pickerField={field.pickerField}
                                    fields={field.fields}

@@ -144,7 +144,7 @@ class TypePicker extends React.Component {
             this.setState({data: null, textValue: v})
         } else {
             this.setState({textValue: v})
-            this.getData(e.target.value)
+            this.getData(e.target.value+(this.props.filter?' && '+this.props.filter:''))
         }
     }
 
@@ -199,7 +199,6 @@ class TypePicker extends React.Component {
                 }
             } catch (e) {
             }
-
             client.query({
                 fetchPolicy: 'network-only',
                 forceFetch: true,
@@ -219,6 +218,7 @@ TypePicker.propTypes = {
     value: PropTypes.array,
     fields: PropTypes.array,
     placeholder: PropTypes.string,
+    filter: PropTypes.string,
     error: PropTypes.bool,
     helperText: PropTypes.string,
     multi: PropTypes.bool,

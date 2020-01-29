@@ -176,10 +176,14 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         const inner = [!loadingSettings &&
-        <WrappedComponent key="cmsView" cmsEditData={cmsEditData} onChange={this.handleTemplateChange}
+        <WrappedComponent key="cmsView" cmsEditData={cmsEditData}
+                          onChange={this.handleTemplateChange}
                           inEditor={inEditor}
-                          onError={this.handleCmsError.bind(this)} settings={settings}
-                          cmsPage={cmsPageWithState}  {...props} />
+                          onError={this.handleCmsError.bind(this)}
+                          onPropertyEdit={this.handlePropertySave.bind(this)}
+                          settings={settings}
+                          cmsPage={cmsPageWithState}
+                          {...props} />
             ,
             <ErrorHandler key="errorHandler" snackbar/>,
             <NetworkStatusHandler key="networkStatus"/>,
@@ -231,7 +235,7 @@ class CmsViewEditorContainer extends React.Component {
                         }}
                     </Query> : <SimpleDialog key="propertyEditor" open={true} onClose={(e) => {
                         if (e.key === 'save' && cmsEditDataValue) {
-                            this.handlePropertySave(cmsEditDataValue)
+                            this.handlePropertySave(cmsEditDataValue, cmsEditData._id, true)
                         }
                         this.props._cmsActions.editCmsData(null)
                     }}
@@ -463,8 +467,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
 
-    handlePropertySave(value) {
-        const path = this.props.cmsEditData._id
+    handlePropertySave(value, path, instantSave) {
 
         const {segment, dataResolver} = this.findSegementInDataResolver(path)
 
@@ -482,7 +485,7 @@ class CmsViewEditorContainer extends React.Component {
                     result = result[field]
                 }
             }
-            this.handleDataResolverChange(JSON.stringify(dataResolver, null, 4), true)
+            this.handleDataResolverChange(JSON.stringify(dataResolver, null, 4), instantSave)
         }
     }
 
