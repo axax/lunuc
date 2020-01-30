@@ -525,11 +525,7 @@ class JsonDomHelper extends React.Component {
                                          onClose={(e) => {
                                              const selected = addChildDialog.selected
                                              if (e.key === 'save' && selected) {
-                                                 const comp = {'t': selected.value}
-
-                                                 if( selected.defaultValue !== undefined){
-                                                     comp.c = selected.defaultValue
-                                                 }
+                                                 const comp = {'t': selected.value,...selected.defaults}
 
                                                  this.handleAddChildClick(comp)
                                              }

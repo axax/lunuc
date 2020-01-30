@@ -3,9 +3,11 @@ import {graphql} from 'react-apollo'
 import {connect} from 'react-redux'
 import {withApollo} from 'react-apollo'
 import gql from 'graphql-tag'
-import {getGqlVariables, gqlQuery, isEditMode, urlSensitivMap,
+import {
+    getGqlVariables, gqlQuery, isEditMode, urlSensitivMap,
     settingKeyPrefix,
-    gqlQueryKeyValue} from '../util/cmsView'
+    gqlQueryKeyValue
+} from '../util/cmsView'
 import Async from 'client/components/Async'
 import compose from '../../../util/compose'
 import DomUtil from '../../../client/util/dom'
@@ -17,10 +19,10 @@ const ErrorPage = (props) => <Async {...props}
 
 
 const CmsViewEditorContainer = (props) => <Async {...props}
-                                    load={import(/* webpackChunkName: "admin" */ './CmsViewEditorContainer')}/>
+                                                 load={import(/* webpackChunkName: "admin" */ './CmsViewEditorContainer')}/>
 
 // enhance cmsview with editor functionalities if in edit mode
-export default function(WrappedComponent) {
+export default function (WrappedComponent) {
 
 
     class Wrapper extends React.Component {
@@ -42,11 +44,12 @@ export default function(WrappedComponent) {
                             id: 'errorPageNoindex'
                         })
 
-                        if( networkStatus === 8){
-                            setTimeout(()=>{
+                        if (networkStatus === 8) {
+                            setTimeout(() => {
                                 window.location.href = window.location.href
-                            },10000)
-                            return <ErrorPage code="504" message="We are sorry. Please try again in a moment" title="Maintenance" background="#f4a742"/>
+                            }, 10000)
+                            return <ErrorPage code="504" message="We are sorry. Please try again in a moment"
+                                              title="Maintenance" background="#f4a742"/>
                         }
                         return <ErrorPage/>
                     } else {
@@ -54,9 +57,11 @@ export default function(WrappedComponent) {
                     }
                 }
             }
-            if(!dynamic && isEditMode(this.props) && window.self === window.top){
-                return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)} setKeyValue={this.setKeyValue.bind(this)} WrappedComponent={WrappedComponent} {...this.props}/>
-            }else{
+            if (!dynamic && isEditMode(this.props) && window.self === window.top) {
+                return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
+                                               setKeyValue={this.setKeyValue.bind(this)}
+                                               WrappedComponent={WrappedComponent} {...this.props}/>
+            } else {
                 return <WrappedComponent setKeyValue={this.setKeyValue.bind(this)} {...this.props} cmsPage={cmsPage}/>
             }
         }
@@ -156,7 +161,6 @@ export default function(WrappedComponent) {
         }
 
 
-
         updateResolvedData(json) {
 
             const {client, cmsPageVariables, cmsPage} = this.props
@@ -186,6 +190,7 @@ export default function(WrappedComponent) {
             skip: props => props.aboutToChange,
             options(ownProps) {
                 return {
+                    context: {fetchOptions: {method: !ownProps.dynamic?'GET':'POST'}},
                     variables: getGqlVariables(ownProps),
                     fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network')
                 }
@@ -247,7 +252,7 @@ export default function(WrappedComponent) {
      * Connect the component to
      * the Redux store.
      */
-    return  connect(
+    return connect(
         mapStateToProps
     )(withApollo(withGql))
 

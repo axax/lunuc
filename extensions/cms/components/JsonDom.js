@@ -70,7 +70,7 @@ class JsonDom extends React.Component {
         'SmartImage': (props) => {
             if(props.src) {
                 return <img {...props} />
-            }else if(props._scope.inlineEditor){
+            }else if(props._scope && props._scope.inlineEditor){
                 return <FileDrop {...props} />
 
             }

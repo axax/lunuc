@@ -27,12 +27,23 @@ const styles = theme => ({
 class JsonEditor extends React.Component {
 
     static components = [
-        {value: 'div', name: 'Container', defaultValue:"New container"},
+        {value: 'div', name: 'Container', defaults: {c: 'New container'}},
         {value: 'SmartImage', name: 'Image'},
+        {
+            value: 'QuillEditor', name: 'Text block',
+            defaults: {
+                c: "${_t('__uid__')}",
+                p: {
+                    name:'__uid__',
+                    readOnly: '${!inlineEditor}',
+                },
+                $edit: ':tr.${_app_.lang}.__uid__:{multiline:true}'
+            }
+        },
         {value: 'hr', name: 'Divider'},
-        {value: 'h1$', name: 'Header 1', defaultValue:"Header 1"},
-        {value: 'h2$', name: 'Header 2', defaultValue:"Header 2"}
-        ]
+        {value: 'h1$', name: 'Header 1', defaults: {c: 'Header 1'}},
+        {value: 'h2$', name: 'Header 2', defaults: {c: 'Header 2'}}
+    ]
 
     constructor(props) {
         super(props)
