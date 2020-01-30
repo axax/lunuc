@@ -31,7 +31,7 @@ const renderInputComponent = (inputProps) => {
 }
 
 const getSuggestionValue = (suggestion) => {
-    return suggestion.key
+    return suggestion.value
 }
 
 
@@ -45,8 +45,8 @@ const getSuggestions = (suggestions, value) => {
         ? []
         : suggestions.filter(suggestion => {
             const keep =
-                count < 5 && (suggestion.label.toLowerCase().indexOf(inputValue) >= 0 || suggestion.key.toLowerCase().indexOf(inputValue) >= 0)
-            /*suggestion.label.slice(0, inputLength).toLowerCase() === inputValue*/
+                count < 5 && (suggestion.name.toLowerCase().indexOf(inputValue) >= 0 || suggestion.value.toLowerCase().indexOf(inputValue) >= 0)
+            /*suggestion.name.slice(0, inputLength).toLowerCase() === inputValue*/
 
             if (keep) {
                 count += 1
@@ -125,13 +125,13 @@ class SimpleAutosuggest extends React.Component {
         const pattern = new RegExp(`(${query.replace(/\s/g, '|')})`, 'gi')
         return <MenuItem selected={isHighlighted} component="div">
             <span
-                dangerouslySetInnerHTML={{__html: Util.hightlight(`${suggestion.key} (${suggestion.label})`, query, classes.hightlight)}}/>
+                dangerouslySetInnerHTML={{__html: Util.hightlight(`${suggestion.value} (${suggestion.name})`, query, classes.hightlight)}}/>
         </MenuItem>
     }
 
     helperText = () => {
-        const a = this.props.items.filter(o => o.key === this.state.single)
-        return a.length > 0 && a[0].label || ''
+        const a = this.props.items.filter(o => o.value === this.state.single)
+        return a.length > 0 && a[0].name || ''
     }
 
     render() {

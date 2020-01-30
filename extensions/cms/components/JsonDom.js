@@ -65,10 +65,19 @@ class JsonDom extends React.Component {
         'Row': Row,
 
         /* Other components */
-        'FileDrop': {component: FileDrop, label: 'File Drop'},
-        'MarkDown': {component: MarkDown, label: 'Markdown parser'},
-        'SmartImage': {component: 'img', label: 'Smart Image (lazy load, error handling...)'},
-        'Print': {component: Print, label: 'Printable area'},
+        'FileDrop': FileDrop,
+        'MarkDown': MarkDown,
+        'SmartImage': (props) => {
+            if(props.src) {
+                return <img {...props} />
+            }else if(props._scope.inlineEditor){
+                return <FileDrop {...props} />
+
+            }
+            return <div>Image source missing</div>
+
+        },
+        'Print': Print,
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'QuillEditor': (props) => <QuillEditor {...props}/>,
@@ -765,10 +774,6 @@ class JsonDom extends React.Component {
 
                     eleProps.key = eleProps._key = key
 
-                    if (eleType.constructor === Object) {
-                        eleType = eleType.component
-                    }
-
                     if (t === 'Cms') {
                         // if we have a cms component in another cms component the location props gets not refreshed
                         // that's way we pass it directly to the reactElement as a prop
@@ -835,9 +840,7 @@ class JsonDom extends React.Component {
                         eleProps.dangerouslySetInnerHTML = {__html: $c}
                     }
 
-                    if ($observe && $observe.if !== 'false' && !!window.IntersectionObserver) {
-
-
+                    if (( (t === 'SmartImage' && eleProps.src) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
                         h.push(React.createElement(
                             elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
                             {key: key}

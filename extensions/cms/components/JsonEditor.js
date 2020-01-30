@@ -9,7 +9,6 @@ import {
     ExpandLessIcon,
     ExpandMoreIcon,
     TextField,
-    AddIconButton,
     ClearIconButton,
     SimpleAutosuggest,
     SimpleMenu
@@ -24,29 +23,20 @@ const styles = theme => ({
         fontWeight: 'bold'
     }
 })
-import JsonDom from './JsonDom'
 
 class JsonEditor extends React.Component {
 
-    static components = null
+    static components = [
+        {value: 'div', name: 'Container', defaultValue:"New container"},
+        {value: 'SmartImage', name: 'Image'},
+        {value: 'hr', name: 'Divider'},
+        {value: 'h1$', name: 'Header 1', defaultValue:"Header 1"},
+        {value: 'h2$', name: 'Header 2', defaultValue:"Header 2"}
+        ]
 
     constructor(props) {
         super(props)
 
-        if (!JsonEditor.components) {
-            JsonEditor.components = Object.keys(JsonDom.components).map((key) => {
-                let label
-                const o = JsonDom.components[key]
-                if (o.constructor === Object) {
-                    label = o.label
-                } else {
-                    label = key
-                }
-                return {key, label}
-            })
-            JsonEditor.components.push({key: 'div', label: 'Arbitrary block of content'})
-            console.log('JsonEditor components created')
-        }
         this.state = {
             dataOri: props.children,
             open: JsonEditor.openState || {}
