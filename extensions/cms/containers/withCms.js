@@ -190,7 +190,7 @@ export default function (WrappedComponent) {
             skip: props => props.aboutToChange,
             options(ownProps) {
                 return {
-                    context: {fetchOptions: {method: ownProps.dynamic?'POST':'GET'}},
+                    /*context: {fetchOptions: {method: ownProps.dynamic?'POST':'GET'}},*/
                     variables: getGqlVariables(ownProps),
                     fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network')
                 }

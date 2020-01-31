@@ -68,14 +68,7 @@ class JsonDom extends React.Component {
         'FileDrop': FileDrop,
         'MarkDown': MarkDown,
         'SmartImage': (props) => {
-            if(props.src) {
-                return <img {...props} />
-            }else if(props._scope && props._scope.inlineEditor){
-                return <FileDrop {...props} />
-
-            }
-            return <div>Image source missing</div>
-
+            return <img src="/placeholder.svg" {...props} />
         },
         'Print': Print,
         'input': JsonDomInput,
@@ -791,7 +784,7 @@ class JsonDom extends React.Component {
                         eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                     }
 
-                    if (editMode) {
+                    if (editMode && $inlineEditor !== false) {
 
                         if (this.props.inlineEditor && (initial || !dynamic)) {
                             const rawJson = this.getJsonRaw(this.props, true)

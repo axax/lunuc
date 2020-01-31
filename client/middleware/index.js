@@ -66,8 +66,12 @@ export function configureMiddleware(store) {
     // create a middleware with the authentication
     const authLink = setContext((req) => {
         const headers= {
-            Authorization: Util.getAuthToken(),
             ['Content-Language']: _app_.lang
+        }
+
+        const token = Util.getAuthToken()
+        if( token ){
+            headers['Authorization'] = token
         }
         if( _app_.session ){
             headers['x-session'] = _app_.session

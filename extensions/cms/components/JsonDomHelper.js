@@ -18,6 +18,9 @@ import AddToBody from './AddToBody'
 import DomUtil from 'client/util/dom'
 import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
 import JsonEditor from './JsonEditor'
+import config from 'gen/config'
+const {UPLOAD_URL} = config
+
 
 const styles = theme => ({
     wrapper: {},
@@ -56,6 +59,12 @@ const styles = theme => ({
         maxHeight: '200px'
     },
     toolbarHovered: {},
+    rootToolbar: {
+        position: 'absolute'
+    },
+    picker: {
+        cursor: 'pointer'
+    },
     toolbarMenu: {
         position: 'absolute',
         left: '-2.2rem',
@@ -96,7 +105,7 @@ class JsonDomHelper extends React.Component {
 
     componentDidMount() {
         const node = ReactDOM.findDOMNode(this)
-        if(node) {
+        if (node) {
             this.scrollHandler = () => {
                 const {hovered, toolbarHovered, toolbarMenuOpen} = this.state
                 if (hovered || toolbarHovered || toolbarMenuOpen) {
@@ -116,8 +125,8 @@ class JsonDomHelper extends React.Component {
 
     componentWillUnmount() {
         const node = ReactDOM.findDOMNode(this)
-        if(node) {
-            if(this.resizeObserver) {
+        if (node) {
+            if (this.resizeObserver) {
                 this.resizeObserver.unobserve(node)
             }
             document.removeEventListener('scroll', this.scrollHandler)
@@ -425,6 +434,32 @@ class JsonDomHelper extends React.Component {
             }
         }
 
+        if (_inlineEditor.picker) {
+            events.onClick = () => {
+                const w = screen.width/3*2, h = screen.height/3*2,left = (screen.width/2)-(w/2),top = (screen.height/2)-(h/2)
+
+                const newwindow = window.open(
+                    `/admin/types/?noLayout=true&fixType=Media`, '_blank' ,
+                    'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left)
+
+                newwindow.onbeforeunload = ()=>{
+
+                    //_cmsActions.editCmsComponent(rest._key, _json, _scope)
+                    const source = getComponentByKey(rest._key, _json)
+                    if(source){
+                        if(!source.p){
+                            source.p={}
+                        }
+                        source.p.src=UPLOAD_URL+'/'+newwindow.resultValue._id
+                        _onchange(_json)
+                    }
+
+                }
+            }
+            events.className = classNames(rest.className, classes.picker)
+        }
+
+
         if (isTempalteEdit) {
             events.draggable = 'true'
             events.onDragStart = this.onDragStart.bind(this)
@@ -432,6 +467,7 @@ class JsonDomHelper extends React.Component {
             events.onDrag = this.onDrag.bind(this)
             events.onDrop = this.onDrop.bind(this)
         }
+
 
         if (!JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)) {
             const menuItems = []
@@ -452,7 +488,7 @@ class JsonDomHelper extends React.Component {
                         icon: <AddIcon/>,
                         onClick: () => {
                             JsonDomHelper.disableEvents = true
-                            this.setState({addChildDialog: {selected: {value:''}}})
+                            this.setState({addChildDialog: {selected: {value: ''}}})
                         }
                     })
                 }
@@ -489,6 +525,7 @@ class JsonDomHelper extends React.Component {
                 style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}
                 className={classes.highlighter}/>
         }
+
         let kids
         if (isTempalteEdit && _inlineEditor.allowDrop) {
             kids = []
@@ -505,6 +542,10 @@ class JsonDomHelper extends React.Component {
         } else {
             kids = children
         }
+        if (_inlineEditor.toolbar) {
+            const rootToolbar = <div key="rootToolbar" className={classNames(classes.rootToolbar)}>toolbar</div>
+            kids.push(rootToolbar)
+        }
         let comp
         if (_WrappedComponent.name === 'Cms') {
             comp = <div key={rest._key} {...events}>
@@ -513,7 +554,6 @@ class JsonDomHelper extends React.Component {
         } else {
             comp = <_WrappedComponent key={rest._key} {...events} {...rest} children={kids}/>
         }
-
         if (toolbar) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>]
         } else {
@@ -525,7 +565,10 @@ class JsonDomHelper extends React.Component {
                                          onClose={(e) => {
                                              const selected = addChildDialog.selected
                                              if (e.key === 'save' && selected) {
-                                                 const comp = {'t': selected.value,...selected.defaults}
+
+                                                 const compStr = JSON.stringify({'t': selected.value, ...selected.defaults}),
+                                                     uid = Math.random().toString(36).substr(2, 9),
+                                                     comp = JSON.parse(compStr.replace(/__uid__/g, uid))
 
                                                  this.handleAddChildClick(comp)
                                              }

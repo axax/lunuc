@@ -22,7 +22,7 @@ import {
     SimpleMenu
 } from 'ui/admin'
 import {withApollo, Query} from 'react-apollo'
-import { ApolloClient } from 'apollo-client'
+import {ApolloClient} from 'apollo-client'
 import gql from 'graphql-tag'
 import Util from 'client/util'
 import GenericForm from 'client/components/GenericForm'
@@ -207,7 +207,7 @@ class TypesContainer extends React.Component {
 
 
     renderTable(columns) {
-        const {classes,client} = this.props
+        const {classes, client} = this.props
         const {data, selectedrows} = this.state
         if (data) {
 
@@ -318,7 +318,7 @@ class TypesContainer extends React.Component {
                                             dangerouslySetInnerHTML={{
                                                 __html: fieldValue && fieldValue[lang]
                                             }}
-                                            contentEditable />
+                                            contentEditable/>
                                             <br/>
                                         </div>)
                                     })
@@ -333,7 +333,7 @@ class TypesContainer extends React.Component {
                                                  suppressContentEditableWarning contentEditable
                                                  dangerouslySetInnerHTML={{
                                                      __html: fieldValue
-                                                 }} />
+                                                 }}/>
                                     }
                                 }
 
@@ -396,15 +396,25 @@ class TypesContainer extends React.Component {
                 },
                 {
                     name: 'Export', onClick: () => {
-                        this.setState({simpleDialog: {title:'Export',children: <textarea style={{width:'20rem',height:'20rem'}}>{JSON.stringify(this.state.data.results,null,4)}</textarea>}})
+                        this.setState({
+                            simpleDialog: {
+                                title: 'Export',
+                                children: <textarea style={{
+                                    width: '20rem',
+                                    height: '20rem'
+                                }}>{JSON.stringify(this.state.data.results, null, 4)}</textarea>
+                            }
+                        })
                     }
                 },
                 {
                     name: 'Import', onClick: () => {
-                        this.setState({simpleDialog: {title:'Import',
-                                actions:[{key: 'import', label: 'Import'}],
-                                onClose:(e)=>{
-                                    if(e.key==='import'){
+                        this.setState({
+                            simpleDialog: {
+                                title: 'Import',
+                                actions: [{key: 'import', label: 'Import'}],
+                                onClose: (e) => {
+                                    if (e.key === 'import') {
                                         client.query({
                                             fetchPolicy: 'network-only',
                                             query: gql`query importCollection($collection: String!, $json: String!){importCollection(collection:$collection,json:$json){result}}`,
@@ -413,13 +423,16 @@ class TypesContainer extends React.Component {
                                                 json: document.getElementById('importData').value
                                             }
                                         }).then(response => {
-                                            this.setState({simpleDialog:{children:JSON.stringify(response.data.importCollection)}})
+                                            this.setState({simpleDialog: {children: JSON.stringify(response.data.importCollection)}})
                                         })
-                                    }else{
-                                        this.setState({simpleDialog:false})
+                                    } else {
+                                        this.setState({simpleDialog: false})
                                     }
                                 },
-                                children: <textarea id="importData" style={{width:'20rem',height:'20rem'}}></textarea>}})
+                                children: <textarea id="importData"
+                                                    style={{width: '20rem', height: '20rem'}}></textarea>
+                            }
+                        })
                     }
                 },
                 {
@@ -642,7 +655,9 @@ class TypesContainer extends React.Component {
                 }} placeholder="Enter a name (optional)"/>
             </SimpleDialog>,
             simpleDialog &&
-            <SimpleDialog key="simpleDialog" open={!!simpleDialog} onClose={simpleDialog.onClose || (()=>{this.setState({simpleDialog:false})})}
+            <SimpleDialog key="simpleDialog" open={!!simpleDialog} onClose={simpleDialog.onClose || (() => {
+                this.setState({simpleDialog: false})
+            })}
                           actions={simpleDialog.actions || [{key: 'ok', label: 'OK'}]}
                           title={simpleDialog.title || 'Message'}>
                 {simpleDialog.children}
@@ -948,7 +963,7 @@ class TypesContainer extends React.Component {
                             variables,
                             data: storeData
                         })
-                        this._lastData= null
+                        this._lastData = null
                         this.setState({data: storeData[storeKey]})
                     }
 
@@ -994,7 +1009,7 @@ class TypesContainer extends React.Component {
                                 variables,
                                 data: storeData
                             })
-                            this._lastData= null
+                            this._lastData = null
                             this.setState({data: storeData[storeKey]})
                         }
                     }
@@ -1049,7 +1064,7 @@ class TypesContainer extends React.Component {
                             variables,
                             data: storeData
                         })
-                        this._lastData= null
+                        this._lastData = null
                         this.setState({data: storeData[storeKey]})
 
                     }
@@ -1152,8 +1167,8 @@ class TypesContainer extends React.Component {
     }
 
     goTo(type, page, limit, sort, filter, _version) {
-        const {baseUrl} = this.props
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${this.fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}`)
+        const {baseUrl, fixType} = this.props
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : (this.fixType ? '/types/' : '')+type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}`)
     }
 
 

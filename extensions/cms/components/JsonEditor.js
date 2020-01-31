@@ -28,11 +28,11 @@ class JsonEditor extends React.Component {
 
     static components = [
         {value: 'div', name: 'Container', defaults: {c: 'New container'}},
-        {value: 'SmartImage', name: 'Image'},
+        {value: 'SmartImage', name: 'Image', defaults: {$inlineEditor: {picker:{type:'Media'}}}},
         {
             value: 'QuillEditor', name: 'Text block',
             defaults: {
-                c: "${_t('__uid__')}",
+                c: "${_t('__uid__',null,'...')}",
                 p: {
                     name:'__uid__',
                     readOnly: '${!inlineEditor}',

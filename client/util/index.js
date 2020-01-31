@@ -231,10 +231,9 @@ const Util = {
     },
     getImageObject(raw) {
         if (!raw) {
-            //TODO replace image placeholder
             return {
-                src: 'https://www.savory.global/wp-content/uploads/2018/07/placeholder.png',
-                alt: 'Placeholder image'
+                src: '/placeholder.svg',
+                alt: 'Placeholder'
             }
         }
 
