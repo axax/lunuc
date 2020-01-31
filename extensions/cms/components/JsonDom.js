@@ -284,6 +284,14 @@ class JsonDom extends React.Component {
             this.runJsEvent('urlchange', false, before)
         })
         this.moveInHtmlComponents()
+
+        if(!this.props.dynamic && !this.props.editMode ) {
+            const meta = document.querySelector('meta[name=description]')
+            console.log(this.scope)
+            if (!meta) {
+                this.addMetaTag('description', document.body.innerText.substring(0,160).replace(/(\r\n|\n|\r)/gm, ' '))
+            }
+        }
     }
 
     componentWillUnmount() {
