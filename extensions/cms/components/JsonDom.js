@@ -269,6 +269,7 @@ class JsonDom extends React.Component {
         let pr = this.props._parentRef
         while (pr) {
             pr.runJsEvent('childmount', false, {id: this.props.id})
+            this.checkMetaTags(pr.props)
             if (pr.props._parentRef) {
                 pr = pr.props._parentRef
             } else {
@@ -284,12 +285,17 @@ class JsonDom extends React.Component {
             this.runJsEvent('urlchange', false, before)
         })
         this.moveInHtmlComponents()
+        this.checkMetaTags(this.props)
+    }
 
-        if(!this.props.dynamic && !this.props.editMode ) {
+    checkMetaTags(props){
+        if(!props.dynamic && !props.editMode ) {
             const meta = document.querySelector('meta[name=description]')
-            console.log(this.scope)
             if (!meta) {
-                this.addMetaTag('description', document.body.innerText.substring(0,160).replace(/(\r\n|\n|\r)/gm, ' '))
+                const content = document.body.innerText.substring(0,160).replace(/(\r\n|\n|\r)/gm, ' ')
+                if(content){
+                    this.addMetaTag('description', content )
+                }
             }
         }
     }
