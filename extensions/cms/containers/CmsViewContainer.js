@@ -7,7 +7,6 @@ import {ApolloClient} from 'apollo-client'
 import Util from 'client/util'
 import DomUtil from 'client/util/dom'
 import {getType} from 'util/types'
-import {classNameByPath} from '../util/jsonDomUtil'
 import {isEditMode, getSlugVersion, getGqlVariables, urlSensitivMap, gqlQuery} from '../util/cmsView'
 import withCms from './withCms'
 

@@ -17,7 +17,6 @@ import {
 import {Link, Redirect} from 'react-router-dom'
 import JsonDomInput from './JsonDomInput'
 import {deepMergeConcatArrays} from 'util/deepMerge'
-import {classNameByPath} from '../util/jsonDomUtil'
 import {preprocessCss} from '../util/cssPreprocessor'
 import {parseStyles} from 'client/util/style'
 import elementWatcher from './elementWatcher'
@@ -319,7 +318,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {dynamic, template, script, resolvedData, parseResolvedData, className, _props, _key, renewing} = this.props
+        const {dynamic, template, script, resolvedData, parseResolvedData, _props, _key, renewing} = this.props
         if (!template) {
             console.warn('Template is missing.', this.props)
             return null
@@ -411,14 +410,12 @@ class JsonDom extends React.Component {
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
-            if (dynamic) {
-                /* if (this.props.editMode) {
-                     return <div _key={_key}>{content}</div>
-                 }*/
+            return content
+            /*if (dynamic) {
                 return content
             } else {
                 return <div className={classNameByPath(scope.page.slug, className)}>{content}</div>
-            }
+            }*/
         }
     }
 
@@ -779,7 +776,7 @@ class JsonDom extends React.Component {
 
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
-                    eleProps.key = eleProps._key = key
+                    eleProps.key = key
 
                     if (t === 'Cms') {
                         // if we have a cms component in another cms component the location props gets not refreshed
@@ -791,6 +788,7 @@ class JsonDom extends React.Component {
                     }
 
                     if (editMode) {
+                        eleProps._key = key
                         eleProps._this = this
                         eleProps._editmode = 'true'
                     }
@@ -846,8 +844,7 @@ class JsonDom extends React.Component {
                     if ($c) {
                         eleProps.dangerouslySetInnerHTML = {__html: $c}
                     }
-
-                    if (( (t === 'SmartImage' && eleProps.src) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
+                    if (( (eleType.name === 'SmartImage' && eleProps.src) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
                         h.push(React.createElement(
                             elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
                             {key: key}
@@ -966,7 +963,7 @@ class JsonDom extends React.Component {
         if (str.startsWith('<')) {
             //It is html
             str = JSON.stringify({
-                t: 'div',
+                t: 'div.JsonDom-html',
                 $c: Util.escapeForJson(str)
             })
         } else if (str.startsWith('{') || str.startsWith('[')) {
@@ -976,7 +973,7 @@ class JsonDom extends React.Component {
         } else {
             //Is other
             str = JSON.stringify({
-                t: 'MarkDown',
+                t: 'MarkDown.JsonDom-markdown',
                 c: Util.escapeForJson(str)
             }).replace(/\`/g, '\\`')
         }
@@ -1252,7 +1249,6 @@ class JsonDom extends React.Component {
 }
 
 JsonDom.propTypes = {
-    className: PropTypes.string,
     template: PropTypes.string,
     resolvedData: PropTypes.string,
     resources: PropTypes.string,

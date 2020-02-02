@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import markdown from 'util/markdown'
 
 
-function MarkDown({children}) {
+function MarkDown({children, className}) {
 
     if( !children)
         return null
@@ -13,7 +13,7 @@ function MarkDown({children}) {
     const html = markdown(children.replace(/\\n/g,'\n'))
     console.info(`render markdown in ${new Date() - startTime}ms`)
 
-    return (<div
+    return (<div className={className}
             dangerouslySetInnerHTML={{__html: html}}/>
     )
 }

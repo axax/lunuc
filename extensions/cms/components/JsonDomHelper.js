@@ -444,14 +444,16 @@ class JsonDomHelper extends React.Component {
 
                 newwindow.onbeforeunload = ()=>{
 
-                    //_cmsActions.editCmsComponent(rest._key, _json, _scope)
-                    const source = getComponentByKey(rest._key, _json)
-                    if(source){
-                        if(!source.p){
-                            source.p={}
+                    if(newwindow.resultValue) {
+                        //_cmsActions.editCmsComponent(rest._key, _json, _scope)
+                        const source = getComponentByKey(rest._key, _json)
+                        if (source) {
+                            if (!source.p) {
+                                source.p = {}
+                            }
+                            source.p.src = UPLOAD_URL + '/' + newwindow.resultValue._id
+                            _onchange(_json)
                         }
-                        source.p.src=UPLOAD_URL+'/'+newwindow.resultValue._id
-                        _onchange(_json)
                     }
 
                 }
