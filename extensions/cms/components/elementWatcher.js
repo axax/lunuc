@@ -22,7 +22,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
         render() {
             const {initialVisible, madeVisible} = this.state
             if (!initialVisible && !madeVisible) {
-                return <div _key={key} data-wait-visible={jsonDom.instanceId} {...eleProps}></div>
+                return <div _key={key} style={{minHeight:'1rem'}} data-wait-visible={jsonDom.instanceId} {...eleProps}></div>
             } else {
                 if (!eleProps.className) {
                     eleProps.className = ''
