@@ -77,6 +77,17 @@ class DbDumpContainer extends React.Component {
         console.log(e)
     }
 
+
+    download(content, filename, contentType)
+    {
+        if(!contentType) contentType = 'application/octet-stream';
+        var a = document.createElement('a');
+        var blob = new Blob([content], {'type':contentType});
+        a.href = window.URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+    }
+
     render() {
         const {dbDumps, mediaDumps} = this.props
         const {creatingDump, creatingMediaDump, importingMediaDump, importMediaDumpDialog, importDbDumpDialog, importingDbDump} = this.state
@@ -101,7 +112,22 @@ class DbDumpContainer extends React.Component {
                             a.push({
                                 primary: i.name,
                                 onClick: () => {
-                                    window.location.href = BACKUP_URL + '/dbdumps/' + i.name
+
+
+                                    const xhr = new XMLHttpRequest
+
+                                    xhr.open( "GET", BACKUP_URL + '/dbdumps/' + i.name )
+                                    xhr.responseType = 'blob'
+
+                                    xhr.addEventListener( "load", (e) => {
+                                        this.download(xhr.response,'backup.gz','application/gzip')
+                                    }, false)
+
+                                    xhr.setRequestHeader('Authorization', Util.getAuthToken() )
+                                   // xhr.overrideMimeType( "application/octet-stream; charset=x-user-defined;" )
+                                    xhr.send(null)
+
+                                   // window.location.href = BACKUP_URL + '/dbdumps/' + i.name
                                     //history.push(ADMIN_BASE_URL + '/post/' + post._id)
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size

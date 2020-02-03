@@ -1,5 +1,4 @@
 import formidable from 'formidable'
-import {auth} from './auth'
 import path from 'path'
 import Util from './util'
 import config from 'gen/config'
@@ -9,7 +8,7 @@ import {execSync} from 'child_process'
 import {
     CAPABILITY_MANAGE_BACKUPS
 } from 'util/capabilities'
-
+import {decodeToken} from './util/jwt'
 const {UPLOAD_DIR, UPLOAD_URL, DEFAULT_LANGUAGE} = config
 
 
@@ -34,7 +33,7 @@ const beforeUpload = (res, req, upload_dir) => {
 
 const authContextOrError = async (db, res, req, capability) => {
     // check auth token
-    const authContext = auth.decodeToken(req.headers.authorization)
+    const authContext = decodeToken(req.headers.authorization)
 
     if (!authContext) {
         // no auth
@@ -60,7 +59,7 @@ export const handleUpload = db => async (req, res) => {
     const upload_dir = path.join(__dirname, '..' + UPLOAD_DIR)
     if (beforeUpload(res, req, upload_dir)) {
 
-        let context = auth.decodeToken(req.headers.authorization)
+        let context = decodeToken(req.headers.authorization)
 
         if (!context.id) {
             // use anonymouse user

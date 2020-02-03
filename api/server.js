@@ -16,6 +16,7 @@ import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload} from './upload'
 import Hook from 'util/hook'
 import compression from 'compression'
 import {pubsub} from './subscription'
+import {decodeToken} from './util/jwt'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -163,7 +164,7 @@ export const start = (done) => {
                     },
                     onOperation: ({payload}) => {
                         // now if auth is needed we can check if the context is available
-                        const context = auth.decodeToken(payload.auth)
+                        const context = decodeToken(payload.auth)
                         context.session = payload.session
                         return {context, schema}
                     }

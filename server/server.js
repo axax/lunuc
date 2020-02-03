@@ -9,6 +9,8 @@ import config from 'gen/config'
 import MimeType from '../util/mime'
 import {getHostFromHeaders} from 'util/host'
 import finalhandler from 'finalhandler'
+import {AUTH_HEADER} from 'api/constants'
+import {decodeToken} from 'api/util/jwt'
 
 
 const defaultWebHandler = (err, req, res) => {
@@ -110,6 +112,11 @@ const app = httpx.createServer(options, function (req, res) {
 
     const parsedUrl =url.parse(req.url, true), uri = parsedUrl.pathname
 
+    if( uri.indexOf('..')>=0){
+        sendError(res, 403)
+        return
+    }
+
     console.log(`${req.connection.remoteAddress}: ${uri}`)
 
     if (uri.startsWith('/graphql') || uri.startsWith('/' + API_PREFIX)) {
@@ -128,20 +135,27 @@ const app = httpx.createServer(options, function (req, res) {
     } else {
 
         if (uri.startsWith(BACKUP_URL + '/')) {
-            const backup_dir = path.join(__dirname, '../' + BACKUP_DIR)
-            const filename = path.join(backup_dir, path.basename(uri))
 
-            fs.exists(filename, (exists) => {
-                if (exists) {
-                    const fileStream = fs.createReadStream(filename)
-                    const headerExtra = {}
-                    res.writeHead(200, {...headerExtra})
-                    fileStream.pipe(res)
-                } else {
-                    console.log('not exists: ' + filename)
-                    sendError(res, 404)
-                }
-            })
+            const context = decodeToken(req.headers[AUTH_HEADER])
+
+            if( context.id) {
+                // only allow download if valid jwt token is set
+                const backup_dir = path.join(__dirname, '../' + BACKUP_DIR)
+                const filename = path.join(backup_dir, uri.substring(BACKUP_URL.length))
+                fs.exists(filename, (exists) => {
+                    if (exists) {
+                        const fileStream = fs.createReadStream(filename)
+                        const headerExtra = {}
+                        res.writeHead(200, {...headerExtra})
+                        fileStream.pipe(res)
+                    } else {
+                        console.log('not exists: ' + filename)
+                        sendError(res, 404)
+                    }
+                })
+            }else{
+                sendError(res, 403)
+            }
 
 
         } else if (uri.startsWith(UPLOAD_URL + '/')) {
@@ -291,7 +305,10 @@ const sendError = (res, code)=>{
     let msg = ''
     if(code === 404){
         msg = 'Not Found'
+    }else if(code === 403){
+        msg = 'Not Allowed'
     }
+
 
     res.writeHead(code, {'Content-Type': 'text/plain'})
     res.write(`${code} ${msg}\n`)

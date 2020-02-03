@@ -3,16 +3,9 @@ import Util from './util'
 import config from 'gen/config'
 import _t from 'util/i18nServer'
 import crypto from 'crypto'
-
+import {decodeToken} from './util/jwt'
+import {AUTH_HEADER,SESSION_HEADER,CONTENT_LANGUAGE_HEADER,AUTH_SCHEME,SECRET_KEY,AUTH_EXPIRES_IN} from './constants'
 const {DEFAULT_LANGUAGE} = config
-
-const AUTH_HEADER = 'authorization',
-    SESSION_HEADER = 'x-session',
-    CONTENT_LANGUAGE_HEADER = 'content-language',
-    AUTH_SCHEME = 'JWT',
-    SECRET_KEY = process.env.LUNUC_SECRET_KEY || 'fa-+3452sdfas!ä$$34dää$', /* set your own SECRET_KEY here. Only the server must know it */
-    AUTH_EXPIRES_IN = process.env.LUNUC_AUTH_EXPIRES_IN || '999y'
-
 
 export const auth = {
     createToken: async (username, password, db, context) => {
@@ -36,33 +29,13 @@ export const auth = {
             return {error: _t('core.login.invalid', context.lang), token: null, user: null}
         }
     },
-    decodeToken: (token) => {
-        let result = {}
-        if (token) {
-
-            const matches = token.match(/(\S+)\s+(\S+)/)
-
-            if (matches && matches.length > 1 && matches[1] === AUTH_SCHEME) {
-
-                // verify a token symmetric - synchronous
-                jwt.verify(matches[2], SECRET_KEY, (err, decoded) => {
-                    if (!err) {
-                        result = decoded
-                    } else {
-                        console.error(err)
-                    }
-                })
-            }
-        }
-        return result
-    },
     initialize: (app, db) => {
 
         app.use((req, res, next) => {
             const token = req.headers[AUTH_HEADER], lang = req.headers[CONTENT_LANGUAGE_HEADER], currentSession = req.headers[SESSION_HEADER]
 
             // now if auth is needed we can check if the context is available
-            req.context = auth.decodeToken(token)
+            req.context = decodeToken(token)
 
             // add the requested language to the context
             req.context.lang = lang || DEFAULT_LANGUAGE
