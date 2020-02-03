@@ -32,9 +32,14 @@ const styles = theme => ({
         minWidth: '10px',
         minHeight: '10px',
         display: 'block',
-        background: 'yellow',
         border: '1px dashed #000',
         pointerEvents: 'none'
+    },
+    bgYellow: {
+        background: 'yellow',
+    },
+    bgBlue: {
+        background: 'blue',
     },
     dropArea: {
         display: 'none',
@@ -525,7 +530,7 @@ class JsonDomHelper extends React.Component {
             highlighter = <span
                 key={rest._key + '.highlighter'}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}
-                className={classes.highlighter}/>
+                className={classNames(classes.highlighter,_WrappedComponent.name === 'Cms'?classes.bgBlue: classes.bgYellow)}/>
         }
 
         let kids

@@ -4,7 +4,15 @@
 
 export const getComponentByKey = (key, json) => {
     if (!json) return
-    const keyParts = key.split('.')
+    const posDash = key.lastIndexOf('-')
+    let editedKey
+    if( posDash>=0){
+        // key has a dash if it is a nested CMS Page
+        editedKey = key.substring(posDash+1)
+    }else{
+        editedKey = key
+    }
+    const keyParts = editedKey.split('.')
 
     // as the key always starts with 0 remove the first value
     keyParts.shift()
@@ -22,7 +30,7 @@ export const getComponentByKey = (key, json) => {
         if (cur.constructor === Object && !isNaN(part)) cur = [cur]
 
         if (!cur[part]) {
-            console.warn('Something is wrong with the key: ' + key, part)
+            console.warn('Something is wrong with the key: ' + editedKey, part)
             return null
         }
         cur = cur[part]

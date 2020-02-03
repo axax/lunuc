@@ -67,6 +67,12 @@ class JsonDom extends React.Component {
         'FileDrop': FileDrop,
         'MarkDown': MarkDown,
         'SmartImage': (props) => {
+            /*
+            <picture>
+ <source srcset="mdn-logo-wide.png" media="(min-width: 600px)">
+ <img src="mdn-logo-narrow.png" alt="MDN">
+</picture>
+             */
             return <img src="/placeholder.svg" {...props} />
         },
         'Print': Print,
@@ -287,13 +293,13 @@ class JsonDom extends React.Component {
         this.checkMetaTags(this.props)
     }
 
-    checkMetaTags(props){
-        if(!props.dynamic && !props.editMode ) {
+    checkMetaTags(props) {
+        if (!props.dynamic && !props.editMode) {
             const meta = document.querySelector('meta[name=description]')
             if (!meta) {
-                const content = document.body.innerText.substring(0,160).replace(/(\r\n|\n|\r)/gm, ' ')
-                if(content){
-                    this.addMetaTag('description', content )
+                const content = document.body.innerText.substring(0, 160).replace(/(\r\n|\n|\r)/gm, ' ')
+                if (content) {
+                    this.addMetaTag('description', content)
                 }
             }
         }
@@ -401,7 +407,7 @@ class JsonDom extends React.Component {
             return <div>Error in beforerender event. See details in console log: <span
                 dangerouslySetInnerHTML={{__html: this.lastEventError}}/></div>
         }
-        let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope, true)
+        let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
         if (content && this._inHtmlComponents.length > 0) {
             content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
         }
@@ -411,11 +417,6 @@ class JsonDom extends React.Component {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
         } else {
             return content
-            /*if (dynamic) {
-                return content
-            } else {
-                return <div className={classNameByPath(scope.page.slug, className)}>{content}</div>
-            }*/
         }
     }
 
@@ -503,7 +504,7 @@ class JsonDom extends React.Component {
         onError(e, meta)
     }
 
-    parseRec(a, rootKey, scope, initial) {
+    parseRec(a, rootKey, scope) {
         if (!a) return null
         if (a.constructor === String) return a
         if (a.constructor === Object) return this.parseRec([a], rootKey, scope)
@@ -786,6 +787,9 @@ class JsonDom extends React.Component {
                         eleProps.match = match
                         eleProps._this = this
                     }
+                    if( key.startsWith('inHtmlComponent')){
+                        eleProps._key = key
+                    }
 
                     if (editMode) {
                         eleProps._key = key
@@ -795,10 +799,9 @@ class JsonDom extends React.Component {
                     if (className) {
                         eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                     }
-
                     if (editMode && $inlineEditor !== false) {
 
-                        if (this.props.inlineEditor && (initial || !dynamic)) {
+                        if (this.props.inlineEditor) {
                             const rawJson = this.getJsonRaw(this.props, true)
                             if (rawJson) {
 
@@ -844,7 +847,7 @@ class JsonDom extends React.Component {
                     if ($c) {
                         eleProps.dangerouslySetInnerHTML = {__html: $c}
                     }
-                    if (( (eleType.name === 'SmartImage' && eleProps.src) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
+                    if (((eleType.name === 'SmartImage' && eleProps.src) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
                         h.push(React.createElement(
                             elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
                             {key: key}
