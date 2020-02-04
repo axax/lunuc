@@ -2,12 +2,14 @@
  * Html dom helper methods
  */
 const DomUtil = {
-    removeElements(selector) {
+    removeElements(selector, butIds) {
         const addedElements = document.querySelectorAll(selector)
         if (addedElements) {
             for (let i = 0; i < addedElements.length; ++i) {
                 const ele = addedElements[i]
-                ele.parentNode.removeChild(ele)
+                if (!butIds || butIds.indexOf(ele.id) < 0) {
+                    ele.parentNode.removeChild(ele)
+                }
             }
         }
     },

@@ -92,6 +92,7 @@ class TypesContainer extends React.Component {
         }
     }
     fixType = null
+    baseFilter = null
     noLayout = false
 
     constructor(props) {
@@ -106,7 +107,9 @@ class TypesContainer extends React.Component {
         // store on object instance to preserve value when url change
         this.noLayout = this.pageParams.noLayout
         this.fixType = this.pageParams.fixType
-
+        if(this.pageParams.baseFilter) {
+            this.baseFilter = this.pageParams.baseFilter
+        }
         this.state = {
             selectAllRows: false,
             selectedrows: {},
@@ -200,7 +203,9 @@ class TypesContainer extends React.Component {
             this.pageParams.sort !== pageParams.sort ||
             this.pageParams.filter !== pageParams.filter) {
             this.pageParams = pageParams
-            this.baseFilter = props.baseFilter
+            if( props.baseFilter) {
+                this.baseFilter = props.baseFilter
+            }
             this.getData(pageParams, true)
         }
     }
@@ -536,7 +541,6 @@ class TypesContainer extends React.Component {
         const {title, client} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
-
         this.searchFields.term.value = filter
 
         if (!this.types[type]) {
@@ -823,7 +827,7 @@ class TypesContainer extends React.Component {
 
     determinPageParams(props) {
         const {params} = props.match
-        const {p, l, s, f, v, noLayout, fixType} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v, noLayout, fixType, baseFilter} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
@@ -844,6 +848,7 @@ class TypesContainer extends React.Component {
         }
         const typeSettings = this.settings[type] || {}
         const result = {
+            baseFilter,
             fixType: finalFixType,
             noLayout: finalNoLayout,
             limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,
@@ -853,6 +858,7 @@ class TypesContainer extends React.Component {
             _version: v || typeSettings._version || 'default'
         }
         result.type = type
+        console.log(result)
         return result
     }
 
@@ -1168,7 +1174,7 @@ class TypesContainer extends React.Component {
 
     goTo(type, page, limit, sort, filter, _version) {
         const {baseUrl, fixType} = this.props
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/'+type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/'+type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${this.pageParams.baseFilter?'&baseFilter='+encodeURIComponent(this.pageParams.baseFilter):''}`)
     }
 
 

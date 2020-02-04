@@ -241,9 +241,8 @@ class JsonDom extends React.Component {
             if (this.props.renewing !== props.renewing) {
                 this.json = null
             }
-
             if (slugChanged || scriptChanged || this.runScript) {
-                this.removeAddedDomElements()
+                this.removeAddedDomElements(true)
                 this.scriptResult = null
                 this.runScript = true
             }
@@ -421,7 +420,7 @@ class JsonDom extends React.Component {
     }
 
     addStyle(style) {
-        const id = 'style' + this.instanceId
+        const id = 'jsondomstyle' + this.instanceId
         if (style) {
             this.setStyle(style, true, id)
         } else {
@@ -465,8 +464,12 @@ class JsonDom extends React.Component {
         }
     }
 
-    removeAddedDomElements() {
-        DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`)
+    removeAddedDomElements(notMainStyle) {
+        let butIds
+        if( notMainStyle ){
+            butIds = ['jsondomstyle'+this.instanceId]
+        }
+        DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`, butIds)
     }
 
     handleBindingChange(cb, event, value) {

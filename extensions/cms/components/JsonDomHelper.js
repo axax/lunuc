@@ -28,18 +28,22 @@ const styles = theme => ({
         position: 'fixed',
         bottom: 0,
         left: 0,
-        opacity: 0.1,
         minWidth: '10px',
         minHeight: '10px',
-        display: 'block',
+        display: 'flex',
         border: '1px dashed #000',
-        pointerEvents: 'none'
+        pointerEvents: 'none',
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     bgYellow: {
-        background: 'yellow',
+        background: 'rgba(245, 245, 66,0.1)',
     },
     bgBlue: {
-        background: 'blue',
+        background: 'rgba(84, 66, 245,0.2)',
+        color:'#fff',
+        fontWeight: 'bold',
+        fontSize: '2rem'
     },
     dropArea: {
         display: 'none',
@@ -68,7 +72,8 @@ const styles = theme => ({
         position: 'absolute'
     },
     picker: {
-        cursor: 'pointer'
+        cursor: 'pointer',
+        pointerEvents: 'auto'
     },
     toolbarMenu: {
         position: 'absolute',
@@ -444,7 +449,7 @@ class JsonDomHelper extends React.Component {
                 const w = screen.width/3*2, h = screen.height/3*2,left = (screen.width/2)-(w/2),top = (screen.height/2)-(h/2)
 
                 const newwindow = window.open(
-                    `/admin/types/?noLayout=true&fixType=Media`, '_blank' ,
+                    `/admin/types/?noLayout=true&fixType=${_inlineEditor.picker.type}&baseFilter=${encodeURIComponent(_inlineEditor.picker.baseFilter || '')}`, '_blank' ,
                     'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left)
 
                 newwindow.onbeforeunload = ()=>{
@@ -474,6 +479,8 @@ class JsonDomHelper extends React.Component {
             events.onDrag = this.onDrag.bind(this)
             events.onDrop = this.onDrop.bind(this)
         }
+
+        const isCms = _WrappedComponent.name==='Cms'
 
 
         if (!JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)) {
@@ -530,7 +537,13 @@ class JsonDomHelper extends React.Component {
             highlighter = <span
                 key={rest._key + '.highlighter'}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}
-                className={classNames(classes.highlighter,_WrappedComponent.name === 'Cms'?classes.bgBlue: classes.bgYellow)}/>
+                className={classNames(classes.highlighter,isCms?classes.bgBlue: classes.bgYellow)}>{isCms ? <div
+                onMouseOver={this.onToolbarMouseOver.bind(this)}
+                onMouseOut={this.onToolbarMouseOut.bind(this, classes.picker)}
+                onClick={()=>{
+                    window.location = '/' + subJson.p.slug
+                }}
+                className={classes.picker}>Klicken Sie hier um die Komponente ({subJson.p.slug}) zu bearbeiten</div>:''}</span>
         }
 
         let kids
@@ -554,7 +567,7 @@ class JsonDomHelper extends React.Component {
             kids.push(rootToolbar)
         }
         let comp
-        if (_WrappedComponent.name === 'Cms') {
+        if (isCms) {
             comp = <div key={rest._key} {...events}>
                 <_WrappedComponent {...rest} children={kids}/>
             </div>
