@@ -4,7 +4,8 @@ import config from 'gen/config'
 
 const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
 import {
-    CAPABILITY_MANAGE_CMS_PAGES
+    CAPABILITY_MANAGE_CMS_PAGES,
+    CAPABILITY_MANAGE_CMS_TEMPLATE
 } from './constants'
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
@@ -34,7 +35,7 @@ export default () => {
 
     // Hook to add user capabilities
     Hook.on('userCapabilities', ({capabilities}) => {
-        capabilities.push(CAPABILITY_MANAGE_CMS_PAGES)
+        capabilities.push(CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE)
     })
 
     // add routes

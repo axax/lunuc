@@ -11,5 +11,6 @@
   "core.address.street_number": "Strasse Nr.",
   "core.address.postcode": "PLZ",
   "core.address.place": "Ort",
-  "core.login.invalid": "Benutzer oder Passwort sind ungültig"
+  "core.login.invalid": "Benutzer oder Passwort sind ungültig",
+  "core.login.blocked": "Benutzer gesperrt. Probieren Sie es in ein paar Minuten nochmals."
 }

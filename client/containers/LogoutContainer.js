@@ -26,7 +26,7 @@ class LogoutContainer extends React.Component {
             try {
                 // clear cache completely
                 client.resetStore()
-                client.cache.saveToLocalStorage()
+                //client.cache.saveToLocalStorage()
             }catch (e){
                 console.log(e)
             }

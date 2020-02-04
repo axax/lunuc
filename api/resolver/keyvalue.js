@@ -79,6 +79,10 @@ export const keyvalueResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
             return GenericResolver.deleteEnity(db, context, 'KeyValue', {_id})
         },
+        deleteKeyValues: async ({_id}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+            return GenericResolver.deleteEnities(db, context, 'KeyValue', {_id})
+        },
         createKeyValueGlobal: async ({key, value, ispublic}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_TYPES)
             return await GenericResolver.createEntity(db, req, 'KeyValueGlobal', {key, value, ispublic})
@@ -98,6 +102,10 @@ export const keyvalueResolver = (db) => ({
         deleteKeyValueGlobal: async ({_id}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
             return await GenericResolver.deleteEnity(db, context, 'KeyValueGlobal', {_id})
+        },
+        deleteKeyValueGlobals: async ({_id}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+            return await GenericResolver.deleteEnities(db, context, 'KeyValueGlobal', {_id})
         },
         setKeyValue: async ({key, value}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)

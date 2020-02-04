@@ -537,7 +537,7 @@ class JsonDomHelper extends React.Component {
             highlighter = <span
                 key={rest._key + '.highlighter'}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}
-                className={classNames(classes.highlighter,isCms?classes.bgBlue: classes.bgYellow)}>{isCms ? <div
+                className={classNames(classes.highlighter,isCms || _inlineEditor.picker?classes.bgBlue: classes.bgYellow)}>{isCms? <div
                 onMouseOver={this.onToolbarMouseOver.bind(this)}
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.picker)}
                 onClick={()=>{

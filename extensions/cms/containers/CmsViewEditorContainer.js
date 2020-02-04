@@ -38,12 +38,13 @@ import {getTypeQueries} from 'util/types'
 import TypeEdit from '../../../client/components/types/TypeEdit'
 import withType from '../../../client/components/types/withType'
 import Util from "../../../client/util";
-import {CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
+import {CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import CodeEditor from 'client/components/CodeEditor'
 
 
 class CmsViewEditorContainer extends React.Component {
 
+    static lastSettings = {inlineEditor: true, fixedLayout:true}
     constructor(props) {
         super(props)
         this.state = CmsViewEditorContainer.propsToState(props, null)
@@ -65,10 +66,11 @@ class CmsViewEditorContainer extends React.Component {
             try {
                 settings = JSON.parse(props.keyValue.value)
             } catch (e) {
-                settings = {}
             }
-        } else {
-            settings = {}
+        }
+
+        if(!settings) {
+            settings = Object.assign({},CmsViewEditorContainer.lastSettings)
         }
 
         const result = {
@@ -170,7 +172,8 @@ class CmsViewEditorContainer extends React.Component {
 
         console.log('render CmsViewEditorContainer')
 
-        const inEditor = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_PAGES)
+        const inEditor = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_PAGES),
+            hasTemplate = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
 
         let cmsEditDataProps, cmsEditDataValue
 
@@ -276,7 +279,7 @@ class CmsViewEditorContainer extends React.Component {
 
                 <div style={{padding: '10px'}}>
 
-                    <Expandable title="Data resolver"
+                    {hasTemplate && <Expandable title="Data resolver"
                                 onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
@@ -286,9 +289,9 @@ class CmsViewEditorContainer extends React.Component {
                                 this.saveUnsafedChanges()
                             }}
                             onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
-                    </Expandable>
+                    </Expandable>}
 
-                    <Expandable title="Server Script"
+                    {hasTemplate && <Expandable title="Server Script"
                                 onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
                                 expanded={settings.serverScriptExpanded}>
                         <ScriptEditor
@@ -298,9 +301,9 @@ class CmsViewEditorContainer extends React.Component {
                                 this.saveUnsafedChanges()
                             }}
                             onChange={this.handleServerScriptChange.bind(this)}>{serverScript}</ScriptEditor>
-                    </Expandable>
+                    </Expandable>}
 
-                    <Expandable title="Template"
+                    {hasTemplate && <Expandable title="Template"
                                 onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
                                 expanded={settings.templateExpanded}>
                         <TemplateEditor
@@ -314,18 +317,18 @@ class CmsViewEditorContainer extends React.Component {
                                 this.handleSettingChange('templateTab', tab)
                             }}
                             onChange={this.handleTemplateChange.bind(this)}>{template}</TemplateEditor>
-                    </Expandable>
+                    </Expandable>}
 
-                    <Expandable title="Script"
+                    {hasTemplate && <Expandable title="Script"
                                 onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
                                 expanded={settings.scriptExpanded}>
                         <ScriptEditor
                             onScroll={this.handleSettingChange.bind(this, 'scriptScroll')}
                             scrollPosition={settings.scriptScroll}
                             onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
-                    </Expandable>
+                    </Expandable>}
 
-                    <Expandable title="Style"
+                    {hasTemplate && <Expandable title="Style"
                                 onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
                                 expanded={settings.styleExpanded}>
 
@@ -333,19 +336,19 @@ class CmsViewEditorContainer extends React.Component {
                                     scrollPosition={settings.styleScroll}
                                     onChange={this.handleStyleChange.bind(this)}>{style}</CodeEditor>
 
-                    </Expandable>
+                    </Expandable>}
 
 
-                    <Expandable title="Static assets"
+                    {hasTemplate && <Expandable title="Static assets"
                                 onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
                                 expanded={settings.resourceExpanded}>
 
                         <ResourceEditor resources={resources}
                                         onChange={this.handleResourceChange.bind(this)}></ResourceEditor>
-                    </Expandable>
+                    </Expandable>}
 
 
-                    <Expandable title="Settings"
+                    {hasTemplate && <Expandable title="Settings"
                                 onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
                                 expanded={settings.settingsExpanded}>
 
@@ -374,7 +377,7 @@ class CmsViewEditorContainer extends React.Component {
                             checked={!!this.state.parseResolvedData}
                             onChange={this.handleFlagChange.bind(this, 'parseResolvedData')}
                         />
-                    </Expandable>
+                    </Expandable>}
 
                     <Expandable title="Revisions"
                                 onChange={this.handleSettingChange.bind(this, 'revisionsExpanded')}
@@ -466,9 +469,11 @@ class CmsViewEditorContainer extends React.Component {
                                                 contrast
                                                 label="Fixed"/>,
 
-                                  <Button key="button" size="small" color="inherit" onClick={e => {
+                                  hasTemplate ? <Button key="button" size="small" color="inherit" onClick={e => {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
-                                  }}>Back</Button>
+                                  }}>Back</Button>:<Button key="button" size="small" color="inherit" onClick={()=>{
+                                      this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname)}`)
+                                  }}>Logout</Button>
                               ]
                               }
                               title={`Edit Page "${props.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>

@@ -103,7 +103,7 @@
     "formidable": "^1.2.1",
     "graphql": "^14.6.0",
     "graphql-subscriptions": "^1.1.0",
-    "graphql-tag": "^2.10.1",
+    "graphql-tag": "^2.10.2",
     "http2-proxy": "^5.0.45",
     "jsonwebtoken": "^8.5.1",
     "less": "^3.10.3",

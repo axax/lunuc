@@ -10,7 +10,12 @@ import {
 } from 'util/capabilities'
 import {sendMail} from 'api/util/mail'
 import crypto from 'crypto'
+import {clientAddress} from '../../util/host'
+import _t from "../../util/i18nServer";
 
+const LOGIN_ATTEMPTS_MAP = {},
+    MAX_LOGIN_ATTEMPTS = 3,
+    LOGIN_DELAY_IN_SEC = 180
 
 const createUser = async ({username, role, password, email, picture, db, context}) => {
 
@@ -140,8 +145,35 @@ export const userResolver = (db) => ({
 
             return users
         },
-        login: async ({username, password},{context}) => {
+        login: async ({username, password},req) => {
+            const {context} = req
+            const ip = clientAddress(req)
+
+            if( LOGIN_ATTEMPTS_MAP[ip] && LOGIN_ATTEMPTS_MAP[ip].count >= MAX_LOGIN_ATTEMPTS){
+                const time = new Date().getTime()
+
+                if( time - LOGIN_ATTEMPTS_MAP[ip].lasttry < LOGIN_DELAY_IN_SEC*1000 ) {
+                    return {error: _t('core.login.blocked', context.lang), token: null, user: null}
+                }else{
+                    delete LOGIN_ATTEMPTS_MAP[ip]
+                }
+            }
+
             const result = await auth.createToken(username, password, db, context)
+            if( !result.token ){
+
+                if(!LOGIN_ATTEMPTS_MAP[ip]){
+                    LOGIN_ATTEMPTS_MAP[ip]={count:0, username}
+                }
+                LOGIN_ATTEMPTS_MAP[ip].lasttry = new Date().getTime()
+                LOGIN_ATTEMPTS_MAP[ip].count++
+                console.log(`Invalid login attempt from ${username}`)
+                //invalid login
+            }else{
+                if(LOGIN_ATTEMPTS_MAP[ip]){
+                    delete LOGIN_ATTEMPTS_MAP[ip]
+                }
+            }
             return result
         },
         forgotPassword: async ({username, url}, {context, headers}) => {
