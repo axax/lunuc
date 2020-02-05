@@ -540,10 +540,11 @@ class JsonDomHelper extends React.Component {
                 className={classNames(classes.highlighter,isCms || _inlineEditor.picker?classes.bgBlue: classes.bgYellow)}>{isCms? <div
                 onMouseOver={this.onToolbarMouseOver.bind(this)}
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.picker)}
+                title={`Klicken Sie hier um die Komponente (${subJson.p.slug}) zu bearbeiten`}
                 onClick={()=>{
                     window.location = '/' + subJson.p.slug
                 }}
-                className={classes.picker}>Klicken Sie hier um die Komponente ({subJson.p.slug}) zu bearbeiten</div>:''}</span>
+                className={classes.picker}><EditIcon /></div>:''}</span>
         }
 
         let kids

@@ -547,7 +547,6 @@ class JsonDom extends React.Component {
                             prop = Util.propertyByPath(match[1], scope)
                         } catch (e) {
                         }
-
                         if (match[2] === '==') {
                             if (match[3] !== String(prop)) {
                                 return
@@ -1024,10 +1023,7 @@ class JsonDom extends React.Component {
                             cb(...args)
                         }
                     } catch (e) {
-                        const line = e.stack.split('\n')[1]
-                        const [, lineNrStr, column] = line.match(/:(\d*):(\d*)/)
-
-                        this.lastEventError = this.prettyErrorMessage(e, cb.toString())
+                        this.lastEventError = this.prettyErrorMessage(e, this.props.script)
                         hasError = true
                     }
                 }
@@ -1042,10 +1038,16 @@ class JsonDom extends React.Component {
     }
 
     prettyErrorMessage = (e, code) => {
-        const line = e.stack.split('\n')[1]
-        const [, lineNrStr, column] = line.match(/:(\d*):(\d*)/)
+        const line = e.stack.split('\n')[1], matches= line.match(/:(\d*):(\d*)/)
+        let lineNrStr, column,errorMsg = '<pre style="margin-top:2rem">'
 
-        let errorMsg = '<pre style="margin-top:2rem">'
+        if(matches && matches.length>2){
+            lineNrStr = matches[1]
+            column = matches[2]
+        }else{
+            lineNrStr = column = 0
+        }
+
         if (lineNrStr) {
             const lineNr = parseInt(lineNrStr)
             const cbLines = code.split('\n'),
@@ -1053,7 +1055,7 @@ class JsonDom extends React.Component {
                 end = Math.min(cbLines.length, lineNr + 4)
             for (let i = start; i < end; i++) {
 
-                const str = cbLines[i - 10]
+                const str = cbLines[i - 9]
                 if (i === lineNr) {
                     errorMsg += `<i style="background:red;color:#fff">Line ${i - 10}: ${e.message}</i>\n<i style="background:yellow">${str}</i>\n`
                 } else {
