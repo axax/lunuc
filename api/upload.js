@@ -211,7 +211,7 @@ export const handleDbDumpUpload = (db, client) => async (req, res) => {
 
             console.log(client.s.url)
             // --drop --> drops collections before
-            const response = execSync(`mongorestore --uri="${client.s.url}" --drop --gzip --archive="${file.path}"`)
+            const response = execSync(`mongorestore --db lunuc --uri="${client.s.url}" --drop --gzip --archive="${file.path}"`)
             console.log('restoreDbDump', response)
 
         })

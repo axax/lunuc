@@ -7,6 +7,7 @@ import path from 'path'
 const MIME_TYPES = {
     'html': 'text/html',
     'text': 'text/plain',
+    'xml': 'text/xml',
     'jpeg': 'image/jpeg',
     'jpg': 'image/jpeg',
     'gif': 'image/gif',

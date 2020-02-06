@@ -124,7 +124,7 @@ class DbDumpContainer extends React.Component {
                                             this.download(xhr.response, 'backup.gz', 'application/gzip')
                                         }else{
 
-                                            alert(xhr.responseText)
+                                            alert(`Invalid status ${xhr.status}`)
                                         }
                                     }, false)
 
