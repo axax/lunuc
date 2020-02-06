@@ -30,14 +30,21 @@ class JsonEditor extends React.Component {
         {value: 'div', name: 'Container', defaults: {c: 'New container'}},
         {value: 'SmartImage', name: 'Image', defaults: {$inlineEditor: {picker:{type:'Media'}}}},
         {
-            value: 'QuillEditor', name: 'Text block',
+            value: 'QuillEditor', name: 'Rich-Text block',
             defaults: {
                 c: "${_t('__uid__',null,'...')}",
                 p: {
                     name:'__uid__',
                     readOnly: '${!inlineEditor}',
+                    theme: 'bubble'
                 },
                 $edit: ':tr.${_app_.lang}.__uid__:{multiline:true}'
+            }
+        },
+        {
+            value: 'p$', name: 'Text block',
+            defaults: {
+                $c: "Paragraph"
             }
         },
         {value: 'hr', name: 'Divider'},

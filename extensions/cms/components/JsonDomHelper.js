@@ -11,7 +11,9 @@ import {
     SimpleMenu,
     EditIcon,
     DeleteIcon,
-    AddIcon
+    AddIcon,
+    BuildIcon,
+    ImageIcon
 } from 'ui/admin'
 import classNames from 'classnames'
 import AddToBody from './AddToBody'
@@ -41,7 +43,7 @@ const styles = theme => ({
     },
     bgBlue: {
         background: 'rgba(84, 66, 245,0.2)',
-        color:'#fff',
+        color: '#fff',
         fontWeight: 'bold',
         fontSize: '2rem'
     },
@@ -90,8 +92,8 @@ const styles = theme => ({
     }
 })
 
-const ALLOW_DROP = ['div', 'Col']
-const ALLOW_CHILDREN = ['div', 'ul', 'Col']
+const ALLOW_DROP = ['div', 'main', 'Col']
+const ALLOW_CHILDREN = ['div', 'main', 'ul', 'Col']
 
 class JsonDomHelper extends React.Component {
     static currentDragElement
@@ -114,22 +116,34 @@ class JsonDomHelper extends React.Component {
     }
 
     componentDidMount() {
-        const node = ReactDOM.findDOMNode(this)
-        if (node) {
-            this.scrollHandler = () => {
-                const {hovered, toolbarHovered, toolbarMenuOpen} = this.state
-                if (hovered || toolbarHovered || toolbarMenuOpen) {
-                    this.setState({
-                        height: node.offsetHeight,
-                        width: node.offsetWidth,
-                        ...DomUtil.elemOffset(node)
-                    })
-                }
-            }
+        this.registerObserver()
+    }
 
-            this.resizeObserver = new ResizeObserver(this.scrollHandler)
-            this.resizeObserver.observe(node)
-            document.addEventListener('scroll', this.scrollHandler)
+    registerObserver(){
+        if(!this.isRegisterObserver) {
+            const node = ReactDOM.findDOMNode(this)
+            if (node) {
+                this.isRegisterObserver = true
+                this.scrollHandler = () => {
+                    const {hovered, toolbarHovered, toolbarMenuOpen} = this.state
+                    if (hovered || toolbarHovered || toolbarMenuOpen) {
+
+                        this.setState({
+                            height: node.offsetHeight,
+                            width: node.offsetWidth,
+                            ...DomUtil.elemOffset(node)
+                        })
+                    }
+                }
+
+                this.resizeObserver = new ResizeObserver(this.scrollHandler)
+                this.resizeObserver.observe(node)
+                document.addEventListener('scroll', this.scrollHandler)
+            }else{
+                setTimeout(()=>{
+                    this.registerObserver()
+                },100)
+            }
         }
     }
 
@@ -184,11 +198,10 @@ class JsonDomHelper extends React.Component {
             }
             this.helperTimeoutIn = setTimeout(() => {
                 this.setState(stat)
-            }, 50)
+            }, 100)
         }
 
     }
-
 
     onHelperMouseOut(e) {
         e.stopPropagation()
@@ -201,7 +214,7 @@ class JsonDomHelper extends React.Component {
         if (hovered) {
             this.helperTimeoutOut = setTimeout(() => {
                 this.setState({hovered: false})
-            }, 50)
+            }, 100)
         } else {
             clearTimeout(this.helperTimeoutIn)
         }
@@ -236,7 +249,7 @@ class JsonDomHelper extends React.Component {
 
             setTimeout(() => {
                 this.setState({toolbarHovered: false})
-            }, 50)
+            }, 100)
         }
     }
 
@@ -390,10 +403,19 @@ class JsonDomHelper extends React.Component {
     }
 
 
-    handleAddChildClick(component) {
+    handleAddChildClick(component, addbelow) {
         const {_cmsActions, _key, _json, _scope, _onchange} = this.props
 
-        addComponent({key: _key, json: _json, index: 0, component})
+        let newkey = _key, index = 0
+        if (addbelow) {
+            newkey = newkey.substring(0, newkey.lastIndexOf('.'))
+            if (newkey.indexOf('.') < 0) {
+                console.warn('can not add below', _key)
+                return
+            }
+            index = -1 // last position
+        }
+        addComponent({key: newkey, json: _json, index, component})
         _onchange(_json)
     }
 
@@ -444,34 +466,6 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        if (_inlineEditor.picker) {
-            events.onClick = () => {
-                const w = screen.width/3*2, h = screen.height/3*2,left = (screen.width/2)-(w/2),top = (screen.height/2)-(h/2)
-
-                const newwindow = window.open(
-                    `/admin/types/?noLayout=true&fixType=${_inlineEditor.picker.type}&baseFilter=${encodeURIComponent(_inlineEditor.picker.baseFilter || '')}`, '_blank' ,
-                    'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left)
-
-                newwindow.onbeforeunload = ()=>{
-
-                    if(newwindow.resultValue) {
-                        //_cmsActions.editCmsComponent(rest._key, _json, _scope)
-                        const source = getComponentByKey(rest._key, _json)
-                        if (source) {
-                            if (!source.p) {
-                                source.p = {}
-                            }
-                            source.p.src = UPLOAD_URL + '/' + newwindow.resultValue._id
-                            _onchange(_json)
-                        }
-                    }
-
-                }
-            }
-            events.className = classNames(rest.className, classes.picker)
-        }
-
-
         if (isTempalteEdit) {
             events.draggable = 'true'
             events.onDragStart = this.onDragStart.bind(this)
@@ -480,16 +474,24 @@ class JsonDomHelper extends React.Component {
             events.onDrop = this.onDrop.bind(this)
         }
 
-        const isCms = _WrappedComponent.name==='Cms'
+        const isCms = _WrappedComponent.name === 'Cms'
 
 
         if (!JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)) {
             const menuItems = []
 
+            if (isCms) {
+                menuItems.push({
+                    name: 'Open component', icon: <EditIcon/>, onClick: () => {
+                        window.location = '/' + subJson.p.slug
+                    }
+                })
+            }
+
             if (isTempalteEdit) {
                 const isLoop = rest._key.indexOf('$loop') >= 0
 
-                menuItems.push({name: 'Edit template', icon: <EditIcon/>, onClick: this.handleEditClick.bind(this)},
+                menuItems.push({name: 'Edit template', icon: <BuildIcon/>, onClick: this.handleEditClick.bind(this)},
                     {
                         name: `Remove ${isLoop ? 'Loop' : 'Component'}`,
                         icon: <DeleteIcon/>,
@@ -506,6 +508,15 @@ class JsonDomHelper extends React.Component {
                         }
                     })
                 }
+
+                menuItems.splice(1, 0, {
+                    name: 'Add child below',
+                    icon: <AddIcon/>,
+                    onClick: () => {
+                        JsonDomHelper.disableEvents = true
+                        this.setState({addChildDialog: {selected: {value: ''}, addbelow: true}})
+                    }
+                })
             }
 
             if (_edit) {
@@ -537,15 +548,50 @@ class JsonDomHelper extends React.Component {
             highlighter = <span
                 key={rest._key + '.highlighter'}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}
-                className={classNames(classes.highlighter,isCms || _inlineEditor.picker?classes.bgBlue: classes.bgYellow)}>{isCms? <div
-                onMouseOver={this.onToolbarMouseOver.bind(this)}
-                onMouseOut={this.onToolbarMouseOut.bind(this, classes.picker)}
-                title={`Klicken Sie hier um die Komponente (${subJson.p.slug}) zu bearbeiten`}
-                onClick={()=>{
-                    window.location = '/' + subJson.p.slug
-                }}
-                className={classes.picker}><EditIcon /></div>:''}</span>
+                className={classNames(classes.highlighter, isCms || _inlineEditor.picker ? classes.bgBlue : classes.bgYellow)}>{_inlineEditor.picker || isCms ?
+                <div
+                    onMouseOver={this.onToolbarMouseOver.bind(this)}
+                    onMouseOut={this.onToolbarMouseOut.bind(this, classes.picker)}
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        if (isCms) {
+                            window.location = '/' + subJson.p.slug
+                        } else {
+                            const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
+                                left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
+
+                            const newwindow = window.open(
+                                `/admin/types/?noLayout=true&fixType=${_inlineEditor.picker.type}&baseFilter=${encodeURIComponent(_inlineEditor.picker.baseFilter || '')}`, '_blank',
+                                'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
+
+                            newwindow.onbeforeunload = () => {
+
+                                if (newwindow.resultValue) {
+                                    //_cmsActions.editCmsComponent(rest._key, _json, _scope)
+                                    const source = getComponentByKey(rest._key, _json)
+                                    if (source) {
+                                        if (!source.p) {
+                                            source.p = {}
+                                        }
+                                        source.p.src = UPLOAD_URL + '/' + newwindow.resultValue._id
+                                        _onchange(_json)
+                                    }
+                                }
+
+                            }
+
+                        }
+                    }}
+                    className={classes.picker}>{isCms?<EditIcon />:<ImageIcon />}</div> : ''}</span>
         }
+
+        if (_inlineEditor.picker) {
+            events.onClick = () => {
+
+            }
+            events.className = classNames(rest.className, classes.picker)
+        }
+
 
         let kids
         if (isTempalteEdit && _inlineEditor.allowDrop) {
@@ -578,50 +624,47 @@ class JsonDomHelper extends React.Component {
         if (toolbar) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>]
         } else {
-            if (addChildDialog) {
-                console.log(addChildDialog.selected)
-            }
             return <React.Fragment>{comp}{(addChildDialog &&
-                <AddToBody><SimpleDialog fullWidth={true} maxWidth="sm" key="addChildDialog" open={true}
-                                         onClose={(e) => {
-                                             const selected = addChildDialog.selected
-                                             if (e.key === 'save' && selected) {
+            <AddToBody><SimpleDialog fullWidth={true} maxWidth="sm" key="addChildDialog" open={true}
+                                     onClose={(e) => {
+                                         const selected = addChildDialog.selected
+                                         if (e.key === 'save' && selected) {
 
-                                                 const compStr = JSON.stringify({'t': selected.value, ...selected.defaults}),
-                                                     uid = Math.random().toString(36).substr(2, 9),
-                                                     comp = JSON.parse(compStr.replace(/__uid__/g, uid))
+                                             const compStr = JSON.stringify({'t': selected.value, ...selected.defaults}),
+                                                 uid = Math.random().toString(36).substr(2, 9),
+                                                 comp = JSON.parse(compStr.replace(/__uid__/g, uid))
 
-                                                 this.handleAddChildClick(comp)
-                                             }
-                                             JsonDomHelper.disableEvents = false
-                                             this.setState({addChildDialog: null})
-                                         }}
-                                         actions={[{
-                                             key: 'save',
-                                             label: 'Save',
-                                             type: 'primary'
-                                         }]}
-                                         title="Edit Value">
+                                             this.handleAddChildClick(comp, addChildDialog.addbelow)
+                                         }
+                                         JsonDomHelper.disableEvents = false
+                                         this.setState({addChildDialog: null})
+                                     }}
+                                     actions={[{
+                                         key: 'save',
+                                         label: 'Save',
+                                         type: 'primary'
+                                     }]}
+                                     title="Edit Value">
 
-                    <SimpleSelect
-                        fullWidth={true}
-                        label="Select a component"
-                        value={addChildDialog.selected.value}
-                        onChange={(e) => {
-                            const value = e.target.value
-                            let item
-                            for (let i = 0; i < JsonEditor.components.length; i++) {
-                                const comp = JsonEditor.components[i]
-                                if (value === comp.value) {
-                                    item = comp
-                                    break
-                                }
+                <SimpleSelect
+                    fullWidth={true}
+                    label="Select a component"
+                    value={addChildDialog.selected.value}
+                    onChange={(e) => {
+                        const value = e.target.value
+                        let item
+                        for (let i = 0; i < JsonEditor.components.length; i++) {
+                            const comp = JsonEditor.components[i]
+                            if (value === comp.value) {
+                                item = comp
+                                break
                             }
-                            this.setState({addChildDialog: {selected: item}})
-                        }}
-                        items={JsonEditor.components}
-                    />
-                </SimpleDialog></AddToBody>)}</React.Fragment>
+                        }
+                        this.setState({addChildDialog: {...addChildDialog, selected: item}})
+                    }}
+                    items={JsonEditor.components}
+                />
+            </SimpleDialog></AddToBody>)}</React.Fragment>
         }
     }
 }

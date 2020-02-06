@@ -50,9 +50,9 @@ class JsonDom extends React.Component {
     static events = ['Click', 'KeyDown', 'KeyUp', 'Change', 'Submit', 'Success', 'ContextMenu', 'CustomEvent', 'FileContent', 'Files', 'Input']
 
     /*
-    * Default components
-    * new components can be added with the JsonDom hook
-    * */
+     * Default components
+     * new components can be added with the JsonDom hook
+     * */
     static components = {
         /* Material Design / admin Component */
         'DrawerLayout': DrawerLayout,
@@ -68,10 +68,10 @@ class JsonDom extends React.Component {
         'MarkDown': MarkDown,
         'SmartImage': (props) => {
             /*
-            <picture>
- <source srcset="mdn-logo-wide.png" media="(min-width: 600px)">
- <img src="mdn-logo-narrow.png" alt="MDN">
-</picture>
+             <picture>
+             <source srcset="mdn-logo-wide.png" media="(min-width: 600px)">
+             <img src="mdn-logo-narrow.png" alt="MDN">
+             </picture>
              */
             return <img src="/placeholder.svg" {...props} />
         },
@@ -466,8 +466,8 @@ class JsonDom extends React.Component {
 
     removeAddedDomElements(notMainStyle) {
         let butIds
-        if( notMainStyle ){
-            butIds = ['jsondomstyle'+this.instanceId]
+        if (notMainStyle) {
+            butIds = ['jsondomstyle' + this.instanceId]
         }
         DomUtil.removeElements(`[data-json-dom-id="${this.instanceId}"]`, butIds)
     }
@@ -488,11 +488,14 @@ class JsonDom extends React.Component {
 
         if (!onChange)
             return
-
         const jsonClone = this.getJsonRaw(this.props)
         const o = getComponentByKey(key, jsonClone)
-        if (o && o.c && o.c.constructor === String) {
-            o.c = value
+        if (o) {
+            if (o.c && o.c.constructor === String) {
+                o.c = value
+            } else if (o.$c && o.$c.constructor === String) {
+                o.$c = value
+            }
             onChange(jsonClone)
         }
     }
@@ -714,7 +717,7 @@ class JsonDom extends React.Component {
                     } else if (t.slice(-1) === '$') {
                         // editable
                         tagName = t.slice(0, -1) // remove last char
-                        if (editMode && !dynamic) {
+                        if (editMode && this.props.inlineEditor && !dynamic) {
                             eleProps.tag = tagName
                             tagName = 'ContentEditable'
                         }
@@ -789,7 +792,7 @@ class JsonDom extends React.Component {
                         eleProps.match = match
                         eleProps._this = this
                     }
-                    if( key.startsWith('inHtmlComponent')){
+                    if (key.startsWith('inHtmlComponent')) {
                         eleProps._key = key
                     }
 
@@ -801,14 +804,11 @@ class JsonDom extends React.Component {
                     if (className) {
                         eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                     }
-                    if (editMode && $inlineEditor !== false) {
+                    if (editMode && this.props.inlineEditor && $inlineEditor !== false) {
 
-                        if (this.props.inlineEditor) {
-                            const rawJson = this.getJsonRaw(this.props, true)
-                            if (rawJson) {
-
-                                eleProps._json = rawJson
-                            }
+                        const rawJson = this.getJsonRaw(this.props, true)
+                        if (rawJson) {
+                            eleProps._json = rawJson
                         }
 
                         if ($edit) {
@@ -1038,13 +1038,13 @@ class JsonDom extends React.Component {
     }
 
     prettyErrorMessage = (e, code) => {
-        const line = e.stack.split('\n')[1], matches= line.match(/:(\d*):(\d*)/)
-        let lineNrStr, column,errorMsg = '<pre style="margin-top:2rem">'
+        const line = e.stack.split('\n')[1], matches = line.match(/:(\d*):(\d*)/)
+        let lineNrStr, column, errorMsg = '<pre style="margin-top:2rem">'
 
-        if(matches && matches.length>2){
+        if (matches && matches.length > 2) {
             lineNrStr = matches[1]
             column = matches[2]
-        }else{
+        } else {
             lineNrStr = column = 0
         }
 

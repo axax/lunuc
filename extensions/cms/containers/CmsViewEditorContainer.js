@@ -61,8 +61,9 @@ class CmsViewEditorContainer extends React.Component {
     static propsToState(props, state) {
         const {template, script, style, serverScript, resources, dataResolver, ssr, urlSensitiv, status, parseResolvedData, alwaysLoadAssets} = props.cmsPage || {}
         let settings = null
-        if (props.keyValue) {
-            // TODO optimize so JSON.parse is only called once
+        if(props.cmsPage && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug && state.settings && !state.settings._default){
+            settings =state.settings
+        }else if (props.keyValue) {
             try {
                 settings = JSON.parse(props.keyValue.value)
             } catch (e) {
@@ -70,7 +71,7 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         if(!settings) {
-            settings = Object.assign({},CmsViewEditorContainer.lastSettings)
+            settings = Object.assign({_default:true},CmsViewEditorContainer.lastSettings)
         }
 
         const result = {
@@ -781,9 +782,10 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     saveSettings() {
-        const key = settingKeyPrefix + this.props.slug, settings = this.state.settings
 
         this._saveSettings = () => {
+            const key = settingKeyPrefix + this.props.slug,
+                settings = this.state.settings
             clearTimeout(this.saveSettingsTimeout)
             this.saveSettingsTimeout = 0
             this.props.setKeyValue(key, settings, false, true)
@@ -841,9 +843,10 @@ const CmsViewEditorContainerWithGql = compose(
                 fetchPolicy: 'network-only'
             }
         },
-        props: ({data: {keyValue}}) => {
+        props: ({data: {keyValue, loading}}) => {
             return {
-                keyValue
+                keyValue,
+                loadingKeyValue:loading
             }
         }
     }),

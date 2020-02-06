@@ -6,6 +6,7 @@ import DomUtil from 'client/util/dom'
 class QuillEditor extends React.Component {
 
     static instanceCounter = 0
+    static loadedStyles = []
 
     isInit = false
 
@@ -16,26 +17,27 @@ class QuillEditor extends React.Component {
         this.state = QuillEditor.propsToState(props)
     }
 
-    static getDerivedStateFromProps(nextProps, prevState) {
+   /* static getDerivedStateFromProps(nextProps, prevState) {
         if (prevState.value !== nextProps.children) {
+            console.log(nextProps.children, prevState.value)
             return QuillEditor.propsToState(nextProps)
         }
         return null
-    }
+    }*/
 
     static propsToState(props) {
-        return {value:props.children}
+        return {value: props.children}
     }
 
     shouldComponentUpdate(props, state) {
         const readOnlyChanged = props.readOnly !== this.props.readOnly
         if (readOnlyChanged) {
             this.isInit = false
-        }else if(this.state.value !== state.value){
-            setTimeout(()=>{
+        } else if (this.state.value !== state.value) {
+            setTimeout(() => {
                 this.quill.setContents([])
-                this.quill.clipboard.dangerouslyPasteHTML(0,state.value)
-            },0)
+                this.quill.clipboard.dangerouslyPasteHTML(0, state.value)
+            }, 0)
         }
 
         return readOnlyChanged
@@ -46,16 +48,32 @@ class QuillEditor extends React.Component {
     }
 
     initEditor() {
+        const theme = this.props.theme || 'snow'
+
         if (!this.isReadOnly(this.props) && !this.isInit) {
 
             const quillIsReady = () => {
 
                 this.isInit = true
                 const toolbar = this.props.toolbar || [
-                    [{header: [1, 2, false]}],
-                    ['bold', 'italic', 'underline'],
-                    ['image', 'code-block']
-                ]
+                        ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+                        /* ['blockquote', 'code-block'],*/
+
+                        /*[{ 'header': 1 }, { 'header': 2 }],   */            // custom button values
+                        [{'list': 'ordered'}, {'list': 'bullet'}],
+                        /*[{ 'script': 'sub'}, { 'script': 'super' }],  */    // superscript/subscript
+                        /*[{ 'indent': '-1'}, { 'indent': '+1' }],  */        // outdent/indent
+                        /*[{ 'direction': 'rtl' }],      */                   // text direction
+
+                        /*[{ 'size': ['small', false, 'large', 'huge'] }], */ // custom dropdown
+                        [{'header': [1, 2, 3, 4, 5, 6, false]}],
+
+                        [{'color': []}, {'background': []}],          // dropdown with defaults from theme
+                        /*[{ 'font': [] }],*/
+                        [{'align': []}],
+
+                        /*['clean']  */                                       // remove formatting button
+                    ]
                 this.quill = new Quill('#quilleditor' + this.instanceId, {
                     modules: {
                         toolbar,
@@ -65,7 +83,7 @@ class QuillEditor extends React.Component {
                             userOnly: true
                         }
                     },
-                    theme: 'snow'
+                    theme
                 })
 
                 this.quill.on('text-change', (e) => {
@@ -81,17 +99,18 @@ class QuillEditor extends React.Component {
             }
 
             if (!window.Quill) {
-                DomUtil.addStyle('https://cdn.quilljs.com/1.3.6/quill.snow.css')
-
                 DomUtil.addScript('https://cdn.quilljs.com/1.3.6/quill.min.js', {
                     onload: quillIsReady
                 })
             } else {
                 quillIsReady()
             }
-
-
         }
+        if( QuillEditor.loadedStyles.indexOf(theme)<0) {
+            DomUtil.addStyle('https://cdn.quilljs.com/1.3.6/quill.' + theme + '.css', {id: 'quill' + theme})
+            QuillEditor.loadedStyles.push(theme)
+        }
+
     }
 
     componentDidMount() {
@@ -103,10 +122,10 @@ class QuillEditor extends React.Component {
     }
 
     render() {
-        const {children, readOnly, toolbar, required, name, placeholder, value, ...rest} = this.props
+        const {children, readOnly, toolbar, required, theme, name, placeholder, value, ...rest} = this.props
         console.log('render QuillEditor')
         if (this.isReadOnly(this.props)) {
-            return <div dangerouslySetInnerHTML={{__html: this.state.value}} {...rest}></div>
+            return <div className="richtext-content" dangerouslySetInnerHTML={{__html: this.state.value}} {...rest}></div>
         }
         return <div {...rest}>
             <div id={'quilleditor' + this.instanceId} dangerouslySetInnerHTML={{__html: this.state.value}}/>

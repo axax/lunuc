@@ -6,10 +6,10 @@ export const getComponentByKey = (key, json) => {
     if (!json) return
     const posDash = key.lastIndexOf('-')
     let editedKey
-    if( posDash>=0){
+    if (posDash >= 0) {
         // key has a dash if it is a nested CMS Page
-        editedKey = key.substring(posDash+1)
-    }else{
+        editedKey = key.substring(posDash + 1)
+    } else {
         editedKey = key
     }
     const keyParts = editedKey.split('.')
@@ -25,10 +25,14 @@ export const getComponentByKey = (key, json) => {
         if (i > 0 && keyParts[i - 1] === '$loop') {
             continue
         }
-        const part = keyParts[i]
+        let part = keyParts[i]
         if (cur.constructor === Object && cur.c) cur = cur.c
         if (cur.constructor === Object && !isNaN(part)) cur = [cur]
 
+        if (!cur[part] && part === '$loop') {
+            // $loop and $for are the same
+            part = '$for'
+        }
         if (!cur[part]) {
             console.warn('Something is wrong with the key: ' + editedKey, part)
             return null
@@ -53,7 +57,7 @@ export const addComponent = ({key, json, index, component}) => {
         if (!component) {
             component = {'c': 'new component'}
         }
-        if (isNaN(index)) {
+        if (isNaN(index) || index < 0) {
             index = c.length
         }
 
@@ -72,7 +76,7 @@ export const removeComponent = (key, json) => {
     const parent = getComponentByKey(parentKey, json),
         child = getComponentByKey(key, json)
     if (parent && child) {
-        let c = parent.constructor===Array?parent:parent['c']
+        let c = parent.constructor === Array ? parent : parent['c']
         if (c.constructor !== Array) {
             c = ''
         } else {
@@ -85,7 +89,7 @@ export const removeComponent = (key, json) => {
 
         parent.c = c
         return true
-    }else{
+    } else {
         console.warn(`Can't remove component ${key}`)
     }
 

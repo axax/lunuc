@@ -19,7 +19,6 @@ class ContentEditable extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         if (nextProps.children !== prevState.dataOri) {
-            console.log('changed data',nextProps.children)
             return ContentEditable.getStateFromProps(nextProps)
         }
         return null
@@ -35,7 +34,10 @@ class ContentEditable extends React.Component {
         return React.createElement(tag, {
             contentEditable: true,
             onInput: (e) => {
-                const data = e.target.innerText
+                let data = e.target.innerText
+                if(props.dangerouslySetInnerHTML){
+                    data = data.replace(/(\r\n|\n|\r)/g,'<br />')
+                }
                 _this.setState({data}, () => {
                     onChange(data)
                 })
