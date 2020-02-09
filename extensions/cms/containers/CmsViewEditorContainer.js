@@ -91,7 +91,7 @@ class CmsViewEditorContainer extends React.Component {
             alwaysLoadAssets,
             public: props.cmsPage && props.cmsPage.public
         }
-        if (state && (['updating', 'updated'].indexOf(status) >= 0 || props.cmsPage && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug)) {
+        if (state && (['updating', 'updated'].indexOf(status) >= 0 || props && props.cmsPage && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug)) {
             // take value from state if there is any because it might be more up to date
             result.template = state.template
             result.script = state.script
