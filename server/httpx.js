@@ -33,7 +33,7 @@ exports.createServer = (opts, handler) => {
             // connection hangs, potentially crashing
             // the process. Prior to NodeJS 10.x
             // the socket may be resumed synchronously.
-            process.nextTick(() => socket.resume())
+            //process.nextTick(() => socket.resume())
         })
 
         socket.once('end', (e) => {

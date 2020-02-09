@@ -95,9 +95,22 @@ const styles = theme => ({
 const ALLOW_DROP = ['div', 'main', 'Col']
 const ALLOW_CHILDREN = ['div', 'main', 'ul', 'Col']
 
+
+document.addEventListener('keydown', (e)=>{
+    if( e.key === 'Alt'){
+        JsonDomHelper.altKeyDown=true
+    }
+})
+document.addEventListener('keyup', (e)=>{
+    if( e.key === 'Alt'){
+        JsonDomHelper.altKeyDown=false
+    }
+})
+
 class JsonDomHelper extends React.Component {
     static currentDragElement
     static disableEvents = false
+    static altKeyDown=false
 
     state = {
         hovered: false,
@@ -177,7 +190,7 @@ class JsonDomHelper extends React.Component {
     helperTimeoutIn = null
 
     onHelperMouseOver(e) {
-        if (JsonDomHelper.disableEvents)
+        if (JsonDomHelper.disableEvents || JsonDomHelper.altKeyDown)
             return
         e.stopPropagation()
         const {hovered, dragging} = this.state
@@ -203,8 +216,31 @@ class JsonDomHelper extends React.Component {
 
     }
 
+
+    onHelperMouseMove(e) {
+        //console.log(e.screenX, e.screenY)
+
+    }
+    onHelperKeyDown(e) {
+        console.log(e.key)
+
+    }
+
+    onHelperKeyUp(e) {
+        console.log(e.key)
+
+    }
+
     onHelperMouseOut(e) {
-        e.stopPropagation()
+        if(e) {
+            e.stopPropagation()
+        }
+        if (JsonDomHelper.altKeyDown) {
+            setTimeout(() => {
+                this.onHelperMouseOut()
+            }, 100)
+            return
+        }
         const {hovered, dragging} = this.state
 
         if (dragging) {
@@ -450,7 +486,8 @@ class JsonDomHelper extends React.Component {
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog} = this.state
         const events = {
             onMouseOver: this.onHelperMouseOver.bind(this),
-            onMouseOut: this.onHelperMouseOut.bind(this)
+            onMouseOut: this.onHelperMouseOut.bind(this),
+            onMouseMove: this.onHelperMouseMove.bind(this)
         }
         let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow
 
@@ -582,7 +619,7 @@ class JsonDomHelper extends React.Component {
 
                         }
                     }}
-                    className={classes.picker}>{isCms?<EditIcon />:<ImageIcon />}</div> : ''}</span>
+                    className={classes.picker}>{isCms?subJson.p.slug:<ImageIcon />}</div> : ''}</span>
         }
 
         if (_inlineEditor.picker) {
