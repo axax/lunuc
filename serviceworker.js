@@ -51,32 +51,38 @@ self.addEventListener('fetch', event => {
         return
     }
 
-    if ( event.request.url.indexOf( '/uploads/' ) >= 0 ) {
+    if (event.request.url.indexOf('/uploads/') >= 0) {
         return
     }
 
     // Skip cross-origin requests, like those for Google Analytics.
     if (event.request.method == 'GET' && (event.request.url.startsWith(self.location.origin) ||
-        HOSTS.some((host) => event.request.url.startsWith(host))
+            HOSTS.some((host) => event.request.url.startsWith(host))
         )) {
         event.respondWith(
             caches.match(event.request).then(cachedResponse => {
                 if (cachedResponse) {
+                    requestAndCache(event)
                     return cachedResponse
                 }
-                return caches.open(RUNTIME).then(cache => {
-                    return fetch(event.request).then(response => {
-                        if( response.status === 200) {
-                            // Put a copy of the response in the runtime cache.
-                            return cache.put(event.request, response.clone()).then(() => {
-                                return response
-                            })
-                        }else{
-                            return response
-                        }
-                    })
-                })
+                return requestAndCache(event)
             })
         )
     }
 })
+
+function requestAndCache(event) {
+
+    return caches.open(RUNTIME).then(cache => {
+        return fetch(event.request).then(response => {
+            if (response.status === 200) {
+                // Put a copy of the response in the runtime cache.
+                return cache.put(event.request, response.clone()).then(() => {
+                    return response
+                })
+            } else {
+                return response
+            }
+        })
+    })
+}
