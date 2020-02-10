@@ -858,7 +858,6 @@ class TypesContainer extends React.Component {
             _version: v || typeSettings._version || 'default'
         }
         result.type = type
-        console.log(result)
         return result
     }
 

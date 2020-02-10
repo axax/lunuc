@@ -492,6 +492,11 @@ class JsonDomHelper extends React.Component {
         }
         let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow
 
+
+        const isLoop = rest._key.indexOf('$loop') >= 0
+        const isCms = _WrappedComponent.name === 'Cms'
+
+
         if (_inlineEditor.allowDrop === undefined) {
             _inlineEditor.allowDrop = children && children.constructor === Array && ALLOW_DROP.indexOf(_tagName) >= 0
         }
@@ -504,15 +509,13 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        if (isTempalteEdit) {
+        if (!isLoop && isTempalteEdit) {
             events.draggable = 'true'
             events.onDragStart = this.onDragStart.bind(this)
             events.onDragEnd = this.onDragEnd.bind(this)
             events.onDrag = this.onDrag.bind(this)
             events.onDrop = this.onDrop.bind(this)
         }
-
-        const isCms = _WrappedComponent.name === 'Cms'
 
 
         if (!JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)) {
@@ -527,7 +530,6 @@ class JsonDomHelper extends React.Component {
             }
 
             if (isTempalteEdit) {
-                const isLoop = rest._key.indexOf('$loop') >= 0
 
                 menuItems.push({name: 'Edit template', icon: <BuildIcon/>, onClick: this.handleEditClick.bind(this)},
                     {

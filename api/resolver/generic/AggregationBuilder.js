@@ -328,7 +328,7 @@ export default class AggregationBuilder {
         let matchExpression
 
         if (['$gt', '$gte', '$lt', '$lte'].indexOf(comparator) >= 0) {
-            matchExpression = {[comparator]: parseFloat(filterValue)}
+            matchExpression = {[comparator]: type === 'ID'?filterValue:parseFloat(filterValue)}
         } else {
             matchExpression = {[comparator]: filterValue}
         }
