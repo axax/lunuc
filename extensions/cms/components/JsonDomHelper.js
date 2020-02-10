@@ -439,17 +439,18 @@ class JsonDomHelper extends React.Component {
     }
 
 
-    handleAddChildClick(component, addbelow) {
-        const {_cmsActions, _key, _json, _scope, _onchange} = this.props
+    handleAddChildClick(component, index) {
+        const {_key, _json, _onchange} = this.props
 
-        let newkey = _key, index = 0
-        if (addbelow) {
+        let newkey = _key
+        if (index) {
             newkey = newkey.substring(0, newkey.lastIndexOf('.'))
             if (newkey.indexOf('.') < 0) {
                 console.warn('can not add below', _key)
                 return
             }
-            index = -1 // last position
+        }else{
+            index = 0
         }
         addComponent({key: newkey, json: _json, index, component})
         _onchange(_json)
@@ -669,9 +670,9 @@ class JsonDomHelper extends React.Component {
 
                                              const compStr = JSON.stringify({'t': selected.value, ...selected.defaults}),
                                                  uid = Math.random().toString(36).substr(2, 9),
-                                                 comp = JSON.parse(compStr.replace(/__uid__/g, uid))
-
-                                             this.handleAddChildClick(comp, addChildDialog.addbelow)
+                                                 comp = JSON.parse(compStr.replace(/__uid__/g, uid)),
+                                                 pos=parseInt(rest._key.substring(rest._key.lastIndexOf('.')+1))+1
+                                           this.handleAddChildClick(comp, pos)
                                          }
                                          JsonDomHelper.disableEvents = false
                                          this.setState({addChildDialog: null})

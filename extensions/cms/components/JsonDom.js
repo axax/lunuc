@@ -422,6 +422,13 @@ class JsonDom extends React.Component {
     addStyle(style) {
         const id = 'jsondomstyle' + this.instanceId
         if (style) {
+
+          /*  tpl = new Function(DomUtil.toES5(` Util = this.Util,
+            _i = Util.tryCatch.bind(this),_t = this._t.bind(this.scope.data)
+                                                    return \`${style}\``))
+*/
+
+
             this.setStyle(style, true, id)
         } else {
             const el = document.getElementById(id)
