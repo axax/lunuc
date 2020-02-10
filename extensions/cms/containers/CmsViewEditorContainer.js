@@ -61,7 +61,7 @@ class CmsViewEditorContainer extends React.Component {
     static propsToState(props, state) {
         const {template, script, style, serverScript, resources, dataResolver, ssr, urlSensitiv, status, parseResolvedData, alwaysLoadAssets} = props.cmsPage || {}
         let settings = null
-        if(props && props.cmsPage && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug && state.settings && !state.settings._default){
+        if(props && props.cmsPage && state && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug && state.settings && !state.settings._default){
             settings =state.settings
         }else if (props.keyValue) {
             try {
