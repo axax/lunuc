@@ -12,6 +12,7 @@ import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, CAPABILITY_MANA
 import Cache from 'util/cache'
 import {withFilter} from 'graphql-subscriptions'
 import {getHostFromHeaders} from 'util/host'
+import Hook from "../../../util/hook";
 
 const createScopeForDataResolver = (query, _props) => {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
@@ -68,6 +69,9 @@ export default db => ({
             let cmsPages = await getCmsPage({db, context, slug, _version, headers, editmode})
 
             if (!cmsPages.results || cmsPages.results.length === 0) {
+
+                Hook.call('trackUser', {req, event: '404', slug, db, context})
+
                 throw new Error('Cms page doesn\'t exist')
             }
             const scope = {...createScopeForDataResolver(query, props), page: {slug, host: getHostFromHeaders(headers)}}

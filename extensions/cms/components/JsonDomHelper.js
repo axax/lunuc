@@ -657,7 +657,7 @@ class JsonDomHelper extends React.Component {
                 <_WrappedComponent {...rest} children={kids}/>
             </div>
         } else {
-            comp = <_WrappedComponent key={rest._key} {...events} {...rest} children={kids}/>
+            comp = <_WrappedComponent _inlineeditor="true" key={rest._key} {...events} {...rest} children={kids}/>
         }
         if (toolbar) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>]
