@@ -37,7 +37,7 @@ const cronjobUtil = {
             if( !noEntry ) {
                 GenericResolver.updateEnity(db, context, 'CronJobExecution', {
                     _id: dbResult._id,
-                    state: 'finished',
+                    state: result.scriptError?'error':'finished',
                     ...result
                 })
             }
