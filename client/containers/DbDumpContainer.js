@@ -88,6 +88,27 @@ class DbDumpContainer extends React.Component {
         a.click();
     }
 
+    authorizedRequest(url, name){
+        const xhr = new XMLHttpRequest
+
+        xhr.open(url)
+        xhr.responseType = 'blob'
+
+        xhr.addEventListener("load", () => {
+            if( xhr.status === 200) {
+
+                this.download(xhr.response, name, 'application/gzip')
+            }else{
+
+                alert(`Invalid status ${xhr.status}`)
+            }
+        }, false)
+
+        xhr.setRequestHeader('Authorization', Util.getAuthToken())
+        // xhr.overrideMimeType( "application/octet-stream; charset=x-user-defined;" )
+        xhr.send(null)
+    }
+
     render() {
         const {dbDumps, mediaDumps} = this.props
         const {creatingDump, creatingMediaDump, importingMediaDump, importMediaDumpDialog, importDbDumpDialog, importingDbDump} = this.state
@@ -113,24 +134,7 @@ class DbDumpContainer extends React.Component {
                                 primary: i.name,
                                 onClick: () => {
 
-                                    const xhr = new XMLHttpRequest
-
-                                    xhr.open("GET", BACKUP_URL + '/dbdumps/' + i.name)
-                                    xhr.responseType = 'blob'
-
-                                    xhr.addEventListener("load", () => {
-                                        if( xhr.status === 200) {
-
-                                            this.download(xhr.response, 'backup.gz', 'application/gzip')
-                                        }else{
-
-                                            alert(`Invalid status ${xhr.status}`)
-                                        }
-                                    }, false)
-
-                                    xhr.setRequestHeader('Authorization', Util.getAuthToken())
-                                    // xhr.overrideMimeType( "application/octet-stream; charset=x-user-defined;" )
-                                    xhr.send(null)
+                                    this.authorizedRequest("GET", BACKUP_URL + '/dbdumps/' + i.name, 'db.backup.gz' )
 
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size
@@ -157,8 +161,7 @@ class DbDumpContainer extends React.Component {
                             a.push({
                                 primary: i.name,
                                 onClick: () => {
-                                    window.location.href = BACKUP_URL + '/mediadumbs/' + i.name
-                                    //history.push(ADMIN_BASE_URL + '/post/' + post._id)
+                                    this.authorizedRequest("GET", BACKUP_URL + '/mediadumbs/' + i.name, 'medias.backup.gz' )
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size
                             })
