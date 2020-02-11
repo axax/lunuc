@@ -161,7 +161,7 @@ class DbDumpContainer extends React.Component {
                             a.push({
                                 primary: i.name,
                                 onClick: () => {
-                                    this.authorizedRequest(BACKUP_URL + '/mediadumbs/' + i.name, 'medias.backup.gz' )
+                                    this.authorizedRequest(BACKUP_URL + '/mediadumps/' + i.name, 'medias.backup.gz' )
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size
                             })
