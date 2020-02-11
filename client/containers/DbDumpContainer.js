@@ -91,7 +91,7 @@ class DbDumpContainer extends React.Component {
     authorizedRequest(url, name){
         const xhr = new XMLHttpRequest
 
-        xhr.open(url)
+        xhr.open("GET",url)
         xhr.responseType = 'blob'
 
         xhr.addEventListener("load", () => {
@@ -134,7 +134,7 @@ class DbDumpContainer extends React.Component {
                                 primary: i.name,
                                 onClick: () => {
 
-                                    this.authorizedRequest("GET", BACKUP_URL + '/dbdumps/' + i.name, 'db.backup.gz' )
+                                    this.authorizedRequest(BACKUP_URL + '/dbdumps/' + i.name, 'db.backup.gz' )
 
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size
@@ -161,7 +161,7 @@ class DbDumpContainer extends React.Component {
                             a.push({
                                 primary: i.name,
                                 onClick: () => {
-                                    this.authorizedRequest("GET", BACKUP_URL + '/mediadumbs/' + i.name, 'medias.backup.gz' )
+                                    this.authorizedRequest(BACKUP_URL + '/mediadumbs/' + i.name, 'medias.backup.gz' )
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size
                             })
