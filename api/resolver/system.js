@@ -16,7 +16,7 @@ import {withFilter} from 'graphql-subscriptions'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail'
 import {getType} from 'util/types'
-
+import os from 'os'
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
 const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ', 'pwd', 'ls', 'ping']
@@ -90,7 +90,11 @@ export const systemResolver = (db) => ({
                 if (command === 'clearcache') {
                     pubsub.publish('subscribeRun', {
                         userId: context.id,
-                        subscribeRun: {event: 'end', response: `${Object.keys(Cache.cache).length} cached items cleared.`, id: currentId}
+                        subscribeRun: {
+                            event: 'end',
+                            response: `${Object.keys(Cache.cache).length} cached items cleared.`,
+                            id: currentId
+                        }
                     })
                     Cache.cache = {}
 
@@ -301,37 +305,37 @@ export const systemResolver = (db) => ({
 
             const col = db.collection(collection)
             const typeDefinition = getType(collection)
-            if( typeDefinition ) {
+            if (typeDefinition) {
 
                 jsonParsed.forEach(entry => {
 
-                    const match={}, set ={}
+                    const match = {}, set = {}
 
-                    if( entry._id ){
-                        match._id=ObjectId(entry._id)
+                    if (entry._id) {
+                        match._id = ObjectId(entry._id)
                     }
-                    typeDefinition.fields.forEach(field=>{
+                    typeDefinition.fields.forEach(field => {
 
 
-                        if( field.unique ){
-                            match[field.name]= entry[field.name]
-                        }else{
+                        if (field.unique) {
+                            match[field.name] = entry[field.name]
+                        } else {
                             set[field.name] = entry[field.name]
                         }
                     })
 
-                    console.log(match,set)
+                    console.log(match, set)
                     col.updateOne(match, {$set: set}, {upsert: true})
 
                 })
             }
             /*findAndReplaceObjectIds(jsonParsed)
-            const startTimeAggregate = new Date()
+             const startTimeAggregate = new Date()
 
-            let a = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
-            console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)*/
+             let a = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
+             console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)*/
 
-            return {result:'imported'}
+            return {result: 'imported'}
         }
     },
     Mutation: {
@@ -381,8 +385,25 @@ export const systemResolver = (db) => ({
                 throw new Error(`No files in folder -> ${media_dir}`)
             }
 
+            const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lunuc'))
+            files.forEach((file) => {
+                const stat = fs.lstatSync(media_dir + '/' + file)
+                if (!stat.isDirectory() && stat.size < 10000000) {
+                    // only include files small then 10MBs
+                    fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
+                }
+            })
+
+
             // zip media dir
-            zipper.sync.zip(media_dir).compress().save(fullName)
+            zipper.sync.zip(tmpDir).compress().save(fullName)
+
+            //remove temp files
+            const tempFiles = fs.readdirSync(tmpDir)
+            tempFiles.forEach((file) => {
+                fs.unlinkSync(path.join(tmpDir, file))
+            })
+            fs.rmdirSync(tmpDir)
 
 
             const stats = fs.statSync(fullName)
