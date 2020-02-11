@@ -128,8 +128,8 @@ const GenericResolver = {
         })
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
-        if (typeName.indexOf("GenericData") >= 0) {
-            console.log(JSON.stringify(dataQuery, null, 4))
+        if (typeName.indexOf("UserTracking") >= 0) {
+           // console.log(JSON.stringify(dataQuery, null, 4))
         }
         //console.log(JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)

@@ -18,6 +18,7 @@ import {
 import classNames from 'classnames'
 import AddToBody from './AddToBody'
 import DomUtil from 'client/util/dom'
+import Util from 'client/util'
 import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
 import JsonEditor from './JsonEditor'
 import config from 'gen/config'
@@ -33,13 +34,13 @@ const styles = theme => ({
         minWidth: '10px',
         minHeight: '10px',
         display: 'flex',
-        border: '1px dashed #000',
+        border: '1px dashed rgba(0,0,0,0.3)',
         pointerEvents: 'none',
         justifyContent: 'center',
         alignItems: 'center'
     },
     bgYellow: {
-        background: 'rgba(245, 245, 66,0.1)',
+        background: 'rgba(245, 245, 66,0.08)',
     },
     bgBlue: {
         background: 'rgba(84, 66, 245,0.2)',
@@ -92,7 +93,9 @@ const styles = theme => ({
     }
 })
 
-const ALLOW_DROP = ['div', 'main', 'Col']
+const ALLOW_DROP = ['div', 'main', 'Col', 'Row']
+const ALLOW_DROP_IN = {'Col':['Row'],'li':['ul']}
+const ALLOW_DROP_FROM = {'Row':['Col']}
 const ALLOW_CHILDREN = ['div', 'main', 'ul', 'Col']
 
 
@@ -319,6 +322,9 @@ class JsonDomHelper extends React.Component {
                  }*/
                 const tags = document.querySelectorAll('.' + this.props.classes.dropArea)
 
+                const fromTagName=JsonDomHelper.currentDragElement.props._tagName,
+                    allowDropIn = ALLOW_DROP_IN[fromTagName]
+
                 for (let i = 0; i < tags.length; ++i) {
                     const tag = tags[i]
                     if (draggable === tag.nextSibling || draggable === tag.previousSibling) {
@@ -337,14 +343,20 @@ class JsonDomHelper extends React.Component {
                     }
 
                     if (JsonDomHelper.currentDragElement) {
-                        const pos = DomUtil.elemOffset(node)
+                        const tagName = tag.getAttribute('data-tag-name')
+                        if( !allowDropIn || allowDropIn.indexOf(tagName)>=0) {
 
-                        const distance = Math.abs(this._clientY - (pos.top + node.offsetHeight / 2))
-                        if (distance < 50) {
-                            tag.style.display = 'block'
-                        } else {
-                            if (distance > 150)
-                                tag.style.display = 'none'
+                            const allowDropFrom = ALLOW_DROP_FROM[tagName]
+                            if( !allowDropFrom || allowDropFrom.indexOf(fromTagName)>=0) {
+                                const pos = DomUtil.elemOffset(node)
+                                const distance = Math.abs(this._clientY - (pos.top + node.offsetHeight / 2))
+                                if (distance < 50) {
+                                    tag.style.display = 'block'
+                                } else {
+                                    if (distance > 150)
+                                        tag.style.display = 'none'
+                                }
+                            }
                         }
                     }
                 }
@@ -443,7 +455,7 @@ class JsonDomHelper extends React.Component {
         const {_key, _json, _onchange} = this.props
 
         let newkey = _key
-        if (index) {
+        if (index !== undefined) {
             newkey = newkey.substring(0, newkey.lastIndexOf('.'))
             if (newkey.indexOf('.') < 0) {
                 console.warn('can not add below', _key)
@@ -477,9 +489,40 @@ class JsonDomHelper extends React.Component {
             onDrop={this.onDrop.bind(this)}
             data-key={rest._key}
             data-index={index}
+            data-tag-name={rest._tagName}
             key={`${rest._key}.dropArea.${index}`}
             style={{paddingLeft: (10 * (rest._key.split('.').length - 1))}}
             className={this.props.classes.dropArea}>drop here ${rest.id || rest._key}</div>
+    }
+
+    openPicker(picker){
+        const {_onchange, _key, _json} = this.props
+
+        const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
+            left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
+
+        const newwindow = window.open(
+            `/admin/types/?noLayout=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`, '_blank',
+            'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
+
+        newwindow.onbeforeunload = () => {
+            if (newwindow.resultValue) {
+                //_cmsActions.editCmsComponent(rest._key, _json, _scope)
+                const source = getComponentByKey(_key, _json)
+                if (source) {
+                    if(picker.template){
+                        source.$c = Util.replacePlaceholders(picker.template.replace(/\\\{/g,'{'),newwindow.resultValue)
+                    }else {
+                        if (!source.p) {
+                            source.p = {}
+                        }
+                        source.p.src = UPLOAD_URL + '/' + newwindow.resultValue._id
+                    }
+                    _onchange(_json)
+                }
+            }
+
+        }
     }
 
     render() {
@@ -574,7 +617,7 @@ class JsonDomHelper extends React.Component {
                 style={{top: this.state.top, left: this.state.left, height: this.state.height}}
                 className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}>
                 <div
-                    className={classes.info}>{_edit ? _edit.type + ': ' : ''}{subJson ? subJson.t + ' - ' : ''}{rest.id || rest._key}</div>
+                    className={classes.info}>{_edit ? _edit.type + ': ' : ''}{subJson ? subJson.t || 'Text' + ' - ' : ''}{rest.id || rest._key}</div>
                 <SimpleMenu
                     onOpen={() => {
                         this.setState({toolbarMenuOpen: true})
@@ -597,32 +640,10 @@ class JsonDomHelper extends React.Component {
                         if (isCms) {
                             window.location = '/' + subJson.p.slug
                         } else {
-                            const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
-                                left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
-
-                            const newwindow = window.open(
-                                `/admin/types/?noLayout=true&fixType=${_inlineEditor.picker.type}&baseFilter=${encodeURIComponent(_inlineEditor.picker.baseFilter || '')}`, '_blank',
-                                'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
-
-                            newwindow.onbeforeunload = () => {
-
-                                if (newwindow.resultValue) {
-                                    //_cmsActions.editCmsComponent(rest._key, _json, _scope)
-                                    const source = getComponentByKey(rest._key, _json)
-                                    if (source) {
-                                        if (!source.p) {
-                                            source.p = {}
-                                        }
-                                        source.p.src = UPLOAD_URL + '/' + newwindow.resultValue._id
-                                        _onchange(_json)
-                                    }
-                                }
-
-                            }
-
+                            this.openPicker(_inlineEditor.picker)
                         }
                     }}
-                    className={classes.picker}>{isCms?subJson.p.slug:<ImageIcon />}</div> : ''}</span>
+                    className={classes.picker}>{isCms && subJson.p ?subJson.p.slug:<ImageIcon />}</div> : ''}</span>
         }
 
         if (_inlineEditor.picker) {
@@ -638,12 +659,12 @@ class JsonDomHelper extends React.Component {
             kids = []
             if (children && children.length) {
                 for (let i = 0; i < children.length; i++) {
-                    kids.push(this.getDropArea(rest, i))
+                    kids.push(this.getDropArea(this.props, i))
                     kids.push(children[i])
                 }
-                kids.push(this.getDropArea(rest, children.length))
+                kids.push(this.getDropArea(this.props, children.length))
             } else {
-                kids.push(this.getDropArea(rest, 0))
+                kids.push(this.getDropArea(this.props, 0))
             }
 
         } else {
@@ -672,8 +693,13 @@ class JsonDomHelper extends React.Component {
 
                                              const compStr = JSON.stringify({'t': selected.value, ...selected.defaults}),
                                                  uid = Math.random().toString(36).substr(2, 9),
-                                                 comp = JSON.parse(compStr.replace(/__uid__/g, uid)),
-                                                 pos=parseInt(rest._key.substring(rest._key.lastIndexOf('.')+1))+1
+                                                 comp = JSON.parse(compStr.replace(/__uid__/g, uid))
+                                             let pos
+
+                                             if( addChildDialog.addbelow) {
+                                                 // determine position to insert in parent node
+                                                 pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+                                             }
                                            this.handleAddChildClick(comp, pos)
                                          }
                                          JsonDomHelper.disableEvents = false

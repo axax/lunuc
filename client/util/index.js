@@ -128,7 +128,7 @@ const Util = {
         var a = query.split('&')
 
         var b = {}
-        for (var i = 0; i < a.length; ++i) {
+        for (let i = 0; i < a.length; ++i) {
             var p = a[i].split('=', 2)
             if (p[0]) {
                 if (p.length === 1)

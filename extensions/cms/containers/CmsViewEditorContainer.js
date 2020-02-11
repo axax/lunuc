@@ -497,7 +497,7 @@ class CmsViewEditorContainer extends React.Component {
             for (let i = 0, n = fields.length; i < n; i++) {
                 let field = fields[i]
                 if (i === n - 1) {
-                    result[field] = value
+                    result[field] = value.replace(/"/g,"'")
                 } else {
                     if( result[field]==undefined){
                         result[field] = {}

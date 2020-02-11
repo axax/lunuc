@@ -126,6 +126,9 @@ class JsonDom extends React.Component {
                     console.log(e)
                 }
             }
+            if(!rest.slug){
+                return <div>No Slug</div>
+            }
             return <CmsViewContainer key={rest.id}
                                      _props={_props}
                                      _parentRef={_this}

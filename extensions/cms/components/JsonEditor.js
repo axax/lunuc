@@ -27,18 +27,53 @@ const styles = theme => ({
 class JsonEditor extends React.Component {
 
     static components = [
-        {value: 'div', name: 'Container', defaults: {c: 'New container'}},
-        {value: 'Row', name: 'Layout 1/2', defaults: {c: [
-            {t:'Col.col-sm-6',c:'Spalte 1'},
-            {t:'Col.col-sm-6',c:'Spalte 2'}
-        ]}},
-        {value: 'SmartImage', name: 'Image', defaults: {$inlineEditor: {picker:{type:'Media'}}}},
+        {
+            value: 'div',
+            name: 'Data Container',
+            defaults: {
+                c: 'New container',
+                $inlineEditor: {picker: {type: 'GenericData', baseFilter: 'mimeType=pdf', template: ''}}
+            }
+        },
+        {
+            value: 'Cms',
+            name: 'Component',
+            defaults: {
+                $inlineEditor: {picker: {type: 'GenericData', baseFilter: 'mimeType=pdf', template: ''}}
+            }
+        },
+        {
+            value: 'a', name: 'Document', defaults: {
+                c: 'Select a Document',
+                $inlineEditor: {
+                    picker: {
+                        type: 'Media',
+                        baseFilter: 'mimeType=pdf',
+                        template: "<a title='$\\{name}' href='${_app_.config.UPLOAD_URL}/$\\{_id}'>$\\{name}</a>"
+                    }
+                },
+                p: {target: '_blank'}
+            }
+        },
+        {
+            value: 'Row', name: 'Layout 1/2', defaults: {
+                c: [
+                    {t: 'Col.col-sm-6', c: [{c: 'Spalte 1'}]},
+                    {t: 'Col.col-sm-6', c: [{c: 'Spalte 1'}]}
+                ]
+            }
+        },
+        {
+            value: 'SmartImage',
+            name: 'Image',
+            defaults: {$inlineEditor: {picker: {type: 'Media', baseFilter: 'mimeType=image'}}}
+        },
         {
             value: 'QuillEditor', name: 'Rich-Text block',
             defaults: {
                 c: "${_t('__uid__',null,'...')}",
                 p: {
-                    name:'__uid__',
+                    name: '__uid__',
                     readOnly: '${!inlineEditor}',
                     theme: 'bubble'
                 },
