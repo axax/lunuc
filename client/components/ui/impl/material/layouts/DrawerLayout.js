@@ -274,7 +274,7 @@ class DrawerLayout extends React.Component {
                                  onMouseDown={this.dividerMouseDown}></div>
                         </div>
                     </Drawer>
-                    <main style={contentFixed}
+                    <main data-layout-content="true" style={contentFixed}
                           className={classNames(classes.content, fixedLayout && !open && classes.contentClose)}>
                         {children}
                     </main>

@@ -40,7 +40,7 @@ import withType from '../../../client/components/types/withType'
 import Util from "../../../client/util";
 import {CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import CodeEditor from 'client/components/CodeEditor'
-
+import {propertyByPath, setPropertyByPath} from '../../../util/json'
 
 class CmsViewEditorContainer extends React.Component {
 
@@ -195,7 +195,7 @@ class CmsViewEditorContainer extends React.Component {
             ,
             <ErrorHandler key="errorHandler" snackbar/>,
             <NetworkStatusHandler key="networkStatus"/>,
-            <SimpleDialog key="templateEditor" open={!!cmsComponentEdit.key}
+            <SimpleDialog fullWidth={true} maxWidth="md" key="templateEditor" open={!!cmsComponentEdit.key}
                           onClose={this.handleComponentEditClose.bind(this)}
                           actions={[{
                               key: 'ok',
@@ -414,7 +414,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>
 
 
-                    <Expandable title="Related pages"
+                    <Expandable title="Pages"
                                 onChange={this.handleSettingChange.bind(this, 'relatedPagesExpanded')}
                                 expanded={settings.relatedPagesExpanded}>
                         <MenuList>
@@ -492,19 +492,7 @@ class CmsViewEditorContainer extends React.Component {
         const {segment, dataResolver} = this.findSegementInDataResolver(path)
 
         if (segment) {
-            const fields = path.split('.')
-            let result = segment
-            for (let i = 0, n = fields.length; i < n; i++) {
-                let field = fields[i]
-                if (i === n - 1) {
-                    result[field] = value.replace(/"/g,"'")
-                } else {
-                    if( result[field]==undefined){
-                        result[field] = {}
-                    }
-                    result = result[field]
-                }
-            }
+            setPropertyByPath(value,path,segment)
             this.handleDataResolverChange(JSON.stringify(dataResolver, null, 4), instantSave)
         }
     }
@@ -522,7 +510,7 @@ class CmsViewEditorContainer extends React.Component {
                     props = JSON.parse(correctJson)
                 }
 
-                return {defaultValue: Util.propertyByPath(path, segment), ...props}
+                return {defaultValue: propertyByPath(path, segment), ...props}
 
             } catch (e) {
                 console.log(e)

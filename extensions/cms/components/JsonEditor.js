@@ -69,6 +69,25 @@ class JsonEditor extends React.Component {
             defaults: {$inlineEditor: {picker: {type: 'Media', baseFilter: 'mimeType=image'}}}
         },
         {
+            value: 'Link',
+            name: 'Link',
+            options: {
+                c: {value: '', placeholder: 'Name eingeben',label:'Name'},
+                p_href: {value: '', placeholder: 'Url eingeben',label:'Url'},
+                p_className: {
+                    label:'Style',
+                    uitype:'select',
+                    enum:[
+                        {
+                            name: 'Button',
+                            value: 'button'
+                        }
+                    ]
+                }
+            },
+            defaults: {}
+        },
+        {
             value: 'QuillEditor', name: 'Rich-Text block',
             defaults: {
                 c: "${_t('__uid__',null,'...')}",
@@ -90,6 +109,9 @@ class JsonEditor extends React.Component {
         {value: 'h1$', name: 'Header 1', defaults: {c: 'Header 1'}},
         {value: 'h2$', name: 'Header 2', defaults: {c: 'Header 2'}}
     ]
+
+
+
 
     constructor(props) {
         super(props)

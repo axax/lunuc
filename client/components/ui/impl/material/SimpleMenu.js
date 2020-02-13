@@ -34,7 +34,7 @@ class SimpleMenu extends React.Component {
 
     render() {
         const {anchorEl} = this.state
-        const {style, items, label, mini, color, fab, onClick, className} = this.props
+        const {style, items, label, mini, color, fab, onClick, className,open,onOpen,...rest} = this.props
         return (
             <div className={className} style={style}>
                 {
@@ -76,8 +76,9 @@ class SimpleMenu extends React.Component {
                 <Menu
                     id="simple-menu"
                     anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
+                    open={open!==undefined?!!open:Boolean(anchorEl)}
                     onClose={this.handleClose}
+                    {...rest}
                 >
                     {items.map((item, i) => {
                         return <MenuItem disabled={item.disabled} onClick={(e) => {
@@ -108,6 +109,7 @@ SimpleMenu.propTypes = {
     label: PropTypes.string,
     mini: PropTypes.bool,
     fab: PropTypes.bool,
+    open: PropTypes.any,
     color: PropTypes.string,
     onOpen: PropTypes.func,
     onClose: PropTypes.func

@@ -1,14 +1,15 @@
 import React from 'react'
 import Hook from 'util/hook'
 import Async from 'client/components/Async'
-
+import {
+    SimpleButton
+} from 'ui/admin'
 
 const GenericForm = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
 
 const Typography = (props) => <Async {...props} expose="Typography"
                                      load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
-
 
 export default () => {
 
@@ -33,6 +34,7 @@ export default () => {
         }
     })
 
+
     Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, parentRef}) {
 
         if (type === 'GenericData') {
@@ -50,7 +52,17 @@ export default () => {
                 delete newDataToEdit.data
 
                 newFields.definition.readOnly=true
-                props.title=newDataToEdit.definition.name
+                props.title=<React.Fragment>{newDataToEdit.definition.name} <div style={{float:'right',textAlign:'right'}}><SimpleButton size="small" variant="contained" color="primary"
+                                                                                                                                         onClick={()=>{
+
+                                                                                                                                             const a = document.createElement('a'),
+                                                                                                                                                 blob = new Blob([JSON.stringify(JSON.parse(dataToEdit.data),null,4)], {'type':'text/plain'})
+                                                                                                                                             a.href = window.URL.createObjectURL(blob)
+                                                                                                                                            // a.download = 'json.txt'
+                                                                                                                                             a.target='_blank'
+                                                                                                                                             a.click()
+
+                                                                                                                                         }}>Show JSON</SimpleButton></div></React.Fragment>
 
                 struct.fields.forEach(field => {
                     const oriName = field.name, newName = 'data_' + oriName

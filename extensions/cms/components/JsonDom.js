@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import Hook from 'util/hook'
 import _t from 'util/i18n'
 import Util from 'client/util'
+import {propertyByPath} from '../../../util/json'
 import QuillEditor from 'client/components/QuillEditor'
 import {getComponentByKey} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
@@ -136,8 +137,8 @@ class JsonDom extends React.Component {
                                      aboutToChange={_this.props.aboutToChange}
                                      dynamic={true} {...rest}/>
         },
-        'ContentEditable': ({_this, _key, ...props}) => <ContentEditable
-            onChange={(v) => _this.emitChange(_key, v)} {...props} />
+        'ContentEditable': ({_this, ...props}) => <ContentEditable
+            onChange={(v) => _this.emitChange(props._key, v)} {...props} />
     }
 
     // Makes sure that the hook is only called once on the first instantiation of this class
@@ -540,7 +541,7 @@ class JsonDom extends React.Component {
                  */
                 if ($ifexist) {
                     try {
-                        if (Util.propertyByPath($ifexist, scope) === undefined) {
+                        if (propertyByPath($ifexist, scope) === undefined) {
                             return
                         }
                     } catch (e) {
@@ -557,7 +558,7 @@ class JsonDom extends React.Component {
                     if (match && match.length === 4) {
                         let prop
                         try {
-                            prop = Util.propertyByPath(match[1], scope)
+                            prop = propertyByPath(match[1], scope)
                         } catch (e) {
                         }
                         if (match[2] === '==') {
@@ -616,7 +617,7 @@ class JsonDom extends React.Component {
                     if ($d) {
                         try {
                             // get data from scope by path (foo.bar)
-                            data = Util.propertyByPath($d, scope)
+                            data = propertyByPath($d, scope)
                         } catch (e) {
                             //this.parseError = e
                             this.emitJsonError(e, {loc: 'Loop Datasrouce'})
@@ -785,7 +786,7 @@ class JsonDom extends React.Component {
                             console.warn(`Don't use property value without name in ${scope.page.slug}`)
                         }
                         if (eleProps.props && eleProps.props.$data) {
-                            eleProps.props.data = Object.assign(Util.propertyByPath(eleProps.props.$data, scope), eleProps.props.data)
+                            eleProps.props.data = Object.assign(propertyByPath(eleProps.props.$data, scope), eleProps.props.data)
                         }
                     }
 

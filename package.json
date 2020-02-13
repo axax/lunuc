@@ -80,12 +80,13 @@
     "apollo-link-error": "^1.1.12",
     "apollo-link-http": "^1.5.16",
     "apollo-link-ws": "^1.0.19",
-    "aws-sdk": "^2.615.0",
+    "aws-sdk": "^2.617.0",
     "babel-plugin-css-modules-transform": "^1.6.2",
     "babel-plugin-dynamic-import-node": "^2.3.0",
     "babel-plugin-module-resolver": "^4.0.0",
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.19.0",
+    "cheerio": "^1.0.0-rc.3",
     "classnames": "^2.2.6",
     "codemirror": "^5.51.0",
     "compression": "^1.7.4",
@@ -109,7 +110,7 @@
     "less": "^3.11.1",
     "mail-notifier": "^0.5.0",
     "merge-graphql-schemas": "^1.7.6",
-    "mongodb": "^3.5.2",
+    "mongodb": "^3.5.3",
     "native-dns": "^0.7.0",
     "natural": "^0.6.3",
     "node-cron": "^2.0.3",
@@ -131,6 +132,7 @@
     "request-promise": "^4.2.5",
     "subscriptions-transport-ws": "^0.9.16",
     "telegraf": "^3.36.0",
+    "xml2js": "^0.4.23",
     "ytdl-core": "^1.0.7",
     "zip-local": "^0.3.4"
   },
@@ -149,7 +151,7 @@
     "uglifyjs-webpack-plugin": "^2.2.0",
     "webpack": "^4.41.6",
     "webpack-bundle-analyzer": "^3.6.0",
-    "webpack-cli": "^3.3.10",
+    "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.10.3"
   }
 }

@@ -40,7 +40,7 @@ const manualManipulations = (data, typeName) => {
                 for (let y = 0; y < typeDefinition.fields.length; y++) {
                     const field = typeDefinition.fields[y]
                     // convert type Object to String
-                    if (field && field.type === 'Object' ) {
+                    if (field && field.type === 'Object') {
 
                         hasField = true
 
@@ -52,15 +52,15 @@ const manualManipulations = (data, typeName) => {
 
                     // in case a field changed to localized
                     /*if( field.localized ){
-                        hasField = true
-                        if (item[field.name].constructor !== Object) {
-                            const translations = {}
-                            config.LANGUAGES.forEach(lang => {
-                                translations[lang] = item[field.name]
-                            })
-                            item[field.name] = translations
-                        }
-                    }*/
+                     hasField = true
+                     if (item[field.name].constructor !== Object) {
+                     const translations = {}
+                     config.LANGUAGES.forEach(lang => {
+                     translations[lang] = item[field.name]
+                     })
+                     item[field.name] = translations
+                     }
+                     }*/
 
                 }
                 if (!hasField) {
@@ -91,14 +91,14 @@ const GenericResolver = {
             } else {
                 const typeDefinition = getType(typeName)
                 let userFilter = true
-                if( typeDefinition ) {
-                    if(typeDefinition.noUserRelation){
-                        userFilter=false
+                if (typeDefinition) {
+                    if (typeDefinition.noUserRelation) {
+                        userFilter = false
                     }
                     if (typeDefinition.access && typeDefinition.access.read) {
-                        if(await Util.userHasCapability(db, context, typeDefinition.access.read)){
+                        if (await Util.userHasCapability(db, context, typeDefinition.access.read)) {
                             match = {}
-                            userFilter=false
+                            userFilter = false
                         }
                     }
                 }
@@ -128,8 +128,8 @@ const GenericResolver = {
         })
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
-        if (typeName.indexOf("UserTracking") >= 0) {
-           // console.log(JSON.stringify(dataQuery, null, 4))
+        if (typeName.indexOf("GenericData") >= 0) {
+            //console.log(JSON.stringify(dataQuery, null, 4))
         }
         //console.log(JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
@@ -156,11 +156,11 @@ const GenericResolver = {
             result.total = result.meta[0].count
         } else {
             /*const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()
-            if (countResults.length > 0) {
-                result.total = countResults[0].count
-            } else {
-                result.total = 0
-            }*/
+             if (countResults.length > 0) {
+             result.total = countResults[0].count
+             } else {
+             result.total = 0
+             }*/
             result.total = 0
         }
         //console.log(JSON.stringify(result, null, 4))
@@ -179,7 +179,7 @@ const GenericResolver = {
     createEntity: async (db, req, typeName, {_version, ...data}) => {
         const {context} = req
 
-        Hook.call('typeBeforeCreate', {type:typeName, _version, data, db, req})
+        Hook.call('typeBeforeCreate', {type: typeName, _version, data, db, req})
 
         const typeDefinition = getType(typeName)
 
@@ -209,9 +209,25 @@ const GenericResolver = {
             createdBy = userContext.id
             username = userContext.id
         }
+
+        //check if this field is a reference
+        const fields = getFormFields(typeName)
+
+
+        const dataSet = Object.keys(data).reduce((o, k) => {
+            if (fields[k] && fields[k].type === 'Object') {
+                // store as object
+                o[k] = JSON.parse(data[k])
+            } else {
+                o[k] = data[k]
+            }
+            return o
+        }, {})
+
         const collection = db.collection(collectionName)
+
         const insertResult = await collection.insertOne({
-            ...data,
+            ...dataSet,
             createdBy: ObjectId(createdBy)
         })
 
@@ -245,7 +261,7 @@ const GenericResolver = {
                 ...newData
             }
 
-            Hook.call('typeCreated', {type:typeName, data, db, context})
+            Hook.call('typeCreated', {type: typeName, data, db, context})
             Hook.call('typeCreated_' + typeName, {data, db})
 
             return allData
@@ -346,15 +362,15 @@ const GenericResolver = {
 
             const typeDefinition = getType(typeName)
             let userFilter = true
-            if( typeDefinition ) {
+            if (typeDefinition) {
                 if (typeDefinition.access && typeDefinition.access.update) {
-                    if(await Util.userHasCapability(db, context, typeDefinition.access.update)){
-                        userFilter=false
+                    if (await Util.userHasCapability(db, context, typeDefinition.access.update)) {
+                        userFilter = false
                     }
                 }
             }
 
-            if( userFilter ) {
+            if (userFilter) {
                 params.createdBy = ObjectId(context.id)
             }
         }

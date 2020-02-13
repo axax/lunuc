@@ -15,10 +15,12 @@ import {
     BuildIcon,
     ImageIcon
 } from 'ui/admin'
+import GenericForm from 'client/components/GenericForm'
 import classNames from 'classnames'
 import AddToBody from './AddToBody'
 import DomUtil from 'client/util/dom'
 import Util from 'client/util'
+import {setPropertyByPath} from '../../../util/json'
 import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
 import JsonEditor from './JsonEditor'
 import config from 'gen/config'
@@ -98,6 +100,31 @@ const ALLOW_DROP_IN = {'Col':['Row'],'li':['ul']}
 const ALLOW_DROP_FROM = {'Row':['Col']}
 const ALLOW_CHILDREN = ['div', 'main', 'ul', 'Col']
 
+const highlighterHandler = () =>{
+    const hightlighter = document.querySelector('[data-highlighter]')
+    if (hightlighter && hightlighter.constructor !== NodeList ) {
+        const key = hightlighter.getAttribute('data-highlighter')
+        const node = document.querySelector('[_key="'+key+'"]')
+
+        if (node && node.constructor !== NodeList ) {
+            const offset = DomUtil.elemOffset(node)
+            hightlighter.style.top = offset.top+'px'
+            hightlighter.style.left = offset.left+'px'
+            hightlighter.style.width = node.offsetWidth+'px'
+            hightlighter.style.height = node.offsetHeight+'px'
+
+
+            const toolbar = document.querySelector('[data-toolbar="'+key+'"]')
+            if (toolbar && toolbar.constructor !== NodeList ) {
+                toolbar.style.top = offset.top+'px'
+                toolbar.style.left = offset.left+'px'
+                toolbar.style.height = node.offsetHeight+'px'
+            }
+
+        }
+    }
+
+}
 
 document.addEventListener('keydown', (e)=>{
     if( e.key === 'Alt'){
@@ -110,10 +137,14 @@ document.addEventListener('keyup', (e)=>{
     }
 })
 
+document.addEventListener('scroll', highlighterHandler)
+
+
 class JsonDomHelper extends React.Component {
     static currentDragElement
     static disableEvents = false
     static altKeyDown=false
+    static mutationObserver=false
 
     state = {
         hovered: false,
@@ -132,47 +163,13 @@ class JsonDomHelper extends React.Component {
     }
 
     componentDidMount() {
-        this.registerObserver()
-    }
+        if(!JsonDomHelper.mutationObserver){
+            JsonDomHelper.mutationObserver = new MutationObserver(highlighterHandler)
 
-    registerObserver(){
-        if(!this.isRegisterObserver) {
-            const node = ReactDOM.findDOMNode(this)
-            if (node) {
-                this.isRegisterObserver = true
-                this.scrollHandler = () => {
-                    const {hovered, toolbarHovered, toolbarMenuOpen} = this.state
-                    if (hovered || toolbarHovered || toolbarMenuOpen) {
-
-                        this.setState({
-                            height: node.offsetHeight,
-                            width: node.offsetWidth,
-                            ...DomUtil.elemOffset(node)
-                        })
-                    }
-                }
-
-                this.resizeObserver = new ResizeObserver(this.scrollHandler)
-                this.resizeObserver.observe(node)
-                document.addEventListener('scroll', this.scrollHandler)
-            }else{
-                setTimeout(()=>{
-                    this.registerObserver()
-                },100)
-            }
         }
-    }
+        JsonDomHelper.mutationObserver.observe(document.querySelector('[data-layout-content]'),  { attributes: false, childList: true, characterData: true, subtree: true })
 
-    componentWillUnmount() {
-        const node = ReactDOM.findDOMNode(this)
-        if (node) {
-            if (this.resizeObserver) {
-                this.resizeObserver.unobserve(node)
-            }
-            document.removeEventListener('scroll', this.scrollHandler)
-        }
     }
-
 
     shouldComponentUpdate(props, state) {
         if (JsonDomHelper.currentDragElement && JsonDomHelper.currentDragElement != this) {
@@ -187,6 +184,7 @@ class JsonDomHelper extends React.Component {
             state.top !== this.state.top ||
             state.height !== this.state.height ||
             state.toolbarHovered !== this.state.toolbarHovered
+            state.mouseX !== this.state.mouseX
     }
 
     helperTimeoutOut = null
@@ -216,21 +214,6 @@ class JsonDomHelper extends React.Component {
                 this.setState(stat)
             }, 100)
         }
-
-    }
-
-
-    onHelperMouseMove(e) {
-        //console.log(e.screenX, e.screenY)
-
-    }
-    onHelperKeyDown(e) {
-        console.log(e.key)
-
-    }
-
-    onHelperKeyUp(e) {
-        console.log(e.key)
 
     }
 
@@ -531,7 +514,13 @@ class JsonDomHelper extends React.Component {
         const events = {
             onMouseOver: this.onHelperMouseOver.bind(this),
             onMouseOut: this.onHelperMouseOut.bind(this),
-            onMouseMove: this.onHelperMouseMove.bind(this)
+            /*onContextMenu: (e)=>{
+                e.preventDefault()
+                this.setState({
+                    mouseX: e.clientX - 2,
+                    mouseY: e.clientY - 4
+                })
+            }*/
         }
         let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow
 
@@ -612,6 +601,7 @@ class JsonDomHelper extends React.Component {
 
             toolbar = <div
                 key={rest._key + '.toolbar'}
+                data-toolbar={rest._key}
                 onMouseOver={this.onToolbarMouseOver.bind(this)}
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height}}
@@ -619,17 +609,24 @@ class JsonDomHelper extends React.Component {
                 <div
                     className={classes.info}>{_edit ? _edit.type + ': ' : ''}{subJson ? subJson.t || 'Text' + ' - ' : ''}{rest.id || rest._key}</div>
                 <SimpleMenu
+                    anchorReference={this.state.mouseY?"anchorPosition":"anchorEl"}
+                    anchorPosition={
+                        this.state.mouseY&& this.state.mouseX
+                            ? { top: this.state.mouseY, left: this.state.mouseX }
+                            : undefined
+                    }
                     onOpen={() => {
                         this.setState({toolbarMenuOpen: true})
                     }}
                     onClose={() => {
-                        this.setState({hovered: false, toolbarHovered: false, toolbarMenuOpen: false})
+                        this.setState({hovered: false, toolbarHovered: false, toolbarMenuOpen: false,mouseY:undefined,mouseX:undefined})
                     }}
                     className={classes.toolbarMenu} mini items={menuItems}/>
             </div>
 
             highlighter = <span
                 key={rest._key + '.highlighter'}
+                data-highlighter={rest._key}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}
                 className={classNames(classes.highlighter, isCms || _inlineEditor.picker ? classes.bgBlue : classes.bgYellow)}>{_inlineEditor.picker || isCms ?
                 <div
@@ -696,6 +693,13 @@ class JsonDomHelper extends React.Component {
                                                  comp = JSON.parse(compStr.replace(/__uid__/g, uid))
                                              let pos
 
+                                             if(addChildDialog.form){
+                                                 const fields = addChildDialog.form.state.fields
+                                                 Object.keys(fields).forEach(key=>{
+                                                     setPropertyByPath(fields[key],key,comp,'_')
+                                                 })
+                                             }
+
                                              if( addChildDialog.addbelow) {
                                                  // determine position to insert in parent node
                                                  pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
@@ -726,10 +730,15 @@ class JsonDomHelper extends React.Component {
                                 break
                             }
                         }
-                        this.setState({addChildDialog: {...addChildDialog, selected: item}})
+                        this.setState({addChildDialog: {...addChildDialog, selected: item, form: null}})
                     }}
                     items={JsonEditor.components}
                 />
+
+                { addChildDialog.selected && addChildDialog.selected.options && <GenericForm primaryButton={false} ref={(e) => {
+                    addChildDialog.form = e
+                }} fields={addChildDialog.selected.options}/>}
+
             </SimpleDialog></AddToBody>)}</React.Fragment>
         }
     }

@@ -265,9 +265,6 @@ const Util = {
         }
         return new Function(DomUtil.toES5('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`')).call({context})
     },
-    propertyByPath(path, obj) {
-        return path.split('.').reduce((res, prop) => res[prop], obj)
-    },
     translateUrl(lang) {
         if (lang === _app_.lang) return
         const p = window.location.pathname.split('/')

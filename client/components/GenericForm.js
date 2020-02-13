@@ -144,6 +144,8 @@ class GenericForm extends React.Component {
         }
         this.setState((prevState) => {
             const newState = Object.assign({}, {fields: {}}, prevState)
+
+            // for localization --> name.de / name.en
             const path = name.split('.')
             if (path.length == 2) {
                 if (!newState.fields[path[0]]) {
@@ -155,10 +157,6 @@ class GenericForm extends React.Component {
             }
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
-                /*setTimeout(() => {
-                    if(target.focus)
-                        target.focus()
-                }, 500)*/
             }
             newState.isValid = this.validate(newState)
             return newState
