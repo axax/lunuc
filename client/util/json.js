@@ -3,6 +3,7 @@
 export const propertyByPath = (path, obj) => {
     return path.split('.').reduce((res, prop) => res[prop], obj)
 }
+
 export const setPropertyByPath = (value, path, obj, separator='.')=> {
     const fields = path.split(separator)
     for (let i = 0, n = fields.length; i < n; i++) {

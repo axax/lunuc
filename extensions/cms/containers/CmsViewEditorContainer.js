@@ -40,7 +40,7 @@ import withType from '../../../client/components/types/withType'
 import Util from "../../../client/util";
 import {CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import CodeEditor from 'client/components/CodeEditor'
-import {propertyByPath, setPropertyByPath} from '../../../util/json'
+import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 
 class CmsViewEditorContainer extends React.Component {
 
