@@ -1,10 +1,10 @@
 
 
-export function propertyByPath(path, obj) => {
-    return path.split('.').reduce((res, prop) => res[prop], obj)
+export function propertyByPath(path, obj, separator='.') {
+    return path.split(separator).reduce((res, prop) => res?res[prop]:null, obj)
 }
 
-export function setPropertyByPath(value, path, obj, separator='.')=> {
+export function setPropertyByPath(value, path, obj, separator='.'){
     const fields = path.split(separator)
     for (let i = 0, n = fields.length; i < n; i++) {
         let field = fields[i]

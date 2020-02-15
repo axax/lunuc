@@ -137,8 +137,10 @@ class JsonDom extends React.Component {
                                      aboutToChange={_this.props.aboutToChange}
                                      dynamic={true} {...rest}/>
         },
-        'ContentEditable': ({_this, ...props}) => <ContentEditable
-            onChange={(v) => _this.emitChange(props._key, v)} {...props} />
+        'ContentEditable': ({_this, onChange, ...props}) => {
+           return  <ContentEditable
+                onChange={(v) => _this.emitChange(props._key, v)} {...props} />
+        }
     }
 
     // Makes sure that the hook is only called once on the first instantiation of this class
@@ -531,7 +533,7 @@ class JsonDom extends React.Component {
 
                 if (!item) return
 
-                const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $edit, $inlineEditor} = item
+                const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $inlineEditor} = item
                 /*
                  t = type
                  c = children
@@ -815,44 +817,22 @@ class JsonDom extends React.Component {
                     if (className) {
                         eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                     }
-                    if (editMode && this.props.inlineEditor && $inlineEditor !== false) {
+                    if (editMode && $inlineEditor !== false) {
 
-                        const rawJson = this.getJsonRaw(this.props, true)
-                        if (rawJson) {
-                            eleProps._json = rawJson
+                        if(  this.props.inlineEditor ) {
+                            const rawJson = this.getJsonRaw(this.props, true)
+                            if (rawJson) {
+                                eleProps._json = rawJson
+                            }
                         }
 
-                        if ($edit) {
-                            let _edit
-                            if ($edit && $edit.constructor === String) {
-                                const pos = $edit.indexOf(':'), pos2 = $edit.indexOf(':', pos + 1)
-
-                                const type = $edit.substring(0, pos),
-                                    _id = $edit.substring(pos + 1, pos2 >= 0 ? pos2 : $edit.length)
-
-                                const parts = $edit.split(':')
-                                if (parts.length >= 2) {
-                                    _edit = {type, _id, props: pos2 >= 0 ? $edit.substring(pos2 + 1) : null}
-                                }
-                            } else {
-                                _edit = $edit
-                            }
-                            if (!_edit.type && this.props.onPropertyEdit) {
-                                const _onChange = eleProps.onChange
-                                eleProps.onChange = (e, ...args) => {
-                                    this.props.onPropertyEdit(e.target.value, _edit._id)
-                                    _onChange(e, ...args)
-                                }
-                            }
-                            eleProps._edit = _edit
-                        }
-
-                        if (eleProps._edit || eleProps._json) {
+                        if (eleProps._json || ($inlineEditor && $inlineEditor.force)) {
                             eleProps._tagName = tagName
                             eleProps._inlineEditor = $inlineEditor || {}
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
                             eleProps._onchange = this.props.onChange
+                            eleProps._onDataResolverPropertyChange = this.props.onDataResolverPropertyChange
                             eleType = JsonDomHelper
                         }
 
@@ -1286,7 +1266,8 @@ JsonDom.propTypes = {
     serverMethod: PropTypes.func,
     clientQuery: PropTypes.func,
     subscriptionCallback: PropTypes.func,
-    onChange: PropTypes.func, /* Is fired when the json dom changes */
+    onChange: PropTypes.func, /* Is fired when the json dom has changed */
+    onDataResolverPropertyChange: PropTypes.func, /* Is fired when a property of the dataResolver has changed */
     onError: PropTypes.func,
     onFetchMore: PropTypes.func,
 

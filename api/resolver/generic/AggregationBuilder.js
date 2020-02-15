@@ -649,17 +649,22 @@ export default class AggregationBuilder {
         }
 
 
-
-
         if (lookups.length > 0) {
             for (const lookup of lookups) {
                 tempQuery.push(lookup)
             }
         }
 
+        // add at the beginning of the query
+        if( this.options.before){
+            tempQuery.unshift(this.options.before)
+        }
+
+        // add right before the group
         if( this.options.beforeGroup){
             tempQuery.push(this.options.beforeGroup)
         }
+
         // Group back to arrays
         tempQuery.push(
             {

@@ -188,7 +188,7 @@ class CmsViewEditorContainer extends React.Component {
                           onChange={this.handleTemplateChange}
                           inEditor={inEditor}
                           onError={this.handleCmsError.bind(this)}
-                          onPropertyEdit={this.handlePropertySave.bind(this)}
+                          onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
                           settings={settings}
                           cmsPage={cmsPageWithState}
                           {...props} />
@@ -243,7 +243,7 @@ class CmsViewEditorContainer extends React.Component {
                         }}
                     </Query> : <SimpleDialog key="propertyEditor" open={true} onClose={(e) => {
                         if (e.key === 'save' && cmsEditDataValue) {
-                            this.handlePropertySave(cmsEditDataValue, cmsEditData._id, true)
+                            this.handleDataResolverPropertySave(cmsEditDataValue, cmsEditData._id, true)
                         }
                         this.props._cmsActions.editCmsData(null)
                     }}
@@ -487,7 +487,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
 
-    handlePropertySave(value, path, instantSave) {
+    handleDataResolverPropertySave(value, path, instantSave) {
 
         const {segment, dataResolver} = this.findSegementInDataResolver(path)
 
