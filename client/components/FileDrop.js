@@ -184,7 +184,7 @@ class FileDrop extends React.Component {
             {errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography>}
             {successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography>}
 
-            {uploading && <Typography variant="body2">uploading data ({uploadCompleted}%)...</Typography>}
+            {uploading && <Typography variant="body2">uploading data ({uploadCompleted}%{this.uploadQueue.length>0?' / '+this.uploadQueue.length+' in queue':''})...</Typography>}
             {uploading && <LinearProgress className={classes.progress} variant="determinate" value={uploadCompleted}/>}
 
         </div>
@@ -228,6 +228,7 @@ class FileDrop extends React.Component {
             const images = []
 
             for (let i = 0, file; file = validFiles[i]; i++) {
+
                 const isImage = UploadUtil.isImage(file.name)
                 if (isImage) {
                     images.push(URL.createObjectURL(file))
@@ -273,7 +274,15 @@ class FileDrop extends React.Component {
         this.setState({uploadCompleted: Math.ceil(e.loaded * 100 / e.total)})
     }
 
+    uploadQueue = []
     uploadData(dataUrl, file, uploadTo) {
+
+        if( this.uploading) {
+            this.uploadQueue.push({dataUrl, file, uploadTo})
+            return
+        }
+        this.uploading=true
+
         this.setState({uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0})
         UploadUtil.uploadData({
             dataUrl,
@@ -285,6 +294,13 @@ class FileDrop extends React.Component {
                 if(e.target.response) {
                     const {status, message} = e.target.response
                     if (status === 'success') {
+
+                        if( this.uploadQueue.length > 0){
+                            this.uploading=false
+                            const fromQueue = this.uploadQueue.shift()
+                            this.uploadData(fromQueue.dataUrl, fromQueue.file, fromQueue.uploadTo)
+                            return
+                        }
                         this.setState({successMessage: 'upload was successfull', uploading: false})
 
                         const {onSuccess, onChange, name} = this.props
@@ -297,6 +313,7 @@ class FileDrop extends React.Component {
                             // call with target
                             onChange({target: {name, value: e.target.response}})
                         }
+
 
                     } else {
                         this.setState({errorMessage: message, uploading: false})

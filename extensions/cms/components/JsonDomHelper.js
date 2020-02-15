@@ -652,6 +652,7 @@ class JsonDomHelper extends React.Component {
                     name: 'Edit',
                     icon: <EditIcon/>,
                     onClick: () => {
+                        JsonDomHelper.disableEvents = true
                         this.setState({addChildDialog: {selected: newJsonElement, edit: true}})
                     }
                 })
