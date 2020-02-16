@@ -530,12 +530,30 @@ class JsonDomHelper extends React.Component {
                             source.p = {}
                         }
                         source.p.src = UPLOAD_URL + '/' + newwindow.resultValue._id
+                        source.p.alt = newwindow.resultValue.name
                     }
                     _onchange(_json)
                 }
             }
 
         }
+    }
+
+    setFormOptionsByProperties(json, options, prefix){
+
+        Object.keys(json).forEach(key=>{
+            const newKey = prefix+key, value = propertyByPath(key,json,'_')
+            console.log(newKey,value)
+            if( value.constructor === Object) {
+                this.setFormOptionsByProperties(value, options,newKey+'_')
+            }else{
+                options[newKey] = {
+                    label: key,
+                    value,
+                    type: value === true || value === false ? 'Boolean' : 'String'
+                }
+            }
+        })
     }
 
     render() {
@@ -639,12 +657,20 @@ class JsonDomHelper extends React.Component {
             }
 
             const jsonElement = getJsonDomElements(tagName)
-            if (jsonElement && jsonElement.options) {
+
+            if (jsonElement && (isCms || jsonElement.options)) {
 
                 const options = Object.assign({},jsonElement.options)
+
                 Object.keys(options).forEach(key=>{
                     options[key].value = propertyByPath(key,subJson,'_')
                 })
+
+                if( isCms ){
+
+                    this.setFormOptionsByProperties(subJson.p, options, 'p_')
+
+                }
 
                 const newJsonElement = Object.assign({},jsonElement)
                 newJsonElement.options = options

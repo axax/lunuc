@@ -252,7 +252,7 @@ class GenericForm extends React.Component {
                                      }}
                                      value={value || []}/>
             } else if (field.type === 'Boolean') {
-                return <SimpleSwitch key={fieldKey} label={field.placeholder} name={fieldKey}
+                return <SimpleSwitch key={fieldKey} label={field.label || field.placeholder} name={fieldKey}
                                      onChange={this.handleInputChange} checked={value ? true : false}/>
 
 
