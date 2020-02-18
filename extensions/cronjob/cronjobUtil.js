@@ -52,7 +52,7 @@ const cronjobUtil = {
         if (scriptLanguage === 'Python') {
             cronjobUtil.runPythonScript(script, {log, debug, end, error, select, ...props})
         } else {
-            cronjobUtil.runJavascript(script, {require, log, debug, end, error, select, ...props})
+            cronjobUtil.runJavascript(script, {__dirname, require, log, debug, end, error, select, ...props})
         }
         return result;
     },
@@ -61,6 +61,7 @@ const cronjobUtil = {
 
         const tpl = new Function(`
         const require = this.require;
+        const __dirname = this.__dirname;
         const start = (async () => {
             try {
                 ${script}
