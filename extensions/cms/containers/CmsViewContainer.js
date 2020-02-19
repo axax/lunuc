@@ -174,7 +174,6 @@ class CmsViewContainer extends React.Component {
                             })
                         } else if (ext.indexOf('js') === 0) {
                             DomUtil.addScript(r, {
-                                crossOrigin:'anonymous',
                                 data: {cmsView: true}
                             })
                         }
