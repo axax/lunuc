@@ -85,7 +85,7 @@ function mainInit() {
 
         if (!contextLanguage && config.DEFAULT_LANGUAGE !== _app_.lang) {
             // add language to url and redirect
-            window.location = loc.origin + '/' + _app_.lang + basePath
+            window.location = loc.origin + '/' + _app_.lang + (basePath==='/'?'':basePath)
             return
         }
 
