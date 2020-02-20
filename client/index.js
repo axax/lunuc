@@ -21,7 +21,7 @@ if (typeof localStorage === 'object') {
 
 function removeTrailingSlash(url){
     // has trailing slash
-    if (url.lastIndexOf('/') === url.length - 1) {
+    if (url !== '/' && url.lastIndexOf('/') === url.length - 1) {
         url = url.substring(0, url.length - 1)
     }
     return url
