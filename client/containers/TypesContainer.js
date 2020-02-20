@@ -744,7 +744,6 @@ class TypesContainer extends React.Component {
                 delete selectedrows[value]
             }
         }
-
         let selectAllRows = false
         if (value === '') {
             const {data} = this.state
@@ -785,6 +784,7 @@ class TypesContainer extends React.Component {
         this.typeColumns[type].push({
             label: 'Check',
             title: <Checkbox
+                value=""
                 checked={this.state.selectAllRows}
                 onChange={this.handleRowSelect.bind(this)}
             />,

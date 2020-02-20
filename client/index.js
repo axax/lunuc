@@ -32,6 +32,12 @@ function mainInit() {
     let contextLanguage, loc = window.location, basePath,
         hasMultiLanguages = config.LANGUAGES && config.LANGUAGES.length > 1
 
+    // has trailing slash --> remove because of seo
+    if(loc.href.lastIndexOf('/')===loc.href.length-1){
+        window.location = loc.href.substring(0,loc.href.length-1)
+        return
+    }
+
     // if multi languages
     if (hasMultiLanguages) {
 

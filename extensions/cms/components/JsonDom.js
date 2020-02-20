@@ -381,7 +381,7 @@ class JsonDom extends React.Component {
         scope.root = root
         scope.parent = parent
 
-        if (this.runScript && script) {
+        if ( this.runScript && script) {
             this.runScript = false
             this.runJsEvent('beforerunscript', false, scope)
             try {
