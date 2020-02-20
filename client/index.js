@@ -131,7 +131,7 @@ function mainInit() {
             DomUtil.createAndAddTag('link', 'head', {
                 id: 'canonicalTag',
                 rel: 'canonical',
-                href: loc.origin + basePath
+                href: loc.origin + (basePath==='/'?'':basePath)
             })
         }
 
@@ -139,7 +139,7 @@ function mainInit() {
         DomUtil.createAndAddTag('link', 'head', {
             rel: 'alternate',
             hreflang: 'x-default',
-            href: loc.origin + basePath
+            href: loc.origin + (basePath==='/'?'':basePath)
         })
         for (let i = 0; i < config.LANGUAGES.length; i++) {
             const curLang = config.LANGUAGES[i]
@@ -147,7 +147,7 @@ function mainInit() {
             DomUtil.createAndAddTag('link', 'head', {
                 rel: 'alternate',
                 hreflang: curLang,
-                href: loc.origin + (!isDefault ? '/' + curLang : '') + basePath
+                href: loc.origin + (!isDefault ? '/' + curLang : '') + (basePath==='/'?'':basePath)
             })
         }
     }
