@@ -13,9 +13,18 @@ if (typeof localStorage === 'object') {
         localStorage.setItem('localStorage', 1)
         localStorage.removeItem('localStorage')
     } catch (e) {
-        Storage.prototype.setItem = function() {}
+        Storage.prototype.setItem = function () {
+        }
         console.log('Your web browser does not support storing settings locally. In Safari, the most common cause of this is using "Private Browsing Mode". Some settings may not save or some features may not work properly for you.')
     }
+}
+
+function removeTrailingSlash(url){
+    // has trailing slash
+    if (url.lastIndexOf('/') === url.length - 1) {
+        url = url.substring(0, url.length - 1)
+    }
+    return url
 }
 
 function mainInit() {
@@ -32,12 +41,12 @@ function mainInit() {
     let contextLanguage, loc = window.location, basePath,
         hasMultiLanguages = config.LANGUAGES && config.LANGUAGES.length > 1
 
-    // has trailing slash --> remove because of seo
-    if(loc.href.lastIndexOf('/')===loc.href.length-1){
-        window.location = loc.href.substring(0,loc.href.length-1)
+    // remove double slashes
+    const cleanPathname = loc.pathname.replace(/\/\/+/g, '/')
+    if (cleanPathname !== loc.pathname) {
+        window.location = loc.origin + cleanPathname +loc.search + loc.hash
         return
     }
-
     // if multi languages
     if (hasMultiLanguages) {
 
@@ -48,11 +57,11 @@ function mainInit() {
         if (contextLanguage && config.LANGUAGES.indexOf(contextLanguage) >= 0) {
             contextLanguage = contextLanguage.toLowerCase()
             _app_.contextPath = '/' + contextLanguage
-            basePath = loc.pathname.substring(contextLanguage.length + 1)
+            basePath = removeTrailingSlash(loc.pathname.substring(contextLanguage.length + 1))
         } else {
             _app_.contextPath = ''
             contextLanguage = false
-            basePath = loc.pathname
+            basePath = removeTrailingSlash(loc.pathname)
         }
         basePath += loc.search + loc.hash
 
@@ -105,10 +114,22 @@ function mainInit() {
 
     document.documentElement.setAttribute('lang', _app_.lang)
 
-    if(hasMultiLanguages){
+
+    // has trailing slash --> set canonical link of seo
+    const cleanPathnameWithoutTrailingSlash = removeTrailingSlash(cleanPathname)
+    if (cleanPathnameWithoutTrailingSlash !== cleanPathname) {
+        DomUtil.createAndAddTag('link', 'head', {
+            id: 'canonicalTag',
+            rel: 'canonical',
+            href: loc.origin + cleanPathnameWithoutTrailingSlash +loc.search + loc.hash
+        })
+    }
+
+    if (hasMultiLanguages) {
         if (contextLanguage === config.DEFAULT_LANGUAGE) {
             // set canonical link
             DomUtil.createAndAddTag('link', 'head', {
+                id: 'canonicalTag',
                 rel: 'canonical',
                 href: loc.origin + basePath
             })
