@@ -25,7 +25,7 @@ const buildCollectionName = async (db, context, typeName, _version) => {
     return typeName + (_version && _version !== 'default' ? '_' + _version : '')
 }
 
-const manualManipulations = (data, typeName) => {
+const postConvertData = (data, typeName) => {
 
 
     // TODO: with mongodb 4 this can be removed as convert and toString is supported
@@ -79,7 +79,7 @@ const GenericResolver = {
         }
         const startTime = new Date()
 
-        let {match, _version, cache, includeCount, ...otherOptions} = options
+        let {match, _version, cache, includeCount, postConvert, ...otherOptions} = options
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
         // Default match
@@ -148,7 +148,11 @@ const GenericResolver = {
                 results: null
             }
         } else {
-            result = manualManipulations(results[0], typeName)
+            if( postConvert === false) {
+                result = results[0]
+            }else{
+                result = postConvertData(results[0], typeName)
+            }
         }
 
 

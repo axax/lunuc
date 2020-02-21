@@ -29,6 +29,10 @@
           "type": "Boolean"
         },
         {
+          "name": "private",
+          "type": "Boolean"
+        },
+        {
           "name": "group",
           "type": "MediaGroup",
           "multi": true

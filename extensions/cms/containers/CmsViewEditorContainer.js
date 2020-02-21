@@ -243,7 +243,7 @@ class CmsViewEditorContainer extends React.Component {
                         }}
                     </Query> : <SimpleDialog key="propertyEditor" open={true} onClose={(e) => {
                         if (e.key === 'save' && cmsEditDataValue) {
-                            this.handleDataResolverPropertySave(cmsEditDataValue, cmsEditData._id, true)
+                            this.handleDataResolverPropertySave({value: cmsEditDataValue, path:  cmsEditData._id, instantSave:true})
                         }
                         this.props._cmsActions.editCmsData(null)
                     }}
@@ -487,19 +487,25 @@ class CmsViewEditorContainer extends React.Component {
     }
 
 
-    handleDataResolverPropertySave(value, path, instantSave) {
+    handleDataResolverPropertySave({value, path, key, instantSave}) {
 
-        const {segment, dataResolver} = this.findSegementInDataResolver(path)
+        const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path, key})
 
         if (segment) {
-            setPropertyByPath(value,path,segment)
+            if( key ) {
+                Object.keys(value).forEach(objKey=>{
+                    segment[objKey]=value[objKey]
+                })
+            }else{
+                setPropertyByPath(value, path, segment)
+            }
             this.handleDataResolverChange(JSON.stringify(dataResolver, null, 4), instantSave)
         }
     }
 
     getDataResolverProperty(cmsEditData) {
         const path = cmsEditData._id
-        const {segment} = this.findSegementInDataResolver(path)
+        const {segment} = this.findSegmentInDataResolverByKeyOrPath({path})
 
 
         if (segment) {
@@ -523,7 +529,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
 
-    findSegementInDataResolver(path) {
+    findSegmentInDataResolverByKeyOrPath({path, key}) {
         let dataResolver
         if (this.state.dataResolver) {
             try {
@@ -536,18 +542,29 @@ class CmsViewEditorContainer extends React.Component {
             dataResolver = []
         }
 
-
-        const first = path.substring(0, path.indexOf('.'))
+        let firstOfPath
+        if( path ) {
+            firstOfPath = path.substring(0, path.indexOf('.'))
+        }
         let segment
         for (let i = 0; i < dataResolver.length; i++) {
             const json = dataResolver[i]
-            if (json[first]) {
+            if( key ){
+                if(json.key===key){
+                    segment = json
+                    break
+                }
+            }else if(json[firstOfPath]) {
                 segment = json
                 break
             }
         }
         if (!segment) {
-            segment = {[first]: {}}
+            if( key){
+                segment = {key}
+            }else {
+                segment = {[firstOfPath]: {}}
+            }
             dataResolver.push(segment)
         }
 

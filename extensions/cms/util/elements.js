@@ -1,41 +1,6 @@
 const baseElements = [
     {
-        value: 'div',
-        name: 'Data Container',
-        defaults: {
-            c: 'New container',
-            $inlineEditor: {picker: {type: 'GenericData', baseFilter: 'mimeType=pdf', template: ''}}
-        }
-    },
-    {
-        value: 'Cms',
-        name: 'Component',
-        defaults: {
-            $inlineEditor: {picker: {type: 'GenericData', baseFilter: 'mimeType=pdf', template: ''}}
-        }
-    },
-    {
-        value: 'a', name: 'Document', defaults: {
-        c: 'Select a Document',
-        $inlineEditor: {
-            picker: {
-                type: 'Media',
-                baseFilter: 'mimeType=pdf',
-                template: "<a title='$\\{name}' href='${_app_.config.UPLOAD_URL}/$\\{_id}'>$\\{name}</a>"
-            }
-        },
-        p: {target: '_blank'}
-    }
-    },
-    {
-        value: 'Row', name: 'Layout 1/2', defaults: {
-        c: [
-            {t: 'Col.col-sm-6', c: [{c: 'Spalte 1'}]},
-            {t: 'Col.col-sm-6', c: [{c: 'Spalte 1'}]}
-        ]
-    }
-    },
-    {
+        subHeader: 'Basic components',
         value: 'SmartImage',
         name: 'Image',
         defaults: {$inlineEditor: {picker: {type: 'Media', baseFilter: 'mimeType=image'}}}
@@ -59,6 +24,9 @@ const baseElements = [
         },
         defaults: {}
     },
+    {value: 'hr', name: 'Divider'},
+    {value: 'h1$', name: 'Header 1', defaults: {c: 'Header 1'}},
+    {value: 'h2$', name: 'Header 2', defaults: {c: 'Header 2'}},
     {
         value: 'QuillEditor', name: 'Rich-Text block',
         defaults: {
@@ -79,9 +47,116 @@ const baseElements = [
             $c: "Paragraph"
         }
     },
-    {value: 'hr', name: 'Divider'},
-    {value: 'h1$', name: 'Header 1', defaults: {c: 'Header 1'}},
-    {value: 'h2$', name: 'Header 2', defaults: {c: 'Header 2'}}
+    {
+        value: 'a', name: 'Document', defaults: {
+            c: 'Select a Document',
+            $inlineEditor: {
+                picker: {
+                    type: 'Media',
+                    baseFilter: 'mimeType=pdf',
+                    template: "<a title='$\\{name}' href='${_app_.config.UPLOAD_URL}/$\\{_id}'>$\\{name}</a>"
+                }
+            },
+            p: {target: '_blank'}
+        },
+        options: {
+            $inlineEditor_picker_type: {
+                label: 'Style',
+                uitype: 'select',
+                enum: [
+                    {
+                        name: 'GenericData',
+                        value: 'GenericData'
+                    }
+                ]
+            },
+            $inlineEditor_picker_baseFilter: {
+                label: 'Filter'
+            }
+        }
+    },
+    {
+        subHeader: 'Advanced components',
+        value: 'Row', name: 'Layout 1/2', defaults: {
+            c: [
+                {t: 'Col.col-sm-6', c: [{c: 'Spalte 1'}]},
+                {t: 'Col.col-sm-6', c: [{c: 'Spalte 1'}]}
+            ]
+        }
+    },
+    {
+        value: 'div',
+        name: 'Data Container',
+        defaults: {
+            c: 'New container',
+            $inlineEditor: {picker: {type: 'GenericData', baseFilter: 'mimeType=pdf', template: ''}}
+        },
+        options: {
+            $inlineEditor_picker_type: {
+                label: 'Style',
+                uitype: 'select',
+                enum: [
+                    {
+                        name: 'GenericData',
+                        value: 'GenericData'
+                    }
+                ]
+            },
+            $inlineEditor_picker_baseFilter: {
+                label: 'Filter'
+            }
+        }
+    },
+    {
+        value: 'Cms',
+        name: 'Component',
+        defaults: {
+            $inlineEditor: {picker: {type: 'GenericData', baseFilter: 'mimeType=pdf', template: ''}}
+        }
+    },
+    {
+        value: 'div.query',
+        name: 'Query',
+        defaults: {
+            $inlineEditor: {
+                dataResolver:{}
+            },
+            c: {
+                $for: {
+                    d: 'data.__uid__.results',
+                    c: {
+                        $inlineEditor:false,
+                        t: 'div',
+                        c: ''
+                    }
+                }
+            }
+        },
+        options: {
+            $inlineEditor_dataResolver:{
+                label: 'Data Resolver',
+                uitype: 'json',
+                value: {
+                    key:'__uid__',
+                    t: 'GenericData',
+                    d: [
+                        '_id',
+                        {
+                            data: [
+                                'title'
+                            ]
+                        },
+                    ],
+                    f:'_id>${ObjectId.createFromTime(Date.now()/1000-60*60*24)}'
+                }
+            },
+            c_$for_c_c: {
+                label: 'Template',
+                uitype: 'editor',
+                value: '$.loop{loop.data.title}'
+            }
+        }
+    }
 ]
 
 let baseElementsMap

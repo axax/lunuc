@@ -31,6 +31,7 @@ const {UPLOAD_URL} = config
 const styles = theme => ({
     wrapper: {},
     highlighter: {
+        zIndex: 999,
         position: 'fixed',
         bottom: 0,
         left: 0,
@@ -196,7 +197,9 @@ class JsonDomHelper extends React.Component {
             state.addChildDialog !== this.state.addChildDialog ||
             state.dragging !== this.state.dragging ||
             state.top !== this.state.top ||
+            state.left !== this.state.left ||
             state.height !== this.state.height ||
+            state.width !== this.state.width ||
             state.toolbarHovered !== this.state.toolbarHovered
         state.mouseX !== this.state.mouseX
     }
@@ -465,7 +468,7 @@ class JsonDomHelper extends React.Component {
     }
 
     handleAddChildClick(component, index) {
-        const {_key, _json, _onchange} = this.props
+        const {_key, _json, _onchange, _onDataResolverPropertyChange} = this.props
 
         let newkey = _key
         if (index !== undefined) {
@@ -476,6 +479,15 @@ class JsonDomHelper extends React.Component {
             }
         } else {
             index = 0
+        }
+        if(component.$inlineEditor && component.$inlineEditor.dataResolver){
+            const dataResolver = component.$inlineEditor.dataResolver
+
+            // replace with key only
+            component.$inlineEditor.dataResolver=dataResolver.key
+
+            _onDataResolverPropertyChange({value: dataResolver, key: dataResolver.key, instantSave: true})
+
         }
         addComponent({key: newkey, json: _json, index, component})
         _onchange(_json)
@@ -644,7 +656,7 @@ class JsonDomHelper extends React.Component {
 
                 if (_onDataResolverPropertyChange) {
                     newOnChange = (e, ...args) => {
-                        _onDataResolverPropertyChange(e.target.value, parsedSouce._id)
+                        _onDataResolverPropertyChange({value: e.target.value, path: parsedSouce._id})
                         onChange(e, ...args)
                     }
 
@@ -782,9 +794,7 @@ class JsonDomHelper extends React.Component {
                                          const selected = addChildDialog.selected
                                          if (e.key === 'save' && selected) {
 
-                                             const compStr = JSON.stringify({'t': selected.value, ...selected.defaults}),
-                                                 uid = Math.random().toString(36).substr(2, 9),
-                                                 comp = JSON.parse(compStr.replace(/__uid__/g, uid))
+                                             const comp = {'t': selected.value, ...selected.defaults}
                                              let pos
 
                                              if (addChildDialog.form) {
@@ -843,7 +853,9 @@ class JsonDomHelper extends React.Component {
                         for (let i = 0; i < jsonElements.length; i++) {
                             const comp = jsonElements[i]
                             if (value === comp.value) {
-                                item = comp
+                                // replace __uid__ placeholder
+                                const uid = Math.random().toString(36).substr(2, 9)
+                                item = JSON.parse(JSON.stringify(comp).replace(/__uid__/g, uid))
                                 break
                             }
                         }

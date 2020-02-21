@@ -91,7 +91,7 @@ class CodeEditor extends React.Component {
         }
 
         console.log('render CodeEditor', fabButtonStyle)
-        return <div className={className} style={{height: '35rem', ...style}}>
+        return <div className={className} style={{height: '25rem', ...style}}>
             {showFab && <SimpleMenu key="menu" mini fab color="secondary" style={{
                 zIndex: 999,
                 position: 'absolute',
@@ -108,7 +108,7 @@ class CodeEditor extends React.Component {
                     }
                     //  editor.setSize(width, height);
                 }}
-                value={this._data}
+                value={this._data.constructor===Object?JSON.stringify(this._data, null, 4):this._data}
                 options={options}
                 onScroll={(editor, e) => {
                     if (onScroll) {
@@ -139,7 +139,7 @@ CodeEditor.propTypes = {
     onScroll: PropTypes.func,
     onBlur: PropTypes.func,
     type: PropTypes.string,
-    children: PropTypes.string,
+    children: PropTypes.any,
     actions: PropTypes.array,
     showFab: PropTypes.bool,
     style: PropTypes.object,

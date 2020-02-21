@@ -160,6 +160,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         cache,
                         includeCount,
                         projectResult: true,
+                        postConvert:false,
                         ...other,
                     })
                     debugInfo += ' result=true'
