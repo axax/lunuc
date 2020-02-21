@@ -481,10 +481,17 @@ class JsonDomHelper extends React.Component {
             index = 0
         }
         if(component.$inlineEditor && component.$inlineEditor.dataResolver){
-            const dataResolver = component.$inlineEditor.dataResolver
+            let dataResolver = component.$inlineEditor.dataResolver
+
+            if(dataResolver.constructor===String){
+                console.log(dataResolver)
+                dataResolver = JSON.parse(dataResolver)
+            }
 
             // replace with key only
             component.$inlineEditor.dataResolver=dataResolver.key
+
+            console.log(dataResolver)
 
             _onDataResolverPropertyChange({value: dataResolver, key: dataResolver.key, instantSave: true})
 
@@ -854,7 +861,7 @@ class JsonDomHelper extends React.Component {
                             const comp = jsonElements[i]
                             if (value === comp.value) {
                                 // replace __uid__ placeholder
-                                const uid = Math.random().toString(36).substr(2, 9)
+                                const uid = 'gen'+Math.random().toString(36).substr(2, 9)
                                 item = JSON.parse(JSON.stringify(comp).replace(/__uid__/g, uid))
                                 break
                             }

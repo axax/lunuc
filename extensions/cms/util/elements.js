@@ -147,7 +147,7 @@ const baseElements = [
                             ]
                         },
                     ],
-                    f:'_id>${ObjectId.createFromTime(Date.now()/1000-60*60*24)}'
+                    f:'definition.name=BlogEntry && _id>${ObjectId.createFromTime(Date.now()/1000-60*60*24)}'
                 }
             },
             c_$for_c_c: {

@@ -1,0 +1,29 @@
+{
+  "types": [
+    {
+      "name": "Comment",
+      "creation": "allow",
+      "access": {
+        "create": "user"
+      },
+      "fields": [
+        {
+          "name": "key",
+          "required": true,
+          "index": 1
+        },
+        {
+          "name": "parent",
+          "type": "Comment",
+          "index": 1
+        },
+        {
+          "name": "comment",
+          "required": true,
+          "type": "String",
+          "index": 1
+        }
+      ]
+    }
+  ]
+}

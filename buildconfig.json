@@ -74,6 +74,9 @@
     },
     "hook": {
       "active": true
+    },
+    "comment": {
+      "active": true
     }
   },
   "ui": [

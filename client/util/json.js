@@ -9,9 +9,8 @@ export function setPropertyByPath(value, path, obj, separator='.'){
     for (let i = 0, n = fields.length; i < n; i++) {
         let field = fields[i]
         if (i === n - 1) {
-            //TODO proper escape for json
             if( value && value.constructor===String) {
-                obj[field] = value.replace(/"/g, "'")
+                obj[field] = value.replace(/"/g, '\\\\\\\"')
             }else{
                 obj[field] = value
             }
