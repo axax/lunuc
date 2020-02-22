@@ -13,6 +13,7 @@ import Cache from 'util/cache'
 import {withFilter} from 'graphql-subscriptions'
 import {getHostFromHeaders} from 'util/host'
 import Hook from "../../../util/hook";
+import {ObjectId} from "mongodb";
 
 const createScopeForDataResolver = (query, _props) => {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
@@ -232,7 +233,7 @@ export default db => ({
                 script: DEFAULT_SCRIPT
             })
         },
-        updateCmsPage: async ({_id, query, props, ...rest}, req) => {
+        updateCmsPage: async ({_id, query, props, createdBy, ...rest}, req) => {
             const {context, headers} = req
 
             Util.checkIfUserIsLoggedIn(context)
@@ -242,7 +243,7 @@ export default db => ({
             const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + rest.slug
 
             Cache.clearStartWith(cacheKey)
-            const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id, ...rest})
+            const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id,createdBy:(createdBy?ObjectId(createdBy):createdBy), ...rest})
 
 
             // if dataResolver has changed resolveData and return it

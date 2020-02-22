@@ -8,7 +8,6 @@ import {
     CAPABILITY_MANAGE_COLLECTION,
     CAPABILITY_MANAGE_BACKUPS,
     CAPABILITY_MANAGE_USER_ROLE,
-    CAPABILITY_READ_EVERYTHING,
     CAPABILITY_RUN_COMMAND,
     CAPABILITY_RUN_SCRIPT
 } from 'util/capabilities'
@@ -85,15 +84,11 @@ export const createUserRoles = async (db) => {
         },
         {
             name: 'contributor',
-            capabilities: [CAPABILITY_VIEW_APP]
+            capabilities: [CAPABILITY_VIEW_APP, CAPABILITY_ACCESS_ADMIN_PAGE]
         },
         {
             name: 'subscriber',
             capabilities: [CAPABILITY_VIEW_APP]
-        },
-        {
-            name: 'demo',
-            capabilities: [CAPABILITY_VIEW_APP, CAPABILITY_READ_EVERYTHING, CAPABILITY_ACCESS_ADMIN_PAGE]
         }
     ]
 
@@ -121,10 +116,10 @@ export const createUserRoles = async (db) => {
 export const createUsers = async (db) => {
 
 
-    console.log('Create users...')
     const userCollection = db.collection('User')
+    if (await userCollection.countDocuments() === 0) {
 
-    if (userCollection.countDocuments()) {
+        console.log('Create users...')
 
         /* insert admin user */
         await userCollection.updateOne({

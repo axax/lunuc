@@ -108,7 +108,9 @@
         "Search",
         "Translate",
         "VolumeUp",
-        "Image"
+        "Image",
+        "Launch",
+        "PlaylistAdd"
       ],
       "theme":{
         "colors":{

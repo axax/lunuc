@@ -59,6 +59,7 @@
     },
     {
       "name": "BotConversation",
+      "access":{"read":"manage_types"},
       "noUserRelation": true,
       "fields": [
         {

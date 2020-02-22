@@ -1,7 +1,7 @@
 import Hook from 'util/hook'
 import config from 'gen/config'
 import {getAllCapabilites} from 'util/capabilities'
-import {getType,getTypes} from './types'
+import {getType, getTypes} from './types'
 
 const {LANGUAGES} = config, typeFormFields = {}
 
@@ -44,19 +44,32 @@ export const getFormFields = (type) => {
         return null
         //throw new Error('Cannot find type "'+type+'" in getFormFields')
     }
-
     typeFormFields[type] = {}
+    if (!types[type].noUserRelation) {
+        // add field so the createdBy User can be changed
+        typeFormFields[type].createdBy = {
+            label: 'Created by user',
+            uitype: 'type_picker',
+            type: 'User',
+            required: true,
+            reference: true,
+            name: 'createdBy'
+        }
+    }
     types[type].fields.map(field => {
-        let uitype = field.uitype, placeholder = ''
+        let uitype = field.uitype, placeholder = '', label = ''
         // if uitype is not defined and if it is a reference to another type use type_picker
         if (!uitype && field.reference) {
             uitype = 'type_picker'
-            placeholder = `${field.name} -> ${field.type}`
+            placeholder = `Select a ${field.type}`
+            label = `${field.name} -> ${field.type}`
         } else {
+            label = `${field.name}`
             placeholder = `Enter ${field.name}`
         }
         typeFormFields[type][field.name] = {
             placeholder,
+            label,
             uitype,
             multi: !!field.multi,
             readOnly: !!field.readOnly,
@@ -71,7 +84,6 @@ export const getFormFields = (type) => {
             name: field.name
         }
     })
-
     return typeFormFields[type]
 }
 
@@ -91,7 +103,7 @@ export const referencesToIds = (data, type) => {
     const formFields = getFormFields(type)
     const newData = {}
 
-    Object.keys(data).map(key=> {
+    Object.keys(data).map(key => {
         const item = data[key]
 
         if (item !== undefined) {
@@ -139,7 +151,6 @@ export const checkFieldType = (value, field) => {
 
     return value
 }
-
 
 
 /* Register manually created types */

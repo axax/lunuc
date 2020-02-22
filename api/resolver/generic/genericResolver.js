@@ -27,8 +27,9 @@ const buildCollectionName = async (db, context, typeName, _version) => {
 
 const postConvertData = (data, typeName) => {
 
+    // here is a good place to handle: Cannot return null for non-nullable
+    const repairMode =false
 
-    // TODO: with mongodb 4 this can be removed as convert and toString is supported
     if (data.results) {
         const typeDefinition = getType(typeName) || {}
         if (typeDefinition.fields) {
@@ -37,6 +38,10 @@ const postConvertData = (data, typeName) => {
             for (let i = 0; i < data.results.length; i++) {
                 const item = data.results[i]
 
+                if( item.createdBy === null){
+                    item.createdBy = {_id:0, username: 'null reference'}
+                }
+
                 for (let y = 0; y < typeDefinition.fields.length; y++) {
                     const field = typeDefinition.fields[y]
                     // convert type Object to String
@@ -44,6 +49,7 @@ const postConvertData = (data, typeName) => {
 
                         hasField = true
 
+                        // TODO: with mongodb 4 this can be removed as convert and toString is supported
                         if (item[field.name] && item[field.name].constructor === Object) {
                             console.log(`convert ${typeName}.${field.name} to string`)
                             item[field.name] = JSON.stringify(item[field.name])
@@ -61,9 +67,12 @@ const postConvertData = (data, typeName) => {
                      item[field.name] = translations
                      }
                      }*/
-
                 }
-                if (!hasField) {
+
+
+
+
+                if (!repairMode && !hasField) {
                     break
                 }
             }
@@ -99,6 +108,8 @@ const GenericResolver = {
                         if (await Util.userHasCapability(db, context, typeDefinition.access.read)) {
                             match = {}
                             userFilter = false
+                        }else if(typeDefinition.noUserRelation){
+                            throw new Error(`no permission to access data ${typeName}`)
                         }
                     }
                 }
@@ -363,6 +374,9 @@ const GenericResolver = {
 
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
 
+            if( data.createdBy && data.createdBy !== context.id){
+                throw new Error('user is not allow to change field createdBy')
+            }
 
             const typeDefinition = getType(typeName)
             let userFilter = true
@@ -408,6 +422,7 @@ const GenericResolver = {
         // set timestamp
         dataSet.modifiedAt = new Date().getTime()
         // try with dot notation for partial update
+
         let result = (await collection.findOneAndUpdate(params, {
             $set: dataSet
         }, {returnOriginal: false}))

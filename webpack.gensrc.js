@@ -301,7 +301,7 @@ function gensrcExtension(name, options) {
             let typeSchema = 'type ' + type.name + '{\n'
             typeSchema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy:UserPublic!' : '') + '\n\tstatus: String\n\tuserAccess: [UserPublic]\n'
 
-            let insertFields = '', cloneFields = '', updateFields = '', resolverFields = '', refResolvers = '',
+            let insertFields = '', cloneFields = '', updateFields = (type.noUserRelation?'':'createdBy: ID'), resolverFields = '', refResolvers = '',
                 refResolversObjectId = ''
 
             type.fields.forEach((field) => {
@@ -424,9 +424,9 @@ function gensrcExtension(name, options) {
             pubsub.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:result}})
             return result
         },
-        update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, {context}) => {
+        update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation?'':'createdBy,'}...rest}, {context}) => {
             pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: {${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}}})
-            return GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${refResolversObjectId}})
+            return GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${type.noUserRelation?'':'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}})
         },
         delete${type.name}: async ({_id}, {context}) => {
              pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: {_id}}})

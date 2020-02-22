@@ -39,8 +39,9 @@ export default () => {
             dataSource.forEach((d, i) => {
                 if (d.slug) {
                     const item = data.results[i]
-                    d.slug = <Link
-                        to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
+                    if( item ) {
+                        d.slug = <Link
+                            to={cmsPageEditorUrl(item.slug, container.pageParams._version)}>
                         <span
                             style={{
                                 fontWeight: 'bold',
@@ -48,6 +49,7 @@ export default () => {
                                 color: '#663366',
                                 textDecoration: 'underline'
                             }}>{item.slug || <WebIcon/>}</span></Link>
+                    }
                 }
             })
         }

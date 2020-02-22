@@ -15,7 +15,6 @@ export const getTypes = () => {
             if (extension.options && extension.options.types) {
 
                 extension.options.types.forEach(type => {
-
                     types[type.name] = Object.assign({}, type)
 
                     // add extension name so we know by which extension the type is used
@@ -117,8 +116,8 @@ export const getTypeQueries = (typeName) => {
 
 
     result.create = `mutation create${name}(${collectionClonable ? '$_version:String,' : ''}${insertParams}){create${name}(${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
-    result.update = `mutation update${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''},${updateParams}){update${name}(_id:$_id${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
-    result.delete = `mutation delete${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}){delete${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
+    result.update = `mutation update${name}($_id:ID!${noUserRelation?'':',$createdBy:ID'}${collectionClonable ? ',$_version:String' : ''},${updateParams}){update${name}(_id:$_id${noUserRelation?'':',createdBy:$createdBy'}${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
+    result.delete = `mutation delete${name}($_id:ID!${collectionClonable ? ',$_version:String' : ''}){delete${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.deleteMany = `mutation delete${name}s($_id: [ID]${collectionClonable ? ',$_version:String' : ''}){delete${name}s(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.clone = `mutation clone${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}${cloneParams}){clone${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}${cloneQuery}){${query}}}`
     typeQueries[typeName] = result

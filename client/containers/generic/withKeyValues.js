@@ -39,7 +39,6 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
         render() {
             const {keyValues, keyValueGlobals, kvUser, loading, ...rest} = this.props
-
             if (keys) {
                 if (!kvUser.isAuthenticated) {
                     // fallback: load keyValues from localstore

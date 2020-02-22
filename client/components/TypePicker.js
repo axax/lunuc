@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {InputLabel, TextField, Paper, MenuItem, withStyles, Chip, Avatar, IconButton, InputAdornment, SearchIcon} from 'ui/admin'
+import {InputLabel, TextField, FormControl, Paper, MenuItem, withStyles, Chip, Avatar, IconButton, InputAdornment, SearchIcon} from 'ui/admin'
 import {withApollo} from 'react-apollo'
 import { ApolloClient } from 'apollo-client'
 import gql from 'graphql-tag'
@@ -11,11 +11,11 @@ import {typeDataToLabel} from 'util/typesAdmin'
 const styles = {
     root: {
         position: 'relative',
-        height: 50
+        display:'block'
     },
     suggestions: {
         position: 'absolute',
-        zIndex: 2
+        zIndex: 999
     }
 }
 
@@ -50,8 +50,7 @@ class TypePicker extends React.Component {
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
         console.log(`render TypePicker | hasFocus=${hasFocus}`,data)
-        return <div className={classes.root}>
-
+        return <FormControl className={classes.root}>
             { !value.length || multi ?
             <TextField error={error} helperText={helperText} value={textValue} onChange={this.handleChange.bind(this)}
                        onKeyDown={this.handleKeyDown.bind(this)}
@@ -112,8 +111,7 @@ class TypePicker extends React.Component {
 
 
             </Paper>
-
-        </div>
+        </FormControl>
     }
 
     handleRemovePick(idx) {

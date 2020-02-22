@@ -239,7 +239,6 @@ class TypesContainer extends React.Component {
 
             if (data.results) {
                 data.results.forEach(item => {
-
                     if (!item) return
                     const dynamic = {}
 

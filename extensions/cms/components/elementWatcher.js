@@ -1,4 +1,5 @@
 import React from 'react'
+import Util from 'client/util'
 
 export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps, c, $c, scope}, options = {}) {
     // ...and returns another component...
@@ -22,7 +23,8 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
         render() {
             const {initialVisible, madeVisible} = this.state
             if (!initialVisible && !madeVisible) {
-                return <div _key={key} style={{minHeight:'1rem'}} data-wait-visible={jsonDom.instanceId} {...eleProps}></div>
+                const {_tagName,_inlineEditor,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, ...rest} = eleProps
+                return <div _key={key} style={{minHeight:'1rem'}} data-wait-visible={jsonDom.instanceId} {...rest}></div>
             } else {
                 if (!eleProps.className) {
                     eleProps.className = ''
@@ -65,7 +67,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                                         clearTimeout(timeout)
                                         this.setState({madeVisible: true})
                                     }
-                                    img.src = eleProps.src
+                                    img.src = Util.getImageObject(eleProps.src).src
 
                                 } else {
                                     this.setState({madeVisible: true})

@@ -621,6 +621,8 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleFlagChange = (key, e, flag) => {
+        if (this._saveSettings)
+            this._saveSettings()
         this.setState({[key]: flag})
         this.saveCmsPage(flag, this.props.cmsPage, key)
     }

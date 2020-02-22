@@ -16,7 +16,6 @@ class ErrorHandler extends React.Component {
         const {messages, snackbar} = this.props
         if (!messages || !Object.keys(messages).length)
             return null
-
         const key = Object.keys(messages)[0], msg = messages[key].msg
 
         if( snackbar ){

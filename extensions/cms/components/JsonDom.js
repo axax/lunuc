@@ -67,14 +67,15 @@ class JsonDom extends React.Component {
         /* Other components */
         'FileDrop': FileDrop,
         'MarkDown': MarkDown,
-        'SmartImage': (props) => {
+        'SmartImage': ({src, ...props}) => {
+            let imageData = Util.getImageObject(src)
             /*
              <picture>
              <source srcset="mdn-logo-wide.png" media="(min-width: 600px)">
              <img src="mdn-logo-narrow.png" alt="MDN">
              </picture>
              */
-            return <img src="/placeholder.svg" {...props} />
+            return <img {...imageData} {...props} />
         },
         'Print': Print,
         'input': JsonDomInput,
@@ -127,7 +128,7 @@ class JsonDom extends React.Component {
                     console.log(e)
                 }
             }
-            if(!rest.slug){
+            if (!rest.slug) {
                 return <div>No Slug</div>
             }
             return <CmsViewContainer key={rest.id}
@@ -138,7 +139,7 @@ class JsonDom extends React.Component {
                                      dynamic={true} {...rest}/>
         },
         'ContentEditable': ({_this, onChange, ...props}) => {
-           return  <ContentEditable
+            return <ContentEditable
                 onChange={(v) => _this.emitChange(props._key, v)} {...props} />
         }
     }
@@ -381,7 +382,7 @@ class JsonDom extends React.Component {
         scope.root = root
         scope.parent = parent
 
-        if ( this.runScript && script) {
+        if (this.runScript && script) {
             this.runScript = false
             this.runJsEvent('beforerunscript', false, scope)
             try {
@@ -434,7 +435,7 @@ class JsonDom extends React.Component {
                              return \`${style}\``)).call({
                     scope: this.scope
                 })
-            }catch (e) {
+            } catch (e) {
                 parsedStyle = style
                 console.log(e)
             }
@@ -824,7 +825,7 @@ class JsonDom extends React.Component {
                     }
                     if (editMode && $inlineEditor !== false) {
 
-                        if(  this.props.inlineEditor ) {
+                        if (this.props.inlineEditor) {
                             const rawJson = this.getJsonRaw(this.props, true)
                             if (rawJson) {
                                 eleProps._json = rawJson
@@ -836,7 +837,7 @@ class JsonDom extends React.Component {
                             eleProps._inlineEditor = $inlineEditor || {}
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
-                            eleProps._onchange = this.props.onChange
+                            eleProps._onChange = this.props.onChange
                             eleProps._onDataResolverPropertyChange = this.props.onDataResolverPropertyChange
                             eleType = JsonDomHelper
                         }

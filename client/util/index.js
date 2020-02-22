@@ -235,6 +235,11 @@ const Util = {
                 src: '/placeholder.svg',
                 alt: 'Placeholder'
             }
+        }else if(raw.constructor === String){
+            return {
+                src: raw,
+                alt: raw
+            }
         }
 
         let image = raw.constructor === String ? JSON.parse(raw) : raw
