@@ -175,7 +175,7 @@ class DbDumpContainer extends React.Component {
                               actions={[{key: 'close', label: 'Close'}]}
                               title="Select a media dump file">
 
-                    <FileDrop style={{width: '15rem', height: '10rem'}} accept="application/x-gzip"
+                    <FileDrop maxSize={100000} style={{width: '15rem', height: '10rem'}} accept="application/x-gzip"
                               uploadTo="/graphql/upload/mediadump"
                               label="Drop file here"/>
 
