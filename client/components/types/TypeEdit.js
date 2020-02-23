@@ -38,7 +38,13 @@ class TypeEdit extends React.Component {
         const {title, type, meta, client} = this.props
         const {dataToEdit, open} = this.state
 
-        const formFields = getFormFields(type)
+        const formFields = Object.assign({},getFormFields(type))
+
+        if( !dataToEdit) {
+            // delete createdBy if new data is created
+            delete formFields.createdBy
+        }
+
         const props = {
             title,
             fullWidth: true,

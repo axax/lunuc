@@ -98,9 +98,9 @@ class TypesContainer extends React.Component {
     constructor(props) {
         super(props)
 
+        this.types = getTypes()
         this.parseSettings(props)
 
-        this.types = getTypes()
         this.pageParams = this.determinPageParams(props)
         this.baseFilter = props.baseFilter
 
@@ -130,8 +130,10 @@ class TypesContainer extends React.Component {
             // if it is not a fix type a selection box with all types is shown
             // prepare list with types for select box
             Object.keys(this.types).map((k) => {
-                const t = this.types[k]
-                this.typesToSelect.push({value: k, name: k, hint: t.usedBy && 'used by ' + t.usedBy.join(',')})
+                if ( !this.settings[k] || !this.settings[k].hide) {
+                    const t = this.types[k]
+                    this.typesToSelect.push({value: k, name: k, hint: t.usedBy && 'used by ' + t.usedBy.join(',')})
+                }
             })
         }
     }

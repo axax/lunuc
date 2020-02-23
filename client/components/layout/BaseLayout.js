@@ -22,6 +22,7 @@ import config from 'gen/config'
 import * as UserActions from 'client/actions/UserAction'
 import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
+import {withKeyValues} from '../../containers/generic/withKeyValues'
 
 const {ADMIN_BASE_URL, APP_NAME} = config
 
@@ -47,8 +48,17 @@ class BaseLayout extends React.Component {
     }
 
     render() {
-        const {history, children, isAuthenticated, username} = this.props
+        const {history, children, isAuthenticated, username, keyValueMap} = this.props
 
+        const settings = keyValueMap.BaseLayoutSettings
+
+        if( settings && settings.menu && settings.menu.hide ){
+            for (let i = this.menuItems.length - 1; i >= 0; i--) {
+                if (settings.menu.hide.indexOf(this.menuItems[i].name) >= 0) {
+                    this.menuItems.splice(i, 1)
+                }
+            }
+        }
 
         return <UIProvider>
             <ResponsiveDrawerLayout title={APP_NAME}
@@ -86,7 +96,8 @@ BaseLayout.propTypes = {
     isAuthenticated: PropTypes.bool,
     username: PropTypes.string,
     /* User Reducer */
-    userActions: PropTypes.object.isRequired
+    userActions: PropTypes.object.isRequired,
+    keyValueMap: PropTypes.object
 }
 
 
@@ -117,4 +128,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withRouter(BaseLayout))
+)(withRouter(withKeyValues(BaseLayout, ['BaseLayoutSettings'])))

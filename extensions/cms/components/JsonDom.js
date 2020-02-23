@@ -45,6 +45,10 @@ const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../../client/containers/TypesContainer')}/>
 
 
+const AdminButton = (props) => <Async {...props} expose="Button" load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')} />
+const AdminSelect = (props) => <Async {...props} expose="Select" load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')} />
+const AdminSwitch = (props) => <Async {...props} expose="Switch" load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')} />
+
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
@@ -55,18 +59,23 @@ class JsonDom extends React.Component {
      * new components can be added with the JsonDom hook
      * */
     static components = {
+        /* Admin Elements */
+        AdminButton,
+        AdminSelect,
+        AdminSwitch,
+
         /* Material Design / admin Component */
-        'DrawerLayout': DrawerLayout,
+        DrawerLayout,
         'TypesContainer': (props) => <TypesContainer noLayout={true} title={false}
                                                      baseUrl={location.pathname} {...props}/>,
 
         /* Default UI Implementation Components */
-        'Col': Col,
-        'Row': Row,
+        Col,
+        Row,
 
         /* Other components */
-        'FileDrop': FileDrop,
-        'MarkDown': MarkDown,
+        FileDrop,
+        MarkDown,
         'SmartImage': ({src, ...props}) => {
             let imageData = Util.getImageObject(src)
             /*
@@ -77,7 +86,7 @@ class JsonDom extends React.Component {
              */
             return <img {...imageData} {...props} />
         },
-        'Print': Print,
+        Print,
         'input': JsonDomInput,
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'QuillEditor': (props) => <QuillEditor {...props}/>,

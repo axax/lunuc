@@ -108,8 +108,6 @@ let aftershockTimeout
 const highlighterHandler = (e, observer, after) => {
     const hightlighter = document.querySelector('[data-highlighter]')
     if (hightlighter) {
-
-
         const key = hightlighter.getAttribute('data-highlighter')
         const node = document.querySelector('[_key="' + key + '"]')
 
@@ -804,7 +802,7 @@ class JsonDomHelper extends React.Component {
         let comp
 
         if (isCms) {
-            comp = <div key={rest._key} {...events}>
+            comp = <div _key={rest._key} key={rest._key} {...events}>
                 <_WrappedComponent onChange={newOnChange || onChange} {...rest} children={kids}/>
             </div>
         } else {

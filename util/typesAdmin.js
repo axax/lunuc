@@ -50,6 +50,7 @@ export const getFormFields = (type) => {
         typeFormFields[type].createdBy = {
             label: 'Created by user',
             uitype: 'type_picker',
+            pickerField: 'username',
             type: 'User',
             required: true,
             reference: true,
@@ -166,14 +167,8 @@ Hook.on('Types', ({types}) => {
                 required: true
             },
             {
-                name: 'value'
-            },
-            {
-                name: 'createdBy',
-                pickerField: 'username',
-                type: 'User',
-                reference: true,
-                required: true
+                name: 'value',
+                uitype: 'editor'
             }
         ],
         selectParams: [{
