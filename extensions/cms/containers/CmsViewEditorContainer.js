@@ -489,13 +489,18 @@ class CmsViewEditorContainer extends React.Component {
 
     handleDataResolverPropertySave({value, path, key, instantSave}) {
 
-        const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path, key})
+        const {segment, index, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path, key})
 
         if (segment) {
             if( key ) {
-                Object.keys(value).forEach(objKey=>{
-                    segment[objKey]=value[objKey]
-                })
+                if( value === null){
+                    //remove
+                    dataResolver.splice(index, 1)
+                }else {
+                    Object.keys(value).forEach(objKey => {
+                        segment[objKey] = value[objKey]
+                    })
+                }
             }else{
                 setPropertyByPath(value, path, segment)
             }
@@ -546,15 +551,17 @@ class CmsViewEditorContainer extends React.Component {
         if( path ) {
             firstOfPath = path.substring(0, path.indexOf('.'))
         }
-        let segment
+        let segment, index = -1
         for (let i = 0; i < dataResolver.length; i++) {
             const json = dataResolver[i]
             if( key ){
                 if(json.key===key){
+                    index = i
                     segment = json
                     break
                 }
             }else if(json[firstOfPath]) {
+                index = i
                 segment = json
                 break
             }
@@ -568,7 +575,7 @@ class CmsViewEditorContainer extends React.Component {
             dataResolver.push(segment)
         }
 
-        return {dataResolver, segment}
+        return {dataResolver, segment, index}
     }
 
     handleCmsError(e, meta) {

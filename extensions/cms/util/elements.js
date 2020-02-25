@@ -274,6 +274,7 @@ const baseElements = [
         name: 'Query',
         defaults: {
             $inlineEditor: {
+                allowDrop: false,
                 elementKey: 'query',
                 dataResolver: {}
             },

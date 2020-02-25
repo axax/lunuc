@@ -504,7 +504,12 @@ class JsonDomHelper extends React.Component {
 
 
     handleDeleteClick(e) {
-        const {_cmsActions, _key, _json, _scope, _onChange} = this.props
+        const {_cmsActions, _key, _json, _scope, _onChange, _onDataResolverPropertyChange} = this.props
+        const source = getComponentByKey(_key, _json)
+
+        if( source && source.$inlineEditor && source.$inlineEditor.dataResolver ) {
+            _onDataResolverPropertyChange({value: null, key: source.$inlineEditor.dataResolver})
+        }
         removeComponent(_key, _json)
         _onChange(_json)
     }
@@ -906,7 +911,7 @@ class JsonDomHelper extends React.Component {
                                     const comp = jsonElements[i]
                                     if (value === comp.defaults.$inlineEditor.elementKey) {
                                         // replace __uid__ placeholder
-                                        const uid = 'gen' + Math.random().toString(36).substr(2, 9)
+                                        const uid = 'genid_' + Math.random().toString(36).substr(2, 9)
                                         item = JSON.parse(JSON.stringify(comp).replace(/__uid__/g, uid))
                                         break
                                     }

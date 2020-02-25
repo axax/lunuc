@@ -31,7 +31,7 @@ const UploadUtil = {
         })
     },
     dataURLtoBlob: (dataUrl, callback) => {
-        var req = new XMLHttpRequest
+        const req = new XMLHttpRequest
 
         req.open('GET', dataUrl)
         req.responseType = 'arraybuffer' // Can't use blob directly because of https://crbug.com/412752
