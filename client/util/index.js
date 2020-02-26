@@ -66,11 +66,11 @@ const Util = {
             second: 'numeric',
         }, options))
     },
-    formattedDateFromObjectId: (objectId) => {
+    formattedDateFromObjectId: (objectId, options) => {
         if (objectId === 0) {
-            return new Util.getDateTimeFormat().format(new Date())
+            return new Util.getDateTimeFormat(options).format(new Date())
         }
-        return Util.getDateTimeFormat().format(Util.dateFromObjectId(objectId))
+        return Util.getDateTimeFormat(options).format(Util.dateFromObjectId(objectId))
     },
     formattedDatetimeFromObjectId: (objectId) => {
         if (objectId === 0) {

@@ -638,8 +638,8 @@ class CmsViewEditorContainer extends React.Component {
     handleClientScriptChange = (script) => {
         if (this._saveSettings)
             this._saveSettings()
-        if (script.length > 10000) {
-            // delay change for bigger script
+        if (script.length > 50) {
+            // delay change
             clearTimeout(this._scriptTimeout)
             this._scriptTimeout = setTimeout(() => {
                 this._scriptTimeout = null

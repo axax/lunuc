@@ -567,7 +567,6 @@ class JsonDomHelper extends React.Component {
 
         Object.keys(json).forEach(key => {
             const newKey = prefix + key, value = propertyByPath(key, json, '_')
-            console.log(newKey, value)
             if (value && value.constructor === Object) {
                 this.setFormOptionsByProperties(value, options, newKey + '_')
             } else {
@@ -665,6 +664,11 @@ class JsonDomHelper extends React.Component {
                         Object.keys(options).forEach(key => {
                             options[key].value = propertyByPath(key, subJson, '_')
                         })
+                        if( options.$inlineEditor_dataResolver ){
+                            if(options.$inlineEditor_dataResolver.value.constructor === String ){
+
+                            }
+                        }
 
                         if (isCms) {
                             this.setFormOptionsByProperties(subJson.p, options, 'p_')

@@ -470,7 +470,6 @@ const GenericResolver = {
         if (insertResult.insertedCount) {
             const doc = insertResult.ops[0]
 
-
             const result = {
                 ...clone,
                 _id: doc._id,
@@ -485,14 +484,17 @@ const GenericResolver = {
 
             if (fields) {
                 Object.keys(result).forEach(field => {
-                    if (fields[field] && fields[field].reference) {
-                        // is a reference
-                        // TODO also resolve fields of subtype
-                        result[field] = {_id: result[field]}
+                    if (fields[field]) {
+                        if( fields[field].reference && result[field].constructor !== Object) {
+                            // is a reference
+                            // TODO also resolve fields of subtype
+                            result[field] = {_id: result[field]}
+                        }else if(fields[field].type==='Object' && result[field].constructor === Object){
+                            result[field] =JSON.stringify(result[field])
+                        }
                     }
                 })
             }
-
 
             Hook.call('typeCloned', {type: typeName, db, context})
             Hook.call('typeCloned_' + typeName, {db, context})

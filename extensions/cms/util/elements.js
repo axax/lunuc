@@ -308,6 +308,10 @@ const baseElements = [
                     f: 'definition.name=BlogEntry && _id>${ObjectId.createFromTime(Date.now()/1000-60*60*24)}'
                 }
             },
+            c_$for_d: {
+                label: 'Data source',
+                value: 'data.__uid__.results'
+            },
             c_$for_c_c: {
                 label: 'Template',
                 uitype: 'editor',
