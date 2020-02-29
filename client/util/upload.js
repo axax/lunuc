@@ -55,7 +55,7 @@ const UploadUtil = {
         oriImg.onload = () => {
 
             //TODO support for multiple conversions
-            const {maxWidth, maxHeight, quality} = conversion[0]
+            const {maxWidth, maxHeight, quality, type} = conversion[0]
 
             let width = oriImg.width, height = oriImg.height
 
@@ -84,8 +84,7 @@ const UploadUtil = {
              ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
              ctx.fillText(file.name, 5, height - 8)*/
 
-
-            const dataUrl = canvas.toDataURL(file.type, quality)
+            const dataUrl = canvas.toDataURL(type || file.type, quality)
             onSuccess(dataUrl)
 
         }

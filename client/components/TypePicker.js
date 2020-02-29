@@ -11,7 +11,8 @@ import {typeDataToLabel} from 'util/typesAdmin'
 const styles = {
     root: {
         position: 'relative',
-        display:'block'
+        display:'block',
+        zIndex:'auto'
     },
     suggestions: {
         position: 'absolute',
