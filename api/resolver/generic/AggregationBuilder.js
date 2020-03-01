@@ -279,7 +279,11 @@ export default class AggregationBuilder {
                         }
                     }
                     filterValue = ids
-                    comparator = '$in'
+                    if(comparator === '$ne'){
+                        comparator = '$nin'
+                    }else {
+                        comparator = '$in'
+                    }
                 } else if (ObjectId.isValid(filterValue)) {
                     // match by id
                     filterValue = ObjectId(filterValue)

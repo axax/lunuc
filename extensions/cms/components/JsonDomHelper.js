@@ -15,6 +15,7 @@ import {
     AddIcon,
     BuildIcon,
     ImageIcon,
+    FileCopyIcon,
     PlaylistAddIcon
 } from 'ui/admin'
 import GenericForm from 'client/components/GenericForm'
@@ -442,6 +443,21 @@ class JsonDomHelper extends React.Component {
 
     }
 
+    handleCopyClick(e) {
+        e.stopPropagation()
+        e.preventDefault()
+        const {_cmsActions, _onChange, _key, _json, _scope} = this.props
+
+        const source = getComponentByKey(_key, _json)
+
+        if (source) {
+            const key = getParentKey(_key)
+            addComponent({key, json: _json, index: -1, component: source})
+            _onChange(_json)
+        }
+
+    }
+
 
     handleEditDataClick(e) {
         e.stopPropagation()
@@ -507,7 +523,7 @@ class JsonDomHelper extends React.Component {
         const {_cmsActions, _key, _json, _scope, _onChange, _onDataResolverPropertyChange} = this.props
         const source = getComponentByKey(_key, _json)
 
-        if( source && source.$inlineEditor && source.$inlineEditor.dataResolver ) {
+        if (source && source.$inlineEditor && source.$inlineEditor.dataResolver) {
             _onDataResolverPropertyChange({value: null, key: source.$inlineEditor.dataResolver})
         }
         removeComponent(_key, _json)
@@ -585,13 +601,16 @@ class JsonDomHelper extends React.Component {
         const events = {
             onMouseOver: this.onHelperMouseOver.bind(this),
             onMouseOut: this.onHelperMouseOut.bind(this),
-            /*onContextMenu: (e)=>{
-             e.preventDefault()
-             this.setState({
-             mouseX: e.clientX - 2,
-             mouseY: e.clientY - 4
-             })
-             }*/
+            onContextMenu: (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                this.setState({
+                    toolbarMenuOpen:true,
+                    toolbarHovered:true,
+                    mouseX: e.clientX - 2,
+                    mouseY: e.clientY - 4
+                })
+            }
         }
         let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, newOnChange
 
@@ -600,10 +619,13 @@ class JsonDomHelper extends React.Component {
 
 
         if (_inlineEditor.allowDrop === undefined) {
-            _inlineEditor.allowDrop = ALLOW_DROP.indexOf(_tagName) >= 0
+            _inlineEditor.allowDrop = ALLOW_DROP.indexOf(_tagName) >= 0 && !this.props.dangerouslySetInnerHTML
         }
         if (!_inlineEditor.menu) {
             _inlineEditor.menu = {}
+        }
+        if (!_inlineEditor.menuTitle) {
+            _inlineEditor.menuTitle = {}
         }
 
         if (isTempalteEdit) {
@@ -648,7 +670,7 @@ class JsonDomHelper extends React.Component {
 
                     }
                     menuItems.push({
-                        name: 'Edit data source',
+                        name: _inlineEditor.menuTitle.source || 'Edit data source',
                         icon: <EditIcon/>,
                         onClick: this.handleEditDataClick.bind(this)
                     })
@@ -659,13 +681,13 @@ class JsonDomHelper extends React.Component {
 
                     if (jsonElement && (isCms || jsonElement.options)) {
 
-                        const options = Object.assign({}, jsonElement.options)
+                        const options = Object.assign({}, jsonElement.options, subJson.$inlineEditor.options)
 
                         Object.keys(options).forEach(key => {
                             options[key].value = propertyByPath(key, subJson, '_')
                         })
-                        if( options.$inlineEditor_dataResolver ){
-                            if(options.$inlineEditor_dataResolver.value.constructor === String ){
+                        if (options.$inlineEditor_dataResolver) {
+                            if (options.$inlineEditor_dataResolver.value.constructor === String) {
 
                             }
                         }
@@ -697,7 +719,15 @@ class JsonDomHelper extends React.Component {
                     })
                 }
 
-                if (!isLoop && ALLOW_CHILDREN.indexOf(_tagName) >= 0) {
+                if (_inlineEditor.menu.clone !== false) {
+                    menuItems.push({
+                        name: 'Element kopieren',
+                        icon: <FileCopyIcon/>,
+                        onClick: this.handleCopyClick.bind(this)
+                    })
+                }
+
+                if (!isLoop && _inlineEditor.allowDrop) {
                     menuItems.push({
                         name: 'Add element',
                         icon: <AddIcon/>,
@@ -729,7 +759,6 @@ class JsonDomHelper extends React.Component {
                     })
                 }
             }
-
             toolbar = <div
                 key={rest._key + '.toolbar'}
                 data-toolbar={rest._key}
@@ -739,13 +768,14 @@ class JsonDomHelper extends React.Component {
                 className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}>
                 <div
                     className={classes.info}>{subJson ? subJson.t || 'Text' + ' - ' : ''}{rest.id || rest._key}</div>
-                {menuItems.length>0&&<SimpleMenu
+                {menuItems.length > 0 && <SimpleMenu
                     anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
                     anchorPosition={
                         this.state.mouseY && this.state.mouseX
                             ? {top: this.state.mouseY, left: this.state.mouseX}
                             : undefined
                     }
+                    open={this.state.mouseY?toolbarMenuOpen:undefined}
                     onOpen={() => {
                         this.setState({toolbarMenuOpen: true})
                     }}
@@ -876,6 +906,8 @@ class JsonDomHelper extends React.Component {
                                                                  subJson[key] = comp[key]
                                                              } else if (subJson[key].constructor === Object) {
                                                                  subJson[key] = {...subJson[key], ...comp[key]}
+                                                             } else if (subJson[key].constructor === Array) {
+                                                                 // do nothing for array.. maybe merge?
                                                              } else {
                                                                  subJson[key] = comp[key]
                                                              }
@@ -920,7 +952,6 @@ class JsonDomHelper extends React.Component {
                                         break
                                     }
                                 }
-                                console.log(item.defaults.$inlineEditor.elementKey)
                                 this.setState({addChildDialog: {...addChildDialog, selected: item, form: null}})
                             }}
                             items={jsonElements}

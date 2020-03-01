@@ -41,6 +41,7 @@ import Util from "../../../client/util";
 import {CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import CodeEditor from 'client/components/CodeEditor'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
+import GenericForm from "../../../client/components/GenericForm";
 
 class CmsViewEditorContainer extends React.Component {
 
@@ -183,6 +184,7 @@ class CmsViewEditorContainer extends React.Component {
             cmsEditDataValue = cmsEditData.value
         }
 
+        let formRef
         const inner = [!loadingSettings &&
         <WrappedComponent key="cmsView" cmsEditData={cmsEditData}
                           onChange={this.handleTemplateChange}
@@ -241,9 +243,10 @@ class CmsViewEditorContainer extends React.Component {
                                 null
                             )
                         }}
-                    </Query> : <SimpleDialog key="propertyEditor" open={true} onClose={(e) => {
-                        if (e.key === 'save' && cmsEditDataValue) {
-                            this.handleDataResolverPropertySave({value: cmsEditDataValue, path:  cmsEditData._id, instantSave:true})
+                    </Query> : <SimpleDialog fullWidth={true} maxWidth="sm" key="propertyEditor" open={true} onClose={(e) => {
+                        if (e.key === 'save' && formRef) {
+                            const field = formRef.state.fields.field
+                            this.handleDataResolverPropertySave({value: field, path:  cmsEditData._id, instantSave:true})
                         }
                         this.props._cmsActions.editCmsData(null)
                     }}
@@ -253,9 +256,12 @@ class CmsViewEditorContainer extends React.Component {
                                                  type: 'primary'
                                              }]}
                                              title="Edit Value">
-                        <TextField onChange={(e) => {
-                            cmsEditDataValue = e.target.value
-                        }} {...cmsEditDataProps} />
+
+                        <GenericForm primaryButton={false} ref={(e) => {
+                            formRef = e
+                        }} fields={cmsEditDataProps}/>
+
+
 
                     </SimpleDialog>
 
@@ -520,17 +526,20 @@ class CmsViewEditorContainer extends React.Component {
                     const correctJson = cmsEditData.props.replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ');
                     props = JSON.parse(correctJson)
                 }
-
-                return {defaultValue: propertyByPath(path, segment), ...props}
+                const newProps = {value: propertyByPath(path, segment)}
+                if( newProps.value.constructor === Object || newProps.value.constructor === Array){
+                    newProps.uitype='json'
+                }
+                return {field:{...newProps, ...props}}
 
             } catch (e) {
                 console.log(e)
-                return {defaultValue: '', error: true, helperText: e.message}
+                return {field:{value: '', error: true, helperText: e.message}}
             }
 
 
         }
-        return {defaultValue: ''}
+        return {field:{value: ''}}
     }
 
 

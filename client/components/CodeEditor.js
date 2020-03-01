@@ -108,7 +108,7 @@ class CodeEditor extends React.Component {
                     }
                     //  editor.setSize(width, height);
                 }}
-                value={this._data && this._data.constructor===Object?JSON.stringify(this._data, null, 4):this._data}
+                value={this._data && this._data.constructor===Object||this._data.constructor===Array?JSON.stringify(this._data, null, 4):this._data}
                 options={options}
                 onScroll={(editor, e) => {
                     if (onScroll) {
@@ -121,7 +121,7 @@ class CodeEditor extends React.Component {
                     }
                 }}
                 onChange={(editor, dataObject, data) => {
-                    if( this._data && this._data.constructor === Object){
+                    if( this._data && (this._data.constructor === Object || this._data.constructor === Array)){
                         // if input was Object output is an Object to
                         this._data = JSON.parse(data)
                     }else {

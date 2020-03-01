@@ -8,6 +8,17 @@ const baseElements = [
                 elementKey: 'image',
                 picker: {type: 'Media', baseFilter: 'mimeType=image'}
             }
+        },
+        options: {
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
+            }
         }
     },
     {
@@ -75,14 +86,17 @@ const baseElements = [
             },
             p_style_marginBottom: {
                 label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
             }
         }
     },
     {
-        tagName: 'h1$', name: 'Header 1',
+        tagName: 'h1', name: 'Header 1',
         defaults: {
             $inlineEditor: {
-                elementKey: 'h1$'
+                elementKey: 'h1'
             },
             c: 'Header 1'
         },
@@ -93,10 +107,10 @@ const baseElements = [
         }
     },
     {
-        tagName: 'h2$', name: 'Header 2',
+        tagName: 'h2', name: 'Header 2',
         defaults: {
             $inlineEditor: {
-                elementKey: 'h2$'
+                elementKey: 'h2'
             },
             c: 'Header 2'
         },
@@ -107,33 +121,45 @@ const baseElements = [
         }
     },
     {
-        tagName: 'p$',
+        tagName: 'p',
         name: 'Text block',
         defaults: {
-            $c: "Paragraph",
+            c: "Paragraph",
             $inlineEditor: {
-                elementKey: 'p$'
+                elementKey: 'p'
             }
         },
         options: {
-            $c: {
+            c: {
                 label: 'Text'
+            },
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
             }
         }
     },
     {
-        tagName: 'QuillEditor',
+        tagName: 'div.lu-rich-text',
         name: 'Rich-Text block',
         defaults: {
-            c: "${_t('__uid__',null,'...')}",
-            p: {
-                name: '__uid__',
-                readOnly: '${!inlineEditor}',
-                theme: 'bubble'
-            },
+            $c: "",
             $inlineEditor: {
-                elementKey: 'QuillEditor',
-                source: ':tr.${_app_.lang}.__uid__:{multiline:true}'
+                elementKey: 'QuillEditor'
+            }
+        },
+        options: {
+            $c: {
+                label: 'Text',
+                uitype: 'html'
+            },
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
             }
         }
     },
@@ -181,6 +207,29 @@ const baseElements = [
             ]
         },
         options: {
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            }
+        }
+    },
+    {
+        tagName: 'Row',
+        name: 'Layout 1/4',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'layout-1-4'
+            },
+            c: [
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-3.col-sm-3.col-xs-6', c: [{c: 'Spalte 1'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-3.col-sm-3.col-xs-6', c: [{c: 'Spalte 2'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-3.col-sm-3.col-xs-6', c: [{c: 'Spalte 3'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-3.col-sm-3.col-xs-6', c: [{c: 'Spalte 4'}]},
+            ]
+        },
+        options: {
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
             p_style_marginBottom: {
                 label: 'Abstand unten'
             }
@@ -316,6 +365,22 @@ const baseElements = [
                 label: 'Template',
                 uitype: 'editor',
                 value: '$.loop{loop.data.title}'
+            }
+        }
+    },
+    {
+        tagName: 'QuillEditor',
+        name: 'Rich-Text Inline (Datasource)',
+        defaults: {
+            c: "${_t('__uid__',null,'...')}",
+            p: {
+                name: '__uid__',
+                readOnly: '${!inlineEditor}',
+                theme: 'bubble'
+            },
+            $inlineEditor: {
+                elementKey: 'QuillEditorInline',
+                source: ':tr.${_app_.lang}.__uid__:{multiline:true}'
             }
         }
     }
