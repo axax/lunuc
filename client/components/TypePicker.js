@@ -12,11 +12,20 @@ const styles = {
     root: {
         position: 'relative',
         display:'block',
-        zIndex:'auto'
+        zIndex:'auto',
+        marginLeft:0
     },
     suggestions: {
         position: 'absolute',
         zIndex: 999
+    },
+    clip:{
+        marginTop:'30px',
+        marginBottom:'0px'
+    },
+    label:{
+        marginTop:'8px',
+        marginLeft:'8px'
     }
 }
 
@@ -87,11 +96,11 @@ class TypePicker extends React.Component {
                                </InputAdornment>
                            ),
                        }}
-            /> : <InputLabel shrink>{label}</InputLabel> }
+            /> : <InputLabel className={classes.label} shrink>{label}</InputLabel> }
 
 
             { value.map((value, i) =>
-                <Chip key={i} label={typeDataToLabel(value, pickerField)} onDelete={this.handleRemovePick.bind(this, i)}
+                <Chip key={i} className={classes.clip} label={typeDataToLabel(value, pickerField)} onDelete={this.handleRemovePick.bind(this, i)}
                       avatar={value.__typename === 'Media' ? <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>)
             }
 

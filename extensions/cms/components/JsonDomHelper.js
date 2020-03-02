@@ -697,9 +697,11 @@ class JsonDomHelper extends React.Component {
                         }
 
                         const newJsonElement = Object.assign({}, jsonElement)
+
+                        delete newJsonElement.defaults
                         newJsonElement.options = options
                         menuItems.push({
-                            name: 'Edit',
+                            name: 'Bearbeiten',
                             icon: <EditIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
@@ -713,7 +715,7 @@ class JsonDomHelper extends React.Component {
 
                 if (_inlineEditor.menu.editTemplate !== false) {
                     menuItems.push({
-                        name: 'Edit template',
+                        name: 'Template bearbeiten',
                         icon: <BuildIcon/>,
                         onClick: this.handleEditClick.bind(this)
                     })
@@ -729,7 +731,7 @@ class JsonDomHelper extends React.Component {
 
                 if (!isLoop && _inlineEditor.allowDrop) {
                     menuItems.push({
-                        name: 'Add element',
+                        name: 'Element hinzufügen',
                         icon: <AddIcon/>,
                         onClick: () => {
                             JsonDomHelper.disableEvents = true
@@ -740,7 +742,7 @@ class JsonDomHelper extends React.Component {
 
                 if (_inlineEditor.menu.addBelow !== false) {
                     menuItems.push({
-                        name: 'Add element below',
+                        name: 'Element unterhalb einfügen',
                         icon: <PlaylistAddIcon/>,
                         onClick: () => {
                             JsonDomHelper.disableEvents = true
@@ -751,7 +753,7 @@ class JsonDomHelper extends React.Component {
 
                 if (_inlineEditor.menu.remove !== false) {
                     menuItems.push({
-                        name: 'Remove',
+                        name: 'Element entfernen',
                         icon: <DeleteIcon/>,
                         onClick: () => {
                             this.setState({deleteConfirmDialog: true})
@@ -791,23 +793,31 @@ class JsonDomHelper extends React.Component {
                     className={classes.toolbarMenu} mini items={menuItems}/>}
             </div>
 
-            highlighter = <span
-                key={rest._key + '.highlighter'}
-                data-highlighter={rest._key}
-                style={{top: this.state.top, left: this.state.left, height: this.state.height, width: this.state.width}}
-                className={classNames(classes.highlighter, isCms || _inlineEditor.picker ? classes.bgBlue : classes.bgYellow)}>{_inlineEditor.picker || isCms ?
-                <div
-                    onMouseOver={this.onToolbarMouseOver.bind(this)}
-                    onMouseOut={this.onToolbarMouseOut.bind(this, classes.picker)}
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        if (isCms) {
-                            window.location = '/' + subJson.p.slug
-                        } else {
-                            this.openPicker(_inlineEditor.picker)
-                        }
+            if(_inlineEditor.highlight === undefined || _inlineEditor.highlight) {
+                highlighter = <span
+                    key={rest._key + '.highlighter'}
+                    data-highlighter={rest._key}
+                    style={{
+                        top: this.state.top,
+                        left: this.state.left,
+                        height: this.state.height,
+                        width: this.state.width
                     }}
-                    className={classes.picker}>{isCms && subJson.p ? subJson.p.slug : <ImageIcon/>}</div> : ''}</span>
+                    className={classNames(classes.highlighter, isCms || _inlineEditor.picker ? classes.bgBlue : classes.bgYellow)}>{_inlineEditor.picker || isCms ?
+                    <div
+                        onMouseOver={this.onToolbarMouseOver.bind(this)}
+                        onMouseOut={this.onToolbarMouseOut.bind(this, classes.picker)}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            if (isCms) {
+                                window.location = '/' + subJson.p.slug
+                            } else {
+                                this.openPicker(_inlineEditor.picker)
+                            }
+                        }}
+                        className={classes.picker}>{isCms && subJson.p ? subJson.p.slug :
+                        <ImageIcon/>}</div> : ''}</span>
+            }
         }
 
         if (_inlineEditor.picker) {
@@ -885,6 +895,7 @@ class JsonDomHelper extends React.Component {
                                                  if (e.key === 'save' && selected) {
 
                                                      const comp = {'t': selected.tagName, ...selected.defaults}
+
                                                      let pos
 
                                                      if (addChildDialog.form) {
@@ -907,7 +918,11 @@ class JsonDomHelper extends React.Component {
                                                              } else if (subJson[key].constructor === Object) {
                                                                  subJson[key] = {...subJson[key], ...comp[key]}
                                                              } else if (subJson[key].constructor === Array) {
-                                                                 // do nothing for array.. maybe merge?
+                                                                 subJson[key].forEach((item,i)=>{
+                                                                     if(comp[key] && comp[key][i]){
+                                                                         subJson[key][i] = {...item, ...comp[key][i]}
+                                                                     }
+                                                                 })
                                                              } else {
                                                                  subJson[key] = comp[key]
                                                              }
@@ -925,21 +940,21 @@ class JsonDomHelper extends React.Component {
                                              actions={[
                                                  {
                                                      key: 'cancel',
-                                                     label: 'Cancel',
+                                                     label: 'Abrechen',
                                                      type: 'secondary'
                                                  },
                                                  {
                                                      key: 'save',
-                                                     label: 'Save',
+                                                     label: 'Speichern',
                                                      type: 'primary'
                                                  }]}
-                                             title="Edit Value">
+                                             title="Bearbeitung">
 
                         <SimpleSelect
                             fullWidth={true}
-                            label="Select a component"
+                            label="Element auswählen"
                             disabled={addChildDialog.edit}
-                            value={addChildDialog.selected && addChildDialog.selected.defaults.$inlineEditor.elementKey}
+                            value={addChildDialog.selected && addChildDialog.selected.defaults && addChildDialog.selected.defaults.$inlineEditor.elementKey}
                             onChange={(e) => {
                                 const value = e.target.value
                                 let item

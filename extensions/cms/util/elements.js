@@ -25,8 +25,8 @@ const baseElements = [
         tagName: 'Link',
         name: 'Link',
         options: {
-            c: {value: '', placeholder: 'Name eingeben', label: 'Name'},
-            p_href: {value: '', placeholder: 'Url eingeben', label: 'Url'},
+            c: {fullWidth: true,value: '', placeholder: 'Name eingeben', label: 'Name'},
+            p_href: { fullWidth: true,value: '', placeholder: 'Url eingeben', label: 'Url'},
             p_className: {
                 label: 'Style',
                 uitype: 'select',
@@ -51,9 +51,9 @@ const baseElements = [
         tagName: 'Link.lu-image-link',
         name: 'Image Link',
         options: {
-            c_0_p_src: {value: '', label: 'Image', uitype: 'type_picker', type: 'Media'},
-            c_1_c: {value: '', placeholder: 'Text eingeben', label: 'Text'},
-            p_href: {value: '', placeholder: 'Url eingeben', label: 'Url'},
+            c_0_p_src: {value: '', label: 'Bild', uitype: 'type_picker', type: 'Media'},
+            c_1_c: {fullWidth: true,value: '', placeholder: 'Text eingeben', label: 'Text'},
+            p_href: {fullWidth: true,value: '', placeholder: 'Url eingeben', label: 'Url'},
             p_className: {value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse'}
         },
         defaults: {
@@ -102,7 +102,8 @@ const baseElements = [
         },
         options: {
             c: {
-                label: 'Text'
+                label: 'Text',
+                fullWidth: true
             }
         }
     },
@@ -116,7 +117,8 @@ const baseElements = [
         },
         options: {
             c: {
-                label: 'Text'
+                label: 'Text',
+                fullWidth: true
             }
         }
     },
@@ -131,7 +133,9 @@ const baseElements = [
         },
         options: {
             c: {
-                label: 'Text'
+                label: 'Text',
+                fullWidth: true,
+                uitype: 'textarea'
             },
             p_style_marginTop: {
                 label: 'Abstand oben'
@@ -253,6 +257,9 @@ const baseElements = [
         options: {
             p_style_marginBottom: {
                 label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
             }
         }
     },
@@ -361,7 +368,7 @@ const baseElements = [
                 label: 'Data source',
                 value: 'data.__uid__.results'
             },
-            c_$for_c_c: {
+            c_$for_c_$c: {
                 label: 'Template',
                 uitype: 'editor',
                 value: '$.loop{loop.data.title}'
