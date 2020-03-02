@@ -108,7 +108,7 @@ class CodeEditor extends React.Component {
                     }
                     //  editor.setSize(width, height);
                 }}
-                value={this._data && this._data.constructor===Object||this._data.constructor===Array?JSON.stringify(this._data, null, 4):this._data}
+                value={this._data && (this._data.constructor===Object||this._data.constructor===Array)?JSON.stringify(this._data, null, 4):this._data}
                 options={options}
                 onScroll={(editor, e) => {
                     if (onScroll) {
