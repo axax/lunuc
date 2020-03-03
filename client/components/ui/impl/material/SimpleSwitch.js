@@ -11,9 +11,10 @@ const styles = {
     },
 };
 
-export const SimpleSwitch = ({label,classes,contrast, ...rest}) => {
+export const SimpleSwitch = ({label,classes,contrast,className, ...rest}) => {
     return <FormControlLabel
         classes={{
+            root: className,
             label: contrast && classes.labelContrast,
         }}
         control={

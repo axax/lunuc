@@ -66,7 +66,6 @@ export default () => {
 
                 struct.fields.forEach(field => {
                     const oriName = field.name, newName = 'data_' + oriName
-                    field.fullWidth = true
                     field.name = newName
                     newFields[newName] = field
                     if (field.localized) {

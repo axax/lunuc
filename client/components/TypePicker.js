@@ -7,25 +7,27 @@ import gql from 'graphql-tag'
 import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
+import classNames from 'classnames'
 
-const styles = {
-    root: {
-        position: 'relative',
-        display:'block',
-        zIndex:'auto',
-        marginLeft:0
-    },
-    suggestions: {
-        position: 'absolute',
-        zIndex: 999
-    },
-    clip:{
-        marginTop:'30px',
-        marginBottom:'0px'
-    },
-    label:{
-        marginTop:'8px',
-        marginLeft:'8px'
+const styles =  theme => {
+    return {
+        root: {
+            position: 'relative',
+            zIndex:'auto',
+            marginLeft:0
+        },
+        suggestions: {
+            position: 'absolute',
+            zIndex: 999,
+            top:'100%',
+            maxWidth: '100%'
+        },
+        clip:{
+            margin:theme.spacing(2)+'px auto 0px '+theme.spacing(1)+'px;'
+        },
+        textField:{
+            margin:'0',
+        }
     }
 }
 
@@ -56,13 +58,19 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {classes, placeholder, multi, error, helperText, pickerField, type, label} = this.props
+        const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, type, label} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
         console.log(`render TypePicker | hasFocus=${hasFocus}`,data)
-        return <FormControl className={classes.root}>
+        return <FormControl
+            fullWidth={fullWidth} className={classNames(classes.root, className)}>
             { !value.length || multi ?
-            <TextField error={error} helperText={helperText} value={textValue} onChange={this.handleChange.bind(this)}
+            <TextField error={error}
+                       fullWidth={fullWidth}
+                       className={classes.textField}
+                       helperText={helperText}
+                       value={textValue}
+                       onChange={this.handleChange.bind(this)}
                        onKeyDown={this.handleKeyDown.bind(this)}
                        onFocus={() => this.setState({hasFocus: true})}
                        onBlur={this.handleBlur.bind(this)}

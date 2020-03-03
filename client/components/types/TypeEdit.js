@@ -36,7 +36,11 @@ class TypeEdit extends React.Component {
 
     render() {
         const {title, type, meta, client} = this.props
-        const {dataToEdit, open} = this.state
+        let {dataToEdit, open} = this.state
+
+        if(!dataToEdit){
+            dataToEdit = this.props.initialData
+        }
 
         const formFields = Object.assign({},getFormFields(type))
 

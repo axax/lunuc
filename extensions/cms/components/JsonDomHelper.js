@@ -459,11 +459,16 @@ class JsonDomHelper extends React.Component {
     }
 
 
-    handleEditDataClick(e) {
+    handleEditDataClick(e, clone) {
         e.stopPropagation()
         e.preventDefault()
         const {_cmsActions, _inlineEditor} = this.props
-        _cmsActions.editCmsData(this.parseInlineEditorSource(_inlineEditor.source))
+
+        const dataSource = this.parseInlineEditorSource(_inlineEditor.source)
+        if( clone ){
+            dataSource.clone = true
+        }
+        _cmsActions.editCmsData(dataSource)
 
     }
 
@@ -569,8 +574,7 @@ class JsonDomHelper extends React.Component {
                         if (!source.p) {
                             source.p = {}
                         }
-                        source.p.src = UPLOAD_URL + '/' + newwindow.resultValue._id
-                        source.p.alt = newwindow.resultValue.name
+                        source.p.src = newwindow.resultValue
                     }
                     _onChange(_json)
                 }
@@ -650,7 +654,7 @@ class JsonDomHelper extends React.Component {
 
             if (isCms) {
                 menuItems.push({
-                    name: 'Open component', icon: <LaunchIcon/>, onClick: () => {
+                    name: `Komponente ${subJson.p.id} öffnen`, icon: <LaunchIcon/>, onClick: () => {
                         window.location = '/' + subJson.p.slug
                     }
                 })
@@ -670,10 +674,20 @@ class JsonDomHelper extends React.Component {
 
                     }
                     menuItems.push({
-                        name: _inlineEditor.menuTitle.source || 'Edit data source',
+                        name: _inlineEditor.menuTitle.source || 'Datenquelle bearbeiten',
                         icon: <EditIcon/>,
                         onClick: this.handleEditDataClick.bind(this)
                     })
+
+                    if( parsedSouce.allowClone ) {
+                        menuItems.push({
+                            name: _inlineEditor.menuTitle.sourceClone || 'Datenquelle kopieren',
+                            icon: <FileCopyIcon/>,
+                            onClick: (e)=>{
+                                this.handleEditDataClick(e, true)
+                            }
+                        })
+                    }
                 }
 
                 if (_inlineEditor.elementKey) {
@@ -709,8 +723,17 @@ class JsonDomHelper extends React.Component {
                             }
                         })
                     }
-
                 }
+
+             /*   if( _inlineEditor.picker ){
+                    menuItems.push({
+                        name: 'Bild Auswählen',
+                        icon: <BuildIcon/>,
+                        onClick: ()=>{
+                            this.openPicker(_inlineEditor.picker)
+                        }
+                    })
+                }*/
 
 
                 if (_inlineEditor.menu.editTemplate !== false) {
@@ -793,7 +816,7 @@ class JsonDomHelper extends React.Component {
                     className={classes.toolbarMenu} mini items={menuItems}/>}
             </div>
 
-            if(_inlineEditor.highlight === undefined || _inlineEditor.highlight) {
+            if(_inlineEditor.highlight !== false) {
                 highlighter = <span
                     key={rest._key + '.highlighter'}
                     data-highlighter={rest._key}
@@ -807,6 +830,7 @@ class JsonDomHelper extends React.Component {
                     <div
                         onMouseOver={this.onToolbarMouseOver.bind(this)}
                         onMouseOut={this.onToolbarMouseOut.bind(this, classes.picker)}
+                        onContextMenu={events.onContextMenu.bind(this)}
                         onClick={(e) => {
                             e.stopPropagation()
                             if (isCms) {
@@ -815,7 +839,7 @@ class JsonDomHelper extends React.Component {
                                 this.openPicker(_inlineEditor.picker)
                             }
                         }}
-                        className={classes.picker}>{isCms && subJson.p ? subJson.p.slug :
+                        className={classes.picker}>{isCms && subJson.p ? subJson.p.id || subJson.p.slug :
                         <ImageIcon/>}</div> : ''}</span>
             }
         }
@@ -940,7 +964,7 @@ class JsonDomHelper extends React.Component {
                                              actions={[
                                                  {
                                                      key: 'cancel',
-                                                     label: 'Abrechen',
+                                                     label: 'Abbrechen',
                                                      type: 'secondary'
                                                  },
                                                  {
@@ -950,10 +974,9 @@ class JsonDomHelper extends React.Component {
                                                  }]}
                                              title="Bearbeitung">
 
-                        <SimpleSelect
+                        {!addChildDialog.edit && <SimpleSelect
                             fullWidth={true}
                             label="Element auswählen"
-                            disabled={addChildDialog.edit}
                             value={addChildDialog.selected && addChildDialog.selected.defaults && addChildDialog.selected.defaults.$inlineEditor.elementKey}
                             onChange={(e) => {
                                 const value = e.target.value
@@ -970,7 +993,7 @@ class JsonDomHelper extends React.Component {
                                 this.setState({addChildDialog: {...addChildDialog, selected: item, form: null}})
                             }}
                             items={jsonElements}
-                        />
+                        />}
 
                         {addChildDialog.selected && addChildDialog.selected.options &&
                         <GenericForm primaryButton={false} ref={(e) => {

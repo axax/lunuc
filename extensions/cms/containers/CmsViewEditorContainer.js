@@ -24,9 +24,9 @@ import {
     Button,
     SimpleSwitch,
     SimpleDialog,
+    SimpleMenu,
     Divider,
-    UIProvider,
-    TextField
+    UIProvider
 } from 'ui/admin'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import config from 'gen/config'
@@ -183,7 +183,6 @@ class CmsViewEditorContainer extends React.Component {
             cmsEditDataProps = this.getDataResolverProperty(cmsEditData)
             cmsEditDataValue = cmsEditData.value
         }
-
         let formRef
         const inner = [!loadingSettings &&
         <WrappedComponent key="cmsView" cmsEditData={cmsEditData}
@@ -234,9 +233,16 @@ class CmsViewEditorContainer extends React.Component {
                                 title: cmsEditData.type,
                                 open: !!cmsEditData,
                                 onClose: this.handleEditDataClose.bind(this),
-                                dataToEdit: data.genericDatas.results[0],
                                 parentRef: this
                             }
+
+                            if( cmsEditData.clone){
+                                editDialogProps.initialData = data.genericDatas.results[0]
+                                delete editDialogProps.initialData._id
+                            }else{
+                                editDialogProps.dataToEdit = data.genericDatas.results[0]
+                            }
+
                             return React.createElement(
                                 withType(TypeEdit),
                                 editDialogProps,
@@ -251,11 +257,16 @@ class CmsViewEditorContainer extends React.Component {
                         this.props._cmsActions.editCmsData(null)
                     }}
                                              actions={[{
+                                                 key: 'cancel',
+                                                 label: 'Abbrechen',
+                                                 type: 'secondary'
+                                             },
+                                             {
                                                  key: 'save',
-                                                 label: 'Save',
+                                                 label: 'Speichern',
                                                  type: 'primary'
                                              }]}
-                                             title="Edit Value">
+                                             title="Bearbeitung">
 
                         <GenericForm primaryButton={false} ref={(e) => {
                             formRef = e
@@ -480,7 +491,8 @@ class CmsViewEditorContainer extends React.Component {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
                                   }}>Back</Button>:<Button key="button" size="small" color="inherit" onClick={()=>{
                                       this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname)}`)
-                                  }}>Logout</Button>
+                                  }}>Logout</Button>,
+                                  <SimpleMenu key="moreMenu" color="inherit" items={[{name: 'Seite kopieren', onClick: ()=>{}}]}/>
                               ]
                               }
                               title={`Edit Page "${props.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>

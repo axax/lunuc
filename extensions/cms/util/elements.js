@@ -10,6 +10,7 @@ const baseElements = [
             }
         },
         options: {
+            p_src: {fullWidth:true, value: '', label: 'Bild', uitype: 'type_picker', type: 'Media'},
             p_style_marginTop: {
                 label: 'Abstand oben'
             },
@@ -51,7 +52,7 @@ const baseElements = [
         tagName: 'Link.lu-image-link',
         name: 'Image Link',
         options: {
-            c_0_p_src: {value: '', label: 'Bild', uitype: 'type_picker', type: 'Media'},
+            c_0_p_src: {fullWidth:true, value: '', label: 'Bild', uitype: 'type_picker', type: 'Media'},
             c_1_c: {fullWidth: true,value: '', placeholder: 'Text eingeben', label: 'Text'},
             p_href: {fullWidth: true,value: '', placeholder: 'Url eingeben', label: 'Url'},
             p_className: {value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse'}
@@ -114,6 +115,21 @@ const baseElements = [
                 elementKey: 'h2'
             },
             c: 'Header 2'
+        },
+        options: {
+            c: {
+                label: 'Text',
+                fullWidth: true
+            }
+        }
+    },
+    {
+        tagName: 'h3', name: 'Header 3',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'h3'
+            },
+            c: 'Header 3'
         },
         options: {
             c: {
@@ -279,6 +295,9 @@ const baseElements = [
         options: {
             p_style_marginBottom: {
                 label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
             }
         }
     },
