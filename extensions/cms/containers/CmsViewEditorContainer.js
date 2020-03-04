@@ -148,6 +148,7 @@ class CmsViewEditorContainer extends React.Component {
             state.template !== this.state.template ||
             state.script !== this.state.script ||
             state.style !== this.state.style ||
+            state.showRevision !== this.state.showRevision ||
             state.serverScript !== this.state.serverScript ||
             this.state.loadingSettings !== state.loadingSettings ||
             this.state.settings.fixedLayout !== state.settings.fixedLayout ||
@@ -418,6 +419,7 @@ class CmsViewEditorContainer extends React.Component {
                                     data.historys.results.forEach(i => {
                                             if (i.slug !== props.slug) {
                                                 menuItems.push(<MenuListItem key={'history' + i._id} onClick={e => {
+                                                    this.setState({showRevision:i})
                                                 }} button
                                                                              primary={Util.formattedDateFromObjectId(i._id) + ' - ' + i.action}/>)
                                             }
@@ -429,6 +431,54 @@ class CmsViewEditorContainer extends React.Component {
                             </Query>
                         </MenuList>
                     </Expandable>
+
+
+                    {this.state.showRevision && <SimpleDialog fullWidth={true} maxWidth="md" key="revisionDialog" open={true}
+                                  onClose={()=>{
+                                      this.setState({showRevision:false})
+                                  }}
+                                  actions={[{
+                                      key: 'ok',
+                                      label: 'Ok',
+                                      type: 'primary'
+                                  }]}
+                                  title="Revision">
+
+                        <Query
+                            query={gql`query historys($filter:String){historys(filter:$filter){results{_id action data}}}`}
+                            fetchPolicy="cache-and-network"
+                            variables={{
+                                filter: `_id=${this.state.showRevision._id}`
+                            }}>
+                            {({loading, error, data}) => {
+                                if (loading) return 'Loading...'
+                                if (error) return `Error! ${error.message}`
+
+                                if (data.historys.results === 0) return 'No entry'
+                                const parsedData = JSON.parse(data.historys.results[0].data)
+
+                                if( parsedData.template){
+
+                                    return <div>
+                                        <p>Template changed</p>
+                                        <pre>{JSON.stringify(JSON.parse(parsedData.template),null,4)}</pre>
+                                    </div>
+
+                                }else if( parsedData.script){
+
+                                    return <div>
+                                        <p>Script changed</p>
+                                        <pre>{parsedData.script}</pre>
+                                    </div>
+
+                                }
+                                return <pre>{JSON.stringify(parsedData,null,4)}</pre>
+                            }}
+                        </Query>
+
+                        <div>{this.state.showRevision.slug}</div>
+
+                    </SimpleDialog>}
 
 
                     <Expandable title="Pages"

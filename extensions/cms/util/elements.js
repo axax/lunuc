@@ -2,7 +2,7 @@ const baseElements = [
     {
         subHeader: 'Basic components',
         tagName: 'SmartImage',
-        name: 'Image',
+        name: 'Bild',
         defaults: {
             $inlineEditor: {
                 elementKey: 'image',
@@ -10,7 +10,7 @@ const baseElements = [
             }
         },
         options: {
-            p_src: {fullWidth:true, value: '', label: 'Bild', uitype: 'type_picker', type: 'Media'},
+            p_src: {fullWidth:true, value: '', label: 'Bild', uitype: 'type_picker', type: 'Media', filter: 'mimeType=image'},
             p_style_marginTop: {
                 label: 'Abstand oben'
             },
@@ -52,7 +52,7 @@ const baseElements = [
         tagName: 'Link.lu-image-link',
         name: 'Image Link',
         options: {
-            c_0_p_src: {fullWidth:true, value: '', label: 'Bild', uitype: 'type_picker', type: 'Media'},
+            c_0_p_src: {fullWidth:true, value: '', label: 'Bild', uitype: 'type_picker', type: 'Media', filter: 'mimeType=image'},
             c_1_c: {fullWidth: true,value: '', placeholder: 'Text eingeben', label: 'Text'},
             p_href: {fullWidth: true,value: '', placeholder: 'Url eingeben', label: 'Url'},
             p_className: {value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse'}
@@ -227,6 +227,28 @@ const baseElements = [
             ]
         },
         options: {
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            }
+        }
+    },
+    {
+        tagName: 'Row',
+        name: 'Layout 1/3',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'layout-1-3'
+            },
+            c: [
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-4.col-sm-4.col-xs-12', c: [{c: 'Spalte 1'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-4.col-sm-4.col-xs-12', c: [{c: 'Spalte 2'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-4.col-sm-4.col-xs-12', c: [{c: 'Spalte 3'}]},
+            ]
+        },
+        options: {
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
             p_style_marginBottom: {
                 label: 'Abstand unten'
             }

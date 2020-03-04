@@ -58,7 +58,7 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, type, label} = this.props
+        const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, type, filter, label} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
         console.log(`render TypePicker | hasFocus=${hasFocus}`,data)
@@ -90,7 +90,7 @@ class TypePicker extends React.Component {
                                            const w = screen.width/3*2, h = screen.height/3*2,left = (screen.width/2)-(w/2),top = (screen.height/2)-(h/2)
 
                                            const newwindow = window.open(
-                                               `/admin/types/?noLayout=true&fixType=${type}`, '_blank' ,
+                                               `/admin/types/?noLayout=true&fixType=${type}${filter?'&baseFilter='+encodeURIComponent(filter):''}`, '_blank' ,
                                                'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left)
 
                                            newwindow.onbeforeunload = ()=>{

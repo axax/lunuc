@@ -706,6 +706,8 @@ class TypesContainer extends React.Component {
 
         const item = data.results[index]
         if (event.detail === 2) {
+            event.preventDefault()
+            event.stopPropagation()
             // it was a double click
             if (window.opener) {
                 window.resultValue = item

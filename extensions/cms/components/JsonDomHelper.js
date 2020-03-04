@@ -907,8 +907,8 @@ class JsonDomHelper extends React.Component {
                                               label: 'Delete',
                                               type: 'primary'
                                           }]}
-                                      title="Deletion Confirmation">
-                            Are you sure you want to delete this element?
+                                      title="Löschung bestätigen">
+                            Sind sie ganz sicher, dass Sie das Element löschen möchten?
                         </SimpleDialog>
                     </AddToBody>
                 )}

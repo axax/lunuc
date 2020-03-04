@@ -28,19 +28,24 @@ export default () => {
             dataSource.forEach((d, i) => {
                 const item = data.results[i]
                 if (item) {
-                    const mimeType = item.mimeType ? item.mimeType.split('/') : ['file']
-
-                    d.data =
-                        <a target="_blank" rel="noopener noreferrer" href={item.src || (UPLOAD_URL + '/' + item._id)}>
-                            {
-                                (mimeType[0] === 'image' ?
-                                        <img height="40" src={item.src || (UPLOAD_URL + '/' + item._id)}/>
-                                        :
-                                        <div className="file-icon"
-                                             data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
-                                )
-                            }
-                        </a>
+                    const mimeType = item.mimeType ? item.mimeType.split('/') : ['file'],
+                        image =
+                            (mimeType[0] === 'image' ?
+                                    <img height="40" src={item.src || (UPLOAD_URL + '/' + item._id)}/>
+                                    :
+                                    <div className="file-icon"
+                                         data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
+                            )
+                    if (window.opener) {
+                        d.data = image
+                    }else {
+                        d.data =
+                            <a target="_blank" ondblclick={(e) => {
+                                e.preventDefault()
+                            }} rel="noopener noreferrer" href={item.src || (UPLOAD_URL + '/' + item._id)}>
+                                {image}
+                            </a>
+                    }
                 }
             })
         }
@@ -57,8 +62,8 @@ export default () => {
                             forceFetch: true,
                             query: gql('{cleanUpMedia{status}}')
                         }).then(response => {
-                            if(response.data && response.data.cleanUpMedia) {
-                                this.setState({simpleDialog: {children:response.data.cleanUpMedia.status}})
+                            if (response.data && response.data.cleanUpMedia) {
+                                this.setState({simpleDialog: {children: response.data.cleanUpMedia.status}})
                             }
                         })
                     }
