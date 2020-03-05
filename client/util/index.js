@@ -57,7 +57,11 @@ const Util = {
         return new Date(parseInt(objectId.substring(0, 8), 16) * 1000)
     },
     getDateTimeFormat: (options) => {
-        return new Intl.DateTimeFormat(Intl.DateTimeFormat().resolvedOptions().locale, Object.assign({
+        let lang
+        if( options){
+            lang = options.lang
+        }
+        return new Intl.DateTimeFormat(lang || _app_.lang || Intl.DateTimeFormat().resolvedOptions().locale, Object.assign({
             year: 'numeric',
             month: 'numeric',
             day: 'numeric',
@@ -83,14 +87,18 @@ const Util = {
         if (typeof stamp === 'string') {
             stamp = parseFloat(stamp);
         }
-        return new Date(stamp).toLocaleString()
+
+        return Util.getDateTimeFormat().format(new Date(stamp))
+        //return new Date(stamp).toLocaleString()
     },
     formatDate(d, options) {
-        return (new Date(d)).toLocaleString(options && options.lang ? options.lang : _app_.lang, Object.assign({
+        return Util.getDateTimeFormat(options).format(new Date(d))
+
+            /*(new Date(d)).toLocaleString(options && options.lang ? options.lang : _app_.lang, Object.assign({
             year: 'numeric',
             month: '2-digit',
             day: 'numeric'
-        }, options))
+        }, options))*/
     },
     textFromHtml: str => {
         if (str.constructor !== String) return str
