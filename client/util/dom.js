@@ -106,23 +106,25 @@ const DomUtil = {
             }
             const startTime = new Date().getTime()
             const result = Babel.transform(code, {
+                sourceMap:false,
+                highlightCode:false,
+                sourceType: 'script',
                 parserOpts: {
-                    allowReturnOutsideFunction: true,
+                    allowReturnOutsideFunction: true
                 },
                 presets: [
                     ['es2015', {modules: false}]
                 ]
-            }).code
+            })
 
             if (code.length < 500) {
                 if (!DomUtil.es5Cache) {
                     DomUtil.es5Cache = {}
                 }
-                DomUtil.es5Cache[code] = result
+                DomUtil.es5Cache[code] = result.code
             }
-
             console.log(`Js to es5 in ${new Date().getTime() - startTime}ms for ${code.substring(0, 20)}...`)
-            return result
+            return result.code
         }
         return code
     }
