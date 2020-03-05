@@ -242,7 +242,7 @@ const app = httpx.createServer(options, function (req, res) {
                         fs.stat(filename, function (err, stats) {
                             if (err || !stats.isFile()) {
                                 console.log('not exists: ' + filename)
-                                sendError(res,404)
+                                sendIndexFile(req, res, uri, hostrule)
                             } else {
                                 const mimeType = MimeType.detectByExtension(ext),
                                     headerExtra = {
@@ -255,21 +255,7 @@ const app = httpx.createServer(options, function (req, res) {
                             }
                         })
                     } else {
-                        const headers = {
-                            'Cache-Control': 'public, max-age=60',
-                            'content-type': MimeType.detectByExtension('html'),
-                            ...hostrule.headers[uri]
-                        }
-
-                        let indexfile
-
-                        if ( hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
-                            indexfile = path.join(__dirname, '../' + hostrule.fileMapping['/index.html'])
-                        } else {
-                            // default index
-                            indexfile = path.join(BUILD_DIR, '/index.min.html')
-                        }
-                        sendFile(req, res, headers, indexfile);
+                        sendIndexFile(req, res, uri, hostrule)
                     }
                 } else {
                     // static file
@@ -288,7 +274,23 @@ const app = httpx.createServer(options, function (req, res) {
     }
 })
 
+const sendIndexFile = (req, res, uri, hostrule)=>{
+    const headers = {
+        'Cache-Control': 'public, max-age=60',
+        'content-type': MimeType.detectByExtension('html'),
+        ...hostrule.headers[uri]
+    }
 
+    let indexfile
+
+    if ( hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
+        indexfile = path.join(__dirname, '../' + hostrule.fileMapping['/index.html'])
+    } else {
+        // default index
+        indexfile = path.join(BUILD_DIR, '/index.min.html')
+    }
+    sendFile(req, res, headers, indexfile);
+}
 //app.https.on('error', (err) => console.error(err));
 
 /*app.https.on('stream', (stream, headers) => {
