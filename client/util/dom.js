@@ -38,7 +38,7 @@ const DomUtil = {
         for (const key of Object.keys(attrs)) {
             if (key === 'data') {
                 for (const dataKey of Object.keys(attrs[key])) {
-                    tag.dataset[dataKey] = attrs[key][dataKey]
+                    tag.setAttribute('data-'+dataKey, attrs[key][dataKey])
                 }
 
             }
