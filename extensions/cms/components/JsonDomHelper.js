@@ -602,18 +602,24 @@ class JsonDomHelper extends React.Component {
     render() {
         const {classes, _WrappedComponent, _json, _cmsActions, _onChange, _onDataResolverPropertyChange, children, _tagName, _inlineEditor, onChange, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog} = this.state
+
+        const menuItems = []
+
         const events = {
             onMouseOver: this.onHelperMouseOver.bind(this),
             onMouseOut: this.onHelperMouseOut.bind(this),
             onContextMenu: (e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                this.setState({
-                    toolbarMenuOpen:true,
-                    toolbarHovered:true,
-                    mouseX: e.clientX - 2,
-                    mouseY: e.clientY - 4
-                })
+
+                if(menuItems.length>0 ) {
+                    this.setState({
+                        toolbarMenuOpen: true,
+                        toolbarHovered: true,
+                        mouseX: e.clientX - 2,
+                        mouseY: e.clientY - 4
+                    })
+                }
             }
         }
         let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, newOnChange
@@ -650,7 +656,6 @@ class JsonDomHelper extends React.Component {
 
 
         if (!JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)) {
-            const menuItems = []
 
             if (isCms) {
                 menuItems.push({
@@ -700,11 +705,11 @@ class JsonDomHelper extends React.Component {
                         Object.keys(options).forEach(key => {
                             options[key].value = propertyByPath(key, subJson, '_')
                         })
-                        if (options.$inlineEditor_dataResolver) {
+                       /* if (options.$inlineEditor_dataResolver) {
                             if (options.$inlineEditor_dataResolver.value.constructor === String) {
 
                             }
-                        }
+                        }*/
 
                         if (isCms) {
                             this.setFormOptionsByProperties(subJson.p, options, 'p_')

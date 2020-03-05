@@ -230,21 +230,29 @@ const Util = {
         return src ? src : (media.src ? media.src : _app_.config.UPLOAD_URL + '/' + media._id)
     },
     getImageObject(raw) {
+        let image
         if (!raw) {
             return {
                 src: '/placeholder.svg',
                 alt: 'Placeholder'
             }
         }else if(raw.constructor === String){
-            return {
-                src: raw,
-                alt: raw
+            try {
+                image = JSON.parse(raw)
+            }catch(e) {
+                return {
+                    src: raw,
+                    alt: raw
+                }
             }
+        }else{
+            image = raw
         }
-
-        let image = raw.constructor === String ? JSON.parse(raw) : raw
         if (image.constructor === Array) {
             image = image[0]
+            if( !image){
+                return {}
+            }
         }
         const data = {alt: image.name}
         if (!image.src) {

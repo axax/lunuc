@@ -44,10 +44,11 @@ class SimpleSelect extends React.Component {
     }
 
     render() {
-        const {onChange, value, items, label, classes, className, multi, disabled, hint, fullWidth} = this.props
+        const {onChange, value, items, label, classes, className, multi, disabled, hint, fullWidth, error} = this.props
         const name = this.props.name || ('name_' + Math.random())
 
-        return <FormControl className={className || classes.formControl} disabled={disabled} fullWidth={fullWidth}>
+        return <FormControl className={className || classes.formControl} disabled={disabled} fullWidth={fullWidth}
+                            error={error}>
             {label && <InputLabel htmlFor={name}>{label}</InputLabel>}
             <Select
                 multiple={multi}

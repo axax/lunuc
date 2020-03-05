@@ -661,7 +661,13 @@ export default class AggregationBuilder {
 
         // add at the beginning of the query
         if( this.options.before){
-            tempQuery.unshift(this.options.before)
+            if( this.options.before.constructor === Array){
+                for (let i = this.options.before.length - 1; i >= 0; i--) {
+                    tempQuery.unshift(this.options.before[i])
+                }
+            }else {
+                tempQuery.unshift(this.options.before)
+            }
         }
 
         // add right before the group

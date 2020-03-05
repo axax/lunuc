@@ -53,7 +53,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                               const Util = this.ClientUtil
                                               const ObjectId = this.ObjectId
                                               return \`${JSON.stringify(segments[i])}\``)
-                const replacedSegmentStr = tpl.call({scope, data: resolvedData, context, editmode, ClientUtil, config, ObjectId})
+                const replacedSegmentStr = tpl.call({scope, data: resolvedData, context, editmode, ClientUtil, config, ObjectId}).replace(/"###/g, '').replace(/###"/g, '')
                 const segment = JSON.parse(replacedSegmentStr)
 
                 if (tempBrowser) {

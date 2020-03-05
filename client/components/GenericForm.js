@@ -262,6 +262,8 @@ class GenericForm extends React.Component {
                                    type={field.type} placeholder={field.placeholder}/>)
             } else if (uitype === 'select') {
                 formFields.push(<SimpleSelect key={fieldKey} name={fieldKey} onChange={this.handleInputChange} items={field.enum}
+                                  error={!!this.state.fieldErrors[fieldKey]}
+                                  hint={this.state.fieldErrors[fieldKey]}
                                      multi={field.multi}
                                      label={field.label}
                                      className={classes.formField}

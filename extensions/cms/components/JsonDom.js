@@ -692,7 +692,6 @@ class JsonDom extends React.Component {
                             if (!loopChild || loopChild.constructor !== Object) {
                                 loopChild = {data: loopChild}
                             }
-
                             // back to json
                             loopChild._index = childIdx
 
