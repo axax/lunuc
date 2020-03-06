@@ -47,10 +47,10 @@ const styles = theme => ({
         alignItems: 'center'
     },
     bgYellow: {
-        background: 'rgba(245, 245, 66,0.08)',
+        background: 'rgba(245, 245, 66,0.05)',
     },
     bgBlue: {
-        background: 'rgba(84, 66, 245,0.2)',
+        background: 'rgba(84, 66, 245,0.1)',
         color: '#fff',
         fontWeight: 'bold',
         fontSize: '2rem'

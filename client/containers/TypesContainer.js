@@ -43,6 +43,7 @@ import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {deepMerge} from 'util/deepMerge'
 import DomUtil from 'client/util/dom'
+import _t from 'util/i18n'
 
 const {ADMIN_BASE_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
 import {COLLECTIONS_QUERY} from '../constants'
@@ -75,7 +76,7 @@ const styles = theme => ({
 class TypesContainer extends React.Component {
 
     // default labels can be repalced
-    labels = {searchPlaceholder: 'Filter expression (for specifc fields use field=term)'}
+    labels = {searchPlaceholder: _t('TypesContainer.filter')}
 
     types = null
     pageParams = null
@@ -1055,17 +1056,19 @@ class TypesContainer extends React.Component {
                         const refResults = storeData[storeKey].results
 
                         const items = ids.length > 1 ? data['delete' + type + 's'] : [data['delete' + type]]
-                        items.forEach(result => {
-                            const idx = refResults.findIndex(x => x._id === result._id)
-                            if (idx > -1) {
-                                if (result.status === 'deleting') {
-                                    refResults[idx].status = 'deleting'
-                                } else {
-                                    refResults.splice(idx, 1)
-                                    storeData[storeKey].total -= 1
+                        if(items) {
+                            items.forEach(result => {
+                                const idx = refResults.findIndex(x => x._id === result._id)
+                                if (idx > -1) {
+                                    if (result.status === 'deleting') {
+                                        refResults[idx].status = 'deleting'
+                                    } else {
+                                        refResults.splice(idx, 1)
+                                        storeData[storeKey].total -= 1
+                                    }
                                 }
-                            }
-                        })
+                            })
+                        }
 
                         store.writeQuery({
                             query: gqlQuery,

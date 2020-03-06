@@ -329,7 +329,7 @@ class GenericForm extends React.Component {
                                       type={uitype}
                                       multiline={uitype === 'textarea'}
                                       placeholder={field.placeholder || field.name}
-                                      value={value || ''}
+                                      value={value || field.defaultValue || ''}
                                       name={fieldKey}
                                       onKeyDown={(e) => {
                                           onKeyDown && onKeyDown(e, value)

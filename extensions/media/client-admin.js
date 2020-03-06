@@ -40,7 +40,7 @@ export default () => {
                         d.data = image
                     }else {
                         d.data =
-                            <a target="_blank" ondblclick={(e) => {
+                            <a target="_blank" onDoubleClick={(e) => {
                                 e.preventDefault()
                             }} rel="noopener noreferrer" href={item.src || (UPLOAD_URL + '/' + item._id)}>
                                 {image}
@@ -109,6 +109,7 @@ export default () => {
                                 e.target.value.forEach(value => {
                                     groups.push(value._id)
                                 })
+                                meta._this.setSettingsForType(type, {groups})
                                 setGroup(groups)
                             }} multi={true} name="group" placeholder="Select a group"
                                         type="MediaGroup"/>
@@ -121,11 +122,15 @@ export default () => {
                                   uploadTo="/graphql/upload" resizeImages={true}
                                   data={{group, useCdn}}
                                   maxSize={3000}
+                                  imagePreview={false}
                                   onSuccess={r => {
                                       if (meta._this) {
-                                          meta._this.setState({createEditDialog: false, createEditDialogOption: null})
+                                          setTimeout(()=> {
+                                              meta._this.setState({createEditDialog: false, createEditDialogOption: null})
 
-                                          meta._this.getData(meta, false)
+                                              meta._this.getData(meta, false)
+                                          },1000)
+
                                       }
                                       // TODO: but it directly into the store instead of reload
                                       //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
@@ -136,6 +141,26 @@ export default () => {
             }
 
             props.children = <MediaUploader/>
+        }
+    })
+
+
+
+
+    Hook.on('TypesContainerRender', function ({type, content}) {
+        if (type === 'Media'){
+
+            content.splice(1, 1,<FileDrop key="fileDrop" multi={true} accept="*/*"
+                                          uploadTo="/graphql/upload"
+                                          resizeImages={true}
+                                          imagePreview={false}
+                                          maxSize={3000}
+                                          data={{group: this.settings.Media ? this.settings.Media.groups: null}}
+                                          onSuccess={r => {
+                                              setTimeout(()=> {
+                                                  this.getData(this.pageParams, false)
+                                              },1000)
+                                          }}/>)
         }
     })
 

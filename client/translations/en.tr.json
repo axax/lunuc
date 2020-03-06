@@ -12,5 +12,8 @@
   "core.address.postcode": "Postcode",
   "core.address.place": "Place",
   "core.login.invalid": "Invalid user or password",
-  "core.login.blocked": "User locked. Try again in a few minutes."
+  "core.login.blocked": "User locked. Try again in a few minutes.",
+  "FileDrop.dropArea": "Drop files here, or click to select files to upload.",
+  "FileDrop.uploadSuccess": "upload was successfull",
+  "TypesContainer.filter": "Filter expression (for specifc fields use field=term)"
 }

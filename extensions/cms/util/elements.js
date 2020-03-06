@@ -10,7 +10,14 @@ const baseElements = [
             }
         },
         options: {
-            p_src: {fullWidth:true, value: '', label: 'Bild', uitype: 'type_picker', type: 'Media', filter: 'mimeType=image'},
+            p_src: {
+                fullWidth:true,
+                value: '',
+                label: 'Bild',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=image'
+            },
             p_style_marginTop: {
                 label: 'Abstand oben'
             },
@@ -19,6 +26,11 @@ const baseElements = [
             },
             p_className: {
                 label: 'Klassname'
+            },
+            p_caption: {
+                label: 'Beschreibung',
+                uitype: 'html',
+                fullWidth:true
             }
         }
     },
@@ -35,6 +47,14 @@ const baseElements = [
                     {
                         name: 'Button',
                         value: 'button'
+                    },
+                    {
+                        name: 'Button 1',
+                        value: 'button1'
+                    },
+                    {
+                        name: 'Button 2',
+                        value: 'button2'
                     }
                 ]
             },

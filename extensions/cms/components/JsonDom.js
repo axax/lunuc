@@ -76,15 +76,22 @@ class JsonDom extends React.Component {
         /* Other components */
         FileDrop,
         MarkDown,
-        'SmartImage': ({src, ...props}) => {
+        'SmartImage': ({src, caption, alt, ...props}) => {
             let imageData = Util.getImageObject(src)
+
+            if(caption){
+                return <figure {...props}>
+                    <img alt={alt} {...imageData} />
+                    <figcaption dangerouslySetInnerHTML={{__html: caption}}/>
+                </figure>
+            }
             /*
              <picture>
              <source srcset="mdn-logo-wide.png" media="(min-width: 600px)">
              <img src="mdn-logo-narrow.png" alt="MDN">
              </picture>
              */
-            return <img {...imageData} {...props} />
+            return <img alt={alt} {...imageData} {...props} />
         },
         Print,
         'input': JsonDomInput,

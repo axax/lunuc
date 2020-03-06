@@ -140,7 +140,10 @@ class CmsViewContainer extends React.Component {
         if (cmsPage && (!dynamic || cmsPage.alwaysLoadAssets)) {
             const {resources} = cmsPage
 
-            DomUtil.removeElements(`[data-cms-view]`)
+            if( !dynamic) {
+                DomUtil.removeElements(`[data-cms-view]`)
+            }
+
             if (resources) {
                 console.log('refresh resources', props.slug)
 

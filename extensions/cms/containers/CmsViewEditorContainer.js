@@ -8,7 +8,8 @@ import {
     gqlQuery
 } from '../util/cmsView'
 import PropTypes from 'prop-types'
-import {graphql, Query} from 'react-apollo'
+import {graphql, Query, withApollo} from 'react-apollo'
+import {ApolloClient} from 'apollo-client'
 import compose from 'util/compose'
 import gql from 'graphql-tag'
 import Expandable from 'client/components/Expandable'
@@ -41,11 +42,13 @@ import Util from "../../../client/util";
 import {CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import CodeEditor from 'client/components/CodeEditor'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
-import GenericForm from "../../../client/components/GenericForm";
+import GenericForm from '../../../client/components/GenericForm'
+import TypePicker from '../../../client/components/TypePicker'
 
 class CmsViewEditorContainer extends React.Component {
 
-    static lastSettings = {inlineEditor: true, fixedLayout:true}
+    static lastSettings = {inlineEditor: true, fixedLayout: true}
+
     constructor(props) {
         super(props)
         this.state = CmsViewEditorContainer.propsToState(props, null)
@@ -62,17 +65,17 @@ class CmsViewEditorContainer extends React.Component {
     static propsToState(props, state) {
         const {template, script, style, serverScript, resources, dataResolver, ssr, urlSensitiv, status, parseResolvedData, alwaysLoadAssets} = props.cmsPage || {}
         let settings = null
-        if(props && props.cmsPage && state && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug && state.settings && !state.settings._default){
-            settings =state.settings
-        }else if (props.keyValue) {
+        if (props && props.cmsPage && state && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug && state.settings && !state.settings._default) {
+            settings = state.settings
+        } else if (props.keyValue) {
             try {
                 settings = JSON.parse(props.keyValue.value)
             } catch (e) {
             }
         }
 
-        if(!settings) {
-            settings = Object.assign({_default:true},CmsViewEditorContainer.lastSettings)
+        if (!settings) {
+            settings = Object.assign({_default: true}, CmsViewEditorContainer.lastSettings)
         }
 
         const result = {
@@ -149,6 +152,7 @@ class CmsViewEditorContainer extends React.Component {
             state.script !== this.state.script ||
             state.style !== this.state.style ||
             state.showRevision !== this.state.showRevision ||
+            state.addNewSite !== this.state.addNewSite ||
             state.serverScript !== this.state.serverScript ||
             this.state.loadingSettings !== state.loadingSettings ||
             this.state.settings.fixedLayout !== state.settings.fixedLayout ||
@@ -237,10 +241,10 @@ class CmsViewEditorContainer extends React.Component {
                                 parentRef: this
                             }
 
-                            if( cmsEditData.clone){
+                            if (cmsEditData.clone) {
                                 editDialogProps.initialData = data.genericDatas.results[0]
                                 delete editDialogProps.initialData._id
-                            }else{
+                            } else {
                                 editDialogProps.dataToEdit = data.genericDatas.results[0]
                             }
 
@@ -250,29 +254,33 @@ class CmsViewEditorContainer extends React.Component {
                                 null
                             )
                         }}
-                    </Query> : <SimpleDialog fullWidth={true} maxWidth="sm" key="propertyEditor" open={true} onClose={(e) => {
+                    </Query> :
+                    <SimpleDialog fullWidth={true} maxWidth="sm" key="propertyEditor" open={true} onClose={(e) => {
                         if (e.key === 'save' && formRef) {
                             const field = formRef.state.fields.field
-                            this.handleDataResolverPropertySave({value: field, path:  cmsEditData._id, instantSave:true})
+                            this.handleDataResolverPropertySave({
+                                value: field,
+                                path: cmsEditData._id,
+                                instantSave: true
+                            })
                         }
                         this.props._cmsActions.editCmsData(null)
                     }}
-                                             actions={[{
-                                                 key: 'cancel',
-                                                 label: 'Abbrechen',
-                                                 type: 'secondary'
-                                             },
-                                             {
-                                                 key: 'save',
-                                                 label: 'Speichern',
-                                                 type: 'primary'
-                                             }]}
-                                             title="Bearbeitung">
+                                  actions={[{
+                                      key: 'cancel',
+                                      label: 'Abbrechen',
+                                      type: 'secondary'
+                                  },
+                                      {
+                                          key: 'save',
+                                          label: 'Speichern',
+                                          type: 'primary'
+                                      }]}
+                                  title="Bearbeitung">
 
                         <GenericForm primaryButton={false} ref={(e) => {
                             formRef = e
                         }} fields={cmsEditDataProps}/>
-
 
 
                     </SimpleDialog>
@@ -299,8 +307,8 @@ class CmsViewEditorContainer extends React.Component {
                 <div style={{padding: '10px'}}>
 
                     {hasTemplate && <Expandable title="Data resolver"
-                                onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
-                                expanded={settings.dataResolverExpanded}>
+                                                onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
+                                                expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
                             onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll')}
                             scrollPosition={settings.dataResolverScroll}
@@ -311,8 +319,8 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {hasTemplate && <Expandable title="Server Script"
-                                onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
-                                expanded={settings.serverScriptExpanded}>
+                                                onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
+                                                expanded={settings.serverScriptExpanded}>
                         <ScriptEditor
                             onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll')}
                             scrollPosition={settings.serverScriptScroll}
@@ -323,8 +331,8 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {hasTemplate && <Expandable title="Template"
-                                onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
-                                expanded={settings.templateExpanded}>
+                                                onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
+                                                expanded={settings.templateExpanded}>
                         <TemplateEditor
                             onScroll={this.handleSettingChange.bind(this, 'templateScroll')}
                             scrollPosition={settings.templateScroll}
@@ -339,8 +347,8 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {hasTemplate && <Expandable title="Script"
-                                onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
-                                expanded={settings.scriptExpanded}>
+                                                onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
+                                                expanded={settings.scriptExpanded}>
                         <ScriptEditor
                             onScroll={this.handleSettingChange.bind(this, 'scriptScroll')}
                             scrollPosition={settings.scriptScroll}
@@ -348,10 +356,11 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {hasTemplate && <Expandable title="Style"
-                                onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
-                                expanded={settings.styleExpanded}>
+                                                onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
+                                                expanded={settings.styleExpanded}>
 
-                        <CodeEditor showFab lineNumbers type="css" onScroll={this.handleSettingChange.bind(this, 'styleScroll')}
+                        <CodeEditor showFab lineNumbers type="css"
+                                    onScroll={this.handleSettingChange.bind(this, 'styleScroll')}
                                     scrollPosition={settings.styleScroll}
                                     onChange={this.handleStyleChange.bind(this)}>{style}</CodeEditor>
 
@@ -359,8 +368,8 @@ class CmsViewEditorContainer extends React.Component {
 
 
                     {hasTemplate && <Expandable title="Static assets"
-                                onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
-                                expanded={settings.resourceExpanded}>
+                                                onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
+                                                expanded={settings.resourceExpanded}>
 
                         <ResourceEditor resources={resources}
                                         onChange={this.handleResourceChange.bind(this)}></ResourceEditor>
@@ -368,8 +377,8 @@ class CmsViewEditorContainer extends React.Component {
 
 
                     {hasTemplate && <Expandable title="Settings"
-                                onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
-                                expanded={settings.settingsExpanded}>
+                                                onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
+                                                expanded={settings.settingsExpanded}>
 
                         <SimpleSwitch
                             label="SSR (Server side Rendering)"
@@ -419,7 +428,7 @@ class CmsViewEditorContainer extends React.Component {
                                     data.historys.results.forEach(i => {
                                             if (i.slug !== props.slug) {
                                                 menuItems.push(<MenuListItem key={'history' + i._id} onClick={e => {
-                                                    this.setState({showRevision:i})
+                                                    this.setState({showRevision: i})
                                                 }} button
                                                                              primary={Util.formattedDateFromObjectId(i._id) + ' - ' + i.action}/>)
                                             }
@@ -433,9 +442,10 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>
 
 
-                    {this.state.showRevision && <SimpleDialog fullWidth={true} maxWidth="md" key="revisionDialog" open={true}
-                                  onClose={()=>{
-                                      this.setState({showRevision:false})
+                    {this.state.showRevision &&
+                    <SimpleDialog fullWidth={true} maxWidth="md" key="revisionDialog" open={true}
+                                  onClose={() => {
+                                      this.setState({showRevision: false})
                                   }}
                                   actions={[{
                                       key: 'ok',
@@ -457,14 +467,14 @@ class CmsViewEditorContainer extends React.Component {
                                 if (data.historys.results === 0) return 'No entry'
                                 const parsedData = JSON.parse(data.historys.results[0].data)
 
-                                if( parsedData.template){
+                                if (parsedData.template) {
 
                                     return <div>
                                         <p>Template changed</p>
-                                        <pre>{JSON.stringify(JSON.parse(parsedData.template),null,4)}</pre>
+                                        <pre>{JSON.stringify(JSON.parse(parsedData.template), null, 4)}</pre>
                                     </div>
 
-                                }else if( parsedData.script){
+                                } else if (parsedData.script) {
 
                                     return <div>
                                         <p>Script changed</p>
@@ -472,7 +482,7 @@ class CmsViewEditorContainer extends React.Component {
                                     </div>
 
                                 }
-                                return <pre>{JSON.stringify(parsedData,null,4)}</pre>
+                                return <pre>{JSON.stringify(parsedData, null, 4)}</pre>
                             }}
                         </Query>
 
@@ -539,16 +549,77 @@ class CmsViewEditorContainer extends React.Component {
 
                                   hasTemplate ? <Button key="button" size="small" color="inherit" onClick={e => {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
-                                  }}>Back</Button>:<Button key="button" size="small" color="inherit" onClick={()=>{
+                                  }}>Back</Button> : <Button key="button" size="small" color="inherit" onClick={() => {
                                       this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname)}`)
                                   }}>Logout</Button>,
-                                  <SimpleMenu key="moreMenu" color="inherit" items={[{name: 'Seite kopieren', onClick: ()=>{}}]}/>
+                                  <SimpleMenu key="moreMenu" color="inherit" items={[{
+                                      name: 'Neue Seite erstellen', onClick: () => {
+                                          this.setState({addNewSite: true})
+
+                                      }
+                                  }]}/>
                               ]
                               }
                               title={`Edit Page "${props.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
                     {inner}
+                    {this.state.addNewSite &&
+                    <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
+                                  onClose={(e) => {
+                                      if (e.key === 'ok') {
+                                          const queries = getTypeQueries('CmsPage')
+                                          const slug=this.addNewSiteForm.state.fields.slug
+                                          this.props.client.mutate({
+                                              mutation: gql(queries.clone),
+                                              variables: {_id: this.addNewSiteForm.props.values._id, slug},
+                                              update: (store, {data}) => {
+                                                  if( !data.errors ){
 
+                                                      this.setState({addNewSite: false})
+                                                      this.props.history.push(`/${slug}`)
+
+                                                  }
+                                              }
+                                          })
+                                      }else{
+                                          this.setState({addNewSite: false})
+                                      }
+                                  }}
+                                  actions={[{
+                                      key: 'cancel',
+                                      label: 'Abbrechen',
+                                      type: 'secondary'
+                                  }, {
+                                      key: 'ok',
+                                      label: 'Erstellen',
+                                      type: 'primary'
+                                  }]}
+                                  title="Neue Seite erstellen">
+
+                        <TypePicker onChange={(e) => {
+                            this.setState({addNewSite: e.target.value[0]})
+
+                        }} name="group" placeholder="Vorlage auswählen" type="CmsPage"/>
+
+                        {this.state.addNewSite.constructor === Object &&
+                        <GenericForm ref={(e) => {
+                            this.addNewSiteForm = e
+                        }} primaryButton={false}
+                                     values={this.state.addNewSite}
+                                     fields={{
+                                         slug: {
+                                             fullWidth: true,
+                                             label: 'Slug'
+                                         },
+                                         name: {
+                                             label: 'Titel',
+                                             localized: true
+                                         }
+                                     }}/>}
+
+
+                    </SimpleDialog>}
                 </DrawerLayout>
+
             </UIProvider>
         }
 
@@ -560,16 +631,16 @@ class CmsViewEditorContainer extends React.Component {
         const {segment, index, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path, key})
 
         if (segment) {
-            if( key ) {
-                if( value === null){
+            if (key) {
+                if (value === null) {
                     //remove
                     dataResolver.splice(index, 1)
-                }else {
+                } else {
                     Object.keys(value).forEach(objKey => {
                         segment[objKey] = value[objKey]
                     })
                 }
-            }else{
+            } else {
                 setPropertyByPath(value, path, segment)
             }
             this.handleDataResolverChange(JSON.stringify(dataResolver, null, 4), instantSave)
@@ -589,19 +660,19 @@ class CmsViewEditorContainer extends React.Component {
                     props = JSON.parse(correctJson)
                 }
                 const newProps = {value: propertyByPath(path, segment)}
-                if( newProps.value.constructor === Object || newProps.value.constructor === Array){
-                    newProps.uitype='json'
+                if (newProps.value.constructor === Object || newProps.value.constructor === Array) {
+                    newProps.uitype = 'json'
                 }
-                return {field:{...newProps, ...props}}
+                return {field: {...newProps, ...props}}
 
             } catch (e) {
                 console.log(e)
-                return {field:{value: '', error: true, helperText: e.message}}
+                return {field: {value: '', error: true, helperText: e.message}}
             }
 
 
         }
-        return {field:{value: ''}}
+        return {field: {value: ''}}
     }
 
 
@@ -619,28 +690,28 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         let firstOfPath
-        if( path ) {
+        if (path) {
             firstOfPath = path.substring(0, path.indexOf('.'))
         }
         let segment, index = -1
         for (let i = 0; i < dataResolver.length; i++) {
             const json = dataResolver[i]
-            if( key ){
-                if(json.key===key){
+            if (key) {
+                if (json.key === key) {
                     index = i
                     segment = json
                     break
                 }
-            }else if(json[firstOfPath]) {
+            } else if (json[firstOfPath]) {
                 index = i
                 segment = json
                 break
             }
         }
         if (!segment) {
-            if( key){
+            if (key) {
                 segment = {key}
-            }else {
+            } else {
                 segment = {[firstOfPath]: {}}
             }
             dataResolver.push(segment)
@@ -885,6 +956,7 @@ class CmsViewEditorContainer extends React.Component {
 
 
 CmsViewEditorContainer.propTypes = {
+    client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
     renewing: PropTypes.bool,
     aboutToChange: PropTypes.bool,
@@ -931,7 +1003,7 @@ const CmsViewEditorContainerWithGql = compose(
         props: ({data: {keyValue, loading}}) => {
             return {
                 keyValue,
-                loadingKeyValue:loading
+                loadingKeyValue: loading
             }
         }
     }),
@@ -1018,5 +1090,5 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(CmsViewEditorContainerWithGql)
+)(withApollo(CmsViewEditorContainerWithGql))
 

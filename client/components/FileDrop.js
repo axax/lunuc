@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {withStyles, CloudUploadIcon, Typography, LinearProgress} from 'ui/admin'
 import classNames from 'classnames'
 import UploadUtil from 'client/util/upload'
+import _t from 'util/i18n'
 
 import config from 'gen/config'
 const {UPLOAD_URL} = config
@@ -146,8 +147,8 @@ class FileDrop extends React.Component {
     }
 
     render() {
-        const {style, classes, multi, label, accept, className, name, onChange} = this.props
-        const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage} = this.state
+        const {style, classes, multi, label, accept, className, name, onChange, imagePreview} = this.props
+        const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage, uploadingFile} = this.state
         return <div style={style} className={classNames(classes.uploader, isHover && classes.uploaderOver, className)}>
             <input className={classes.inputFile}
                    multiple={!!multi}
@@ -158,7 +159,7 @@ class FileDrop extends React.Component {
                    onDragOver={this.handelDragOver.bind(this)}
                    onChange={this.handelDrop.bind(this)}/>
             {
-                images.map(i => {
+                (imagePreview===undefined || imagePreview) && images.map(i => {
                     return <div key={'uploadImage'+i} className={classes.imageWrap}><img className={classes.image} src={i}/>
                         <button className={classes.imageDelete} onClick={
                             (e)=>{
@@ -173,18 +174,16 @@ class FileDrop extends React.Component {
             }
 
 
-            {!uploading && !(!multi && images.length) &&
             <CloudUploadIcon className={classNames(classes.uploadIcon, isHover && classes.uploadIconOver)}
-                             color="disabled"/>}
+                             color="disabled"/>
 
-            {!uploading &&
             <Typography component="div"
-                        variant="caption">{label || 'Drop files here, or click to select files to upload.'}</Typography>}
+                        variant="caption">{label || _t('FileDrop.dropArea')}</Typography>
 
             {errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography>}
             {successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography>}
 
-            {uploading && <Typography variant="body2">uploading data ({uploadCompleted}%{this.uploadQueue.length>0?' / '+this.uploadQueue.length+' in queue':''})...</Typography>}
+            {uploading && <Typography variant="body2">uploading {uploadingFile} ({uploadCompleted}%{this.uploadQueue.length>0?' / '+this.uploadQueue.length+' in queue':''})...</Typography>}
             {uploading && <LinearProgress className={classes.progress} variant="determinate" value={uploadCompleted}/>}
 
         </div>
@@ -223,12 +222,11 @@ class FileDrop extends React.Component {
             this.setState({errorMessage: invalidFiles[0].message})
         } else {
             // reset error message
-            this.setState({errorMessage: null})
+            this.setState({errorMessage: null, successMessage:null})
 
             const images = []
 
             for (let i = 0, file; file = validFiles[i]; i++) {
-
                 const isImage = UploadUtil.isImage(file.name)
                 if (isImage) {
                     images.push(URL.createObjectURL(file))
@@ -275,15 +273,15 @@ class FileDrop extends React.Component {
     }
 
     uploadQueue = []
-    uploadData(dataUrl, file, uploadTo) {
+    uploadData(dataUrl, file, uploadTo, fromQueue) {
 
-        if( this.uploading) {
+        if( !fromQueue && this.uploading) {
             this.uploadQueue.push({dataUrl, file, uploadTo})
             return
         }
-        this.uploading=true
-
-        this.setState({uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0})
+        // uploading from state is delayed
+        this.uploading = true
+        this.setState({uploading: true, successMessage: null, errorMessage: null, uploadCompleted: 0, uploadingFile:file.name})
         UploadUtil.uploadData({
             dataUrl,
             data: this.props.data,
@@ -296,12 +294,13 @@ class FileDrop extends React.Component {
                     if (status === 'success') {
 
                         if( this.uploadQueue.length > 0){
-                            this.uploading=false
                             const fromQueue = this.uploadQueue.shift()
-                            this.uploadData(fromQueue.dataUrl, fromQueue.file, fromQueue.uploadTo)
+                            this.uploadData(fromQueue.dataUrl, fromQueue.file, fromQueue.uploadTo, true)
                             return
                         }
-                        this.setState({successMessage: 'upload was successfull', uploading: false})
+                        this.uploading = false
+                        this.setState({successMessage: _t('FileDrop.uploadSuccess'), uploading: false})
+
 
                         const {onSuccess, onChange, name} = this.props
                         if (onSuccess) {
@@ -316,13 +315,16 @@ class FileDrop extends React.Component {
 
 
                     } else {
+                        this.uploading = false
                         this.setState({errorMessage: message, uploading: false})
                     }
                 }else{
+                    this.uploading = false
                     this.setState({errorMessage: e.target.statusText, uploading: false})
                 }
             },
             onError: (e) => {
+                this.uploading = false
                 this.setState({errorMessage: e.message, uploading: false})
             }
         })
@@ -345,6 +347,7 @@ FileDrop.propTypes = {
     style: PropTypes.object,
     data: PropTypes.object,
     resizeImages: PropTypes.bool,
+    imagePreview: PropTypes.bool,
     multi: PropTypes.bool,
     conversion: PropTypes.array,
     maxSize: PropTypes.number

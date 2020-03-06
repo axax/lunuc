@@ -99,7 +99,7 @@ class QuillEditor extends React.Component {
             }
 
             if (!window.Quill) {
-                DomUtil.addScript('https://cdn.quilljs.com/1.3.6/quill.min.js', {
+                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js', {
                     onload: quillIsReady
                 })
             } else {
@@ -107,7 +107,7 @@ class QuillEditor extends React.Component {
             }
         }
         if( QuillEditor.loadedStyles.indexOf(theme)<0) {
-            DomUtil.addStyle('https://cdn.quilljs.com/1.3.6/quill.' + theme + '.css', {id: 'quill' + theme})
+            DomUtil.addStyle(  `https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.${theme}.min.css`, {id: 'quill' + theme})
             QuillEditor.loadedStyles.push(theme)
         }
 

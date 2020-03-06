@@ -38,9 +38,12 @@ const DomUtil = {
         for (const key of Object.keys(attrs)) {
             if (key === 'data') {
                 for (const dataKey of Object.keys(attrs[key])) {
-                    tag.setAttribute('data-'+dataKey, attrs[key][dataKey])
+                    if(tag.dataset) {
+                        tag.dataset[dataKey] = attrs[key][dataKey]
+                    }else{
+                        tag.setAttribute('data-'+dataKey.replace(/([A-Z])/g, "-$1").toLowerCase(), attrs[key][dataKey])
+                    }
                 }
-
             }
             if (key === 'style' && attrs[key].constructor === Object) {
                 tag[key] = DomUtil.styleObjectToString(attrs[key])
@@ -75,8 +78,19 @@ const DomUtil = {
         }
     },
     elemOffset(el) {
-        var xPos = 0
-        var yPos = 0
+        let xPos = 0, yPos = 0
+
+        let compStyles = window.getComputedStyle(el)
+        const bl = compStyles.getPropertyValue('border-left-width')
+
+        if( bl && bl !== '0px'){
+            xPos -= parseInt(bl)
+        }
+        const bt = compStyles.getPropertyValue('border-top-width')
+
+        if( bt && bt !== '0px'){
+            yPos -= parseInt(bt)
+        }
 
         while (el) {
             if (el.tagName == "BODY") {
@@ -94,6 +108,7 @@ const DomUtil = {
 
             el = el.offsetParent
         }
+
         return {
             left: xPos,
             top: yPos
