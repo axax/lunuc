@@ -76,13 +76,13 @@ class JsonDom extends React.Component {
         /* Other components */
         FileDrop,
         MarkDown,
-        'SmartImage': ({src, caption, alt, ...props}) => {
+        'SmartImage': ({src, caption, wrapper, alt, ...props}) => {
             let imageData = Util.getImageObject(src)
 
-            if(caption){
+            if(caption || wrapper){
                 return <figure {...props}>
                     <img alt={alt} {...imageData} />
-                    <figcaption dangerouslySetInnerHTML={{__html: caption}}/>
+                    {caption && <figcaption dangerouslySetInnerHTML={{__html: caption}}/>}
                 </figure>
             }
             /*
@@ -231,6 +231,7 @@ class JsonDom extends React.Component {
             this.props.user !== props.user ||
             this.props.renewing !== props.renewing
 
+
         if (updateIsNeeded) {
 
             // set error to false before render
@@ -274,6 +275,8 @@ class JsonDom extends React.Component {
             this.addParentRef(props)
 
             return true
+        }else if(props.editMode && this.props.style !== props.style) {
+            this.addStyle(props.style)
         }
         return false
     }
@@ -337,7 +340,6 @@ class JsonDom extends React.Component {
     // is called after render
     componentDidUpdate(prevProps, prevState, snapshot) {
         this._ismounted = true
-
 
         if (this.props.style !== prevProps.style) {
             this.addStyle(this.props.style)
