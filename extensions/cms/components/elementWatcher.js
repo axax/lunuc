@@ -67,6 +67,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                                         clearTimeout(timeout)
                                         this.setState({madeVisible: true})
                                     }
+
                                     img.src = Util.getImageObject(eleProps.src).src
 
                                 } else {

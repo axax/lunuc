@@ -231,10 +231,6 @@ class JsonDom extends React.Component {
             this.props.user !== props.user ||
             this.props.renewing !== props.renewing
 
-        if (this.props.style !== props.style) {
-            this.addStyle(props.style)
-        }
-
         if (updateIsNeeded) {
 
             // set error to false before render
@@ -339,8 +335,13 @@ class JsonDom extends React.Component {
     }
 
     // is called after render
-    componentDidUpdate(props, state, snapshot) {
+    componentDidUpdate(prevProps, prevState, snapshot) {
         this._ismounted = true
+
+
+        if (this.props.style !== prevProps.style) {
+            this.addStyle(this.props.style)
+        }
         this.runJsEvent('update', true)
         this.moveInHtmlComponents()
     }
@@ -861,7 +862,7 @@ class JsonDom extends React.Component {
                     if ($c) {
                         eleProps.dangerouslySetInnerHTML = {__html: $c}
                     }
-                    if (((eleType.name === 'SmartImage' && eleProps.src) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
+                    if (((eleType.name === 'SmartImage' && eleProps.src && (!$observe ||  $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
                         h.push(React.createElement(
                             elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
                             {key: key}
