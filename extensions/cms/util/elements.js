@@ -344,6 +344,27 @@ const baseElements = [
         }
     },
     {
+        tagName: 'Row',
+        name: 'Layout 1/4 - 3/4',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'layout-1-4-3'
+            },
+            c: [
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col.col-sm-4', c: [{c: 'Spalte 1'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col.col-sm-8', c: [{c: 'Spalte 2'}]}
+            ]
+        },
+        options: {
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
+            }
+        }
+    },
+    {
         tagName: 'div',
         name: 'Data Container',
         defaults: {

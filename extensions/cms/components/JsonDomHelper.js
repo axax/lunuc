@@ -352,11 +352,13 @@ class JsonDomHelper extends React.Component {
                             const allowDropFrom = ALLOW_DROP_FROM[tagName]
                             if (!allowDropFrom || allowDropFrom.indexOf(fromTagName) >= 0) {
                                 const pos = DomUtil.elemOffset(node)
-                                const distance = Math.abs(this._clientY - (pos.top + node.offsetHeight / 2))
-                                if (distance < 100) {
+                                const distanceTop = Math.abs(this._clientY - (pos.top))
+                                const distanceMiddle = Math.abs(this._clientY - (pos.top + node.offsetHeight / 2))
+                                const distanceBottom = Math.abs(this._clientY - (pos.top + node.offsetHeight))
+                                if (distanceTop < 100 || distanceMiddle < 100 || distanceBottom < 100) {
                                     tag.style.display = 'block'
                                 } else {
-                                    if (distance > 250)
+                                    if (distanceTop > 250 && distanceMiddle > 250 && distanceBottom > 250)
                                         tag.style.display = 'none'
                                 }
                             }
@@ -587,13 +589,16 @@ class JsonDomHelper extends React.Component {
 
         Object.keys(json).forEach(key => {
             const newKey = prefix + key, value = propertyByPath(key, json, '_')
-            if (value && value.constructor === Object) {
-                this.setFormOptionsByProperties(value, options, newKey + '_')
-            } else {
-                options[newKey] = {
-                    label: key,
-                    value,
-                    type: value === true || value === false ? 'Boolean' : 'String'
+
+            if( !options[newKey] ) {
+                if (value && value.constructor === Object) {
+                    this.setFormOptionsByProperties(value, options, newKey + '_')
+                } else {
+                    options[newKey] = {
+                        label: key,
+                        value,
+                        type: value === true || value === false ? 'Boolean' : 'String'
+                    }
                 }
             }
         })
@@ -938,8 +943,9 @@ class JsonDomHelper extends React.Component {
                                                          pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
                                                      }
 
-
                                                      if (addChildDialog.edit) {
+
+                                                         const mySubJson = getComponentByKey(rest._key, _json)
 
                                                          Object.keys(comp).forEach((key) => {
                                                              if (!subJson[key]) {
@@ -956,7 +962,14 @@ class JsonDomHelper extends React.Component {
                                                                  subJson[key] = comp[key]
                                                              }
                                                          })
-                                                         _onChange(_json)
+
+                                                         if(subJson.$inlineEditor && subJson.$inlineEditor.options){
+                                                             Object.keys(subJson.$inlineEditor.options).forEach(optKey=>{
+                                                                 delete subJson.$inlineEditor.options[optKey].value
+                                                             })
+                                                         }
+
+                                                         _onChange(_json, true)
 
                                                      } else {
                                                          // add new

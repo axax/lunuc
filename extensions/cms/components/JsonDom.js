@@ -568,7 +568,8 @@ class JsonDom extends React.Component {
                  */
                 if ($ifexist) {
                     try {
-                        if (propertyByPath($ifexist, scope) === undefined) {
+                        const value = propertyByPath($ifexist, scope)
+                        if ( value === null || value === undefined) {
                             return
                         }
                     } catch (e) {
