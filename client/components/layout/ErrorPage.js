@@ -253,8 +253,13 @@ hr:after {
                 <hr/>
                 <div className="_1">{title.toUpperCase()}</div>
                 <div className="_2">{message.toUpperCase()}</div>
-                <a className='btn' onClick={() => {
-                    history.back()
+                <a className='btn' onClick={(e) => {
+                    e.preventDefault()
+                    if(document.referrer) {
+                        window.open(document.referrer,'_self')
+                    } else {
+                        history.go(-1)
+                    }
                 }} href="#">GO BACK</a>
             </div>
         </div>

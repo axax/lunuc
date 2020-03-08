@@ -51,9 +51,10 @@ const styles = theme => ({
     },
     bgBlue: {
         background: 'rgba(84, 66, 245,0.1)',
-        color: '#fff',
+        color: 'black',
         fontWeight: 'bold',
-        fontSize: '2rem'
+        fontSize: '0.9rem',
+        textShadow:'1px 1px 2px white'
     },
     dropArea: {
         display: 'none',
@@ -711,30 +712,31 @@ class JsonDomHelper extends React.Component {
 
                     if (jsonElement && (isCms || jsonElement.options)) {
 
-                        const options = Object.assign({}, jsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
-
-                        Object.keys(options).forEach(key => {
-                            options[key].value = propertyByPath(key, subJson, '_')
-                        })
-                       /* if (options.$inlineEditor_dataResolver) {
-                            if (options.$inlineEditor_dataResolver.value.constructor === String) {
-
-                            }
-                        }*/
-
-                        if (isCms) {
-                            this.setFormOptionsByProperties(subJson.p, options, 'p_')
-                        }
-
-                        const newJsonElement = Object.assign({}, jsonElement)
-
-                        delete newJsonElement.defaults
-                        newJsonElement.options = options
                         menuItems.push({
                             name: 'Bearbeiten',
                             icon: <EditIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
+
+                                //clone
+                                const newJsonElement = JSON.parse(JSON.stringify(jsonElement))
+                                delete newJsonElement.defaults
+
+                                newJsonElement.options = Object.assign({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
+
+                                Object.keys(newJsonElement.options).forEach(key => {
+                                    newJsonElement.options[key].value = propertyByPath(key, subJson, '_')
+                                })
+                                /* if (options.$inlineEditor_dataResolver) {
+                                     if (options.$inlineEditor_dataResolver.value.constructor === String) {
+
+                                     }
+                                 }*/
+
+                                if (isCms) {
+                                    this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
+                                }
+
                                 this.setState({addChildDialog: {selected: newJsonElement, edit: true}})
                             }
                         })

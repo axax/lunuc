@@ -35,7 +35,7 @@ export default () => {
 
     // add some extra data to the table
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
-        if (type === 'CmsPage') {
+        if (type === 'CmsPage' && !window.opener) {
             dataSource.forEach((d, i) => {
                 if (d.slug) {
                     const item = data.results[i]

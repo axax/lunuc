@@ -55,6 +55,10 @@ const baseElements = [
                     {
                         name: 'Button 2',
                         value: 'button2'
+                    },
+                    {
+                        name: 'Button 3',
+                        value: 'button3'
                     }
                 ]
             },
