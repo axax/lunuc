@@ -454,7 +454,13 @@ class JsonDomHelper extends React.Component {
 
         if (source) {
             const key = getParentKey(_key)
-            addComponent({key, json: _json, index: -1, component: source})
+            let index = parseInt(_key.substring(_key.lastIndexOf('.')+1))
+            if( isNaN(index)){
+                index = -1
+            }else{
+                index++
+            }
+            addComponent({key, json: _json, index, component: source})
             _onChange(_json)
         }
 
@@ -705,7 +711,7 @@ class JsonDomHelper extends React.Component {
 
                     if (jsonElement && (isCms || jsonElement.options)) {
 
-                        const options = Object.assign({}, jsonElement.options, subJson.$inlineEditor.options)
+                        const options = Object.assign({}, jsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
 
                         Object.keys(options).forEach(key => {
                             options[key].value = propertyByPath(key, subJson, '_')

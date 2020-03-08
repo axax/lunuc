@@ -44,8 +44,14 @@ class SimpleSelect extends React.Component {
     }
 
     render() {
-        const {onChange, value, items, label, classes, className, multi, disabled, hint, fullWidth, error} = this.props
+        const {onChange, items, label, classes, className, multi, disabled, hint, fullWidth, error} = this.props
         const name = this.props.name || ('name_' + Math.random())
+        let value = this.props.value
+        if( value ){
+            if( multi && value.constructor !== Array){
+                value = [value]
+            }
+        }
 
         return <FormControl className={className || classes.formControl} disabled={disabled} fullWidth={fullWidth}
                             error={error}>

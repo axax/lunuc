@@ -41,8 +41,13 @@ export default () => {
 
             if (dataToEdit && dataToEdit.definition) {
 
-                const struct = JSON.parse(dataToEdit.definition.structure)
-
+                let struct
+                try {
+                    struct = JSON.parse(dataToEdit.definition.structure)
+                }catch (e) {
+                    console.error(e, dataToEdit.definition.structure)
+                    return
+                }
                 const data = dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data
 
                 const newFields = Object.assign({}, formFields)
