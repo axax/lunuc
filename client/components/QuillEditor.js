@@ -89,10 +89,14 @@ class QuillEditor extends React.Component {
                 this.quill.on('text-change', (e) => {
                     const {onChange, name} = this.props
                     if (onChange) {
+                        let html = this.quill.root.innerHTML
+                        if( html === '<p><br></p>'){
+                            html = ''
+                        }
                         if (name) {
-                            onChange({target: {name, value: this.quill.root.innerHTML}})
+                            onChange({target: {name, value: html}})
                         } else {
-                            onChange(this.quill.root.innerHTML)
+                            onChange(html)
                         }
                     }
                 })

@@ -114,47 +114,54 @@ const baseElements = [
         }
     },
     {
-        tagName: 'h1', name: 'Header 1',
+        tagName: '', name: 'Überschrift',
         defaults: {
             $inlineEditor: {
-                elementKey: 'h1'
+                elementKey: 'headline'
             },
-            c: 'Header 1'
+            c: 'Headline'
         },
         options: {
+            t: {
+                enum:[
+                    {
+                        name: 'H1',
+                        value: 'h1'
+                    },
+                    {
+                        name: 'H2',
+                        value: 'h2'
+                    },
+                    {
+                        name: 'H3',
+                        value: 'h3'
+                    },
+                    {
+                        name: 'H4',
+                        value: 'h4'
+                    },
+                    {
+                        name: 'H5',
+                        value: 'h5'
+                    },
+                    {
+                        name: 'H6',
+                        value: 'h6'
+                    }
+                ]
+            },
             c: {
                 label: 'Text',
                 fullWidth: true
-            }
-        }
-    },
-    {
-        tagName: 'h2', name: 'Header 2',
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'h2'
             },
-            c: 'Header 2'
-        },
-        options: {
-            c: {
-                label: 'Text',
-                fullWidth: true
-            }
-        }
-    },
-    {
-        tagName: 'h3', name: 'Header 3',
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'h3'
+            p_style_marginTop: {
+                label: 'Abstand oben'
             },
-            c: 'Header 3'
-        },
-        options: {
-            c: {
-                label: 'Text',
-                fullWidth: true
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
             }
         }
     },

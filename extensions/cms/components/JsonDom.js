@@ -401,36 +401,40 @@ class JsonDom extends React.Component {
         scope.root = root
         scope.parent = parent
 
-        if (this.runScript && script) {
-            this.runScript = false
-            this.runJsEvent('beforerunscript', false, scope)
-            try {
-                this.jsOnStack = {}
-                this.scriptResult = new Function(DomUtil.toES5(`
+        if( script ) {
+            if (this.runScript) {
+                this.runScript = false
+                this.runJsEvent('beforerunscript', false, scope)
+                try {
+                    this.jsOnStack = {}
+                    this.scriptResult = new Function(DomUtil.toES5(`
                 const   __this=this._this
                 const {serverMethod, on, setLocal, getLocal, refresh, getComponent, addMetaTag, setStyle, fetchMore} = __this
                 const {history, clientQuery, setKeyValue} = __this.props
                 const {scope, getKeyValueFromLS, parent, root, Util, DomUtil} = this
                 const _t = this._t.bind(scope.data),forceUpdate = refresh
                 ${script}`)).call({
-                    _this: this,
-                    scope,
-                    Util,
-                    DomUtil,
-                    _t,
-                    getKeyValueFromLS,
-                    root,
-                    parent
-                })
-            } catch (e) {
-                console.error(e)
-                return <div>Error in the script: <strong>{e.message}</strong></div>
+                        _this: this,
+                        scope,
+                        Util,
+                        DomUtil,
+                        _t,
+                        getKeyValueFromLS,
+                        root,
+                        parent
+                    })
+                } catch (e) {
+                    console.error(e)
+                    return <div>Error in the script: <strong>{e.message}</strong></div>
+                }
+                scope.script = this.scriptResult || {}
             }
-            scope.script = this.scriptResult || {}
-        }
-        if (!this.runJsEvent('beforerender', false, scope)) {
-            return <div>Error in beforerender event. See details in console log: <span
-                dangerouslySetInnerHTML={{__html: this.lastEventError}}/></div>
+            if (!this.runJsEvent('beforerender', false, scope)) {
+                return <div>Error in beforerender event. See details in console log: <span
+                    dangerouslySetInnerHTML={{__html: this.lastEventError}}/></div>
+            }
+        }else{
+            this.jsOnStack = {}
         }
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
         if (content && this._inHtmlComponents.length > 0) {
@@ -809,9 +813,8 @@ class JsonDom extends React.Component {
                             eleProps.onChange = this.handleBindingChange.bind(this, eleProps.onChange)
 
                             eleProps.time = new Date()
-                        } else if (eleProps.value && tagName !== 'option') {
-                            console.warn(`Don't use property value without name in ${scope.page.slug}`)
                         }
+
                         if (eleProps.props && eleProps.props.$data) {
                             eleProps.props.data = Object.assign(propertyByPath(eleProps.props.$data, scope), eleProps.props.data)
                         }
@@ -1039,6 +1042,7 @@ class JsonDom extends React.Component {
                             cb(...args)
                         }
                     } catch (e) {
+                        console.log(e)
                         this.lastEventError = this.prettyErrorMessage(e, this.props.script)
                         hasError = true
                     }
@@ -1063,12 +1067,12 @@ class JsonDom extends React.Component {
         } else {
             lineNrStr = column = 0
         }
-
         if (lineNrStr) {
             const lineNr = parseInt(lineNrStr)
             const cbLines = code.split('\n'),
                 start = Math.max(0, lineNr - 3),
                 end = Math.min(cbLines.length, lineNr + 4)
+            console.log(cbLines)
             for (let i = start; i < end; i++) {
 
                 const str = cbLines[i - 9]
@@ -1078,6 +1082,8 @@ class JsonDom extends React.Component {
                     errorMsg += str + '\n'
                 }
             }
+        }else{
+            errorMsg += e.message
         }
         errorMsg += '</pre>'
         return errorMsg

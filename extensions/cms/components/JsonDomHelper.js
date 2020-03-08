@@ -756,7 +756,7 @@ class JsonDomHelper extends React.Component {
 
                 if (_inlineEditor.menu.clone !== false) {
                     menuItems.push({
-                        name: 'Element kopieren',
+                        name: 'Element duplizieren',
                         icon: <FileCopyIcon/>,
                         onClick: this.handleCopyClick.bind(this)
                     })
@@ -793,6 +793,14 @@ class JsonDomHelper extends React.Component {
                         }
                     })
                 }
+
+                menuItems.push({
+                    name: 'Element in Zwischenablage kopieren',
+                    icon: <FileCopyIcon/>,
+                    onClick: () => {
+                        navigator.clipboard.writeText(JSON.stringify(subJson,null,4))
+                    }
+                })
             }
             toolbar = <div
                 key={rest._key + '.toolbar'}
@@ -889,7 +897,7 @@ class JsonDomHelper extends React.Component {
                 <_WrappedComponent onChange={newOnChange || onChange} {...rest} children={kids}/>
             </div>
         } else {
-            comp = <_WrappedComponent onChange={newOnChange || onChange} _inlineeditor="true"
+            comp = <_WrappedComponent onChange={newOnChange || onChange} _inlineeditor="true" data-isempty={rest.dangerouslySetInnerHTML?false:children?false:true}
                                       key={rest._key} {...events} {...rest} children={kids}/>
         }
         if (toolbar) {
