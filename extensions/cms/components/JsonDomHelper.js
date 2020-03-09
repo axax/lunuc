@@ -705,6 +705,17 @@ class JsonDomHelper extends React.Component {
                             }
                         })
                     }
+
+
+                    if( parsedSouce.allowRemove ) {
+                        menuItems.push({
+                            name: _inlineEditor.menuTitle.sourceRemove || 'Datenquelle löschen',
+                            icon: <DeleteIcon/>,
+                            onClick: (e)=>{
+
+                            }
+                        })
+                    }
                 }
 
                 if (_inlineEditor.elementKey) {
@@ -802,13 +813,15 @@ class JsonDomHelper extends React.Component {
                     })
                 }
 
-                menuItems.push({
-                    name: 'Element in Zwischenablage kopieren',
-                    icon: <FileCopyIcon/>,
-                    onClick: () => {
-                        navigator.clipboard.writeText(JSON.stringify(subJson,null,4))
-                    }
-                })
+                if (_inlineEditor.menu.clipboard !== false) {
+                    menuItems.push({
+                        name: 'Element in Zwischenablage kopieren',
+                        icon: <FileCopyIcon/>,
+                        onClick: () => {
+                            navigator.clipboard.writeText(JSON.stringify(subJson, null, 4))
+                        }
+                    })
+                }
             }
             toolbar = <div
                 key={rest._key + '.toolbar'}
