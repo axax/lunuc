@@ -46,7 +46,7 @@ export const getFormFields = (type) => {
         //throw new Error('Cannot find type "'+type+'" in getFormFields')
     }
     typeFormFields[type] = {}
-    if (!types[type].noUserRelation && Util.hasCapability(_app_.user, 'manage_other_users')) {
+    if (!types[type].noUserRelation && Util.hasCapability({userData:_app_.user}, 'manage_other_users')) {
         // add field so the createdBy User can be changed
         typeFormFields[type].createdBy = {
             label: 'Created by user',
