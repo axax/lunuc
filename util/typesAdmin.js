@@ -2,6 +2,7 @@ import Hook from 'util/hook'
 import config from 'gen/config'
 import {getAllCapabilites} from 'util/capabilities'
 import {getType, getTypes} from './types'
+import Util from '../client/util'
 
 const {LANGUAGES} = config, typeFormFields = {}
 
@@ -45,7 +46,7 @@ export const getFormFields = (type) => {
         //throw new Error('Cannot find type "'+type+'" in getFormFields')
     }
     typeFormFields[type] = {}
-    if (!types[type].noUserRelation) {
+    if (!types[type].noUserRelation && Util.hasCapability(_app_.user, 'manage_other_users')) {
         // add field so the createdBy User can be changed
         typeFormFields[type].createdBy = {
             label: 'Created by user',

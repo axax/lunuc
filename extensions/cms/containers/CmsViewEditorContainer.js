@@ -546,10 +546,10 @@ class CmsViewEditorContainer extends React.Component {
                                                 onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
                                                 contrast
                                                 label="Fixed"/>,
-
-                                  hasTemplate ? <Button key="button" size="small" color="inherit" onClick={e => {
+                                    <Button key="buttonBack" size="small" color="inherit" onClick={e => {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
-                                  }}>Back</Button> : <Button key="button" size="small" color="inherit" onClick={() => {
+                                  }}>Admin</Button>,
+                                      <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
                                       this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname)}`)
                                   }}>Logout</Button>,
                                   <SimpleMenu key="moreMenu" color="inherit" items={[{

@@ -12,9 +12,7 @@ export const keyvalueResolver = (db) => ({
         keyValues: async ({keys, limit, sort, offset, page, filter, all}, {context}) => {
             const match = {}
 
-            if (all) {
-                await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
-            } else {
+            if (!all || !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
                 match.createdBy = ObjectId(context.id)
             }
             if (keys) {

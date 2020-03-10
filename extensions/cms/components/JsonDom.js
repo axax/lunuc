@@ -79,6 +79,8 @@ class JsonDom extends React.Component {
         'SmartImage': ({src, caption, wrapper, alt, ...props}) => {
             let imageData = Util.getImageObject(src)
 
+            imageData['data-smartimage']=true
+
             if(caption || wrapper){
                 return <figure {...props}>
                     <img alt={alt} {...imageData} />
