@@ -1,7 +1,6 @@
 import extensions from 'gen/extensions'
 import Hook from 'util/hook'
 import config from 'gen/config'
-import {getAllCapabilites} from 'util/capabilities'
 const {LANGUAGES} = config
 
 export const types = {}, typeQueries = {}

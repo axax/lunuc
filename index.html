@@ -55,26 +55,30 @@
     } catch (e) {
     }
 
-    _app_ = {tr: {}, trLoaded: true, localSettings: ls, start: new Date(), langBefore: sessionStorage.getItem('lang')}
-    var l = window.location.pathname.split('/')[1]
-    if (!l || l.length !== 2) {
-        if (!_app_.langBefore) {
-            l = (navigator.language || navigator.userLanguage).substr(0, 2)
+    _app_ = {tr: {}, trLoaded: false, localSettings: ls, start: new Date(), langBefore: sessionStorage.getItem('lang')}
+    if( localStorage.getItem('token') ) {
+        var l = window.location.pathname.split('/')[1]
+        if (!l || l.length !== 2) {
+            if (!_app_.langBefore) {
+                l = (navigator.language || navigator.userLanguage).substr(0, 2)
+            } else {
+                l = '${DEFAULT_LANGUAGE}'
+            }
         } else {
-            l = '${DEFAULT_LANGUAGE}'
+            l = l.toLowerCase()
         }
-    } else {
-        l = l.toLowerCase()
-    }
 
-    _app_.lang = l
-    var s = document.createElement('script')
-    s.onload = function () {
+        _app_.lang = l
+        var s = document.createElement('script')
+        s.onload = function () {
+            _app_.trLoaded = true
+            if (_app_.trCallback) _app_.trCallback()
+        }
+        s.setAttribute('src', '/' + l + '.tr.js?v=${BUILD_NUMBER}')
+        document.head.appendChild(s)
+    }else{
         _app_.trLoaded = true
-        if (_app_.trCallback) _app_.trCallback()
     }
-    s.setAttribute('src', '/' + l + '.tr.js?v=${BUILD_NUMBER}')
-    document.head.appendChild(s)
 </script>
 <script async src="/main.bundle.js?v=${BUILD_NUMBER}"></script>
 </body>

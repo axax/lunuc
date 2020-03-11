@@ -15,5 +15,13 @@
   "core.login.blocked": "User locked. Try again in a few minutes.",
   "FileDrop.dropArea": "Drop files here, or click to select files to upload.",
   "FileDrop.uploadSuccess": "upload was successfull",
-  "TypesContainer.filter": "Filter expression (for specifc fields use field=term)"
+  "TypesContainer.filter": "Filter expression (for specifc fields use field=term)",
+  "CmsViewEditorContainer.editPage": "Edit page",
+  "CmsViewEditorContainer.pageTitle": "Page title",
+  "CmsViewEditorContainer.revisions": "Editing history",
+  "CmsViewEditorContainer.pages": "Pages",
+  "CmsViewEditorContainer.settings": "Settings",
+  "CmsViewEditorContainer.inlineEditor": "Edit mode",
+  "CmsViewEditorContainer.fixed": "Fix sidebar",
+  "CmsViewEditorContainer.preview": "Preview"
 }

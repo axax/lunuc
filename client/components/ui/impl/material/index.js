@@ -159,11 +159,11 @@ export const MenuList = ({children, ...rest}) => {
     </List>
 }
 
-export const MenuListItem = ({primary, ...rest}) => {
+export const MenuListItem = ({primary,secondary, ...rest}) => {
     return <ListItem {...rest}>
         <ListItemText
             primary={primary}
-            secondary={null}
+            secondary={secondary}
         />
     </ListItem>
 }

@@ -16,10 +16,12 @@ Hook.on('schema', ({schemas}) => {
 
 // Hook when the type Api has changed
 Hook.on('typeUpdated', async ({db, data, type, context}) => {
+    const meta = {keys: Object.keys(data)}
     db.collection('History').insertOne({
         type,
         action:'update',
         data,
+        meta,
         createdBy: await Util.userOrAnonymousId(db, context)
     })
 })

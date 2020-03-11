@@ -19,6 +19,7 @@ import TemplateEditor from '../components/TemplateEditor'
 import ScriptEditor from '../components/ScriptEditor'
 import ResourceEditor from '../components/ResourceEditor'
 import {
+    TextField,
     DrawerLayout,
     MenuList,
     MenuListItem,
@@ -30,7 +31,6 @@ import {
     UIProvider
 } from 'ui/admin'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
-import config from 'gen/config'
 import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
@@ -44,6 +44,9 @@ import CodeEditor from 'client/components/CodeEditor'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import GenericForm from '../../../client/components/GenericForm'
 import TypePicker from '../../../client/components/TypePicker'
+import _t from 'util/i18n'
+import config from 'gen/config'
+
 
 class CmsViewEditorContainer extends React.Component {
 
@@ -300,7 +303,7 @@ class CmsViewEditorContainer extends React.Component {
                     <MenuListItem onClick={e => {
                         const win = window.open(location.pathname + '?preview=true', '_blank')
                         win.focus()
-                    }} button primary="Preview"/>
+                    }} button primary={_t('CmsViewEditorContainer.preview')}/>
                 </MenuList>
                 <Divider/>
 
@@ -376,43 +379,56 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
 
-                    {hasTemplate && <Expandable title="Settings"
+                    <Expandable title={_t('CmsViewEditorContainer.settings')}
                                                 onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
                                                 expanded={settings.settingsExpanded}>
 
-                        <SimpleSwitch
+                        <TextField key="pageTitle"
+                                   label={_t('CmsViewEditorContainer.pageTitle')}
+                                   InputLabelProps={{
+                                       shrink: true,
+                                   }}
+                                   onBlur={(e)=>{
+                                       let value = {...cmsPage.name, [_app_.lang]:e.target.value}
+
+                                       this.saveCmsPage(value, this.props.cmsPage, 'name')
+                                   }}
+                                   defaultValue={cmsPage.name[_app_.lang]}
+                                   fullWidth={true}/>
+
+                        {hasTemplate && <React.Fragment><SimpleSwitch
                             label="SSR (Server side Rendering)"
                             checked={!!this.state.ssr}
                             onChange={this.handleFlagChange.bind(this, 'ssr')}
-                        />
+                        />,
                         <SimpleSwitch
                             label="Public (is visible to everyone)"
                             checked={!!this.state.public}
                             onChange={this.handleFlagChange.bind(this, 'public')}
-                        />
+                        />,
                         <SimpleSwitch
                             label="Url sensitive (refresh component on url change)"
                             checked={!!this.state.urlSensitiv}
                             onChange={this.handleFlagChange.bind(this, 'urlSensitiv')}
-                        />
+                        />,
                         <SimpleSwitch
                             label="Always load assets (even when component is loaded dynamically)"
                             checked={!!this.state.alwaysLoadAssets}
                             onChange={this.handleFlagChange.bind(this, 'alwaysLoadAssets')}
-                        />
+                        />,
                         <SimpleSwitch
                             label="Parse resolvedData in frontend (replace placeholders)"
                             checked={!!this.state.parseResolvedData}
                             onChange={this.handleFlagChange.bind(this, 'parseResolvedData')}
-                        />
-                    </Expandable>}
+                        /></React.Fragment>}
+                    </Expandable>
 
-                    <Expandable title="Revisions"
+                    <Expandable title={_t('CmsViewEditorContainer.revisions')}
                                 onChange={this.handleSettingChange.bind(this, 'revisionsExpanded')}
                                 expanded={settings.revisionsExpanded}>
                         <MenuList>
                             <Query
-                                query={gql`query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action}}}`}
+                                query={gql`query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action, meta}}}`}
                                 fetchPolicy="cache-and-network"
                                 variables={{
                                     limit: 99,
@@ -427,10 +443,12 @@ class CmsViewEditorContainer extends React.Component {
 
                                     data.historys.results.forEach(i => {
                                             if (i.slug !== props.slug) {
+                                                console.log(i.meta)
                                                 menuItems.push(<MenuListItem key={'history' + i._id} onClick={e => {
                                                     this.setState({showRevision: i})
-                                                }} button
-                                                                             primary={Util.formattedDateFromObjectId(i._id) + ' - ' + i.action}/>)
+                                                }} button primary={Util.formattedDateFromObjectId(i._id) + ' - ' + i.action}
+                                                                             secondary={i.meta}
+                                                />)
                                             }
                                         }
                                     )
@@ -491,7 +509,7 @@ class CmsViewEditorContainer extends React.Component {
                     </SimpleDialog>}
 
 
-                    <Expandable title="Pages"
+                    <Expandable title={_t('CmsViewEditorContainer.pages')}
                                 onChange={this.handleSettingChange.bind(this, 'relatedPagesExpanded')}
                                 expanded={settings.relatedPagesExpanded}>
                         <MenuList>
@@ -536,16 +554,16 @@ class CmsViewEditorContainer extends React.Component {
                               onDrawerOpenClose={this.drawerOpenClose}
                               onDrawerWidthChange={this.drawerWidthChange}
                               toolbarRight={[
-                                  <SimpleSwitch key="inlineEditorSwitch" color="default"
-                                                checked={!!settings.inlineEditor}
-                                                onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
-                                                contrast
-                                                label="Inline Editor"/>,
                                   <SimpleSwitch key="fixedLayoutSwitch" color="default"
                                                 checked={!!settings.fixedLayout}
                                                 onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
                                                 contrast
-                                                label="Fixed"/>,
+                                                label={_t('CmsViewEditorContainer.fixed')}/>,
+                                  <SimpleSwitch key="inlineEditorSwitch" color="default"
+                                                checked={!!settings.inlineEditor}
+                                                onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
+                                                contrast
+                                                label={_t('CmsViewEditorContainer.inlineEditor')}/>,
                                     <Button key="buttonBack" size="small" color="inherit" onClick={e => {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
                                   }}>Admin</Button>,
@@ -560,7 +578,7 @@ class CmsViewEditorContainer extends React.Component {
                                   }]}/>
                               ]
                               }
-                              title={`Edit Page "${props.slug}" - ${cmsPage.online ? 'Online' : 'Offline'}`}>
+                              title={`${_t('CmsViewEditorContainer.editPage')} "${props.slug}" - ${cmsPage.online ? 'Online' : 'Online'}`}>
                     {inner}
                     {this.state.addNewSite &&
                     <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
@@ -1007,13 +1025,17 @@ const CmsViewEditorContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key, cb) => {
 
                 const variables = getGqlVariables(ownProps)
                 const variablesWithNewValue = {...variables, _id, [key]: rest[key]}
 
+                if(rest[key].constructor === Object ){
+                    variablesWithNewValue[key] = Object.assign({},rest[key])
+                    delete variablesWithNewValue[key].__typename
+                }
                 return mutate({
                     variables: variablesWithNewValue,
                     optimisticResponse: {
