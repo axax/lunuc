@@ -671,7 +671,7 @@ class JsonDomHelper extends React.Component {
 
             if (isCms) {
                 menuItems.push({
-                    name: `Komponente ${subJson.p.id} öffnen`, icon: <LaunchIcon/>, onClick: () => {
+                    name: `Komponente ${subJson.p && subJson.p.id} öffnen`, icon: <LaunchIcon/>, onClick: () => {
                         window.location = '/' + subJson.p.slug
                     }
                 })
@@ -952,7 +952,7 @@ class JsonDomHelper extends React.Component {
                     </AddToBody>
                 )}
                 {(addChildDialog &&
-                    <AddToBody><SimpleDialog fullWidth={true} maxWidth="sm" key="addChildDialog" open={true}
+                    <AddToBody><SimpleDialog fullWidth={true} maxWidth="md" key="addChildDialog" open={true}
                                              onClose={(e) => {
                                                  const selected = addChildDialog.selected
                                                  if (e.key === 'save' && selected) {

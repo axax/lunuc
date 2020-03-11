@@ -70,7 +70,7 @@ class Routes extends React.Component {
             } else {
                 newPath = path
             }
-            this.history._last = newPath
+            this.history._last = this.history.location.pathname
 
             this.history._push(newPath, state)
         }
