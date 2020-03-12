@@ -594,7 +594,7 @@ class JsonDomHelper extends React.Component {
                     }
                     delete e['returnValue']
                 })
-            },0)
+            },500)
     }
 
     setFormOptionsByProperties(json, options, prefix) {

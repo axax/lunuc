@@ -98,7 +98,7 @@ class TypePicker extends React.Component {
                                                    this.selectValue(newwindow.resultValue)
                                                    delete e['returnValue']
                                                })
-                                           },0)
+                                           },500)
                                        }}
                                        onMouseDown={()=>{}}
                                    >
