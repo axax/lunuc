@@ -573,27 +573,28 @@ class JsonDomHelper extends React.Component {
         const newwindow = window.open(
             `/admin/types/?noLayout=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`, '_blank',
             'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
-
-        newwindow.addEventListener('beforeunload',(e) => {
-            if (newwindow.resultValue) {
-                //_cmsActions.editCmsComponent(rest._key, _json, _scope)
-                const source = getComponentByKey(_key, _json)
-                if (source) {
-                    if (picker.template) {
-                        source.$c = Util.replacePlaceholders(picker.template.replace(/\\\{/g, '{'), newwindow.resultValue)
-                    } else {
-                        if (!source.p) {
-                            source.p = {}
+            setTimeout(()=> {
+                newwindow.addEventListener('beforeunload', (e) => {
+                    if (newwindow.resultValue) {
+                        //_cmsActions.editCmsComponent(rest._key, _json, _scope)
+                        const source = getComponentByKey(_key, _json)
+                        if (source) {
+                            if (picker.template) {
+                                source.$c = Util.replacePlaceholders(picker.template.replace(/\\\{/g, '{'), newwindow.resultValue)
+                            } else {
+                                if (!source.p) {
+                                    source.p = {}
+                                }
+                                source.p.src = newwindow.resultValue
+                            }
+                            setTimeout(() => {
+                                _onChange(_json)
+                            }, 0)
                         }
-                        source.p.src = newwindow.resultValue
                     }
-                    setTimeout(()=> {
-                        _onChange(_json)
-                    },0)
-                }
-            }
-            delete e['returnValue']
-        })
+                    delete e['returnValue']
+                })
+            },0)
     }
 
     setFormOptionsByProperties(json, options, prefix) {
