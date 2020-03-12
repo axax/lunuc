@@ -1280,7 +1280,7 @@ class TypesContainer extends React.Component {
     handleCopyClick = (data, fields) => {
         const newData = {}
         fields.forEach(field => {
-            if (field.clone) {
+            if (field.clone && !field.localized) {
                 const tpl = new Function(DomUtil.toES5('const {' + Object.keys(data).join(',') + '} = this.data;return `' + field.clone + '`;'))
                 newData[field.name] = tpl.call({data})
             }

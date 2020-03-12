@@ -160,7 +160,16 @@ class TypePicker extends React.Component {
             this.setState({data: null, textValue: v})
         } else {
             this.setState({textValue: v})
-            this.getData(e.target.value+(this.props.filter?' && '+this.props.filter:''))
+            const {searchFields} = this.props
+            let filter=''
+            if( searchFields){
+                searchFields.forEach(field=>{
+                    filter += field+'='+e.target.value+' '
+                })
+            }else{
+                filter = e.target.value
+            }
+            this.getData(filter+(this.props.filter?' && '+this.props.filter:''))
         }
     }
 
@@ -233,6 +242,7 @@ class TypePicker extends React.Component {
 TypePicker.propTypes = {
     value: PropTypes.array,
     fields: PropTypes.array,
+    searchFields: PropTypes.array,
     placeholder: PropTypes.string,
     filter: PropTypes.string,
     error: PropTypes.bool,

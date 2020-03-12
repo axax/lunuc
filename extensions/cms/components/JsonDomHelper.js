@@ -27,6 +27,9 @@ import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
 import config from 'gen/config'
 import {getJsonDomElements} from '../util/elements'
+import {ApolloClient} from 'apollo-client'
+import {withApollo} from 'react-apollo'
+import gql from 'graphql-tag'
 
 const {UPLOAD_URL} = config
 
@@ -199,6 +202,7 @@ class JsonDomHelper extends React.Component {
             state.hovered !== this.state.hovered ||
             state.addChildDialog !== this.state.addChildDialog ||
             state.deleteConfirmDialog !== this.state.deleteConfirmDialog ||
+            state.deleteSourceConfirmDialog !== this.state.deleteSourceConfirmDialog ||
             state.dragging !== this.state.dragging ||
             state.top !== this.state.top ||
             state.left !== this.state.left ||
@@ -408,22 +412,23 @@ class JsonDomHelper extends React.Component {
         // 1. get element from json structure by key
         const source = getComponentByKey(sourceKey, _json)
 
+        if(source) {
+            if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
+                //2. remove it from json
+                if (removeComponent(sourceKey, _json)) {
 
-        if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
-            //2. remove it from json
-            if (removeComponent(sourceKey, _json)) {
+                    // 3. add it to new position
+                    addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
 
-                // 3. add it to new position
+                    _onChange(_json)
+
+                }
+            } else {
                 addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
-
-                _onChange(_json)
-
+                removeComponent(sourceKey, _json)
             }
-        } else {
-            addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
-            removeComponent(sourceKey, _json)
+            _onChange(_json)
         }
-        _onChange(_json)
 
 
         this.resetDragState()
@@ -431,6 +436,7 @@ class JsonDomHelper extends React.Component {
 
 
     resetDragState() {
+        console.log('.' + this.props.classes.dropArea)
         DomUtil.setAttrForSelector('.' + this.props.classes.dropArea, {style: 'display:none'})
         JsonDomHelper.currentDragElement = null
         this.setState({toolbarHovered: false, hovered: false, dragging: false})
@@ -613,7 +619,7 @@ class JsonDomHelper extends React.Component {
 
     render() {
         const {classes, _WrappedComponent, _json, _cmsActions, _onChange, _onDataResolverPropertyChange, children, _tagName, _inlineEditor, onChange, ...rest} = this.props
-        const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog} = this.state
+        const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         const menuItems = []
 
@@ -713,6 +719,7 @@ class JsonDomHelper extends React.Component {
                             icon: <DeleteIcon/>,
                             onClick: (e)=>{
 
+                                this.setState({deleteSourceConfirmDialog: parsedSouce})
                             }
                         })
                     }
@@ -938,16 +945,50 @@ class JsonDomHelper extends React.Component {
                                       actions={[
                                           {
                                               key: 'cancel',
-                                              label: 'Cancel',
+                                              label: 'Abbrechen',
                                               type: 'secondary'
                                           },
                                           {
                                               key: 'delete',
-                                              label: 'Delete',
+                                              label: 'Löschen',
                                               type: 'primary'
                                           }]}
                                       title="Löschung bestätigen">
-                            Sind sie ganz sicher, dass Sie das Element löschen möchten?
+                            Sind Sie ganz sicher, dass Sie das Element löschen möchten?
+                        </SimpleDialog>
+                    </AddToBody>
+                )}
+                {(deleteSourceConfirmDialog &&
+                    <AddToBody>
+                        <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteSourceConformation" open={true}
+                                      onClose={(e) => {
+                                          if (e.key === 'delete') {
+                                              const {type,_id} = deleteSourceConfirmDialog
+                                              this.props.client.mutate({
+                                                  mutation: gql`mutation delete${type}($_id: ID!) {delete${type}(_id: $_id) {_id status}}`,
+                                                  variables:{_id},
+                                                    update: (store, {data: {setKeyValue}}) => {
+                                                        window.location.href = window.location.href
+                                                    }
+                                                  }
+                                              )
+
+                                          }
+                                          this.setState({deleteSourceConfirmDialog: null})
+                                      }}
+                                      actions={[
+                                          {
+                                              key: 'cancel',
+                                              label: 'Abbrechen',
+                                              type: 'secondary'
+                                          },
+                                          {
+                                              key: 'delete',
+                                              label: 'Löschen',
+                                              type: 'primary'
+                                          }]}
+                                      title="Löschung bestätigen">
+                            Sind Sie ganz sicher, dass Sie das Element löschen möchten?
                         </SimpleDialog>
                     </AddToBody>
                 )}
@@ -1054,6 +1095,7 @@ class JsonDomHelper extends React.Component {
 
 
 JsonDomHelper.propTypes = {
+    client: PropTypes.instanceOf(ApolloClient).isRequired,
     classes: PropTypes.object.isRequired,
     _WrappedComponent: PropTypes.any.isRequired,
     _cmsActions: PropTypes.object.isRequired,
@@ -1085,7 +1127,7 @@ const mapDispatchToProps = (dispatch) => ({
  * Connect the component to
  * the Redux store.
  */
-export default connect(
+export default withApollo(connect(
     mapStateToProps,
     mapDispatchToProps
-)(withStyles(styles)(JsonDomHelper))
+)(withStyles(styles)(JsonDomHelper)))

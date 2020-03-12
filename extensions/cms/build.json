@@ -9,6 +9,7 @@
       "fields": [
         {
           "name": "name",
+          "clone": "${name}",
           "label": "Name",
           "localized": true,
           "index": 1

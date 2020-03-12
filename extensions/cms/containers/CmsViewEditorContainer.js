@@ -586,9 +586,11 @@ class CmsViewEditorContainer extends React.Component {
                                       if (e.key === 'ok') {
                                           const queries = getTypeQueries('CmsPage')
                                           const slug=this.addNewSiteForm.state.fields.slug
+                                          const name=this.addNewSiteForm.state.fields.name
+                                          delete name.__typename
                                           this.props.client.mutate({
                                               mutation: gql(queries.clone),
-                                              variables: {_id: this.addNewSiteForm.props.values._id, slug},
+                                              variables: {_id: this.addNewSiteForm.props.values._id, slug, name},
                                               update: (store, {data}) => {
                                                   if( !data.errors ){
 
@@ -616,7 +618,7 @@ class CmsViewEditorContainer extends React.Component {
                         <TypePicker onChange={(e) => {
                             this.setState({addNewSite: e.target.value[0]})
 
-                        }} name="group" placeholder="Vorlage auswählen" type="CmsPage"/>
+                        }} fullWidth={true} searchFields={['name']} name="group" placeholder="Vorlage auswählen" type="CmsPage"/>
 
                         {this.state.addNewSite.constructor === Object &&
                         <GenericForm ref={(e) => {
