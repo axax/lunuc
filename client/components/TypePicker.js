@@ -93,9 +93,10 @@ class TypePicker extends React.Component {
                                                `/admin/types/?noLayout=true&fixType=${type}${filter?'&baseFilter='+encodeURIComponent(filter):''}`, '_blank' ,
                                                'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left)
 
-                                           newwindow.onbeforeunload = ()=>{
+                                           newwindow.addEventListener('beforeunload',(e) => {
                                                this.selectValue(newwindow.resultValue)
-                                           }
+                                               delete e['returnValue']
+                                           })
                                        }}
                                        onMouseDown={()=>{}}
                                    >

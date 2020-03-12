@@ -574,7 +574,7 @@ class JsonDomHelper extends React.Component {
             `/admin/types/?noLayout=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`, '_blank',
             'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
 
-        newwindow.onbeforeunload = () => {
+        newwindow.addEventListener('beforeunload',(e) => {
             if (newwindow.resultValue) {
                 //_cmsActions.editCmsComponent(rest._key, _json, _scope)
                 const source = getComponentByKey(_key, _json)
@@ -587,11 +587,13 @@ class JsonDomHelper extends React.Component {
                         }
                         source.p.src = newwindow.resultValue
                     }
-                    _onChange(_json)
+                    setTimeout(()=> {
+                        _onChange(_json)
+                    },0)
                 }
             }
-
-        }
+            delete e['returnValue']
+        })
     }
 
     setFormOptionsByProperties(json, options, prefix) {
