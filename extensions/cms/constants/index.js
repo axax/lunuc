@@ -95,7 +95,7 @@ export const DEFAULT_TEMPLATE = `[
             "t": "td",
             "c": "Page \${data.Word.page} of \${Math.ceil(data.Word.total / data.Word.limit)}",
             "p": {
-                "colspan":"\${data.fields.length}"
+                "colSpan":"\${data.fields.length}"
             }
           }
         }

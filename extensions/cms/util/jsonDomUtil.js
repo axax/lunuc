@@ -46,13 +46,18 @@ export const getComponentByKey = (key, json) => {
 export const addComponent = ({key, json, index, component}) => {
     const subJson = getComponentByKey(key, json)
     if (subJson) {
-        let c = subJson['c']
-        if (!c) {
-            c = []
-        } else if (c.constructor === Object) {
-            c = [c]
-        } else if (c.constructor === String) {
-            c = [{c}]
+        let c
+        if (subJson.constructor === Array) {
+            c = subJson
+        } else {
+            c = subJson['c']
+            if (!c) {
+                c = []
+            } else if (c.constructor === Object) {
+                c = [c]
+            } else if (c.constructor === String) {
+                c = [{c}]
+            }
         }
         if (!component) {
             component = {'c': 'new component'}
@@ -60,9 +65,11 @@ export const addComponent = ({key, json, index, component}) => {
         if (isNaN(index) || index < 0) {
             index = c.length
         }
-
         c.splice(index, 0, component)
-        subJson.c = c
+
+        if (subJson.constructor !== Array) {
+            subJson.c = c
+        }
     }
     return subJson
 }

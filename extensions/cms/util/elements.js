@@ -24,6 +24,23 @@ const baseElements = [
             p_style_marginBottom: {
                 label: 'Abstand unten'
             },
+            p_style_float: {
+                label: 'Ausrichtung',
+                enum: [
+                    {
+                        name: 'Keine',
+                        value: 'none'
+                    },
+                    {
+                        name: 'Rechts',
+                        value: 'right'
+                    },
+                    {
+                        name: 'Links',
+                        value: 'left'
+                    },
+                ]
+            },
             p_className: {
                 label: 'Klassname'
             },

@@ -1,3 +1,4 @@
+import Util from 'client/util'
 
 
 export function propertyByPath(path, obj, separator='.') {
@@ -10,7 +11,7 @@ export function setPropertyByPath(value, path, obj, separator='.'){
         let field = fields[i]
         if (i === n - 1) {
             if( value && value.constructor===String) {
-                obj[field] = value.replace(/"/g, '\\\\\\\"')
+                obj[field] = value //Util.escapeForJson(value) //.replace(/"/g, '\\\\\\\"')
             }else{
                 obj[field] = value
             }

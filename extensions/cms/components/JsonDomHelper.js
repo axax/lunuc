@@ -350,7 +350,7 @@ class JsonDomHelper extends React.Component {
                         node = tag.parentNode
                     }
 
-                    if (JsonDomHelper.currentDragElement) {
+                    if (node.nodeType !== Node.TEXT_NODE && JsonDomHelper.currentDragElement) {
                         const tagName = tag.getAttribute('data-tag-name')
                         if (!allowDropIn || allowDropIn.indexOf(tagName) >= 0) {
 
@@ -511,10 +511,6 @@ class JsonDomHelper extends React.Component {
         let newkey = _key
         if (index !== undefined) {
             newkey = newkey.substring(0, newkey.lastIndexOf('.'))
-            if (newkey.indexOf('.') < 0) {
-                console.warn('can not add below', _key)
-                return
-            }
         } else {
             index = 0
         }

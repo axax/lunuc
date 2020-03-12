@@ -38,10 +38,10 @@ const DomUtil = {
         for (const key of Object.keys(attrs)) {
             if (key === 'data') {
                 for (const dataKey of Object.keys(attrs[key])) {
-                    if(tag.dataset) {
+                    if (tag.dataset) {
                         tag.dataset[dataKey] = attrs[key][dataKey]
-                    }else{
-                        tag.setAttribute('data-'+dataKey.replace(/([A-Z])/g, "-$1").toLowerCase(), attrs[key][dataKey])
+                    } else {
+                        tag.setAttribute('data-' + dataKey.replace(/([A-Z])/g, "-$1").toLowerCase(), attrs[key][dataKey])
                     }
                 }
             }
@@ -78,7 +78,7 @@ const DomUtil = {
         }
     },
     elemOffset(el) {
-       const {left, top} = el.getBoundingClientRect()
+        const {left, top} = el.getBoundingClientRect()
         return {
             left,
             top
@@ -91,8 +91,8 @@ const DomUtil = {
             }
             const startTime = new Date().getTime()
             const result = Babel.transform(code, {
-                sourceMap:false,
-                highlightCode:false,
+                sourceMap: false,
+                highlightCode: false,
                 sourceType: 'script',
                 parserOpts: {
                     allowReturnOutsideFunction: true
