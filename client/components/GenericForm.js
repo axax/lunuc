@@ -226,9 +226,9 @@ class GenericForm extends React.Component {
                                    })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor></FormControl>)
 
             } else if (uitype === 'html') {
-                formFields.push( <FormControl key={'control'+fieldKey} fullWidth>
+                formFields.push( <FormControl style={{zIndex:1}} key={'control'+fieldKey} fullWidth>
                     <InputLabel key={'label'+fieldKey} shrink>{field.label}</InputLabel>
-                    <QuillEditor key={fieldKey} id={fieldKey} style={{marginTop: '1.5rem',zIndex:1}}
+                    <QuillEditor key={fieldKey} id={fieldKey} style={{marginTop: '1.5rem'}}
                                  onChange={(newValue) => this.handleInputChange({
                                      target: {
                                          name: fieldKey,
