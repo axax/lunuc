@@ -11,7 +11,7 @@ import {withStyles} from '@material-ui/core/styles'
 
 const styles = theme => ({
     paper: {
-        overflow: 'auto'
+        overflow: 'visible'
     },
     root: {
         overflow: 'visible'
