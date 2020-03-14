@@ -12,6 +12,7 @@ exports.createServer = (opts, handler) => {
 
             // Determine if this is an HTTP(s) request
             let byte = buffer[0]
+            console.log(byte)
             let protocol
             if (byte === 22) {
                 protocol = 'https'
