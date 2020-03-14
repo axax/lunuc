@@ -50,6 +50,39 @@ const baseElements = [
                 fullWidth:true
             }
         }
+    },{
+        tagName: 'SmartImage',
+        name: 'Bildergalerie',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'gallery'
+            }
+        },
+        options: {
+            p_src: {
+                fullWidth:true,
+                value: '',
+                label: 'Bild',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=image',
+                multi:true
+            },
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
+            },
+            p_caption: {
+                label: 'Beschreibung',
+                uitype: 'html',
+                fullWidth:true
+            }
+        }
     },
     {
         tagName: 'Link',
@@ -262,7 +295,7 @@ const baseElements = [
         }
     },
     {
-        subHeader: 'Advanced components',
+        subHeader: 'Layout Elemente',
         tagName: 'Row',
         name: 'Layout 1/2',
         defaults: {

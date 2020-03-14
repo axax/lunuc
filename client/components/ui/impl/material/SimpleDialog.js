@@ -25,6 +25,7 @@ export const SimpleDialog = withMobileDialog()(({classes, children, onClose, act
         classes={{
             paper: classes.paper,
         }}
+        scroll="body"
         {...rest}>
         <DialogTitle id="responsive-dialog-title">{title}</DialogTitle>
         <DialogContent

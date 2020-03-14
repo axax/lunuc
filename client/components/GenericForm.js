@@ -9,6 +9,7 @@ import QuillEditor from './QuillEditor'
 import {withStyles} from 'ui/admin'
 import {checkFieldType} from 'util/typesAdmin'
 import Hook from '../../util/hook'
+import classNames from 'classnames'
 
 const styles = theme => {
     return {
@@ -20,6 +21,9 @@ const styles = theme => {
         formField:{
             minWidth: 'calc(25% - '+theme.spacing(2)+'px)',
             margin: theme.spacing(1)+'px',
+        },
+        formFieldFull:{
+            width: 'calc(100% - '+theme.spacing(2)+'px)',
         }
     }
 }
@@ -67,7 +71,7 @@ class GenericForm extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        return state !== this.state
+        return state !== this.state || state.fieldErrors !== this.state.fieldErrors
     }
 
     componentDidMount() {
@@ -121,7 +125,9 @@ class GenericForm extends React.Component {
             }
         })
         if (Object.keys(fieldErrors).length || Object.keys(this.state.fieldErrors).length) {
-            this.setState({fieldErrors})
+            setTimeout(()=>{
+                this.setState({fieldErrors})
+            },0)
         }
         if (Object.keys(fieldErrors).length) {
             return false
@@ -187,7 +193,6 @@ class GenericForm extends React.Component {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
         const fieldKeys = Object.keys(fields), formFields = []
 
-
         for(let fieldIndex = 0; fieldIndex<fieldKeys.length;fieldIndex++){
             const fieldKey = fieldKeys[fieldIndex],
                 field = fields[fieldKey], value = this.state.fields[fieldKey]
@@ -216,7 +221,7 @@ class GenericForm extends React.Component {
 
                     }
                 }
-                formFields.push(<FormControl key={'control'+fieldKey} fullWidth>
+                formFields.push(<FormControl key={'control'+fieldKey} className={classNames(classes.formFieldFull)}>
                     <InputLabel key={'label'+fieldKey} shrink>{field.label}</InputLabel><CodeEditor className={classes.editor} key={fieldKey}
                                    onChange={(newValue) => this.handleInputChange({
                                        target: {
@@ -226,7 +231,7 @@ class GenericForm extends React.Component {
                                    })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor></FormControl>)
 
             } else if (uitype === 'html') {
-                formFields.push( <FormControl style={{zIndex:1}} key={'control'+fieldKey} fullWidth>
+                formFields.push( <FormControl style={{zIndex:1}} key={'control'+fieldKey}  className={classNames(classes.formFieldFull)}>
                     <InputLabel key={'label'+fieldKey} shrink>{field.label}</InputLabel>
                     <QuillEditor key={fieldKey} id={fieldKey} style={{marginTop: '1.5rem'}}
                                  onChange={(newValue) => this.handleInputChange({
@@ -250,7 +255,7 @@ class GenericForm extends React.Component {
                                    error={!!this.state.fieldErrors[fieldKey]}
                                    helperText={this.state.fieldErrors[fieldKey]}
                                    onChange={this.handleInputChange}
-                                   className={classes.formField}
+                                   className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
                                    fullWidth={field.fullWidth}
                                    key={fieldKey}
                                    name={fieldKey}
@@ -258,6 +263,7 @@ class GenericForm extends React.Component {
                                    filter={field.filter}
                                    multi={field.multi}
                                    pickerField={field.pickerField}
+                                   searchFields={field.searchFields}
                                    fields={field.fields}
                                    type={field.type} placeholder={field.placeholder}/>)
             } else if (uitype === 'select') {
@@ -266,7 +272,7 @@ class GenericForm extends React.Component {
                                   hint={this.state.fieldErrors[fieldKey]}
                                      multi={field.multi}
                                      label={field.label}
-                                     className={classes.formField}
+                                     className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
                                      InputLabelProps={{
                                          shrink: true,
                                      }}
@@ -275,7 +281,7 @@ class GenericForm extends React.Component {
                 formFields.push(<SimpleSwitch key={fieldKey}
                                               label={field.label || field.placeholder}
                                               name={fieldKey}
-                                              className={classes.formField}
+                                              className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
                                               onChange={this.handleInputChange} checked={value ? true : false}/>)
 
 
@@ -297,7 +303,7 @@ class GenericForm extends React.Component {
                                             error={!!this.state.fieldErrors[fieldName]}
                                             helperText={this.state.fieldErrors[fieldName]}
                                             label={field.label+' ['+languageCode+']'}
-                                            className={classes.formField}
+                                            className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
                                             InputLabelProps={{
                                                 shrink: true,
                                             }}
@@ -320,7 +326,7 @@ class GenericForm extends React.Component {
                                       key={fieldKey}
                                       id={fieldKey}
                                       label={field.label}
-                                      className={classes.formField}
+                                      className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
                                       InputLabelProps={{
                                           shrink: true,
                                       }}
@@ -343,7 +349,7 @@ class GenericForm extends React.Component {
         console.log('render GenericForm')
 
         return (
-            <form>
+            <form className={classes.form}>
                 {formFields}
                 {primaryButton != false ?
                     <Button color="primary" variant="contained" disabled={!this.state.isValid}

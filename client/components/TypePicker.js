@@ -54,7 +54,11 @@ class TypePicker extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        return state.value !== this.state.value || state.textValue !== this.state.textValue || state.data !== this.state.data || state.selIdx !== this.state.selIdx
+        return state.value !== this.state.value ||
+            state.textValue !== this.state.textValue ||
+            state.data !== this.state.data ||
+            props.error !== this.props.error ||
+            state.selIdx !== this.state.selIdx
     }
 
     render() {
@@ -139,8 +143,8 @@ class TypePicker extends React.Component {
         const value = this.state.value.slice(0)
         value.splice(idx, 1)
 
-        this.props.onChange({target: {value, name: this.props.name}})
         this.setState({value})
+        this.props.onChange({target: {value, name: this.props.name}})
 
     }
 

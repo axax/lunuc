@@ -51,7 +51,13 @@ export default function (WrappedComponent) {
                             return <ErrorPage code="504" message="We are sorry. Please try again in a moment"
                                               title="Maintenance" background="#f4a742"/>
                         }
-                        return <ErrorPage/>
+                        if( isEditMode(this.props)) {
+                            return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
+                                                           setKeyValue={this.setKeyValue.bind(this)}
+                                                           WrappedComponent={WrappedComponent} {...this.props} cmsPage={{name:{}}}/>
+                        }else{
+                            return <ErrorPage/>
+                        }
                     } else {
                         return <div>Cms page {slug} doesn't exist</div>
                     }
@@ -82,7 +88,7 @@ export default function (WrappedComponent) {
             }
 
 
-            if (!key || !value) {
+            if (!key || !value || !cmsPage) {
                 return
             }
             const {client, user, cmsPage, slug} = this.props

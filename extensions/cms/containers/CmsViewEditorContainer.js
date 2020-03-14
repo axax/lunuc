@@ -107,6 +107,10 @@ class CmsViewEditorContainer extends React.Component {
             result.dataResolver = state.dataResolver
             result.resources = state.resources
         }
+
+        if( props.cmsPage && !props.cmsPage._id ){
+            result.addNewSite={slugNoExist: props.slug, slug:props.slug}
+        }
         return result
     }
 
@@ -298,7 +302,7 @@ class CmsViewEditorContainer extends React.Component {
         } else {
 
             const {slug, _version} = getSlugVersion(props.slug)
-            const sidebar = <div>
+            const sidebar = cmsPage._id && <div>
                 <MenuList>
                     <MenuListItem onClick={e => {
                         const win = window.open(location.pathname + '?preview=true', '_blank')
@@ -443,11 +447,12 @@ class CmsViewEditorContainer extends React.Component {
 
                                     data.historys.results.forEach(i => {
                                             if (i.slug !== props.slug) {
-                                                console.log(i.meta)
+
+                                                const meta = i.meta?JSON.parse(i.meta):{keys:[]}
                                                 menuItems.push(<MenuListItem key={'history' + i._id} onClick={e => {
                                                     this.setState({showRevision: i})
                                                 }} button primary={Util.formattedDateFromObjectId(i._id) + ' - ' + i.action}
-                                                                             secondary={i.meta}
+                                                                             secondary={meta.keys.indexOf('template')>-1?'Inhalt wurde geändert':'Änderung'}
                                                 />)
                                             }
                                         }
@@ -496,7 +501,7 @@ class CmsViewEditorContainer extends React.Component {
 
                                     return <div>
                                         <p>Script changed</p>
-                                        <pre>{parsedData.script}</pre>
+                                        <textarea>{parsedData.script}</textarea>
                                     </div>
 
                                 }
@@ -572,7 +577,7 @@ class CmsViewEditorContainer extends React.Component {
                                   }}>Logout</Button>,
                                   <SimpleMenu key="moreMenu" color="inherit" items={[{
                                       name: 'Neue Seite erstellen', onClick: () => {
-                                          this.setState({addNewSite: true})
+                                          this.setState({addNewSite: {}})
 
                                       }
                                   }]}/>
@@ -584,24 +589,34 @@ class CmsViewEditorContainer extends React.Component {
                     <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
                                   onClose={(e) => {
                                       if (e.key === 'ok') {
-                                          const queries = getTypeQueries('CmsPage')
-                                          const slug=this.addNewSiteForm.state.fields.slug
-                                          const name=this.addNewSiteForm.state.fields.name
-                                          delete name.__typename
-                                          this.props.client.mutate({
-                                              mutation: gql(queries.clone),
-                                              variables: {_id: this.addNewSiteForm.props.values._id, slug, name},
-                                              update: (store, {data}) => {
-                                                  if( !data.errors ){
+                                          if( this.addNewSiteForm.validate() ) {
+                                              console.log(this.addNewSiteForm.props.values)
+                                              if (this.addNewSiteForm.props.values._id) {
+                                                  const queries = getTypeQueries('CmsPage')
+                                                  const slug = this.addNewSiteForm.state.fields.slug
+                                                  const name = this.addNewSiteForm.state.fields.name
+                                                  delete name.__typename
+                                                  this.props.client.mutate({
+                                                      mutation: gql(queries.clone),
+                                                      variables: {
+                                                          _id: this.addNewSiteForm.props.values._id[0]._id,
+                                                          slug,
+                                                          name
+                                                      },
+                                                      update: (store, {data}) => {
+                                                          if (!data.errors) {
 
-                                                      this.setState({addNewSite: false})
-                                                      this.props.history.push(`/${slug}`)
+                                                              this.setState({addNewSite: null})
+                                                              //this.props.history.push(`/${slug}`)
+                                                              window.location.href = `/${slug}`
 
-                                                  }
+                                                          }
+                                                      }
+                                                  })
                                               }
-                                          })
+                                          }
                                       }else{
-                                          this.setState({addNewSite: false})
+                                          this.setState({addNewSite: null})
                                       }
                                   }}
                                   actions={[{
@@ -613,28 +628,57 @@ class CmsViewEditorContainer extends React.Component {
                                       label: 'Erstellen',
                                       type: 'primary'
                                   }]}
-                                  title="Neue Seite erstellen">
+                                  title={this.state.addNewSite.slugNoExist?`Seite "${this.state.addNewSite.slugNoExist}" exisitert nicht. Möchten Sie die Seite jetzt erstellen?`:'Neue Seite erstellen'}>
 
-                        <TypePicker onChange={(e) => {
-                            this.setState({addNewSite: e.target.value[0]})
 
-                        }} fullWidth={true} searchFields={['name']} name="group" placeholder="Vorlage auswählen" type="CmsPage"/>
 
-                        {this.state.addNewSite.constructor === Object &&
                         <GenericForm ref={(e) => {
                             this.addNewSiteForm = e
                         }} primaryButton={false}
                                      values={this.state.addNewSite}
+                                     onChange={(e)=>{
+                                         if(e.name==='_id'){
+                                             const fields = this.addNewSiteForm.state.fields
+                                             const values = {_id:fields._id}
+
+                                             if( fields.slug ){
+                                                 values.slug = fields.slug
+                                             }else{
+                                                 values.slug = e.value[0].slug
+                                             }
+                                             if( fields.name ){
+                                                 values.name = fields.name
+                                             }else{
+                                                 values.name = e.value[0].name
+                                             }
+
+                                             setTimeout(()=> {
+                                                 this.setState({addNewSite: values})
+                                             },10)
+                                         }
+                                     }}
                                      fields={{
+                                         _id: {
+                                             uitype:'type_picker',
+                                             type:'CmsPage',
+                                             placeholder: 'Vorlage auswählen',
+                                             fullWidth: true,
+                                             label: 'Vorlage',
+                                             searchFields:['name'],
+                                             required:true
+                                         },
                                          slug: {
                                              fullWidth: true,
-                                             label: 'Slug'
+                                             label: 'Slug',
+                                             required:true
                                          },
                                          name: {
+                                             fullWidth: true,
                                              label: 'Titel',
-                                             localized: true
+                                             localized: true,
+                                             required:true
                                          }
-                                     }}/>}
+                                     }}/>
 
 
                     </SimpleDialog>}

@@ -63,7 +63,7 @@ export default () => {
                 }
 
                 if (slug === undefined || (slug && slug.split('/')[0] !== container.adminBaseUrlPlain)) {
-                    return <CmsViewContainer match={match} location={location} history={history} slug={slug || ''}/>;
+                    return <CmsViewContainer match={match} location={location} history={history} slug={slug || ''}/>
                 }
                 return <ErrorPage/>
             }

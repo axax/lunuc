@@ -330,7 +330,7 @@ class JsonDomHelper extends React.Component {
                  }*/
                 const tags = document.querySelectorAll('.' + this.props.classes.dropArea)
 
-                const fromTagName = JsonDomHelper.currentDragElement.props._tagName,
+                const fromTagName = JsonDomHelper.currentDragElement?JsonDomHelper.currentDragElement.props._tagName:'',
                     allowDropIn = ALLOW_DROP_IN[fromTagName]
 
                 for (let i = 0; i < tags.length; ++i) {
@@ -663,12 +663,21 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        if (!isLoop && isTempalteEdit) {
+        const isDraggable = !isLoop && isTempalteEdit && _inlineEditor.allowDrag!== false
+
+        if (isDraggable) {
             events.draggable = 'true'
-            events.onDragStart = this.onDragStart.bind(this)
             events.onDragEnd = this.onDragEnd.bind(this)
             events.onDrag = this.onDrag.bind(this)
             events.onDrop = this.onDrop.bind(this)
+        }
+
+        events.onDragStart = e=>{
+            if( isDraggable ) {
+                this.onDragStart(e)
+            }else{
+                e.stopPropagation()
+            }
         }
 
 
