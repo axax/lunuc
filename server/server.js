@@ -11,7 +11,6 @@ import {getHostFromHeaders} from 'util/host'
 import finalhandler from 'finalhandler'
 import {AUTH_HEADER} from 'api/constants'
 import {decodeToken} from 'api/util/jwt'
-import crypto from 'crypto'
 
 const defaultWebHandler = (err, req, res) => {
     if (err) {
@@ -67,8 +66,7 @@ const CERT_DIR = process.env.LUNUC_CERT_DIR || __dirname
 const options = {
     key: fs.readFileSync(path.join(CERT_DIR, './privkey.pem')),
     cert: fs.readFileSync(path.join(CERT_DIR, './cert.pem')),
-    allowHTTP1: true,
-    secureOptions: crypto.constants.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION
+    allowHTTP1: true
 }
 
 if (fs.existsSync(path.join(CERT_DIR, './chain.pem'))) {
@@ -95,11 +93,34 @@ const app = httpx.createServer(options, function (req, res) {
         if (!config.DEV_MODE && this.constructor.name === 'Server') {
             if (process.env.LUNUC_FORCE_HTTPS) {
 
-                console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost} / user-agent: ${req.headers['user-agent']}`)
+                const agent = req.headers['user-agent'], agentParts = agent.split(' ')
 
-                res.writeHead(301, {"Location": "https://" + newhost + req.url})
-                res.end()
-                return
+                let browser, version
+                if( agentParts.length()>2) {
+
+                    const browserPart = agentParts[agentParts.length() - 1].split('/'),
+                        versionPart = agentParts[agentParts.length() - 2].split('/')
+
+                    browser = browserPart[0].trim().toLowerCase()
+                    if( versionPart.length()>1){
+                        version = parseInt(versionPart[1])
+                    }
+
+                }
+
+
+
+
+
+                console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
+
+                if( browser === 'safari' && version<6) {
+                    // only a little test as safari version small 6 doesn't support tls 1.2
+                }else{
+                    res.writeHead(301, {"Location": "https://" + newhost + req.url})
+                    res.end()
+                    return
+                }
             }
         }
 
