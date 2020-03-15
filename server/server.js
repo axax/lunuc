@@ -11,7 +11,7 @@ import {getHostFromHeaders} from 'util/host'
 import finalhandler from 'finalhandler'
 import {AUTH_HEADER} from 'api/constants'
 import {decodeToken} from 'api/util/jwt'
-
+import crypto from 'crypto'
 
 const defaultWebHandler = (err, req, res) => {
     if (err) {
@@ -67,7 +67,8 @@ const CERT_DIR = process.env.LUNUC_CERT_DIR || __dirname
 const options = {
     key: fs.readFileSync(path.join(CERT_DIR, './privkey.pem')),
     cert: fs.readFileSync(path.join(CERT_DIR, './cert.pem')),
-    allowHTTP1: true
+    allowHTTP1: true,
+    secureOptions: crypto.constants.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION
 }
 
 if (fs.existsSync(path.join(CERT_DIR, './chain.pem'))) {
