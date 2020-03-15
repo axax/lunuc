@@ -96,13 +96,13 @@ const app = httpx.createServer(options, function (req, res) {
                 const agent = req.headers['user-agent'], agentParts = agent.split(' ')
 
                 let browser, version
-                if( agentParts.length()>2) {
+                if( agentParts.length>2) {
 
-                    const browserPart = agentParts[agentParts.length() - 1].split('/'),
-                        versionPart = agentParts[agentParts.length() - 2].split('/')
+                    const browserPart = agentParts[agentParts.length - 1].split('/'),
+                        versionPart = agentParts[agentParts.length - 2].split('/')
 
                     browser = browserPart[0].trim().toLowerCase()
-                    if( versionPart.length()>1){
+                    if( versionPart.length>1){
                         version = parseInt(versionPart[1])
                     }
 
