@@ -87,11 +87,10 @@ export default function (WrappedComponent) {
                 internal = arg1.internal
             }
 
-
+            const {client, user, cmsPage, slug} = this.props
             if (!key || !value || !cmsPage) {
                 return
             }
-            const {client, user, cmsPage, slug} = this.props
             const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
             const kvk = resolvedDataJson._meta && resolvedDataJson._meta.keyValueKey
             if (kvk) {

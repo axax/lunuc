@@ -80,7 +80,6 @@ class JsonDom extends React.Component {
             let imageData = Util.getImageObject(src)
 
             imageData['data-smartimage']=true
-
             if(caption || wrapper){
                 return <figure {...props}>
                     <img alt={alt} {...imageData} />
@@ -706,11 +705,16 @@ class JsonDom extends React.Component {
                                                     return \`${cStr}\``))
                         }
                         data.forEach((loopChild, childIdx) => {
-                            if (!loopChild || loopChild.constructor !== Object) {
+                            if (loopOrFor.convert==='String'){
+                                loopChild = Util.escapeForJson(loopChild)
+                            }
+                            if (!loopChild || loopChild.constructor !== Object ) {
                                 loopChild = {data: loopChild}
                             }
+
                             // back to json
                             loopChild._index = childIdx
+
 
                             if ($loop) {
                                 tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},

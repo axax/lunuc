@@ -195,15 +195,17 @@ class GenericForm extends React.Component {
 
         for(let fieldIndex = 0; fieldIndex<fieldKeys.length;fieldIndex++){
             const fieldKey = fieldKeys[fieldIndex],
-                field = fields[fieldKey], value = this.state.fields[fieldKey]
+                field = fields[fieldKey]
             if (field.readOnly) {
                 continue
             }
 
+            let value = this.state.fields[fieldKey]
             if( field.newLine){
                 formFields.push(<br key={'br'+fieldKey} />)
             }
             const uitype = (field.uitype === 'datetime' ? 'datetime-local' : 0) || field.uitype || (field.enum ? 'select' : 'text')
+
 
             if (['json', 'editor', 'jseditor'].indexOf(uitype) >= 0) {
 

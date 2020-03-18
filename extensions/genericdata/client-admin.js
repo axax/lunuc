@@ -78,6 +78,13 @@ export default () => {
                     } else {
                         newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
                     }
+                    if( field.defaultValue && !newDataToEdit[newName]){
+                        try {
+                            newDataToEdit[newName] = eval(field.defaultValue)
+                        }catch(e){
+                            newDataToEdit[newName] = field.defaultValue
+                        }
+                    }
                 })
 
                 // override default
