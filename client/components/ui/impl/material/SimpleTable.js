@@ -41,6 +41,7 @@ const styles = theme => ({
     },
     actions: {
         color: theme.palette.text.secondary,
+        position:'relative'
     },
     title: {
         flex: '0 0 auto',
@@ -87,9 +88,7 @@ class SimpleTable extends React.Component {
                                 </IconButton>
                             </Tooltip>
                         ) : (
-                            <Tooltip title="Actions">
-                                <SimpleMenu items={actions}/>
-                            </Tooltip>
+                            <SimpleMenu items={actions}/>
                         )}
                     </div>
                     }

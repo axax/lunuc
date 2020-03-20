@@ -95,6 +95,10 @@ const baseElements = [
                 uitype: 'select',
                 enum: [
                     {
+                        name: 'Kein Style',
+                        value: ''
+                    },
+                    {
                         name: 'Button',
                         value: 'button'
                     },
@@ -246,7 +250,7 @@ const baseElements = [
         tagName: 'div.lu-rich-text',
         name: 'Rich-Text block',
         defaults: {
-            $c: "",
+            $c: '',
             $inlineEditor: {
                 elementKey: 'QuillEditor'
             }
@@ -266,31 +270,43 @@ const baseElements = [
     },
     {
         tagName: 'a',
-        name: 'Document', defaults: {
-            c: 'Select a Document',
-            $inlineEditor: {
-                elementKey: 'documentLink',
-                picker: {
-                    type: 'Media',
-                    baseFilter: 'mimeType=pdf',
-                    template: "<a title='$\\{name}' href='${_app_.config.UPLOAD_URL}/$\\{_id}'>$\\{name}</a>"
-                }
+        name: 'Dokument',
+        defaults: {
+            c: '',
+            p: {
+                title:'',
+                target:'_blank',
+                rel:'noopener',
+                href: '',
+                ['data-element-key']:'documentLink'
             },
-            p: {target: '_blank'}
+            $inlineEditor: {
+                elementKey: 'documentLink'
+            }
         },
         options: {
-            $inlineEditor_picker_type: {
-                label: 'Style',
-                uitype: 'select',
-                enum: [
-                    {
-                        name: 'GenericData',
-                        value: 'GenericData'
-                    }
-                ]
+            p_href: {
+                fullWidth:true,
+                value: '',
+                label: 'Datei',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=pdf',
+                template: '${_app_.config.UPLOAD_URL}/${_id}'
             },
-            $inlineEditor_picker_baseFilter: {
-                label: 'Filter'
+            c: {
+                fullWidth:true,
+                value: '',
+                label: 'Bezeichnung'
+            },
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
             }
         }
     },

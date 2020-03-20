@@ -670,7 +670,24 @@ class TypesContainer extends React.Component {
             </SimpleDialog>,
             createEditDialog !== undefined && <TypeEdit key="editDialog" {...editDialogProps}/>,
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,
-            manageColDialog !== undefined && <SimpleDialog key="collectionDialog" {...manageColDialogProps}/>
+            manageColDialog !== undefined && <SimpleDialog key="collectionDialog" {...manageColDialogProps}/>,
+            /*AppBar position="fixed" color="primary" className={classes.appBar}>
+                <Toolbar>
+                    <IconButton edge="start" color="inherit" aria-label="open drawer">
+                        <MenuIcon />
+                    </IconButton>
+                    <Fab color="secondary" aria-label="add" className={classes.fabButton}>
+                        <AddIcon />
+                    </Fab>
+                    <div className={classes.grow} />
+                    <IconButton color="inherit">
+                        <SearchIcon />
+                    </IconButton>
+                    <IconButton edge="end" color="inherit">
+                        <MoreIcon />
+                    </IconButton>
+                </Toolbar>
+            </AppBar>*/
         ]
 
         Hook.call('TypesContainerRender', {type, content}, this)

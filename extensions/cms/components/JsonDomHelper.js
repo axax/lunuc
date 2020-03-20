@@ -1013,7 +1013,11 @@ class JsonDomHelper extends React.Component {
                                                      if (addChildDialog.form) {
                                                          const fields = addChildDialog.form.state.fields
                                                          Object.keys(fields).forEach(key => {
-                                                             setPropertyByPath(fields[key], key, comp, '_')
+                                                             let val = fields[key]
+                                                             if( selected.options && selected.options[key] && selected.options[key].template){
+                                                                 val = Util.replacePlaceholders(selected.options[key].template, val[0])
+                                                             }
+                                                             setPropertyByPath(val, key, comp, '_')
                                                          })
                                                      }
                                                      if (addChildDialog.addbelow) {
