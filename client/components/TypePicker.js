@@ -116,7 +116,7 @@ class TypePicker extends React.Component {
 
             { value.map((value, i) =>
                 <Chip key={i} className={classes.clip} label={typeDataToLabel(value, pickerField)} onDelete={this.handleRemovePick.bind(this, i)}
-                      avatar={value.__typename === 'Media' ? <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>)
+                      avatar={value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image')===0 ? <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>)
             }
 
             <Paper className={classes.suggestions} square>
@@ -130,7 +130,7 @@ class TypePicker extends React.Component {
                         style={{
                             fontWeight: selIdx === idx ? 500 : 400,
                         }}
-                    >{item.__typename === 'Media' ? getImageTag(item, {height: 30}) : ''} {typeDataToLabel(item, pickerField)}
+                    >{item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image')===0  ? getImageTag(item, {height: 30}) : ''} {typeDataToLabel(item, pickerField)}
                     </MenuItem>
                 )}
 

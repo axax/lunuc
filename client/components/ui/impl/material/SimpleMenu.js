@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import Button from '@material-ui/core/Button'
+import Divider from '@material-ui/core/Divider'
 import Fab from '@material-ui/core/Fab'
 import Menu from '@material-ui/core/Menu'
 import MenuItem from '@material-ui/core/MenuItem'
@@ -81,10 +82,10 @@ class SimpleMenu extends React.Component {
                     {...rest}
                 >
                     {items.map((item, i) => {
-                        return <MenuItem disabled={item.disabled} onClick={(e) => {
+                        return [item.divider && <Divider key={'divider' + i} light />,<MenuItem disabled={item.disabled} onClick={(e) => {
                             item.onClick(e)
                             this.handleClose(e)
-                        }} key={i}>
+                        }} key={'menuitem' + i}>
                             {item.icon &&
                             <ListItemIcon>
                                 {item.icon}
@@ -93,7 +94,7 @@ class SimpleMenu extends React.Component {
                             <ListItemText>
                                 {item.name}
                             </ListItemText>
-                        </MenuItem>
+                        </MenuItem>]
                     })}
 
                 </Menu>

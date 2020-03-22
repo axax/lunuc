@@ -91,7 +91,7 @@ const app = httpx.createServer(options, function (req, res) {
         }
 
         if (!config.DEV_MODE && this.constructor.name === 'Server') {
-            if (process.env.LUNUC_FORCE_HTTPS) {
+            if (false && process.env.LUNUC_FORCE_HTTPS) {
 
                 const agent = req.headers['user-agent'], agentParts = agent.split(' ')
 

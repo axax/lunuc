@@ -751,7 +751,11 @@ class JsonDomHelper extends React.Component {
                                 newJsonElement.options = Object.assign({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
 
                                 Object.keys(newJsonElement.options).forEach(key => {
-                                    newJsonElement.options[key].value = propertyByPath(key, subJson, '_')
+                                    let val = propertyByPath('$original_'+key, subJson, '_')
+                                    if( !val ){
+                                        val = propertyByPath(key, subJson, '_')
+                                    }
+                                    newJsonElement.options[key].value = val
                                 })
                                 /* if (options.$inlineEditor_dataResolver) {
                                      if (options.$inlineEditor_dataResolver.value.constructor === String) {
@@ -830,10 +834,35 @@ class JsonDomHelper extends React.Component {
 
                 if (_inlineEditor.menu.clipboard !== false) {
                     menuItems.push({
+                        divider: true,
                         name: 'Element in Zwischenablage kopieren',
                         icon: <FileCopyIcon/>,
                         onClick: () => {
                             navigator.clipboard.writeText(JSON.stringify(subJson, null, 4))
+                        }
+                    })
+
+                    menuItems.push({
+                        name: 'Element von Zwischenablage unterhalb einfügen',
+                        icon: <FileCopyIcon/>,
+                        onClick: () => {
+
+                            navigator.clipboard.readText().then(text => {
+                                    if( text ){
+                                        try {
+                                            const json = JSON.parse(text),
+                                                pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+
+                                            this.handleAddChildClick(json, pos)
+
+                                        }catch (e) {
+
+                                        }
+                                    }
+                                }).catch(err => {
+                                    console.log('Something went wrong', err)
+                                })
+
                         }
                     })
                 }
@@ -1015,6 +1044,7 @@ class JsonDomHelper extends React.Component {
                                                          Object.keys(fields).forEach(key => {
                                                              let val = fields[key]
                                                              if( selected.options && selected.options[key] && selected.options[key].template){
+                                                                 setPropertyByPath(val, '$original_'+key, comp, '_')
                                                                  val = Util.replacePlaceholders(selected.options[key].template, val[0])
                                                              }
                                                              setPropertyByPath(val, key, comp, '_')
