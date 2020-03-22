@@ -170,6 +170,12 @@ create lunuc-api.service file under /etc/systemd/system
 
 `sudo certbot certonly --manual`
 
+#### Auto renewal 
+`sudo crontab -e`
+
+Add this to the file:
+
+`* 3 * * 6 certbot renew && sudo systemctl restart lunuc-client`
 
 ### Rebuild bcrypt
 `npm rebuild bcrypt --update-binary`

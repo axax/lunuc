@@ -221,6 +221,7 @@ const Util = {
     },
     hightlight(text, query, cls) {
         if (!text) return ''
+        if(!query) return text
 
         const pattern = new RegExp(`(${query.replace(/\s/g, '|')})`, 'gi');
 
