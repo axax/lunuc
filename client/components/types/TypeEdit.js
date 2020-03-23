@@ -56,14 +56,14 @@ class TypeEdit extends React.Component {
             maxWidth: 'xl',
             open,
             onClose: this.handleSaveData.bind(this),
-            actions: [{key: 'cancel', label: 'Cancel'}, {
+            actions: [{key: 'cancel', label: 'Abbrechen'}, {
                 key: 'save',
-                label: 'Save',
+                label: 'Speichern',
                 type: 'primary'
             },
                 {
                     key: 'save_close',
-                    label: 'Save & Close',
+                    label: 'Speichern & Schliessen',
                     type: 'primary'
                 }],
             children: <GenericForm autoFocus innerRef={ref => {

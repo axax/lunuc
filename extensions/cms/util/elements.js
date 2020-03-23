@@ -319,13 +319,24 @@ const baseElements = [
                 elementKey: 'layout-1-2'
             },
             c: [
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col.col-sm-6', c: [{c: 'Spalte 1'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col.col-sm-6', c: [{c: 'Spalte 1'}]}
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col', c: [{c: 'Spalte 1'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col', c: [{c: 'Spalte 1'}]}
             ]
         },
         options: {
+            c_0_p_className: {
+                label: 'Spalte 1',
+                value: 'col-sm-6'
+            },
+            c_1_p_className: {
+                label: 'Spalte 2',
+                value: 'col-sm-6'
+            },
             p_style_marginBottom: {
                 label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
             }
         }
     },
@@ -337,12 +348,24 @@ const baseElements = [
                 elementKey: 'layout-1-3'
             },
             c: [
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-4.col-sm-4.col-xs-12', c: [{c: 'Spalte 1'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-4.col-sm-4.col-xs-12', c: [{c: 'Spalte 2'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-4.col-sm-4.col-xs-12', c: [{c: 'Spalte 3'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 1'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 2'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 3'}]},
             ]
         },
         options: {
+            c_0_p_className: {
+                label: 'Spalte 1',
+                value: 'col-md-4 col-sm-4 col-xs-12'
+            },
+            c_1_p_className: {
+                label: 'Spalte 2',
+                value: 'col-md-4 col-sm-4 col-xs-12'
+            },
+            c_2_p_className: {
+                label: 'Spalte 3',
+                value: 'col-md-4 col-sm-4 col-xs-12'
+            },
             p_style_marginTop: {
                 label: 'Abstand oben'
             },
@@ -359,13 +382,29 @@ const baseElements = [
                 elementKey: 'layout-1-4'
             },
             c: [
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-3.col-sm-3.col-xs-6', c: [{c: 'Spalte 1'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-3.col-sm-3.col-xs-6', c: [{c: 'Spalte 2'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-3.col-sm-3.col-xs-6', c: [{c: 'Spalte 3'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-3.col-sm-3.col-xs-6', c: [{c: 'Spalte 4'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 1'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 2'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 3'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 4'}]}
             ]
         },
         options: {
+            c_0_p_className: {
+                label: 'Spalte 1',
+                value: 'col-md-3 col-sm-3 col-xs-6'
+            },
+            c_1_p_className: {
+                label: 'Spalte 2',
+                value: 'col-md-3 col-sm-3 col-xs-6'
+            },
+            c_2_p_className: {
+                label: 'Spalte 3',
+                value: 'col-md-3 col-sm-3 col-xs-6'
+            },
+            c_3_p_className: {
+                label: 'Spalte 4',
+                value: 'col-md-3 col-sm-3 col-xs-6'
+            },
             p_style_marginTop: {
                 label: 'Abstand oben'
             },
@@ -382,14 +421,34 @@ const baseElements = [
                 elementKey: 'layout-1-5'
             },
             c: [
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-1-5.col-sm-4.col-xs-6', c: [{c: 'Spalte 1'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-1-5.col-sm-4.col-xs-6', c: [{c: 'Spalte 2'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-1-5.col-sm-4.col-xs-6', c: [{c: 'Spalte 3'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-1-5.col-sm-4.col-xs-6', c: [{c: 'Spalte 4'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col.col-md-1-5.col-sm-4.col-xs-6', c: [{c: 'Spalte 5'}]}
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 1'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 2'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 3'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 4'}]},
+                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 5'}]}
             ]
         },
         options: {
+            c_0_p_className: {
+                label: 'Spalte 1',
+                value: 'col-md-1-5 col-sm-4 col-xs-6'
+            },
+            c_1_p_className: {
+                label: 'Spalte 2',
+                value: 'col-md-1-5 col-sm-4 col-xs-6'
+            },
+            c_2_p_className: {
+                label: 'Spalte 3',
+                value: 'col-md-1-5 col-sm-4 col-xs-6'
+            },
+            c_3_p_className: {
+                label: 'Spalte 4',
+                value: 'col-md-1-5 col-sm-4 col-xs-6'
+            },
+            c_4_p_className: {
+                label: 'Spalte 5',
+                value: 'col-md-1-5 col-sm-4 col-xs-6'
+            },
             p_style_marginBottom: {
                 label: 'Abstand unten'
             },
@@ -400,48 +459,6 @@ const baseElements = [
     },
     {
         subHeader: 'Advanced components',
-        tagName: 'Row',
-        name: 'Layout 3/4 - 1/4',
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'layout-3-4-1'
-            },
-            c: [
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col.col-sm-8', c: [{c: 'Spalte 1'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col.col-sm-4', c: [{c: 'Spalte 2'}]}
-            ]
-        },
-        options: {
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            },
-            p_className: {
-                label: 'Klassname'
-            }
-        }
-    },
-    {
-        tagName: 'Row',
-        name: 'Layout 1/4 - 3/4',
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'layout-1-4-3'
-            },
-            c: [
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col.col-sm-4', c: [{c: 'Spalte 1'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col.col-sm-8', c: [{c: 'Spalte 2'}]}
-            ]
-        },
-        options: {
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            },
-            p_className: {
-                label: 'Klassname'
-            }
-        }
-    },
-    {
         tagName: 'div',
         name: 'Data Container',
         defaults: {

@@ -237,7 +237,7 @@ class JsonDomHelper extends React.Component {
             }
             this.helperTimeoutIn = setTimeout(() => {
                 this.setState(stat)
-            }, 100)
+            }, 80)
         }
 
     }
@@ -293,7 +293,6 @@ class JsonDomHelper extends React.Component {
                 }
                 el = el.parentNode
             }
-
             setTimeout(() => {
                 this.setState({toolbarHovered: false})
             }, 100)
@@ -560,8 +559,7 @@ class JsonDomHelper extends React.Component {
             data-index={index}
             data-tag-name={rest._tagName}
             key={`${rest._key}.dropArea.${index}`}
-            style={{paddingLeft: (10 * (rest._key.split('.').length - 1))}}
-            className={this.props.classes.dropArea}>Drop here ${rest.id || rest._key}</div>
+            className={this.props.classes.dropArea}>Hier plazieren</div>
     }
 
     openPicker(picker) {
@@ -928,10 +926,10 @@ class JsonDomHelper extends React.Component {
         }
 
         if (_inlineEditor.picker) {
-            events.onClick = () => {
+            /*events.onClick = () => {
 
-            }
-            events.className = classNames(rest.className, classes.picker)
+            }*/
+            //events.className = classNames(rest.className, classes.picker)
         }
 
 
@@ -1120,6 +1118,7 @@ class JsonDomHelper extends React.Component {
                                         break
                                     }
                                 }
+                                console.log(item)
                                 this.setState({addChildDialog: {...addChildDialog, selected: item, form: null}})
                             }}
                             items={jsonElements}

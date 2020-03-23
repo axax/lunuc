@@ -155,7 +155,7 @@ class SimpleTable extends React.Component {
                     <TableRow>
                         <TableCell>{footer}</TableCell>
                         <TablePagination
-                            rowsPerPageOptions={[5, 10, 25, 50, 100, 1000]}
+                            rowsPerPageOptions={[5, 10, 25, 50, 100, 1000, 2500, 5000]}
                             count={count}
                             rowsPerPage={rowsPerPage}
                             page={(page - 1)}
