@@ -349,7 +349,7 @@ class JsonDomHelper extends React.Component {
                         node = tag.parentNode
                     }
 
-                    if (node.nodeType !== Node.TEXT_NODE && JsonDomHelper.currentDragElement) {
+                    if (node.nodeType !== Node.TEXT_NODE && JsonDomHelper.currentDragElement && !draggable.contains( node )) {
                         const tagName = tag.getAttribute('data-tag-name')
                         if (!allowDropIn || allowDropIn.indexOf(tagName) >= 0) {
 
@@ -683,7 +683,7 @@ class JsonDomHelper extends React.Component {
 
             if (isCms) {
                 menuItems.push({
-                    name: `Komponente ${subJson.p && subJson.p.id} öffnen`, icon: <LaunchIcon/>, onClick: () => {
+                    name: `Komponente ${subJson && subJson.p && subJson.p.id || subJson.p.slug} öffnen`, icon: <LaunchIcon/>, onClick: () => {
                         window.location = '/' + subJson.p.slug
                     }
                 })
@@ -798,26 +798,30 @@ class JsonDomHelper extends React.Component {
                     })
                 }
 
-                if (!isLoop && _inlineEditor.allowDrop) {
-                    menuItems.push({
-                        name: 'Element hinzufügen',
-                        icon: <AddIcon/>,
-                        onClick: () => {
-                            JsonDomHelper.disableEvents = true
-                            this.setState({addChildDialog: {selected: false}})
-                        }
-                    })
-                }
+                if (!isLoop && _inlineEditor.allowDrop ) {
 
-                if (_inlineEditor.menu.addBelow !== false) {
-                    menuItems.push({
-                        name: 'Element unterhalb einfügen',
-                        icon: <PlaylistAddIcon/>,
-                        onClick: () => {
-                            JsonDomHelper.disableEvents = true
-                            this.setState({addChildDialog: {selected: false, addbelow: true}})
-                        }
-                    })
+
+                    if (_inlineEditor.menu.add !== false) {
+                        menuItems.push({
+                            name: 'Element hinzufügen',
+                            icon: <AddIcon/>,
+                            onClick: () => {
+                                JsonDomHelper.disableEvents = true
+                                this.setState({addChildDialog: {selected: false}})
+                            }
+                        })
+                    }
+
+                    if (_inlineEditor.menu.addBelow !== false) {
+                        menuItems.push({
+                            name: 'Element unterhalb einfügen',
+                            icon: <PlaylistAddIcon/>,
+                            onClick: () => {
+                                JsonDomHelper.disableEvents = true
+                                this.setState({addChildDialog: {selected: false, addbelow: true}})
+                            }
+                        })
+                    }
                 }
 
                 if (_inlineEditor.menu.remove !== false) {
@@ -920,7 +924,7 @@ class JsonDomHelper extends React.Component {
                                 this.openPicker(_inlineEditor.picker)
                             }
                         }}
-                        className={classes.picker}>{isCms && subJson.p ? subJson.p.id || subJson.p.slug :
+                        className={classes.picker}>{isCms && subJson && subJson.p ? subJson.p.id || subJson.p.slug :
                         <ImageIcon/>}</div> : ''}</span>
             }
         }

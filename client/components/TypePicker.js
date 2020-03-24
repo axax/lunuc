@@ -1,32 +1,51 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {InputLabel, TextField, FormControl, Paper, MenuItem, withStyles, Chip, Avatar, IconButton, InputAdornment, SearchIcon} from 'ui/admin'
+import {
+    InputLabel,
+    TextField,
+    FormControl,
+    Paper,
+    MenuItem,
+    withStyles,
+    Chip,
+    Avatar,
+    IconButton,
+    InputAdornment,
+    SearchIcon
+} from 'ui/admin'
 import {withApollo} from 'react-apollo'
-import { ApolloClient } from 'apollo-client'
+import {ApolloClient} from 'apollo-client'
 import gql from 'graphql-tag'
 import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
 import classNames from 'classnames'
 
-const styles =  theme => {
+const styles = theme => {
     return {
         root: {
             position: 'relative',
-            zIndex:'auto',
-            marginLeft:0
+            zIndex: 'auto',
+            marginLeft: 0
         },
         suggestions: {
             position: 'absolute',
             zIndex: 999,
-            top:'100%',
+            top: '100%',
             maxWidth: '100%'
         },
-        clip:{
-            margin:theme.spacing(2)+'px auto 0px '+theme.spacing(1)+'px;'
+        clip: {
+            margin: theme.spacing(2) + 'px auto 0px ' + theme.spacing(1) + 'px;'
         },
-        textField:{
-            margin:'0',
+        clipDrop: {
+            height: theme.spacing(2) + 'px',
+            margin: '0 0 -' + theme.spacing(2) + 'px 0',
+            opacity: '0',
+            fontSize: '0.8rem',
+            backgroundColor: 'rgba(255,0,0,0.2)'
+        },
+        textField: {
+            margin: '0',
         }
     }
 }
@@ -65,58 +84,98 @@ class TypePicker extends React.Component {
         const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, type, filter, label} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
 
-        console.log(`render TypePicker | hasFocus=${hasFocus}`,data)
+        console.log(`render TypePicker | hasFocus=${hasFocus}`, data)
         return <FormControl
             fullWidth={fullWidth} className={classNames(classes.root, className)}>
-            { !value.length || multi ?
-            <TextField error={error}
-                       fullWidth={fullWidth}
-                       className={classes.textField}
-                       helperText={helperText}
-                       value={textValue}
-                       onChange={this.handleChange.bind(this)}
-                       onKeyDown={this.handleKeyDown.bind(this)}
-                       onFocus={() => this.setState({hasFocus: true})}
-                       onBlur={this.handleBlur.bind(this)}
-                       placeholder={placeholder}
-                       label={label}
-                       InputLabelProps={{
-                           shrink: true,
-                       }}
-                       InputProps={{
-                           endAdornment: (
-                               <InputAdornment position="end">
-                                   <IconButton
-                                       edge="end"
-                                       aria-label="toggle password visibility"
-                                       onClick={()=>{
+            {!value.length || multi ?
+                <TextField error={error}
+                           fullWidth={fullWidth}
+                           className={classes.textField}
+                           helperText={helperText}
+                           value={textValue}
+                           onChange={this.handleChange.bind(this)}
+                           onKeyDown={this.handleKeyDown.bind(this)}
+                           onFocus={() => this.setState({hasFocus: true})}
+                           onBlur={this.handleBlur.bind(this)}
+                           placeholder={placeholder}
+                           label={label}
+                           InputLabelProps={{
+                               shrink: true,
+                           }}
+                           InputProps={{
+                               endAdornment: (
+                                   <InputAdornment position="end">
+                                       <IconButton
+                                           edge="end"
+                                           aria-label="toggle password visibility"
+                                           onClick={() => {
 
-                                           const w = screen.width/3*2, h = screen.height/3*2,left = (screen.width/2)-(w/2),top = (screen.height/2)-(h/2)
+                                               const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
+                                                   left = (screen.width / 2) - (w / 2),
+                                                   top = (screen.height / 2) - (h / 2)
 
-                                           const newwindow = window.open(
-                                               `/admin/types/?noLayout=true&fixType=${type}${filter?'&baseFilter='+encodeURIComponent(filter):''}`, '_blank' ,
-                                               'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left)
+                                               const newwindow = window.open(
+                                                   `/admin/types/?noLayout=true&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
+                                                   'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
 
-                                           setTimeout(()=> {
-                                               newwindow.addEventListener('beforeunload', (e) => {
-                                                   this.selectValue(newwindow.resultValue)
-                                                   delete e['returnValue']
-                                               })
-                                           },500)
-                                       }}
-                                       onMouseDown={()=>{}}
-                                   >
-                                       <SearchIcon />
-                                   </IconButton>
-                               </InputAdornment>
-                           ),
-                       }}
-            /> : <InputLabel className={classes.label} shrink>{label}</InputLabel> }
+                                               setTimeout(() => {
+                                                   newwindow.addEventListener('beforeunload', (e) => {
+                                                       this.selectValue(newwindow.resultValue)
+                                                       delete e['returnValue']
+                                                   })
+                                               }, 500)
+                                           }}
+                                           onMouseDown={() => {
+                                           }}
+                                       >
+                                           <SearchIcon/>
+                                       </IconButton>
+                                   </InputAdornment>
+                               ),
+                           }}
+                /> : <InputLabel className={classes.label} shrink>{label}</InputLabel>}
 
 
-            { value.map((value, i) =>
-                <Chip key={i} className={classes.clip} label={typeDataToLabel(value, pickerField)} onDelete={this.handleRemovePick.bind(this, i)}
-                      avatar={value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image')===0 ? <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>)
+            {value.map((value, i) =>
+                [
+                    <div key={'drop' + i}
+                         data-index={i}
+                         className={classes.clipDrop}
+                         onDrop={(e) => {
+                             const targetIndex = parseInt(e.currentTarget.getAttribute('data-index')),
+                                 sourceIndex=parseInt(e.dataTransfer.getData("text"))
+                             e.target.style.opacity = 0
+
+                             const value = this.state.value.slice(0),
+                                 element  = value.splice(sourceIndex, 1) [0]
+
+                             value.splice(targetIndex>sourceIndex?targetIndex-1:targetIndex, 0, element)
+
+                             this.setState({value})
+                             this.props.onChange({target: {value, name: this.props.name}})
+
+                         }}
+                         onDragOver={(e) => {
+                             e.preventDefault()
+                             e.dataTransfer.dropEffect = 'copy'
+                             e.target.style.opacity = 1
+                         }}
+                         onDragLeave={(e) => {
+                             e.target.style.opacity = 0
+                         }}>Hier einfügen</div>,
+                    <Chip draggable={true}
+                          data-index={i}
+                          onDragStart={(e)=>{
+                              console.log(e.target, e.target.getAttribute('data-index'))
+                              e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
+                          }}
+                          key={i}
+                          className={classes.clip}
+                          label={typeDataToLabel(value, pickerField)}
+                          onDelete={this.handleRemovePick.bind(this, i)}
+                          avatar={value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
+                              <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>]
+            )
             }
 
             <Paper className={classes.suggestions} square>
@@ -130,7 +189,7 @@ class TypePicker extends React.Component {
                         style={{
                             fontWeight: selIdx === idx ? 500 : 400,
                         }}
-                    >{item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image')===0  ? getImageTag(item, {height: 30}) : ''} {typeDataToLabel(item, pickerField)}
+                    >{item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image') === 0 ? getImageTag(item, {height: 30}) : ''} {typeDataToLabel(item, pickerField)}
                     </MenuItem>
                 )}
 
@@ -152,8 +211,8 @@ class TypePicker extends React.Component {
         this.selectValue(this.state.data.results[idx])
     }
 
-    selectValue(item){
-        if(item) {
+    selectValue(item) {
+        if (item) {
             const value = (this.state.value ? this.state.value.slice(0) : [])
             value.push({__typename: this.props.type, ...item})
             this.props.onChange({target: {value, name: this.props.name}})
@@ -168,15 +227,15 @@ class TypePicker extends React.Component {
         } else {
             this.setState({textValue: v})
             const {searchFields} = this.props
-            let filter=''
-            if( searchFields){
-                searchFields.forEach(field=>{
-                    filter += field+'='+e.target.value+' '
+            let filter = ''
+            if (searchFields) {
+                searchFields.forEach(field => {
+                    filter += field + '=' + e.target.value + ' '
                 })
-            }else{
+            } else {
                 filter = e.target.value
             }
-            this.getData(filter+(this.props.filter?' && '+this.props.filter:''))
+            this.getData(filter + (this.props.filter ? ' && ' + this.props.filter : ''))
         }
     }
 
