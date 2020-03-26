@@ -92,11 +92,6 @@ const baseElements = [
             },
             p_className: {
                 label: 'Klassname'
-            },
-            p_caption: {
-                label: 'Beschreibung',
-                uitype: 'html',
-                fullWidth: true
             }
         }
     },

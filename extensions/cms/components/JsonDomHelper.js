@@ -30,6 +30,7 @@ import {getJsonDomElements} from '../util/elements'
 import {ApolloClient} from 'apollo-client'
 import {withApollo} from 'react-apollo'
 import gql from 'graphql-tag'
+import {deepMergeToFirst} from 'util/deepMerge'
 
 const {UPLOAD_URL} = config
 
@@ -1055,6 +1056,7 @@ class JsonDomHelper extends React.Component {
                                                              setPropertyByPath(val, key, comp, '_')
                                                          })
                                                      }
+
                                                      if (addChildDialog.addbelow) {
                                                          // determine position to insert in parent node
                                                          pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
@@ -1068,7 +1070,7 @@ class JsonDomHelper extends React.Component {
                                                              if (!subJson[key]) {
                                                                  subJson[key] = comp[key]
                                                              } else if (subJson[key].constructor === Object) {
-                                                                 subJson[key] = {...subJson[key], ...comp[key]}
+                                                                 deepMergeToFirst(subJson[key],comp[key])
                                                              } else if (subJson[key].constructor === Array) {
                                                                  subJson[key].forEach((item,i)=>{
                                                                      if(comp[key] && comp[key][i]){
