@@ -86,6 +86,8 @@ export {withStyles} from '@material-ui/core/styles'
 
 // Export material-ui coponents directly
 export Typography from '@material-ui/core/Typography'
+export AppBar from '@material-ui/core/AppBar'
+export Toolbar from '@material-ui/core/Toolbar'
 export Button from '@material-ui/core/Button'
 export Fab from '@material-ui/core/Fab'
 export Input from '@material-ui/core/Input'

@@ -19,7 +19,10 @@ import {
     Row,
     Col,
     SimpleSwitch,
-    SimpleMenu
+    SimpleMenu,
+    AppBar,
+    Button,
+    Toolbar
 } from 'ui/admin'
 import {withApollo, Query} from 'react-apollo'
 import {ApolloClient} from 'apollo-client'
@@ -470,6 +473,7 @@ class TypesContainer extends React.Component {
 
             this._renderedTable =
                 <SimpleTable key="typeTable"
+                             style={{marginBottom:window.opener && selectedLength >0 && this.pageParams.multi==='true' ?'5rem':''}}
                              title={type}
                              onRowClick={this.handleRowClick.bind(this)}
                              dataSource={dataSource}
@@ -614,6 +618,7 @@ class TypesContainer extends React.Component {
             }
         }
 
+        const selectedLength = Object.keys(this.state.selectedrows).length
         const {description} = this.types[type]
         const content = [
             title === false ? '' :
@@ -671,23 +676,26 @@ class TypesContainer extends React.Component {
             createEditDialog !== undefined && <TypeEdit key="editDialog" {...editDialogProps}/>,
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,
             manageColDialog !== undefined && <SimpleDialog key="collectionDialog" {...manageColDialogProps}/>,
-            /*AppBar position="fixed" color="primary" className={classes.appBar}>
+            window.opener && selectedLength>0 && this.pageParams.multi==='true' && <AppBar key="appbar" position="fixed" color="primary" style={{
+                top: 'auto',
+                bottom: 0
+            }}>
                 <Toolbar>
-                    <IconButton edge="start" color="inherit" aria-label="open drawer">
-                        <MenuIcon />
-                    </IconButton>
-                    <Fab color="secondary" aria-label="add" className={classes.fabButton}>
-                        <AddIcon />
-                    </Fab>
-                    <div className={classes.grow} />
-                    <IconButton color="inherit">
-                        <SearchIcon />
-                    </IconButton>
-                    <IconButton edge="end" color="inherit">
-                        <MoreIcon />
-                    </IconButton>
+                    <Button color="secondary" variant="contained"
+                            onClick={()=>{
+                                const items = []
+
+                                this.state.data.results.forEach(item => {
+                                    if( this.state.selectedrows[item._id]) {
+                                        items.push(item)
+                                    }
+                                })
+                                window.resultValue = items
+                                window.close()
+
+                            }}>Auswahl übernehmen</Button>
                 </Toolbar>
-            </AppBar>*/
+            </AppBar>
         ]
 
         Hook.call('TypesContainerRender', {type, content}, this)
@@ -848,7 +856,7 @@ class TypesContainer extends React.Component {
 
     determinPageParams(props) {
         const {params} = props.match
-        const {p, l, s, f, v, noLayout, fixType, baseFilter} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v, noLayout, fixType, baseFilter, multi} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
@@ -870,6 +878,7 @@ class TypesContainer extends React.Component {
         const typeSettings = this.settings[type] || {}
         const result = {
             baseFilter,
+            multi,
             fixType: finalFixType,
             noLayout: finalNoLayout,
             limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,

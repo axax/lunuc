@@ -58,11 +58,10 @@ class SimpleTable extends React.Component {
     }
 
     render() {
-        const {title, actions, header, classes, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
+        const {style, title, actions, header, classes, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
 
-        // TODO implement header when items are selected
         const numSelected = 0
-        return <Paper>
+        return <Paper style={style}>
 
             { (header || title || actions ?
                 <Toolbar

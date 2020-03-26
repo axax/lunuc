@@ -115,7 +115,7 @@ class TypePicker extends React.Component {
                                                    top = (screen.height / 2) - (h / 2)
 
                                                const newwindow = window.open(
-                                                   `/admin/types/?noLayout=true&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
+                                                   `/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
                                                    'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
 
                                                setTimeout(() => {
@@ -214,7 +214,13 @@ class TypePicker extends React.Component {
     selectValue(item) {
         if (item) {
             const value = (this.state.value ? this.state.value.slice(0) : [])
-            value.push({__typename: this.props.type, ...item})
+            if( item.forEach ){
+                item.forEach(itm=>{
+                    value.push({__typename: this.props.type, ...itm})
+                })
+            }else {
+                value.push({__typename: this.props.type, ...item})
+            }
             this.props.onChange({target: {value, name: this.props.name}})
             this.setState({value, textValue: '', hastFocus: false, data: null})
         }
