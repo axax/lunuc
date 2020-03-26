@@ -1036,7 +1036,8 @@ class JsonDomHelper extends React.Component {
                     </AddToBody>
                 )}
                 {(addChildDialog &&
-                    <AddToBody><SimpleDialog fullWidth={true} maxWidth="md" key="addChildDialog" open={true}
+                    <AddToBody>
+                        <SimpleDialog fullWidth={true} maxWidth="md" key="addChildDialog" open={true}
                                              onClose={(e) => {
                                                  const selected = addChildDialog.selected
                                                  if (e.key === 'save' && selected) {

@@ -128,7 +128,7 @@ class QuillEditor extends React.Component {
                 this.quill.on('text-change', (e) => {
                     const {onChange, name} = this.props
                     if (onChange) {
-                       /* this.quill.root.querySelectorAll('a').forEach(a => {
+                       /* this.editor.root.querySelectorAll('a').forEach(a => {
                             const href = a.getAttribute('href')
                             if (href && href.indexOf('/') === 0) {
                                 a.removeAttribute('target')
@@ -162,8 +162,8 @@ class QuillEditor extends React.Component {
             }
         }
         if (QuillEditor.loadedStyles.indexOf(theme) < 0) {
-            DomUtil.addStyle(`https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.0-dev.3/quill.${theme}.min.css`, {id: 'quill' + theme})
-            DomUtil.addStyle('https://unpkg.com/quill-table-ui@1.0.5/dist/index.css', {id: 'quill-better-table'})
+            DomUtil.addStyle(`https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.0-dev.3/quill.${theme}.min.css`, {id: 'editor' + theme})
+            DomUtil.addStyle('https://unpkg.com/quill-table-ui@1.0.5/dist/index.css', {id: 'editor-better-table'})
             QuillEditor.loadedStyles.push(theme)
         }
 

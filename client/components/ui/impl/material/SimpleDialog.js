@@ -22,6 +22,7 @@ export const SimpleDialog = withMobileDialog()(({classes, children, onClose, act
     return <Dialog
         aria-labelledby="responsive-dialog-title"
         onClose={onClose}
+        disableEnforceFocus={true}
         classes={{
             paper: classes.paper,
         }}

@@ -5,7 +5,7 @@ import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
 import config from 'gen/config'
 import CodeEditor from './CodeEditor'
-import QuillEditor from './QuillEditor'
+import TinyEditor from './TinyEditor'
 import {withStyles} from 'ui/admin'
 import {checkFieldType} from 'util/typesAdmin'
 import Hook from '../../util/hook'
@@ -235,13 +235,13 @@ class GenericForm extends React.Component {
             } else if (uitype === 'html') {
                 formFields.push( <FormControl style={{zIndex:1}} key={'control'+fieldKey}  className={classNames(classes.formFieldFull)}>
                     <InputLabel key={'label'+fieldKey} shrink>{field.label}</InputLabel>
-                    <QuillEditor key={fieldKey} id={fieldKey} style={{marginTop: '1.5rem'}}
+                    <TinyEditor key={fieldKey} id={fieldKey} style={{marginTop: '1.5rem'}}
                                  onChange={(newValue) => this.handleInputChange({
                                      target: {
                                          name: fieldKey,
                                          value: newValue
                                      }
-                                 })}>{value}</QuillEditor>
+                                 })}>{value}</TinyEditor>
                     {(!!this.state.fieldErrors[fieldKey] ?
                     <FormHelperText>Bitte
                         ausfüllen</FormHelperText> : '')}
