@@ -62,6 +62,7 @@ const baseElements = [
             },
             c: {
                 $loop: {
+                    d: [],
                     s: 'item',
                     convert: 'String',
                     c: {
