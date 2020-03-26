@@ -301,6 +301,9 @@ class JsonDomHelper extends React.Component {
 
     onDragStart(e) {
         e.stopPropagation()
+        if( JsonDomHelper.disableEvents ){
+            return
+        }
         if (!JsonDomHelper.currentDragElement) {
             JsonDomHelper.currentDragElement = this
             this.setState({toolbarHovered: false, hovered: false, dragging: true})
@@ -798,10 +801,10 @@ class JsonDomHelper extends React.Component {
                     })
                 }
 
-                if (!isLoop && _inlineEditor.allowDrop ) {
+                if (!isLoop) {
 
 
-                    if (_inlineEditor.menu.add !== false) {
+                    if (_inlineEditor.allowDrop && _inlineEditor.menu.add !== false) {
                         menuItems.push({
                             name: 'Element hinzufügen',
                             icon: <AddIcon/>,
@@ -1104,7 +1107,7 @@ class JsonDomHelper extends React.Component {
                                                      label: 'Speichern',
                                                      type: 'primary'
                                                  }]}
-                                             title="Bearbeitung">
+                                             title={`Bearbeitung ${addChildDialog.selected ? '('+addChildDialog.selected.name+')':''}`}>
 
                         {!addChildDialog.edit && <SimpleSelect
                             fullWidth={true}

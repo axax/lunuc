@@ -11,7 +11,7 @@ const baseElements = [
         },
         options: {
             p_src: {
-                fullWidth:true,
+                fullWidth: true,
                 value: '',
                 label: 'Bild',
                 uitype: 'type_picker',
@@ -47,26 +47,42 @@ const baseElements = [
             p_caption: {
                 label: 'Beschreibung',
                 uitype: 'html',
-                fullWidth:true
+                fullWidth: true
             }
         }
-    },{
-        tagName: 'SmartImage',
+    }, {
+        tagName: 'div',
         name: 'Bildergalerie',
         defaults: {
             $inlineEditor: {
                 elementKey: 'gallery'
+            },
+            p: {
+                ['data-element-key']: 'gallery'
+            },
+            c: {
+                $loop: {
+                    s: 'item',
+                    convert: 'String',
+                    c: {
+                        $inlineEditor: false,
+                        t: 'SmartImage',
+                        p: {
+                            src: '$.item{data}'
+                        }
+                    }
+                }
             }
         },
         options: {
-            p_src: {
-                fullWidth:true,
+            c_$loop_d: {
+                fullWidth: true,
                 value: '',
                 label: 'Bild',
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
-                multi:true
+                multi: true
             },
             p_style_marginTop: {
                 label: 'Abstand oben'
@@ -80,7 +96,7 @@ const baseElements = [
             p_caption: {
                 label: 'Beschreibung',
                 uitype: 'html',
-                fullWidth:true
+                fullWidth: true
             }
         }
     },
@@ -88,8 +104,8 @@ const baseElements = [
         tagName: 'Link',
         name: 'Link',
         options: {
-            c: {fullWidth: true,value: '', placeholder: 'Name eingeben', label: 'Name'},
-            p_href: { fullWidth: true,value: '', placeholder: 'Url eingeben', label: 'Url'},
+            c: {fullWidth: true, value: '', placeholder: 'Name eingeben', label: 'Name'},
+            p_href: {fullWidth: true, value: '', placeholder: 'Url eingeben', label: 'Url'},
             p_className: {
                 label: 'Style',
                 uitype: 'select',
@@ -130,14 +146,24 @@ const baseElements = [
         tagName: 'Link.lu-image-link',
         name: 'Image Link',
         options: {
-            c_0_p_src: {fullWidth:true, value: '', label: 'Bild', uitype: 'type_picker', type: 'Media', filter: 'mimeType=image'},
-            c_1_c: {fullWidth: true,value: '', placeholder: 'Text eingeben', label: 'Text'},
-            p_href: {fullWidth: true,value: '', placeholder: 'Url eingeben', label: 'Url'},
+            c_0_p_src: {
+                fullWidth: true,
+                value: '',
+                label: 'Bild',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=image'
+            },
+            c_1_c: {fullWidth: true, value: '', placeholder: 'Text eingeben', label: 'Text'},
+            p_href: {fullWidth: true, value: '', placeholder: 'Url eingeben', label: 'Url'},
             p_className: {value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse'}
         },
         defaults: {
             $inlineEditor: {
                 elementKey: 'imageLink'
+            },
+            p: {
+                ['data-element-key']: 'imageLink'
             },
             c: [
                 {
@@ -181,7 +207,7 @@ const baseElements = [
         },
         options: {
             t: {
-                enum:[
+                enum: [
                     {
                         name: 'H1',
                         value: 'h1'
@@ -274,11 +300,11 @@ const baseElements = [
         defaults: {
             c: '',
             p: {
-                title:'',
-                target:'_blank',
-                rel:'noopener',
+                title: '',
+                target: '_blank',
+                rel: 'noopener',
                 href: '',
-                ['data-element-key']:'documentLink'
+                ['data-element-key']: 'documentLink'
             },
             $inlineEditor: {
                 elementKey: 'documentLink'
@@ -286,7 +312,7 @@ const baseElements = [
         },
         options: {
             p_href: {
-                fullWidth:true,
+                fullWidth: true,
                 value: '',
                 label: 'Datei',
                 uitype: 'type_picker',
@@ -295,13 +321,34 @@ const baseElements = [
                 template: '${_app_.config.UPLOAD_URL}/${_id}'
             },
             c: {
-                fullWidth:true,
+                fullWidth: true,
                 value: '',
                 label: 'Bezeichnung'
             },
             p_style_marginTop: {
                 label: 'Abstand oben'
             },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
+            }
+        }
+    },
+    {
+        tagName: 'div',
+        name: 'Container',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'container'
+            },
+            c: '',
+            p: {
+                ['data-element-key']: 'container'
+            }
+        },
+        options: {
             p_style_marginBottom: {
                 label: 'Abstand unten'
             },
@@ -319,8 +366,16 @@ const baseElements = [
                 elementKey: 'layout-1-2'
             },
             c: [
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col', c: [{c: 'Spalte 1'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}}, t: 'Col', c: [{c: 'Spalte 1'}]}
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 1'}]
+                },
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 1'}]
+                }
             ]
         },
         options: {
@@ -348,9 +403,21 @@ const baseElements = [
                 elementKey: 'layout-1-3'
             },
             c: [
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 1'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 2'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 3'}]},
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 1'}]
+                },
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 2'}]
+                },
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 3'}]
+                },
             ]
         },
         options: {
@@ -382,10 +449,26 @@ const baseElements = [
                 elementKey: 'layout-1-4'
             },
             c: [
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 1'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 2'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 3'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 4'}]}
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 1'}]
+                },
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 2'}]
+                },
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 3'}]
+                },
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 4'}]
+                }
             ]
         },
         options: {
@@ -421,11 +504,31 @@ const baseElements = [
                 elementKey: 'layout-1-5'
             },
             c: [
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 1'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 2'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 3'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 4'}]},
-                {$inlineEditor: {menu:{remove:false, editTemplate:false, addBelow:false}},t: 'Col', c: [{c: 'Spalte 5'}]}
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 1'}]
+                },
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 2'}]
+                },
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 3'}]
+                },
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 4'}]
+                },
+                {
+                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    t: 'Col',
+                    c: [{c: 'Spalte 5'}]
+                }
             ]
         },
         options: {
@@ -486,7 +589,7 @@ const baseElements = [
     },
     {
         tagName: 'Cms',
-        name: 'Component',
+        name: 'Komponente',
         defaults: {
             $inlineEditor: {
                 elementKey: 'Cms'
