@@ -107,7 +107,6 @@ class TypePicker extends React.Component {
                                    <InputAdornment position="end">
                                        <IconButton
                                            edge="end"
-                                           aria-label="toggle password visibility"
                                            onClick={() => {
 
                                                const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
@@ -116,7 +115,7 @@ class TypePicker extends React.Component {
 
                                                const newwindow = window.open(
                                                    `/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
-                                                   'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
+                                                   'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
 
                                                setTimeout(() => {
                                                    newwindow.addEventListener('beforeunload', (e) => {
@@ -124,8 +123,6 @@ class TypePicker extends React.Component {
                                                        delete e['returnValue']
                                                    })
                                                }, 500)
-                                           }}
-                                           onMouseDown={() => {
                                            }}
                                        >
                                            <SearchIcon/>

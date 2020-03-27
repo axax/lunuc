@@ -80,7 +80,8 @@ class TinyEditor extends React.Component {
                                 }
                             }
                         })
-                    }
+                    },
+                    content_css : "/css/tinymce.css"
                 })
 
             }

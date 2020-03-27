@@ -775,17 +775,6 @@ class JsonDomHelper extends React.Component {
                     }
                 }
 
-             /*   if( _inlineEditor.picker ){
-                    menuItems.push({
-                        name: 'Bild Auswählen',
-                        icon: <BuildIcon/>,
-                        onClick: ()=>{
-                            this.openPicker(_inlineEditor.picker)
-                        }
-                    })
-                }*/
-
-
                 if (_inlineEditor.menu.editTemplate !== false) {
                     menuItems.push({
                         name: 'Template bearbeiten',

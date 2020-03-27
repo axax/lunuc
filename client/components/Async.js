@@ -7,6 +7,7 @@ class Async extends React.Component {
 
     componentWillMount = () => {
         const {load, expose} = this.props
+
         if( expose && Async.cache[expose]){
             this.Component = Async.cache[expose]
         }else {
@@ -24,7 +25,7 @@ class Async extends React.Component {
 
     render = () => {
         const { load, expose, ...rest} = this.props
-        return this.Component ? <this.Component {...rest}/> : null
+        return this.Component ? React.createElement(this.Component, rest) : null
     }
 }
 
