@@ -55,7 +55,9 @@ const baseElements = [
         name: 'Bildergalerie',
         defaults: {
             $inlineEditor: {
-                elementKey: 'gallery'
+                elementKey: 'gallery',
+                menu: {addBelow: false},
+                allowDrop:false
             },
             p: {
                 ['data-element-key']: 'gallery'
@@ -79,7 +81,7 @@ const baseElements = [
             c_$loop_d: {
                 fullWidth: true,
                 value: '',
-                label: 'Bild',
+                label: 'Bilder',
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',

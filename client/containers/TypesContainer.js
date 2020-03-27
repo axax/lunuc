@@ -1205,7 +1205,7 @@ class TypesContainer extends React.Component {
 
     goTo(type, page, limit, sort, filter, _version) {
         const {baseUrl, fixType} = this.props
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/'+type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${this.pageParams.baseFilter?'&baseFilter='+encodeURIComponent(this.pageParams.baseFilter):''}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/'+type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${this.pageParams.multi?'&multi='+this.pageParams.multi:''}${this.pageParams.baseFilter?'&baseFilter='+encodeURIComponent(this.pageParams.baseFilter):''}`)
     }
 
 
