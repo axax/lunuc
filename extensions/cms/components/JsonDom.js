@@ -465,7 +465,7 @@ class JsonDom extends React.Component {
             }
 
 
-            this.setStyle(parsedStyle, true, id)
+            this.setStyle(parsedStyle, true, id, true)
         } else {
             const el = document.getElementById(id)
 
@@ -660,11 +660,25 @@ class JsonDom extends React.Component {
                             try {
                                 data = Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};const Util = this.Util;return ${d}`).call({
                                     scope,
-                                    Util
+                                    Util,
+                                    serverMethod: (name, args)=>{
+                                        if(!this.serverMethodMap){
+                                            this.serverMethodMap = {}
+                                        }
+                                        if(this.serverMethodMap[d]){
+                                            return this.serverMethodMap[d]
+                                        }
+                                        this.props.serverMethod(name, args, (response) => {
+                                            this.serverMethodMap[d] = JSON.parse(response.data.cmsServerMethod.result)
+                                            this.forceUpdate()
+                                        })
+                                    }
                                 })
                             } catch (e) {
-                                console.log(e, d)
-                                this.emitJsonError(e, {loc: 'Loop Datasource'})
+                                if( !loopOrFor.ignore ) {
+                                    console.log(e, d)
+                                    this.emitJsonError(e, {loc: 'Loop Datasource'})
+                                }
                             }
                         } else {
                             data = d
@@ -1233,7 +1247,7 @@ class JsonDom extends React.Component {
         }
         if (preprocess) {
 
-            if (inworker) {
+            if (inworker ) {
                 // process in web worker
                 Util.createWorker(preprocessCss).run(style).then(e => {
                     addTag(e.data)

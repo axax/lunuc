@@ -1,6 +1,3 @@
-import Util from 'client/util'
-
-
 export function propertyByPath(path, obj, separator='.') {
     return path.split(separator).reduce((res, prop) => res?res[prop]:null, obj)
 }
