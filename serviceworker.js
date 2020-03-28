@@ -8,7 +8,8 @@ const RUNTIME = 'runtime-v${BUILD_NUMBER}'
 const PRECACHE_URLS = [
     '/', // Alias for index.html
     'main.bundle.js?v=${BUILD_NUMBER}',
-    'manifest.json?v=${BUILD_NUMBER}'
+    'manifest.json?v=${BUILD_NUMBER}',
+    'favicon.ico'
 ]
 
 // a list of cross origin domains that we want to cache
