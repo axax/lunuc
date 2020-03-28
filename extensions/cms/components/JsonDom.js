@@ -465,7 +465,7 @@ class JsonDom extends React.Component {
             }
 
 
-            this.setStyle(parsedStyle, true, id, true)
+            this.setStyle(parsedStyle, true, id)
         } else {
             const el = document.getElementById(id)
 
