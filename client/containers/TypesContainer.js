@@ -523,7 +523,7 @@ class TypesContainer extends React.Component {
                              </Query>
                              }
                              actions={actions}
-                             footer={<div>{`${selectedLength} rows selected`} {selectedLength ? <SimpleSelect
+                             footer={<div style={{display:'flex',alignItems: 'center'}}><p style={{marginRight:'2rem'}}>{`${selectedLength} rows selected`}</p>{selectedLength ? <SimpleSelect
                                  label="Select action"
                                  value=""
                                  onChange={this.handleBatchAction.bind(this)}
@@ -973,6 +973,7 @@ class TypesContainer extends React.Component {
                         }, ...optimisticInput
                     }
                     this.enhanceOptimisticData(freshData)
+
                     const gqlQuery = gql(queries.query),
                         storeKey = this.getStoreKey(type)
                     const extendedFilter = this.extendFilter(filter)

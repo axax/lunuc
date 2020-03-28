@@ -15,15 +15,15 @@ const styles = theme => {
     return {
         editor: {
             border: '1px solid ' + theme.palette.grey['200'],
-                margin: theme.spacing(3) + 'px 0',
-                height: '20rem'
+            margin: theme.spacing(3) + 'px 0',
+            height: '20rem'
         },
-        formField:{
-            minWidth: 'calc(25% - '+theme.spacing(2)+'px)',
-            margin: theme.spacing(1)+'px',
+        formField: {
+            minWidth: 'calc(25% - ' + theme.spacing(2) + 'px)',
+            margin: theme.spacing(1) + 'px',
         },
-        formFieldFull:{
-            width: 'calc(100% - '+theme.spacing(2)+'px)',
+        formFieldFull: {
+            width: 'calc(100% - ' + theme.spacing(2) + 'px)',
         }
     }
 }
@@ -125,9 +125,9 @@ class GenericForm extends React.Component {
             }
         })
         if (Object.keys(fieldErrors).length || Object.keys(this.state.fieldErrors).length) {
-            setTimeout(()=>{
+            setTimeout(() => {
                 this.setState({fieldErrors})
-            },0)
+            }, 0)
         }
         if (Object.keys(fieldErrors).length) {
             return false
@@ -193,7 +193,7 @@ class GenericForm extends React.Component {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
         const fieldKeys = Object.keys(fields), formFields = []
 
-        for(let fieldIndex = 0; fieldIndex<fieldKeys.length;fieldIndex++){
+        for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
             const fieldKey = fieldKeys[fieldIndex],
                 field = fields[fieldKey]
             if (field.readOnly) {
@@ -201,8 +201,8 @@ class GenericForm extends React.Component {
             }
 
             let value = this.state.fields[fieldKey]
-            if( field.newLine){
-                formFields.push(<br key={'br'+fieldKey} />)
+            if (field.newLine) {
+                formFields.push(<br key={'br' + fieldKey}/>)
             }
             const uitype = (field.uitype === 'datetime' ? 'datetime-local' : 0) || field.uitype || (field.enum ? 'select' : 'text')
 
@@ -223,28 +223,30 @@ class GenericForm extends React.Component {
 
                     }
                 }
-                formFields.push(<FormControl key={'control'+fieldKey} className={classNames(classes.formFieldFull)}>
-                    <InputLabel key={'label'+fieldKey} shrink>{field.label}</InputLabel><CodeEditor className={classes.editor} key={fieldKey}
-                                   onChange={(newValue) => this.handleInputChange({
-                                       target: {
-                                           name: fieldKey,
-                                           value: newValue
-                                       }
-                                   })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor></FormControl>)
+                formFields.push(<FormControl key={'control' + fieldKey} className={classNames(classes.formFieldFull)}>
+                    <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><CodeEditor
+                    className={classes.editor} key={fieldKey}
+                    onChange={(newValue) => this.handleInputChange({
+                        target: {
+                            name: fieldKey,
+                            value: newValue
+                        }
+                    })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor></FormControl>)
 
             } else if (uitype === 'html') {
-                formFields.push( <FormControl style={{zIndex:1}} key={'control'+fieldKey}  className={classNames(classes.formFieldFull)}>
-                    <InputLabel key={'label'+fieldKey} shrink>{field.label}</InputLabel>
+                formFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldKey}
+                                             className={classNames(classes.formFieldFull)}>
+                    <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel>
                     <TinyEditor key={fieldKey} id={fieldKey} style={{marginTop: '1.5rem'}}
-                                 onChange={(newValue) => this.handleInputChange({
-                                     target: {
-                                         name: fieldKey,
-                                         value: newValue
-                                     }
-                                 })}>{value}</TinyEditor>
+                                onChange={(newValue) => this.handleInputChange({
+                                    target: {
+                                        name: fieldKey,
+                                        value: newValue
+                                    }
+                                })}>{value}</TinyEditor>
                     {(!!this.state.fieldErrors[fieldKey] ?
-                    <FormHelperText>Bitte
-                        ausfüllen</FormHelperText> : '')}
+                        <FormHelperText>Bitte
+                            ausfüllen</FormHelperText> : '')}
                 </FormControl>)
 
             } else if (uitype === 'image') {
@@ -254,31 +256,34 @@ class GenericForm extends React.Component {
 
             } else if (uitype === 'type_picker') {
                 formFields.push(<TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
-                                   error={!!this.state.fieldErrors[fieldKey]}
-                                   helperText={this.state.fieldErrors[fieldKey]}
-                                   onChange={this.handleInputChange}
-                                   className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                   fullWidth={field.fullWidth}
-                                   key={fieldKey}
-                                   name={fieldKey}
-                                   label={field.label}
-                                   filter={field.filter}
-                                   multi={field.multi}
-                                   pickerField={field.pickerField}
-                                   searchFields={field.searchFields}
-                                   fields={field.fields}
-                                   type={field.type} placeholder={field.placeholder}/>)
+                                            error={!!this.state.fieldErrors[fieldKey]}
+                                            helperText={this.state.fieldErrors[fieldKey]}
+                                            onChange={this.handleInputChange}
+                                            className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                                            fullWidth={field.fullWidth}
+                                            key={fieldKey}
+                                            name={fieldKey}
+                                            label={field.label}
+                                            filter={field.filter}
+                                            multi={field.multi}
+                                            pickerField={field.pickerField}
+                                            searchFields={field.searchFields}
+                                            fields={field.fields}
+                                            type={field.type} placeholder={field.placeholder}/>)
             } else if (uitype === 'select') {
-                formFields.push(<SimpleSelect key={fieldKey} name={fieldKey} onChange={this.handleInputChange} items={field.enum}
-                                  error={!!this.state.fieldErrors[fieldKey]}
-                                  hint={this.state.fieldErrors[fieldKey]}
-                                     multi={field.multi}
-                                     label={field.label}
-                                     className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                     InputLabelProps={{
-                                         shrink: true,
-                                     }}
-                                     value={value || []}/>)
+                formFields.push(<SimpleSelect
+                    key={fieldKey} name={fieldKey}
+                    onChange={this.handleInputChange}
+                    items={field.enum}
+                    error={!!this.state.fieldErrors[fieldKey]}
+                    hint={this.state.fieldErrors[fieldKey]}
+                    multi={field.multi}
+                    label={field.label}
+                    className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
+                    value={value || []}/>)
             } else if (field.type === 'Boolean') {
                 formFields.push(<SimpleSwitch key={fieldKey}
                                               label={field.label || field.placeholder}
@@ -304,7 +309,7 @@ class GenericForm extends React.Component {
                         arr.push(<TextField key={fieldName}
                                             error={!!this.state.fieldErrors[fieldName]}
                                             helperText={this.state.fieldErrors[fieldName]}
-                                            label={field.label+' ['+languageCode+']'}
+                                            label={field.label + ' [' + languageCode + ']'}
                                             className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
                                             InputLabelProps={{
                                                 shrink: true,
@@ -324,26 +329,26 @@ class GenericForm extends React.Component {
                     }, []))
                 } else {
                     formFields.push(<TextField autoFocus={autoFocus && fieldIndex === 0}
-                                      error={!!this.state.fieldErrors[fieldKey]}
-                                      key={fieldKey}
-                                      id={fieldKey}
-                                      label={field.label}
-                                      className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                      InputLabelProps={{
-                                          shrink: true,
-                                      }}
-                                      helperText={this.state.fieldErrors[fieldKey]}
-                                      fullWidth={field.fullWidth}
-                                      type={uitype}
-                                      multiline={uitype === 'textarea'}
-                                      placeholder={field.placeholder || field.name}
-                                      value={value || field.defaultValue || ''}
-                                      name={fieldKey}
-                                      onKeyDown={(e) => {
-                                          onKeyDown && onKeyDown(e, value)
-                                      }}
-                                      onBlur={this.handleBlur}
-                                      onChange={this.handleInputChange}/>)
+                                               error={!!this.state.fieldErrors[fieldKey]}
+                                               key={fieldKey}
+                                               id={fieldKey}
+                                               label={field.label}
+                                               className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                                               InputLabelProps={{
+                                                   shrink: true,
+                                               }}
+                                               helperText={this.state.fieldErrors[fieldKey]}
+                                               fullWidth={field.fullWidth}
+                                               type={uitype}
+                                               multiline={uitype === 'textarea'}
+                                               placeholder={field.placeholder || field.name}
+                                               value={value || field.defaultValue || ''}
+                                               name={fieldKey}
+                                               onKeyDown={(e) => {
+                                                   onKeyDown && onKeyDown(e, value)
+                                               }}
+                                               onBlur={this.handleBlur}
+                                               onChange={this.handleInputChange}/>)
                 }
 
             }

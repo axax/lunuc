@@ -37,7 +37,6 @@ class TypeEdit extends React.Component {
     render() {
         const {title, type, meta, client} = this.props
         let {dataToEdit, open} = this.state
-
         if(!dataToEdit){
             dataToEdit = this.props.initialData
         }
@@ -108,7 +107,7 @@ class TypeEdit extends React.Component {
             const editedDataWithRefs = referencesToIds(editedData, type)
 
 
-            const callback = ({errors}) => {
+            const callback = ({errors, data}) => {
                 // server side validation
                 if (errors && errors.length) {
                     const fieldErrors = {}
@@ -123,6 +122,11 @@ class TypeEdit extends React.Component {
                         this.createEditForm.setState({fieldErrors})
                     }
                 } else {
+
+                    if( !editedData._id && data['create' + type]) {
+                        editedData._id = data['create' + type]._id
+                    }
+
                     if (action.key === 'save_close') {
                         closeModal()
                     } else {

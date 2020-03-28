@@ -38,7 +38,6 @@ export default () => {
     Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, parentRef}) {
 
         if (type === 'GenericData') {
-
             if (dataToEdit && dataToEdit.definition) {
 
                 let struct
@@ -57,7 +56,7 @@ export default () => {
                 delete newDataToEdit.data
 
                 newFields.definition.readOnly=true
-                props.title=<React.Fragment>{newDataToEdit.definition.name} <div style={{float:'right',textAlign:'right'}}><SimpleButton size="small" variant="contained" color="primary"
+                props.title=<React.Fragment>{newDataToEdit.definition.name} ({newDataToEdit._id}) <div style={{float:'right',textAlign:'right'}}><SimpleButton size="small" variant="contained" color="primary"
                                                                                                                                          onClick={()=>{
 
                                                                                                                                              const a = document.createElement('a'),

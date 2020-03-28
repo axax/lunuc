@@ -14,14 +14,16 @@ import {withStyles} from '@material-ui/core/styles';
 const styles = theme => ({
     formControl: {
         margin: theme.spacing(1),
-        minWidth: 120,
+        minWidth: 200,
     },
     chips: {
         display: 'flex',
-        flexWrap: 'wrap',
+        flexWrap: 'wrap'
     },
     chip: {
-        margin: theme.spacing(0.25),
+        height:'auto',
+        padding: '2px',
+        margin:'-2px 2px'
     }
 });
 
