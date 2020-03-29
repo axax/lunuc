@@ -11,6 +11,7 @@ import {getHostFromHeaders} from 'util/host'
 import finalhandler from 'finalhandler'
 import {AUTH_HEADER} from 'api/constants'
 import {decodeToken} from 'api/util/jwt'
+import puppeteer from 'puppeteer'
 
 const defaultWebHandler = (err, req, res) => {
     if (err) {
@@ -96,27 +97,24 @@ const app = httpx.createServer(options, function (req, res) {
                 const agent = req.headers['user-agent'], agentParts = agent.split(' ')
 
                 let browser, version
-                if( agentParts.length>2) {
+                if (agentParts.length > 2) {
 
                     const browserPart = agentParts[agentParts.length - 1].split('/'),
                         versionPart = agentParts[agentParts.length - 2].split('/')
 
                     browser = browserPart[0].trim().toLowerCase()
-                    if( versionPart.length>1){
+                    if (versionPart.length > 1) {
                         version = parseInt(versionPart[1])
                     }
 
                 }
 
 
-
-
-
                 console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
 
-                if( browser === 'safari' && version<6) {
+                if (browser === 'safari' && version < 6) {
                     // only a little test as safari version small 6 doesn't support tls 1.2
-                }else{
+                } else {
                     res.writeHead(301, {"Location": "https://" + newhost + req.url})
                     res.end()
                     return
@@ -132,9 +130,9 @@ const app = httpx.createServer(options, function (req, res) {
         }
     }
 
-    const parsedUrl =url.parse(req.url, true), uri = parsedUrl.pathname
+    const parsedUrl = url.parse(req.url, true), uri = parsedUrl.pathname
 
-    if( uri.indexOf('..')>=0){
+    if (uri.indexOf('..') >= 0) {
         sendError(res, 403)
         return
     }
@@ -150,7 +148,7 @@ const app = httpx.createServer(options, function (req, res) {
             onReq: (req, {headers}) => {
                 headers['x-forwarded-for'] = req.socket.remoteAddress
                 headers['x-forwarded-proto'] = req.socket.encrypted ? 'https' : 'http'
-                headers['x-forwarded-host'] = getHostFromHeaders(req.headers)
+                headers['x-forwarded-host'] = host
             }
         }, defaultWebHandler)
 
@@ -160,7 +158,7 @@ const app = httpx.createServer(options, function (req, res) {
 
             const context = decodeToken(req.headers[AUTH_HEADER])
 
-            if( context.id) {
+            if (context.id) {
                 // only allow download if valid jwt token is set
                 const backup_dir = path.join(__dirname, '../' + BACKUP_DIR)
                 const filename = path.join(backup_dir, uri.substring(BACKUP_URL.length))
@@ -175,7 +173,7 @@ const app = httpx.createServer(options, function (req, res) {
                         sendError(res, 404)
                     }
                 })
-            }else{
+            } else {
                 sendError(res, 403)
             }
 
@@ -190,26 +188,32 @@ const app = httpx.createServer(options, function (req, res) {
                 if (exists) {
                     const stat = fs.statSync(filename)
 
-                    const headerExtra = {'Last-Modified':stat.mtime.toUTCString(),'Connection': 'Keep-Alive','Cache-Control': 'public, max-age=31536000', 'Content-Length': stat.size}
+                    const headerExtra = {
+                        'Vary': 'Accept-Encoding',
+                        'Last-Modified': stat.mtime.toUTCString(),
+                        'Connection': 'Keep-Alive',
+                        'Cache-Control': 'public, max-age=31536000',
+                        'Content-Length': stat.size
+                    }
                     let code = 200, streamOption
 
                     let ext = parsedUrl.query.ext
 
-                    if( !ext) {
+                    if (!ext) {
                         const pos = filename.lastIndexOf('.')
                         if (pos >= 0) {
                             ext = filename.substring(pos + 1).toLocaleLowerCase()
                         }
                     }
-                    if(ext){
+                    if (ext) {
                         const mimeType = MimeType.detectByExtension(ext)
 
                         headerExtra['Content-Type'] = mimeType
 
-                        if( ext === 'mp3' || ext === 'mp4'){
+                        if (ext === 'mp3' || ext === 'mp4') {
 
                             delete headerExtra['Cache-Control']
-                            headerExtra['Accept-Ranges']= 'bytes'
+                            headerExtra['Accept-Ranges'] = 'bytes'
 
                             const range = req.headers.range
 
@@ -218,11 +222,11 @@ const app = httpx.createServer(options, function (req, res) {
                                     partialstart = parts[0],
                                     partialend = parts[1],
                                     start = parseInt(partialstart, 10),
-                                    end = partialend ? parseInt(partialend, 10) : stat.size-1,
-                                    chunksize = (end-start)+1
+                                    end = partialend ? parseInt(partialend, 10) : stat.size - 1,
+                                    chunksize = (end - start) + 1
 
                                 code = 206
-                                streamOption={start, end}
+                                streamOption = {start, end}
                                 headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
                                 headerExtra['Content-Length'] = chunksize
 
@@ -230,7 +234,7 @@ const app = httpx.createServer(options, function (req, res) {
                         }
                     }
 
-                    const fileStream = fs.createReadStream(filename,streamOption)
+                    const fileStream = fs.createReadStream(filename, streamOption)
                     res.writeHead(code, {...headerExtra})
                     fileStream.pipe(res)
                 } else {
@@ -264,7 +268,7 @@ const app = httpx.createServer(options, function (req, res) {
                         fs.stat(filename, function (err, stats) {
                             if (err || !stats.isFile()) {
                                 console.log('not exists: ' + filename)
-                                sendIndexFile(req, res, uri, hostrule)
+                                sendIndexFile(req, res, uri, hostrule, host)
                             } else {
                                 const mimeType = MimeType.detectByExtension(ext),
                                     headerExtra = {
@@ -277,7 +281,7 @@ const app = httpx.createServer(options, function (req, res) {
                             }
                         })
                     } else {
-                        sendIndexFile(req, res, uri, hostrule)
+                        sendIndexFile(req, res, uri, hostrule, host)
                     }
                 } else {
                     // static file
@@ -296,22 +300,62 @@ const app = httpx.createServer(options, function (req, res) {
     }
 })
 
-const sendIndexFile = (req, res, uri, hostrule)=>{
+const sendIndexFile = async (req, res, uri, hostrule, host) => {
     const headers = {
         'Cache-Control': 'public, max-age=60',
         'content-type': MimeType.detectByExtension('html'),
         ...hostrule.headers[uri]
     }
 
-    let indexfile
+    const agent = req.headers['user-agent']
+    if(agent.indexOf('compatible; bingbot/')>-1) {
 
-    if ( hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
-        indexfile = path.join(__dirname, '../' + hostrule.fileMapping['/index.html'])
-    } else {
-        // default index
-        indexfile = path.join(BUILD_DIR, '/index.min.html')
+        // return rentered html for bing as they are not able to render js properly
+        const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${uri}`)
+
+
+        res.writeHead(200, headers)
+        res.write(html)
+        res.end()
+
+    }else {
+        let indexfile
+
+        if (hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
+            indexfile = path.join(__dirname, '../' + hostrule.fileMapping['/index.html'])
+        } else {
+            // default index
+            indexfile = path.join(BUILD_DIR, '/index.min.html')
+        }
+        sendFile(req, res, headers, indexfile);
     }
-    sendFile(req, res, headers, indexfile);
+}
+
+const parseWebsite = async (urlToFetch) => {
+    console.log(`fetch ${urlToFetch}`)
+    const browser = await puppeteer.launch({
+        ignoreHTTPSErrors: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    })
+    const page = await browser.newPage()
+
+    await page.setRequestInterception(true)
+    page.on('request', (request) => {
+        if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
+            request.abort()
+        } else {
+            request.continue()
+        }
+    })
+
+    await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
+
+    const html = await page.content()
+
+
+    await browser.close()
+
+    return html
 }
 
 //app.https.on('error', (err) => console.error(err));
@@ -326,11 +370,11 @@ const sendIndexFile = (req, res, uri, hostrule)=>{
 });*/
 
 
-const sendError = (res, code)=>{
+const sendError = (res, code) => {
     let msg = ''
-    if(code === 404){
+    if (code === 404) {
         msg = 'Not Found'
-    }else if(code === 403){
+    } else if (code === 403) {
         msg = 'Not Allowed'
     }
 

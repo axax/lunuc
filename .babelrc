@@ -4,6 +4,7 @@
     "@babel/preset-react"
   ],
   "plugins": [
+    "@babel/plugin-transform-runtime",
     "@babel/plugin-proposal-class-properties",
     "@babel/plugin-syntax-dynamic-import",
     "@babel/plugin-proposal-export-default-from",
@@ -28,7 +29,6 @@
   "env": {
     "api": {
       "plugins": [
-        "@babel/plugin-transform-runtime",
         "dynamic-import-node",
         [
           "css-modules-transform",
