@@ -7,6 +7,10 @@ const baseElements = [
             $inlineEditor: {
                 elementKey: 'image',
                 picker: {type: 'Media', baseFilter: 'mimeType=image'}
+            },
+            p:{
+                wrapper:'true',
+                ['data-element-key']: 'image'
             }
         },
         options: {
@@ -44,6 +48,10 @@ const baseElements = [
             p_className: {
                 label: 'Klassname'
             },
+            p_wrapper: {
+                label: 'Zoom',
+                type: 'Boolean'
+            },
             p_caption: {
                 label: 'Beschreibung',
                 uitype: 'html',
@@ -71,6 +79,7 @@ const baseElements = [
                         $inlineEditor: false,
                         t: 'SmartImage',
                         p: {
+                            wrapper:'true',
                             src: '$.item{data}'
                         }
                     }

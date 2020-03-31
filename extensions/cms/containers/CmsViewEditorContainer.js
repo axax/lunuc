@@ -618,6 +618,7 @@ class CmsViewEditorContainer extends React.Component {
                                           }
                                       }else{
                                           this.setState({addNewSite: null})
+                                          window.history.back()
                                       }
                                   }}
                                   actions={[{

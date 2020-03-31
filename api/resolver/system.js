@@ -256,7 +256,7 @@ export const systemResolver = (db) => ({
                 ${script}            
             })`)
 
-            tpl.call({entries, save})
+            tpl.call({entries, save, ObjectId})
 
             return {result:`Successful executed`}
         },
