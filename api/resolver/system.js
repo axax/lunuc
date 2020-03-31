@@ -214,6 +214,52 @@ export const systemResolver = (db) => ({
 
             throw new Error('Not implmented yet.')
         },
+        bulkEdit: async ({collection,_id,script}, {context}) => {
+
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
+
+            const $in = []
+            _id.forEach(id => {
+                $in.push(ObjectId(id))
+            })
+
+            const options = {
+                _id: {$in}
+            }
+
+
+            const entries = await db.collection(collection).find(options).toArray()
+
+            const save = (entry)=>{
+                db.collection(collection).updateOne({_id: entry._id}, {$set: entry})
+            }
+
+
+            const tpl = new Function(`      
+            const findProperties = (json, key, accumulator = []) => {
+                if( json && (json.constructor===Object || json.constructor===Array)){
+                    const keys = json.constructor===Object?Object.keys(json):json
+                    for(let i = 0;i < keys.length;i++){
+                        if(keys[i].constructor===Object){
+                            findProperties(keys[i],key, accumulator)
+                        }else if(key===keys[i]){
+                            accumulator.push(json)
+                        }else{
+                            findProperties(json[keys[i]],key, accumulator)
+                        }
+                    }
+                }
+                return accumulator
+            }
+      
+            this.entries.forEach(entry=>{
+                ${script}            
+            })`)
+
+            tpl.call({entries, save})
+
+            return {result:`Successful executed`}
+        },
         dbDumps: async (data, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 

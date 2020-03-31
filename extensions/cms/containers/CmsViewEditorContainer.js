@@ -73,6 +73,7 @@ class CmsViewEditorContainer extends React.Component {
         } else if (props.keyValue) {
             try {
                 settings = JSON.parse(props.keyValue.value)
+                delete settings._default
             } catch (e) {
             }
         }
@@ -928,8 +929,11 @@ class CmsViewEditorContainer extends React.Component {
             if (str.constructor !== String) {
                 str = JSON.stringify(str, null, 2)
             }
+
+            // save settings first
             if (this._saveSettings)
                 this._saveSettings()
+
             this.setState({template: str, templateError: null})
             this._autoSaveTemplate = () => {
                 clearTimeout(this._autoSaveTemplateTimeout)

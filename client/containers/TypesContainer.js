@@ -50,6 +50,7 @@ import _t from 'util/i18n'
 
 const {ADMIN_BASE_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
 import {COLLECTIONS_QUERY} from '../constants'
+import CodeEditor from "../components/CodeEditor";
 
 const gqlCollectionsQuery = gql(COLLECTIONS_QUERY)
 
@@ -111,7 +112,7 @@ class TypesContainer extends React.Component {
         // store on object instance to preserve value when url change
         this.noLayout = this.pageParams.noLayout
         this.fixType = this.pageParams.fixType
-        if(this.pageParams.baseFilter) {
+        if (this.pageParams.baseFilter) {
             this.baseFilter = this.pageParams.baseFilter
         }
         this.state = {
@@ -122,6 +123,7 @@ class TypesContainer extends React.Component {
             manageColDialog: undefined,
             confirmCloneColDialog: undefined,
             dataToDelete: null,
+            dataToBulkEdit: null,
             createEditDialog: undefined,
             createEditDialogOption: null,
             dataToEdit: null,
@@ -134,7 +136,7 @@ class TypesContainer extends React.Component {
             // if it is not a fix type a selection box with all types is shown
             // prepare list with types for select box
             Object.keys(this.types).map((k) => {
-                if ( !this.settings[k] || !this.settings[k].hide) {
+                if (!this.settings[k] || !this.settings[k].hide) {
                     const t = this.types[k]
                     this.typesToSelect.push({value: k, name: k, hint: t.usedBy && 'used by ' + t.usedBy.join(',')})
                 }
@@ -209,7 +211,7 @@ class TypesContainer extends React.Component {
             this.pageParams.sort !== pageParams.sort ||
             this.pageParams.filter !== pageParams.filter) {
             this.pageParams = pageParams
-            if( props.baseFilter) {
+            if (props.baseFilter) {
                 this.baseFilter = props.baseFilter
             }
             this.getData(pageParams, true)
@@ -473,7 +475,7 @@ class TypesContainer extends React.Component {
 
             this._renderedTable =
                 <SimpleTable key="typeTable"
-                             style={{marginBottom:window.opener && selectedLength >0 && this.pageParams.multi==='true' ?'5rem':''}}
+                             style={{marginBottom: window.opener && selectedLength > 0 && this.pageParams.multi === 'true' ? '5rem' : ''}}
                              title={type}
                              onRowClick={this.handleRowClick.bind(this)}
                              dataSource={dataSource}
@@ -523,12 +525,14 @@ class TypesContainer extends React.Component {
                              </Query>
                              }
                              actions={actions}
-                             footer={<div style={{display:'flex',alignItems: 'center'}}><p style={{marginRight:'2rem'}}>{`${selectedLength} rows selected`}</p>{selectedLength ? <SimpleSelect
-                                 label="Select action"
-                                 value=""
-                                 onChange={this.handleBatchAction.bind(this)}
-                                 items={[{name: 'Delete', value: 'delete'}]}
-                             /> : ''}</div>}
+                             footer={<div style={{display: 'flex', alignItems: 'center'}}><p
+                                 style={{marginRight: '2rem'}}>{`${selectedLength} rows selected`}</p>{selectedLength ?
+                                 <SimpleSelect
+                                     label="Select action"
+                                     value=""
+                                     onChange={this.handleBatchAction.bind(this)}
+                                     items={[{name: 'Delete', value: 'delete'}, {name: 'Bulk edit', value: 'edit'}]}
+                                 /> : ''}</div>}
                              orderDirection={asort.length > 1 && asort[1] || null}
                              onSort={this.handleSortChange}
                              onChangePage={this.handleChangePage.bind(this)}
@@ -543,7 +547,7 @@ class TypesContainer extends React.Component {
 
     render() {
         const startTime = new Date()
-        const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, confirmCloneColDialog, manageColDialog, dataToDelete, confirmDeletionDialog} = this.state
+        const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
         const {title, client} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
@@ -653,6 +657,50 @@ class TypesContainer extends React.Component {
                           title="Confirm deletion">
                 Are you sure you want to delete {dataToDelete.length > 1 ? 'the selected items' : 'this item'}?
             </SimpleDialog>,
+            dataToBulkEdit &&
+            <SimpleDialog fullWidth={true}
+                          maxWidth="md"
+                          key="bulkeditDialog"
+                          open={true}
+                          onClose={(action) => {
+                              if(action.key==='execute'){
+
+                                  const script = this.state.bulkEditScript || this.props.keyValueMap.TypesContainerBulkEdit
+                                  this.props.setKeyValue({key: 'TypesContainerBulkEdit', value: script})
+
+                                  client.query({
+                                      fetchPolicy: 'network-only',
+                                      query: gql`query bulkEdit($collection:String!,$_id:[ID]!,$script:String!){bulkEdit(collection:$collection,_id:$_id,script:$script){result}}`,
+                                      variables: {
+                                          collection: type,
+                                          _id: dataToBulkEdit,
+                                          script
+                                      }
+                                  }).then(response => {
+                                      if(response.data.bulkEdit) {
+                                          this.setState({simpleDialog: {children: JSON.stringify(response.data.bulkEdit)}})
+                                      }
+                                  })
+
+
+                              }else{
+                                  this.setState({dataToBulkEdit:false})
+                              }
+                          }}
+                          actions={[{key: 'execute', label: 'Execute'}, {
+                              key: 'cancel',
+                              label: 'Cancel',
+                              type: 'primary'
+                          }]}
+                          title="Bulk edit">
+
+                <CodeEditor lineNumbers
+                            type="js"
+                            onChange={(bulkEditScript) => {
+                                this.setState({bulkEditScript})
+                            }}>{this.props.keyValueMap.TypesContainerBulkEdit}</CodeEditor>
+
+            </SimpleDialog>,
             confirmCloneColDialog !== undefined &&
             <SimpleDialog key="confirmClonCol" open={confirmCloneColDialog} onClose={this.handleCloneClollection}
                           actions={[{key: 'cancel', label: 'Cancel'}, {
@@ -676,17 +724,18 @@ class TypesContainer extends React.Component {
             createEditDialog !== undefined && <TypeEdit key="editDialog" {...editDialogProps}/>,
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,
             manageColDialog !== undefined && <SimpleDialog key="collectionDialog" {...manageColDialogProps}/>,
-            window.opener && selectedLength>0 && this.pageParams.multi==='true' && <AppBar key="appbar" position="fixed" color="primary" style={{
+            window.opener && selectedLength > 0 && this.pageParams.multi === 'true' &&
+            <AppBar key="appbar" position="fixed" color="primary" style={{
                 top: 'auto',
                 bottom: 0
             }}>
                 <Toolbar>
                     <Button color="secondary" variant="contained"
-                            onClick={()=>{
+                            onClick={() => {
                                 const items = []
 
                                 this.state.data.results.forEach(item => {
-                                    if( this.state.selectedrows[item._id]) {
+                                    if (this.state.selectedrows[item._id]) {
                                         items.push(item)
                                     }
                                 })
@@ -758,6 +807,12 @@ class TypesContainer extends React.Component {
             })
             this.setState({dataToDelete, confirmDeletionDialog: true})
 
+        } else if (value === 'edit') {
+            const dataToBulkEdit = []
+            Object.keys(this.state.selectedrows).forEach(_id => {
+                dataToBulkEdit.push(_id)
+            })
+            this.setState({dataToBulkEdit})
         }
     }
 
@@ -1083,7 +1138,7 @@ class TypesContainer extends React.Component {
                         const refResults = storeData[storeKey].results
 
                         const items = ids.length > 1 ? data['delete' + type + 's'] : [data['delete' + type]]
-                        if(items) {
+                        if (items) {
                             items.forEach(result => {
                                 const idx = refResults.findIndex(x => x._id === result._id)
                                 if (idx > -1) {
@@ -1206,7 +1261,7 @@ class TypesContainer extends React.Component {
 
     goTo(type, page, limit, sort, filter, _version) {
         const {baseUrl, fixType} = this.props
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/'+type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${this.pageParams.multi?'&multi='+this.pageParams.multi:''}${this.pageParams.baseFilter?'&baseFilter='+encodeURIComponent(this.pageParams.baseFilter):''}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${this.pageParams.multi ? '&multi=' + this.pageParams.multi : ''}${this.pageParams.baseFilter ? '&baseFilter=' + encodeURIComponent(this.pageParams.baseFilter) : ''}`)
     }
 
 
@@ -1372,4 +1427,4 @@ const mapStateToProps = (store) => ({user: store.user})
 
 export default connect(
     mapStateToProps
-)(withApollo(withStyles(styles)(withKeyValues(TypesContainer, ['TypesContainerSettings']))))
+)(withApollo(withStyles(styles)(withKeyValues(TypesContainer, ['TypesContainerSettings', 'TypesContainerBulkEdit']))))

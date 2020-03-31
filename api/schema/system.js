@@ -74,6 +74,10 @@ export const systemSchemaRaw = `
         result: String
     }
         
+    type BulkEditResult {
+        result: String
+    }
+        
     type Query {
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!, scope: String, id: String, sync: Boolean): RunResult
@@ -85,6 +89,7 @@ export const systemSchemaRaw = `
     	collections (filter: String): CollectionResult
     	collectionAggregate (collection: String!, json: String!): CollectionAggregateResult
     	importCollection (collection: String!, json: String!): ImportCollectionResult
+    	bulkEdit (collection: String!, _id: [ID]!, script: String!): BulkEditResult
     }
     
       

@@ -766,7 +766,7 @@ class JsonDomHelper extends React.Component {
                                  }*/
 
                                 if (isCms) {
-                                    this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
+                                   this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
                                 }
 
                                 this.setState({addChildDialog: {selected: newJsonElement, edit: true}})

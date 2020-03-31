@@ -154,7 +154,7 @@ class DrawerLayout extends React.Component {
         if (nextProps.open !== prevState.openOriginal || nextProps.drawerWidth !== prevState.drawerWidthOriginal) {
             return {
                 open: !!nextProps.open,
-                drawerWidth: nextProps.drawerWidth,
+                drawerWidth: nextProps.drawerWidth || DRAWER_WIDTH_DEFAULT,
                 drawerWidthOriginal: nextProps.drawerWidth,
                 openOriginal: nextProps.open
             }
