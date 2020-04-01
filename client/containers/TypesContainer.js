@@ -724,7 +724,7 @@ class TypesContainer extends React.Component {
             createEditDialog !== undefined && <TypeEdit key="editDialog" {...editDialogProps}/>,
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,
             manageColDialog !== undefined && <SimpleDialog key="collectionDialog" {...manageColDialogProps}/>,
-            window.opener && selectedLength > 0 && this.pageParams.multi === 'true' &&
+            window.opener && selectedLength > 0  &&
             <AppBar key="appbar" position="fixed" color="primary" style={{
                 top: 'auto',
                 bottom: 0
@@ -734,11 +734,17 @@ class TypesContainer extends React.Component {
                             onClick={() => {
                                 const items = []
 
+
                                 this.state.data.results.forEach(item => {
                                     if (this.state.selectedrows[item._id]) {
                                         items.push(item)
                                     }
                                 })
+
+                                if(this.pageParams.multi !== 'true' ) {
+                                    items.splice(1)
+                                }
+
                                 window.resultValue = items
                                 window.close()
 
