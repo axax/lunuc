@@ -43,9 +43,9 @@ import {CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../co
 import CodeEditor from 'client/components/CodeEditor'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import GenericForm from '../../../client/components/GenericForm'
-import TypePicker from '../../../client/components/TypePicker'
 import _t from 'util/i18n'
 import config from 'gen/config'
+import {getFormFields} from "../../../util/typesAdmin";
 
 
 class CmsViewEditorContainer extends React.Component {
@@ -249,8 +249,9 @@ class CmsViewEditorContainer extends React.Component {
                                 parentRef: this
                             }
 
-                            if (cmsEditData.clone) {
+                            if (cmsEditData.options && cmsEditData.options.clone) {
                                 editDialogProps.initialData = data.genericDatas.results[0]
+
                                 delete editDialogProps.initialData._id
                             } else {
                                 editDialogProps.dataToEdit = data.genericDatas.results[0]
@@ -973,16 +974,28 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleEditDataClose(action, {editedData, dataToEdit, type}) {
-        const {_cmsActions, cmsPage, updateResolvedData} = this.props
+        const {_cmsActions, cmsPage, updateResolvedData, cmsEditData} = this.props
 
         if (editedData && dataToEdit) {
-            const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
+            const resolvedDataJson = JSON.parse(cmsPage.resolvedData),
+                resolver = resolvedDataJson[cmsEditData.resolverKey || type]
 
-            if (resolvedDataJson[type]) {
-                const results = resolvedDataJson[type].results
+
+            if (resolver) {
+                const results = resolver.results
                 const idx = results.findIndex(x => x._id === dataToEdit._id)
                 if (idx >= 0) {
                     results[idx] = Object.assign(results[idx], editedData)
+
+                    const formFields = getFormFields(type)
+                    // convert type=Object to Object
+                    Object.keys(formFields).forEach(key => {
+                        const field = formFields[key]
+                        if (field.type === 'Object' && results[idx][key].constructor !== Object) {
+                            results[idx][key] = JSON.parse(editedData[key])
+                        }
+                    })
+
                     updateResolvedData(resolvedDataJson)
                 }
             }

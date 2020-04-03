@@ -477,15 +477,14 @@ class JsonDomHelper extends React.Component {
     }
 
 
-    handleEditDataClick(e, clone) {
+    handleDatasource(e, options) {
         e.stopPropagation()
         e.preventDefault()
+
         const {_cmsActions, _inlineEditor} = this.props
 
         const dataSource = this.parseInlineEditorSource(_inlineEditor.source)
-        if( clone ){
-            dataSource.clone = true
-        }
+        dataSource.options = options
         _cmsActions.editCmsData(dataSource)
 
     }
@@ -709,7 +708,7 @@ class JsonDomHelper extends React.Component {
                     menuItems.push({
                         name: _inlineEditor.menuTitle.source || 'Datenquelle bearbeiten',
                         icon: <EditIcon/>,
-                        onClick: this.handleEditDataClick.bind(this)
+                        onClick: this.handleDatasource.bind(this)
                     })
 
                     if( parsedSouce.allowClone ) {
@@ -717,7 +716,7 @@ class JsonDomHelper extends React.Component {
                             name: _inlineEditor.menuTitle.sourceClone || 'Datenquelle kopieren',
                             icon: <FileCopyIcon/>,
                             onClick: (e)=>{
-                                this.handleEditDataClick(e, true)
+                                this.handleDatasource(e, {clone:true})
                             }
                         })
                     }
