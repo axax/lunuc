@@ -25,13 +25,10 @@ class TinyEditor extends React.Component {
         if (readOnlyChanged) {
             this.isInit = false
         } else if (this.state.value !== state.value) {
-            setTimeout(() => {
-                this.editor.setContents([])
-                this.editor.clipboard.dangerouslyPasteHTML(0, state.value)
-            }, 0)
+
         }
 
-        return readOnlyChanged
+        return readOnlyChanged || props.error !== this.props.error
     }
 
     isReadOnly(props) {
@@ -73,10 +70,17 @@ class TinyEditor extends React.Component {
                         editor.on('Change', (e) => {
                             const {onChange, name} = this.props
                             if (onChange) {
+
+
+                                let html = e.level.content
+                                if (html === '<p><br data-mce-bogus="1"></p>') {
+                                    html = ''
+                                }
+
                                 if (name) {
-                                    onChange({target: {name, value: e.level.content}})
+                                    onChange({target: {name, value: html}})
                                 } else {
-                                    onChange(e.level.content)
+                                    onChange(html)
                                 }
                             }
                         })
@@ -116,12 +120,20 @@ class TinyEditor extends React.Component {
     }
 
     render() {
-        const {children, readOnly, toolbar, required, theme, name, placeholder, value, ...rest} = this.props
+        const {children, readOnly, toolbar, required, theme, name, placeholder, value, error, ...rest} = this.props
         console.log('render TinyEditor')
         if (this.isReadOnly(this.props)) {
             return <div className="richtext-content"
                         dangerouslySetInnerHTML={{__html: this.state.value}} {...rest}></div>
         }
+        if( error){
+            if(!rest.style){
+                rest.style = {}
+            }
+            rest.style.border= 'solid 1px red'
+        }
+
+
         return <div {...rest}>
             <textarea id={'TinyEditor' + this.instanceId} defaultValue={this.state.value} />
         </div>

@@ -45,7 +45,7 @@ import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import GenericForm from '../../../client/components/GenericForm'
 import _t from 'util/i18n'
 import config from 'gen/config'
-import {getFormFields} from "../../../util/typesAdmin";
+import {getFormFields} from '../../../util/typesAdmin'
 
 
 class CmsViewEditorContainer extends React.Component {
@@ -251,8 +251,9 @@ class CmsViewEditorContainer extends React.Component {
 
                             if (cmsEditData.options && cmsEditData.options.clone) {
                                 editDialogProps.initialData = data.genericDatas.results[0]
-
                                 delete editDialogProps.initialData._id
+                            }else if (cmsEditData.options && cmsEditData.options.create) {
+                                editDialogProps.initialData = cmsEditData.initialData
                             } else {
                                 editDialogProps.dataToEdit = data.genericDatas.results[0]
                             }
@@ -975,16 +976,26 @@ class CmsViewEditorContainer extends React.Component {
 
     handleEditDataClose(action, {editedData, dataToEdit, type}) {
         const {_cmsActions, cmsPage, updateResolvedData, cmsEditData} = this.props
+        if (editedData) {
+            if( !dataToEdit){
 
-        if (editedData && dataToEdit) {
-            const resolvedDataJson = JSON.parse(cmsPage.resolvedData),
-                resolver = resolvedDataJson[cmsEditData.resolverKey || type]
+                window.location.href = window.location.href
+               /* setTimeout(()=>{
+                    this.forceUpdate()
+                },100)*/
+            }else {
+                const resolvedDataJson = JSON.parse(cmsPage.resolvedData),
+                    resolver = resolvedDataJson[cmsEditData.resolverKey || type]
 
+                if (resolver) {
+                    const results = resolver.results
+                    let idx = results.findIndex(x => x._id === dataToEdit._id)
 
-            if (resolver) {
-                const results = resolver.results
-                const idx = results.findIndex(x => x._id === dataToEdit._id)
-                if (idx >= 0) {
+                    if (idx < 0) {
+                        idx = 0
+                        results.unshift({_id: dataToEdit._id})
+                    }
+
                     results[idx] = Object.assign(results[idx], editedData)
 
                     const formFields = getFormFields(type)

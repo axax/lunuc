@@ -80,7 +80,7 @@ class GenericForm extends React.Component {
 
     setValidateState(state) {
         if (this.props.onValidate) {
-            this.setState({isValid: this.validate(state)})
+            this.setState(this.validate(state))
         }
     }
 
@@ -124,19 +124,14 @@ class GenericForm extends React.Component {
                 }
             }
         })
-        if (Object.keys(fieldErrors).length || Object.keys(this.state.fieldErrors).length) {
-            setTimeout(() => {
-                this.setState({fieldErrors})
-            }, 0)
-        }
         if (Object.keys(fieldErrors).length) {
-            return false
+            return {isValid:false, fieldErrors}
         }
 
         if (onValidate) {
             return onValidate(theState.fields)
         }
-        return true
+        return {isValid:true, fieldErrors}
     }
 
     reset = () => {
@@ -170,8 +165,7 @@ class GenericForm extends React.Component {
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
             }
-            newState.isValid = this.validate(newState)
-            return newState
+            return this.validate(newState)
         })
     }
 
@@ -234,18 +228,20 @@ class GenericForm extends React.Component {
                     })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor></FormControl>)
 
             } else if (uitype === 'html') {
+                const hasError = !!this.state.fieldErrors[fieldKey]
                 formFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldKey}
                                              className={classNames(classes.formFieldFull)}>
                     <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel>
-                    <TinyEditor key={fieldKey} id={fieldKey} style={{marginTop: '1.5rem'}}
+                    <TinyEditor key={fieldKey} id={fieldKey} error={hasError} style={{marginTop: '1.5rem'}}
+
                                 onChange={(newValue) => this.handleInputChange({
                                     target: {
                                         name: fieldKey,
                                         value: newValue
                                     }
                                 })}>{value}</TinyEditor>
-                    {(!!this.state.fieldErrors[fieldKey] ?
-                        <FormHelperText>Bitte
+                    {(hasError?
+                        <FormHelperText error>Bitte
                             ausfüllen</FormHelperText> : '')}
                 </FormControl>)
 

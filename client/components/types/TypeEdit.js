@@ -81,7 +81,6 @@ class TypeEdit extends React.Component {
     handleSaveData = (action) => {
         const {onClose, type, updateData, createData, meta, client} = this.props
         const {dataToEdit} = this.state
-
         let editedData
 
         const closeModal = () => {
@@ -135,7 +134,8 @@ class TypeEdit extends React.Component {
                 }
             }
 
-            if (dataToEdit) {
+            if (dataToEdit && dataToEdit._id) {
+
                 // if dataToEdit is set we are in edit mode
                 const editedDataToUpdate = {}
                 Object.keys(editedDataWithRefs).forEach(k => {
@@ -161,6 +161,7 @@ class TypeEdit extends React.Component {
 
             } else {
                 // create a new entry
+
                 createData(editedDataWithRefs, editedData, meta).then(callback)
             }
 

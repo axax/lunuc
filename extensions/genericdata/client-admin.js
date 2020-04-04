@@ -4,6 +4,7 @@ import Async from 'client/components/Async'
 import {
     SimpleButton
 } from 'ui/admin'
+import gql from 'graphql-tag'
 
 const GenericForm = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
@@ -40,66 +41,92 @@ export default () => {
         if (type === 'GenericData') {
             if (dataToEdit && dataToEdit.definition) {
 
-                let struct
-                try {
-                    struct = JSON.parse(dataToEdit.definition.structure)
-                }catch (e) {
-                    console.error(e, dataToEdit.definition.structure)
-                    return
-                }
-                const data = dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data
+                if( !dataToEdit.definition.structure){
 
-                const newFields = Object.assign({}, formFields)
-                const newDataToEdit = Object.assign({}, dataToEdit)
-
-                delete newFields.data
-                delete newDataToEdit.data
-
-                newFields.definition.readOnly=true
-                props.title=<React.Fragment>{newDataToEdit.definition.name} ({newDataToEdit._id}) <div style={{float:'right',textAlign:'right'}}><SimpleButton size="small" variant="contained" color="primary"
-                                                                                                                                         onClick={()=>{
-
-                                                                                                                                             const a = document.createElement('a'),
-                                                                                                                                                 blob = new Blob([JSON.stringify(JSON.parse(dataToEdit.data),null,4)], {'type':'text/plain'})
-                                                                                                                                             a.href = window.URL.createObjectURL(blob)
-                                                                                                                                            // a.download = 'json.txt'
-                                                                                                                                             a.target='_blank'
-                                                                                                                                             a.click()
-
-                                                                                                                                         }}>Show JSON</SimpleButton></div></React.Fragment>
-
-                struct.fields.forEach(field => {
-                    const oriName = field.name, newName = 'data_' + oriName
-                    field.name = newName
-                    newFields[newName] = field
-                    if (field.localized) {
-                        newDataToEdit[newName] = data[oriName]
-                    } else {
-                        newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
-                    }
-                    if( field.defaultValue && !newDataToEdit[newName]){
-                        try {
-                            newDataToEdit[newName] = eval(field.defaultValue)
-                        }catch(e){
-                            newDataToEdit[newName] = field.defaultValue
+                    parentRef.props.client.query({
+                        query: gql`query genericDataDefinitions($filter:String){genericDataDefinitions(filter:$filter){results{_id name structure}}}`,
+                        variables: {
+                            filter: `_id=${dataToEdit.definition} || name==${dataToEdit.definition}`
                         }
-                    }
-                })
+                    }).then(response => {
+                        if( response.data.genericDataDefinitions.results){
+                            let newDataToEdit = Object.assign({}, dataToEdit, {definition: response.data.genericDataDefinitions.results[0]})
 
-                // override default
-                props.children = <React.Fragment>
-                    <GenericForm autoFocus
-                                innerRef={ref => {
-                                    parentRef.createEditForm = ref
-                                }}
-                                onBlur={event => {
-                                }}
-                                onChange={field => {
-                                }}
-                                primaryButton={false}
-                                fields={newFields}
-                                values={newDataToEdit}/>
-                </React.Fragment>
+                            parentRef.setState({dataToEdit: newDataToEdit})
+                        }
+                    }).catch(error => {
+                        console.error(error.message)
+                    })
+                    props.children = <React.Fragment>
+                        loading structure...
+                    </React.Fragment>
+
+                }else {
+
+                    let struct
+                    try {
+                        struct = JSON.parse(dataToEdit.definition.structure)
+                    } catch (e) {
+                        console.error(e, dataToEdit.definition.structure)
+                        return
+                    }
+                    const data = dataToEdit.data?(dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data): {}
+
+                    const newFields = Object.assign({}, formFields)
+                    const newDataToEdit = Object.assign({}, dataToEdit)
+
+                    delete newFields.data
+                    delete newDataToEdit.data
+
+                    newFields.definition.readOnly = true
+                    props.title = <React.Fragment>{newDataToEdit.definition.name} ({newDataToEdit._id}) <div
+                        style={{float: 'right', textAlign: 'right'}}><SimpleButton size="small" variant="contained"
+                                                                                   color="primary"
+                                                                                   onClick={() => {
+
+                                                                                       const a = document.createElement('a'),
+                                                                                           blob = new Blob([JSON.stringify(JSON.parse(dataToEdit.data), null, 4)], {'type': 'text/plain'})
+                                                                                       a.href = window.URL.createObjectURL(blob)
+                                                                                       // a.download = 'json.txt'
+                                                                                       a.target = '_blank'
+                                                                                       a.click()
+
+                                                                                   }}>Show JSON</SimpleButton></div>
+                    </React.Fragment>
+
+                    struct.fields.forEach(field => {
+                        const oriName = field.name, newName = 'data_' + oriName
+                        field.name = newName
+                        newFields[newName] = field
+                        if (field.localized) {
+                            newDataToEdit[newName] = data[oriName]
+                        } else {
+                            newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
+                        }
+                        if (field.defaultValue && !newDataToEdit[newName]) {
+                            try {
+                                newDataToEdit[newName] = eval(field.defaultValue)
+                            } catch (e) {
+                                newDataToEdit[newName] = field.defaultValue
+                            }
+                        }
+                    })
+
+                    // override default
+                    props.children = <React.Fragment>
+                        <GenericForm autoFocus
+                                     innerRef={ref => {
+                                         parentRef.createEditForm = ref
+                                     }}
+                                     onBlur={event => {
+                                     }}
+                                     onChange={field => {
+                                     }}
+                                     primaryButton={false}
+                                     fields={newFields}
+                                     values={newDataToEdit}/>
+                    </React.Fragment>
+                }
             } else {
 
 

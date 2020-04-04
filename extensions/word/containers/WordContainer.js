@@ -105,9 +105,9 @@ class WordContainer extends React.Component {
 
     handleAddValidate(e) {
         for (const k of Object.keys(e)) {
-            if (e[k] === '') return false
+            if (e[k] === '') return {isValid:false}
         }
-        return true
+        return {isValid:true}
     }
 
     handleAddClick(e) {

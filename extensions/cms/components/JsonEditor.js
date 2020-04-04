@@ -134,7 +134,8 @@ class JsonEditor extends React.Component {
             if (json.p) {
                 Object.keys(json.p).forEach(k => {
                     let value = json.p[k], valueOri = json.p[k]
-                    if (value.constructor !== String) {
+
+                    if (value && value.constructor !== String) {
                         value = JSON.stringify(value, null, 4)
                     }
                     props.push(<tr key={key + '.p.' + k}>

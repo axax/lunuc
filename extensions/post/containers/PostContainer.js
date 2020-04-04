@@ -34,7 +34,7 @@ class PostContainer extends React.Component {
     }
 
     handleAddPostValidate = (post) => {
-        return post.title.trim() !== ''
+        return {isValid:post.title.trim() !== ''}
     }
 
 

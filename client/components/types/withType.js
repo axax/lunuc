@@ -33,7 +33,6 @@ export default function(WrappedComponent) {
                         ...input
                     },
                     update: (store, {data}) => {
-                        window.location.href = window.location.href
                     }
                 })
             }
@@ -52,7 +51,6 @@ export default function(WrappedComponent) {
                         ...input
                     },
                     update: (store, {data}) => {
-                        //window.location.href = window.location.href
                     }
                 })
             }

@@ -706,14 +706,14 @@ class JsonDomHelper extends React.Component {
 
                     }
                     menuItems.push({
-                        name: _inlineEditor.menuTitle.source || 'Datenquelle bearbeiten',
+                        name: _inlineEditor.menuTitle.source || 'Eintrag bearbeiten',
                         icon: <EditIcon/>,
                         onClick: this.handleDatasource.bind(this)
                     })
 
                     if( parsedSouce.allowClone ) {
                         menuItems.push({
-                            name: _inlineEditor.menuTitle.sourceClone || 'Datenquelle kopieren',
+                            name: _inlineEditor.menuTitle.sourceClone || 'Eintrag kopieren',
                             icon: <FileCopyIcon/>,
                             onClick: (e)=>{
                                 this.handleDatasource(e, {clone:true})
@@ -721,10 +721,20 @@ class JsonDomHelper extends React.Component {
                         })
                     }
 
+                    if( parsedSouce.allowNew ) {
+                        menuItems.push({
+                            name: _inlineEditor.menuTitle.sourceNew || 'Eintrag erstellen',
+                            icon: <AddIcon/>,
+                            onClick: (e)=>{
+                                this.handleDatasource(e, {create:true})
+                            }
+                        })
+                    }
+
 
                     if( parsedSouce.allowRemove ) {
                         menuItems.push({
-                            name: _inlineEditor.menuTitle.sourceRemove || 'Datenquelle löschen',
+                            name: _inlineEditor.menuTitle.sourceRemove || 'Eintrag löschen',
                             icon: <DeleteIcon/>,
                             onClick: (e)=>{
 

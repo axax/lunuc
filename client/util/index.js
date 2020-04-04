@@ -265,7 +265,7 @@ const Util = {
         }
         const data = {alt: image.name}
         if (!image.src) {
-            data.src = _app_.config.UPLOAD_URL + '/' + image._id
+            data.src = _app_.config.UPLOAD_URL + '/' + image._id+ '#'+image.name
         } else {
             data.src = image.src
         }
