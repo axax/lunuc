@@ -146,11 +146,14 @@ const baseElements = [
         defaults: {
             $inlineEditor: {
                 elementKey: 'link'
+            },
+            p: {
+                ['data-element-key']: 'link'
             }
         }
     },
     {
-        tagName: 'Link.lu-image-link',
+        tagName: 'Link',
         name: 'Image Link',
         options: {
             c_0_p_src: {
@@ -190,6 +193,9 @@ const baseElements = [
         defaults: {
             $inlineEditor: {
                 elementKey: 'hr'
+            },
+            p: {
+                ['data-element-key']: 'hr'
             }
         },
         options: {
@@ -209,6 +215,9 @@ const baseElements = [
         defaults: {
             $inlineEditor: {
                 elementKey: 'headline'
+            },
+            p: {
+                ['data-element-key']: 'headline'
             },
             c: 'Headline'
         },
@@ -280,12 +289,15 @@ const baseElements = [
         }
     },
     {
-        tagName: 'div.lu-rich-text',
+        tagName: 'div',
         name: 'Rich-Text block',
         defaults: {
             $c: '',
             $inlineEditor: {
-                elementKey: 'QuillEditor'
+                elementKey: 'richText'
+            },
+            p: {
+                ['data-element-key']: 'richText'
             }
         },
         options: {
@@ -325,7 +337,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=pdf',
-                template: '${_app_.config.UPLOAD_URL}/${_id}'
+                template: '${_app_.config.UPLOAD_URL}/${_id}/-/${name}'
             },
             c: {
                 fullWidth: true,
@@ -372,6 +384,9 @@ const baseElements = [
             $inlineEditor: {
                 elementKey: 'layout-1-2'
             },
+            p: {
+                ['data-element-key']: 'layout-1-2'
+            },
             c: [
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
@@ -408,6 +423,9 @@ const baseElements = [
         defaults: {
             $inlineEditor: {
                 elementKey: 'layout-1-3'
+            },
+            p: {
+                ['data-element-key']: 'layout-1-3'
             },
             c: [
                 {
@@ -454,6 +472,9 @@ const baseElements = [
         defaults: {
             $inlineEditor: {
                 elementKey: 'layout-1-4'
+            },
+            p: {
+                ['data-element-key']: 'layout-1-4'
             },
             c: [
                 {
@@ -509,6 +530,9 @@ const baseElements = [
         defaults: {
             $inlineEditor: {
                 elementKey: 'layout-1-5'
+            },
+            p: {
+                ['data-element-key']: 'layout-1-5'
             },
             c: [
                 {
@@ -576,6 +600,9 @@ const baseElements = [
             $inlineEditor: {
                 elementKey: 'dataContainer',
                 picker: {type: 'GenericData', baseFilter: 'mimeType=pdf', template: ''}
+            },
+            p: {
+                ['data-element-key']: 'dataContainer'
             }
         },
         options: {
@@ -600,6 +627,9 @@ const baseElements = [
         defaults: {
             $inlineEditor: {
                 elementKey: 'Cms'
+            },
+            p: {
+                ['data-element-key']: 'cms'
             }
         },
         options: {
@@ -619,6 +649,9 @@ const baseElements = [
                 allowDrop: false,
                 elementKey: 'query',
                 dataResolver: {}
+            },
+            p: {
+                ['data-element-key']: 'query'
             },
             c: {
                 $for: {
@@ -669,7 +702,8 @@ const baseElements = [
             p: {
                 name: '__uid__',
                 readOnly: '${!inlineEditor}',
-                theme: 'bubble'
+                theme: 'bubble',
+                ['data-element-key']: 'QuillEditorInline'
             },
             $inlineEditor: {
                 elementKey: 'QuillEditorInline',

@@ -16,6 +16,21 @@ const PASSWORD_MIN_LENGTH = 5
  */
 
 const Util = {
+    findProperties: (json, key, accumulator = []) => {
+        if (json && (json.constructor === Object || json.constructor === Array)) {
+            const keys = json.constructor === Object ? Object.keys(json) : json
+            for (let i = 0; i < keys.length; i++) {
+                if (keys[i].constructor === Object) {
+                    Util.findProperties(keys[i], key, accumulator)
+                } else if (key === keys[i]) {
+                    accumulator.push(json)
+                } else {
+                    Util.findProperties(json[keys[i]], key, accumulator)
+                }
+            }
+        }
+        return accumulator
+    },
     userOrAnonymousId: async (db, context) => {
         if (!context || !context.id) {
             const anonymousContext = await Util.anonymousUserContext(db)
@@ -131,7 +146,7 @@ const Util = {
                 try {
                     v = JSON.parse(obj.value)
                 } catch (e) {
-                    console.log('keyValueGlobalMap',e)
+                    console.log('keyValueGlobalMap', e)
                     v = obj.value
                 }
             } else {
@@ -206,7 +221,7 @@ const Util = {
 
             const user = await Util.userById(db, context.id)
             if (user && user.role) {
-                const userRole = await Util.getUserRoles(db,user.role)
+                const userRole = await Util.getUserRoles(db, user.role)
                 return userRole.capabilities.includes(capability)
             }
         }
@@ -217,7 +232,7 @@ const Util = {
         let userRole = Cache.get(cacheKeyUserRole)
 
         if (!userRole) {
-            if( id) {
+            if (id) {
                 userRole = (await db.collection('UserRole').findOne({_id: ObjectId(id)}))
             }
             // fallback to minimal user role

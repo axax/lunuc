@@ -235,28 +235,12 @@ export const systemResolver = (db) => ({
             }
 
 
-            const tpl = new Function(`      
-            const findProperties = (json, key, accumulator = []) => {
-                if( json && (json.constructor===Object || json.constructor===Array)){
-                    const keys = json.constructor===Object?Object.keys(json):json
-                    for(let i = 0;i < keys.length;i++){
-                        if(keys[i].constructor===Object){
-                            findProperties(keys[i],key, accumulator)
-                        }else if(key===keys[i]){
-                            accumulator.push(json)
-                        }else{
-                            findProperties(json[keys[i]],key, accumulator)
-                        }
-                    }
-                }
-                return accumulator
-            }
-      
+            const tpl = new Function(`            
             this.entries.forEach(entry=>{
                 ${script}            
             })`)
 
-            tpl.call({entries, save, ObjectId})
+            tpl.call({entries, save, ObjectId, Util})
 
             return {result:`Successful executed`}
         },

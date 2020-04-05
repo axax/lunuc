@@ -181,7 +181,17 @@ const app = httpx.createServer(options, function (req, res) {
         } else if (uri.startsWith(UPLOAD_URL + '/')) {
             const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
             // uploads
-            const filename = path.join(upload_dir, uri.substring(UPLOAD_URL.length + 1).replace(/\.\.\//g, ''))
+
+            const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/')
+            let modUri
+            if (pos >= 0) {
+                modUri = uri.substring(0, pos)
+            }else{
+                modUri = uri
+            }
+
+
+            const filename = path.join(upload_dir, modUri.substring(UPLOAD_URL.length + 1).replace(/\.\.\//g, ''))
 
 
             fs.exists(filename, (exists) => {

@@ -210,7 +210,16 @@ if (DEV_MODE) {
 
     config.devServer = {
         contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],
-        historyApiFallback: true,
+        historyApiFallback:  {
+            rewrites: [
+                {
+                    from: /.\/-\/./,
+                    to: function(context) {
+                        return context.request.url.split('/'+APP_CONFIG.PRETTYURL_SEPERATOR+'/')[0]
+                    }
+                }
+            ]
+        },
         inline: true,
         hot: true,
         stats: 'errors-only',

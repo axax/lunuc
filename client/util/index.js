@@ -1,6 +1,7 @@
 import {getType, getTypes, getTypeQueries} from 'util/types'
 import DomUtil from 'client/util/dom'
 import md5 from 'util/md5'
+import config from 'gen/config'
 
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor
@@ -58,7 +59,7 @@ const Util = {
     },
     getDateTimeFormat: (options) => {
         let lang
-        if( options){
+        if (options) {
             lang = options.lang
         }
         return new Intl.DateTimeFormat(lang || _app_.lang || Intl.DateTimeFormat().resolvedOptions().locale, Object.assign({
@@ -94,11 +95,11 @@ const Util = {
     formatDate(d, options) {
         return Util.getDateTimeFormat(options).format(new Date(d))
 
-            /*(new Date(d)).toLocaleString(options && options.lang ? options.lang : _app_.lang, Object.assign({
-            year: 'numeric',
-            month: '2-digit',
-            day: 'numeric'
-        }, options))*/
+        /*(new Date(d)).toLocaleString(options && options.lang ? options.lang : _app_.lang, Object.assign({
+        year: 'numeric',
+        month: '2-digit',
+        day: 'numeric'
+    }, options))*/
     },
     textFromHtml: str => {
         if (str.constructor !== String) return str
@@ -221,19 +222,19 @@ const Util = {
     },
     hightlight(text, query, cls) {
         if (!text) return ''
-        if(!query) return text
+        if (!query) return text
 
         const pattern = new RegExp(`(${query.replace(/\s/g, '|')})`, 'gi');
 
         return text.replace(pattern, match => `<span class='${cls || ''}'>${match}</span>`);
     },
     getProfileImage(userAny) {
-        const user = userAny && userAny.userData ? userAny.userData: userAny
-        if (user &&  user.picture ) {
+        const user = userAny && userAny.userData ? userAny.userData : userAny
+        if (user && user.picture) {
 
-                return _app_.config.UPLOAD_URL + '/' + (user.picture._id?user.picture._id:user.picture)
+            return _app_.config.UPLOAD_URL + '/' + (user.picture._id ? user.picture._id : user.picture)
         }
-        return 'https://gravatar.com/avatar/' + md5(user ? user.email:'') + '?s=50&r=pg&d=mp'
+        return 'https://gravatar.com/avatar/' + md5(user ? user.email : '') + '?s=50&r=pg&d=mp'
     },
     getMediaSrc(media, src) {
         return src ? src : (media.src ? media.src : _app_.config.UPLOAD_URL + '/' + media._id)
@@ -245,27 +246,27 @@ const Util = {
                 src: '/placeholder.svg',
                 alt: 'Placeholder'
             }
-        }else if(raw.constructor === String){
+        } else if (raw.constructor === String) {
             try {
                 image = JSON.parse(raw)
-            }catch(e) {
+            } catch (e) {
                 return {
                     src: raw,
                     alt: raw
                 }
             }
-        }else{
+        } else {
             image = raw
         }
         if (image.constructor === Array) {
             image = image[0]
-            if( !image){
+            if (!image) {
                 return {}
             }
         }
         const data = {alt: image.name}
         if (!image.src) {
-            data.src = _app_.config.UPLOAD_URL + '/' + image._id+ '#'+image.name
+            data.src = _app_.config.UPLOAD_URL + '/' + image._id + '/' + config.PRETTYURL_SEPERATOR + '/' + image.name
         } else {
             data.src = image.src
         }

@@ -55,16 +55,23 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
                 //console.log(template)
 
                 //minify script
-               /* cmsPages.results[0].script = cmsPages.results[0].script.replace(/\t/g, ' ').replace(/ +(?= )/g,'')
-                cmsPages.results[0].style = cmsPages.results[0].style.replace(/\t/g, ' ').replace(/ +(?= )/g,'')
-*/
+                /*cmsPages.results[0].script = cmsPages.results[0].script.replace(/\t/g, ' ').replace(/ +(?= )/g,'')
+                cmsPages.results[0].style = cmsPages.results[0].style.replace(/\t/g, ' ').replace(/ +(?= )/g,'')*/
+
                 try {
                     // TODO: Include sub CMS component to reduce number of requests
                     // TODO: also check if template is html
 
                     const template = JSON.parse(cmsPages.results[0].template)
+                    /*Util.findProperties(template,'$inlineEditor').forEach(element=>{
+                        delete element.$inlineEditor
+                    })*/
+
+                    //console.log(template)
+
                     cmsPages.results[0].template = JSON.stringify(template, null, 0)
                 } catch (e) {
+                    console.log(e)
                 }
             }
 
