@@ -3,11 +3,10 @@ A function for deep (recursive) merging of objects and arrays
 */
 
 const _deepMerge = (concatArrays, ...objects) => {
-    const isObject = obj => obj && typeof obj === 'object'
+    const isObject = obj => obj && obj.constructor === Object
 
     return objects.reduce((prev, obj) => {
         if (obj) {
-
             Object.keys(obj).forEach(key => {
                 const pVal = prev[key]
                 const oVal = obj[key]

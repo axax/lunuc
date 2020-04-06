@@ -586,7 +586,7 @@ class JsonDomHelper extends React.Component {
                                 if (!source.p) {
                                     source.p = {}
                                 }
-                                source.p.src = newwindow.resultValue
+                                source.p.src = newwindow.resultValue.constructor!==Array?[newwindow.resultValue]:newwindow.resultValue
                             }
                             setTimeout(() => {
                                 _onChange(_json)
