@@ -37,7 +37,7 @@ export const keyvalueResolver = (db) => ({
                 match.ispublic = true
             }
 
-            return await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value', 'ispublic'], {
+            const data =  await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value', 'ispublic'], {
                 limit,
                 offset,
                 sort,
@@ -45,6 +45,16 @@ export const keyvalueResolver = (db) => ({
                 filter,
                 match
             })
+
+
+            for (let i = 0; i < data.results.length; i++) {
+                const item = data.results[i]
+                if(item.value && item.value.constructor !== String){
+                    item.value = JSON.stringify(item.value)
+                }
+            }
+
+            return data
         },
         keyValue: async ({key}, {context}) => {
             const keyValues = await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {

@@ -11,6 +11,7 @@ import {
     Avatar,
     IconButton,
     InputAdornment,
+    DeleteIcon,
     SearchIcon
 } from 'ui/admin'
 import {withApollo} from 'react-apollo'
@@ -34,15 +35,50 @@ const styles = theme => {
             top: '100%',
             maxWidth: '100%'
         },
+        clips: {
+            display: 'flex',
+            width: '100%',
+            flexWrap: 'wrap'
+        },
         clip: {
-            margin: theme.spacing(2) + 'px auto 0px ' + theme.spacing(1) + 'px;'
+            margin: theme.spacing(1) + 'px auto 0px ' + theme.spacing(1) + 'px;'
+        },
+        clipMulti: {
+            margin: theme.spacing(1) + 'px 0',
+            width: '15%',
+            position:'relative'
         },
         clipDrop: {
-            height: theme.spacing(2) + 'px',
+            width: '1.6%',
             margin: '0 0 -' + theme.spacing(2) + 'px 0',
             opacity: '0',
             fontSize: '0.8rem',
             backgroundColor: 'rgba(255,0,0,0.2)'
+        },
+        dummyImg: {
+            pointerEvents: 'none',
+            width: '100%',
+            height: 'auto',
+            objectFit: 'cover',
+            maxHeight: '6rem'
+        },
+        dummyTxt:{
+            pointerEvents: 'none',
+            fontSize:'0.85rem',
+            whiteSpace: 'nowrap',
+            width: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+        },
+        dummyRemove:{
+            position: 'absolute',
+            right: '0.1rem',
+            top: '0.2rem',
+            zIndex:2,
+            margin:0,
+            padding:'0.2rem',
+            background:'rgba(0,0,0,0.5)',
+            color: '#fff'
         },
         textField: {
             margin: '0',
@@ -132,48 +168,67 @@ class TypePicker extends React.Component {
                            }}
                 /> : <InputLabel className={classes.label} shrink>{label}</InputLabel>}
 
+            <div className={classes.clips}>
+                {value.map((value, i) =>
+                    [
+                        (multi && value.__typename === 'Media' ?
+                            <div draggable={true}
+                                 data-index={i}
+                                 onDragStart={(e) => {
+                                     e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
+                                 }}
+                                 key={i}
+                                 className={classNames(classes.clip, multi && classes.clipMulti)}>
+                                <img className={classes.dummyImg} src={getImageSrc(value)}/>
+                                <div className={classes.dummyTxt}>{typeDataToLabel(value, pickerField)}</div>
 
-            {value.map((value, i) =>
-                [
-                    <div key={'drop' + i}
-                         data-index={i}
-                         className={classes.clipDrop}
-                         onDrop={(e) => {
-                             const targetIndex = parseInt(e.currentTarget.getAttribute('data-index')),
-                                 sourceIndex=parseInt(e.dataTransfer.getData("text"))
-                             e.target.style.opacity = 0
+                                <IconButton className={classes.dummyRemove}
+                                    edge="end"
+                                    onClick={this.handleRemovePick.bind(this, i)}
+                                >
+                                    <DeleteIcon/>
+                                </IconButton>
 
-                             const value = this.state.value.slice(0),
-                                 element  = value.splice(sourceIndex, 1) [0]
+                            </div> :
+                            <Chip draggable={true}
+                                  data-index={i}
+                                  onDragStart={(e) => {
+                                      e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
+                                  }}
+                                  key={i}
+                                  className={classNames(classes.clip, multi && classes.clipMulti)}
+                                  label={typeDataToLabel(value, pickerField)}
+                                  onDelete={this.handleRemovePick.bind(this, i)}
+                                  avatar={value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
+                                      <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>),
+                        <div key={'drop' + i}
+                             data-index={i}
+                             className={classes.clipDrop}
+                             onDrop={(e) => {
+                                 const targetIndex = parseInt(e.currentTarget.getAttribute('data-index')) + 1,
+                                     sourceIndex = parseInt(e.dataTransfer.getData("text"))
+                                 e.target.style.opacity = 0
 
-                             value.splice(targetIndex>sourceIndex?targetIndex-1:targetIndex, 0, element)
+                                 const value = this.state.value.slice(0),
+                                     element = value.splice(sourceIndex, 1) [0]
 
-                             this.setState({value})
-                             this.props.onChange({target: {value, name: this.props.name}})
+                                 value.splice(targetIndex > sourceIndex ? targetIndex - 1 : targetIndex, 0, element)
 
-                         }}
-                         onDragOver={(e) => {
-                             e.preventDefault()
-                             e.dataTransfer.dropEffect = 'copy'
-                             e.target.style.opacity = 1
-                         }}
-                         onDragLeave={(e) => {
-                             e.target.style.opacity = 0
-                         }}>Hier einfügen</div>,
-                    <Chip draggable={true}
-                          data-index={i}
-                          onDragStart={(e)=>{
-                              console.log(e.target, e.target.getAttribute('data-index'))
-                              e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
-                          }}
-                          key={i}
-                          className={classes.clip}
-                          label={typeDataToLabel(value, pickerField)}
-                          onDelete={this.handleRemovePick.bind(this, i)}
-                          avatar={value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
-                              <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>]
-            )
-            }
+                                 this.setState({value})
+                                 this.props.onChange({target: {value, name: this.props.name}})
+
+                             }}
+                             onDragOver={(e) => {
+                                 e.preventDefault()
+                                 e.dataTransfer.dropEffect = 'copy'
+                                 e.target.style.opacity = 1
+                             }}
+                             onDragLeave={(e) => {
+                                 e.target.style.opacity = 0
+                             }}>Hier einfügen</div>]
+                )
+                }
+            </div>
 
             <Paper className={classes.suggestions} square>
 
@@ -211,11 +266,11 @@ class TypePicker extends React.Component {
     selectValue(item) {
         if (item) {
             const value = (this.state.value ? this.state.value.slice(0) : [])
-            if( item.forEach ){
-                item.forEach(itm=>{
+            if (item.forEach) {
+                item.forEach(itm => {
                     value.push({__typename: this.props.type, ...itm})
                 })
-            }else {
+            } else {
                 value.push({__typename: this.props.type, ...item})
             }
             this.props.onChange({target: {value, name: this.props.name}})
