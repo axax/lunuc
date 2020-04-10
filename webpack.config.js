@@ -213,9 +213,10 @@ if (DEV_MODE) {
         historyApiFallback:  {
             rewrites: [
                 {
-                    from: /.\/-\/./,
+                    from: /.*\/-\/.*/,
                     to: function(context) {
-                        return context.request.url.split('/'+APP_CONFIG.PRETTYURL_SEPERATOR+'/')[0]
+                        console.log(context.request.url)
+                        return context.request.url.split('/'+APP_CONFIG.options.PRETTYURL_SEPERATOR+'/')[0]
                     }
                 }
             ]

@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {Button, TextField, SimpleSwitch, SimpleSelect, InputLabel, FormHelperText, FormControl} from 'ui/admin'
+import {Button, TextField, SimpleSwitch, SimpleSelect, InputLabel, FormHelperText, FormControl, Tabs, Tab, Typography, Box} from 'ui/admin'
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
 import config from 'gen/config'
@@ -24,10 +24,71 @@ const styles = theme => {
         },
         formFieldFull: {
             width: 'calc(100% - ' + theme.spacing(2) + 'px)',
+        },
+        tabContainer: {
+            backgroundColor: theme.palette.background.paper
         }
     }
 }
 
+
+const AntTabs = withStyles({
+    root: {
+        borderBottom: '1px solid #e8e8e8',
+    },
+    indicator: {
+        backgroundColor: '#1890ff',
+    },
+})(Tabs)
+
+const AntTab = withStyles((theme) => ({
+    root: {
+        textTransform: 'none',
+        minWidth: 72,
+        fontWeight: theme.typography.fontWeightRegular,
+        marginRight: theme.spacing(4),
+        fontFamily: [
+            '-apple-system',
+            'BlinkMacSystemFont',
+            '"Segoe UI"',
+            'Roboto',
+            '"Helvetica Neue"',
+            'Arial',
+            'sans-serif',
+            '"Apple Color Emoji"',
+            '"Segoe UI Emoji"',
+            '"Segoe UI Symbol"',
+        ].join(','),
+        '&:hover': {
+            color: '#40a9ff',
+            opacity: 1,
+        },
+        '&$selected': {
+            color: '#1890ff',
+            fontWeight: theme.typography.fontWeightMedium,
+        },
+        '&:focus': {
+            color: '#40a9ff',
+        },
+    },
+    selected: {},
+}))((props) => <Tab disableRipple {...props} />)
+
+
+
+function TabPanel(props) {
+    const { children, value, index, ...other } = props
+
+    return (
+        <Typography
+            component="div"
+            hidden={value !== index}
+            {...other}
+        >
+            {value === index && <Box p={3}>{children}</Box>}
+        </Typography>
+    )
+}
 
 class GenericForm extends React.Component {
     constructor(props) {
@@ -41,7 +102,8 @@ class GenericForm extends React.Component {
             fieldsOri: props.fields,
             fields: {},
             fieldErrors: {},
-            isValid: true
+            isValid: true,
+            tabValue:0
         }
         Object.keys(props.fields).map(k => {
             const field = props.fields[k]
@@ -185,7 +247,7 @@ class GenericForm extends React.Component {
 
     render() {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
-        const fieldKeys = Object.keys(fields), formFields = []
+        const fieldKeys = Object.keys(fields), formFields = [], tabs = {}
 
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
             const fieldKey = fieldKeys[fieldIndex],
@@ -193,10 +255,20 @@ class GenericForm extends React.Component {
             if (field.readOnly) {
                 continue
             }
-
             let value = this.state.fields[fieldKey]
+
+            let currentFormFields = formFields
+
+            if( field.tab){
+                if(!tabs[field.tab]){
+                    tabs[field.tab] = []
+                }
+                currentFormFields = tabs[field.tab]
+            }
+
+
             if (field.newLine) {
-                formFields.push(<br key={'br' + fieldKey}/>)
+                currentFormFields.push(<br key={'br' + fieldKey}/>)
             }
             const uitype = (field.uitype === 'datetime' ? 'datetime-local' : 0) || field.uitype || (field.enum ? 'select' : 'text')
 
@@ -217,7 +289,7 @@ class GenericForm extends React.Component {
 
                     }
                 }
-                formFields.push(<FormControl key={'control' + fieldKey} className={classNames(classes.formFieldFull)}>
+                currentFormFields.push(<FormControl key={'control' + fieldKey} className={classNames(classes.formFieldFull)}>
                     <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><CodeEditor
                     className={classes.editor} key={fieldKey}
                     onChange={(newValue) => this.handleInputChange({
@@ -229,7 +301,7 @@ class GenericForm extends React.Component {
 
             } else if (uitype === 'html') {
                 const hasError = !!this.state.fieldErrors[fieldKey]
-                formFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldKey}
+                currentFormFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldKey}
                                              className={classNames(classes.formFieldFull)}>
                     <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel>
                     <TinyEditor key={fieldKey} id={fieldKey} error={hasError} style={{marginTop: '1.5rem'}}
@@ -247,11 +319,11 @@ class GenericForm extends React.Component {
 
             } else if (uitype === 'image') {
 
-                formFields.push(<FileDrop key={fieldKey} value={value}/>)
+                currentFormFields.push(<FileDrop key={fieldKey} value={value}/>)
 
 
             } else if (uitype === 'type_picker') {
-                formFields.push(<TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
+                currentFormFields.push(<TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
                                             error={!!this.state.fieldErrors[fieldKey]}
                                             helperText={this.state.fieldErrors[fieldKey]}
                                             onChange={this.handleInputChange}
@@ -267,7 +339,7 @@ class GenericForm extends React.Component {
                                             fields={field.fields}
                                             type={field.type} placeholder={field.placeholder}/>)
             } else if (uitype === 'select') {
-                formFields.push(<SimpleSelect
+                currentFormFields.push(<SimpleSelect
                     key={fieldKey} name={fieldKey}
                     onChange={this.handleInputChange}
                     items={field.enum}
@@ -281,7 +353,7 @@ class GenericForm extends React.Component {
                     }}
                     value={value || []}/>)
             } else if (field.type === 'Boolean') {
-                formFields.push(<SimpleSwitch key={fieldKey}
+                currentFormFields.push(<SimpleSwitch key={fieldKey}
                                               label={field.label || field.placeholder}
                                               name={fieldKey}
                                               className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
@@ -295,12 +367,12 @@ class GenericForm extends React.Component {
                 Hook.call('GenericFormField', {field, result, value}, this)
 
                 if (result.component) {
-                    formFields.push(result.component)
+                    currentFormFields.push(result.component)
                     continue
                 }
 
                 if (field.localized) {
-                    formFields.push(config.LANGUAGES.reduce((arr, languageCode) => {
+                    currentFormFields.push(config.LANGUAGES.reduce((arr, languageCode) => {
                         const fieldName = fieldKey + '.' + languageCode
                         arr.push(<TextField key={fieldName}
                                             error={!!this.state.fieldErrors[fieldName]}
@@ -324,11 +396,11 @@ class GenericForm extends React.Component {
                         return arr
                     }, []))
                 } else {
-                    formFields.push(<TextField autoFocus={autoFocus && fieldIndex === 0}
+                    currentFormFields.push(<TextField autoFocus={autoFocus && fieldIndex === 0}
                                                error={!!this.state.fieldErrors[fieldKey]}
                                                key={fieldKey}
                                                id={fieldKey}
-                                               label={field.label}
+                                               label={field.label || field.name}
                                                className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
                                                InputLabelProps={{
                                                    shrink: true,
@@ -337,7 +409,7 @@ class GenericForm extends React.Component {
                                                fullWidth={field.fullWidth}
                                                type={uitype}
                                                multiline={uitype === 'textarea'}
-                                               placeholder={field.placeholder || field.name}
+                                               placeholder={field.placeholder}
                                                value={value || field.defaultValue || ''}
                                                name={fieldKey}
                                                onKeyDown={(e) => {
@@ -349,11 +421,31 @@ class GenericForm extends React.Component {
 
             }
         }
+        const {tabValue} = this.state
+        const tabKeys = Object.keys(tabs)
         console.log('render GenericForm')
 
         return (
             <form className={classes.form}>
                 {formFields}
+                {tabKeys.length>0 && <div className={classes.tabContainer}>
+                    <AntTabs
+                        value={tabValue}
+                        onChange={(e, newValue)=>{
+                            this.setState({tabValue:newValue})
+                        }}
+                    >
+                        {tabKeys.map((value, i) =>
+                            <AntTab key={'tab-'+i} label={value}/>
+                        )}
+                    </AntTabs>
+
+                    {tabKeys.map((value, i) =>
+                        <TabPanel key={'tabPanel-'+i} value={tabValue} index={i}>
+                            {tabs[value]}
+                        </TabPanel>
+                    )}
+                </div>}
                 {primaryButton != false ?
                     <Button color="primary" variant="contained" disabled={!this.state.isValid}
                             onClick={this.onAddClick}>{caption || 'Add'}</Button>

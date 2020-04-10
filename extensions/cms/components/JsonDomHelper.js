@@ -940,7 +940,7 @@ class JsonDomHelper extends React.Component {
 
 
         let kids
-        if (isTempalteEdit && _inlineEditor.allowDrop) {
+        if (isTempalteEdit && _inlineEditor.allowDrop && _inlineEditor.dropArea!==false) {
             kids = []
             if (children && children.length) {
                 for (let i = 0; i < children.length; i++) {
@@ -1126,7 +1126,16 @@ class JsonDomHelper extends React.Component {
                                         break
                                     }
                                 }
-                                console.log(item)
+                                if( item.groupOptions ){
+                                    Object.keys(item.groupOptions).forEach(key=>{
+
+                                        Object.keys(item.groupOptions[key]).forEach(fieldKey=>{
+                                            item.options['__'+key+'_'+fieldKey]= item.groupOptions[key][fieldKey]
+                                        })
+
+                                    })
+                                }
+
                                 this.setState({addChildDialog: {...addChildDialog, selected: item, form: null}})
                             }}
                             items={jsonElements}

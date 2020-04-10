@@ -5,6 +5,8 @@ import {
     SimpleButton
 } from 'ui/admin'
 import gql from 'graphql-tag'
+import Util from '../../client/util'
+import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
 
 const GenericForm = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
@@ -79,8 +81,9 @@ export default () => {
                     delete newDataToEdit.data
 
                     newFields.definition.readOnly = true
-                    props.title = <React.Fragment>{newDataToEdit.definition.name} ({newDataToEdit._id}) <div
-                        style={{float: 'right', textAlign: 'right'}}><SimpleButton size="small" variant="contained"
+                    const userHasCapa = Util.hasCapability({userData:_app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)
+                    props.title = <React.Fragment>{struct.title || newDataToEdit.definition.name}{userHasCapa?' ('+newDataToEdit._id+')':''} <div
+                        style={{float: 'right', textAlign: 'right'}}>{userHasCapa && <SimpleButton size="small" variant="contained"
                                                                                    color="primary"
                                                                                    onClick={() => {
 
@@ -91,7 +94,7 @@ export default () => {
                                                                                        a.target = '_blank'
                                                                                        a.click()
 
-                                                                                   }}>Show JSON</SimpleButton></div>
+                                                                                   }}>Show JSON</SimpleButton>}</div>
                     </React.Fragment>
 
                     struct.fields.forEach(field => {

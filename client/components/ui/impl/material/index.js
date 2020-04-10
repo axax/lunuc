@@ -114,6 +114,7 @@ export Paper from '@material-ui/core/Paper'
 export Avatar from '@material-ui/core/Avatar'
 export Tabs from '@material-ui/core/Tabs'
 export Tab from '@material-ui/core/Tab'
+export Box from '@material-ui/core/Box'
 
 // simple components are extended componente with features easy to use
 export SimpleHeaderMenu from './SimpleHeaderMenu'
