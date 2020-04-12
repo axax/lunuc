@@ -105,7 +105,7 @@ const Util = {
         if (str.constructor !== String) return str
         return str.replace(/<[^>]+>/g, ' ').replace(/\s/g, ' ')
     },
-    escapeHtml: (str) => {
+    /*escapeHtml: (str) => {
         const entityMap = {
             '&': '&amp;',
             '<': '&lt;',
@@ -119,7 +119,7 @@ const Util = {
         return String(str).replace(/[&<>"'`=\/]/g, function (s) {
             return entityMap[s]
         })
-    },
+    },*/
     removeNullValues: obj => {
         let newObj = {}
         Object.keys(obj).forEach((prop) => {

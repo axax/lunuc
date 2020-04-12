@@ -317,6 +317,20 @@ class GenericForm extends React.Component {
                             ausfüllen</FormHelperText> : '')}
                 </FormControl>)
 
+            } else if (uitype === 'hr') {
+
+                currentFormFields.push(<hr />)
+
+            } else if (uitype === 'button') {
+
+                currentFormFields.push(<Button key={fieldKey}
+                                               color="primary" variant="contained"
+                                               onClick={()=>{
+                                                   if (this.props.onButtonClick)
+                                                       this.props.onButtonClick(field)
+                                               }}>{field.label}</Button>)
+
+
             } else if (uitype === 'image') {
 
                 currentFormFields.push(<FileDrop key={fieldKey} value={value}/>)
@@ -460,6 +474,7 @@ GenericForm.propTypes = {
     fields: PropTypes.object.isRequired,
     values: PropTypes.object,
     onClick: PropTypes.func,
+    onButtonClick: PropTypes.func,
     onKeyDown: PropTypes.func,
     onValidate: PropTypes.func,
     onChange: PropTypes.func,

@@ -124,13 +124,12 @@ const baseElements = [
                 $loop: {
                     d: [],
                     s: 'item',
-                    convert: 'String',
                     c: {
                         $inlineEditor: false,
                         t: 'SmartImage',
                         p: {
-                            wrapper:'true',
-                            src: '$.item{data.image}'
+                            caption: "$.item{text}",
+                            src: "$.item{Util.escapeForJson(image)}"
                         }
                     }
                 }

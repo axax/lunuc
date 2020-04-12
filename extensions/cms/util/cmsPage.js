@@ -82,7 +82,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
 
             //only cache if public
             if (cmsPages.results[0].public) {
-                Cache.set(cacheKey, cmsPages, 600000) // cache expires in 10 min
+                Cache.set(cacheKey, cmsPages, 6000000) // cache expires in 1h40min
             }
         }
 

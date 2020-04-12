@@ -173,7 +173,6 @@ export default db => ({
         },
         cmsServerMethod: async ({slug, methodName, args, query, props, _version}, req) => {
             const {context, headers} = req
-            const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
             let cmsPages = await getCmsPage({db, context, slug, _version, headers})
 

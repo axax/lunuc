@@ -15,6 +15,7 @@ import {
 } from 'ui/admin'
 import {getComponentByKey, addComponent, removeComponent} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
+import DomUtilAdmin from 'client/util/domAdmin'
 import {getJsonDomElements} from '../util/elements'
 const INDENT = 30
 
@@ -198,7 +199,7 @@ class JsonEditor extends React.Component {
                               onMouseEnter={() => {
                                   const ele = document.querySelector(`[_key="${key}"]`)
                                   if (ele) {
-                                      const pos = DomUtil.elemOffset(ele);
+                                      const pos = DomUtilAdmin.elemOffset(ele);
                                       DomUtil.createAndAddTag('div', 'body', {
                                           id: 'JsonEditorHighlighter',
                                           style: {

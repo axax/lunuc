@@ -140,7 +140,7 @@ class FilesContainer extends React.Component {
                                                     this.setState({file: b[8]})
                                                 }
                                             },
-                                            secondary: formatBytes(b[4])/*,
+                                            secondary: this.formatBytes(b[4])/*,
                                              actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
                                              disabled: ['creating', 'deleting'].indexOf(post.status) > -1*/
                                         })

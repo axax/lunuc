@@ -7,7 +7,7 @@ import {ApolloClient} from '@apollo/client/core'
 import Util from 'client/util'
 import DomUtil from 'client/util/dom'
 import {getType} from 'util/types'
-import {isEditMode, getSlugVersion, getGqlVariables, urlSensitivMap, gqlQuery} from '../util/cmsView'
+import {isEditMode, getSlugVersion, gqlQuery} from '../util/cmsView'
 import withCms from './withCms'
 
 class CmsViewContainer extends React.Component {

@@ -176,9 +176,9 @@ const config = {
                      return true
 
                  }*/
-                if (resource.indexOf('ObservableQuery.js') > -1) {
-                    //  console.log(resource, context)
-                    //return true
+                if (resource.indexOf('optimism') > -1) {
+                     // console.log(resource, context)
+                   // return true
 
                 }
 
@@ -316,6 +316,9 @@ if (DEV_MODE) {
             drop_console: true,
             pure_getters:true, /* 1kb */
             //unsafe_proto:true /* 20 bytes */
+            booleans_as_integers:true, /* 200 bytes */
+            //unsafe_Function: true /* 10 Bytes */
+            //unsafe_proto:true /* 10 Bytes */
         },
         mangle: {
         },
