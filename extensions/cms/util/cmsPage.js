@@ -55,7 +55,11 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
                 //minify script
                 if(cmsPages.results[0].compress) {
                     cmsPages.results[0].script = cmsPages.results[0].script.replace(/\t/g, ' ').replace(/ +(?= )/g,'').replace(/(^[ \t]*\n)/gm, "")
-                    cmsPages.results[0].style = cmsPages.results[0].style.replace(/\t/g, ' ').replace(/ +(?= )/g, '').replace(/(^[ \t]*\n)/gm, "")
+                    cmsPages.results[0].style = cmsPages.results[0].style
+                        .replace(/\t/g, ' ') // remove tabs
+                        .replace(/ +(?= )/g, '') // remove double whitespace
+                        .replace(/(^[ \t]*\n)/gm, "") // remove empty lines
+                        .replace(/;$\n/gm, ';') // remove line break after ;
                 }
                 try {
                     // TODO: Include sub CMS component to reduce number of requests
