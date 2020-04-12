@@ -1,6 +1,6 @@
 import React from 'react'
 import Hook from 'util/hook'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import Async from 'client/components/Async'
 
 

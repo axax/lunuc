@@ -1,12 +1,11 @@
-import {ApolloClient} from 'apollo-client'
-import {createHttpLink} from 'apollo-link-http'
-import {setContext} from 'apollo-link-context'
-import {onError} from 'apollo-link-error'
-import {WebSocketLink} from 'apollo-link-ws'
-import {ApolloLink} from 'apollo-link'
-import {getOperationAST} from 'graphql/utilities/getOperationAST'
+import {ApolloClient} from '@apollo/client/core'
+import {createHttpLink, ApolloLink} from '@apollo/client'
+import {setContext} from '@apollo/link-context'
+import {onError} from '@apollo/link-error'
+import {WebSocketLink} from '@apollo/link-ws'
+import { getMainDefinition } from '@apollo/client/utilities'
 //import {OfflineCache} from './cache'
-import {InMemoryCache} from 'apollo-cache-inmemory'
+import {InMemoryCache} from '@apollo/client/cache'
 import {addError} from 'client/actions/ErrorHandlerAction'
 import {setNetworkStatus} from 'client/actions/NetworkStatusAction'
 import Util from '../util'
@@ -39,7 +38,7 @@ function removeLoader() {
     }
 }
 
-if( window.fetch ) {
+if (window.fetch) {
     const oldfetch = fetch
     fetch = function (input, opts) {
         addLoader()
@@ -65,20 +64,20 @@ export function configureMiddleware(store) {
 
     // create a middleware with the authentication
     const authLink = setContext((req) => {
-        const headers= {
+        const headers = {
             ['Content-Language']: _app_.lang
         }
 
         const token = Util.getAuthToken()
-        if( token ){
+        if (token) {
             headers['Authorization'] = token
         }
-        if( _app_.session ){
+        if (_app_.session) {
             headers['x-session'] = _app_.session
         }
 
 
-        return { headers}
+        return {headers}
     })
 
 
@@ -148,19 +147,32 @@ export function configureMiddleware(store) {
         // add the middleware to the web socket link via the Subscription Transport client
         wsLink.subscriptionClient.use([subscriptionMiddleware])
 
-
         // add ws link
         link = ApolloLink.split(
+            ({ query }) => {
+                const definition = getMainDefinition(query);
+                return (
+                    definition.kind === 'OperationDefinition' &&
+                    definition.operation === 'subscription'
+                );
+            },
+            wsLink,
+            combinedLink
+        )
+
+
+        // add ws link
+        /*link = ApolloLink.split(
             operation => {
                 const operationAST = getOperationAST(operation.query, operation.operationName)
                 return !!operationAST && operationAST.operation === 'subscription'
             },
             wsLink,
             combinedLink
-        )
-    }catch (e) {
+        )*/
+    } catch (e) {
         // without ws
-        console.warn('WS might not work')
+        console.warn('WS might not work', e)
         link = combinedLink
     }
 

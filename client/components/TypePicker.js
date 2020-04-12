@@ -14,9 +14,9 @@ import {
     DeleteIcon,
     SearchIcon
 } from 'ui/admin'
-import {withApollo} from 'react-apollo'
-import {ApolloClient} from 'apollo-client'
-import gql from 'graphql-tag'
+import {withApollo} from '@apollo/react-hoc'
+import { ApolloClient } from '@apollo/client/core'
+import {gql} from '@apollo/client'
 import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
@@ -196,7 +196,7 @@ class TypePicker extends React.Component {
                                       e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
                                   }}
                                   key={i}
-                                  className={classNames(classes.clip, multi && classes.clipMulti)}
+                                  className={classNames(classes.clip)}
                                   label={typeDataToLabel(value, pickerField)}
                                   onDelete={this.handleRemovePick.bind(this, i)}
                                   avatar={value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?

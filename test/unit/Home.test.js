@@ -6,7 +6,7 @@ import {Provider} from 'react-redux'
 import {createStore} from 'redux'
 import rootReducer from 'client/reducers/index'
 import {BrowserRouter as Router} from 'react-router-dom'
-import {ApolloProvider} from 'react-apollo'
+import {ApolloProvider} from '@apollo/client'
 import {configureMiddleware} from 'client/middleware/index'
 import UserDataContainer from 'client/containers/UserDataContainer'
 

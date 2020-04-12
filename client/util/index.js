@@ -161,64 +161,9 @@ const Util = {
         }
         return b
     },
-    /* TODO: remove from here. It is currently used in the cms component /shop/component/toolbar */
-    parseFilter: filter => {
-        const parts = {}, rest = []
-        let restString = ''
-        if (filter) {
-            let operator = 'or'
-            filter.split(/ +(?=(?:(?:[^"]*"){2})*[^"]*$)/g).forEach(i => {
-
-                if (i === '') {
-                    //ignore
-                } else if (i === '||') {
-                    operator = 'or'
-                } else if (i === '&&') {
-                    operator = 'and'
-                } else {
-                    const comparator = i.match(/==|>=|<=|!=|=|>|<|:/)
-                    if (comparator) {
-
-                        let key = i.substring(0, comparator.index)
-                        let value = i.substring(comparator.index + comparator[0].length)
-
-                        if (value.length > 1 && value.endsWith('"') && value.startsWith('"')) {
-                            value = value.substring(1, value.length - 1)
-                        }
-                        if (parts[key]) {
-                            if (parts[key].constructor !== Array) {
-                                parts[key] = [parts[key]]
-                            }
-                            parts[key].push({value, operator, comparator: comparator[0]})
-                        } else {
-                            parts[key] = {value, operator, comparator: comparator[0]}
-                        }
-
-                    } else {
-                        if (i.length > 1 && i.endsWith('"') && i.startsWith('"')) {
-                            i = i.substring(1, i.length - 1)
-                        }
-                        rest.push({value: i, operator, comparator: '='})
-                        if (restString !== '') restString += ' '
-                        restString += (operator === 'and' ? ' and ' : '') + i
-                    }
-                    operator = 'or'
-                }
-            })
-        }
-        return {parts, rest, restString}
-    },
     hasCapability(user, capa) {
         const capabilities = (user && user.userData && user.userData.role && user.userData.role.capabilities) || []
         return capabilities.indexOf(capa) >= 0
-    },
-    formatBytes(bytes, decimals) {
-        if (bytes == 0) return '0 Bytes';
-        var k = 1024,
-            dm = decimals || 2,
-            sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-            i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     },
     hightlight(text, query, cls) {
         if (!text) return ''

@@ -1,8 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {withApollo, Query} from 'react-apollo'
-import { ApolloClient } from 'apollo-client'
-import gql from 'graphql-tag'
+import {withApollo} from '@apollo/react-hoc'
+import {Query} from '@apollo/react-components'
+import { ApolloClient } from '@apollo/client/core'
+import {gql} from '@apollo/client'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {
     TextField,

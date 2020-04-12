@@ -58,7 +58,8 @@ const baseElements = [
                 fullWidth: true
             }
         }
-    }, {
+    },
+    {
         tagName: 'div',
         name: 'Bildergalerie',
         defaults: {
@@ -105,6 +106,63 @@ const baseElements = [
             p_className: {
                 label: 'Klassname'
             }
+        }
+    },
+    {
+        tagName: 'div',
+        name: 'Slider',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'slider',
+                menu: {addBelow: false},
+                allowDrop:false
+            },
+            p: {
+                ['data-element-key']: 'slider'
+            },
+            c: {
+                $loop: {
+                    d: [],
+                    s: 'item',
+                    convert: 'String',
+                    c: {
+                        $inlineEditor: false,
+                        t: 'SmartImage',
+                        p: {
+                            wrapper:'true',
+                            src: '$.item{data.image}'
+                        }
+                    }
+                }
+            }
+        },
+        groupOptions:{
+            c_$loop_d: {
+                image: {
+                    fullWidth: true,
+                    value: '',
+                    label: 'Bild',
+                    uitype: 'type_picker',
+                    type: 'Media',
+                    filter: 'mimeType=image'
+                },
+                text:{
+                    label: 'Text',
+                    uitype: 'html'
+                }
+            }
+        },
+        options: {
+
+            /*p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
+            }*/
         }
     },
     {

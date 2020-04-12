@@ -2,7 +2,6 @@ import React from 'react'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import TypesContainer from 'client/containers/TypesContainer'
 import PropTypes from 'prop-types'
-import Hook from 'util/hook'
 import {
     Row,
     Col,
@@ -11,9 +10,9 @@ import {
 } from 'ui/admin'
 import GenericForm from 'client/components/GenericForm'
 import extensions from 'gen/extensions'
-import {graphql} from 'react-apollo'
+import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 
 const TYPE = 'Word'

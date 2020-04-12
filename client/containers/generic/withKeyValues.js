@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import gql from 'graphql-tag'
-import {graphql} from 'react-apollo'
+import {gql} from '@apollo/client'
+import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
 import {connect} from 'react-redux'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
@@ -27,9 +27,9 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
             const ignoreToCompare = ['deleteKeyValueByKey', 'setKeyValue', 'setKeyValueGlobal', 'loading']
             const keys = Object.keys(nextProps)
-            for (let i = 0; i<keys.length; i++) {
+            for (let i = 0; i < keys.length; i++) {
                 const key = keys[i]
-                if (ignoreToCompare.indexOf(key)===-1 && nextProps[key] !== this.props[key]) {
+                if (ignoreToCompare.indexOf(key) === -1 && nextProps[key] !== this.props[key]) {
                     return true
                 }
             }
@@ -63,7 +63,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                 } else if (loading) {
                     // there is nothing in cache
                     if (!keyValueGlobals) {
-                        return <NetworkStatusHandler />
+                        return <NetworkStatusHandler/>
                     }
 
                 }
@@ -181,20 +181,26 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                         },
                         update: (proxy, {data: {setKeyValue}}) => {
                             // Read the data from our cache for this query.
-                            const data = proxy.readQuery({query: gqlKeyValueQuery})
+                            const storeData = proxy.readQuery({query: gqlKeyValueQuery}),
+                                storeKeyValue = Object.assign({}, storeData.keyValues)
 
-                            if (!data.keyValues.results) {
-                                data.keyValues.results = []
-                            }
-                            const idx = data.keyValues.results.findIndex(x => x.key === setKeyValue.key && x.createdBy && x.createdBy._id === user._id)
-                            if (idx > -1) {
-                                data.keyValues.results[idx].value = setKeyValue.value
+                            if (!storeKeyValue.results) {
+                                storeKeyValue.results = []
                             } else {
-                                data.keyValues.results.push(setKeyValue)
-                                data.keyValues.total++;
+                                storeKeyValue.results = [...storeKeyValue.results]
+                            }
+                            const idx = storeKeyValue.results.findIndex(x => x.key === setKeyValue.key && x.createdBy && x.createdBy._id === user._id)
+                            if (idx > -1) {
+                                storeKeyValue.results[idx] = Object.assign({
+                                    ...storeKeyValue.results[idx],
+                                    value: setKeyValue.value
+                                })
+                            } else {
+                                storeKeyValue.results.push(setKeyValue)
+                                storeKeyValue.total++;
                             }
                             // Write our data back to the cache.
-                            proxy.writeQuery({query: gqlKeyValueQuery, data})
+                            proxy.writeQuery({query: gqlKeyValueQuery, data: {...storeData, keyValues: storeKeyValue}})
                         }
                     })
                 }
@@ -220,20 +226,24 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                         },
                         update: (proxy, {data: {setKeyValueGlobal}}) => {
                             // Read the data from our cache for this query.
-                            const data = proxy.readQuery({query: gqlKeyValueGlobalsQuery})
+                            const storeData = proxy.readQuery({query: gqlKeyValueGlobalsQuery}),
+                                storekeyValueGlobals = Object.assign({}, storeData.keyValueGlobals)
 
-                            if (!data.keyValueGlobals.results) {
-                                data.keyValueGlobals.results = []
-                            }
-                            const idx = data.keyValueGlobals.results.findIndex(x => x.key === setKeyValueGlobal.key)
-                            if (idx > -1) {
-                                data.keyValueGlobals.results[idx].value = setKeyValueGlobal.value
+                            if (!storekeyValueGlobals.results) {
+                                storekeyValueGlobals.results = []
                             } else {
-                                data.keyValueGlobals.results.push(setKeyValueGlobal)
-                                data.keyValueGlobals.total++;
+                                storekeyValueGlobals.results = [...storekeyValueGlobals.results]
+                            }
+
+                            const idx = storekeyValueGlobals.results.findIndex(x => x.key === setKeyValueGlobal.key)
+                            if (idx > -1) {
+                                storekeyValueGlobals.results[idx] = {...storekeyValueGlobals.results[idx], value: setKeyValueGlobal.value}
+                            } else {
+                                storekeyValueGlobals.results.push(setKeyValueGlobal)
+                                storekeyValueGlobals.total++;
                             }
                             // Write our data back to the cache.
-                            proxy.writeQuery({query: gqlKeyValueGlobalsQuery, data})
+                            proxy.writeQuery({query: gqlKeyValueGlobalsQuery, data: {...storeData, keyValueGlobals: storekeyValueGlobals}})
                         }
                     })
                 }
@@ -260,16 +270,22 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                         },
                         update: (proxy, {data: {deleteKeyValueByKey}}) => {
                             // Read the data from our cache for this query.
-                            const data = proxy.readQuery({query: gqlKeyValueQuery})
-                            // Add our note from the mutation to the end.
-                            const idx = data.keyValues.results.findIndex(x => x.key === deleteKeyValueByKey.key)
-                            if (idx >= 0) {
-                                if (deleteKeyValueByKey.status == 'deleting') {
-                                    data.keyValues.results[idx].status = 'deleting'
-                                } else {
-                                    data.keyValues.results.splice(idx, 1)
+                            const storeData = proxy.readQuery({query: gqlKeyValueQuery}),
+                            storeKeyValue = Object.assign({}, storeData.keyValues)
+
+                            if (storeKeyValue.results) {
+                                storeKeyValue.results = [...storeKeyValue.results]
+
+                                // Add our note from the mutation to the end.
+                                const idx = storeKeyValue.results.findIndex(x => x.key === deleteKeyValueByKey.key)
+                                if (idx >= 0) {
+                                    if (deleteKeyValueByKey.status == 'deleting') {
+                                        storeKeyValue.results[idx] = {...storeKeyValue.results[idx],status: 'deleting'}
+                                    } else {
+                                        storeKeyValue.results.splice(idx, 1)
+                                    }
+                                    proxy.writeQuery({query: gqlKeyValueQuery, data: {...storeData, keyValues: storeKeyValue}})
                                 }
-                                proxy.writeQuery({query: gqlKeyValueQuery, data})
                             }
                         }
                     })

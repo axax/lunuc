@@ -1,14 +1,14 @@
 import React from 'react'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import {
     Typography,
     Button
 } from 'ui/admin'
-import {withApollo} from 'react-apollo'
+import {withApollo} from '@apollo/react-hoc'
 import PropTypes from 'prop-types'
-import { ApolloClient } from 'apollo-client'
+import { ApolloClient } from '@apollo/client/core'
 import * as NotificationAction from 'client/actions/NotificationAction'
 
 class System extends React.Component {

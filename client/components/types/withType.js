@@ -1,7 +1,7 @@
 import React from 'react'
 import {connect} from 'react-redux'
-import {withApollo} from 'react-apollo'
-import gql from 'graphql-tag'
+import {withApollo} from '@apollo/react-hoc'
+import {gql} from '@apollo/client'
 import {getTypeQueries} from 'util/types'
 
 

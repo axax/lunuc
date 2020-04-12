@@ -24,9 +24,10 @@ import {
     Button,
     Toolbar
 } from 'ui/admin'
-import {withApollo, Query} from 'react-apollo'
-import {ApolloClient} from 'apollo-client'
-import gql from 'graphql-tag'
+import {Query} from '@apollo/react-components'
+import {withApollo} from '@apollo/react-hoc'
+import {ApolloClient} from '@apollo/client/core'
+import {gql} from '@apollo/client'
 import Util from 'client/util'
 import GenericForm from 'client/components/GenericForm'
 import TypeEdit from 'client/components/types/TypeEdit'
@@ -663,7 +664,7 @@ class TypesContainer extends React.Component {
                           key="bulkeditDialog"
                           open={true}
                           onClose={(action) => {
-                              if(action.key==='execute'){
+                              if (action.key === 'execute') {
 
                                   const script = this.state.bulkEditScript || this.props.keyValueMap.TypesContainerBulkEdit
                                   this.props.setKeyValue({key: 'TypesContainerBulkEdit', value: script})
@@ -677,14 +678,14 @@ class TypesContainer extends React.Component {
                                           script
                                       }
                                   }).then(response => {
-                                      if(response.data.bulkEdit) {
+                                      if (response.data.bulkEdit) {
                                           this.setState({simpleDialog: {children: JSON.stringify(response.data.bulkEdit)}})
                                       }
                                   })
 
 
-                              }else{
-                                  this.setState({dataToBulkEdit:false})
+                              } else {
+                                  this.setState({dataToBulkEdit: false})
                               }
                           }}
                           actions={[{key: 'execute', label: 'Execute'}, {
@@ -724,7 +725,7 @@ class TypesContainer extends React.Component {
             createEditDialog !== undefined && <TypeEdit key="editDialog" {...editDialogProps}/>,
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,
             manageColDialog !== undefined && <SimpleDialog key="collectionDialog" {...manageColDialogProps}/>,
-            window.opener && selectedLength > 0  &&
+            window.opener && selectedLength > 0 &&
             <AppBar key="appbar" position="fixed" color="primary" style={{
                 top: 'auto',
                 bottom: 0
@@ -741,7 +742,7 @@ class TypesContainer extends React.Component {
                                     }
                                 })
 
-                                if(this.pageParams.multi !== 'true' ) {
+                                if (this.pageParams.multi !== 'true') {
                                     items.splice(1)
                                 }
 
@@ -960,7 +961,7 @@ class TypesContainer extends React.Component {
         const formFields = getFormFields(this.pageParams.type)
         for (let k in o) {
             if (o[k] && formFields[k] && formFields[k].localized) {
-                o[k].__typename = 'LocalizedString'
+                o[k] = {...o[k], __typename: 'LocalizedString'}
             }
         }
     }
@@ -1047,21 +1048,19 @@ class TypesContainer extends React.Component {
                         variables
                     })
                     if (storeData[storeKey]) {
-                        if (!storeData[storeKey].results) {
-                            storeData[storeKey].results = []
-                        }
+                        const newData = {...storeData[storeKey], results: [...storeData[storeKey].results]}
 
                         if (freshData) {
-                            storeData[storeKey].results.unshift(freshData)
-                            storeData[storeKey].total += 1
+                            newData.results.unshift(freshData)
+                            newData.total += 1
                         }
                         store.writeQuery({
                             query: gqlQuery,
                             variables,
-                            data: storeData
+                            data: {...storeData, [storeKey]: newData}
                         })
                         this._lastData = null
-                        this.setState({data: storeData[storeKey]})
+                        this.setState({data: newData})
                     }
 
                 },
@@ -1094,7 +1093,9 @@ class TypesContainer extends React.Component {
 
                     if (storeData[storeKey]) {
                         // find entry in result list
-                        const refResults = storeData[storeKey].results
+                        const newData = {...storeData[storeKey], results: [...storeData[storeKey].results]}
+
+                        const refResults = newData.results
                         const idx = refResults.findIndex(x => x._id === responseItem._id)
                         if (idx > -1) {
                             // update entry with new data
@@ -1104,10 +1105,10 @@ class TypesContainer extends React.Component {
                             store.writeQuery({
                                 query: gqlQuery,
                                 variables,
-                                data: storeData
+                                data: {...storeData, [storeKey]: newData}
                             })
                             this._lastData = null
-                            this.setState({data: storeData[storeKey]})
+                            this.setState({data: newData})
                         }
                     }
 
@@ -1141,7 +1142,9 @@ class TypesContainer extends React.Component {
                         variables
                     })
                     if (storeData[storeKey]) {
-                        const refResults = storeData[storeKey].results
+                        const newData = {...storeData[storeKey], results: [...storeData[storeKey].results]}
+
+                        const refResults = newData.results
 
                         const items = ids.length > 1 ? data['delete' + type + 's'] : [data['delete' + type]]
                         if (items) {
@@ -1149,10 +1152,10 @@ class TypesContainer extends React.Component {
                                 const idx = refResults.findIndex(x => x._id === result._id)
                                 if (idx > -1) {
                                     if (result.status === 'deleting') {
-                                        refResults[idx].status = 'deleting'
+                                        refResults[idx] = {...refResults[idx], status: 'deleting'}
                                     } else {
                                         refResults.splice(idx, 1)
-                                        storeData[storeKey].total -= 1
+                                        newData.total -= 1
                                     }
                                 }
                             })
@@ -1161,10 +1164,10 @@ class TypesContainer extends React.Component {
                         store.writeQuery({
                             query: gqlQuery,
                             variables,
-                            data: storeData
+                            data: {...storeData, [storeKey]: newData}
                         })
                         this._lastData = null
-                        this.setState({data: storeData[storeKey]})
+                        this.setState({data: newData})
 
                     }
 
@@ -1207,17 +1210,18 @@ class TypesContainer extends React.Component {
                         variables
                     })
                     if (storeData[storeKey]) {
+                        const newData = {...storeData[storeKey], results: [...storeData[storeKey].results]}
 
                         if (freshData) {
-                            storeData[storeKey].results.unshift(freshData)
-                            storeData[storeKey].total += 1
+                            newData.results.unshift(freshData)
+                            newData.total += 1
                         }
                         store.writeQuery({
                             query: gqlQuery,
                             variables,
-                            data: storeData
+                            data: {...storeData, [storeKey]: newData}
                         })
-                        this.setState({data: storeData[storeKey]})
+                        this.setState({data: newData})
                     }
 
                 },
@@ -1243,11 +1247,13 @@ class TypesContainer extends React.Component {
                             variables
                         })
                         if (storeData.collections) {
+                            const newData = {...storeData.collections, results: [...storeData.collections.results]}
+
                             storeData.collections.results.push(data.cloneCollection.collection)
                             store.writeQuery({
                                 query: gqlCollectionsQuery,
                                 variables,
-                                data: storeData
+                                data: {...storeData, collections: newData}
                             })
                         }
                     }
@@ -1351,7 +1357,7 @@ class TypesContainer extends React.Component {
 
         if (value !== data[key]) {
             const changedData = {_id: data._id, [key]: value}
-            addAlwaysUpdateData(data, changedData, data.__typename)
+            addAlwaysUpdateData(data, changedData, this.pageParams.type)
             this.updateData(changedData, null, this.pageParams)
         }
     }

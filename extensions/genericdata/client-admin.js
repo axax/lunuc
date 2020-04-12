@@ -4,7 +4,7 @@ import Async from 'client/components/Async'
 import {
     SimpleButton
 } from 'ui/admin'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import Util from '../../client/util'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
 

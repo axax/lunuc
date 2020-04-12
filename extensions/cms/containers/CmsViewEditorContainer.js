@@ -8,10 +8,11 @@ import {
     gqlQuery
 } from '../util/cmsView'
 import PropTypes from 'prop-types'
-import {graphql, Query, withApollo} from 'react-apollo'
-import {ApolloClient} from 'apollo-client'
+import {graphql, withApollo} from '@apollo/react-hoc'
+import {Query} from '@apollo/react-components'
+import {ApolloClient} from '@apollo/client/core'
 import compose from 'util/compose'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import Expandable from 'client/components/Expandable'
 import ErrorHandler from 'client/components/layout/ErrorHandler'
 import DataResolverEditor from '../components/DataResolverEditor'
@@ -109,8 +110,8 @@ class CmsViewEditorContainer extends React.Component {
             result.resources = state.resources
         }
 
-        if( props.cmsPage && !props.cmsPage._id ){
-            result.addNewSite={slugNoExist: props.slug, slug:props.slug}
+        if (props.cmsPage && !props.cmsPage._id) {
+            result.addNewSite = {slugNoExist: props.slug, slug: props.slug}
         }
         return result
     }
@@ -174,7 +175,6 @@ class CmsViewEditorContainer extends React.Component {
         const {WrappedComponent, cmsPage, cmsEditData, cmsComponentEdit, ...props} = this.props
 
         const {template, resources, script, style, settings, dataResolver, serverScript, loadingSettings} = this.state
-
         if (!cmsPage) {
             // show a loader here
             if (!props.dynamic) {
@@ -250,9 +250,9 @@ class CmsViewEditorContainer extends React.Component {
                             }
 
                             if (cmsEditData.options && cmsEditData.options.clone) {
-                                editDialogProps.initialData = data.genericDatas.results[0]
+                                editDialogProps.initialData = Object.assign({}, data.genericDatas.results[0])
                                 delete editDialogProps.initialData._id
-                            }else if (cmsEditData.options && cmsEditData.options.create) {
+                            } else if (cmsEditData.options && cmsEditData.options.create) {
                                 editDialogProps.initialData = cmsEditData.initialData
                             } else {
                                 editDialogProps.dataToEdit = data.genericDatas.results[0]
@@ -387,16 +387,16 @@ class CmsViewEditorContainer extends React.Component {
 
 
                     <Expandable title={_t('CmsViewEditorContainer.settings')}
-                                                onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
-                                                expanded={settings.settingsExpanded}>
+                                onChange={this.handleSettingChange.bind(this, 'settingsExpanded')}
+                                expanded={settings.settingsExpanded}>
 
                         <TextField key="pageTitle"
                                    label={_t('CmsViewEditorContainer.pageTitle')}
                                    InputLabelProps={{
                                        shrink: true,
                                    }}
-                                   onBlur={(e)=>{
-                                       let value = {...cmsPage.name, [_app_.lang]:e.target.value}
+                                   onBlur={(e) => {
+                                       let value = {...cmsPage.name, [_app_.lang]: e.target.value}
 
                                        this.saveCmsPage(value, this.props.cmsPage, 'name')
                                    }}
@@ -408,26 +408,26 @@ class CmsViewEditorContainer extends React.Component {
                             checked={!!this.state.ssr}
                             onChange={this.handleFlagChange.bind(this, 'ssr')}
                         />,
-                        <SimpleSwitch
-                            label="Public (is visible to everyone)"
-                            checked={!!this.state.public}
-                            onChange={this.handleFlagChange.bind(this, 'public')}
-                        />,
-                        <SimpleSwitch
-                            label="Url sensitive (refresh component on url change)"
-                            checked={!!this.state.urlSensitiv}
-                            onChange={this.handleFlagChange.bind(this, 'urlSensitiv')}
-                        />,
-                        <SimpleSwitch
-                            label="Always load assets (even when component is loaded dynamically)"
-                            checked={!!this.state.alwaysLoadAssets}
-                            onChange={this.handleFlagChange.bind(this, 'alwaysLoadAssets')}
-                        />,
-                        <SimpleSwitch
-                            label="Parse resolvedData in frontend (replace placeholders)"
-                            checked={!!this.state.parseResolvedData}
-                            onChange={this.handleFlagChange.bind(this, 'parseResolvedData')}
-                        /></React.Fragment>}
+                            <SimpleSwitch
+                                label="Public (is visible to everyone)"
+                                checked={!!this.state.public}
+                                onChange={this.handleFlagChange.bind(this, 'public')}
+                            />,
+                            <SimpleSwitch
+                                label="Url sensitive (refresh component on url change)"
+                                checked={!!this.state.urlSensitiv}
+                                onChange={this.handleFlagChange.bind(this, 'urlSensitiv')}
+                            />,
+                            <SimpleSwitch
+                                label="Always load assets (even when component is loaded dynamically)"
+                                checked={!!this.state.alwaysLoadAssets}
+                                onChange={this.handleFlagChange.bind(this, 'alwaysLoadAssets')}
+                            />,
+                            <SimpleSwitch
+                                label="Parse resolvedData in frontend (replace placeholders)"
+                                checked={!!this.state.parseResolvedData}
+                                onChange={this.handleFlagChange.bind(this, 'parseResolvedData')}
+                            /></React.Fragment>}
                     </Expandable>
 
                     <Expandable title={_t('CmsViewEditorContainer.revisions')}
@@ -451,11 +451,11 @@ class CmsViewEditorContainer extends React.Component {
                                     data.historys.results.forEach(i => {
                                             if (i.slug !== props.slug) {
 
-                                                const meta = i.meta?JSON.parse(i.meta):{keys:[]}
+                                                const meta = i.meta ? JSON.parse(i.meta) : {keys: []}
                                                 menuItems.push(<MenuListItem key={'history' + i._id} onClick={e => {
                                                     this.setState({showRevision: i})
                                                 }} button primary={Util.formattedDateFromObjectId(i._id) + ' - ' + i.action}
-                                                                             secondary={meta.keys.indexOf('template')>-1?'Inhalt wurde geändert':'Änderung'}
+                                                                             secondary={meta.keys.indexOf('template') > -1 ? 'Inhalt wurde geändert' : 'Änderung'}
                                                 />)
                                             }
                                         }
@@ -572,10 +572,10 @@ class CmsViewEditorContainer extends React.Component {
                                                 onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
                                                 contrast
                                                 label={_t('CmsViewEditorContainer.inlineEditor')}/>,
-                                    <Button key="buttonBack" size="small" color="inherit" onClick={e => {
+                                  <Button key="buttonBack" size="small" color="inherit" onClick={e => {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
                                   }}>Admin</Button>,
-                                      <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
+                                  <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
                                       this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname)}`)
                                   }}>Logout</Button>,
                                   <SimpleMenu key="moreMenu" color="inherit" items={[{
@@ -592,7 +592,7 @@ class CmsViewEditorContainer extends React.Component {
                     <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
                                   onClose={(e) => {
                                       if (e.key === 'ok') {
-                                          if( this.addNewSiteForm.validate() ) {
+                                          if (this.addNewSiteForm.validate()) {
                                               console.log(this.addNewSiteForm.props.values)
                                               if (this.addNewSiteForm.props.values._id) {
                                                   const queries = getTypeQueries('CmsPage')
@@ -618,7 +618,7 @@ class CmsViewEditorContainer extends React.Component {
                                                   })
                                               }
                                           }
-                                      }else{
+                                      } else {
                                           this.setState({addNewSite: null})
                                           window.history.back()
                                       }
@@ -632,55 +632,54 @@ class CmsViewEditorContainer extends React.Component {
                                       label: 'Erstellen',
                                       type: 'primary'
                                   }]}
-                                  title={this.state.addNewSite.slugNoExist?`Seite "${this.state.addNewSite.slugNoExist}" exisitert nicht. Möchten Sie die Seite jetzt erstellen?`:'Neue Seite erstellen'}>
-
+                                  title={this.state.addNewSite.slugNoExist ? `Seite "${this.state.addNewSite.slugNoExist}" exisitert nicht. Möchten Sie die Seite jetzt erstellen?` : 'Neue Seite erstellen'}>
 
 
                         <GenericForm ref={(e) => {
                             this.addNewSiteForm = e
                         }} primaryButton={false}
                                      values={this.state.addNewSite}
-                                     onChange={(e)=>{
-                                         if(e.name==='_id'){
+                                     onChange={(e) => {
+                                         if (e.name === '_id') {
                                              const fields = this.addNewSiteForm.state.fields
-                                             const values = {_id:fields._id}
+                                             const values = {_id: fields._id}
 
-                                             if( fields.slug ){
+                                             if (fields.slug) {
                                                  values.slug = fields.slug
-                                             }else{
+                                             } else {
                                                  values.slug = e.value[0].slug
                                              }
-                                             if( fields.name ){
+                                             if (fields.name) {
                                                  values.name = fields.name
-                                             }else{
+                                             } else {
                                                  values.name = e.value[0].name
                                              }
 
-                                             setTimeout(()=> {
+                                             setTimeout(() => {
                                                  this.setState({addNewSite: values})
-                                             },10)
+                                             }, 10)
                                          }
                                      }}
                                      fields={{
                                          _id: {
-                                             uitype:'type_picker',
-                                             type:'CmsPage',
+                                             uitype: 'type_picker',
+                                             type: 'CmsPage',
                                              placeholder: 'Vorlage auswählen',
                                              fullWidth: true,
                                              label: 'Vorlage',
-                                             searchFields:['name'],
-                                             required:true
+                                             searchFields: ['name'],
+                                             required: true
                                          },
                                          slug: {
                                              fullWidth: true,
                                              label: 'Slug',
-                                             required:true
+                                             required: true
                                          },
                                          name: {
                                              fullWidth: true,
                                              label: 'Titel',
                                              localized: true,
-                                             required:true
+                                             required: true
                                          }
                                      }}/>
 
@@ -977,13 +976,13 @@ class CmsViewEditorContainer extends React.Component {
     handleEditDataClose(action, {editedData, dataToEdit, type}) {
         const {_cmsActions, cmsPage, updateResolvedData, cmsEditData} = this.props
         if (editedData) {
-            if( !dataToEdit){
+            if (!dataToEdit) {
 
                 window.location.href = window.location.href
-               /* setTimeout(()=>{
-                    this.forceUpdate()
-                },100)*/
-            }else {
+                /* setTimeout(()=>{
+                     this.forceUpdate()
+                 },100)*/
+            } else {
                 const resolvedDataJson = JSON.parse(cmsPage.resolvedData),
                     resolver = resolvedDataJson[cmsEditData.resolverKey || type]
 
@@ -1107,8 +1106,8 @@ const CmsViewEditorContainerWithGql = compose(
                 const variables = getGqlVariables(ownProps)
                 const variablesWithNewValue = {...variables, _id, [key]: rest[key]}
 
-                if(rest[key].constructor === Object ){
-                    variablesWithNewValue[key] = Object.assign({},rest[key])
+                if (rest[key].constructor === Object) {
+                    variablesWithNewValue[key] = Object.assign({}, rest[key])
                     delete variablesWithNewValue[key].__typename
                 }
                 return mutate({
@@ -1136,8 +1135,9 @@ const CmsViewEditorContainerWithGql = compose(
                             variables
                         })
                         if (data.cmsPage) {
+
                             // update cmsPage
-                            data.cmsPage = {
+                            const newData = {
                                 _id,
                                 [key]: updateCmsPage[key], ...rest,
                                 modifiedAt: updateCmsPage.modifiedAt,
@@ -1146,10 +1146,10 @@ const CmsViewEditorContainerWithGql = compose(
 
                             // update resolvedData
                             if (updateCmsPage.resolvedData) {
-                                data.cmsPage.resolvedData = updateCmsPage.resolvedData
-                                data.cmsPage.subscriptions = updateCmsPage.subscriptions
+                                newData.resolvedData = updateCmsPage.resolvedData
+                                newData.subscriptions = updateCmsPage.subscriptions
                             }
-                            store.writeQuery({query: gqlQuery(), variables, data})
+                            store.writeQuery({query: gqlQuery(), variables, data: {...data, cmsPage: newData}})
                         }
                         if (cb) {
                             cb()

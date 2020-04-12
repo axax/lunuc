@@ -1,18 +1,20 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from 'react-apollo'
+import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import {connect} from 'react-redux'
 import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import GenericForm from 'client/components/GenericForm'
 import {Row, Col, Typography, SimpleList, DeleteIconButton, SimpleDialog} from 'ui/admin'
 import config from 'gen/config'
+
 const {ADMIN_BASE_URL, DEFAULT_RESULT_LIMIT} = config
 import Async from 'client/components/Async'
 
-const PostEditor = (props) => <Async {...props} load={import(/* webpackChunkName: "post" */ '../components/post/PostEditor')}/>
+const PostEditor = (props) => <Async {...props}
+                                     load={import(/* webpackChunkName: "post" */ '../components/post/PostEditor')}/>
 
 class PostContainer extends React.Component {
     constructor(props) {
@@ -34,7 +36,7 @@ class PostContainer extends React.Component {
     }
 
     handleAddPostValidate = (post) => {
-        return {isValid:post.title.trim() !== ''}
+        return {isValid: post.title.trim() !== ''}
     }
 
 
@@ -98,7 +100,7 @@ class PostContainer extends React.Component {
         const selectedPostId = match.params.id
 
         if (!posts)
-            return <BaseLayout />
+            return <BaseLayout/>
 
         let selectedPost = false
         const listItems = (posts.results ? posts.results.reduce((a, post) => {
@@ -226,10 +228,17 @@ const PostContainerWithGql = compose(
                         const variables = getVariables()
                         //console.log('createPost', createPost)
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery, variables})
+                        const storeData = store.readQuery({query: gqlQuery, variables})
 
-                        data.posts.results.push(createPost)
-                        store.writeQuery({query: gqlQuery, variables, data})
+                        const newData = {...storeData.posts}
+                        if (!newData.results) {
+                            newData.results = []
+                        } else {
+                            newData.results = [...newData.results]
+                        }
+
+                        newData.results.push(createPost)
+                        store.writeQuery({query: gqlQuery, variables, data: {...storeData, posts: newData}})
                     }
                 })
             }
@@ -261,11 +270,18 @@ const PostContainerWithGql = compose(
 
                         //console.log('updatePost', updatePost)
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery, variables})
-                        const idx = data.posts.results.findIndex(x => x._id === updatePost._id)
+                        const storeData = store.readQuery({query: gqlQuery, variables})
+                        const idx = storeData.posts.results.findIndex(x => x._id === updatePost._id)
                         if (idx > -1) {
-                            data.posts.results[idx] = updatePost
-                            store.writeQuery({query: gqlQuery, variables, data})
+                            const newData = {...storeData.posts}
+                            if (!newData.results) {
+                                newData.results = []
+                            } else {
+                                newData.results = [...newData.results]
+                            }
+
+                            newData.results[idx] = updatePost
+                            store.writeQuery({query: gqlQuery, variables, data: {...storeData, posts: newData}})
                         }
                     }
                 })
@@ -290,17 +306,24 @@ const PostContainerWithGql = compose(
 
                         console.log('deletePost', deletePost)
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery, variables})
+                        const storeData = store.readQuery({query: gqlQuery, variables})
 
-                        const idx = data.posts.results.findIndex((e) => e._id === deletePost._id)
+                        const idx = storeData.posts.results.findIndex((e) => e._id === deletePost._id)
                         if (idx >= 0) {
-                            if (deletePost.status == 'deleting') {
-                                console.log(data.posts[idx])
-                                data.posts.results[idx].status = 'deleting'
+                            const newData = {...storeData.posts}
+                            if (!newData.results) {
+                                newData.results = []
                             } else {
-                                data.posts.results.splice(idx, 1)
+                                newData.results = [...newData.results]
                             }
-                            store.writeQuery({query: gqlQuery, variables, data})
+
+                            if (deletePost.status == 'deleting') {
+                                console.log(storeData.posts[idx])
+                                newData[idx] = {...newData[idx], status: 'deleting'}
+                            } else {
+                                newData.results.splice(idx, 1)
+                            }
+                            store.writeQuery({query: gqlQuery, variables, data: {...storeData, posts: newData}})
                         }
 
                     }

@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from 'react-apollo'
+import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {
     SimpleButton,
@@ -78,27 +78,26 @@ class DbDumpContainer extends React.Component {
     }
 
 
-    download(content, filename, contentType)
-    {
-        if(!contentType) contentType = 'application/octet-stream';
+    download(content, filename, contentType) {
+        if (!contentType) contentType = 'application/octet-stream';
         var a = document.createElement('a');
-        var blob = new Blob([content], {'type':contentType});
+        var blob = new Blob([content], {'type': contentType});
         a.href = window.URL.createObjectURL(blob);
         a.download = filename;
         a.click();
     }
 
-    authorizedRequest(url, name){
+    authorizedRequest(url, name) {
         const xhr = new XMLHttpRequest
 
-        xhr.open("GET",url)
+        xhr.open("GET", url)
         xhr.responseType = 'blob'
 
         xhr.addEventListener("load", () => {
-            if( xhr.status === 200) {
+            if (xhr.status === 200) {
 
                 this.download(xhr.response, name, 'application/gzip')
-            }else{
+            } else {
 
                 alert(`Invalid status ${xhr.status}`)
             }
@@ -134,7 +133,7 @@ class DbDumpContainer extends React.Component {
                                 primary: i.name,
                                 onClick: () => {
 
-                                    this.authorizedRequest(BACKUP_URL + '/dbdumps/' + i.name, 'db.backup.gz' )
+                                    this.authorizedRequest(BACKUP_URL + '/dbdumps/' + i.name, 'db.backup.gz')
 
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size
@@ -161,7 +160,7 @@ class DbDumpContainer extends React.Component {
                             a.push({
                                 primary: i.name,
                                 onClick: () => {
-                                    this.authorizedRequest(BACKUP_URL + '/mediadumps/' + i.name, 'medias.backup.gz' )
+                                    this.authorizedRequest(BACKUP_URL + '/mediadumps/' + i.name, 'medias.backup.gz')
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size
                             })
@@ -229,11 +228,15 @@ const DbDumpContainerWithGql = compose(
                     variables: {type: 'full'},
                     update: (proxy, {data: {createDbDump}}) => {
                         // Read the data from our cache for this query.
-                        const data = proxy.readQuery({query: gqlQuery})
+                        const storeData = proxy.readQuery({query: gqlQuery})
+
+                        const newData = {...storeData.dbDumps, results: [...storeData.dbDumps.results]}
+
                         // Add our note from the mutation to the end.
-                        data.dbDumps.results.unshift(createDbDump)
+                        newData.results.unshift(createDbDump)
+
                         // Write our data back to the cache.
-                        proxy.writeQuery({query: gqlQuery, data})
+                        proxy.writeQuery({query: gqlQuery, data: {...storeData, dbDumps: newData}})
                     }
 
                 })
@@ -258,10 +261,14 @@ const DbDumpContainerWithGql = compose(
                     update: (proxy, {data: {createMediaDump}}) => {
                         // Read the data from our cache for this query.
                         const data = proxy.readQuery({query: gqlQueryMedia})
+
+                        const newData = {...storeData.mediaDumps, results: [...storeData.mediaDumps.results]}
+
                         // Add our note from the mutation to the end.
-                        data.mediaDumps.results.unshift(createMediaDump)
+                        newData.results.unshift(createMediaDump)
+
                         // Write our data back to the cache.
-                        proxy.writeQuery({query: gqlQueryMedia, data})
+                        proxy.writeQuery({query: gqlQueryMedia, data: {...storeData, mediaDumps: newData}})
                     }
 
                 })

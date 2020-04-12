@@ -1,8 +1,7 @@
 import React from 'react'
-import {graphql} from 'react-apollo'
+import {graphql, withApollo} from '@apollo/react-hoc'
 import {connect} from 'react-redux'
-import {withApollo} from 'react-apollo'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import {
     getGqlVariables, gqlQuery, isEditMode, urlSensitivMap,
     settingKeyPrefix,
@@ -51,11 +50,12 @@ export default function (WrappedComponent) {
                             return <ErrorPage code="504" message="We are sorry. Please try again in a moment"
                                               title="Maintenance" background="#f4a742"/>
                         }
-                        if( isEditMode(this.props)) {
+                        if (isEditMode(this.props)) {
                             return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
                                                            setKeyValue={this.setKeyValue.bind(this)}
-                                                           WrappedComponent={WrappedComponent} {...this.props} cmsPage={{name:{}}}/>
-                        }else{
+                                                           WrappedComponent={WrappedComponent} {...this.props}
+                                                           cmsPage={{name: {}}}/>
+                        } else {
                             return <ErrorPage/>
                         }
                     } else {
@@ -178,12 +178,14 @@ export default function (WrappedComponent) {
             // upadate data in resolvedData string
             if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
 
-                cmsPage.resolvedData = storeData.cmsPage.resolvedData = JSON.stringify(json)
+                const newData = Object.assign({}, storeData.cmsPage)
+
+                newData.resolvedData = JSON.stringify(json)
 
                 client.writeQuery({
                     query: gqlQuery(),
                     variables: cmsPageVariables,
-                    data: storeData
+                    data: {...storeData, cmsPage: newData}
                 })
 
             }

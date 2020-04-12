@@ -90,7 +90,6 @@ const replacePlaceholders = (content, path) => {
     return result
 }
 
-
 const config = {
     entry: ['./client/index.js'],
     target: 'web',
@@ -135,6 +134,32 @@ const config = {
         ]
     },
     plugins: [
+        {
+            apply: (compiler) => {
+                compiler.hooks.emit.tap('AfterEmitPlugin', (compilation) => {
+
+                    const {assets} = compilation; // eslint-disable-next-line consistent-return
+                    const key = 'main.bundle.js?v=' + BUILD_NUMBER,
+                        asset = assets[key]
+                    let content = asset.source()
+
+                    content = content.replace(/new Error\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new Error()')
+                    content = content.replace(/new TypeError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new TypeError()')
+                    content = content.replace(/new ReferenceError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new ReferenceError()')
+                    content = content.replace(/throw E\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw E()')
+
+                    compilation.assets[key] = {
+                        source: function () {
+                            return new Buffer(content)
+                        },
+                        size: function () {
+                            return Buffer.byteLength(content)
+                        }
+                    }
+
+                })
+            }
+        },
         new GenSourceCode(APP_VALUES), /* Generate some source code based on the buildconfig.json file */
         new MiniCssExtractPlugin({
             filename: 'style.css',
@@ -143,10 +168,28 @@ const config = {
         new WebpackI18nPlugin({
             src: './**/*.tr.json',
             dest: '[name].js'
+        }),
+        new webpack.IgnorePlugin({
+            checkResource(resource, context) {
+                /* if( resource.indexOf('useQuery.js')>-1 || resource.indexOf('useMutation.js')>-1 || resource.indexOf('useSubscription.js')>-1 ) {
+                     console.log(resource, context)
+                     return true
+
+                 }*/
+                if (resource.indexOf('ObservableQuery.js') > -1) {
+                    //  console.log(resource, context)
+                    //return true
+
+                }
+
+                // do something with resource
+                return false
+            }
         })
     ],
     optimization: {
         usedExports: true,
+        sideEffects: true,
         /*splitChunks: {
          cacheGroups: {
          style: {
@@ -210,13 +253,12 @@ if (DEV_MODE) {
 
     config.devServer = {
         contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],
-        historyApiFallback:  {
+        historyApiFallback: {
             rewrites: [
                 {
                     from: /.*\/-\/.*/,
-                    to: function(context) {
-                        console.log(context.request.url)
-                        return context.request.url.split('/'+APP_CONFIG.options.PRETTYURL_SEPERATOR+'/')[0]
+                    to: function (context) {
+                        return context.request.url.split('/' + APP_CONFIG.options.PRETTYURL_SEPERATOR + '/')[0]
                     }
                 }
             ]
@@ -237,7 +279,7 @@ if (DEV_MODE) {
     }
 
     /* For Debugging porpuses */
-    config.devtool = 'eval'
+    //config.devtool = 'eval'
 
     config.plugins.push(new webpack.HotModuleReplacementPlugin())
 
@@ -252,9 +294,10 @@ if (DEV_MODE) {
     )
 
 
-    config.optimization.minimizer.push(
+    /*config.optimization.minimizer.push(
         new UglifyJSPlugin({
             uglifyOptions: {
+                toplevel: true,
                 compress: {
                     drop_console: true
                 },
@@ -265,22 +308,29 @@ if (DEV_MODE) {
                     beautify: false
                 }
             }
-        }))
+        }))*/
 
-    /*config.optimization.minimizer.push(new TerserPlugin({
-        terserOptions: {
-            extractComments: 'all',
-            compress: {
-                drop_console: true
-            },
-            output: {
-                comments: false,
-                semicolons: true,
-                shebang: true,
-                beautify: false
-            }
+    const terserOptions = {
+        extractComments: 'all',
+        compress: {
+            drop_console: true,
+            pure_getters:true, /* 1kb */
+            //unsafe_proto:true /* 20 bytes */
         },
-    }))*/
+        mangle: {
+        },
+        output: {
+            comments: false,
+            semicolons: true,
+            shebang: true,
+            beautify: false
+        }
+    }
+    config.optimization.minimizer.push(
+        new TerserPlugin({
+            terserOptions
+        })
+    )
 
     config.resolve = {
         alias: {
@@ -289,7 +339,7 @@ if (DEV_MODE) {
         },
     }
 
-   /* const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+    /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
     config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'
@@ -303,3 +353,4 @@ module.exports = config
 
 
 /* --port 8080 --hot --host 0.0.0.0 --content-base . */
+

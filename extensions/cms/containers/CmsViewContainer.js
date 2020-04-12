@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import JsonDom from '../components/JsonDom'
 import config from 'gen/config'
-import {ApolloClient} from 'apollo-client'
+import {ApolloClient} from '@apollo/client/core'
 import Util from 'client/util'
 import DomUtil from 'client/util/dom'
 import {getType} from 'util/types'
@@ -85,6 +85,7 @@ class CmsViewContainer extends React.Component {
     render() {
         const {slug, cmsPage, children, dynamic, fetchMore, settings, setKeyValue, ...props} = this.props
         const editMode = isEditMode(this.props)
+
         if (!cmsPage) {
             // show a loader here
             return null //<div className={classNameByPath(slug, 'Cms--loading')}/>

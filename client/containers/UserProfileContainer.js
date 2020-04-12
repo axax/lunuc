@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from 'react-apollo'
+import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import KeyValueContainer from './KeyValueContainer'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {Button, Typography, TextField, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
@@ -26,8 +26,12 @@ class UserProfileContainer extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.me && prevState.me !== nextProps.me ) {
-            return Object.assign({}, prevState, {me: nextProps.me, username: nextProps.me.username, note: nextProps.me.note})
+        if (nextProps.me && prevState.me !== nextProps.me) {
+            return Object.assign({}, prevState, {
+                me: nextProps.me,
+                username: nextProps.me.username,
+                note: nextProps.me.note
+            })
         }
         // No state update necessary
         return null
@@ -135,7 +139,7 @@ class UserProfileContainer extends React.Component {
 
     render() {
         const {me} = this.props
-        if (!me) return <BaseLayout />
+        if (!me) return <BaseLayout/>
         console.log('render UserProfileContainer')
         const {username, usernameError, loading, note} = this.state
 
@@ -182,7 +186,7 @@ class UserProfileContainer extends React.Component {
                 <Typography variant="h4" component="h2" gutterBottom>Notes</Typography>
                 <ContentBlock>
                     {noteElements}
-                    <br />
+                    <br/>
                     <Button variant="contained" color="primary" onClick={this.createNote}>Add new note</Button>
                 </ContentBlock>
 
@@ -190,7 +194,7 @@ class UserProfileContainer extends React.Component {
                     <ContentBlock>
                         <Typography variant="h4" component="h2" gutterBottom>KeyValue Store</Typography>
 
-                        <KeyValueContainer />
+                        <KeyValueContainer/>
                     </ContentBlock> : ''}
 
             </BaseLayout>
@@ -270,12 +274,18 @@ const UserProfileContainerWithGql = compose(
                 },
                 update: (proxy, {data: {createNote}}) => {
                     // Read the data from our cache for this query.
-                    const data = proxy.readQuery({query: gqlQuery})
+                    const storeData = proxy.readQuery({query: gqlQuery})
+                    const newData = {...storeData.me}
+
                     // Add our note from the mutation to the end.
-                    if (!data.me.note) data.me.note = []
-                    data.me.note.push(createNote)
+                    if (!newData.note) {
+                        newData.note = []
+                    } else {
+                        newData.note = [...newData.note]
+                    }
+                    newData.note.push(createNote)
                     // Write our data back to the cache.
-                    proxy.writeQuery({query: gqlQuery, data})
+                    proxy.writeQuery({query: gqlQuery, data: {...storeData, me: newData}})
                 },
             })
         })
@@ -295,11 +305,17 @@ const UserProfileContainerWithGql = compose(
                 },
                 update: (proxy, {data: {deleteNote}}) => {
                     // Read the data from our cache for this query.
-                    const data = proxy.readQuery({query: gqlQuery})
+                    const storeData = proxy.readQuery({query: gqlQuery})
+                    const newData = {...storeData.me}
+                    if (!newData.note) {
+                        newData.note = []
+                    } else {
+                        newData.note = [...newData.note]
+                    }
                     // Add our note from the mutation to the end.
-                    data.me.note = data.me.note.filter(note => note._id !== deleteNote._id)
+                    newData.note = newData.note.filter(note => note._id !== deleteNote._id)
                     // Write our data back to the cache.
-                    proxy.writeQuery({query: gqlQuery, data})
+                    proxy.writeQuery({query: gqlQuery, data: {...storeData, me: newData}})
                 },
             })
         })

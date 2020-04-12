@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from 'react-apollo'
+import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import {Card, Divider} from 'ui/admin'
 import styles from './style.css'
 

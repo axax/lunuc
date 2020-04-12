@@ -1,8 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from 'react-apollo'
+import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import {Link} from 'react-router-dom'
 import ChatMessage from '../components/chat/ChatMessage'
 import CreateChat from '../components/chat/CreateChat'
@@ -12,6 +12,7 @@ import {connect} from 'react-redux'
 import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import config from 'gen/config'
+
 const {ADMIN_BASE_URL} = config
 
 class ChatContainer extends React.Component {
@@ -259,8 +260,7 @@ const ChatContainerWithGql = compose(
                         }
                     })
                 },
-                loadMoreMessages({chatId, messageOffset})
-                {
+                loadMoreMessages({chatId, messageOffset}) {
 
                     return fetchMore({
                         query: gqlQueryMoreMessages,
@@ -319,10 +319,10 @@ const ChatContainerWithGql = compose(
                     update: (store, {data: {createChat}}) => {
                         console.log('createChat', createChat)
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery})
-
-                        data.chatsWithMessages.push(createChat)
-                        store.writeQuery({query: gqlQuery, data})
+                        const storeData = store.readQuery({query: gqlQuery})
+                        const newData = [...storeData.chatsWithMessages]
+                        newData.push(createChat)
+                        store.writeQuery({query: gqlQuery, data: {...storeData, chatsWithMessages: newData}})
                     }
                 })
             }
@@ -346,16 +346,19 @@ const ChatContainerWithGql = compose(
                     },
                     update: (store, {data: {addUserToChat}}) => {
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery})
-                        if( data.chatsWithMessages ) {
-                            const chatIdx = data.chatsWithMessages.findIndex((e) => e._id === chatId)
+                        const storeData = store.readQuery({query: gqlQuery})
+                        if (storeData.chatsWithMessages) {
+                            const newData = [...storeData.chatsWithMessages]
+
+                            const chatIdx = newData.findIndex((e) => e._id === chatId)
                             const userIdx = data.publicUsers.findIndex((e) => e._id === userId)
                             if (chatIdx >= 0 && userIdx >= 0) {
-                                data.chatsWithMessages[chatIdx].users.unshift(data.publicUsers[userIdx])
+                                newData[chatIdx] = {...newData[chatIdx], users: [...newData[chatIdx].users]}
+                                newData[chatIdx].users.unshift(data.publicUsers[userIdx])
                             }
 
 
-                            store.writeQuery({query: gqlQuery, data})
+                            store.writeQuery({query: gqlQuery, data: {...storeData, chatsWithMessages: newData}})
                         }
                     }
                 })
@@ -378,14 +381,19 @@ const ChatContainerWithGql = compose(
                     },
                     update: (store, {data: {removeUserFromChat}}) => {
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery})
+                        const storeData = store.readQuery({query: gqlQuery})
 
-                        const chatIdx = data.chatsWithMessages.findIndex((e) => e._id === chatId)
+                        const chatIdx = storeData.chatsWithMessages.findIndex((e) => e._id === chatId)
                         if (chatIdx >= 0) {
-                            data.chatsWithMessages[chatIdx].users = data.chatsWithMessages[chatIdx].users.filter(u => u._id !== userId)
+                            const newData = [...storeData.chatsWithMessages]
+                            newData[chatIdx] = {...newData[chatIdx], users: [...newData[chatIdx].users]}
+
+                            newData[chatIdx].users = data.chatsWithMessages[chatIdx].users.filter(u => u._id !== userId)
+
+                            store.writeQuery({query: gqlQuery, data: {...storeData, chatsWithMessages: newData}})
+
                         }
 
-                        store.writeQuery({query: gqlQuery, data})
                     }
                 })
             }
@@ -407,17 +415,19 @@ const ChatContainerWithGql = compose(
                     update: (store, {data: {deleteChat}}) => {
                         console.log('deleteChat', deleteChat)
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery})
+                        const storeData = store.readQuery({query: gqlQuery})
 
-                        const chatIdx = data.chatsWithMessages.findIndex((e) => e._id === deleteChat._id)
+                        const chatIdx = storeData.chatsWithMessages.findIndex((e) => e._id === deleteChat._id)
                         if (chatIdx >= 0) {
+                            const newData = [...storeData.chatsWithMessages]
+
                             if (deleteChat.status == 'deleting') {
                                 console.log(data.chatsWithMessages[chatIdx])
-                                data.chatsWithMessages[chatIdx].status = 'deleting'
+                                newData[chatIdx] = {...newData[chatIdx], status: 'deleting'}
                             } else {
-                                data.chatsWithMessages.splice(chatIdx, 1)
+                                newData.splice(chatIdx, 1)
                             }
-                            store.writeQuery({query: gqlQuery, data})
+                            store.writeQuery({query: gqlQuery, data: {...storeData, chatsWithMessages: newData}})
                         }
 
                     }
@@ -453,20 +463,23 @@ const ChatContainerWithGql = compose(
 
                     update: (store, {data: {createMessage}}) => {
                         // Read the data from the cache for this query.
-                        const data = store.readQuery({query: gqlQuery})
+                        const storeData = store.readQuery({query: gqlQuery})
 
-                        const chatIdx = data.chatsWithMessages.findIndex((e) => e._id === createMessage.to._id)
+                        const chatIdx = storeData.chatsWithMessages.findIndex((e) => e._id === createMessage.to._id)
                         if (chatIdx >= 0) {
+                            const newData = [...storeData.chatsWithMessages]
+                            newData[chatIdx] = {...newData[chatIdx], messages: [...newData[chatIdx].messages]}
+
                             // remove optimistic id
-                            const msgOIdx = data.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === oid)
+                            const msgOIdx = storeData.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === oid)
                             if (msgOIdx > -1) {
-                                data.chatsWithMessages[chatIdx].messages.splice(msgOIdx, 1)
+                                newData[chatIdx].messages.splice(msgOIdx, 1)
                             }
-                            const msgIdx = data.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === createMessage._id)
+                            const msgIdx = storeData.chatsWithMessages[chatIdx].messages.findIndex((e) => e._id === createMessage._id)
                             if (msgIdx < 0) {
-                                data.chatsWithMessages[chatIdx].messages.unshift(createMessage)
+                                newData[chatIdx].messages.unshift(createMessage)
                             }
-                            store.writeQuery({query: gqlQuery, data})
+                            store.writeQuery({query: gqlQuery, data: {...storeData, chatsWithMessages: newData}})
                         }
                     }
                 })

@@ -4,8 +4,8 @@ import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
 import {Redirect} from 'react-router-dom'
 import * as UserActions from 'client/actions/UserAction'
-import {withApollo} from 'react-apollo'
-import { ApolloClient } from 'apollo-client'
+import {withApollo} from '@apollo/react-hoc'
+import { ApolloClient } from '@apollo/client/core'
 import Util from 'client/util'
 
 

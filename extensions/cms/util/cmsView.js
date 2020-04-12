@@ -1,7 +1,7 @@
 import Util from '../../../client/util'
 import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants'
-import {NO_SESSION_KEY_VALUES_SERVER} from "../../../client/constants";
-import gql from "graphql-tag";
+import {NO_SESSION_KEY_VALUES_SERVER} from '../../../client/constants'
+import {gql} from '@apollo/client'
 
 //map with slugs that are url sensitive
 export const urlSensitivMap = {}

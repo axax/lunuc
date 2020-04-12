@@ -9,9 +9,10 @@ import {
     Tooltip
 } from 'ui/admin'
 import Util from 'client/util'
-import {withApollo, Query} from 'react-apollo'
-import gql from 'graphql-tag'
-import { ApolloClient } from 'apollo-client'
+import {withApollo} from '@apollo/react-hoc'
+import {Query} from '@apollo/react-components'
+import {gql} from '@apollo/client'
+import { ApolloClient } from '@apollo/client/core'
 import {COLLECTIONS_QUERY} from '../../constants'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {theme} from 'ui/admin'
@@ -130,12 +131,14 @@ class ManageCollectionClones extends React.PureComponent {
                         variables
                     })
 
-                    storeData.collections.results = storeData.collections.results.filter(f => f.name != name)
+                    const newData = {...storeData.collections}
+
+                    newData.results = storeData.collections.results.filter(f => f.name != name)
 
                     store.writeQuery({
                         query: gqlCollectionsQuery,
                         variables,
-                        data: storeData
+                        data: {...storeData, collections: newData}
                     })
                 },
             })

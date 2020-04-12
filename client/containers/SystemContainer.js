@@ -3,8 +3,8 @@ import PropTypes from 'prop-types'
 import extensions from 'gen/extensions'
 import BaseLayout from '../components/layout/BaseLayout'
 import {withStyles, Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock} from 'ui/admin'
-import {withApollo} from 'react-apollo'
-import { ApolloClient } from 'apollo-client'
+import {withApollo} from '@apollo/react-hoc'
+import { ApolloClient } from '@apollo/client/core'
 import Hook from 'util/hook'
 
 

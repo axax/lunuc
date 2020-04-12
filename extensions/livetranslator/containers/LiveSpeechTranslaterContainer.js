@@ -1,10 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {withApollo} from 'react-apollo'
-import { ApolloClient } from 'apollo-client'
-import {graphql} from 'react-apollo'
+import {withApollo, graphql} from '@apollo/react-hoc'
+import { ApolloClient } from '@apollo/client/core'
 import compose from 'util/compose'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {

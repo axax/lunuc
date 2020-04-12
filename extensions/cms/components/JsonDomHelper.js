@@ -27,9 +27,9 @@ import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
 import config from 'gen/config'
 import {getJsonDomElements} from '../util/elements'
-import {ApolloClient} from 'apollo-client'
-import {withApollo} from 'react-apollo'
-import gql from 'graphql-tag'
+import { ApolloClient } from '@apollo/client/core'
+import {withApollo} from '@apollo/react-hoc'
+import {gql} from '@apollo/client'
 import {deepMergeToFirst} from 'util/deepMerge'
 
 const {UPLOAD_URL} = config

@@ -1,7 +1,7 @@
 import React from 'react'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
-import gql from 'graphql-tag'
+import {gql} from '@apollo/client'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {
     Typography,
@@ -14,10 +14,11 @@ import {
 } from 'ui/admin'
 import Util from 'client/util'
 import CodeEditor from 'client/components/CodeEditor'
-import {Query, withApollo} from 'react-apollo'
+import {withApollo} from '@apollo/react-hoc'
+import {Query} from '@apollo/react-components'
 import {COMMAND_QUERY} from '../constants'
 import PropTypes from 'prop-types'
-import { ApolloClient } from 'apollo-client'
+import {ApolloClient} from '@apollo/client/core'
 import * as NotificationAction from 'client/actions/NotificationAction'
 
 class FilesContainer extends React.Component {
@@ -30,6 +31,16 @@ class FilesContainer extends React.Component {
             dir: props.dir || './',
             searchText: ''
         }
+    }
+
+
+    formatBytes(bytes, decimals) {
+        if (bytes == 0) return '0 Bytes';
+        const k = 1024,
+            dm = decimals || 2,
+            sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+            i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 
     render() {
@@ -129,7 +140,7 @@ class FilesContainer extends React.Component {
                                                     this.setState({file: b[8]})
                                                 }
                                             },
-                                            secondary: Util.formatBytes(b[4])/*,
+                                            secondary: formatBytes(b[4])/*,
                                              actions: <DeleteIconButton onClick={this.handlePostDeleteClick.bind(this, post)}/>,
                                              disabled: ['creating', 'deleting'].indexOf(post.status) > -1*/
                                         })

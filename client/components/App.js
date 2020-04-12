@@ -9,11 +9,9 @@ import UserDataContainer from 'client/containers/UserDataContainer'
  * components so we don't need to pass
  * it explicitly to all the components.
  */
-import {ApolloProvider} from 'react-apollo'
+import {ApolloProvider} from '@apollo/client'
 import {configureMiddleware} from '../middleware/index'
 import {Provider} from 'react-redux'
-
-
 
 class App extends React.PureComponent {
 

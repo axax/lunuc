@@ -1,4 +1,4 @@
-import ClientUtil from 'client/util'
+import Util from 'api/util'
 import {getType} from 'util/types'
 import {getFormFields} from 'util/typesAdmin'
 import {ObjectId} from 'mongodb'
@@ -69,7 +69,7 @@ export default class AggregationBuilder {
 
     getParsedFilter(filterStr) {
         if (filterStr) {
-            return ClientUtil.parseFilter(filterStr)
+            return Util.parseFilter(filterStr)
         }
     }
 
