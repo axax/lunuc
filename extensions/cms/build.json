@@ -53,6 +53,12 @@
           "type": "Boolean"
         },
         {
+          "name": "compress",
+          "label": "Compress response",
+          "hidden": true,
+          "type": "Boolean"
+        },
+        {
           "name": "template",
           "hidden": true,
           "searchable": true

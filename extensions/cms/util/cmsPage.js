@@ -42,7 +42,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         } else {
             match = {$or: ors}
         }
-        cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets'], {
+        cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'compress'], {
             match,
             limit: 1,
             _version
@@ -52,22 +52,22 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
 
             if (!editmode) {
 
-                //console.log(template)
-
                 //minify script
-                /*cmsPages.results[0].script = cmsPages.results[0].script.replace(/\t/g, ' ').replace(/ +(?= )/g,'')
-                cmsPages.results[0].style = cmsPages.results[0].style.replace(/\t/g, ' ').replace(/ +(?= )/g,'')*/
-
+                if(cmsPages.results[0].compress) {
+                    cmsPages.results[0].script = cmsPages.results[0].script.replace(/\t/g, ' ').replace(/ +(?= )/g,'').replace(/(^[ \t]*\n)/gm, "")
+                    cmsPages.results[0].style = cmsPages.results[0].style.replace(/\t/g, ' ').replace(/ +(?= )/g, '').replace(/(^[ \t]*\n)/gm, "")
+                }
                 try {
                     // TODO: Include sub CMS component to reduce number of requests
                     // TODO: also check if template is html
 
                     const template = JSON.parse(cmsPages.results[0].template)
-                    /*Util.findProperties(template,'$inlineEditor').forEach(element=>{
-                        delete element.$inlineEditor
-                    })*/
 
-                    //console.log(template)
+                    if(cmsPages.results[0].compress) {
+                        Util.findProperties(template, '$inlineEditor').forEach(element => {
+                            delete element.$inlineEditor
+                        })
+                    }
 
                     cmsPages.results[0].template = JSON.stringify(template, null, 0)
                 } catch (e) {

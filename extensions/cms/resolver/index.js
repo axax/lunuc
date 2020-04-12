@@ -34,7 +34,7 @@ export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets']
+            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets','compress']
             if (filter) {
                 // search in fields
                 fields.push('dataResolver')
@@ -76,7 +76,7 @@ export default db => ({
                 throw new Error('Cms page doesn\'t exist')
             }
             const scope = {...createScopeForDataResolver(query, props), page: {slug, host: getHostFromHeaders(headers)}}
-            const {_id, createdBy, template, script, style, resources, dataResolver, parseResolvedData,alwaysLoadAssets,
+            const {_id, createdBy, template, script, style, resources, dataResolver, parseResolvedData,alwaysLoadAssets,compress,
                 ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
 
@@ -130,6 +130,7 @@ export default db => ({
                     resolvedData: JSON.stringify(resolvedData),
                     parseResolvedData,
                     alwaysLoadAssets,
+                    compress,
                     html,
                     subscriptions,
                     urlSensitiv,
@@ -162,6 +163,7 @@ export default db => ({
                     resolvedData: JSON.stringify(resolvedData),
                     parseResolvedData,
                     alwaysLoadAssets,
+                    compress,
                     subscriptions,
                     urlSensitiv,
                     cacheKey: clientCacheKey
