@@ -120,16 +120,29 @@ const GenericResolver = {
             }
         }
 
-        let cacheKey
-        if (!isNaN(cache) && cache > 0) {
-            cacheKey = collectionName + JSON.stringify(match) + context.lang + JSON.stringify(otherOptions)
 
+        let cacheKey, cacheTime
+        if( cache !== undefined) {
+            if (cache.constructor === Object) {
+                if( cache.if!=='false') {
+                    cacheTime = cache.expires
+                    cacheKey = cache.key
+                }
+            } else {
+                cacheTime = cache
+            }
 
-            const resultFromCache = Cache.get(cacheKey)
-            if (resultFromCache) {
-                console.log(`GenericResolver from cache for ${collectionName} complete: total time ${new Date() - startTime}ms`)
+            if (!isNaN(cacheTime) && cacheTime > 0) {
+                if (!cacheKey) {
+                    //create cacheKey
+                    cacheKey = collectionName + JSON.stringify(match) + context.lang + JSON.stringify(otherOptions)
+                }
+                const resultFromCache = Cache.get(cacheKey)
+                if (resultFromCache) {
+                    console.log(`GenericResolver from cache for ${collectionName} complete: total time ${new Date() - startTime}ms`)
 
-                return resultFromCache
+                    return resultFromCache
+                }
             }
         }
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
@@ -185,7 +198,7 @@ const GenericResolver = {
 
 
         if (cacheKey) {
-            Cache.set(cacheKey, result, cache)
+            Cache.set(cacheKey, result, cacheTime)
         }
 
         console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${new Date() - startTime}ms`)
