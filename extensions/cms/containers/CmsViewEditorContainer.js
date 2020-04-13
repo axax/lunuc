@@ -10,7 +10,7 @@ import {
 import PropTypes from 'prop-types'
 import {graphql, withApollo} from '@apollo/react-hoc'
 import {Query} from '@apollo/react-components'
-import {ApolloClient} from '@apollo/client/core'
+import {ApolloClient} from '@apollo/client'
 import compose from 'util/compose'
 import {gql} from '@apollo/client'
 import Expandable from 'client/components/Expandable'

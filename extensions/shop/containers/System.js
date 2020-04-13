@@ -8,7 +8,7 @@ import {
 } from 'ui/admin'
 import {withApollo} from '@apollo/react-hoc'
 import PropTypes from 'prop-types'
-import { ApolloClient } from '@apollo/client/core'
+import { ApolloClient } from '@apollo/client'
 import * as NotificationAction from 'client/actions/NotificationAction'
 
 class System extends React.Component {

@@ -1,4 +1,4 @@
-import {ApolloClient} from '@apollo/client/core'
+import {ApolloClient} from '@apollo/client'
 import {createHttpLink, ApolloLink} from '@apollo/client'
 import {setContext} from '@apollo/link-context'
 import {onError} from '@apollo/link-error'

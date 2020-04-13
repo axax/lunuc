@@ -15,7 +15,7 @@ import {
     SearchIcon
 } from 'ui/admin'
 import {withApollo} from '@apollo/react-hoc'
-import { ApolloClient } from '@apollo/client/core'
+import { ApolloClient } from '@apollo/client'
 import {gql} from '@apollo/client'
 import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'

@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import {withApollo} from '@apollo/react-hoc'
 import {Query} from '@apollo/react-components'
-import { ApolloClient } from '@apollo/client/core'
+import { ApolloClient } from '@apollo/client'
 import {gql} from '@apollo/client'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {

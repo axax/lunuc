@@ -26,7 +26,7 @@ import {
 } from 'ui/admin'
 import {Query} from '@apollo/react-components'
 import {withApollo} from '@apollo/react-hoc'
-import {ApolloClient} from '@apollo/client/core'
+import {ApolloClient} from '@apollo/client'
 import {gql} from '@apollo/client'
 import Util from 'client/util'
 import GenericForm from 'client/components/GenericForm'

@@ -5,7 +5,7 @@ import PropTypes from 'prop-types'
 import {Redirect} from 'react-router-dom'
 import * as UserActions from 'client/actions/UserAction'
 import {withApollo} from '@apollo/react-hoc'
-import { ApolloClient } from '@apollo/client/core'
+import { ApolloClient } from '@apollo/client'
 import Util from 'client/util'
 
 

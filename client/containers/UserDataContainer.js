@@ -5,7 +5,7 @@ import {connect} from 'react-redux'
 import * as UserActions from 'client/actions/UserAction'
 import {withApollo} from '@apollo/react-hoc'
 import {gql} from '@apollo/client'
-import {ApolloClient} from '@apollo/client/core'
+import {ApolloClient} from '@apollo/client'
 import {USER_DATA_QUERY} from '../constants'
 
 class UserDataContainer extends React.PureComponent {

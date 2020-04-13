@@ -8,8 +8,8 @@ const baseElements = [
                 elementKey: 'image',
                 picker: {type: 'Media', baseFilter: 'mimeType=image'}
             },
-            p:{
-                wrapper:'true',
+            p: {
+                wrapper: 'true',
                 ['data-element-key']: 'image'
             }
         },
@@ -66,7 +66,7 @@ const baseElements = [
             $inlineEditor: {
                 elementKey: 'gallery',
                 menu: {addBelow: false},
-                allowDrop:false
+                allowDrop: false
             },
             p: {
                 ['data-element-key']: 'gallery'
@@ -80,7 +80,7 @@ const baseElements = [
                         $inlineEditor: false,
                         t: 'SmartImage',
                         p: {
-                            wrapper:'true',
+                            wrapper: 'true',
                             src: '$.item{data}'
                         }
                     }
@@ -109,34 +109,116 @@ const baseElements = [
         }
     },
     {
-        tagName: 'div',
+        tagName: 'section',
         name: 'Slider',
         defaults: {
             $inlineEditor: {
                 elementKey: 'slider',
                 menu: {addBelow: false},
-                allowDrop:false
+                allowDrop: false
             },
             p: {
                 ['data-element-key']: 'slider'
             },
-            c: {
-                $loop: {
-                    d: [],
-                    s: 'item',
+            $set: {
+                key: '__sliderData',
+                value: []
+            },
+            c: [
+                {
+                    $for: {
+                        $d: '__sliderData',
+                        s: 'slide',
+                        c:
+                            {
+                                $inlineEditor: false,
+                                t: 'input',
+                                p: {
+                                    type: 'radio',
+                                    name: '__uid__',
+                                    defaultValue: '$.slide{slide._index}',
+                                    id: '__uid__$.slide{slide._index}',
+                                    defaultChecked: "$.slide{slide._index===0?'checked':''}"
+                                }
+                            }
+                    }
+                },
+                {
+                    $inlineEditor: false,
+                    t:'ul',
+                    c: {
+                        $for: {
+                            $d: '__sliderData',
+                            s: 'slide',
+                            c: {
+                                $inlineEditor: false,
+                                t:'li',
+                                p: {
+                                    style: {
+                                        left: "$.slide{slide._index*100}%"
+                                    }
+                                },
+                                c: [
+                                    {
+                                        $inlineEditor: false,
+                                        $is: '__sliderData.length>1',
+                                        t: 'label',
+                                        p: {
+                                            htmlFor: '__uid__$.slide{slide._index>0?slide._index-1:this.scope.__sliderData.length-1}'
+                                        }
+                                    },
+                                    {
+                                        $inlineEditor: false,
+                                        t: 'SmartImage',
+                                        p: {
+                                            caption: "$.slide{slide.text}",
+                                            src: "$.slide{Util.escapeForJson(slide.image)}"
+                                        }
+                                    },
+                                    {
+                                        $inlineEditor: false,
+                                        $is: '__sliderData.length>1',
+                                        t: 'label',
+                                        p: {
+                                            htmlFor: '__uid__$.slide{slide._index<this.scope.__sliderData.length-1?slide._index+1:0}'
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    $inlineEditor: false,
+                    $is: '__sliderData.length>1',
+                    t: 'nav',
                     c: {
                         $inlineEditor: false,
-                        t: 'SmartImage',
-                        p: {
-                            caption: "$.item{text}",
-                            src: "$.item{Util.escapeForJson(image)}"
+                        t: 'ul',
+                        c: {
+                            $for: {
+                                $d: '__sliderData',
+                                s: 'slide',
+                                c: {
+                                    $inlineEditor: false,
+                                    t: 'li',
+                                    c: {
+                                        $inlineEditor: false,
+                                        t: 'label',
+                                        p: {
+                                            htmlFor: '__uid__$.slide{slide._index}'
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-            }
+
+            ]
         },
-        groupOptions:{
-            c_$loop_d: {
+        groupOptions: {
+            $set_value: {
                 image: {
                     fullWidth: true,
                     value: '',
@@ -145,24 +227,13 @@ const baseElements = [
                     type: 'Media',
                     filter: 'mimeType=image'
                 },
-                text:{
+                text: {
                     label: 'Text',
                     uitype: 'html'
                 }
             }
         },
-        options: {
-
-            /*p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            },
-            p_className: {
-                label: 'Klassname'
-            }*/
-        }
+        options: {}
     },
     {
         tagName: 'Link',

@@ -45,9 +45,12 @@ const TypesContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../../client/containers/TypesContainer')}/>
 
 
-const AdminButton = (props) => <Async {...props} expose="Button" load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')} />
-const AdminSelect = (props) => <Async {...props} expose="Select" load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')} />
-const AdminSwitch = (props) => <Async {...props} expose="Switch" load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')} />
+const AdminButton = (props) => <Async {...props} expose="Button"
+                                      load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')}/>
+const AdminSelect = (props) => <Async {...props} expose="Select"
+                                      load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')}/>
+const AdminSwitch = (props) => <Async {...props} expose="Switch"
+                                      load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')}/>
 
 class JsonDom extends React.Component {
 
@@ -79,8 +82,8 @@ class JsonDom extends React.Component {
         'SmartImage': ({src, caption, wrapper, alt, ...props}) => {
             let imageData = Util.getImageObject(src)
 
-            imageData['data-smartimage']=true
-            if(caption || wrapper){
+            imageData['data-smartimage'] = true
+            if (caption || wrapper) {
                 return <figure {...props}>
                     <img alt={alt} {...imageData} />
                     {caption && <figcaption dangerouslySetInnerHTML={{__html: caption}}/>}
@@ -95,7 +98,12 @@ class JsonDom extends React.Component {
             return <img alt={alt} {...imageData} {...props} />
         },
         Print,
-        'input': JsonDomInput,
+        'input': props => {
+            if (props.type === 'radio') {
+                return <input {...props} />
+            }
+            return <JsonDomInput {...props} />
+        },
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'QuillEditor': (props) => <QuillEditor {...props}/>,
         'select': (props) => <JsonDomInput select={true} {...props}/>,
@@ -276,7 +284,7 @@ class JsonDom extends React.Component {
             this.addParentRef(props)
 
             return true
-        }else if(props.editMode && this.props.style !== props.style) {
+        } else if (props.editMode && this.props.style !== props.style) {
             this.addStyle(props.style)
         }
         return false
@@ -402,7 +410,7 @@ class JsonDom extends React.Component {
         scope.root = root
         scope.parent = parent
 
-        if( script ) {
+        if (script) {
             if (this.runScript) {
                 this.runScript = false
                 this.runJsEvent('beforerunscript', false, scope)
@@ -434,7 +442,7 @@ class JsonDom extends React.Component {
                 return <div>Error in beforerender event. See details in console log: <span
                     dangerouslySetInnerHTML={{__html: this.lastEventError}}/></div>
             }
-        }else{
+        } else {
             this.jsOnStack = {}
         }
         let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
@@ -563,7 +571,7 @@ class JsonDom extends React.Component {
 
                 if (!item) return
 
-                const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $inlineEditor} = item
+                const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $inlineEditor, $set} = item
                 /*
                  t = type
                  c = children
@@ -574,7 +582,7 @@ class JsonDom extends React.Component {
                 if ($ifexist) {
                     try {
                         const value = propertyByPath($ifexist, scope)
-                        if ( value === null || value === undefined) {
+                        if (value === null || value === undefined) {
                             return
                         }
                     } catch (e) {
@@ -587,7 +595,7 @@ class JsonDom extends React.Component {
                     if ($is === 'false') {
                         return
                     }
-                    const match = $is.match(/([\w|\.]*)(==|\!=)(.*)/)
+                    const match = $is.match(/([\w|\.]*)(==|\!=|>)(.*)/)
                     if (match && match.length === 4) {
                         let prop
                         try {
@@ -601,6 +609,12 @@ class JsonDom extends React.Component {
                         }
                         if (match[2] === '!=') {
                             if (match[3] === String(prop)) {
+                                return
+                            }
+                        }
+                        if (match[2] === '>') {
+
+                            if ( !(prop > parseInt(match[3]))) {
                                 return
                             }
                         }
@@ -618,6 +632,11 @@ class JsonDom extends React.Component {
                         console.log(e, scope)
                         return
                     }
+                }
+
+                //set
+                if ($set) {
+                    scope[$set.key] = $set.value
                 }
 
                 // extend type
@@ -661,11 +680,11 @@ class JsonDom extends React.Component {
                                 data = Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};const Util = this.Util;return ${d}`).call({
                                     scope,
                                     Util,
-                                    serverMethod: (name, args)=>{
-                                        if(!this.serverMethodMap){
+                                    serverMethod: (name, args) => {
+                                        if (!this.serverMethodMap) {
                                             this.serverMethodMap = {}
                                         }
-                                        if(this.serverMethodMap[d]){
+                                        if (this.serverMethodMap[d]) {
                                             return this.serverMethodMap[d]
                                         }
                                         this.props.serverMethod(name, args, (response) => {
@@ -675,7 +694,7 @@ class JsonDom extends React.Component {
                                     }
                                 })
                             } catch (e) {
-                                if( !loopOrFor.ignore ) {
+                                if (!loopOrFor.ignore) {
                                     console.log(e, d)
                                     this.emitJsonError(e, {loc: 'Loop Datasource'})
                                 }
@@ -719,10 +738,10 @@ class JsonDom extends React.Component {
                                                     return \`${cStr}\``))
                         }
                         data.forEach((loopChild, childIdx) => {
-                            if (loopOrFor.convert==='String'){
+                            if (loopOrFor.convert === 'String') {
                                 loopChild = Util.escapeForJson(loopChild)
                             }
-                            if (!loopChild || loopChild.constructor !== Object ) {
+                            if (!loopChild || loopChild.constructor !== Object) {
                                 loopChild = {data: loopChild}
                             }
 
@@ -822,17 +841,22 @@ class JsonDom extends React.Component {
                         }
                         if (eleProps.name) {
                             // handle controlled input here
-                            if (eleProps.value === undefined) {
-                                eleProps.value = (eleProps.type === 'checkbox' ? false : '')
-                            }
-                            if (!this.bindings[eleProps.name]) {
-                                this.bindings[eleProps.name] = eleProps.value
+                            if (eleProps.type === 'radio') {
+                                if (eleProps.defaultChecked && !this.bindings[eleProps.name]) {
+                                    this.bindings[eleProps.name] = eleProps.value
+                                }
                             } else {
-                                eleProps.value = this.bindings[eleProps.name]
+                                if (eleProps.value === undefined) {
+                                    eleProps.value = (eleProps.type === 'checkbox' ? false : '')
+                                }
+                                if (!this.bindings[eleProps.name]) {
+                                    this.bindings[eleProps.name] = eleProps.value
+                                } else {
+                                    eleProps.value = this.bindings[eleProps.name]
+                                }
+                                eleProps.time = new Date()
                             }
                             eleProps.onChange = this.handleBindingChange.bind(this, eleProps.onChange)
-
-                            eleProps.time = new Date()
                         }
 
                         if (eleProps.props && eleProps.props.$data) {
@@ -888,7 +912,7 @@ class JsonDom extends React.Component {
                     if ($c) {
                         eleProps.dangerouslySetInnerHTML = {__html: $c}
                     }
-                    if (((eleType.name === 'SmartImage' && eleProps.src && (!$observe ||  $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
+                    if (((eleType.name === 'SmartImage' && eleProps.src && (!$observe || $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
                         h.push(React.createElement(
                             elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
                             {key: key}
@@ -1102,7 +1126,7 @@ class JsonDom extends React.Component {
                     errorMsg += str + '\n'
                 }
             }
-        }else{
+        } else {
             errorMsg += e.message
         }
         errorMsg += '</pre>'
@@ -1247,7 +1271,7 @@ class JsonDom extends React.Component {
         }
         if (preprocess) {
 
-            if (inworker ) {
+            if (inworker) {
                 // process in web worker
                 Util.createWorker(preprocessCss).run(style).then(e => {
                     addTag(e.data)

@@ -18,7 +18,7 @@ import {withApollo} from '@apollo/react-hoc'
 import {Query} from '@apollo/react-components'
 import {COMMAND_QUERY} from '../constants'
 import PropTypes from 'prop-types'
-import {ApolloClient} from '@apollo/client/core'
+import {ApolloClient} from '@apollo/client'
 import * as NotificationAction from 'client/actions/NotificationAction'
 
 class FilesContainer extends React.Component {

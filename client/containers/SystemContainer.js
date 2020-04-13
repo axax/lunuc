@@ -4,7 +4,7 @@ import extensions from 'gen/extensions'
 import BaseLayout from '../components/layout/BaseLayout'
 import {withStyles, Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock} from 'ui/admin'
 import {withApollo} from '@apollo/react-hoc'
-import { ApolloClient } from '@apollo/client/core'
+import { ApolloClient } from '@apollo/client'
 import Hook from 'util/hook'
 
 

@@ -28,7 +28,7 @@ import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
 import config from 'gen/config'
 import {getJsonDomElements} from '../util/elements'
-import {ApolloClient} from '@apollo/client/core'
+import {ApolloClient} from '@apollo/client'
 import {withApollo} from '@apollo/react-hoc'
 import {gql} from '@apollo/client'
 import {deepMergeToFirst} from 'util/deepMerge'
@@ -1075,6 +1075,9 @@ class JsonDomHelper extends React.Component {
                                                           if (selected.groupOptions[groupKey]) {
                                                               if (selected.groupOptions[groupKey][groupProp]) {
                                                                   let groupArray = propertyByPath(groupKey, subJson, '_')
+                                                                  if( !groupArray){
+                                                                      groupArray = propertyByPath(groupKey, comp, '_')
+                                                                  }
                                                                   while (groupIdx >= groupArray.length) {
                                                                       groupArray.push({})
                                                                   }
