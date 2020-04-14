@@ -350,16 +350,16 @@ const parseWebsite = async (urlToFetch, host) => {
     })
     const page = await browser.newPage()
 
-    await page.setExtraHTTPHeaders(
-        {'x-host-rule': host},
-    );
-
     await page.setRequestInterception(true)
+
     page.on('request', (request) => {
         if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
             request.abort()
         } else {
-            request.continue()
+            const headers = Object.assign({}, request.headers(), {
+                'x-host-rule': host
+            })
+            request.continue({headers})
         }
     })
 
