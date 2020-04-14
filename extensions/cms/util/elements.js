@@ -65,7 +65,6 @@ const baseElements = [
         defaults: {
             $inlineEditor: {
                 elementKey: 'gallery',
-                menu: {addBelow: false},
                 allowDrop: false
             },
             p: {
@@ -114,7 +113,6 @@ const baseElements = [
         defaults: {
             $inlineEditor: {
                 elementKey: 'slider',
-                menu: {addBelow: false},
                 allowDrop: false
             },
             p: {

@@ -772,26 +772,27 @@ class JsonDomHelper extends React.Component {
                                     newJsonElement.options[key].value = val
                                 })
 
-
-                                Object.keys(newJsonElement.groupOptions).forEach(key => {
-                                    let val = propertyByPath(key, subJson, '_')
-                                    if (val) {
-                                        newJsonElement.options['!' + key + '!add'] = {
-                                            uitype: 'button',
-                                            key,
-                                            group: newJsonElement.groupOptions[key],
-                                            label: 'Hinzufügen'
-                                        }
-                                        val.forEach((groupValue, idx) => {
-                                            Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
-                                                newJsonElement.options['!' + key + '!' + fieldKey + '!' + idx] = {
-                                                    ...newJsonElement.groupOptions[key][fieldKey],
-                                                    value: groupValue[fieldKey]
-                                                }
+                                if( newJsonElement.groupOptions ) {
+                                    Object.keys(newJsonElement.groupOptions).forEach(key => {
+                                        let val = propertyByPath(key, subJson, '_')
+                                        if (val) {
+                                            newJsonElement.options['!' + key + '!add'] = {
+                                                uitype: 'button',
+                                                key,
+                                                group: newJsonElement.groupOptions[key],
+                                                label: 'Hinzufügen'
+                                            }
+                                            val.forEach((groupValue, idx) => {
+                                                Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
+                                                    newJsonElement.options['!' + key + '!' + fieldKey + '!' + idx] = {
+                                                        ...newJsonElement.groupOptions[key][fieldKey],
+                                                        value: groupValue[fieldKey]
+                                                    }
+                                                })
                                             })
-                                        })
-                                    }
-                                })
+                                        }
+                                    })
+                                }
 
                                 /* if (options.$inlineEditor_dataResolver) {
                                      if (options.$inlineEditor_dataResolver.value.constructor === String) {
