@@ -257,7 +257,7 @@ const app = httpx.createServer(options, function (req, res) {
         } else {
 
             // check with and without www
-            const hostRuleHost = req.headers['x-host-rule']?req.headers['x-host-rule'].spit(':')[0]:host
+            const hostRuleHost = req.headers['x-host-rule']?req.headers['x-host-rule'].split(':')[0]:host
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
 
 
