@@ -4,7 +4,7 @@ import {getHostFromHeaders} from 'util/host'
 import Cache from 'util/cache'
 
 export const getCmsPage = async ({db, context, slug, editmode, _version, headers}) => {
-    let host = getHostFromHeaders(headers)
+    let host = headers['x-host-rule']?headers['x-host-rule'].split(':')[0]:getHostFromHeaders(headers)
 
     if (host && host.startsWith('www.')) {
         host = host.substring(4)
