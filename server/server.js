@@ -258,6 +258,7 @@ const app = httpx.createServer(options, function (req, res) {
 
             // check with and without www
             const hostRuleHost = req.headers['x-host-rule']?req.headers['x-host-rule'].split(':')[0]:host
+            console.log('hostRuleHost = '+hostRuleHost)
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
 
 
@@ -352,15 +353,13 @@ const parseWebsite = async (urlToFetch, host) => {
     const page = await browser.newPage()
 
     await page.setRequestInterception(true)
+    await page.setExtraHTTPHeaders({ 'x-host-rule': host })
 
     page.on('request', (request) => {
         if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
             request.abort()
         } else {
-            const headers = Object.assign({}, request.headers(), {
-                'x-host-rule': host
-            })
-            request.continue({headers})
+            request.continue()
         }
     })
 
