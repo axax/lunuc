@@ -322,7 +322,7 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
 
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${uri}`)
-        const html = await parseWebsite(`http://localhost:${PORT}${uri}`)
+        const html = await parseWebsite(`http://localhost:${PORT}${uri}`, host)
 
 
         res.writeHead(200, headers)
@@ -342,13 +342,17 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
     }
 }
 
-const parseWebsite = async (urlToFetch) => {
+const parseWebsite = async (urlToFetch, host) => {
     console.log(`fetch ${urlToFetch}`)
     const browser = await puppeteer.launch({
         ignoreHTTPSErrors: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     })
     const page = await browser.newPage()
+
+    await page.setExtraHTTPHeaders(
+        {'x-host-rule': host},
+    );
 
     await page.setRequestInterception(true)
     page.on('request', (request) => {
