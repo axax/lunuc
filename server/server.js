@@ -323,7 +323,10 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
 
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${uri}`)
-        const html = await parseWebsite(`http://localhost:${PORT}${uri}`, host)
+        const baseUrl = `http://localhost:${PORT}`
+        let html = await parseWebsite(baseUrl+uri, host)
+        const re = new RegExp(baseUrl, 'g')
+        html = html.replace(re,`https://${host}`)
 
 
         res.writeHead(200, headers)
@@ -365,6 +368,8 @@ const parseWebsite = async (urlToFetch, host) => {
     await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
 
     const html = await page.content()
+
+
 
 
     await browser.close()
