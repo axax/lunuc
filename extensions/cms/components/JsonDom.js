@@ -195,7 +195,7 @@ class JsonDom extends React.Component {
     scriptResult = null
     componentRefs = {} // this is the object with references to elements with identifier
     jsOnStack = {}
-    styles={}
+    styles = {}
 
     constructor(props) {
         super(props)
@@ -466,11 +466,11 @@ class JsonDom extends React.Component {
                 parsedStyle = new Function(DomUtil.toES5(`const {scope} = this
                              return \`${style}\``)).call({
                     scope: this.scope,
-                    set:(key, value)=>{
-                        this.styles[key]=value
+                    set: (key, value) => {
+                        this.styles[key] = value
                         return ''
                     },
-                    get:(key)=>{
+                    get: (key) => {
                         return this.styles[key]
                     }
                 })
@@ -621,7 +621,7 @@ class JsonDom extends React.Component {
                         }
                         if (match[2] === '>') {
 
-                            if ( !(prop > parseInt(match[3]))) {
+                            if (!(prop > parseInt(match[3]))) {
                                 return
                             }
                         }
@@ -642,8 +642,14 @@ class JsonDom extends React.Component {
                 }
 
                 //set
-                if ($set) {
-                    scope[$set.key] = $set.value
+                if ($set && $set.forEach) {
+                    $set.forEach(keyvalue => {
+                        if (keyvalue.chunk) {
+                            scope[keyvalue.key] = Util.chunkArray(keyvalue.value, keyvalue.chunk)
+                        } else {
+                            scope[keyvalue.key] = keyvalue.value
+                        }
+                    })
                 }
 
                 // extend type
@@ -677,6 +683,7 @@ class JsonDom extends React.Component {
                         try {
                             // get data from scope by path (foo.bar)
                             data = propertyByPath($d, scope)
+                            console.log($d, scope)
                         } catch (e) {
                             //this.parseError = e
                             this.emitJsonError(e, {loc: 'Loop Datasrouce'})

@@ -118,10 +118,13 @@ const baseElements = [
             p: {
                 ['data-element-key']: 'slider'
             },
-            $set: {
-                key: '__sliderData',
-                value: []
-            },
+            $set: [
+                {
+                    key: '__sliderData',
+                    value: [],
+                    chunk: '1'
+                }
+            ],
             c: [
                 {
                     $for: {
@@ -143,14 +146,14 @@ const baseElements = [
                 },
                 {
                     $inlineEditor: false,
-                    t:'ul',
+                    t: 'ul',
                     c: {
                         $for: {
                             $d: '__sliderData',
                             s: 'slide',
                             c: {
                                 $inlineEditor: false,
-                                t:'li',
+                                t: 'li',
                                 p: {
                                     style: {
                                         left: "$.slide{slide._index*100}%"
@@ -166,11 +169,17 @@ const baseElements = [
                                         }
                                     },
                                     {
-                                        $inlineEditor: false,
-                                        t: 'SmartImage',
-                                        p: {
-                                            caption: "$.slide{slide.text}",
-                                            src: "$.slide{Util.escapeForJson(slide.image)}"
+                                        $for: {
+                                            $d: 'slide.data',
+                                            s: 'item',
+                                            c: {
+                                                $inlineEditor: false,
+                                                t: 'SmartImage',
+                                                p: {
+                                                    caption: "$.item{Util.escapeForJson(item.text)}",
+                                                    src: "$.item{Util.escapeForJson(item.image)}"
+                                                }
+                                            }
                                         }
                                     },
                                     {
@@ -216,7 +225,7 @@ const baseElements = [
             ]
         },
         groupOptions: {
-            $set_value: {
+            $set_0_value: {
                 image: {
                     fullWidth: true,
                     value: '',
@@ -231,7 +240,10 @@ const baseElements = [
                 }
             }
         },
-        options: {}
+        options: {
+            $set_0_chunk: {value: '', label: 'Anzahl pro Seite'},
+            p_className: {value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse'}
+        }
     },
     {
         tagName: 'Link',
@@ -550,6 +562,9 @@ const baseElements = [
             }
         },
         options: {
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
             p_style_marginBottom: {
                 label: 'Abstand unten'
             },

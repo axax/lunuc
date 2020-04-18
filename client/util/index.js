@@ -277,6 +277,17 @@ const Util = {
             if (newObj[key] !== prevObj[key]) return true
         }
         return false
+    },
+    chunkArray(arr, chunk) {
+        const chunkInt = parseInt(chunk)
+        if(!isNaN(chunkInt)) {
+            return arr.reduce((all, one, i) => {
+                const ch = Math.floor(i / chunkInt)
+                all[ch] = [].concat((all[ch] || []), one)
+                return all
+            }, [])
+        }
+        return arr
     }
 }
 export default Util
