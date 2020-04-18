@@ -149,6 +149,8 @@ export const checkFieldType = (value, field) => {
         if (isNaN(value)) {
             value = null
         }
+    }else if( field.replaceBreaks){
+        value = value.replace(/(?:\r\n|\r|\n)/g, '<br>')
     }
 
     return value

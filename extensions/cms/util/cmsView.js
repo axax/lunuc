@@ -2,7 +2,7 @@ import Util from '../../../client/util'
 import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants'
 import {NO_SESSION_KEY_VALUES_SERVER} from '../../../client/constants'
 import {gql} from '@apollo/client'
-
+import config from 'gen/config'
 //map with slugs that are url sensitive
 export const urlSensitivMap = {}
 
@@ -13,7 +13,7 @@ export const settingKeyPrefix = 'CmsViewContainerSettings'
 let _gqlQuery
 export const gqlQuery = ()=>{
     if(!_gqlQuery) {
-        _gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name{en de} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData style parseResolvedData alwaysLoadAssets compress html subscriptions _id modifiedAt createdBy{_id username} status}}`
+        _gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,_version:$_version){cacheKey slug name{${config.LANGUAGES.join(' ')}} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData style parseResolvedData alwaysLoadAssets compress html subscriptions _id modifiedAt createdBy{_id username} status}}`
     }
     return _gqlQuery
 }

@@ -70,10 +70,11 @@
 
         _app_.lang = l
         var s = document.createElement('script')
-        s.onload = function () {
+        s.onerror = s.onload = function () {
             _app_.trLoaded = true
             if (_app_.trCallback) _app_.trCallback()
         }
+
         s.setAttribute('src', '/' + l + '.tr.js?v=${BUILD_NUMBER}')
         document.head.appendChild(s)
     }else{

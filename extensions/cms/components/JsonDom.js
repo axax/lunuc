@@ -195,7 +195,7 @@ class JsonDom extends React.Component {
     scriptResult = null
     componentRefs = {} // this is the object with references to elements with identifier
     jsOnStack = {}
-
+    styles={}
 
     constructor(props) {
         super(props)
@@ -465,7 +465,14 @@ class JsonDom extends React.Component {
             try {
                 parsedStyle = new Function(DomUtil.toES5(`const {scope} = this
                              return \`${style}\``)).call({
-                    scope: this.scope
+                    scope: this.scope,
+                    set:(key, value)=>{
+                        this.styles[key]=value
+                        return ''
+                    },
+                    get:(key)=>{
+                        return this.styles[key]
+                    }
                 })
             } catch (e) {
                 parsedStyle = style
@@ -744,7 +751,6 @@ class JsonDom extends React.Component {
                             if (!loopChild || loopChild.constructor !== Object) {
                                 loopChild = {data: loopChild}
                             }
-
                             // back to json
                             loopChild._index = childIdx
 

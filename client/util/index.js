@@ -93,8 +93,11 @@ const Util = {
         //return new Date(stamp).toLocaleString()
     },
     formatDate(d, options) {
-        return Util.getDateTimeFormat(options).format(new Date(d))
-
+        try {
+            return Util.getDateTimeFormat(options).format(new Date(d))
+        }catch (e) {
+            return ''
+        }
         /*(new Date(d)).toLocaleString(options && options.lang ? options.lang : _app_.lang, Object.assign({
         year: 'numeric',
         month: '2-digit',

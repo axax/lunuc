@@ -392,19 +392,75 @@ const baseElements = [
         }
     },
     {
+        tagName: '', name: 'Überschrift (sprachabhänig)',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'headlinetr'
+            },
+            p: {
+                ['data-element-key']: 'headlinetr'
+            },
+            c: "${_t('__uid__')}"
+        },
+        options: {
+            t: {
+                enum: [
+                    {
+                        name: 'H1',
+                        value: 'h1'
+                    },
+                    {
+                        name: 'H2',
+                        value: 'h2'
+                    },
+                    {
+                        name: 'H3',
+                        value: 'h3'
+                    },
+                    {
+                        name: 'H4',
+                        value: 'h4'
+                    },
+                    {
+                        name: 'H5',
+                        value: 'h5'
+                    },
+                    {
+                        name: 'H6',
+                        value: 'h6'
+                    }
+                ]
+            },
+            c: {
+                label: 'Text',
+                fullWidth: true
+            },
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
+            }
+        }
+    },
+    {
         tagName: 'p',
         name: 'Text block',
         defaults: {
-            c: "Paragraph",
+            $c: "Paragraph",
             $inlineEditor: {
                 elementKey: 'p'
             }
         },
         options: {
-            c: {
+            $c: {
                 label: 'Text',
                 fullWidth: true,
-                uitype: 'textarea'
+                uitype: 'textarea',
+                replaceBreaks: true
             },
             p_style_marginTop: {
                 label: 'Abstand oben'

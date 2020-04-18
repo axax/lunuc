@@ -27,6 +27,10 @@ export const systemSchemaRaw = `
         total: Int
     }
     
+    type RemoveDbDumpResult {
+        status: String
+    }
+    
     type MediaDump {
         name: String
         createdAt: Float
@@ -83,7 +87,7 @@ export const systemSchemaRaw = `
     	run(command: String!, scope: String, id: String, sync: Boolean): RunResult
     	killRun(id: String!): RunResult
     	sendMail(recipient: String!, subject: String, body: String, slug: String): MailResult
-    	dbDumps: DbDumpResult   
+    	dbDumps: DbDumpResult
     	mediaDumps: MediaDumpResult  
     	ping: PingResult
     	collections (filter: String): CollectionResult
@@ -94,7 +98,8 @@ export const systemSchemaRaw = `
     
       
     type Mutation {   	
-    	createDbDump(type: String): DbDump
+    	createDbDump(type: String): DbDump    	
+    	removeDbDump(name: String!): RemoveDbDumpResult   
     	createMediaDump(type: String): MediaDump
     	cloneCollection(type: String!, name: String): CloneCollectionResult
     	deleteCollection(name: String!): DeleteCollectionResult

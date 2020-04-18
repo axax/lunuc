@@ -716,7 +716,7 @@ class CmsViewEditorContainer extends React.Component {
             } else {
                 setPropertyByPath(value, path, segment)
             }
-            this.handleDataResolverChange(JSON.stringify(dataResolver, null, 4), instantSave)
+            this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2), instantSave)
         }
     }
 

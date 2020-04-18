@@ -765,14 +765,24 @@ class JsonDomHelper extends React.Component {
                                 newJsonElement.options = Object.assign({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
 
                                 Object.keys(newJsonElement.options).forEach(key => {
+
                                     let val = propertyByPath('$original_' + key, subJson, '_')
                                     if (!val) {
                                         val = propertyByPath(key, subJson, '_')
                                     }
-                                    newJsonElement.options[key].value = val
+
+                                    const pos = val ? val.indexOf('${_t(\'') : -1
+                                    if (pos > -1) {
+                                        const trKey = val.substring(6, val.indexOf('\')}'))
+                                        if (this.props._scope.data.tr) {
+                                            newJsonElement.options[key].value = this.props._scope.data.tr[trKey]
+                                        }
+                                    } else {
+                                        newJsonElement.options[key].value = val
+                                    }
                                 })
 
-                                if( newJsonElement.groupOptions ) {
+                                if (newJsonElement.groupOptions) {
                                     Object.keys(newJsonElement.groupOptions).forEach(key => {
                                         let val = propertyByPath(key, subJson, '_')
                                         if (val) {
@@ -984,8 +994,14 @@ class JsonDomHelper extends React.Component {
                 <_WrappedComponent onChange={newOnChange || onChange} {...rest} children={kids}/>
             </div>
         } else {
+            let isEmpty = false
+            if (!children && !rest.dangerouslySetInnerHTML) {
+                isEmpty = true
+            } else if (children && children.constructor === Array && children.length === 0) {
+                isEmpty = true
+            }
             comp = <_WrappedComponent onChange={newOnChange || onChange} _inlineeditor="true"
-                                      data-isempty={rest.dangerouslySetInnerHTML ? false : children ? false : true}
+                                      data-isempty={isEmpty}
                                       key={rest._key} {...events} {...rest} children={kids}/>
         }
         if (toolbar) {
@@ -1076,7 +1092,7 @@ class JsonDomHelper extends React.Component {
                                                           if (selected.groupOptions[groupKey]) {
                                                               if (selected.groupOptions[groupKey][groupProp]) {
                                                                   let groupArray = propertyByPath(groupKey, subJson, '_')
-                                                                  if( !groupArray){
+                                                                  if (!groupArray) {
                                                                       groupArray = propertyByPath(groupKey, comp, '_')
                                                                   }
                                                                   while (groupIdx >= groupArray.length) {
@@ -1091,7 +1107,21 @@ class JsonDomHelper extends React.Component {
                                                               setPropertyByPath(val, '$original_' + key, comp, '_')
                                                               val = Util.replacePlaceholders(selected.options[key].template, val[0])
                                                           }
-                                                          setPropertyByPath(val, key, comp, '_')
+
+                                                          let oldVal = propertyByPath(key, addChildDialog.edit?subJson:selected.defaults, '_')
+                                                          const pos = oldVal ? oldVal.indexOf('${_t(\'') : -1
+
+                                                          if (pos > -1) {
+                                                              const trKey = oldVal.substring(6, oldVal.indexOf('\')}'))
+
+                                                              _onDataResolverPropertyChange({
+                                                                  value: val,
+                                                                  path: 'tr.' + _app_.lang + '.' + trKey,
+                                                                  instantSave: true
+                                                              })
+                                                          } else {
+                                                              setPropertyByPath(val, key, comp, '_')
+                                                          }
                                                       }
                                                   })
                                               }
@@ -1179,8 +1209,13 @@ class JsonDomHelper extends React.Component {
                                             })
                                         })
                                     }
-
-                                    this.setState({addChildDialog: {...addChildDialog, selected: item, form: null}})
+                                    this.setState({
+                                        addChildDialog: {
+                                            ...addChildDialog,
+                                            selected: item,
+                                            form: null
+                                        }
+                                    })
                                 }}
                                 items={jsonElements}
                             />}

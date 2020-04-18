@@ -256,6 +256,10 @@ class GenericForm extends React.Component {
                 continue
             }
             let value = this.state.fields[fieldKey]
+            if( field.replaceBreaks && value){
+                value = value.replace(/<br>/g, '\n');
+            }
+
 
             let currentFormFields = formFields
 

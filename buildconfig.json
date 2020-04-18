@@ -138,7 +138,7 @@
     "BACKUP_URL": "/backups",
     "UPLOAD_DIR": "/uploads",
     "UPLOAD_URL": "/uploads",
-    "LANGUAGES": ["de","en"],
+    "LANGUAGES": ["de","en","fr","it"],
     "DEFAULT_LANGUAGE": "de",
     "DEFAULT_RESULT_LIMIT": 10,
     "API_PREFIX": "lunucapi",

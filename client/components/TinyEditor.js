@@ -42,7 +42,6 @@ class TinyEditor extends React.Component {
             const assestLoaded = () => {
 
                 if (!window.tinymce) return
-
                 this.isInit = true
                 tinymce.init({
                     selector:'#TinyEditor' + this.instanceId,
@@ -89,7 +88,6 @@ class TinyEditor extends React.Component {
                 })
 
             }
-
             if (!window.tinymce) {
                 DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.2.1/tinymce.min.js', {
                     onload: assestLoaded
@@ -102,17 +100,19 @@ class TinyEditor extends React.Component {
     }
 
     componentDidMount() {
-        this.initEditor()
-        this.css = document.createElement('style')
+        setTimeout(()=> {
+            this.initEditor()
+        },(this.instanceId-1)*50)
+        /*this.css = document.createElement('style')
         this.css.innerHTML = `
         `
-        document.body.appendChild(this.css)
+        document.body.appendChild(this.css)*/
 
     }
 
     componentWillUnmount() {
         tinymce.remove('#TinyEditor' + this.instanceId)
-        document.body.removeChild(this.css)
+        //document.body.removeChild(this.css)
     }
 
     componentDidUpdate() {
@@ -121,7 +121,6 @@ class TinyEditor extends React.Component {
 
     render() {
         const {children, readOnly, toolbar, required, theme, name, placeholder, value, error, ...rest} = this.props
-        console.log('render TinyEditor')
         if (this.isReadOnly(this.props)) {
             return <div className="richtext-content"
                         dangerouslySetInnerHTML={{__html: this.state.value}} {...rest}></div>

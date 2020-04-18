@@ -17,6 +17,7 @@ import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail'
 import {getType} from 'util/types'
 import os from 'os'
+
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
 const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ', 'pwd', 'ls', 'ping']
@@ -214,7 +215,7 @@ export const systemResolver = (db) => ({
 
             throw new Error('Not implmented yet.')
         },
-        bulkEdit: async ({collection,_id,script}, {context}) => {
+        bulkEdit: async ({collection, _id, script}, {context}) => {
 
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
 
@@ -230,7 +231,7 @@ export const systemResolver = (db) => ({
 
             const entries = await db.collection(collection).find(options).toArray()
 
-            const save = (entry)=>{
+            const save = (entry) => {
                 db.collection(collection).updateOne({_id: entry._id}, {$set: entry})
             }
 
@@ -242,7 +243,7 @@ export const systemResolver = (db) => ({
 
             tpl.call({entries, save, ObjectId, Util, require})
 
-            return {result:`Successful executed`}
+            return {result: `Successful executed`}
         },
         dbDumps: async (data, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
@@ -393,6 +394,16 @@ export const systemResolver = (db) => ({
             const stats = fs.statSync(fullName)
 
             return {name, createdAt: date, size: (stats.size / 1000) + 'kb'}
+        },
+        removeDbDump: async ({name}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+
+            // make sure upload dir exists
+            const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/dbdumps/')
+
+            fs.unlinkSync(backup_dir+'/'+name)
+
+            return {status:'ok'}
         },
         createMediaDump: async ({type}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)

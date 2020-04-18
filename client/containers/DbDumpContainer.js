@@ -136,7 +136,10 @@ class DbDumpContainer extends React.Component {
                                     this.authorizedRequest(BACKUP_URL + '/dbdumps/' + i.name, 'db.backup.gz')
 
                                 },
-                                secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size
+                                secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size,
+                                actions: <DeleteIconButton onClick={()=>{
+                                    this.props.removeDbDump(i)
+                                }}/>
                             })
                             return a
                         }, [])}/>
@@ -207,6 +210,7 @@ DbDumpContainer.propTypes = {
 
 const gqlQuery = gql`query{dbDumps{results{name createdAt size}}}`
 const gqlUpdate = gql`mutation createDbDump($type:String){createDbDump(type:$type){name createdAt size}}`
+const gqlRemove = gql`mutation removeDbDump($name:String!){removeDbDump(name:$name){status}}`
 const gqlQueryMedia = gql`query{mediaDumps{results{name createdAt size}}}`
 const gqlUpdateMedia = gql`mutation createMediaDump($type:String){createMediaDump(type:$type){name createdAt size}}`
 
@@ -237,6 +241,30 @@ const DbDumpContainerWithGql = compose(
 
                         // Write our data back to the cache.
                         proxy.writeQuery({query: gqlQuery, data: {...storeData, dbDumps: newData}})
+                    }
+
+                })
+            }
+        })
+    }),
+    graphql(gqlRemove, {
+        props: ({mutate}) => ({
+            removeDbDump: ({name}) => {
+                return mutate({
+                    variables: {name: name},
+                    update: (proxy, {data: {removeDbDump}}) => {
+                        // Read the data from our cache for this query.
+                        const storeData = proxy.readQuery({query: gqlQuery})
+
+                        const newData = {...storeData.dbDumps, results: [...storeData.dbDumps.results]}
+
+
+                        const idx = newData.results.findIndex(x => x.name === name)
+                        if (idx > -1) {
+                            newData.results.splice(idx, 1)
+                            proxy.writeQuery({query: gqlQuery, data: {...storeData, dbDumps: newData}})
+
+                        }
                     }
 
                 })
