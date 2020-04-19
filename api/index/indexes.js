@@ -43,7 +43,9 @@ export const createAllIndexes = async (db) => {
             }
         }
         if( Object.keys(textIndex).length > 0){
-            db.collection(typeName).createIndex(textIndex)
+            db.collection(typeName).createIndex(textIndex).catch(async e=>{
+                console.error(e)
+            })
         }
     }
 
