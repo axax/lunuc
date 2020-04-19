@@ -21,6 +21,7 @@ import ScriptEditor from '../components/ScriptEditor'
 import ResourceEditor from '../components/ResourceEditor'
 import {
     TextField,
+    Typography,
     DrawerLayout,
     MenuList,
     MenuListItem,
@@ -502,8 +503,11 @@ class CmsViewEditorContainer extends React.Component {
                                 if (parsedData.template) {
 
                                     return <div>
-                                        <p>Template changed</p>
-                                        <pre>{JSON.stringify(JSON.parse(parsedData.template), null, 4)}</pre>
+                                        <Typography gutterBottom>Template changed</Typography>
+
+                                        <CodeEditor lineNumbers
+                                                    type="json"
+                                                    readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>
                                     </div>
 
                                 } else if (parsedData.script) {
@@ -514,7 +518,7 @@ class CmsViewEditorContainer extends React.Component {
                                     </div>
 
                                 }
-                                return <pre>{JSON.stringify(parsedData, null, 4)}</pre>
+                                return <pre>{JSON.stringify(parsedData, null, 2)}</pre>
                             }}
                         </Query>
 

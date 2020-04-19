@@ -740,7 +740,7 @@ class JsonDomHelper extends React.Component {
                             name: _inlineEditor.menuTitle.sourceRemove || 'Eintrag löschen',
                             icon: <DeleteIcon/>,
                             onClick: (e) => {
-
+                                //JsonDomHelper.disableEvents = true
                                 this.setState({deleteSourceConfirmDialog: parsedSouce})
                             }
                         })
@@ -790,7 +790,8 @@ class JsonDomHelper extends React.Component {
                                                 uitype: 'button',
                                                 key,
                                                 group: newJsonElement.groupOptions[key],
-                                                label: 'Hinzufügen'
+                                                label: 'Hinzufügen',
+                                                newLine: true
                                             }
                                             val.forEach((groupValue, idx) => {
                                                 Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
@@ -867,6 +868,7 @@ class JsonDomHelper extends React.Component {
                         name: 'Element entfernen',
                         icon: <DeleteIcon/>,
                         onClick: () => {
+                            JsonDomHelper.disableEvents = true
                             this.setState({deleteConfirmDialog: true})
                         }
                     })
@@ -1011,11 +1013,13 @@ class JsonDomHelper extends React.Component {
             return <React.Fragment>{comp}
                 {(deleteConfirmDialog &&
                     <AddToBody>
-                        <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteConformation" open={true}
+                        <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteConfirmation" open={true}
                                       onClose={(e) => {
                                           if (e.key === 'delete') {
                                               this.handleDeleteClick()
                                           }
+
+                                          JsonDomHelper.disableEvents = false
                                           this.setState({deleteConfirmDialog: null})
                                       }}
                                       actions={[
@@ -1036,7 +1040,7 @@ class JsonDomHelper extends React.Component {
                 )}
                 {(deleteSourceConfirmDialog &&
                     <AddToBody>
-                        <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteSourceConformation" open={true}
+                        <SimpleDialog fullWidth={true} maxWidth="sm" key="deleteSourceConfirmation" open={true}
                                       onClose={(e) => {
                                           if (e.key === 'delete') {
                                               const {type, _id} = deleteSourceConfirmDialog
@@ -1050,6 +1054,7 @@ class JsonDomHelper extends React.Component {
                                               )
 
                                           }
+                                          //JsonDomHelper.disableEvents = false
                                           this.setState({deleteSourceConfirmDialog: null})
                                       }}
                                       actions={[
@@ -1196,12 +1201,14 @@ class JsonDomHelper extends React.Component {
                                             break
                                         }
                                     }
+
                                     if (item.groupOptions) {
                                         Object.keys(item.groupOptions).forEach(key => {
                                             item.options['!' + key + '!add'] = {
                                                 uitype: 'button',
                                                 group: item.groupOptions[key],
                                                 key,
+                                                newLine:true,
                                                 label: 'Hinzufügen'
                                             }
                                             Object.keys(item.groupOptions[key]).forEach(fieldKey => {
@@ -1230,6 +1237,12 @@ class JsonDomHelper extends React.Component {
                                              const curKey = '!' + field.key + '!'
                                              let curIdx = 0
                                              Object.keys(item.options).forEach(optionKey => {
+                                                 const formField = addChildDialog.form.state.fields[optionKey]
+                                                 if( formField ){
+                                                     item.options[optionKey].value = formField
+                                                 }
+                                                 console.log(item.options[optionKey] )
+
                                                  if (optionKey.startsWith(curKey)) {
                                                      const parts = optionKey.split('!'),
                                                          newIdx = parseInt(parts[parts.length - 1])
@@ -1238,12 +1251,13 @@ class JsonDomHelper extends React.Component {
                                                      }
                                                  }
                                              })
-
                                              Object.keys(field.group).forEach(groupKey => {
-                                                 item.options[curKey + groupKey + '!' + (curIdx + 1)] = item.groupOptions[field.key][groupKey]
+                                                 const newItem = Object.assign({},item.groupOptions[field.key][groupKey])
+                                                 delete newItem.value
+                                                 item.options[curKey + groupKey + '!' + (curIdx + 1)] = newItem
                                              })
+
                                              this.setState({addChildDialog: {...addChildDialog, selected: item}})
-                                             console.log(item)
                                          }}
                                          ref={(e) => {
                                              addChildDialog.form = e

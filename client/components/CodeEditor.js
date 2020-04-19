@@ -20,7 +20,8 @@ class CodeEditor extends React.Component {
         super(props)
         this._data = props.children
         this.state = {
-            data: props.children
+            data: props.children,
+            error: false
         }
     }
 
@@ -28,7 +29,8 @@ class CodeEditor extends React.Component {
         if (nextProps.children !== prevState.data) {
             console.log('CodeEditor update state')
             return {
-                data: nextProps.children
+                data: nextProps.children,
+                error: false
             }
         }
         return null
@@ -40,7 +42,7 @@ class CodeEditor extends React.Component {
             this._data = nextState.data
             refresh = true
         }
-        return refresh
+        return refresh || nextState.error !== this.state.error
     }
 
     autoFormatSelection() {
@@ -51,7 +53,8 @@ class CodeEditor extends React.Component {
     }
 
     render() {
-        const {onChange, onBlur, onScroll, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition} = this.props
+        const {onChange, onBlur, onScroll, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition} = this.props
+        const {error} = this.state
         const options = {
             mode: {},
             readOnly,
@@ -91,7 +94,12 @@ class CodeEditor extends React.Component {
         }
 
         console.log('render CodeEditor', fabButtonStyle)
-        return <div className={className} style={{height: '25rem', ...style}}>
+        const baseStyle = {height: '25rem'}
+
+        if( error ){
+            baseStyle.border = 'solid 1px red'
+        }
+        return <div className={className} style={{...baseStyle, ...style}}>
             {showFab && <SimpleMenu key="menu" mini fab color="secondary" style={{
                 zIndex: 999,
                 position: 'absolute',
@@ -108,7 +116,7 @@ class CodeEditor extends React.Component {
                     }
                     //  editor.setSize(width, height);
                 }}
-                value={this._data && (this._data.constructor===Object||this._data.constructor===Array)?JSON.stringify(this._data, null, 4):this._data}
+                value={this._data && (this._data.constructor === Object || this._data.constructor === Array) ? JSON.stringify(this._data, null, 4) : this._data}
                 options={options}
                 onScroll={(editor, e) => {
                     if (onScroll) {
@@ -121,17 +129,28 @@ class CodeEditor extends React.Component {
                     }
                 }}
                 onChange={(editor, dataObject, data) => {
-                    if( this._data && (this._data.constructor === Object || this._data.constructor === Array)){
+                    if (this._data && (this._data.constructor === Object || this._data.constructor === Array)) {
                         // if input was Object output is an Object to
-                        this._data = JSON.parse(data)
-                    }else {
+                        try {
+                            this.setState({error: false})
+                            this._data = JSON.parse(data)
+                        } catch (e) {
+                            console.error(e)
+                            if (onError) {
+                                onError(e)
+                            }
+                            this.setState({error: `Fehler in der JSON Struktur: ${e.message}`})
+                            return
+                        }
+                    } else {
                         this._data = data
                     }
                     if (onChange) {
                         onChange(this._data)
                     }
+
                 }}
-            /></div>
+            />{error && <div style={{color:'red'}}>{error}</div>}</div>
     }
 }
 
@@ -140,6 +159,7 @@ CodeEditor.propTypes = {
     lineNumbers: PropTypes.bool,
     readOnly: PropTypes.bool,
     onChange: PropTypes.func,
+    onError: PropTypes.func,
     onScroll: PropTypes.func,
     onBlur: PropTypes.func,
     type: PropTypes.string,

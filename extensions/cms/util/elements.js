@@ -121,8 +121,7 @@ const baseElements = [
             $set: [
                 {
                     key: '__sliderData',
-                    value: [],
-                    chunk: '1'
+                    value: []
                 }
             ],
             c: [
@@ -241,7 +240,7 @@ const baseElements = [
             }
         },
         options: {
-            $set_0_chunk: {value: '', label: 'Anzahl pro Seite'},
+            $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
             p_className: {value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse'}
         }
     },

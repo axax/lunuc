@@ -683,7 +683,6 @@ class JsonDom extends React.Component {
                         try {
                             // get data from scope by path (foo.bar)
                             data = propertyByPath($d, scope)
-                            console.log($d, scope)
                         } catch (e) {
                             //this.parseError = e
                             this.emitJsonError(e, {loc: 'Loop Datasrouce'})
