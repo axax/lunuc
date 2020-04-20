@@ -16,16 +16,16 @@ const PASSWORD_MIN_LENGTH = 5
  */
 
 const Util = {
-    findProperties: (json, key, accumulator = [], parent, index) => {
+    findProperties: (json, key, accumulator = []) => {
         if (json && (json.constructor === Object || json.constructor === Array)) {
             const keys = json.constructor === Object ? Object.keys(json) : json
             for (let i = 0; i < keys.length; i++) {
                 if (keys[i].constructor === Object) {
-                    Util.findProperties(keys[i], key, accumulator, json, i)
+                    Util.findProperties(keys[i], key, accumulator)
                 } else if (key === keys[i]) {
-                    accumulator.push({element:json, parent, index})
+                    accumulator.push(json)
                 } else {
-                    Util.findProperties(json[keys[i]], key, accumulator, json)
+                    Util.findProperties(json[keys[i]], key, accumulator)
                 }
             }
         }
