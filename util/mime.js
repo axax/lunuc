@@ -21,7 +21,11 @@ const MIME_TYPES = {
     'gz': 'application/gzip',
     'zip': 'application/zip',
     'svg': 'image/svg+xml',
-    'pdf': 'application/pdf'
+    'pdf': 'application/pdf',
+    'eot': 'application/vnd.ms-fontobject',
+    'ttf': 'font/ttf',
+    'woff': 'font/woff',
+    'woff2': 'font/woff2'
 }
 
 
