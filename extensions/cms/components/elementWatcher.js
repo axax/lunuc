@@ -2,7 +2,8 @@ import React from 'react'
 import Util from 'client/util'
 
 export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps, c, $c, scope}, options = {}) {
-    // ...and returns another component...
+
+// ...and returns another component...
     return class extends React.Component {
 
         state = {
@@ -15,9 +16,26 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
         }
 
         componentDidMount() {
-            setTimeout(() => {
-                this.addIntersectionObserver()
-            }, 0)
+            if( !!window.IntersectionObserver ) {
+                setTimeout(() => {
+                    this.addIntersectionObserver()
+                }, 0)
+            }else if(eleProps.inlineSvg){
+                this.fetchSvg()
+            }
+        }
+
+        fetchSvg() {
+            fetch(Util.getImageObject(eleProps.src).src).then((response) => response.blob()).then((blob) => {
+                const reader = new FileReader()
+
+                reader.addEventListener("load", () => {
+                    this.setState({svgData: reader.result, madeVisible: true})
+
+                }, false)
+
+                reader.readAsText(blob)
+            })
         }
 
         render() {
@@ -58,18 +76,8 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                             } else {
                                 ele.setAttribute('data-loading', true)
                                 if (tagName === 'SmartImage') {
-                                    const src = Util.getImageObject(eleProps.src).src
                                     if(eleProps.inlineSvg){
-                                        fetch(src).then((response) => response.blob()).then((blob) => {
-                                            const reader = new FileReader()
-
-                                            reader.addEventListener("load", () => {
-                                                this.setState({svgData: reader.result, madeVisible: true})
-
-                                            }, false)
-
-                                            reader.readAsText(blob)
-                                        })
+                                        this.fetchSvg()
                                     }else {
                                         const img = new Image()
 
@@ -86,7 +94,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                                             this.setState({madeVisible: true})
                                         }
 
-                                        img.src = src
+                                        img.src = Util.getImageObject(eleProps.src).src
                                     }
 
                                 } else {

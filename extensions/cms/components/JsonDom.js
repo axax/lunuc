@@ -932,7 +932,7 @@ class JsonDom extends React.Component {
                         eleProps.dangerouslySetInnerHTML = {__html: $c}
                     }
 
-                    if ((( (eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
+                    if ((( (eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) && (!!window.IntersectionObserver || eleProps.inlineSvg)) {
 
                         h.push(React.createElement(
                             elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
