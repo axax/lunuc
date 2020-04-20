@@ -81,7 +81,7 @@
     "@material-ui/icons": "^4.9.1",
     "aws-sdk": "^2.659.0",
     "babel-plugin-css-modules-transform": "^1.6.2",
-    "babel-plugin-dynamic-import-node": "^2.3.1",
+    "babel-plugin-dynamic-import-node": "^2.3.0",
     "babel-plugin-module-resolver": "^4.0.0",
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.19.0",
