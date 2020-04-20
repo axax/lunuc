@@ -296,8 +296,7 @@ const Util = {
         return fs.existsSync(dir)
     },
     execFilter: (filter) => {
-        return true;
-        //return Util.matchFilterExpression(filter, Util.systemProperties())
+        return Util.matchFilterExpression(filter, Util.systemProperties())
     },
     matchFilterExpression: (filter, data) => {
         let match = false
