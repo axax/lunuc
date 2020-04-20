@@ -68,7 +68,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
                     const template = JSON.parse(cmsPages.results[0].template)
 
                     if(cmsPages.results[0].compress) {
-                        Util.findProperties(template, '$inlineEditor').forEach(element => {
+                        Util.findProperties(template, '$inlineEditor').forEach(({element}) => {
                             delete element.$inlineEditor
                         })
                     }
