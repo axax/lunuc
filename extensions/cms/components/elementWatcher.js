@@ -1,7 +1,13 @@
 import React from 'react'
 import Util from 'client/util'
 
+const hasLoaded = {}
 export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps, c, $c, scope}, options = {}) {
+
+    let tagSrc
+    if(tagName === 'SmartImage'){
+        tagSrc = Util.getImageObject(eleProps.src).src
+    }
 
 // ...and returns another component...
     return class extends React.Component {
@@ -16,22 +22,24 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
         }
 
         componentDidMount() {
-            if( !!window.IntersectionObserver ) {
-                setTimeout(() => {
-                    this.addIntersectionObserver()
-                }, 0)
-            }else if(eleProps.inlineSvg){
-                this.fetchSvg()
+            if( !hasLoaded[tagSrc] ) {
+                if (!!window.IntersectionObserver) {
+                    setTimeout(() => {
+                        this.addIntersectionObserver()
+                    }, 0)
+                } else if (eleProps.inlineSvg) {
+                    this.fetchSvg()
+                }
             }
         }
 
         fetchSvg() {
-            fetch(Util.getImageObject(eleProps.src).src).then((response) => response.blob()).then((blob) => {
+            fetch(tagSrc).then((response) => response.blob()).then((blob) => {
                 const reader = new FileReader()
 
                 reader.addEventListener("load", () => {
-                    this.setState({svgData: reader.result, madeVisible: true})
-
+                    hasLoaded[tagSrc] = {svgData:reader.result}
+                    this.setState({madeVisible: true})
                 }, false)
 
                 reader.readAsText(blob)
@@ -39,13 +47,14 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
         }
 
         render() {
-            const {initialVisible, madeVisible, svgData} = this.state
-            if (!initialVisible && !madeVisible) {
+            const {initialVisible, madeVisible} = this.state
+
+            if (!initialVisible && !madeVisible && !hasLoaded[tagSrc]) {
                 const {_tagName,_inlineEditor,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, inlineSvg, ...rest} = eleProps
                 return <div _key={key} style={{minHeight:'1rem'}} data-wait-visible={jsonDom.instanceId} {...rest}></div>
             } else {
-                if( svgData){
-                    eleProps.svgData =svgData
+                if( hasLoaded[tagSrc] && hasLoaded[tagSrc].svgData){
+                    eleProps.svgData =hasLoaded[tagSrc].svgData
                 }
                 if (!eleProps.className) {
                     eleProps.className = ''
@@ -88,13 +97,12 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                                         }, 1000)
 
                                         img.onerror = img.onload = () => {
-
-
                                             clearTimeout(timeout)
+                                            hasLoaded[tagSrc] = true
                                             this.setState({madeVisible: true})
                                         }
 
-                                        img.src = Util.getImageObject(eleProps.src).src
+                                        img.src = tagSrc
                                     }
 
                                 } else {

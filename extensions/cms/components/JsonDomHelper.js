@@ -623,15 +623,13 @@ class JsonDomHelper extends React.Component {
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         const menuItems = []
+        const isCms = _tagName === 'Cms'
 
         const events = {
-            onMouseOver: this.onHelperMouseOver.bind(this),
-            onMouseOut: this.onHelperMouseOut.bind(this),
             onContextMenu: (e) => {
                 e.preventDefault()
                 e.stopPropagation()
-
-                if (menuItems.length > 0) {
+                if (menuItems.length > 0 || isCms) {
                     this.setState({
                         toolbarMenuOpen: true,
                         toolbarHovered: true,
@@ -641,10 +639,16 @@ class JsonDomHelper extends React.Component {
                 }
             }
         }
+
+        if (_inlineEditor.highlight !== false) {
+            events.onMouseOver = this.onHelperMouseOver.bind(this)
+            events.onMouseOut = this.onHelperMouseOut.bind(this)
+        }
+
+
         let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, newOnChange
 
         const isLoop = rest._key.indexOf('$loop') >= 0
-        const isCms = _tagName === 'Cms'
 
 
         if (_inlineEditor.allowDrop === undefined) {
@@ -771,7 +775,7 @@ class JsonDomHelper extends React.Component {
                                         val = propertyByPath(key, subJson, '_')
                                     }
 
-                                    const pos = val && val.constructor===String ? val.indexOf('${_t(\'') : -1
+                                    const pos = val && val.constructor === String ? val.indexOf('${_t(\'') : -1
                                     if (pos > -1) {
                                         const trKey = val.substring(6, val.indexOf('\')}'))
                                         if (this.props._scope.data.tr) {
@@ -1113,8 +1117,8 @@ class JsonDomHelper extends React.Component {
                                                               val = Util.replacePlaceholders(selected.options[key].template, val[0])
                                                           }
 
-                                                          let oldVal = propertyByPath(key, addChildDialog.edit?subJson:selected.defaults, '_')
-                                                          const pos = oldVal && oldVal.constructor===String ? oldVal.indexOf('${_t(\'') : -1
+                                                          let oldVal = propertyByPath(key, addChildDialog.edit ? subJson : selected.defaults, '_')
+                                                          const pos = oldVal && oldVal.constructor === String ? oldVal.indexOf('${_t(\'') : -1
 
                                                           if (pos > -1) {
                                                               const trKey = oldVal.substring(6, oldVal.indexOf('\')}'))
@@ -1208,7 +1212,7 @@ class JsonDomHelper extends React.Component {
                                                 uitype: 'button',
                                                 group: item.groupOptions[key],
                                                 key,
-                                                newLine:true,
+                                                newLine: true,
                                                 label: 'Hinzufügen'
                                             }
                                             Object.keys(item.groupOptions[key]).forEach(fieldKey => {
@@ -1238,10 +1242,10 @@ class JsonDomHelper extends React.Component {
                                              let curIdx = 0
                                              Object.keys(item.options).forEach(optionKey => {
                                                  const formField = addChildDialog.form.state.fields[optionKey]
-                                                 if( formField ){
+                                                 if (formField) {
                                                      item.options[optionKey].value = formField
                                                  }
-                                                 console.log(item.options[optionKey] )
+                                                 console.log(item.options[optionKey])
 
                                                  if (optionKey.startsWith(curKey)) {
                                                      const parts = optionKey.split('!'),
@@ -1252,7 +1256,7 @@ class JsonDomHelper extends React.Component {
                                                  }
                                              })
                                              Object.keys(field.group).forEach(groupKey => {
-                                                 const newItem = Object.assign({},item.groupOptions[field.key][groupKey])
+                                                 const newItem = Object.assign({}, item.groupOptions[field.key][groupKey])
                                                  delete newItem.value
                                                  item.options[curKey + groupKey + '!' + (curIdx + 1)] = newItem
                                              })
