@@ -8,7 +8,7 @@ global.document = {documentElement: {}}
 global._app_ = {lang: 'en', ssr: true}
 
 // Entry point for our server
-/*const server = require('./server')
+const server = require('./server')
 
 server.start()
-*/
+
