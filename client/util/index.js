@@ -123,11 +123,15 @@ const Util = {
             return entityMap[s]
         })
     },*/
-    removeNullValues: obj => {
+    removeNullValues: (obj,options={}) => {
         let newObj = {}
         Object.keys(obj).forEach((prop) => {
             if (obj[prop] !== null) {
-                newObj[prop] = obj[prop]
+                if( options.emptyArray && obj[prop].constructor===Array && obj[prop].length===0 ){
+                    //skip empty arrays
+                }else {
+                    newObj[prop] = obj[prop]
+                }
             }
         })
         return newObj
@@ -271,10 +275,11 @@ const Util = {
     // a simple implementation of the shallowCompare.
     // only compares the first level properties and hence shallow.
     shallowCompare(newObj, prevObj) {
-        if (newObj !== prevObj) return true
         if (!newObj && !prevObj) return false
         for (const key in newObj) {
-            if (newObj[key] !== prevObj[key]) return true
+            if (newObj[key] !== prevObj[key]){
+                return true
+            }
         }
         return false
     },

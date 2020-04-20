@@ -106,7 +106,7 @@ const styles = theme => ({
     }
 })
 
-const ALLOW_DROP = ['div', 'main', 'Col', 'Row']
+const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section']
 const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul']}
 const ALLOW_DROP_FROM = {'Row': ['Col']}
 const ALLOW_CHILDREN = ['div', 'main', 'ul', 'Col']
@@ -757,7 +757,7 @@ class JsonDomHelper extends React.Component {
                     if (jsonElement && (isCms || jsonElement.options)) {
 
                         menuItems.push({
-                            name: 'Bearbeiten',
+                            name: _inlineEditor.menuTitle.edit || 'Bearbeiten',
                             icon: <EditIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true

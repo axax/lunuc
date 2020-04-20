@@ -10,6 +10,7 @@ import {withStyles} from 'ui/admin'
 import {checkFieldType} from 'util/typesAdmin'
 import Hook from '../../util/hook'
 import classNames from 'classnames'
+import Expandable from 'client/components/Expandable'
 
 const styles = theme => {
     return {
@@ -445,7 +446,7 @@ class GenericForm extends React.Component {
 
         return (
             <form className={classes.form}>
-                {formFields}
+                {tabKeys.length===0 && formFields}
                 {tabKeys.length>0 && <div className={classes.tabContainer}>
                     <AntTabs
                         value={tabValue}
@@ -456,6 +457,9 @@ class GenericForm extends React.Component {
                         {tabKeys.map((value, i) =>
                             <AntTab key={'tab-'+i} label={value}/>
                         )}
+
+                        {formFields.length>0 && <AntTab key={'tab-'+tabKeys.length} label="Verwaltung"/>}
+
                     </AntTabs>
 
                     {tabKeys.map((value, i) =>
@@ -463,6 +467,10 @@ class GenericForm extends React.Component {
                             {tabs[value]}
                         </TabPanel>
                     )}
+                    {formFields.length>0 && <TabPanel key={'tabPanel-'+tabKeys.length} value={tabValue} index={tabKeys.length}>
+                        {formFields}
+                    </TabPanel>}
+
                 </div>}
                 {primaryButton != false ?
                     <Button color="primary" variant="contained" disabled={!this.state.isValid}

@@ -1137,7 +1137,6 @@ class JsonDom extends React.Component {
             const cbLines = code.split('\n'),
                 start = Math.max(0, lineNr - 3),
                 end = Math.min(cbLines.length, lineNr + 4)
-            console.log(cbLines)
             for (let i = start; i < end; i++) {
 
                 const str = cbLines[i - 9]

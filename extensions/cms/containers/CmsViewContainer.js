@@ -44,6 +44,8 @@ class CmsViewContainer extends React.Component {
             // there is no need to update
             return false
         }
+      //  console.log(cmsPage.slug,Util.shallowCompare(props._props, this.props._props) )
+      //  console.log(props._props, this.props._props)
 
         // only update if it is needed
         return !cmsPage ||
