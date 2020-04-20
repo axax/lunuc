@@ -79,13 +79,20 @@ class JsonDom extends React.Component {
         /* Other components */
         FileDrop,
         MarkDown,
-        'SmartImage': ({src, caption, wrapper, alt, ...props}) => {
+        'SmartImage': ({src, caption, wrapper, alt,inlineSvg,svgData, ...props}) => {
             let imageData = Util.getImageObject(src)
-
             imageData['data-smartimage'] = true
+            const imgTag = props =>{
+                if(svgData){
+                    return <span data-inline-svg={true} {...props} dangerouslySetInnerHTML={{__html: svgData}}/>
+                }else{
+                    return <img alt={alt} {...imageData} {...props} />
+                }
+            }
+
             if (caption || wrapper) {
                 return <figure {...props}>
-                    <img alt={alt} {...imageData} />
+                    {imgTag()}
                     {caption && <figcaption dangerouslySetInnerHTML={{__html: caption}}/>}
                 </figure>
             }
@@ -95,7 +102,7 @@ class JsonDom extends React.Component {
              <img src="mdn-logo-narrow.png" alt="MDN">
              </picture>
              */
-            return <img alt={alt} {...imageData} {...props} />
+            return imgTag(props)
         },
         Print,
         'input': props => {
@@ -924,7 +931,9 @@ class JsonDom extends React.Component {
                     if ($c) {
                         eleProps.dangerouslySetInnerHTML = {__html: $c}
                     }
-                    if (((eleType.name === 'SmartImage' && eleProps.src && (!$observe || $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
+
+                    if ((( (eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) && !!window.IntersectionObserver) {
+
                         h.push(React.createElement(
                             elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
                             {key: key}

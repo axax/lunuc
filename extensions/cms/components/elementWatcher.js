@@ -21,11 +21,14 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
         }
 
         render() {
-            const {initialVisible, madeVisible} = this.state
+            const {initialVisible, madeVisible, svgData} = this.state
             if (!initialVisible && !madeVisible) {
-                const {_tagName,_inlineEditor,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, ...rest} = eleProps
+                const {_tagName,_inlineEditor,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, inlineSvg, ...rest} = eleProps
                 return <div _key={key} style={{minHeight:'1rem'}} data-wait-visible={jsonDom.instanceId} {...rest}></div>
             } else {
+                if( svgData){
+                    eleProps.svgData =svgData
+                }
                 if (!eleProps.className) {
                     eleProps.className = ''
                 }
@@ -53,22 +56,38 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                             if (this.state.initialVisible) {
                                 ele.classList.add(options.visibleClass)
                             } else {
-                                ele.setAttribute('data-loading', true);
+                                ele.setAttribute('data-loading', true)
                                 if (tagName === 'SmartImage') {
-                                    const img = new Image()
+                                    const src = Util.getImageObject(eleProps.src).src
+                                    if(eleProps.inlineSvg){
+                                        fetch(src).then((response) => response.blob()).then((blob) => {
+                                            const reader = new FileReader()
 
-                                    const timeout = setTimeout(()=>{
-                                        // gifs can be show even if they are not fully loaded
-                                        img.onerror = img.onload = null
-                                        this.setState({madeVisible: true})
-                                    },1000)
+                                            reader.addEventListener("load", () => {
+                                                this.setState({svgData: reader.result, madeVisible: true})
 
-                                    img.onerror = img.onload = () => {
-                                        clearTimeout(timeout)
-                                        this.setState({madeVisible: true})
+                                            }, false)
+
+                                            reader.readAsText(blob)
+                                        })
+                                    }else {
+                                        const img = new Image()
+
+                                        const timeout = setTimeout(() => {
+                                            // gifs can be show even if they are not fully loaded
+                                            img.onerror = img.onload = null
+                                            this.setState({madeVisible: true})
+                                        }, 1000)
+
+                                        img.onerror = img.onload = () => {
+
+
+                                            clearTimeout(timeout)
+                                            this.setState({madeVisible: true})
+                                        }
+
+                                        img.src = src
                                     }
-
-                                    img.src = Util.getImageObject(eleProps.src).src
 
                                 } else {
                                     this.setState({madeVisible: true})
