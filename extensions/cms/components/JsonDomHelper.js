@@ -771,7 +771,7 @@ class JsonDomHelper extends React.Component {
                                         val = propertyByPath(key, subJson, '_')
                                     }
 
-                                    const pos = val ? val.indexOf('${_t(\'') : -1
+                                    const pos = val && val.constructor===String ? val.indexOf('${_t(\'') : -1
                                     if (pos > -1) {
                                         const trKey = val.substring(6, val.indexOf('\')}'))
                                         if (this.props._scope.data.tr) {
@@ -1114,7 +1114,7 @@ class JsonDomHelper extends React.Component {
                                                           }
 
                                                           let oldVal = propertyByPath(key, addChildDialog.edit?subJson:selected.defaults, '_')
-                                                          const pos = oldVal ? oldVal.indexOf('${_t(\'') : -1
+                                                          const pos = oldVal && oldVal.constructor===String ? oldVal.indexOf('${_t(\'') : -1
 
                                                           if (pos > -1) {
                                                               const trKey = oldVal.substring(6, oldVal.indexOf('\')}'))
