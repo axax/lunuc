@@ -37,7 +37,7 @@ fs.readdir(HOSTRULES_DIR, (err, filenames) => {
 })
 
 // Use Httpx
-const USE_HTTPX = (process.env.LUNUC_HTTPX || true)
+const USE_HTTPX = process.env.LUNUC_HTTPX === 'false' ? false : true
 
 // Port to listen to
 const PORT = (process.env.PORT || process.env.LUNUC_PORT || 8080)
@@ -58,7 +58,6 @@ const options = {
 if (fs.existsSync(path.join(CERT_DIR, './chain.pem'))) {
     options.ca = fs.readFileSync(path.join(CERT_DIR, './chain.pem'))
 }
-
 
 
 const defaultWebHandler = (err, req, res) => {
@@ -141,7 +140,7 @@ const parseWebsite = async (urlToFetch, host) => {
     const page = await browser.newPage()
 
     await page.setRequestInterception(true)
-    await page.setExtraHTTPHeaders({ 'x-host-rule': host })
+    await page.setExtraHTTPHeaders({'x-host-rule': host})
 
     page.on('request', (request) => {
         if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
@@ -154,8 +153,6 @@ const parseWebsite = async (urlToFetch, host) => {
     await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
 
     const html = await page.content()
-
-
 
 
     await browser.close()
@@ -172,21 +169,21 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
     }
 
     const agent = req.headers['user-agent']
-    if(agent && agent.indexOf('bingbot')>-1 || agent.indexOf('msnbot')>-1) {
+    if (agent && agent.indexOf('bingbot') > -1 || agent.indexOf('msnbot') > -1) {
 
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${uri}`)
         const baseUrl = `http://localhost:${PORT}`
-        let html = await parseWebsite(baseUrl+uri, host)
+        let html = await parseWebsite(baseUrl + uri, host)
         const re = new RegExp(baseUrl, 'g')
-        html = html.replace(re,`https://${host}`)
+        html = html.replace(re, `https://${host}`)
 
 
         res.writeHead(200, headers)
         res.write(html)
         res.end()
 
-    }else {
+    } else {
         let indexfile
 
         if (hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
@@ -200,9 +197,8 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
 }
 
 
-
 // Initialize http api
-const app = (USE_HTTPX?httpx:http).createServer(options, function (req, res) {
+const app = (USE_HTTPX ? httpx : http).createServer(options, function (req, res) {
 
     const host = getHostFromHeaders(req.headers)
 
@@ -220,7 +216,7 @@ const app = (USE_HTTPX?httpx:http).createServer(options, function (req, res) {
         if (!config.DEV_MODE && this.constructor.name === 'Server') {
             if (process.env.LUNUC_FORCE_HTTPS) {
 
-                const agent = req.headers['user-agent'], agentParts = agent?agent.split(' '):[]
+                const agent = req.headers['user-agent'], agentParts = agent ? agent.split(' ') : []
 
                 let browser, version
                 if (agentParts.length > 2) {
@@ -312,7 +308,7 @@ const app = (USE_HTTPX?httpx:http).createServer(options, function (req, res) {
             let modUri
             if (pos >= 0) {
                 modUri = uri.substring(0, pos)
-            }else{
+            } else {
                 modUri = uri
             }
 
@@ -383,7 +379,7 @@ const app = (USE_HTTPX?httpx:http).createServer(options, function (req, res) {
         } else {
 
             // check with and without www
-            const hostRuleHost = req.headers['x-host-rule']?req.headers['x-host-rule'].split(':')[0]:host
+            const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
 
 
@@ -441,10 +437,10 @@ const app = (USE_HTTPX?httpx:http).createServer(options, function (req, res) {
 // Listen to the `upgrade` event and proxy the
 // WebSocket requests as well.
 //
-if( USE_HTTPX ) {
+if (USE_HTTPX) {
     app.http.on('upgrade', webSocket)
     app.https.on('upgrade', webSocket)
-}else{
+} else {
     app.on('upgrade', webSocket)
 }
 // Start server
