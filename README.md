@@ -161,10 +161,17 @@ create lunuc-api.service file under /etc/systemd/system
 `sudo systemctl restart lunuc-api`
 `journalctl -lf -u lunuc-api`
 
+#### Restart service
+`sudo systemctl restart lunuc-api`
+
+
 ### Port forwarding
 
 `sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080`
 `sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 8080`
+
+#### List port forwarding
+`sudo iptables -t nat -vnL`
 
 ### Create cert with letsencrypt
 
@@ -177,8 +184,20 @@ Add this to the file:
 
 `* 3 * * 6 certbot renew && sudo systemctl restart lunuc-client`
 
-### Rebuild bcrypt
-`npm rebuild bcrypt --update-binary`
+### enable DNS extension
+
+1. check if port 53 is used
+`sudo lsof -i -P -n | grep LISTEN`
+
+2. if systemd-resolved is running stop it
+`sudo systemctl stop systemd-resolved`
+
+3. edit /etc/systemd/resolved.conf
+`DNS=8.8.8.8`
+`DNSStubListener=no`
+
+4. run
+`sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf`
 
 ## Contributors
 

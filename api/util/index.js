@@ -146,7 +146,7 @@ const Util = {
                 try {
                     v = JSON.parse(obj.value)
                 } catch (e) {
-                    console.log('keyValueGlobalMap', e)
+                    console.warn(`${obj.key} is not a json`)
                     v = obj.value
                 }
             } else {

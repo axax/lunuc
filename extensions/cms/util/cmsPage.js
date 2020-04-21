@@ -75,7 +75,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
 
                     cmsPages.results[0].template = JSON.stringify(template, null, 0)
                 } catch (e) {
-                    console.log(e)
+                    console.warn(`${cmsPages.results[0].slug} is not a valid json template`)
                 }
             }
 

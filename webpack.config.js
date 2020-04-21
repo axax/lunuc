@@ -277,6 +277,12 @@ if (DEV_MODE) {
         }
     }
 
+    config.resolve = {
+        alias: {
+            'react': 'preact/compat',
+            'react-dom': 'preact/compat'
+        },
+    }
     /* For Debugging porpuses */
     //config.devtool = 'eval'
 
@@ -292,22 +298,6 @@ if (DEV_MODE) {
         })
     )
 
-
-    /*config.optimization.minimizer.push(
-        new UglifyJSPlugin({
-            uglifyOptions: {
-                toplevel: true,
-                compress: {
-                    drop_console: true
-                },
-                output: {
-                    comments: false,
-                    semicolons: true,
-                    shebang: true,
-                    beautify: false
-                }
-            }
-        }))*/
 
     const terserOptions = {
         extractComments: 'all',

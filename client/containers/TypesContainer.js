@@ -86,7 +86,6 @@ class TypesContainer extends React.Component {
     types = null
     pageParams = null
     createEditForm = null
-    typeColumns = {}
     typesToSelect = []
     settings = {}
     searchFields = {
@@ -181,28 +180,14 @@ class TypesContainer extends React.Component {
 
 
     shouldComponentUpdate(props, state) {
-        return this.state !== state ||
-            this.state.selectedrows !== state.selectedrows ||
-            this.props.location !== props.location ||
-            this.props.baseFilter !== props.baseFilter ||
-            this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
-    }
+        const settingsChanged = this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
+        const pageParams = this.determinPageParams(props)
 
-    UNSAFE_componentWillReceiveProps(props) {
-        const change = this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
-        if (change) {
-            this._filterForm = null
+        if (settingsChanged) {
             this.parseSettings(props)
         }
 
-        const pageParams = this.determinPageParams(props)
-
-        if (this.props.settings !== props.settings) {
-            this._lastData = null
-        }
-
-
-        if (change ||
+        if (/*settingsChanged ||*/
             this.props.settings !== props.settings ||
             this.props.baseFilter !== props.baseFilter ||
             this.pageParams.type !== pageParams.type ||
@@ -211,27 +196,28 @@ class TypesContainer extends React.Component {
             this.pageParams.limit !== pageParams.limit ||
             this.pageParams.sort !== pageParams.sort ||
             this.pageParams.filter !== pageParams.filter) {
+
             this.pageParams = pageParams
             if (props.baseFilter) {
                 this.baseFilter = props.baseFilter
             }
             this.getData(pageParams, true)
-        }
-    }
 
+            return false
+        }
+
+        return this.state !== state ||
+            this.state.data !== state.data ||
+            this.state.selectedrows !== state.selectedrows ||
+            this.props.location !== props.location ||
+            this.props.baseFilter !== props.baseFilter ||
+            settingsChanged
+    }
 
     renderTable(columns) {
         const {classes, client} = this.props
         const {data, selectedrows} = this.state
         if (data) {
-
-            // small optimization. only render table if data changed
-            if (data === this._lastData && selectedrows === this._lastSelectedRows) {
-                return this._renderedTable
-            }
-
-            this._lastData = data
-            this._lastSelectedRows = selectedrows
 
             const {type, page, limit, sort, _version} = this.pageParams
             const fields = this.types[type].fields, dataSource = []
@@ -857,7 +843,6 @@ class TypesContainer extends React.Component {
         const target = e.target, value = target.checked, name = target.name
         this.settings = deepMerge(this.settings, {[type]: {columns: {[name]: value}}})
         // force rerendering
-        this._lastData = null
         this.forceUpdate()
     }
 
@@ -868,11 +853,9 @@ class TypesContainer extends React.Component {
 
         const {selectAllRows} = this.state
 
-        if (this.typeColumns[type] && this._lastSelectAllRows === selectAllRows) return this.typeColumns[type]
-        this.typeColumns[type] = []
-        this._lastSelectAllRows = selectAllRows
+        const typeColumns = []
 
-        this.typeColumns[type].push({
+        typeColumns.push({
             label: 'Check',
             title: <Checkbox
                 value=""
@@ -884,7 +867,7 @@ class TypesContainer extends React.Component {
 
         typeDefinition.fields.forEach(field => {
             if (!field.hidden && field.name !== 'createdBy') {
-                this.typeColumns[type].push({
+                typeColumns.push({
                     title: (field.label || field.name) + (field.localized ? ' [' + _app_.lang + ']' : ''),
                     id: field.name,
                     sortable: true
@@ -893,12 +876,12 @@ class TypesContainer extends React.Component {
         })
 
         if (!typeDefinition.noUserRelation) {
-            this.typeColumns[type].push({
+            typeColumns.push({
                 title: 'User',
                 id: '_user'
             })
         }
-        this.typeColumns[type].push(
+        typeColumns.push(
             {
                 title: 'Created at / id',
                 id: 'date',
@@ -911,9 +894,9 @@ class TypesContainer extends React.Component {
             })
 
         /* HOOK */
-        Hook.call('TypeTableColumns', {type, _version: this.pageParams._version, columns: this.typeColumns[type]})
+        Hook.call('TypeTableColumns', {type, _version: this.pageParams._version, columns: typeColumns})
 
-        return this.typeColumns[type]
+        return typeColumns
     }
 
     determinPageParams(props) {
@@ -980,7 +963,6 @@ class TypesContainer extends React.Component {
                 const storeKey = this.getStoreKey(type),
                     variables = {limit, page, sort, _version, filter: this.extendFilter(filter)},
                     gqlQuery = gql(queries.query)
-                let hasStoreError = false
                 if (cacheFirst) {
                     try {
                         const storeData = client.readQuery({
@@ -992,7 +974,7 @@ class TypesContainer extends React.Component {
                             this.setState({data: storeData[storeKey]})
                         }
                     } catch (e) {
-                        hasStoreError = true
+                        console.log(e)
                     }
                 }
                 client.query({
@@ -1002,9 +984,7 @@ class TypesContainer extends React.Component {
                     variables
                 }).then(response => {
                     const o = response.data[storeKey]
-                    if (!this.state.data || hasStoreError || JSON.stringify(this.state.data) !== JSON.stringify(o)) {
-                        this.setState({data: o})
-                    }
+                    this.setState({data: o})
                 }).catch(error => {
                     console.log(error.message)
                     this.setState({data: null})
@@ -1059,7 +1039,6 @@ class TypesContainer extends React.Component {
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
-                        this._lastData = null
                         this.setState({data: newData})
                     }
 
@@ -1107,7 +1086,6 @@ class TypesContainer extends React.Component {
                                 variables,
                                 data: {...storeData, [storeKey]: newData}
                             })
-                            this._lastData = null
                             this.setState({data: newData})
                         }
                     }
@@ -1166,7 +1144,6 @@ class TypesContainer extends React.Component {
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
-                        this._lastData = null
                         this.setState({data: newData})
 
                     }
