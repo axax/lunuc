@@ -4,7 +4,6 @@ const glob = require('glob')
 const webpack = require('webpack')
 
 // webpack plugins
-const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CompressionPlugin = require("compression-webpack-plugin")

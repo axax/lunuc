@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt-nodejs'
+import bcrypt from 'bcryptjs'
 import {ObjectId} from 'mongodb'
 import path from 'path'
 import fs from 'fs'
