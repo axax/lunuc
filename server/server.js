@@ -1,5 +1,6 @@
 import proxy from 'http2-proxy'
 import httpx from './httpx'
+import http from 'http'
 import url from 'url'
 import path from 'path'
 import net from 'net'
@@ -35,6 +36,8 @@ fs.readdir(HOSTRULES_DIR, (err, filenames) => {
     })
 })
 
+// Use Httpx
+const USE_HTTPX = (process.env.LUNUC_HTTPX || true)
 
 // Port to listen to
 const PORT = (process.env.PORT || process.env.LUNUC_PORT || 8080)
@@ -199,7 +202,7 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
 
 
 // Initialize http api
-const app = httpx.createServer(options, function (req, res) {
+const app = (USE_HTTPX?httpx:http).createServer(options, function (req, res) {
 
     const host = getHostFromHeaders(req.headers)
 
@@ -438,9 +441,12 @@ const app = httpx.createServer(options, function (req, res) {
 // Listen to the `upgrade` event and proxy the
 // WebSocket requests as well.
 //
-app.http.on('upgrade', webSocket)
-app.https.on('upgrade', webSocket)
-
+if( USE_HTTPX ) {
+    app.http.on('upgrade', webSocket)
+    app.https.on('upgrade', webSocket)
+}else{
+    app.on('upgrade', webSocket)
+}
 // Start server
 app.listen(PORT, () => console.log(
     `Listening at localhost:${PORT}`

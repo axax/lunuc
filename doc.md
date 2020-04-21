@@ -383,8 +383,20 @@ _tr()
 
 
 ### Config environment vars
+LUNUC_HTTPX --> if true webserver handles http and https request on the same port (default is true)
+LUNUC_FORCE_HTTPS --> If true reqeust is forced to be https
+LUNUC_AUTH_EXPIRES_IN --> Expiration of authentication
+LUNUC_SECRET_KEY --> Secret key for user token
+LUNUC_MONGO_URL = MONGO_URL --> Connection to mongodb
+LUNUC_CERT_DIR --> SSL cert location
+LUNUC_API_PORT = API_PORT --> Graphql API port
+LUNUC_PORT = PORT --> Webserver port
+LUNUC_GROUP --> Is used for execution rule
+LUNUC_UPLOAD_DIR --> Location of uploaded files default is ./uploads
+AWS_SECRET --> Amason web service secret key
+GOOGLE_API_KEY --> Google cloud key
+LUNUC_ALPHA_VANTAGE_API_KEY --> Alpha vantage spi key
 
-LUNUC_FORCE_HTTPS=true 
 
 ### Security
 

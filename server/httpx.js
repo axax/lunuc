@@ -34,7 +34,6 @@ exports.createServer = (opts, handler) => {
             // the process. Prior to NodeJS 10.x
             // the socket may be resumed synchronously.
             process.nextTick(() =>{
-                console.log("socket is paused:"+socket.isPaused())
                 socket.resume()
             })
         })
