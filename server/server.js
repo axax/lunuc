@@ -12,25 +12,8 @@ import finalhandler from 'finalhandler'
 import {AUTH_HEADER} from 'api/constants'
 import {decodeToken} from 'api/util/jwt'
 
-const defaultWebHandler = (err, req, res) => {
-    if (err) {
-        console.error('proxy error', err)
-        finalhandler(req, res)(err)
-    } else {
-        res.end()
-    }
-}
-
-const defaultWSHandler = (err, req, socket, head) => {
-    if (err) {
-        console.error('proxy error ws ', err)
-        socket.destroy()
-    }
-}
-
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX} = config
-
 
 // load hostrules
 const HOSTRULES_DIR = path.join(__dirname, '../hostrules/')
@@ -54,8 +37,8 @@ fs.readdir(HOSTRULES_DIR, (err, filenames) => {
 
 
 // Port to listen to
-const PORT = (process.env.LUNUC_PORT || process.env.PORT || 8080)
-const API_PORT = (process.env.LUNUC_API_PORT || process.env.API_PORT || 3000)
+const PORT = (process.env.PORT || process.env.LUNUC_PORT || 8080)
+const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 
 // Build dir
 const BUILD_DIR = path.join(__dirname, '../build')
@@ -72,6 +55,147 @@ const options = {
 if (fs.existsSync(path.join(CERT_DIR, './chain.pem'))) {
     options.ca = fs.readFileSync(path.join(CERT_DIR, './chain.pem'))
 }
+
+
+
+const defaultWebHandler = (err, req, res) => {
+    if (err) {
+        console.error('proxy error', err)
+        finalhandler(req, res)(err)
+    } else {
+        res.end()
+    }
+}
+
+const defaultWSHandler = (err, req, socket, head) => {
+    if (err) {
+        console.error('proxy error ws ', err)
+        socket.destroy()
+    }
+}
+
+const webSocket = function (req, socket, head) {
+    proxy.ws(req, socket, head, {
+        hostname: 'localhost',
+        port: API_PORT,
+        path: '/ws'
+    }, defaultWSHandler)
+}
+
+const sendError = (res, code) => {
+    let msg = ''
+    if (code === 404) {
+        msg = 'Not Found'
+    } else if (code === 403) {
+        msg = 'Not Allowed'
+    }
+
+
+    res.writeHead(code, {'Content-Type': 'text/plain'})
+    res.write(`${code} ${msg}\n`)
+    res.end()
+}
+
+const sendFile = function (req, res, headerExtra, filename) {
+    let acceptEncoding = req.headers['accept-encoding']
+    if (!acceptEncoding) {
+        acceptEncoding = ''
+    }
+    if (acceptEncoding.match(/\bgzip\b/)) {
+        res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
+
+        if (fs.existsSync(filename + '.gz')) {
+            // if gz version is available send this instead
+            const fileStream = fs.createReadStream(filename + '.gz')
+            fileStream.pipe(res)
+        } else {
+            const fileStream = fs.createReadStream(filename)
+            fileStream.pipe(zlib.createGzip()).pipe(res)
+        }
+
+    } else if (acceptEncoding.match(/\bdeflate\b/)) {
+        res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate'})
+
+        const fileStream = fs.createReadStream(filename)
+        fileStream.pipe(zlib.createDeflate()).pipe(res)
+    } else {
+        res.writeHead(200, {...headerExtra})
+
+        const fileStream = fs.createReadStream(filename)
+        fileStream.pipe(res)
+    }
+}
+
+
+const parseWebsite = async (urlToFetch, host) => {
+    const puppeteer = require('puppeteer')
+
+    console.log(`fetch ${urlToFetch}`)
+    const browser = await puppeteer.launch({
+        ignoreHTTPSErrors: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    })
+    const page = await browser.newPage()
+
+    await page.setRequestInterception(true)
+    await page.setExtraHTTPHeaders({ 'x-host-rule': host })
+
+    page.on('request', (request) => {
+        if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
+            request.abort()
+        } else {
+            request.continue()
+        }
+    })
+
+    await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
+
+    const html = await page.content()
+
+
+
+
+    await browser.close()
+
+    return html
+}
+
+
+const sendIndexFile = async (req, res, uri, hostrule, host) => {
+    const headers = {
+        'Cache-Control': 'public, max-age=60',
+        'content-type': MimeType.detectByExtension('html'),
+        ...hostrule.headers[uri]
+    }
+
+    const agent = req.headers['user-agent']
+    if(agent && agent.indexOf('bingbot')>-1 || agent.indexOf('msnbot')>-1) {
+
+        // return rentered html for bing as they are not able to render js properly
+        //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${uri}`)
+        const baseUrl = `http://localhost:${PORT}`
+        let html = await parseWebsite(baseUrl+uri, host)
+        const re = new RegExp(baseUrl, 'g')
+        html = html.replace(re,`https://${host}`)
+
+
+        res.writeHead(200, headers)
+        res.write(html)
+        res.end()
+
+    }else {
+        let indexfile
+
+        if (hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
+            indexfile = path.join(__dirname, '../' + hostrule.fileMapping['/index.html'])
+        } else {
+            // default index
+            indexfile = path.join(BUILD_DIR, '/index.min.html')
+        }
+        sendFile(req, res, headers, indexfile);
+    }
+}
+
 
 
 // Initialize http api
@@ -309,138 +433,6 @@ const app = httpx.createServer(options, function (req, res) {
         }
     }
 })
-
-const sendIndexFile = async (req, res, uri, hostrule, host) => {
-    const headers = {
-        'Cache-Control': 'public, max-age=60',
-        'content-type': MimeType.detectByExtension('html'),
-        ...hostrule.headers[uri]
-    }
-
-    const agent = req.headers['user-agent']
-    if(agent && agent.indexOf('bingbot')>-1 || agent.indexOf('msnbot')>-1) {
-
-        // return rentered html for bing as they are not able to render js properly
-        //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${uri}`)
-        const baseUrl = `http://localhost:${PORT}`
-        let html = await parseWebsite(baseUrl+uri, host)
-        const re = new RegExp(baseUrl, 'g')
-        html = html.replace(re,`https://${host}`)
-
-
-        res.writeHead(200, headers)
-        res.write(html)
-        res.end()
-
-    }else {
-        let indexfile
-
-        if (hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
-            indexfile = path.join(__dirname, '../' + hostrule.fileMapping['/index.html'])
-        } else {
-            // default index
-            indexfile = path.join(BUILD_DIR, '/index.min.html')
-        }
-        sendFile(req, res, headers, indexfile);
-    }
-}
-
-const parseWebsite = async (urlToFetch, host) => {
-    const puppeteer = require('puppeteer')
-
-    console.log(`fetch ${urlToFetch}`)
-    const browser = await puppeteer.launch({
-        ignoreHTTPSErrors: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    })
-    const page = await browser.newPage()
-
-    await page.setRequestInterception(true)
-    await page.setExtraHTTPHeaders({ 'x-host-rule': host })
-
-    page.on('request', (request) => {
-        if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
-            request.abort()
-        } else {
-            request.continue()
-        }
-    })
-
-    await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
-
-    const html = await page.content()
-
-
-
-
-    await browser.close()
-
-    return html
-}
-
-//app.https.on('error', (err) => console.error(err));
-
-/*app.https.on('stream', (stream, headers) => {
-    // stream is a Duplex
-    stream.respond({
-        'content-type': 'text/html',
-        ':status': 200
-    });
-    stream.end('<h1>Hello World</h1>');
-});*/
-
-
-const sendError = (res, code) => {
-    let msg = ''
-    if (code === 404) {
-        msg = 'Not Found'
-    } else if (code === 403) {
-        msg = 'Not Allowed'
-    }
-
-
-    res.writeHead(code, {'Content-Type': 'text/plain'})
-    res.write(`${code} ${msg}\n`)
-    res.end()
-}
-
-const sendFile = function (req, res, headerExtra, filename) {
-    let acceptEncoding = req.headers['accept-encoding']
-    if (!acceptEncoding) {
-        acceptEncoding = ''
-    }
-    if (acceptEncoding.match(/\bgzip\b/)) {
-        res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
-
-        if (fs.existsSync(filename + '.gz')) {
-            // if gz version is available send this instead
-            const fileStream = fs.createReadStream(filename + '.gz')
-            fileStream.pipe(res)
-        } else {
-            const fileStream = fs.createReadStream(filename)
-            fileStream.pipe(zlib.createGzip()).pipe(res)
-        }
-
-    } else if (acceptEncoding.match(/\bdeflate\b/)) {
-        res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate'})
-
-        const fileStream = fs.createReadStream(filename)
-        fileStream.pipe(zlib.createDeflate()).pipe(res)
-    } else {
-        res.writeHead(200, {...headerExtra})
-
-        const fileStream = fs.createReadStream(filename)
-        fileStream.pipe(res)
-    }
-}
-
-const webSocket = function (req, socket, head) {
-    proxy.ws(req, socket, head, {
-        hostname: 'localhost',
-        port: API_PORT,
-        path: '/ws'
-    }, defaultWSHandler)
-}
 
 //
 // Listen to the `upgrade` event and proxy the

@@ -67,7 +67,7 @@
       "active": false
     },
     "dns": {
-      "active": true
+      "active": false
     },
     "history": {
       "active": true
