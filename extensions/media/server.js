@@ -6,7 +6,6 @@ import resolver from './resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
 import fs from 'fs'
 import path from 'path'
-import {uploadImageToStorage} from './googleupload'
 
 import config from 'gen/config'
 import React from 'react'
@@ -68,6 +67,8 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
 
     let uploadResult
     if( data.useCdn ) {
+        const uploadImageToStorage = require('./googleupload').uploadImageToStorage
+
         uploadResult = await uploadImageToStorage({file})
         data.src = uploadResult.url
     }
