@@ -1,4 +1,3 @@
-import puppeteer from 'puppeteer'
 import config from 'gen/config'
 import path from 'path'
 import Util from '../../../api/util'
@@ -38,9 +37,11 @@ const processWebsiteQueue = async (job) => {
 }
 
 const openInBrowser = async (options, scope, resolvedData) => {
+
+    const puppeteer = require('puppeteer')
+
     const {url, pipeline, images, ignoreSsl, waitUntil, timeout} = options
     let data = {}, error
-
     const browserInstance = await puppeteer.launch({
         ignoreHTTPSErrors: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
