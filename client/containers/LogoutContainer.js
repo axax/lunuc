@@ -31,7 +31,7 @@ class LogoutContainer extends React.Component {
                 console.log(e)
             }
             localStorage.removeItem('token')
-        },50)
+        },250)
     }
 
     render() {

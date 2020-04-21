@@ -1,7 +1,7 @@
 'use strict'
 
 // Use ES6 module syntax with node.js
-require("@babel/register");
+require("@babel/register")
 
 // define some global vars for server side rendering
 global.document = {documentElement: {}}
