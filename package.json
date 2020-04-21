@@ -109,7 +109,9 @@
     "redux": "^4.0.5",
     "request-promise": "^4.2.5",
     "subscriptions-transport-ws": "^0.9.16",
-    "zip-local": "^0.3.4"
+    "zip-local": "^0.3.4",
+    "less": "^3.11.1",
+    "http2-proxy": "^5.0.45"
   },
   "optionalDependencies": {
     "@google-cloud/storage": "^4.7.0",
@@ -120,7 +122,6 @@
     "fluent-ffmpeg": "^2.1.2",
     "puppeteer": "^3.0.0",
     "nodemon": "^2.0.3",
-    "http2-proxy": "^5.0.45",
     "mssql": "^6.2.0",
     "native-dns": "^0.7.0",
     "natural": "^0.6.3",
@@ -137,7 +138,6 @@
     "copy-webpack-plugin": "^5.1.1",
     "css-loader": "^3.5.2",
     "less-loader": "^5.0.0",
-    "less": "^3.11.1",
     "mini-css-extract-plugin": "^0.9.0",
     "prop-types": "^15.7.2",
     "style-loader": "^1.1.4",

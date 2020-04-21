@@ -11,7 +11,6 @@ import {getHostFromHeaders} from 'util/host'
 import finalhandler from 'finalhandler'
 import {AUTH_HEADER} from 'api/constants'
 import {decodeToken} from 'api/util/jwt'
-import puppeteer from 'puppeteer'
 
 const defaultWebHandler = (err, req, res) => {
     if (err) {
@@ -347,6 +346,8 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
 }
 
 const parseWebsite = async (urlToFetch, host) => {
+    const puppeteer = require('puppeteer')
+
     console.log(`fetch ${urlToFetch}`)
     const browser = await puppeteer.launch({
         ignoreHTTPSErrors: true,
