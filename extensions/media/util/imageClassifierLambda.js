@@ -1,19 +1,20 @@
-var AWS = require('aws-sdk/index');
-
-AWS.config.region = 'us-east-1'
-
-// you shouldn't hardcode your keys in production! See http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html
-AWS.config.update({accessKeyId: process.env.AWS_KEY, secretAccessKey: process.env.AWS_SECRET});
-
-
 const ImageClassifier = {
 
 
     classifyByUrl: (url) => {
 
+        const AWS = require('aws-sdk/index')
+
+        AWS.config.region = 'us-east-1'
+
+        // you shouldn't hardcode your keys in production! See http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html
+        AWS.config.update({accessKeyId: process.env.AWS_KEY, secretAccessKey: process.env.AWS_SECRET})
+
+
+
         return new Promise((resolve, reject) => {
 
-                var lambda = new AWS.Lambda();
+                var lambda = new AWS.Lambda()
                 var params = {
                     FunctionName: 'imageClassifier',
                     Payload: `{"options": {"url": "${url}"}}`
