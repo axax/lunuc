@@ -116,7 +116,6 @@
     "nodemailer": "^6.4.6",
     "nodemon": "^2.0.3",
     "preact": "^10.4.1",
-    "puppeteer": "^3.0.0",
     "react": "^16.13.1",
     "react-autosuggest": "^10.0.0",
     "react-codemirror2": "^7.1.0",
@@ -132,6 +131,9 @@
     "xml2js": "^0.4.23",
     "ytdl-core": "^2.1.0",
     "zip-local": "^0.3.4"
+  },
+  "optionalDependencies":{
+    "puppeteer": "^3.0.0"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
