@@ -25,7 +25,7 @@ const ImageClassifier = {
                         console.log(err)
                         reject(err) // an error occurred
                     } else {
-                        resolve(JSON.parse(data.Payload))           // successful response
+                        resolve(JSON.parse(data.Payload))  // successful response
                     }
                 })
 
