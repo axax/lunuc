@@ -971,10 +971,11 @@ class TypesContainer extends React.Component {
                         })
                         if (storeData && storeData[storeKey]) {
                             // oh data are available in cache. show them first
-                            this.setState({data: storeData[storeKey]})
+                            setTimeout(()=> {
+                                this.setState({data: storeData[storeKey]})
+                            },0)
                         }
                     } catch (e) {
-                        console.log(e)
                     }
                 }
                 client.query({
@@ -1297,7 +1298,6 @@ class TypesContainer extends React.Component {
         const v = event.target.value
         if (v !== this.pageParams.type) {
             this.settings.lastType = v
-            this.saveSettings()
             this.props.history.push(`${ADMIN_BASE_URL}/types/${v}`)
         }
     }

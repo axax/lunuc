@@ -31,6 +31,10 @@ export const systemSchemaRaw = `
         status: String
     }
     
+    type RemoveMediaDumpResult {
+        status: String
+    }
+    
     type MediaDump {
         name: String
         createdAt: Float
@@ -100,6 +104,7 @@ export const systemSchemaRaw = `
     type Mutation {   	
     	createDbDump(type: String): DbDump    	
     	removeDbDump(name: String!): RemoveDbDumpResult   
+    	removeMediaDump(name: String!): RemoveMediaDumpResult   
     	createMediaDump(type: String): MediaDump
     	cloneCollection(type: String!, name: String): CloneCollectionResult
     	deleteCollection(name: String!): DeleteCollectionResult

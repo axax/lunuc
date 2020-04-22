@@ -165,7 +165,10 @@ class DbDumpContainer extends React.Component {
                                 onClick: () => {
                                     this.authorizedRequest(BACKUP_URL + '/mediadumps/' + i.name, 'medias.backup.gz')
                                 },
-                                secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size
+                                secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size,
+                                actions: <DeleteIconButton onClick={()=>{
+                                    this.props.removeMediaDump(i)
+                                }}/>
                             })
                             return a
                         }, [])}/>
@@ -213,6 +216,7 @@ const gqlUpdate = gql`mutation createDbDump($type:String){createDbDump(type:$typ
 const gqlRemove = gql`mutation removeDbDump($name:String!){removeDbDump(name:$name){status}}`
 const gqlQueryMedia = gql`query{mediaDumps{results{name createdAt size}}}`
 const gqlUpdateMedia = gql`mutation createMediaDump($type:String){createMediaDump(type:$type){name createdAt size}}`
+const gqlRemoveMedia = gql`mutation removeMediaDump($name:String!){removeMediaDump(name:$name){status}}`
 
 const DbDumpContainerWithGql = compose(
     graphql(gqlQuery, {
@@ -232,8 +236,11 @@ const DbDumpContainerWithGql = compose(
                     variables: {type: 'full'},
                     update: (proxy, {data: {createDbDump}}) => {
                         // Read the data from our cache for this query.
-                        const storeData = proxy.readQuery({query: gqlQuery})
+                        const storeData = proxy.readQuery({query: gqlQuery}) || {}
 
+                        if( !storeData.dbDumps ){
+                            storeData.dbDumps={}
+                        }
                         const newData = {...storeData.dbDumps, results: [...storeData.dbDumps.results]}
 
                         // Add our note from the mutation to the end.
@@ -288,7 +295,11 @@ const DbDumpContainerWithGql = compose(
                     variables: {type: 'full'},
                     update: (proxy, {data: {createMediaDump}}) => {
                         // Read the data from our cache for this query.
-                        const data = proxy.readQuery({query: gqlQueryMedia})
+                        const storeData = proxy.readQuery({query: gqlQueryMedia}) || {}
+
+                        if( !storeData.mediaDumps ){
+                            storeData.mediaDumps={}
+                        }
 
                         const newData = {...storeData.mediaDumps, results: [...storeData.mediaDumps.results]}
 
@@ -302,7 +313,31 @@ const DbDumpContainerWithGql = compose(
                 })
             }
         })
-    })
+    }),
+    graphql(gqlRemoveMedia, {
+        props: ({mutate}) => ({
+            removeMediaDump: ({name}) => {
+                return mutate({
+                    variables: {name: name},
+                    update: (proxy, {data: {removeMediaDump}}) => {
+                        // Read the data from our cache for this query.
+                        const storeData = proxy.readQuery({query: gqlQueryMedia})
+
+                        const newData = {...storeData.mediaDumps, results: [...storeData.mediaDumps.results]}
+
+
+                        const idx = newData.results.findIndex(x => x.name === name)
+                        if (idx > -1) {
+                            newData.results.splice(idx, 1)
+                            proxy.writeQuery({query: gqlQueryMedia, data: {...storeData, mediaDumps: newData}})
+
+                        }
+                    }
+
+                })
+            }
+        })
+    }),
 )
 (DbDumpContainer)
 

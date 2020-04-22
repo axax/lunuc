@@ -40,7 +40,7 @@ import * as CmsActions from '../actions/CmsAction'
 import {getTypeQueries} from 'util/types'
 import TypeEdit from '../../../client/components/types/TypeEdit'
 import withType from '../../../client/components/types/withType'
-import Util from "../../../client/util";
+import Util from '../../../client/util'
 import {CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import CodeEditor from 'client/components/CodeEditor'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
@@ -51,6 +51,8 @@ import {getFormFields} from '../../../util/typesAdmin'
 
 
 class CmsViewEditorContainer extends React.Component {
+
+    templateChangeHistory = []
 
     static lastSettings = {inlineEditor: true, fixedLayout: true}
 
@@ -183,6 +185,8 @@ class CmsViewEditorContainer extends React.Component {
                 return <NetworkStatusHandler/>
             }
         }
+
+        const isSmallScreen = window.innerWidth < 1000
 
         // extend with value from state because they are more update to date
         const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template})
@@ -564,6 +568,43 @@ class CmsViewEditorContainer extends React.Component {
                 </div>
             </div>
 
+            const moreMenu = [{
+                divider: true,
+                name: _t('CmsViewEditorContainer.addnewpage'), onClick: () => {
+                    this.setState({addNewSite: {}})
+
+                }
+            }
+            ]
+
+            if (this.templateChangeHistory.length > 0) {
+                moreMenu.push(
+                    {
+                        divider: true,
+                        name: _t('CmsViewEditorContainer.undochange')+' ('+this.templateChangeHistory.length+')', onClick: () => {
+                            if(this.templateChangeHistory.length>0) {
+                                this.handleTemplateChange(this.templateChangeHistory[0], true, true)
+                                this.templateChangeHistory.splice(0, 1)
+                            }
+                        }
+                    })
+            }
+
+            if (isSmallScreen) {
+                moreMenu.unshift({
+                    component: <SimpleSwitch key="fixedLayoutSwitch" color="default"
+                                             checked={!!settings.fixedLayout}
+                                             onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
+                                             label={_t('CmsViewEditorContainer.fixed')}/>
+                })
+                moreMenu.unshift({
+                    component: <SimpleSwitch key="inlineEditorSwitch" color="default"
+                                             checked={!!settings.inlineEditor}
+                                             onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
+                                             label={_t('CmsViewEditorContainer.inlineEditor')}/>
+                })
+            }
+
             return <UIProvider>
                 <DrawerLayout sidebar={sidebar}
                               open={settings.drawerOpen}
@@ -572,28 +613,23 @@ class CmsViewEditorContainer extends React.Component {
                               onDrawerOpenClose={this.drawerOpenClose}
                               onDrawerWidthChange={this.drawerWidthChange}
                               toolbarRight={[
-                                  <SimpleSwitch key="fixedLayoutSwitch" color="default"
-                                                checked={!!settings.fixedLayout}
-                                                onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
-                                                contrast
-                                                label={_t('CmsViewEditorContainer.fixed')}/>,
-                                  <SimpleSwitch key="inlineEditorSwitch" color="default"
-                                                checked={!!settings.inlineEditor}
-                                                onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
-                                                contrast
-                                                label={_t('CmsViewEditorContainer.inlineEditor')}/>,
+                                  !isSmallScreen && <SimpleSwitch key="fixedLayoutSwitch" color="default"
+                                                                  checked={!!settings.fixedLayout}
+                                                                  onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
+                                                                  contrast
+                                                                  label={_t('CmsViewEditorContainer.fixed')}/>,
+                                  !isSmallScreen && <SimpleSwitch key="inlineEditorSwitch" color="default"
+                                                                  checked={!!settings.inlineEditor}
+                                                                  onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
+                                                                  contrast
+                                                                  label={_t('CmsViewEditorContainer.inlineEditor')}/>,
                                   <Button key="buttonBack" size="small" color="inherit" onClick={e => {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
                                   }}>Admin</Button>,
                                   <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
                                       this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname)}`)
                                   }}>Logout</Button>,
-                                  <SimpleMenu key="moreMenu" color="inherit" items={[{
-                                      name: 'Neue Seite erstellen', onClick: () => {
-                                          this.setState({addNewSite: {}})
-
-                                      }
-                                  }]}/>
+                                  <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>
                               ]
                               }
                               title={`${_t('CmsViewEditorContainer.editPage')} "${props.slug}" - ${cmsPage.online ? 'Online' : 'Online'}`}>
@@ -935,7 +971,7 @@ class CmsViewEditorContainer extends React.Component {
         }
     }
 
-    handleTemplateChange = (str, instantSave) => {
+    handleTemplateChange = (str, instantSave, skipHistory) => {
         clearTimeout(this._templateTimeout)
         this._templateTimeout = setTimeout(() => {
             if (str.constructor !== String) {
@@ -945,6 +981,13 @@ class CmsViewEditorContainer extends React.Component {
             // save settings first
             if (this._saveSettings)
                 this._saveSettings()
+
+            if (!skipHistory) {
+                this.templateChangeHistory.unshift(this.state.template)
+                if(this.templateChangeHistory.length>10) {
+                    this.templateChangeHistory.length = 10
+                }
+            }
 
             this.setState({template: str, templateError: null})
             this._autoSaveTemplate = () => {

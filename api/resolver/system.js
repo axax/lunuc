@@ -405,6 +405,16 @@ export const systemResolver = (db) => ({
 
             return {status:'ok'}
         },
+        removeMediaDump: async ({name}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+
+            // make sure upload dir exists
+            const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/mediadumps/')
+
+            fs.unlinkSync(backup_dir+'/'+name)
+
+            return {status:'ok'}
+        },
         createMediaDump: async ({type}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
 

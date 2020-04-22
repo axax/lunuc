@@ -91,9 +91,12 @@ class SimpleMenu extends React.Component {
                                 {item.icon}
                             </ListItemIcon>
                             }
+                            {item.component}
+                            {item.name &&
                             <ListItemText>
                                 {item.name}
                             </ListItemText>
+                            }
                         </MenuItem>]
                     })}
 
