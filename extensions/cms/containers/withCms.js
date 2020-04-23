@@ -115,24 +115,28 @@ export default function (WrappedComponent) {
                     update: (store, {data: {setKeyValue}}) => {
                         if (internal) {
 
-                            const storedData = store.readQuery({
-                                query: gqlQueryKeyValue,
-                                variables: {key: settingKeyPrefix + slug}
-                            })
+                            try {
+                                const storedData = store.readQuery({
+                                    query: gqlQueryKeyValue,
+                                    variables: {key: settingKeyPrefix + slug}
+                                })
 
-                            let newData = {keyValue: null}
-                            if (storedData.keyValue) {
-                                newData.keyValue = Object.assign({}, storedData.keyValue, {value: setKeyValue.value})
-                            } else {
-                                newData.keyValue = setKeyValue
+                                let newData = {keyValue: null}
+                                if (storedData.keyValue) {
+                                    newData.keyValue = Object.assign({}, storedData.keyValue, {value: setKeyValue.value})
+                                } else {
+                                    newData.keyValue = setKeyValue
+                                }
+
+                                // Write our data back to the cache.
+                                store.writeQuery({
+                                    query: gqlQueryKeyValue,
+                                    variables: {key: settingKeyPrefix + slug},
+                                    data: newData
+                                })
+                            }catch (e) {
+
                             }
-
-                            // Write our data back to the cache.
-                            store.writeQuery({
-                                query: gqlQueryKeyValue,
-                                variables: {key: settingKeyPrefix + slug},
-                                data: newData
-                            })
 
                         } else {
                             this.updateResolvedData(resolvedDataJson)

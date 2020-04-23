@@ -21,6 +21,7 @@ export const gqlQuery = ()=>{
 
 // query to get a keyvalue pair
 export const gqlQueryKeyValue = gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`
+export const gqlQueryKeyValues = gql`query keyValues($keys:[String]){keyValues(keys:$keys){results{key value createdBy{_id}}}}`
 
 export const isPreview = () => {
     const params = new URLSearchParams(window.location.search)

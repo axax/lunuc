@@ -4,7 +4,7 @@ import {
     getSlugVersion,
     getGqlVariables,
     settingKeyPrefix,
-    gqlQueryKeyValue,
+    gqlQueryKeyValues,
     gqlQuery
 } from '../util/cmsView'
 import PropTypes from 'prop-types'
@@ -54,7 +54,8 @@ class CmsViewEditorContainer extends React.Component {
 
     templateChangeHistory = []
 
-    static lastSettings = {inlineEditor: true, fixedLayout: true}
+    static defaultSettings = {inlineEditor: true, fixedLayout: true, drawerOpen: false}
+    static generalSettingsKeys = ['inlineEditor', 'fixedLayout', 'drawerOpen']
 
     constructor(props) {
         super(props)
@@ -63,34 +64,44 @@ class CmsViewEditorContainer extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         if ((nextProps.cmsPage !== prevState.cmsPage && nextProps.cmsPage && nextProps.cmsPage.status !== 'updating')
-            || nextProps.keyValue !== prevState.keyValue) {
+            || nextProps.keyValues !== prevState.keyValues) {
             return CmsViewEditorContainer.propsToState(nextProps, prevState)
         }
         return null
     }
 
+    static getSettingsByKeyValue(props) {
+        let generalSettings = {}, pageSettings = {}, settings = {}
+
+        if (props.keyValues) {
+
+            props.keyValues.results.forEach(keyValue => {
+                if (keyValue.value) {
+                    try {
+                        if (keyValue.key === settingKeyPrefix) {
+                            generalSettings = JSON.parse(keyValue.value)
+                        } else {
+                            pageSettings = JSON.parse(keyValue.value)
+                        }
+                    } catch (e) {
+                        console.log(e)
+                    }
+                }
+            })
+        }
+        settings = {...CmsViewEditorContainer.defaultSettings, ...generalSettings, ...pageSettings}
+
+        return {settings, pageSettings, generalSettings}
+    }
+
     static propsToState(props, state) {
         const {template, script, style, serverScript, resources, dataResolver, ssr, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, compress} = props.cmsPage || {}
-        let settings = null
-        if (props && props.cmsPage && state && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug && state.settings && !state.settings._default) {
-            settings = state.settings
-        } else if (props.keyValue) {
-            try {
-                settings = JSON.parse(props.keyValue.value)
-                delete settings._default
-            } catch (e) {
-            }
-        }
-
-        if (!settings) {
-            settings = Object.assign({_default: true}, CmsViewEditorContainer.lastSettings)
-        }
-
+        const {settings} = CmsViewEditorContainer.getSettingsByKeyValue(props)
         const result = {
-            keyValue: props.keyValue,
+            keyValues: props.keyValues,
             cmsPage: props.cmsPage,
             settings,
-            loadingSettings: props.keyValue === undefined,
+            loadingSettings: props.keyValues === undefined,
             template,
             resources,
             script,
@@ -204,13 +215,12 @@ class CmsViewEditorContainer extends React.Component {
         }
 
 
+        const DataEditDialog = () => {
 
-        const DataEditDialog = ()=> {
+            if (cmsEditData) {
+                if (cmsEditData.type) {
 
-            if( cmsEditData){
-                if(cmsEditData.type){
-
-                    const OpenTypeEdit = ({data})=>{
+                    const OpenTypeEdit = ({data}) => {
 
                         const editDialogProps = {
                             type: cmsEditData.type,
@@ -235,7 +245,7 @@ class CmsViewEditorContainer extends React.Component {
                             null
                         )
                     }
-                    if( cmsEditData._id) {
+                    if (cmsEditData._id) {
 
                         return <Query key="dataEditor"
                                       query={gql(getTypeQueries(cmsEditData.type).query)}
@@ -253,23 +263,24 @@ class CmsViewEditorContainer extends React.Component {
                                 return <OpenTypeEdit data={data}/>
                             }}
                         </Query>
-                    }else{
+                    } else {
                         return <OpenTypeEdit/>
                     }
-                }else{
+                } else {
 
                     let formRef
-                    return <SimpleDialog fullWidth={true} maxWidth="sm" key="propertyEditor" open={true} onClose={(e) => {
-                        if (e.key === 'save' && formRef) {
-                            const field = formRef.state.fields.field
-                            this.handleDataResolverPropertySave({
-                                value: field,
-                                path: cmsEditData._id,
-                                instantSave: true
-                            })
-                        }
-                        this.props._cmsActions.editCmsData(null)
-                    }}
+                    return <SimpleDialog fullWidth={true} maxWidth="sm" key="propertyEditor" open={true}
+                                         onClose={(e) => {
+                                             if (e.key === 'save' && formRef) {
+                                                 const field = formRef.state.fields.field
+                                                 this.handleDataResolverPropertySave({
+                                                     value: field,
+                                                     path: cmsEditData._id,
+                                                     instantSave: true
+                                                 })
+                                             }
+                                             this.props._cmsActions.editCmsData(null)
+                                         }}
                                          actions={[{
                                              key: 'cancel',
                                              label: 'Abbrechen',
@@ -344,8 +355,8 @@ class CmsViewEditorContainer extends React.Component {
                 <div style={{padding: '10px'}}>
 
                     {canMangeCmsTemplate && <Expandable title="Data resolver"
-                                                onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
-                                                expanded={settings.dataResolverExpanded}>
+                                                        onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
+                                                        expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
                             onScroll={this.handleSettingChange.bind(this, 'dataResolverScroll')}
                             scrollPosition={settings.dataResolverScroll}
@@ -356,8 +367,8 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {canMangeCmsTemplate && <Expandable title="Server Script"
-                                                onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
-                                                expanded={settings.serverScriptExpanded}>
+                                                        onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
+                                                        expanded={settings.serverScriptExpanded}>
                         <ScriptEditor
                             onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll')}
                             scrollPosition={settings.serverScriptScroll}
@@ -368,8 +379,8 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {canMangeCmsTemplate && <Expandable title="Template"
-                                                onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
-                                                expanded={settings.templateExpanded}>
+                                                        onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
+                                                        expanded={settings.templateExpanded}>
                         <TemplateEditor
                             onScroll={this.handleSettingChange.bind(this, 'templateScroll')}
                             scrollPosition={settings.templateScroll}
@@ -384,8 +395,8 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {canMangeCmsTemplate && <Expandable title="Script"
-                                                onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
-                                                expanded={settings.scriptExpanded}>
+                                                        onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
+                                                        expanded={settings.scriptExpanded}>
                         <ScriptEditor
                             onScroll={this.handleSettingChange.bind(this, 'scriptScroll')}
                             scrollPosition={settings.scriptScroll}
@@ -393,8 +404,8 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
                     {canMangeCmsTemplate && <Expandable title="Style"
-                                                onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
-                                                expanded={settings.styleExpanded}>
+                                                        onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
+                                                        expanded={settings.styleExpanded}>
 
                         <CodeEditor showFab lineNumbers type="css"
                                     onScroll={this.handleSettingChange.bind(this, 'styleScroll')}
@@ -405,8 +416,8 @@ class CmsViewEditorContainer extends React.Component {
 
 
                     {canMangeCmsTemplate && <Expandable title="Static assets"
-                                                onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
-                                                expanded={settings.resourceExpanded}>
+                                                        onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
+                                                        expanded={settings.resourceExpanded}>
 
                         <ResourceEditor resources={resources}
                                         onChange={this.handleResourceChange.bind(this)}></ResourceEditor>
@@ -602,8 +613,9 @@ class CmsViewEditorContainer extends React.Component {
                 moreMenu.push(
                     {
                         divider: true,
-                        name: _t('CmsViewEditorContainer.undochange')+' ('+this.templateChangeHistory.length+')', onClick: () => {
-                            if(this.templateChangeHistory.length>0) {
+                        name: _t('CmsViewEditorContainer.undochange') + ' (' + this.templateChangeHistory.length + ')',
+                        onClick: () => {
+                            if (this.templateChangeHistory.length > 0) {
                                 this.handleTemplateChange(this.templateChangeHistory[0], true, true)
                                 this.templateChangeHistory.splice(0, 1)
                             }
@@ -999,7 +1011,7 @@ class CmsViewEditorContainer extends React.Component {
 
             if (!skipHistory) {
                 this.templateChangeHistory.unshift(this.state.template)
-                if(this.templateChangeHistory.length>10) {
+                if (this.templateChangeHistory.length > 10) {
                     this.templateChangeHistory.length = 10
                 }
             }
@@ -1100,11 +1112,35 @@ class CmsViewEditorContainer extends React.Component {
     saveSettings() {
 
         this._saveSettings = () => {
-            const key = settingKeyPrefix + this.props.slug,
-                settings = this.state.settings
+
+            const settings = this.state.settings
+            const {pageSettings, generalSettings} = CmsViewEditorContainer.getSettingsByKeyValue(this.props)
+
+            let pageSettingsChanged, generalSettingsChanged
+
+            Object.keys(settings).forEach(key => {
+                if (CmsViewEditorContainer.generalSettingsKeys.indexOf(key) > -1) {
+                    if (generalSettings[key] !== settings[key]) {
+                        generalSettingsChanged = true
+                        generalSettings[key] = settings[key]
+                    }
+                } else {
+                    if (pageSettings[key] !== settings[key]) {
+                        pageSettingsChanged = true
+                        pageSettings[key] = settings[key]
+                    }
+                }
+            })
+            if (generalSettingsChanged) {
+                this.props.setKeyValue(settingKeyPrefix, generalSettings, false, true)
+            }
+            if (pageSettingsChanged) {
+                this.props.setKeyValue(settingKeyPrefix + this.props.slug, pageSettings, false, true)
+            }
+
+
             clearTimeout(this.saveSettingsTimeout)
             this.saveSettingsTimeout = 0
-            this.props.setKeyValue(key, settings, false, true)
             delete this._saveSettings
         }
 
@@ -1126,7 +1162,7 @@ CmsViewEditorContainer.propTypes = {
     cmsPage: PropTypes.object,
     cmsComponentEdit: PropTypes.object,
     cmsEditData: PropTypes.object,
-    keyValue: PropTypes.object,
+    keyValues: PropTypes.array,
     setKeyValue: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
     user: PropTypes.object.isRequired,
@@ -1150,19 +1186,19 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(gqlQueryKeyValue, {
+    graphql(gqlQueryKeyValues, {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {
             return {
                 variables: {
-                    key: settingKeyPrefix + ownProps.slug
+                    keys: [settingKeyPrefix, settingKeyPrefix + ownProps.slug]
                 },
                 fetchPolicy: 'network-only'
             }
         },
-        props: ({data: {keyValue, loading}}) => {
+        props: ({data: {keyValues, loading}}) => {
             return {
-                keyValue,
+                keyValues,
                 loadingKeyValue: loading
             }
         }

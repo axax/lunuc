@@ -415,7 +415,6 @@ export default class AggregationBuilder {
             fieldDefinition.type = 'User'
         }
 
-
         return fieldDefinition
 
     }
@@ -455,27 +454,27 @@ export default class AggregationBuilder {
                 match: rootMatch
             })
         }
-        // if there is filter like createdBy=12323213
-        if (filters && filters.parts.createdBy) {
-            // if there is a filter on _id
-            // handle it here
-            /*this.addFilterToMatch({
-                filterKey: 'createdBy',
-                filterValue: filters.parts.createdBy.value,
-                filterOptions: filters.parts.createdBy,
-                type: 'ID',
+        if (filters && filters.parts['createdBy.username']) {
+            // TODO
+            const typeFields = getFormFields('User')
+            hasMatchInReference = true
+            this.addFilterToMatch({
+                filterKey: 'createdBy.username',
+                filterValue: filters.parts['createdBy.username'].value,
+                filterOptions: filters.parts['createdBy.username'],
                 match
-            })*/
+            })
         }
+
         this.fields.forEach((field, i) => {
             const fieldDefinition = this.getFieldDefinition(field, this.type)
             const fieldName = fieldDefinition.name
+
             if (fieldDefinition.reference) {
 
                 // search in a ref field
                 // poor performance
                 let refFields = fieldDefinition.fields, projectPipeline = {}, usePipeline = false
-
 
                 if (!refFields) {
                     projectResultData[fieldName] = 1
