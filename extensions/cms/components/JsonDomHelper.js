@@ -84,9 +84,6 @@ const styles = theme => ({
         maxHeight: '200px'
     },
     toolbarHovered: {},
-    rootToolbar: {
-        position: 'absolute'
-    },
     picker: {
         cursor: 'pointer',
         pointerEvents: 'auto'
@@ -185,12 +182,16 @@ class JsonDomHelper extends React.Component {
             JsonDomHelper.mutationObserver = new MutationObserver(highlighterHandler)
 
         }
-        JsonDomHelper.mutationObserver.observe(document.querySelector('[data-layout-content]'), {
-            attributes: false,
-            childList: true,
-            characterData: true,
-            subtree: true
-        })
+        const layout = document.querySelector('[data-layout-content]')
+
+        if( layout ) {
+            JsonDomHelper.mutationObserver.observe(layout, {
+                attributes: false,
+                childList: true,
+                characterData: true,
+                subtree: true
+            })
+        }
 
     }
 
@@ -415,7 +416,6 @@ class JsonDomHelper extends React.Component {
 
         // 1. get element from json structure by key
         const source = getComponentByKey(sourceKey, _json)
-
         if (source) {
             if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
                 //2. remove it from json
@@ -430,8 +430,8 @@ class JsonDomHelper extends React.Component {
             } else {
                 addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
                 removeComponent(sourceKey, _json)
+                _onChange(_json)
             }
-            _onChange(_json)
         }
 
 
@@ -619,7 +619,7 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {classes, _WrappedComponent, _json, _cmsActions, _onChange, _onDataResolverPropertyChange, children, _tagName, _inlineEditor, onChange, ...rest} = this.props
+        const {classes, _WrappedComponent, _json, _cmsActions, _onChange, _onDataResolverPropertyChange, children, _tagName, _inlineEditor, onChange, onClick, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         const menuItems = []
@@ -646,9 +646,9 @@ class JsonDomHelper extends React.Component {
         }
 
 
-        let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, newOnChange
+        let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, overrideOnChange, overrideOnClick
 
-        const isLoop = rest._key.indexOf('$loop') >= 0
+        const isInLoop = rest._key.indexOf('$loop') >= 0
 
 
         if (_inlineEditor.allowDrop === undefined) {
@@ -669,7 +669,7 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        const isDraggable = !isLoop && isTempalteEdit && _inlineEditor.allowDrag !== false
+        const isDraggable = !isInLoop && isTempalteEdit && _inlineEditor.allowDrag !== false
 
         if (isDraggable) {
             events.draggable = 'true'
@@ -706,17 +706,20 @@ class JsonDomHelper extends React.Component {
                 if (parsedSouce) {
 
                     if (_onDataResolverPropertyChange) {
-                        newOnChange = (e, ...args) => {
+                        overrideOnChange = (e, ...args) => {
                             _onDataResolverPropertyChange({value: e.target.value, path: parsedSouce._id})
                             onChange(e, ...args)
                         }
 
                     }
-                    menuItems.push({
-                        name: _inlineEditor.menuTitle.source || 'Eintrag bearbeiten',
-                        icon: <EditIcon/>,
-                        onClick: this.handleDatasource.bind(this)
-                    })
+
+                    if (parsedSouce._id) {
+                        menuItems.push({
+                            name: _inlineEditor.menuTitle.source || 'Eintrag bearbeiten',
+                            icon: <EditIcon/>,
+                            onClick: this.handleDatasource.bind(this)
+                        })
+                    }
 
                     if (parsedSouce.allowClone) {
                         menuItems.push({
@@ -736,6 +739,11 @@ class JsonDomHelper extends React.Component {
                                 this.handleDatasource(e, {create: true})
                             }
                         })
+                    }
+                    if (parsedSouce.newOnClick) {
+                        overrideOnClick = (e)=>{
+                            this.handleDatasource(e, {create: true})
+                        }
                     }
 
 
@@ -841,7 +849,7 @@ class JsonDomHelper extends React.Component {
                     })
                 }
 
-                if (!isLoop) {
+                if (!isInLoop) {
 
 
                     if (_inlineEditor.allowDrop && _inlineEditor.menu.add !== false) {
@@ -884,7 +892,7 @@ class JsonDomHelper extends React.Component {
                         name: 'Element in Zwischenablage kopieren',
                         icon: <FileCopyIcon/>,
                         onClick: () => {
-                            navigator.clipboard.writeText(JSON.stringify(subJson, null, 4))
+                            navigator.clipboard.writeText(JSON.stringify(subJson, null, 2))
                         }
                     })
 
@@ -974,14 +982,22 @@ class JsonDomHelper extends React.Component {
         }
 
         let kids
-        if (isTempalteEdit && _inlineEditor.allowDrop && _inlineEditor.dropArea !== false) {
+        if (children && children.constructor !== String && isTempalteEdit && !isInLoop && _inlineEditor.allowDrop && _inlineEditor.dropArea !== false) {
             kids = []
             if (children && children.length) {
+
+                let index=-1
                 for (let i = 0; i < children.length; i++) {
-                    kids.push(this.getDropArea(this.props, i))
+                    if(children[i].key){
+                        index = parseInt(children[i].key.substring(children[i].key.lastIndexOf('.') + 1))
+                        kids.push(this.getDropArea(this.props,index ))
+                    }
                     kids.push(children[i])
                 }
-                kids.push(this.getDropArea(this.props, children.length))
+                if( index>-1) {
+                    kids.push(this.getDropArea(this.props, index + 1))
+                }
+
             } else {
                 kids.push(this.getDropArea(this.props, 0))
             }
@@ -989,15 +1005,16 @@ class JsonDomHelper extends React.Component {
         } else {
             kids = children
         }
-        if (_inlineEditor.toolbar) {
-            const rootToolbar = <div key="rootToolbar" className={classNames(classes.rootToolbar)}>toolbar</div>
-            kids.push(rootToolbar)
-        }
+
         let comp
 
         if (isCms) {
             comp = <div _key={rest._key} key={rest._key} {...events}>
-                <_WrappedComponent onChange={newOnChange || onChange} {...rest} children={kids}/>
+                <_WrappedComponent
+                    onChange={overrideOnChange || onChange}
+                    onClick={overrideOnClick || onClick}
+                    {...rest}
+                    children={kids}/>
             </div>
         } else {
             let isEmpty = false
@@ -1006,9 +1023,14 @@ class JsonDomHelper extends React.Component {
             } else if (children && children.constructor === Array && children.length === 0) {
                 isEmpty = true
             }
-            comp = <_WrappedComponent onChange={newOnChange || onChange} _inlineeditor="true"
+            comp = <_WrappedComponent onChange={overrideOnChange || onChange}
+                                      onClick={overrideOnClick || onClick}
+                                      _inlineeditor="true"
                                       data-isempty={isEmpty}
-                                      key={rest._key} {...events} {...rest} children={kids}/>
+                                      key={rest._key}
+                                      {...events}
+                                      {...rest}
+                                      children={kids}/>
         }
         if (toolbar) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>]

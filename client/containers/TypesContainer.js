@@ -401,7 +401,7 @@ class TypesContainer extends React.Component {
                                 children: <textarea style={{
                                     width: '20rem',
                                     height: '20rem'
-                                }}>{JSON.stringify(this.state.data.results, null, 4)}</textarea>
+                                }}>{JSON.stringify(this.state.data.results, null, 2)}</textarea>
                             }
                         })
                     }

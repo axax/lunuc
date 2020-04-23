@@ -193,8 +193,8 @@ class CmsViewEditorContainer extends React.Component {
 
         console.log('render CmsViewEditorContainer')
 
-        const inEditor = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_PAGES),
-            hasTemplate = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
+        const canManageCmsPages = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_PAGES),
+            canMangeCmsTemplate = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
 
         let cmsEditDataProps, cmsEditDataValue
 
@@ -202,11 +202,102 @@ class CmsViewEditorContainer extends React.Component {
             cmsEditDataProps = this.getDataResolverProperty(cmsEditData)
             cmsEditDataValue = cmsEditData.value
         }
-        let formRef
+
+
+
+        const DataEditDialog = ()=> {
+
+            if( cmsEditData){
+                if(cmsEditData.type){
+
+                    const OpenTypeEdit = ({data})=>{
+
+                        const editDialogProps = {
+                            type: cmsEditData.type,
+                            title: cmsEditData.type,
+                            open: !!cmsEditData,
+                            onClose: this.handleEditDataClose.bind(this),
+                            parentRef: this
+                        }
+
+                        if (cmsEditData.options && cmsEditData.options.clone) {
+                            editDialogProps.initialData = Object.assign({}, data.genericDatas.results[0])
+                            delete editDialogProps.initialData._id
+                        } else if (cmsEditData.options && cmsEditData.options.create) {
+                            editDialogProps.initialData = cmsEditData.initialData
+                        } else {
+                            editDialogProps.dataToEdit = data.genericDatas.results[0]
+                        }
+
+                        return React.createElement(
+                            withType(TypeEdit),
+                            editDialogProps,
+                            null
+                        )
+                    }
+                    if( cmsEditData._id) {
+
+                        return <Query key="dataEditor"
+                                      query={gql(getTypeQueries(cmsEditData.type).query)}
+                                      variables={{filter: `_id=${cmsEditData._id}`}}
+                                      fetchPolicy="network-only">
+
+                            {({loading, error, data}) => {
+                                if (loading) {
+                                    return 'Loading...'
+                                }
+
+                                if (error) return `Error! ${error.message}`
+                                if (data.genericDatas.results.length === 0) return 'No data'
+
+                                return <OpenTypeEdit data={data}/>
+                            }}
+                        </Query>
+                    }else{
+                        return <OpenTypeEdit/>
+                    }
+                }else{
+
+                    let formRef
+                    return <SimpleDialog fullWidth={true} maxWidth="sm" key="propertyEditor" open={true} onClose={(e) => {
+                        if (e.key === 'save' && formRef) {
+                            const field = formRef.state.fields.field
+                            this.handleDataResolverPropertySave({
+                                value: field,
+                                path: cmsEditData._id,
+                                instantSave: true
+                            })
+                        }
+                        this.props._cmsActions.editCmsData(null)
+                    }}
+                                         actions={[{
+                                             key: 'cancel',
+                                             label: 'Abbrechen',
+                                             type: 'secondary'
+                                         },
+                                             {
+                                                 key: 'save',
+                                                 label: 'Speichern',
+                                                 type: 'primary'
+                                             }]}
+                                         title="Bearbeitung">
+
+                        <GenericForm primaryButton={false} ref={(e) => {
+                            formRef = e
+                        }} fields={cmsEditDataProps}/>
+
+
+                    </SimpleDialog>
+                }
+            }
+            return null
+        }
+
+
         const inner = [!loadingSettings &&
         <WrappedComponent key="cmsView" cmsEditData={cmsEditData}
                           onChange={this.handleTemplateChange}
-                          inEditor={inEditor}
+                          inEditor={canManageCmsPages}
                           onError={this.handleCmsError.bind(this)}
                           onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
                           settings={settings}
@@ -232,81 +323,11 @@ class CmsViewEditorContainer extends React.Component {
                     onChange={this.handleTemplateChange.bind(this)}/>
 
             </SimpleDialog>,
-
-            cmsEditData ?
-                cmsEditData.type ?
-                    <Query key="dataEditor" query={gql(getTypeQueries(cmsEditData.type).query)}
-                           variables={{filter: `_id=${cmsEditData._id}`}}
-                           fetchPolicy="network-only">
-
-                        {({loading, error, data}) => {
-                            if (loading) {
-                                return 'Loading...'
-                            }
-
-                            if (error) return `Error! ${error.message}`
-                            if (data.genericDatas.results.length === 0) return 'No data'
-
-                            const editDialogProps = {
-                                type: cmsEditData.type,
-                                title: cmsEditData.type,
-                                open: !!cmsEditData,
-                                onClose: this.handleEditDataClose.bind(this),
-                                parentRef: this
-                            }
-
-                            if (cmsEditData.options && cmsEditData.options.clone) {
-                                editDialogProps.initialData = Object.assign({}, data.genericDatas.results[0])
-                                delete editDialogProps.initialData._id
-                            } else if (cmsEditData.options && cmsEditData.options.create) {
-                                editDialogProps.initialData = cmsEditData.initialData
-                            } else {
-                                editDialogProps.dataToEdit = data.genericDatas.results[0]
-                            }
-
-                            return React.createElement(
-                                withType(TypeEdit),
-                                editDialogProps,
-                                null
-                            )
-                        }}
-                    </Query> :
-                    <SimpleDialog fullWidth={true} maxWidth="sm" key="propertyEditor" open={true} onClose={(e) => {
-                        if (e.key === 'save' && formRef) {
-                            const field = formRef.state.fields.field
-                            this.handleDataResolverPropertySave({
-                                value: field,
-                                path: cmsEditData._id,
-                                instantSave: true
-                            })
-                        }
-                        this.props._cmsActions.editCmsData(null)
-                    }}
-                                  actions={[{
-                                      key: 'cancel',
-                                      label: 'Abbrechen',
-                                      type: 'secondary'
-                                  },
-                                      {
-                                          key: 'save',
-                                          label: 'Speichern',
-                                          type: 'primary'
-                                      }]}
-                                  title="Bearbeitung">
-
-                        <GenericForm primaryButton={false} ref={(e) => {
-                            formRef = e
-                        }} fields={cmsEditDataProps}/>
-
-
-                    </SimpleDialog>
-
-                : null
-
+            <DataEditDialog/>
         ]
 
 
-        if (!inEditor) {
+        if (!canManageCmsPages) {
             return inner
         } else {
 
@@ -322,7 +343,7 @@ class CmsViewEditorContainer extends React.Component {
 
                 <div style={{padding: '10px'}}>
 
-                    {hasTemplate && <Expandable title="Data resolver"
+                    {canMangeCmsTemplate && <Expandable title="Data resolver"
                                                 onChange={this.handleSettingChange.bind(this, 'dataResolverExpanded')}
                                                 expanded={settings.dataResolverExpanded}>
                         <DataResolverEditor
@@ -334,7 +355,7 @@ class CmsViewEditorContainer extends React.Component {
                             onChange={this.handleDataResolverChange.bind(this)}>{dataResolver}</DataResolverEditor>
                     </Expandable>}
 
-                    {hasTemplate && <Expandable title="Server Script"
+                    {canMangeCmsTemplate && <Expandable title="Server Script"
                                                 onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded')}
                                                 expanded={settings.serverScriptExpanded}>
                         <ScriptEditor
@@ -346,7 +367,7 @@ class CmsViewEditorContainer extends React.Component {
                             onChange={this.handleServerScriptChange.bind(this)}>{serverScript}</ScriptEditor>
                     </Expandable>}
 
-                    {hasTemplate && <Expandable title="Template"
+                    {canMangeCmsTemplate && <Expandable title="Template"
                                                 onChange={this.handleSettingChange.bind(this, 'templateExpanded')}
                                                 expanded={settings.templateExpanded}>
                         <TemplateEditor
@@ -362,7 +383,7 @@ class CmsViewEditorContainer extends React.Component {
                             onChange={this.handleTemplateChange.bind(this)}>{template}</TemplateEditor>
                     </Expandable>}
 
-                    {hasTemplate && <Expandable title="Script"
+                    {canMangeCmsTemplate && <Expandable title="Script"
                                                 onChange={this.handleSettingChange.bind(this, 'scriptExpanded')}
                                                 expanded={settings.scriptExpanded}>
                         <ScriptEditor
@@ -371,7 +392,7 @@ class CmsViewEditorContainer extends React.Component {
                             onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
                     </Expandable>}
 
-                    {hasTemplate && <Expandable title="Style"
+                    {canMangeCmsTemplate && <Expandable title="Style"
                                                 onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
                                                 expanded={settings.styleExpanded}>
 
@@ -383,7 +404,7 @@ class CmsViewEditorContainer extends React.Component {
                     </Expandable>}
 
 
-                    {hasTemplate && <Expandable title="Static assets"
+                    {canMangeCmsTemplate && <Expandable title="Static assets"
                                                 onChange={this.handleSettingChange.bind(this, 'resourceExpanded')}
                                                 expanded={settings.resourceExpanded}>
 
@@ -409,7 +430,7 @@ class CmsViewEditorContainer extends React.Component {
                                    defaultValue={cmsPage.name[_app_.lang]}
                                    fullWidth={true}/>
 
-                        {hasTemplate && <React.Fragment><SimpleSwitch
+                        {canMangeCmsTemplate && <React.Fragment><SimpleSwitch
                             label="SSR (Server side Rendering)"
                             checked={!!this.state.ssr}
                             onChange={this.handleFlagChange.bind(this, 'ssr')}
@@ -591,12 +612,6 @@ class CmsViewEditorContainer extends React.Component {
             }
 
             if (isSmallScreen) {
-                moreMenu.unshift({
-                    component: <SimpleSwitch key="fixedLayoutSwitch" color="default"
-                                             checked={!!settings.fixedLayout}
-                                             onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
-                                             label={_t('CmsViewEditorContainer.fixed')}/>
-                })
                 moreMenu.unshift({
                     component: <SimpleSwitch key="inlineEditorSwitch" color="default"
                                              checked={!!settings.inlineEditor}

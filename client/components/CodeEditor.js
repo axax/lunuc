@@ -46,6 +46,22 @@ class CodeEditor extends React.Component {
     }
 
     autoFormatSelection() {
+        const {type,onChange} = this.props
+
+        if (type === 'json') {
+            try {
+                const parsedJson = JSON.parse(this._data)
+
+                if (onChange) {
+                   onChange(JSON.stringify(parsedJson, null, 2))
+                }
+
+                return
+            } catch (e) {
+
+            }
+        }
+
         const from = this._editor.getCursor(true), to = this._editor.getCursor(false)
         if (from !== to) {
             this._editor.autoFormatRange(from, to)
@@ -96,7 +112,7 @@ class CodeEditor extends React.Component {
         console.log('render CodeEditor', fabButtonStyle)
         const baseStyle = {height: '25rem'}
 
-        if( error ){
+        if (error) {
             baseStyle.border = 'solid 1px red'
         }
         return <div className={className} style={{...baseStyle, ...style}}>
@@ -116,7 +132,7 @@ class CodeEditor extends React.Component {
                     }
                     //  editor.setSize(width, height);
                 }}
-                value={this._data && (this._data.constructor === Object || this._data.constructor === Array) ? JSON.stringify(this._data, null, 4) : this._data}
+                value={this._data && (this._data.constructor === Object || this._data.constructor === Array) ? JSON.stringify(this._data, null, 2) : this._data}
                 options={options}
                 onScroll={(editor, e) => {
                     if (onScroll) {
@@ -150,7 +166,7 @@ class CodeEditor extends React.Component {
                     }
 
                 }}
-            />{error && <div style={{color:'red'}}>{error}</div>}</div>
+            />{error && <div style={{color: 'red'}}>{error}</div>}</div>
     }
 }
 

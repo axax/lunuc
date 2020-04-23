@@ -32,9 +32,12 @@ Hook.on('createUserRoles', ({userRoles}) => {
         if (['administrator', 'editor', 'demo'].indexOf(userRole.name) >= 0) {
             console.log(`Add capabilities "${CAPABILITY_MANAGE_CMS_PAGES}",${CAPABILITY_MANAGE_CMS_TEMPLATE} and ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
             userRole.capabilities.push(CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE)
-        }else if( userRole.name === 'contributor'){
+        }else if( userRole.name === 'author'){
             console.log(`Add capability ${CAPABILITY_MANAGE_CMS_CONTENT} and ${CAPABILITY_MANAGE_CMS_PAGES} for user role "${userRole.name}"`)
             userRole.capabilities.push(CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_PAGES)
+        }else if( userRole.name === 'contributor'){
+            console.log(`Add capability ${CAPABILITY_MANAGE_CMS_CONTENT} for user role "${userRole.name}"`)
+            userRole.capabilities.push(CAPABILITY_MANAGE_CMS_CONTENT)
         }
     })
 })

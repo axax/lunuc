@@ -210,7 +210,7 @@ const Util = {
         } else {
             image = raw
         }
-        if (image.constructor === Array) {
+        if (Array.isArray(image)) {
             image = image[0]
             if (!image) {
                 return {}

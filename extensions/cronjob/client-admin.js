@@ -84,7 +84,7 @@ export default () => {
                     <h3 key="status">{this.state.cronjobResponse.data.runCronJob.status}</h3>
                     {this.state.cronjobResponse.data.runCronJob.result &&
                     <pre key="result">
-                        {JSON.stringify(JSON.parse(this.state.cronjobResponse.data.runCronJob.result),null,4)}
+                        {JSON.stringify(JSON.parse(this.state.cronjobResponse.data.runCronJob.result),null,2)}
                     </pre>
                     }
 

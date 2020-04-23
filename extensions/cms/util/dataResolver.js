@@ -341,6 +341,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                             resolvedData[dataKey] = cachedData
                             continue
                         }
+
+
                     }
 
                     const match = {key: {$in: segment.keyValueGlobals}}

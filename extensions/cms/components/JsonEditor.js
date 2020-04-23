@@ -137,7 +137,7 @@ class JsonEditor extends React.Component {
                     let value = json.p[k], valueOri = json.p[k]
 
                     if (value && value.constructor !== String) {
-                        value = JSON.stringify(value, null, 4)
+                        value = JSON.stringify(value, null, 2)
                     }
                     props.push(<tr key={key + '.p.' + k}>
                         <td style={{fontWeight: 'bold', background: '#ffdbfb'}}

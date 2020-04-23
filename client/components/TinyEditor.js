@@ -1,6 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import DomUtil from 'client/util/dom'
+import {getComponentByKey} from "../../extensions/cms/util/jsonDomUtil";
+import Util from '../util'
 
 class TinyEditor extends React.Component {
 
@@ -65,6 +67,65 @@ class TinyEditor extends React.Component {
                         favs: {title: 'My Favorites', items: 'code visualaid | searchreplace | spellchecker | emoticons'}
                     },
                     menubar: 'favs file edit view insert format tools table help',
+                    file_picker_callback: function(callback, value, meta) {
+
+                        let baseFilter
+                        // Provide file and text for the link dialog
+                        if (meta.filetype == 'file') {
+                            //callback('mypage.html', {text: 'My text'});
+                        }
+
+                        // Provide image and alt text for the image dialog
+                        if (meta.filetype == 'image') {
+                            baseFilter = 'mimeType=image'
+                        }
+
+                        // Provide alternative source and posted for the media dialog
+                        if (meta.filetype == 'media') {
+                            baseFilter = 'mimeType=video'
+                            //callback('movie.mp4', {source2: 'alt.ogg', poster: 'image.jpg'});
+                        }
+
+                        const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
+                            left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
+
+                        const newwindow = window.open(
+                            `/admin/types/?noLayout=true&fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`, '_blank',
+                            'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
+                        setTimeout(() => {
+                            newwindow.addEventListener('beforeunload', (e) => {
+                                if (newwindow.resultValue) {
+
+                                    const mediaObj = Util.getImageObject(newwindow.resultValue)
+
+                                    // Provide image and alt text for the image dialog
+                                    if (meta.filetype == 'image') {
+                                        callback(mediaObj.src, {alt: mediaObj.alt})
+                                    }
+
+                                    if (meta.filetype == 'media') {
+                                        callback(mediaObj.src, {source2: '', poster: ''})
+                                    }
+
+                                    //_cmsActions.editCmsComponent(rest._key, _json, _scope)
+                                    /*const source = getComponentByKey(_key, _json)
+                                    if (source) {
+                                        if (picker.template) {
+                                            source.$c = Util.replacePlaceholders(picker.template.replace(/\\\{/g, '{'), newwindow.resultValue)
+                                        } else {
+                                            if (!source.p) {
+                                                source.p = {}
+                                            }
+                                            source.p.src = newwindow.resultValue.constructor !== Array ? [newwindow.resultValue] : newwindow.resultValue
+                                        }
+                                        setTimeout(() => {
+                                            _onChange(_json)
+                                        }, 0)
+                                    }*/
+                                }
+                            })
+                        },0)
+                    },
                     init_instance_callback: (editor) => {
                         editor.on('Change', (e) => {
                             const {onChange, name} = this.props
@@ -134,7 +195,7 @@ class TinyEditor extends React.Component {
 
 
         return <div {...rest}>
-            <textarea id={'TinyEditor' + this.instanceId} defaultValue={this.state.value} />
+            <textarea id={'TinyEditor' + this.instanceId} style={{visibility:'hidden',height:'446px'}} defaultValue={this.state.value} />
         </div>
 
     }

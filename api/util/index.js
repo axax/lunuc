@@ -131,6 +131,7 @@ const Util = {
                 }
             }
             if (map) {
+                console.log(`Loaded keyValue "${keys.join(',')}" from cache`)
                 return map
             }
         }

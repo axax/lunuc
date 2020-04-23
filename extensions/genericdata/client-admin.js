@@ -82,13 +82,13 @@ export default () => {
 
                     newFields.definition.readOnly = true
                     const userHasCapa = Util.hasCapability({userData:_app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)
-                    props.title = <React.Fragment>{struct.title || newDataToEdit.definition.name}{userHasCapa?' ('+newDataToEdit._id+')':''} <div
+                    props.title = <React.Fragment>{struct.title || newDataToEdit.definition.name}{newDataToEdit._id && userHasCapa?' ('+newDataToEdit._id+')':''} <div
                         style={{float: 'right', textAlign: 'right'}}>{userHasCapa && <SimpleButton size="small" variant="contained"
                                                                                    color="primary"
                                                                                    onClick={() => {
 
                                                                                        const a = document.createElement('a'),
-                                                                                           blob = new Blob([JSON.stringify(JSON.parse(dataToEdit.data), null, 4)], {'type': 'text/plain'})
+                                                                                           blob = new Blob([JSON.stringify(JSON.parse(dataToEdit.data), null, 2)], {'type': 'text/plain'})
                                                                                        a.href = window.URL.createObjectURL(blob)
                                                                                        // a.download = 'json.txt'
                                                                                        a.target = '_blank'
