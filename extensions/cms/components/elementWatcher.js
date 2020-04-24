@@ -50,7 +50,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
             const {initialVisible, madeVisible} = this.state
 
             if (!initialVisible && !madeVisible && !hasLoaded[tagSrc]) {
-                const {_tagName,_inlineEditor,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, inlineSvg, ...rest} = eleProps
+                const {_tagName,_options,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, inlineSvg, ...rest} = eleProps
                 return <div _key={key} data-wait-visible={jsonDom.instanceId} {...rest} style={{minHeight:'1rem', minWidth:'1rem'}}></div>
             } else {
                 if( hasLoaded[tagSrc] && hasLoaded[tagSrc].svgData){

@@ -910,16 +910,17 @@ class JsonDom extends React.Component {
                     }
                     if (editMode && $inlineEditor !== false) {
 
-                        if (this.props.inlineEditor) {
+                        if (this.props.inlineEditor || ($inlineEditor && $inlineEditor.mode==='source')) {
                             const rawJson = this.getJsonRaw(this.props, true)
                             if (rawJson) {
                                 eleProps._json = rawJson
                             }
                         }
 
-                        if (eleProps._json || ($inlineEditor && $inlineEditor.force)) {
+                        if (eleProps._json) {
                             eleProps._tagName = tagName
-                            eleProps._inlineEditor = $inlineEditor || {}
+                            eleProps._inlineEditor = this.props.inlineEditor
+                            eleProps._options = $inlineEditor || {}
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
                             eleProps._onChange = this.props.onChange

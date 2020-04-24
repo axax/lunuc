@@ -282,6 +282,9 @@ export default db => ({
         deleteCmsPage: async ({_id, _version}, {context}) => {
             return GenericResolver.deleteEnity(db, context, 'CmsPage', {_id, _version})
         },
+        deleteCmsPages: async ({_id, _version}, {context}) => {
+            return GenericResolver.deleteEnities(db, context, 'CmsPage', {_id, _version})
+        },
         cloneCmsPage: async (data, {context}) => {
             return GenericResolver.cloneEntity(db, context, 'CmsPage', data)
         }

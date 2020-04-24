@@ -14,7 +14,7 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
-// Hook when the type Api has changed
+// Hook when a type has changed
 Hook.on('typeUpdated', async ({db, data, type, context}) => {
     const meta = {keys: Object.keys(data)}
     db.collection('History').insertOne({
@@ -25,6 +25,19 @@ Hook.on('typeUpdated', async ({db, data, type, context}) => {
         createdBy: await Util.userOrAnonymousId(db, context)
     })
 })
+
+
+// Hook when a type has been deleted
+/*Hook.on('typeDeleted', async ({db, data, type, context}) => {
+    const meta = {keys: Object.keys(data)}
+    db.collection('History').insertOne({
+        type,
+        action:'delete',
+        data,
+        meta,
+        createdBy: await Util.userOrAnonymousId(db, context)
+    })
+})*/
 
 
 

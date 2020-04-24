@@ -184,7 +184,7 @@ class JsonDomHelper extends React.Component {
         }
         const layout = document.querySelector('[data-layout-content]')
 
-        if( layout ) {
+        if (layout) {
             JsonDomHelper.mutationObserver.observe(layout, {
                 attributes: false,
                 childList: true,
@@ -482,9 +482,9 @@ class JsonDomHelper extends React.Component {
         e.stopPropagation()
         e.preventDefault()
 
-        const {_cmsActions, _inlineEditor} = this.props
+        const {_cmsActions, _options} = this.props
 
-        const dataSource = this.parseInlineEditorSource(_inlineEditor.source)
+        const dataSource = this.parseInlineEditorSource(_options.source)
         dataSource.options = options
         _cmsActions.editCmsData(dataSource)
 
@@ -619,11 +619,13 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {classes, _WrappedComponent, _json, _cmsActions, _onChange, _onDataResolverPropertyChange, children, _tagName, _inlineEditor, onChange, onClick, ...rest} = this.props
+        const {classes, _WrappedComponent, _json, _cmsActions, _onChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, onChange, onClick, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         const menuItems = []
-        const isCms = _tagName === 'Cms'
+        const isCms = _tagName === 'Cms', isInLoop = rest._key.indexOf('$loop') >= 0
+
+        let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, overrideOnChange, overrideOnClick
 
         const events = {
             onContextMenu: (e) => {
@@ -640,25 +642,18 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        if (_inlineEditor.highlight !== false) {
+        if (_options.highlight !== false) {
             events.onMouseOver = this.onHelperMouseOver.bind(this)
             events.onMouseOut = this.onHelperMouseOut.bind(this)
         }
-
-
-        let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, overrideOnChange, overrideOnClick
-
-        const isInLoop = rest._key.indexOf('$loop') >= 0
-
-
-        if (_inlineEditor.allowDrop === undefined) {
-            _inlineEditor.allowDrop = ALLOW_DROP.indexOf(_tagName) >= 0 && !this.props.dangerouslySetInnerHTML
+        if (_options.allowDrop === undefined) {
+            _options.allowDrop = ALLOW_DROP.indexOf(_tagName) >= 0 && !this.props.dangerouslySetInnerHTML
         }
-        if (!_inlineEditor.menu) {
-            _inlineEditor.menu = {}
+        if (!_options.menu) {
+            _options.menu = {}
         }
-        if (!_inlineEditor.menuTitle) {
-            _inlineEditor.menuTitle = {}
+        if (!_options.menuTitle) {
+            _options.menuTitle = {}
         }
 
         if (isTempalteEdit) {
@@ -669,7 +664,7 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        const isDraggable = !isInLoop && isTempalteEdit && _inlineEditor.allowDrag !== false
+        const isDraggable = !isInLoop && isTempalteEdit && _options.allowDrag !== false
 
         if (isDraggable) {
             events.draggable = 'true'
@@ -702,7 +697,7 @@ class JsonDomHelper extends React.Component {
             if (isTempalteEdit) {
 
 
-                const parsedSouce = this.parseInlineEditorSource(_inlineEditor.source)
+                const parsedSouce = this.parseInlineEditorSource(_options.source)
                 if (parsedSouce) {
 
                     if (_onDataResolverPropertyChange) {
@@ -715,7 +710,7 @@ class JsonDomHelper extends React.Component {
 
                     if (parsedSouce._id) {
                         menuItems.push({
-                            name: _inlineEditor.menuTitle.source || 'Eintrag bearbeiten',
+                            name: _options.menuTitle.source || 'Eintrag bearbeiten',
                             icon: <EditIcon/>,
                             onClick: this.handleDatasource.bind(this)
                         })
@@ -723,7 +718,7 @@ class JsonDomHelper extends React.Component {
 
                     if (parsedSouce.allowClone) {
                         menuItems.push({
-                            name: _inlineEditor.menuTitle.sourceClone || 'Eintrag kopieren',
+                            name: _options.menuTitle.sourceClone || 'Eintrag kopieren',
                             icon: <FileCopyIcon/>,
                             onClick: (e) => {
                                 this.handleDatasource(e, {clone: true})
@@ -733,7 +728,7 @@ class JsonDomHelper extends React.Component {
 
                     if (parsedSouce.allowNew) {
                         menuItems.push({
-                            name: _inlineEditor.menuTitle.sourceNew || 'Eintrag erstellen',
+                            name: _options.menuTitle.sourceNew || 'Eintrag erstellen',
                             icon: <AddIcon/>,
                             onClick: (e) => {
                                 this.handleDatasource(e, {create: true})
@@ -741,7 +736,7 @@ class JsonDomHelper extends React.Component {
                         })
                     }
                     if (parsedSouce.newOnClick) {
-                        overrideOnClick = (e)=>{
+                        overrideOnClick = (e) => {
                             this.handleDatasource(e, {create: true})
                         }
                     }
@@ -749,7 +744,7 @@ class JsonDomHelper extends React.Component {
 
                     if (parsedSouce.allowRemove) {
                         menuItems.push({
-                            name: _inlineEditor.menuTitle.sourceRemove || 'Eintrag löschen',
+                            name: _options.menuTitle.sourceRemove || 'Eintrag löschen',
                             icon: <DeleteIcon/>,
                             onClick: (e) => {
                                 //JsonDomHelper.disableEvents = true
@@ -759,13 +754,13 @@ class JsonDomHelper extends React.Component {
                     }
                 }
 
-                if (_inlineEditor.elementKey) {
-                    const jsonElement = getJsonDomElements(_inlineEditor.elementKey)
+                if (_options.elementKey) {
+                    const jsonElement = getJsonDomElements(_options.elementKey)
 
                     if (jsonElement && (isCms || jsonElement.options)) {
 
                         menuItems.push({
-                            name: _inlineEditor.menuTitle.edit || 'Bearbeiten',
+                            name: _options.menuTitle.edit || 'Bearbeiten',
                             icon: <EditIcon/>,
                             onClick: () => {
                                 JsonDomHelper.disableEvents = true
@@ -833,7 +828,7 @@ class JsonDomHelper extends React.Component {
                     }
                 }
 
-                if (_inlineEditor.menu.editTemplate !== false) {
+                if (_options.menu.editTemplate !== false) {
                     menuItems.push({
                         name: 'Template bearbeiten',
                         icon: <BuildIcon/>,
@@ -841,7 +836,7 @@ class JsonDomHelper extends React.Component {
                     })
                 }
 
-                if (_inlineEditor.menu.clone !== false) {
+                if (_options.menu.clone !== false) {
                     menuItems.push({
                         name: 'Element duplizieren',
                         icon: <FileCopyIcon/>,
@@ -852,7 +847,7 @@ class JsonDomHelper extends React.Component {
                 if (!isInLoop) {
 
 
-                    if (_inlineEditor.allowDrop && _inlineEditor.menu.add !== false) {
+                    if (_options.allowDrop && _options.menu.add !== false) {
                         menuItems.push({
                             name: 'Element hinzufügen',
                             icon: <AddIcon/>,
@@ -863,7 +858,7 @@ class JsonDomHelper extends React.Component {
                         })
                     }
 
-                    if (_inlineEditor.menu.addBelow !== false) {
+                    if (_options.menu.addBelow !== false) {
                         menuItems.push({
                             name: 'Element unterhalb einfügen',
                             icon: <PlaylistAddIcon/>,
@@ -875,7 +870,7 @@ class JsonDomHelper extends React.Component {
                     }
                 }
 
-                if (_inlineEditor.menu.remove !== false) {
+                if (_options.menu.remove !== false) {
                     menuItems.push({
                         name: 'Element entfernen',
                         icon: <DeleteIcon/>,
@@ -886,7 +881,7 @@ class JsonDomHelper extends React.Component {
                     })
                 }
 
-                if (_inlineEditor.menu.clipboard !== false) {
+                if (_options.menu.clipboard !== false) {
                     menuItems.push({
                         divider: true,
                         name: 'Element in Zwischenablage kopieren',
@@ -953,7 +948,7 @@ class JsonDomHelper extends React.Component {
                     className={classes.toolbarMenu} mini items={menuItems}/>}
             </div>
 
-            if (_inlineEditor.highlight !== false) {
+            if (_options.highlight !== false) {
                 highlighter = <span
                     key={rest._key + '.highlighter'}
                     data-highlighter={rest._key}
@@ -963,7 +958,7 @@ class JsonDomHelper extends React.Component {
                         height: this.state.height,
                         width: this.state.width
                     }}
-                    className={classNames(classes.highlighter, isCms || _inlineEditor.picker ? classes.bgBlue : classes.bgYellow)}>{_inlineEditor.picker || isCms ?
+                    className={classNames(classes.highlighter, isCms || _options.picker ? classes.bgBlue : classes.bgYellow)}>{_options.picker || isCms ?
                     <div
                         onMouseOver={this.onToolbarMouseOver.bind(this)}
                         onMouseOut={this.onToolbarMouseOut.bind(this, classes.picker)}
@@ -973,7 +968,7 @@ class JsonDomHelper extends React.Component {
                             if (isCms) {
                                 window.location = '/' + subJson.p.slug
                             } else {
-                                this.openPicker(_inlineEditor.picker)
+                                this.openPicker(_options.picker)
                             }
                         }}
                         className={classes.picker}>{isCms && subJson && subJson.p ? subJson.p.id || subJson.p.slug :
@@ -982,19 +977,19 @@ class JsonDomHelper extends React.Component {
         }
 
         let kids
-        if (children && children.constructor !== String && isTempalteEdit && !isInLoop && _inlineEditor.allowDrop && _inlineEditor.dropArea !== false) {
+        if (children && children.constructor !== String && isTempalteEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
             kids = []
             if (children && children.length) {
 
-                let index=-1
+                let index = -1
                 for (let i = 0; i < children.length; i++) {
-                    if(children[i].key){
+                    if (children[i].key) {
                         index = parseInt(children[i].key.substring(children[i].key.lastIndexOf('.') + 1))
-                        kids.push(this.getDropArea(this.props,index ))
+                        kids.push(this.getDropArea(this.props, index))
                     }
                     kids.push(children[i])
                 }
-                if( index>-1) {
+                if (index > -1) {
                     kids.push(this.getDropArea(this.props, index + 1))
                 }
 
@@ -1025,7 +1020,7 @@ class JsonDomHelper extends React.Component {
             }
             comp = <_WrappedComponent onChange={overrideOnChange || onChange}
                                       onClick={overrideOnClick || onClick}
-                                      _inlineeditor="true"
+                                      _inlineeditor={_inlineEditor}
                                       data-isempty={isEmpty}
                                       key={rest._key}
                                       {...events}

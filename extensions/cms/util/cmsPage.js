@@ -4,7 +4,7 @@ import {getHostFromHeaders} from 'util/host'
 import Cache from 'util/cache'
 
 export const getCmsPage = async ({db, context, slug, editmode, _version, headers}) => {
-    let host = headers['x-host-rule']?headers['x-host-rule'].split(':')[0]:getHostFromHeaders(headers)
+    let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
 
     if (host && host.startsWith('www.')) {
         host = host.substring(4)
@@ -53,8 +53,8 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
             if (!editmode) {
 
                 //minify script
-                if(cmsPages.results[0].compress) {
-                    cmsPages.results[0].script = cmsPages.results[0].script.replace(/\t/g, ' ').replace(/ +(?= )/g,'').replace(/(^[ \t]*\n)/gm, "")
+                if (cmsPages.results[0].compress) {
+                    cmsPages.results[0].script = cmsPages.results[0].script.replace(/\t/g, ' ').replace(/ +(?= )/g, '').replace(/(^[ \t]*\n)/gm, "")
                     cmsPages.results[0].style = cmsPages.results[0].style
                         .replace(/\t/g, ' ') // remove tabs
                         .replace(/ +(?= )/g, '') // remove double whitespace
@@ -67,7 +67,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
 
                     const template = JSON.parse(cmsPages.results[0].template)
 
-                    if(cmsPages.results[0].compress) {
+                    if (cmsPages.results[0].compress) {
                         Util.findProperties(template, '$inlineEditor').forEach(({element}) => {
                             delete element.$inlineEditor
                         })
