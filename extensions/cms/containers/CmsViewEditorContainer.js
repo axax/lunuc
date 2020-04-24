@@ -54,8 +54,8 @@ class CmsViewEditorContainer extends React.Component {
 
     templateChangeHistory = []
 
-    static defaultSettings = {inlineEditor: true, fixedLayout: true, drawerOpen: false}
-    static generalSettingsKeys = ['inlineEditor', 'fixedLayout', 'drawerOpen']
+    static defaultSettings = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth:500}
+    static generalSettingsKeys = ['inlineEditor', 'fixedLayout', 'drawerOpen','drawerWidth']
 
     constructor(props) {
         super(props)
@@ -1119,6 +1119,7 @@ class CmsViewEditorContainer extends React.Component {
 
             Object.keys(settings).forEach(key => {
                 if (CmsViewEditorContainer.generalSettingsKeys.indexOf(key) > -1) {
+                    console.log(generalSettings[key],settings[key])
                     if ( Util.shallowCompare(generalSettings[key],settings[key])) {
                         generalSettingsChanged = true
                         generalSettings[key] = settings[key]
