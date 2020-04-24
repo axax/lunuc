@@ -276,6 +276,9 @@ const Util = {
     // only compares the first level properties and hence shallow.
     shallowCompare(newObj, prevObj) {
         if (!newObj && !prevObj) return false
+        if( !newObj || newObj.constructor !== Object){
+            return newObj !== prevObj
+        }
         for (const key in newObj) {
             if (newObj[key] !== prevObj[key]){
                 return true

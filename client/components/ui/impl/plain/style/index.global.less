@@ -13,6 +13,7 @@
   display: flex;
   flex-flow: row wrap;
   align-items: center;
+
   &__title {
     color: white;
     flex: 1 auto;
@@ -27,6 +28,7 @@
     display: flex;
     position: relative;
   }
+
   &__appBar {
     position: absolute;
     height: 50px;
@@ -37,10 +39,12 @@
     flex-shrink: 0;
     flex-direction: column;
     background-color: @primary-background;
+
     &--open {
       margin-left: 200px;
     }
   }
+
   &__menuButton {
     float: left
   }
@@ -56,6 +60,7 @@
     background: @primary-background;
     z-index: 10;
     display: none;
+
     &--open {
       display: block;
     }
@@ -64,6 +69,7 @@
   &__sidebar {
     margin: 0px;
   }
+
   &__sidebarHeader {
 
   }
@@ -100,6 +106,7 @@
     position: relative;
     width: 100%;
     height: 100%;
+
     &:before {
       content: '';
       position: absolute;
@@ -107,6 +114,7 @@
       background-color: #03A9F4;
       animation: indeterminate_first 1.5s infinite ease-out;
     }
+
     &:after {
       content: '';
       position: absolute;
@@ -145,8 +153,8 @@
   transition: box-shadow 0.3s;
   border-radius: 2px;
   background-color: #fff;
+
   &:hover {
     box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
   }
 }
-

@@ -77,6 +77,7 @@ class CodeEditor extends React.Component {
             lineNumbers,
             tabSize: 2,
             indentWithTabs: true,
+            autoClearEmptyLines:false,
             /*  lineWrapping: false,
              matchBrackets: true,*/
             extraKeys: {

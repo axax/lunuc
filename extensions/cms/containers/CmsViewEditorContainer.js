@@ -62,10 +62,16 @@ class CmsViewEditorContainer extends React.Component {
         this.state = CmsViewEditorContainer.propsToState(props, null)
     }
 
+    static isLoadingState(props){
+        return props.loadingKeyValues || props.loading || props.aboutToChange
+    }
+
     static getDerivedStateFromProps(nextProps, prevState) {
-        if ((nextProps.cmsPage !== prevState.cmsPage && nextProps.cmsPage && nextProps.cmsPage.status !== 'updating')
-            || nextProps.keyValues !== prevState.keyValues) {
-            return CmsViewEditorContainer.propsToState(nextProps, prevState)
+        if( nextProps.cmsPage && nextProps.keyValues && !CmsViewEditorContainer.isLoadingState(nextProps)){
+            if (!prevState.slug || nextProps.cmsPage.slug !== prevState.slug ) {
+                console.log('update state')
+                return CmsViewEditorContainer.propsToState(nextProps, prevState)
+            }
         }
         return null
     }
@@ -95,13 +101,13 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, style, serverScript, resources, dataResolver, ssr, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, compress} = props.cmsPage || {}
+        const {template, script, style, slug, serverScript, resources, dataResolver, ssr, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, compress} = props.cmsPage || {}
         const {settings} = CmsViewEditorContainer.getSettingsByKeyValue(props)
         const result = {
             keyValues: props.keyValues,
-            cmsPage: props.cmsPage,
+            public: props.cmsPage && props.cmsPage.public,
             settings,
-            loadingSettings: props.keyValues === undefined,
+            slug,
             template,
             resources,
             script,
@@ -112,19 +118,8 @@ class CmsViewEditorContainer extends React.Component {
             urlSensitiv,
             parseResolvedData,
             alwaysLoadAssets,
-            compress,
-            public: props.cmsPage && props.cmsPage.public
+            compress
         }
-        if (state && (['updating', 'updated'].indexOf(status) >= 0 || props && props.cmsPage && state.cmsPage && props.cmsPage.slug === state.cmsPage.slug)) {
-            // take value from state if there is any because it might be more up to date
-            result.template = state.template
-            result.script = state.script
-            result.style = state.style
-            result.serverScript = state.serverScript
-            result.dataResolver = state.dataResolver
-            result.resources = state.resources
-        }
-
         if (props.cmsPage && !props.cmsPage._id) {
             result.addNewSite = {slugNoExist: props.slug, slug: props.slug}
         }
@@ -150,22 +145,18 @@ class CmsViewEditorContainer extends React.Component {
 
     shouldComponentUpdate(props, state) {
 
-        if (!props.cmsPage && props.loading && this.props.loading) {
-            // if there is still no cmsPage and it is still loading
-            // there is no need to update
-            return false
-        }
         // only update if it is needed
         return !props.cmsPage ||
             !this.props.cmsPage ||
+            CmsViewEditorContainer.isLoadingState(props) !== CmsViewEditorContainer.isLoadingState(this.props) ||
             props.cmsPage.slug !== this.props.cmsPage.slug ||
-            props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||
+            /*props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||*/
             props.cmsComponentEdit !== this.props.cmsComponentEdit ||
             props.cmsEditData !== this.props.cmsEditData ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
             (!props.renewing && this.props.renewing) ||
             (
-                props.cmsPage.urlSensitiv && (
+                state.urlSensitiv && (
                     props.location.search !== this.props.location.search ||
                     props.location.hash !== this.props.location.hash)
             ) ||
@@ -175,21 +166,26 @@ class CmsViewEditorContainer extends React.Component {
             state.template !== this.state.template ||
             state.script !== this.state.script ||
             state.style !== this.state.style ||
+            state.parseResolvedData !== this.state.parseResolvedData ||
+            state.alwaysLoadAssets !== this.state.alwaysLoadAssets ||
+            state.public !== this.state.public ||
+            state.ssr !== this.state.ssr ||
+            state.urlSensitiv !== this.state.urlSensitiv ||
+            state.compress !== this.state.compress ||
             state.showRevision !== this.state.showRevision ||
             state.addNewSite !== this.state.addNewSite ||
             state.serverScript !== this.state.serverScript ||
-            this.state.loadingSettings !== state.loadingSettings ||
-            this.state.settings.fixedLayout !== state.settings.fixedLayout ||
-            this.state.settings.inlineEditor !== state.settings.inlineEditor ||
-            this.state.settings.templateTab !== state.settings.templateTab ||
-            this.state.settings.drawerWidth !== state.settings.drawerWidth
+            state.settings.fixedLayout !== this.state.settings.fixedLayout ||
+            state.settings.inlineEditor !== this.state.settings.inlineEditor ||
+            state.settings.templateTab !== this.state.settings.templateTab ||
+            state.settings.drawerWidth !== this.state.settings.drawerWidth
 
     }
 
     render() {
         const {WrappedComponent, cmsPage, cmsEditData, cmsComponentEdit, ...props} = this.props
 
-        const {template, resources, script, style, settings, dataResolver, serverScript, loadingSettings} = this.state
+        const {template, resources, script, style, settings, dataResolver, serverScript} = this.state
         if (!cmsPage) {
             // show a loader here
             if (!props.dynamic) {
@@ -197,8 +193,9 @@ class CmsViewEditorContainer extends React.Component {
             }
         }
 
-        const isSmallScreen = window.innerWidth < 1000
+        const loadingState=CmsViewEditorContainer.isLoadingState(this.props)
 
+        const isSmallScreen = window.innerWidth < 1000
         // extend with value from state because they are more update to date
         const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template})
 
@@ -305,8 +302,8 @@ class CmsViewEditorContainer extends React.Component {
         }
 
 
-        const inner = [!loadingSettings &&
-        <WrappedComponent key="cmsView" cmsEditData={cmsEditData}
+        const inner = [
+        !loadingState && <WrappedComponent key="cmsView" cmsEditData={cmsEditData}
                           onChange={this.handleTemplateChange}
                           inEditor={canManageCmsPages}
                           onError={this.handleCmsError.bind(this)}
@@ -633,7 +630,7 @@ class CmsViewEditorContainer extends React.Component {
             }
 
             return <UIProvider>
-                <DrawerLayout sidebar={sidebar}
+                <DrawerLayout sidebar={!loadingState && sidebar}
                               open={settings.drawerOpen}
                               fixedLayout={settings.fixedLayout}
                               drawerWidth={settings.drawerWidth}
@@ -1120,12 +1117,12 @@ class CmsViewEditorContainer extends React.Component {
 
             Object.keys(settings).forEach(key => {
                 if (CmsViewEditorContainer.generalSettingsKeys.indexOf(key) > -1) {
-                    if (generalSettings[key] !== settings[key]) {
+                    if ( Util.shallowCompare(generalSettings[key],settings[key])) {
                         generalSettingsChanged = true
                         generalSettings[key] = settings[key]
                     }
                 } else {
-                    if (pageSettings[key] !== settings[key]) {
+                    if (Util.shallowCompare(pageSettings[key], settings[key])) {
                         pageSettingsChanged = true
                         pageSettings[key] = settings[key]
                     }
@@ -1196,10 +1193,10 @@ const CmsViewEditorContainerWithGql = compose(
                 fetchPolicy: 'network-only'
             }
         },
-        props: ({data: {keyValues, loading}}) => {
+        props: ({data: {keyValues, loading, variables}}) => {
             return {
                 keyValues,
-                loadingKeyValue: loading
+                loadingKeyValues: loading
             }
         }
     }),
