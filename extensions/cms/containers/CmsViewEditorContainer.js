@@ -68,7 +68,8 @@ class CmsViewEditorContainer extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         if( nextProps.cmsPage && nextProps.keyValues && !CmsViewEditorContainer.isLoadingState(nextProps)){
-            if (!prevState.slug || nextProps.cmsPage.slug !== prevState.slug ) {
+
+            if (prevState.slug==undefined || nextProps.cmsPage.slug !== prevState.slug ) {
                 console.log('update state')
                 return CmsViewEditorContainer.propsToState(nextProps, prevState)
             }
@@ -101,7 +102,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, style, slug, serverScript, resources, dataResolver, ssr, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, compress} = props.cmsPage || {}
+        const {template, script, style,  serverScript, resources, dataResolver, ssr, slug, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, compress} = props.cmsPage || {}
         const {settings} = CmsViewEditorContainer.getSettingsByKeyValue(props)
         const result = {
             keyValues: props.keyValues,
@@ -118,7 +119,8 @@ class CmsViewEditorContainer extends React.Component {
             urlSensitiv,
             parseResolvedData,
             alwaysLoadAssets,
-            compress
+            compress,
+            addNewSite: null
         }
         if (props.cmsPage && !props.cmsPage._id) {
             result.addNewSite = {slugNoExist: props.slug, slug: props.slug}
@@ -658,7 +660,7 @@ class CmsViewEditorContainer extends React.Component {
                               }
                               title={`${_t('CmsViewEditorContainer.editPage')} "${props.slug}" - ${cmsPage.online ? 'Online' : 'Online'}`}>
                     {inner}
-                    {this.state.addNewSite &&
+                    {!loadingState && this.state.addNewSite &&
                     <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
                                   onClose={(e) => {
                                       if (e.key === 'ok') {
@@ -679,9 +681,10 @@ class CmsViewEditorContainer extends React.Component {
                                                       update: (store, {data}) => {
                                                           if (!data.errors) {
 
-                                                              this.setState({addNewSite: null})
-                                                              //this.props.history.push(`/${slug}`)
-                                                              window.location.href = `/${slug}`
+                                                              this.setState({addNewSite: null},()=>{
+                                                                  //this.props.history.push(`/${slug}`)
+                                                                  window.location.href = `/${slug}`
+                                                              })
 
                                                           }
                                                       }
@@ -689,7 +692,6 @@ class CmsViewEditorContainer extends React.Component {
                                               }
                                           }
                                       } else {
-                                          this.setState({addNewSite: null})
                                           window.history.back()
                                       }
                                   }}

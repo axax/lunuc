@@ -45,6 +45,7 @@ class CmsViewContainer extends React.Component {
             return false
         }
 
+
         // only update if it is needed
         return !cmsPage ||
             !cmsPageOld ||
