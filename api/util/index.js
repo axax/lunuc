@@ -23,7 +23,7 @@ const Util = {
                 if (keys[i].constructor === Object) {
                     Util.findProperties(keys[i], key, accumulator, json, i)
                 } else if (key === keys[i]) {
-                    accumulator.push({element:json, parent, index})
+                    accumulator.push({element: json, parent, index})
                 } else {
                     Util.findProperties(json[keys[i]], key, accumulator, json)
                 }
@@ -81,7 +81,7 @@ const Util = {
         }
 
         if ((newOption.skipCheck) || await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
-            Cache.remove('KeyValueGlobal_' + key)
+            Cache.clearStartWith('KeyValueGlobal_' + key)
 
             return db.collection('KeyValueGlobal').updateOne({
                 key
@@ -96,7 +96,7 @@ const Util = {
         }
     },
     getKeyValueGlobal: async (db, context, key, parse) => {
-        const map = await Util.keyValueGlobalMap(db, context, [key], true, parse)
+        const map = await Util.keyValueGlobalMap(db, context, [key], {parse})
         return map[key]
     },
     keyvalueMap: async (db, context, keys) => {
@@ -116,13 +116,17 @@ const Util = {
         }, {})
 
     },
-    keyValueGlobalMap: async (db, context, keys, cache = true, parse = true) => {
+    keyValueGlobalMap: async (db, context, keys, options) => {
+
+        const allOptions = Object.assign({public: false, cache: true, parse: true}, options)
+
+        const cacheKeyPrefix = 'KeyValueGlobal_'
 
         // check if all keys are in the cache
-        if (cache) {
+        if (allOptions.cache) {
             let map = {}
             for (const k of keys) {
-                const fromCache = Cache.get('KeyValueGlobal_' + k)
+                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse + allOptions.public)
                 if (fromCache) {
                     map[k] = fromCache
                 } else {
@@ -131,31 +135,35 @@ const Util = {
                 }
             }
             if (map) {
-                console.log(`Loaded keyValue "${keys.join(',')}" from cache`)
+                console.log(`load KeyValueGlobal "${keys.join(',')}" from cache`)
                 return map
             }
         }
 
-        const keyvalues = (await db.collection('KeyValueGlobal').find({
-            key: {$in: keys}
-        }).toArray())
+        const match = {key: {$in: keys}}
 
-        console.log('load KeyValueGlobal', keys)
+        if (allOptions.public) {
+            match.ispublic = true
+        }
+
+        const keyvalues = (await db.collection('KeyValueGlobal').find(match).toArray())
+
+        console.log(`load KeyValueGlobal "${keys.join(',')}"`)
         return keyvalues.reduce((map, obj) => {
             let v
-            if (parse) {
+            if (allOptions.parse && obj.value && obj.value.constructor === String) {
                 try {
                     v = JSON.parse(obj.value)
                 } catch (e) {
-                    console.warn(`${obj.key} is not a json`)
+                    console.warn(`load KeyValueGlobal - "${obj.key}" is not a json`)
                     v = obj.value
                 }
             } else {
                 v = obj.value
             }
             map[obj.key] = v
-            if (cache) {
-                Cache.set('KeyValueGlobal_' + obj.key, v)
+            if (allOptions.cache) {
+                Cache.set(cacheKeyPrefix + obj.key + allOptions.parse + allOptions.public, v)
             }
             return map
         }, {})

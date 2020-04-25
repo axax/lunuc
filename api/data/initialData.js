@@ -95,7 +95,6 @@ export const createUserRoles = async (db) => {
             capabilities: [CAPABILITY_VIEW_APP]
         }
     ]
-    
 
     Hook.call('createUserRoles', {userRoles, db})
 

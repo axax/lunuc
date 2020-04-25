@@ -12,20 +12,7 @@ import {pubsubDelayed} from '../../../api/subscription'
 import fs from 'fs'
 import config from 'gen/config'
 import path from 'path'
-
-const createCacheKey = (segment, name) => {
-    let cacheKey
-    if (segment.cache) {
-        cacheKey = segment.cache.key || segment.key
-        if (cacheKey) {
-            cacheKey = `dataresolver_${name}_${cacheKey}`
-        } else {
-            console.warn('Please define a key or a cacheKey if you want to use caching')
-        }
-    }
-
-    return cacheKey
-}
+import {propertyByPath} from '../../../client/util/json'
 
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode}) => {
     const startTime = new Date().getTime()
@@ -279,6 +266,24 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         if (!segment.ignoreError)
                             throw e
                     }
+                } else if (segment.reduce) {
+                    try {
+                        segment.reduce.forEach(re => {
+                            if (re.path) {
+                                if( re.key) {
+                                    const value = propertyByPath(re.path, resolvedData)
+                                    resolvedData[re.key] = value
+                                }
+                                if( re.delete ){
+                                    const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))
+                                    const ob = propertyByPath(parentPath,resolvedData)
+                                    delete ob[re.path.substring(re.path.lastIndexOf('.')+1)]
+                                }
+                            }
+                        })
+                    } catch (e) {
+                        console.warn(`segment ${segment.key} can not be reduced`, e)
+                    }
                 } else if (segment.subscription) {
                     if (segment.subscription.constructor === String) {
                         subscriptions.push(segment.subscription)
@@ -286,88 +291,19 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         subscriptions.push(JSON.stringify(segment.subscription))
                     }
                 } else if (segment.system) {
-
-
-                    const data = {}
-                    if (segment.system.properties) {
-                        data.properties = Util.systemProperties()
-                        //Object.keys(Cache.cache).length
-                    }
-                    if (segment.system.ls) {
-                        data.ls = {}
-                        segment.system.ls.forEach(ls=>{
-                            if( ls.key ) {
-                                const files = []
-                                fs.readdirSync(path.join(__dirname, ls.path)).forEach(file => {
-                                    files.push(file)
-                                })
-                                data.ls[ls.key]=files
-                            }else{
-                                console.warn('key for ls is missing')
-                            }
-
-                        })
-                    }
-                    if (segment.system.cache) {
-                        data.cache = {}
-                        if (segment.system.cache.data) {
-                            data.cache.data = Cache.cache
-                        }
-                        if (segment.system.cache.count) {
-                            data.cache.count = Object.keys(Cache.cache).length
-                        }
-                    }
-                    if (segment.system.client) {
-                        data.client = {
-                            agent: req.header('user-agent'), // User Agent we get from headers
-                            referrer: req.header('referrer'), //  Likewise for referrer
-                            ip: req.header('x-forwarded-for') || req.connection.remoteAddress, // Get IP - allow for proxy
-                            screen: { // Get screen info that we passed in url post data
-                                width: req.params.width,
-                                height: req.params.height
-                            }
-                        }
-                    }
-                    resolvedData._meta.system = segment.key || 'system'
-                    resolvedData[resolvedData._meta.system] = data
+                    resolveSystemData(segment, req, resolvedData)
                 } else if (segment.keyValueGlobals) {
 
-                    const dataKey = segment.key || 'keyValueGlobals'
-                    const cacheKey = createCacheKey(segment, 'keyValueGlobals')
-
-                    if (cacheKey) {
-                        const cachedData = Cache.get(cacheKey)
-                        if (cachedData) {
-                            resolvedData[dataKey] = cachedData
-                            continue
-                        }
-
-
-                    }
-
-                    const match = {key: {$in: segment.keyValueGlobals}}
-
                     // if user don't have capability to manage keys he can only see the public ones
-                    if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
-                        match.ispublic = true
-                    }
+                    const onlyPublic = !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)
+                    const dataKey = segment.key || 'keyValueGlobals'
 
-                    const result = await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value'], {
-                        match
+                    const map = await Util.keyValueGlobalMap(db, context, segment.keyValueGlobals, {
+                        public: onlyPublic,
+                        cache: true,
+                        parse:true
                     })
-                    const map = {}
-                    if (result.results) {
-                        result.results.map(entry => {
-                            try {
-                                map[entry.key] = JSON.parse(entry.value)
-                            } catch (e) {
-                                map[entry.key] = entry.value
-                            }
-                        })
-                    }
-                    if (cacheKey) {
-                        Cache.set(cacheKey, map, segment.cache.expiresIn)
-                    }
+
                     resolvedData[dataKey] = map
                 } else if (segment.user) {
 
@@ -463,4 +399,65 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
     }
     console.log(`dataResolver for ${scope.page.slug} in ${new Date().getTime() - startTime}ms`)
     return {resolvedData, subscriptions}
+}
+
+
+const createCacheKey = (segment, name) => {
+    let cacheKey
+    if (segment.cache) {
+        if(segment.cache.key){
+            cacheKey = segment.cache.key
+        }else if( segment.key ){
+            cacheKey = `dataresolver_${name}_${segment.key}`
+        } else {
+            console.warn('Please define a key or a cacheKey if you want to use caching')
+        }
+    }
+
+    return cacheKey
+}
+
+function resolveSystemData(segment, req, resolvedData) {
+    const data = {}
+    if (segment.system.properties) {
+        data.properties = Util.systemProperties()
+        //Object.keys(Cache.cache).length
+    }
+    if (segment.system.ls) {
+        data.ls = {}
+        segment.system.ls.forEach(ls => {
+            if (ls.key) {
+                const files = []
+                fs.readdirSync(path.join(__dirname, ls.path)).forEach(file => {
+                    files.push(file)
+                })
+                data.ls[ls.key] = files
+            } else {
+                console.warn('key for ls is missing')
+            }
+
+        })
+    }
+    if (segment.system.cache) {
+        data.cache = {}
+        if (segment.system.cache.data) {
+            data.cache.data = Cache.cache
+        }
+        if (segment.system.cache.count) {
+            data.cache.count = Object.keys(Cache.cache).length
+        }
+    }
+    if (segment.system.client) {
+        data.client = {
+            agent: req.header('user-agent'), // User Agent we get from headers
+            referrer: req.header('referrer'), //  Likewise for referrer
+            ip: req.header('x-forwarded-for') || req.connection.remoteAddress, // Get IP - allow for proxy
+            screen: { // Get screen info that we passed in url post data
+                width: req.params.width,
+                height: req.params.height
+            }
+        }
+    }
+    resolvedData._meta.system = segment.key || 'system'
+    resolvedData[resolvedData._meta.system] = data
 }

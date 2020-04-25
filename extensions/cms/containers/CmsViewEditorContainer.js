@@ -665,7 +665,6 @@ class CmsViewEditorContainer extends React.Component {
                                   onClose={(e) => {
                                       if (e.key === 'ok') {
                                           if (this.addNewSiteForm.validate()) {
-                                              console.log(this.addNewSiteForm.props.values)
                                               if (this.addNewSiteForm.props.values._id) {
                                                   const queries = getTypeQueries('CmsPage')
                                                   const slug = this.addNewSiteForm.state.fields.slug
@@ -949,7 +948,11 @@ class CmsViewEditorContainer extends React.Component {
         if (this._saveSettings)
             this._saveSettings()
 
-        this.setState({style})
+
+        clearTimeout(this._setStyleDelayed)
+        this._setStyleDelayed = setTimeout(()=>{
+            this.setState({style})
+        },1000)
 
         this._autoSaveStyle = () => {
             clearTimeout(this._autoSaveStyleTimeout)
@@ -1119,7 +1122,6 @@ class CmsViewEditorContainer extends React.Component {
 
             Object.keys(settings).forEach(key => {
                 if (CmsViewEditorContainer.generalSettingsKeys.indexOf(key) > -1) {
-                    console.log(generalSettings[key],settings[key])
                     if ( Util.shallowCompare(generalSettings[key],settings[key])) {
                         generalSettingsChanged = true
                         generalSettings[key] = settings[key]

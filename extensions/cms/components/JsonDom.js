@@ -709,7 +709,8 @@ class JsonDom extends React.Component {
                                         }
                                         this.props.serverMethod(name, args, (response) => {
                                             this.serverMethodMap[d] = JSON.parse(response.data.cmsServerMethod.result)
-                                            this.forceUpdate()
+                                            console.log(this.serverMethodMap[d] = JSON.parse(response.data.cmsServerMethod.result))
+                                            //this.forceUpdate()
                                         })
                                     }
                                 })

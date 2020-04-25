@@ -1,4 +1,7 @@
 export function propertyByPath(path, obj, separator='.') {
+    if( !path ){
+        return obj
+    }
     return path.split(separator).reduce((res, prop) => res?res[prop]:null, obj)
 }
 

@@ -623,9 +623,11 @@ class JsonDomHelper extends React.Component {
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         const menuItems = []
-        const isCms = _tagName === 'Cms', isInLoop = rest._key.indexOf('$loop') >= 0
+        const isCms = _tagName === 'Cms', isInLoop = rest._key.indexOf('$loop') >= 0,
+            isElementActive = !JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)
 
-        let isTempalteEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, overrideOnChange, overrideOnClick
+        let hasJsonToEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow,
+            overrideOnChange, overrideOnClick, parsedSource
 
         const events = {
             onContextMenu: (e) => {
@@ -656,15 +658,21 @@ class JsonDomHelper extends React.Component {
             _options.menuTitle = {}
         }
 
-        if (isTempalteEdit) {
+        if (hasJsonToEdit) {
             subJson = getComponentByKey(rest._key, _json)
 
             if (!subJson) {
-                isTempalteEdit = false
+                hasJsonToEdit = false
             }
+
+            if( isElementActive || _options.mode==='source' ) {
+                // in source mode source is even editable when element is not active
+                parsedSource = this.parseInlineEditorSource(_options.source)
+            }
+
         }
 
-        const isDraggable = !isInLoop && isTempalteEdit && _options.allowDrag !== false
+        const isDraggable = !isInLoop && hasJsonToEdit && _options.allowDrag !== false
 
         if (isDraggable) {
             events.draggable = 'true'
@@ -682,7 +690,14 @@ class JsonDomHelper extends React.Component {
         }
 
 
-        if (!JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)) {
+        if (parsedSource && parsedSource.newOnClick) {
+            overrideOnClick = (e) => {
+                this.handleDatasource(e, {create: true})
+            }
+        }
+
+
+        if (isElementActive) {
 
             if (isCms) {
                 menuItems.push({
@@ -694,21 +709,19 @@ class JsonDomHelper extends React.Component {
                 })
             }
 
-            if (isTempalteEdit) {
+            if (hasJsonToEdit) {
 
 
-                const parsedSouce = this.parseInlineEditorSource(_options.source)
-                if (parsedSouce) {
+                if (parsedSource) {
 
                     if (_onDataResolverPropertyChange) {
                         overrideOnChange = (e, ...args) => {
-                            _onDataResolverPropertyChange({value: e.target.value, path: parsedSouce._id})
+                            _onDataResolverPropertyChange({value: e.target.value, path: parsedSource._id})
                             onChange(e, ...args)
                         }
-
                     }
 
-                    if (parsedSouce._id) {
+                    if (parsedSource._id) {
                         menuItems.push({
                             name: _options.menuTitle.source || 'Eintrag bearbeiten',
                             icon: <EditIcon/>,
@@ -716,7 +729,7 @@ class JsonDomHelper extends React.Component {
                         })
                     }
 
-                    if (parsedSouce.allowClone) {
+                    if (parsedSource.allowClone) {
                         menuItems.push({
                             name: _options.menuTitle.sourceClone || 'Eintrag kopieren',
                             icon: <FileCopyIcon/>,
@@ -726,7 +739,7 @@ class JsonDomHelper extends React.Component {
                         })
                     }
 
-                    if (parsedSouce.allowNew) {
+                    if (parsedSource.allowNew) {
                         menuItems.push({
                             name: _options.menuTitle.sourceNew || 'Eintrag erstellen',
                             icon: <AddIcon/>,
@@ -735,14 +748,8 @@ class JsonDomHelper extends React.Component {
                             }
                         })
                     }
-                    if (parsedSouce.newOnClick) {
-                        overrideOnClick = (e) => {
-                            this.handleDatasource(e, {create: true})
-                        }
-                    }
 
-
-                    if (parsedSouce.allowRemove) {
+                    if (parsedSource.allowRemove) {
                         menuItems.push({
                             name: _options.menuTitle.sourceRemove || 'Eintrag löschen',
                             icon: <DeleteIcon/>,
@@ -812,11 +819,6 @@ class JsonDomHelper extends React.Component {
                                     })
                                 }
 
-                                /* if (options.$inlineEditor_dataResolver) {
-                                     if (options.$inlineEditor_dataResolver.value.constructor === String) {
-
-                                     }
-                                 }*/
 
                                 if (isCms) {
                                     this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
@@ -916,6 +918,7 @@ class JsonDomHelper extends React.Component {
                     })
                 }
             }
+
             toolbar = <div
                 key={rest._key + '.toolbar'}
                 data-toolbar={rest._key}
@@ -977,7 +980,7 @@ class JsonDomHelper extends React.Component {
         }
 
         let kids
-        if (children && children.constructor !== String && isTempalteEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
+        if (children && children.constructor !== String && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
             kids = []
             if (children && children.length) {
 

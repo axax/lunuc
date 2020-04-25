@@ -4,6 +4,7 @@ import {SimpleMenu} from 'ui/admin'
 import {UnControlled as CodeMirror} from 'react-codemirror2'
 import './codemirror/javascript'
 import './codemirror/search'
+import 'codemirror/addon/display/rulers'
 import 'codemirror/mode/htmlmixed/htmlmixed'
 import 'codemirror/addon/hint/javascript-hint'
 import 'codemirror/addon/hint/show-hint'
@@ -12,7 +13,7 @@ import 'codemirror/addon/hint/show-hint.css'
 import './codemirror/style.css'
 import './codemirror/dialog.css'
 
-
+//https://codemirror.net/doc/manual.html#addon_rulers
 class CodeEditor extends React.Component {
 
 
@@ -102,7 +103,16 @@ class CodeEditor extends React.Component {
             // repalce tabs with spaces
             options.extraKeys.Tab = (cm) => cm.execCommand('indentMore')
             options.extraKeys['Shift-Tab'] = (cm) => cm.execCommand('indentLess')
+
+
+            const rulers = []
+            for (let i = 1; i <= 30; i++) {
+                rulers.push({color: 'rgba(0,0,0,0.05)', column: i * 2, lineStyle: "dashed"})
+            }
+
+            options.rulers = rulers
         }
+
 
         const allActions = [{name: 'Format selection (Ctrl-L)', onClick: this.autoFormatSelection.bind(this)}]
 

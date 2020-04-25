@@ -48,7 +48,7 @@ export const keyvalueSchemaRaw = `
 		deleteKeyValueByKey(key: String!): KeyValue
 		
 		createKeyValueGlobal(key: String!, value: String, ispublic: Boolean): KeyValueGlobal
-		updateKeyValueGlobal(_id: ID!, key: String, value: String, ispublic: Boolean): KeyValueGlobal
+		updateKeyValueGlobal(_id: ID!, createdBy: ID, key: String, value: String, ispublic: Boolean): KeyValueGlobal
 		deleteKeyValueGlobal(_id: ID!): KeyValueGlobal
 		deleteKeyValueGlobals(_id: [ID]): [KeyValueGlobal]
         setKeyValueGlobal(key: String!, value: String): KeyValueGlobal	
