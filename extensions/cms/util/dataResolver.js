@@ -6,7 +6,7 @@ import translations from 'gensrc/tr'
 import Util from '../../../api/util'
 import ClientUtil from 'client/util'
 import {CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities'
-import {processWebsiteQueue} from './browser'
+import {addToWebsiteQueue} from './browser'
 import Hook from '../../../util/hook'
 import {pubsubDelayed} from '../../../api/subscription'
 import fs from 'fs'
@@ -355,32 +355,16 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                 } else if (segment.website) {
 
-                    // headless browser
                     if (segment.if === false || !segment.website.url) {
                         continue
                     }
 
                     const dataKey = segment.key || 'website'
-
                     const cacheKey = createCacheKey(segment, 'website')
 
-                    if (cacheKey) {
-                        const cachedData = Cache.cache[cacheKey] // Cache.get(cacheKey, true)
-                        if (cachedData) {
-                            resolvedData[dataKey] = cachedData.data
-                            if (Cache.isValid(cachedData)) {
-                                // no need to renew cache
-                                continue
-                            }
-                        }
+                    if(addToWebsiteQueue({segment, scope, resolvedData, context, dataKey, cacheKey})){
+                        addDataResolverSubsription=true
                     }
-
-                    addDataResolverSubsription = true
-                    if (!resolvedData[dataKey]) {
-                        resolvedData[dataKey] = {}
-                    }
-                    resolvedData[dataKey].meta = segment.meta
-                    processWebsiteQueue({segment, scope, resolvedData, context, dataKey, cacheKey})
 
                 } else {
                     console.log('call cmsCustomResolver', segment)

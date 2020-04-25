@@ -10,25 +10,42 @@ const {UPLOAD_DIR, UPLOAD_URL} = config
 
 let websiteProcessingQueue = []
 let isQueueProcessing = false
-const processWebsiteQueue = async (job) => {
-    websiteProcessingQueue.push(job)
 
+
+const addToWebsiteQueue = async (processData) => {
+    const {cacheKey,segment,resolvedData,dataKey} = processData
+
+    if (cacheKey) {
+        const cachedData = Cache.cache[cacheKey] // Cache.get(cacheKey, true)
+        if (cachedData) {
+            resolvedData[dataKey] = cachedData.data
+            if (Cache.isValid(cachedData)) {
+                // no need to wait for result
+                return false
+            }
+        }
+    }
+
+    if (!resolvedData[dataKey]) {
+        resolvedData[dataKey] = {}
+    }
+    resolvedData[dataKey].meta = segment.meta
+
+    if (segment.queue === false) {
+        processWebsiteData(processData)
+    }else {
+        websiteProcessingQueue.push(processData)
+        startProcessingQueue()
+    }
+    return true
+}
+
+
+async function startProcessingQueue() {
     if (!isQueueProcessing) {
         isQueueProcessing = true
         while (websiteProcessingQueue.length > 0) {
-            const {segment, scope, resolvedData, cacheKey, context, dataKey} = websiteProcessingQueue[0]
-            const data = await openInBrowser(segment.website, scope, resolvedData)
-            if (segment.meta) {
-                data.meta = segment.meta
-            }
-            if (cacheKey && !data.error) {
-                Cache.set(cacheKey, data, segment.cache.expiresIn)
-            }
-            pubsubDelayed.publish('cmsPageData', {
-                userId: context.id,
-                session: context.session,
-                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: data})}
-            }, context)
+            await processWebsiteData(websiteProcessingQueue[0])
 
             websiteProcessingQueue.shift()
         }
@@ -36,11 +53,31 @@ const processWebsiteQueue = async (job) => {
     }
 }
 
+async function processWebsiteData(processData) {
+    const {segment, scope, resolvedData, cacheKey, context, dataKey} = processData
+
+
+    const data = await openInBrowser(segment.website, scope, resolvedData)
+    if (segment.meta) {
+        data.meta = segment.meta
+    }
+    if (cacheKey && !data.error) {
+        Cache.set(cacheKey, data, segment.cache.expiresIn)
+    }
+    pubsubDelayed.publish('cmsPageData', {
+        userId: context.id,
+        session: context.session,
+        cmsPageData: {resolvedData: JSON.stringify({[dataKey]: data})}
+    }, context)
+}
+
+
+
 const openInBrowser = async (options, scope, resolvedData) => {
 
     const puppeteer = require('puppeteer')
 
-    const {url, pipeline, images, ignoreSsl, waitUntil, timeout} = options
+    const {url, pipeline, images, ignoreSsl, waitUntil, timeout, viewPort} = options
     let data = {}, error
     const browserInstance = await puppeteer.launch({
         ignoreHTTPSErrors: true,
@@ -50,6 +87,10 @@ const openInBrowser = async (options, scope, resolvedData) => {
 
     console.log(`Open in headless browser ${url}`)
     try {
+
+        if(viewPort) {
+            await page.setViewport(viewPort)
+        }
 
         if (images === false) {
             await page.setRequestInterception(true)
@@ -74,7 +115,6 @@ const openInBrowser = async (options, scope, resolvedData) => {
         const gotoOptions = {waitUntil, timeout}
 
         await page.goto(url, gotoOptions)
-
 
         if (pipeline) {
 
@@ -192,6 +232,7 @@ const openInBrowser = async (options, scope, resolvedData) => {
                     await page.waitForNavigation(pipe.waitForNavigation)
                 } else if (pipe.waitForSelector) {
                     const keys = Object.keys(pipe.waitForSelector)
+                    console.log(pipe.waitForSelector[keys[0]])
                     await page.waitForSelector(keys[0], pipe.waitForSelector[keys[0]])
                 } else if (pipe.waitFor) {
                     if (pipe.waitFor.constructor === Object) {
@@ -260,4 +301,4 @@ const openInBrowser = async (options, scope, resolvedData) => {
     return {eval: data, error}
 }
 
-export {openInBrowser, processWebsiteQueue}
+export {openInBrowser, addToWebsiteQueue}

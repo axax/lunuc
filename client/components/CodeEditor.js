@@ -13,6 +13,23 @@ import 'codemirror/addon/hint/show-hint.css'
 import './codemirror/style.css'
 import './codemirror/dialog.css'
 
+/* linter */
+/*import 'codemirror/addon/lint/lint'
+import 'codemirror/addon/lint/json-lint'
+import 'codemirror/addon/lint/lint.css'
+import '../../node_modules/jshint/dist/jshint';
+*/
+
+/* Code Folding */
+import 'codemirror/addon/fold/foldcode'
+import 'codemirror/addon/fold/foldgutter'
+import 'codemirror/addon/fold/brace-fold'
+import 'codemirror/addon/fold/xml-fold'
+import 'codemirror/addon/fold/indent-fold'
+import 'codemirror/addon/fold/markdown-fold'
+import 'codemirror/addon/fold/comment-fold'
+import 'codemirror/addon/fold/foldgutter.css'
+
 //https://codemirror.net/doc/manual.html#addon_rulers
 class CodeEditor extends React.Component {
 
@@ -77,6 +94,9 @@ class CodeEditor extends React.Component {
             readOnly,
             lineNumbers,
             tabSize: 2,
+            foldGutter:true,
+            lint: true,
+            gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
             indentWithTabs: true,
             autoClearEmptyLines:false,
             /*  lineWrapping: false,
@@ -98,6 +118,7 @@ class CodeEditor extends React.Component {
         }
 
         if (type === 'json') {
+
             options.mode.json = true
             options.indentWithTabs = false
             // repalce tabs with spaces
