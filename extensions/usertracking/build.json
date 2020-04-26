@@ -1,6 +1,9 @@
 {
   "types": [
     {
+      "access":{
+        "create": "anonymous"
+      },
       "name": "UserTracking",
       "fields": [
         {
