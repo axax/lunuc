@@ -138,7 +138,9 @@ class JsonDom extends React.Component {
                     }
 
                     if (gotop) {
-                        window.scrollTo({top: 0})
+                        setTimeout(()=> {
+                            window.scrollTo({top: 0})
+                        },0)
                     }
 
                     if (onClick) {

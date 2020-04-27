@@ -39,16 +39,18 @@ class CodeEditor extends React.Component {
         this._data = props.children
         this.state = {
             data: props.children,
-            error: false
+            stateError: false,
+            error: props.error
         }
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.children !== prevState.data) {
+        if (nextProps.children !== prevState.data || nextProps.error !== prevState.error) {
             console.log('CodeEditor update state')
             return {
                 data: nextProps.children,
-                error: false
+                stateError: false,
+                error: nextProps.error
             }
         }
         return null
@@ -60,7 +62,7 @@ class CodeEditor extends React.Component {
             this._data = nextState.data
             refresh = true
         }
-        return refresh || nextState.error !== this.state.error
+        return refresh || nextState.stateError !== this.state.stateError || nextState.error !== this.state.error
     }
 
     autoFormatSelection() {
@@ -87,8 +89,8 @@ class CodeEditor extends React.Component {
     }
 
     render() {
-        const {onChange, onBlur, onScroll, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition} = this.props
-        const {error} = this.state
+        const {onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition} = this.props
+        const {stateError} = this.state
         const options = {
             mode: {},
             readOnly,
@@ -144,7 +146,7 @@ class CodeEditor extends React.Component {
         console.log('render CodeEditor', fabButtonStyle)
         const baseStyle = {height: '25rem'}
 
-        if (error) {
+        if (error || stateError) {
             baseStyle.border = 'solid 1px red'
         }
         return <div className={className} style={{...baseStyle, ...style}}>
@@ -180,14 +182,14 @@ class CodeEditor extends React.Component {
                     if (this._data && (this._data.constructor === Object || this._data.constructor === Array)) {
                         // if input was Object output is an Object to
                         try {
-                            this.setState({error: false})
+                            this.setState({stateError: false})
                             this._data = JSON.parse(data)
                         } catch (e) {
                             console.error(e)
                             if (onError) {
                                 onError(e)
                             }
-                            this.setState({error: `Fehler in der JSON Struktur: ${e.message}`})
+                            this.setState({stateError: `Fehler in der JSON Struktur: ${e.message}`})
                             return
                         }
                     } else {
@@ -198,7 +200,7 @@ class CodeEditor extends React.Component {
                     }
 
                 }}
-            />{error && <div style={{color: 'red'}}>{error}</div>}</div>
+            />{(error || stateError) && <div style={{color: 'red'}}>{error?error + ' ':''}{stateError?stateError:''}</div>}</div>
     }
 }
 
@@ -207,6 +209,7 @@ CodeEditor.propTypes = {
     lineNumbers: PropTypes.bool,
     readOnly: PropTypes.bool,
     onChange: PropTypes.func,
+    error: PropTypes.string,
     onError: PropTypes.func,
     onScroll: PropTypes.func,
     onBlur: PropTypes.func,

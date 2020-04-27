@@ -213,9 +213,10 @@ const GenericResolver = {
 
         let userContext = context
 
-        //TODO change to role check
-        if (typeDefinition && typeDefinition.access && typeDefinition.access.create === 'anonymous') {
-            userContext = await Util.userOrAnonymousContext(db, context)
+        if (typeDefinition && typeDefinition.access && typeDefinition.access.create) {
+            if (await Util.userHasCapability(db, context, typeDefinition.access.create)) {
+                userContext = await Util.userOrAnonymousContext(db, context)
+            }
         }
 
         Util.checkIfUserIsLoggedIn(userContext)

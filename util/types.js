@@ -47,7 +47,6 @@ export const getTypeQueries = (typeName) => {
 
     const {name, fields, noUserRelation, selectParams, collectionClonable} = types[typeName]
 
-    console.log(types[typeName])
     const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
     const result = {name: nameStartLower}
 

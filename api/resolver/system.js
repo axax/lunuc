@@ -367,6 +367,33 @@ export const systemResolver = (db) => ({
              console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)*/
 
             return {result: 'imported'}
+        },
+        searchInCollections: async ({search}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
+
+
+            const collectionNames = db.getCollectionNames()
+            const results = []
+
+            for (const collectionName in collectionNames) {
+                const coll = collectionNames[collectionName]
+                if (coll === "system.indexes") continue
+
+                console.log(`Search in collection ${collectionName}`)
+
+                db[coll].find({$where: function() {
+                        for (const key in this) {
+                            if (this[key] === "bar") {
+                                return true
+                            }
+                        }
+                        return false
+                    }}).forEach((rec) => {
+                        results.push({collection:collectionName, field: ''})
+                    })
+            }
+
+            return {result}
         }
     },
     Mutation: {
@@ -401,9 +428,9 @@ export const systemResolver = (db) => ({
             // make sure upload dir exists
             const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/dbdumps/')
 
-            fs.unlinkSync(backup_dir+'/'+name)
+            fs.unlinkSync(backup_dir + '/' + name)
 
-            return {status:'ok'}
+            return {status: 'ok'}
         },
         removeMediaDump: async ({name}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
@@ -411,9 +438,9 @@ export const systemResolver = (db) => ({
             // make sure upload dir exists
             const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/mediadumps/')
 
-            fs.unlinkSync(backup_dir+'/'+name)
+            fs.unlinkSync(backup_dir + '/' + name)
 
-            return {status:'ok'}
+            return {status: 'ok'}
         },
         createMediaDump: async ({type}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)

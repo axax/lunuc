@@ -755,7 +755,7 @@ class JsonDomHelper extends React.Component {
                             icon: <DeleteIcon/>,
                             onClick: (e) => {
                                 //JsonDomHelper.disableEvents = true
-                                this.setState({deleteSourceConfirmDialog: parsedSouce})
+                                this.setState({deleteSourceConfirmDialog: parsedSource})
                             }
                         })
                     }

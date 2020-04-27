@@ -75,8 +75,8 @@ export default () => {
                     const data = dataToEdit.data?(dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data): {}
 
                     const newFields = Object.assign({}, formFields)
-                    const newDataToEdit = Object.assign({}, dataToEdit)
 
+                    const newDataToEdit = Object.assign({}, dataToEdit)
                     delete newFields.data
                     delete newDataToEdit.data
 

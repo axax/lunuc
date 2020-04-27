@@ -121,13 +121,14 @@ class TemplateEditor extends React.Component {
     shouldComponentUpdate(props, state) {
 
         return state.data !== this.state.data ||
-            state.tab !== this.state.tab
+            state.tab !== this.state.tab ||
+            state.error !== this.state.error
     }
 
     render() {
         const {classes, component, fabButtonStyle, onScroll, scrollPosition} = this.props
-        const {tab, data, type} = this.state
-
+        const {tab, data, type, error} = this.state
+        console.log(error)
         const currentTab = (!component && this.state.tab === 2 ? 0 : this.state.tab) || 0
         return <div>
             <Tabs
@@ -148,7 +149,14 @@ class TemplateEditor extends React.Component {
                 <Tab icon={<SubjectIcon/>} classes={{root: classes.tabRoot, selected: classes.tabSelected}}/>}
             </Tabs>
             {currentTab === 0 && <TabContainer>
-                <CodeEditor onScroll={onScroll} scrollPosition={scrollPosition} fabButtonStyle={fabButtonStyle} onChange={this.handleChange.bind(this)} showFab lineNumbers type={type}>{data}</CodeEditor>
+                <CodeEditor onScroll={onScroll}
+                            scrollPosition={scrollPosition}
+                            fabButtonStyle={fabButtonStyle}
+                            onChange={this.handleChange.bind(this)}
+                            error={error}
+                            showFab
+                            lineNumbers
+                            type={type}>{data}</CodeEditor>
 
             </TabContainer>}
             {currentTab === 1 && <TabContainer>
@@ -171,7 +179,7 @@ class TemplateEditor extends React.Component {
     handleChange(str, instantSave) {
         const {onChange, component} = this.props
 
-        this.setState({data: str})
+        this.setState({data: str, error: false})
 
         let data, type = 'json'
         if (!component) {
@@ -190,9 +198,12 @@ class TemplateEditor extends React.Component {
                 // set property of new object to existing reference
                 try {
                     Object.assign(jsonPart, JSON.parse(str))
+
                     onChange(json)
                 } catch (e) {
+                    this.setState({error: `Fehler in der JSON Struktur: ${e.message}`})
                     console.log('Error in json', str)
+                    return false
                 }
             }
         }

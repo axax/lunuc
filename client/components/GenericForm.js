@@ -11,6 +11,7 @@ import {checkFieldType} from 'util/typesAdmin'
 import Hook from '../../util/hook'
 import classNames from 'classnames'
 import Expandable from 'client/components/Expandable'
+import _t from '../../util/i18n'
 
 const styles = theme => {
     return {
@@ -102,8 +103,6 @@ class GenericForm extends React.Component {
             updatekey: props.updatekey,
             fieldsOri: props.fields,
             fields: {},
-            fieldErrors: {},
-            isValid: true,
             tabValue:0
         }
         Object.keys(props.fields).map(k => {
@@ -121,6 +120,9 @@ class GenericForm extends React.Component {
             }
             initalState.fields[k] = fieldValue
         })
+        const formValidation = GenericForm.staticValidate(initalState, props)
+        initalState.isValid = formValidation.isValid
+        initalState.fieldErrors = formValidation.fieldErrors
         return initalState
     }
 
@@ -133,73 +135,67 @@ class GenericForm extends React.Component {
         return null
     }
 
-    shouldComponentUpdate(props, state) {
-        return state !== this.state || state.fieldErrors !== this.state.fieldErrors
-    }
-
-    componentDidMount() {
-        this.setValidateState(this.state)
-    }
-
-    setValidateState(state) {
-        if (this.props.onValidate) {
-            this.setState(this.validate(state))
-        }
-    }
-
-    validate(state) {
-        let theState
-
-        if (state) {
-            theState = state
-        } else {
-            theState = this.state
-        }
-
-        const {fields, onValidate} = this.props
-
+    static staticValidate(state, props){
+        const {fields, onValidate} = props
         const fieldErrors = {}
         Object.keys(fields).forEach(fieldKey => {
             const field = fields[fieldKey]
             if (field.required) {
 
                 if (field.reference) {
-                    let fieldValue = theState.fields[fieldKey]
+                    let fieldValue = state.fields[fieldKey]
                     if (fieldValue && fieldValue.length) {
                         fieldValue = fieldValue[0]
                     }
                     if (!fieldValue || !fieldValue._id) {
-                        fieldErrors[fieldKey] = 'Field is required'
+                        fieldErrors[fieldKey] = _t('GenericForm.fieldIsRequired')
                     }
                 } else {
                     if (field.localized) {
                         config.LANGUAGES.forEach(lang => {
-                            if (!theState.fields[fieldKey] || !theState.fields[fieldKey][lang] || !theState.fields[fieldKey][lang].trim() === '') {
-                                fieldErrors[fieldKey + '.' + lang] = 'Field is required'
+                            if (!state.fields[fieldKey] || !state.fields[fieldKey][lang] || !state.fields[fieldKey][lang].trim() === '') {
+                                fieldErrors[fieldKey + '.' + lang] = _t('GenericForm.fieldIsRequired')
                             }
                         })
                     } else {
-                        const value = theState.fields[fieldKey]
+                        const value = state.fields[fieldKey]
                         if (!value || (value.constructor === String && value.trim() === '')) {
-                            fieldErrors[fieldKey] = 'Field is required'
+                            fieldErrors[fieldKey] = _t('GenericForm.fieldIsRequired')
                         }
                     }
                 }
             }
         })
+        let validationState
         if (Object.keys(fieldErrors).length) {
-            return {isValid:false, fieldErrors}
+            validationState = {isValid:false, fieldErrors}
+        }else if (onValidate) {
+            validationState = onValidate(state.fields)
+            if( !validationState.fieldErrors){
+                validationState.fieldErrors = {}
+            }
+        }else{
+            validationState = {isValid:true, fieldErrors}
         }
+        return validationState
+    }
 
-        if (onValidate) {
-            return onValidate(theState.fields)
+    shouldComponentUpdate(props, state) {
+        return state !== this.state || state.fieldErrors !== this.state.fieldErrors
+    }
+
+    validate(state = this.state, updateState=true) {
+
+        const validationState = GenericForm.staticValidate(state, this.props)
+
+        if( updateState ){
+            this.setState(validationState)
         }
-        return {isValid:true, fieldErrors}
+        return validationState
     }
 
     reset = () => {
         this.setState(GenericForm.getInitalState(this.props))
-        this.setValidateState(this.state)
     }
 
 
@@ -228,7 +224,8 @@ class GenericForm extends React.Component {
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
             }
-            return this.validate(newState)
+            const formValidation = this.validate(newState, false)
+            return Object.assign(newState, formValidation)
         })
     }
 

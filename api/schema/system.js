@@ -85,8 +85,18 @@ export const systemSchemaRaw = `
     type BulkEditResult {
         result: String
     }
+    
+    type SearchInCollections{
+        collection: String
+        field: String
+    }
+    
+    type SearchInCollectionsResult{
+        results: [SearchInCollections]
+    }
         
     type Query {
+        searchInCollections(search: String!): SearchInCollectionsResult
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!, scope: String, id: String, sync: Boolean): RunResult
     	killRun(id: String!): RunResult

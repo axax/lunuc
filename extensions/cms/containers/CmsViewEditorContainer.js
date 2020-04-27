@@ -174,6 +174,7 @@ class CmsViewEditorContainer extends React.Component {
             state.ssr !== this.state.ssr ||
             state.urlSensitiv !== this.state.urlSensitiv ||
             state.compress !== this.state.compress ||
+            state.simpleDialog !== this.state.simpleDialog ||
             state.showRevision !== this.state.showRevision ||
             state.addNewSite !== this.state.addNewSite ||
             state.serverScript !== this.state.serverScript ||
@@ -187,7 +188,7 @@ class CmsViewEditorContainer extends React.Component {
     render() {
         const {WrappedComponent, cmsPage, cmsEditData, cmsComponentEdit, ...props} = this.props
 
-        const {template, resources, script, style, settings, dataResolver, serverScript} = this.state
+        const {template, resources, script, style, settings, dataResolver, serverScript, simpleDialog} = this.state
         if (!cmsPage) {
             // show a loader here
             if (!props.dynamic) {
@@ -257,7 +258,12 @@ class CmsViewEditorContainer extends React.Component {
                                 }
 
                                 if (error) return `Error! ${error.message}`
-                                if (data.genericDatas.results.length === 0) return 'No data'
+                                if (data.genericDatas.results.length === 0){
+
+                                    this.props._cmsActions.editCmsData(null)
+                                    this.setState({simpleDialog:{title:"Keine Daten", text:"Sie haben vermutlich keine Berechtigung diese Daten zu bearbeiten"}})
+                                    return null
+                                }
 
                                 return <OpenTypeEdit data={data}/>
                             }}
@@ -316,7 +322,20 @@ class CmsViewEditorContainer extends React.Component {
             ,
             <ErrorHandler key="errorHandler" snackbar/>,
             <NetworkStatusHandler key="networkStatus"/>,
-            <SimpleDialog fullWidth={true} maxWidth="md" key="templateEditor" open={!!cmsComponentEdit.key}
+            simpleDialog && <SimpleDialog open={true}
+                          onClose={()=>{
+                              this.setState({simpleDialog:null})
+                          }}
+                          actions={[
+                              {
+                                  key: 'ok',
+                                  label: 'Ok',
+                                  type: 'primary'
+                              }]}
+                          title={simpleDialog.title}>
+                {simpleDialog.text}
+            </SimpleDialog>,
+            cmsComponentEdit.key && <SimpleDialog fullWidth={true} maxWidth="md" key="templateEditor" open={true}
                           onClose={this.handleComponentEditClose.bind(this)}
                           actions={[{
                               key: 'ok',
@@ -664,7 +683,8 @@ class CmsViewEditorContainer extends React.Component {
                     <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
                                   onClose={(e) => {
                                       if (e.key === 'ok') {
-                                          if (this.addNewSiteForm.validate()) {
+                                          const formValidation = this.addNewSiteForm.validate()
+                                          if (formValidation.isValid) {
                                               if (this.addNewSiteForm.props.values._id) {
                                                   const queries = getTypeQueries('CmsPage')
                                                   const slug = this.addNewSiteForm.state.fields.slug

@@ -25,5 +25,6 @@
   "CmsViewEditorContainer.fixed": "Menü fixieren",
   "CmsViewEditorContainer.preview": "Vorschau",
   "CmsViewEditorContainer.addnewpage": "Neue Seite erstellen",
-  "CmsViewEditorContainer.undochange": "Änderung Rückgängig"
+  "CmsViewEditorContainer.undochange": "Änderung Rückgängig",
+  "GenericForm.fieldIsRequired": "Bitte ausfüllen"
 }

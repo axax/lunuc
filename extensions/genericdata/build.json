@@ -1,6 +1,7 @@
 {
   "types": [
     {
+      "access": {"read":  "anonymous"},
       "name": "GenericDataDefinition",
       "entryClonable": true,
       "fields": [
@@ -25,7 +26,8 @@
         },
         {
           "name": "definition",
-          "type": "GenericDataDefinition"
+          "type": "GenericDataDefinition",
+          "required": true
         }
       ]
     }

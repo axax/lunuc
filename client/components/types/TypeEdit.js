@@ -88,7 +88,8 @@ class TypeEdit extends React.Component {
         }
 
         if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
-            if (!this.createEditForm.validate()) {
+            const formValidation = this.createEditForm.validate()
+            if (!formValidation.isValid) {
                 return
             }
             editedData = Object.assign({}, this.createEditForm.state.fields)

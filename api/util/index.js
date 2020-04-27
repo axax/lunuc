@@ -226,6 +226,10 @@ const Util = {
         return user
     },
     userHasCapability: async (db, context, capability) => {
+
+        if( capability === 'anonymous'){
+            return true
+        }
         if (context && context.id) {
 
             const user = await Util.userById(db, context.id)
