@@ -70,11 +70,15 @@ class CodeEditor extends React.Component {
 
         if (type === 'json') {
             try {
-                const parsedJson = JSON.parse(this._data)
+                this._data = JSON.stringify(JSON.parse(this._data),null, 2)
 
                 if (onChange) {
-                   onChange(JSON.stringify(parsedJson, null, 2))
+                   onChange(this._data)
                 }
+                const scrollInfo = this._editor.getScrollInfo()
+                this._editor.setValue(this._data)
+                this._editor.scrollTo(scrollInfo.left, scrollInfo.top)
+
 
                 return
             } catch (e) {

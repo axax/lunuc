@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import Hook from 'util/hook'
 import _t from 'util/i18n'
 import Util from 'client/util'
-import {propertyByPath} from '../../../client/util/json'
+import {propertyByPath, matchExpr} from '../../../client/util/json'
 import QuillEditor from 'client/components/QuillEditor'
 import {getComponentByKey} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
@@ -608,37 +608,13 @@ class JsonDom extends React.Component {
 
 
                 if ($is && $is !== 'true') {
-                    if ($is === 'false') {
+                    if( matchExpr($is, scope)){
                         return
-                    }
-                    const match = $is.match(/([\w|\.]*)(==|\!=|>)(.*)/)
-                    if (match && match.length === 4) {
-                        let prop
-                        try {
-                            prop = propertyByPath(match[1], scope)
-                        } catch (e) {
-                        }
-                        if (match[2] === '==') {
-                            if (match[3] !== String(prop)) {
-                                return
-                            }
-                        }
-                        if (match[2] === '!=') {
-                            if (match[3] === String(prop)) {
-                                return
-                            }
-                        }
-                        if (match[2] === '>') {
-
-                            if (!(prop > parseInt(match[3]))) {
-                                return
-                            }
-                        }
                     }
                 }
 
                 if ($if) {
-                    // check condition --> slower than to check with $ifexist
+                    // check condition --> slower than to check with $ifexist or $is
                     try {
                         const tpl = new Function(`${Object.keys(scope).reduce((str, key) => str + '\nconst ' + key + '=this.scope.' + key, '')};return  ${$if}`)
                         if (!tpl.call({scope})) {

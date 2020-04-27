@@ -12,7 +12,7 @@ import {pubsubDelayed} from '../../../api/subscription'
 import fs from 'fs'
 import config from 'gen/config'
 import path from 'path'
-import {propertyByPath} from '../../../client/util/json'
+import {propertyByPath, setPropertyByPath, assignIfObjectOrArray, matchExpr} from '../../../client/util/json'
 
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode}) => {
     const startTime = new Date().getTime()
@@ -40,9 +40,16 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                               const Util = this.ClientUtil
                                               const ObjectId = this.ObjectId
                                               return \`${JSON.stringify(segments[i])}\``)
-                const replacedSegmentStr = tpl.call({scope, data: resolvedData, context, editmode, ClientUtil, config, ObjectId}).replace(/"###/g, '').replace(/###"/g, '')
+                const replacedSegmentStr = tpl.call({
+                    scope,
+                    data: resolvedData,
+                    context,
+                    editmode,
+                    ClientUtil,
+                    config,
+                    ObjectId
+                }).replace(/"###/g, '').replace(/###"/g, '')
                 const segment = JSON.parse(replacedSegmentStr)
-
                 if (tempBrowser) {
                     segment.website.pipeline = tempBrowser
                 }
@@ -71,7 +78,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         resolvedData[k] = segment.data[k]
                     })
                 } else if (segment.t) {
-                    const {t, f, l, o, g, p, d, s, $if, cache, includeCount,resultFilter, ...other} = segment
+                    const {t, f, l, o, g, p, d, s, $if, cache, includeCount, resultFilter, ...other} = segment
                     /*
                      f = filter for the query
                      t = type
@@ -123,23 +130,23 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     // restriction = if it is set to 'user' only entries that belongs to the user are returned
                     if (segment.restriction) {
 
-                        const restriction = segment.restriction.constructor === String? {type: segment.restriction }:segment.restriction
+                        const restriction = segment.restriction.constructor === String ? {type: segment.restriction} : segment.restriction
 
-                        if( restriction.type === 'user') {
+                        if (restriction.type === 'user') {
                             if (!context.id) {
                                 // use anonymouse user
                                 const anonymousUser = await Util.userByName(db, 'anonymous')
                                 context.id = anonymousUser._id.toString()
                             }
                             match = {createdBy: ObjectId(context.id)}
-                        }else if( restriction.type === 'role') {
+                        } else if (restriction.type === 'role') {
 
                             if (await Util.userHasCapability(db, context, restriction.role)) {
                                 match = {}
-                            }else{
+                            } else {
                                 match = {createdBy: ObjectId(context.id)}
                             }
-                        }else{
+                        } else {
                             match = {}
                         }
                     } else {
@@ -158,7 +165,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         cache,
                         includeCount,
                         projectResult: true,
-                        postConvert:false,
+                        postConvert: false,
                         ...other,
                     })
                     debugInfo += ' result=true'
@@ -268,19 +275,65 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
                 } else if (segment.reduce) {
                     try {
-                        segment.reduce.forEach(re => {
-                            if (re.path) {
-                                if( re.key) {
-                                    const value = propertyByPath(re.path, resolvedData)
-                                    resolvedData[re.key] = value
-                                }
-                                if( re.delete ){
-                                    const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))
-                                    const ob = propertyByPath(parentPath,resolvedData)
-                                    delete ob[re.path.substring(re.path.lastIndexOf('.')+1)]
-                                }
+                        const reduce = (reducePipe, rootData, currentData) => {
+                            if (!currentData) {
+                                currentData = rootData
                             }
-                        })
+                            reducePipe.forEach(re => {
+                                if (re.path) {
+                                    if (re.key) {
+                                        const value = propertyByPath(re.path, currentData)
+                                        resolvedData[re.key] = re.assign ? assignIfObjectOrArray(value) : value
+                                    } else if (re.loop) {
+
+
+                                        let value = propertyByPath(re.path, currentData, '.', re.assign)
+                                        if (value.constructor === Object) {
+                                            Object.keys(value).forEach(key => {
+                                                if (re.loop.reduce) {
+                                                    value[key] = re.assign ? assignIfObjectOrArray(value[key]) : value[key]
+                                                    if (re.loop.filter) {
+                                                        for (let i = 0; i < re.loop.filter.length; i++) {
+                                                            const filter = re.loop.filter[i]
+
+                                                            if ( matchExpr(filter.expr, {key, value:value[key]})){
+                                                                if (filter.remove) {
+                                                                    delete value[key]
+                                                                }
+                                                                return
+                                                            }
+                                                        }
+                                                    }
+                                                    reduce(re.loop.reduce, rootData, value[key])
+                                                }
+                                            })
+                                        }
+                                    } else if (re.reduce) {
+                                        const arr = propertyByPath(re.path, currentData)
+
+                                        reduce(re.reduce, rootData, arr)
+
+                                    } else if (re.lookup) {
+                                        const lookupData = propertyByPath(re.lookup, rootData)
+                                        const value = propertyByPath(re.path, currentData)
+                                        const lookedupData = []
+                                        value.forEach(key => {
+                                            lookedupData.push(lookupData[key])
+                                        })
+                                        setPropertyByPath(lookedupData, re.path, currentData)
+                                        // console.log(currentData, lookupData)
+
+                                    }
+                                    if (re.remove) {
+                                        const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))
+                                        const ob = propertyByPath(parentPath, currentData)
+                                        delete ob[re.path.substring(re.path.lastIndexOf('.') + 1)]
+                                    }
+                                }
+                            })
+                        }
+
+                        reduce(segment.reduce, resolvedData)
                     } catch (e) {
                         console.warn(`segment ${segment.key} can not be reduced`, e)
                     }
@@ -301,7 +354,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     const map = await Util.keyValueGlobalMap(db, context, segment.keyValueGlobals, {
                         public: onlyPublic,
                         cache: true,
-                        parse:true
+                        parse: true
                     })
 
                     resolvedData[dataKey] = map
@@ -362,8 +415,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     const dataKey = segment.key || 'website'
                     const cacheKey = createCacheKey(segment, 'website')
 
-                    if(addToWebsiteQueue({segment, scope, resolvedData, context, dataKey, cacheKey})){
-                        addDataResolverSubsription=true
+                    if (addToWebsiteQueue({segment, scope, resolvedData, context, dataKey, cacheKey})) {
+                        addDataResolverSubsription = true
                     }
 
                 } else {
@@ -389,9 +442,9 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 const createCacheKey = (segment, name) => {
     let cacheKey
     if (segment.cache) {
-        if(segment.cache.key){
+        if (segment.cache.key) {
             cacheKey = segment.cache.key
-        }else if( segment.key ){
+        } else if (segment.key) {
             cacheKey = `dataresolver_${name}_${segment.key}`
         } else {
             console.warn('Please define a key or a cacheKey if you want to use caching')
