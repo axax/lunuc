@@ -326,12 +326,35 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                         const value = propertyByPath(re.path, currentData)
                                         const lookedupData = []
                                         value.forEach(key => {
+                                            if( re.lookup.facets) {
+                                                const facets = propertyByPath(re.lookup.facets.path,rootData)
+                                                if( facets) {
+                                                    Object.keys(facets).forEach(facetKey=>{
+                                                        const facet = facets[facetKey]
+                                                        if( facet ){
+                                                            if( facet.min === undefined || facet.min > lookupData[key][facetKey] ){
+                                                                if( !isNaN(lookupData[key][facetKey])) {
+                                                                    facet.min = lookupData[key][facetKey]
+                                                                }
+                                                            }
+                                                            if( facet.max === undefined || facet.max < lookupData[key][facetKey] ){
+                                                                if( !isNaN(lookupData[key][facetKey])) {
+                                                                    facet.max = lookupData[key][facetKey]
+                                                                }
+                                                            }
+                                                        }
+                                                    })
+                                                }
+                                            }
+
                                             if (checkFilter(re.lookup.filter, lookupData, key)) {
                                                 return
                                             }
+
                                             lookedupData.push(lookupData[key])
                                         })
                                         setPropertyByPath(lookedupData, re.path, currentData)
+
                                         // console.log(currentData, lookupData)
 
                                     }
