@@ -128,7 +128,6 @@ class TemplateEditor extends React.Component {
     render() {
         const {classes, component, fabButtonStyle, onScroll, scrollPosition} = this.props
         const {tab, data, type, error} = this.state
-        console.log(error)
         const currentTab = (!component && this.state.tab === 2 ? 0 : this.state.tab) || 0
         return <div>
             <Tabs

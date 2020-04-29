@@ -1053,7 +1053,7 @@ class CmsViewEditorContainer extends React.Component {
                 this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 5000)
             }
 
-        }, instantSave ? 0 : 250)
+        }, instantSave ? 0 : 500)
     }
 
     handleResourceChange = (str) => {

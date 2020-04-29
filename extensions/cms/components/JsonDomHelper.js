@@ -673,7 +673,6 @@ class JsonDomHelper extends React.Component {
         }
 
         const isDraggable = !isInLoop && hasJsonToEdit && _options.allowDrag !== false
-
         if (isDraggable) {
             events.draggable = 'true'
             events.onDragEnd = this.onDragEnd.bind(this)
@@ -699,9 +698,9 @@ class JsonDomHelper extends React.Component {
 
         if (isElementActive) {
 
-            if (isCms) {
+            if (isCms && subJson && subJson.p && subJson.p.slug !== null) {
                 menuItems.push({
-                    name: `Komponente ${subJson && subJson.p && subJson.p.id || subJson.p.slug} öffnen`,
+                    name: `Komponente ${subJson.p.id || subJson.p.slug} öffnen`,
                     icon: <LaunchIcon/>,
                     onClick: () => {
                         window.location = '/' + subJson.p.slug
@@ -980,7 +979,7 @@ class JsonDomHelper extends React.Component {
         }
 
         let kids
-        if (children && children.constructor !== String && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
+        if ((!children || children.constructor !== String) && hasJsonToEdit && !isInLoop && _options.allowDrop && _options.dropArea !== false) {
             kids = []
             if (children && children.length) {
 

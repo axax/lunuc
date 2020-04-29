@@ -95,7 +95,7 @@ const Util = {
     formatDate(d, options) {
         try {
             return Util.getDateTimeFormat(options).format(new Date(d))
-        }catch (e) {
+        } catch (e) {
             return ''
         }
         /*(new Date(d)).toLocaleString(options && options.lang ? options.lang : _app_.lang, Object.assign({
@@ -123,13 +123,13 @@ const Util = {
             return entityMap[s]
         })
     },*/
-    removeNullValues: (obj,options={}) => {
+    removeNullValues: (obj, options = {}) => {
         let newObj = {}
         Object.keys(obj).forEach((prop) => {
             if (obj[prop] !== null) {
-                if( options.emptyArray && obj[prop].constructor===Array && obj[prop].length===0 ){
+                if (options.emptyArray && obj[prop].constructor === Array && obj[prop].length === 0) {
                     //skip empty arrays
-                }else {
+                } else {
                     newObj[prop] = obj[prop]
                 }
             }
@@ -290,7 +290,7 @@ const Util = {
     },
     chunkArray(arr, chunk) {
         const chunkInt = parseInt(chunk)
-        if(!isNaN(chunkInt)) {
+        if (!isNaN(chunkInt)) {
             return arr.reduce((all, one, i) => {
                 const ch = Math.floor(i / chunkInt)
                 all[ch] = [].concat((all[ch] || []), one)

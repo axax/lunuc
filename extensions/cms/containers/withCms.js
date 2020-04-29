@@ -203,7 +203,7 @@ export default function (WrappedComponent) {
                 return {
                     /*context: {fetchOptions: {method: ownProps.dynamic?'POST':'GET'}},*/
                     variables: getGqlVariables(ownProps),
-                    fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network')
+                    fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network') // cache-first
                 }
             },
             props: ({data: {loading, cmsPage, variables, fetchMore, networkStatus}, ownProps}) => {

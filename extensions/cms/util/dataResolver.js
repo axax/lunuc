@@ -275,6 +275,23 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
                 } else if (segment.reduce) {
                     try {
+                        const checkFilter = (filters, value, key)=>{
+                            if (filters) {
+                                for (let i = 0; i < filters.length; i++) {
+                                    const filter = filters[i]
+                                    if(!filter.is || filter.is==='true') {
+                                        if (matchExpr(filter.expr, {key, value: value[key]})) {
+                                            if (filter.elseRemove) {
+                                                delete value[key]
+                                            }
+                                            return true
+                                        }
+                                    }
+                                }
+                            }
+                            return false
+                        }
+
                         const reduce = (reducePipe, rootData, currentData) => {
                             if (!currentData) {
                                 currentData = rootData
@@ -292,17 +309,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                             Object.keys(value).forEach(key => {
                                                 if (re.loop.reduce) {
                                                     value[key] = re.assign ? assignIfObjectOrArray(value[key]) : value[key]
-                                                    if (re.loop.filter) {
-                                                        for (let i = 0; i < re.loop.filter.length; i++) {
-                                                            const filter = re.loop.filter[i]
-
-                                                            if ( matchExpr(filter.expr, {key, value:value[key]})){
-                                                                if (filter.remove) {
-                                                                    delete value[key]
-                                                                }
-                                                                return
-                                                            }
-                                                        }
+                                                    if (checkFilter(re.loop.filter, value, key)) {
+                                                        return
                                                     }
                                                     reduce(re.loop.reduce, rootData, value[key])
                                                 }
@@ -314,10 +322,13 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                         reduce(re.reduce, rootData, arr)
 
                                     } else if (re.lookup) {
-                                        const lookupData = propertyByPath(re.lookup, rootData)
+                                        const lookupData = propertyByPath(re.lookup.path, rootData)
                                         const value = propertyByPath(re.path, currentData)
                                         const lookedupData = []
                                         value.forEach(key => {
+                                            if (checkFilter(re.lookup.filter, lookupData, key)) {
+                                                return
+                                            }
                                             lookedupData.push(lookupData[key])
                                         })
                                         setPropertyByPath(lookedupData, re.path, currentData)
