@@ -759,11 +759,10 @@ class JsonDomHelper extends React.Component {
                         })
                     }
                 }
-
                 if (_options.elementKey) {
                     const jsonElement = getJsonDomElements(_options.elementKey)
 
-                    if (jsonElement && (isCms || jsonElement.options)) {
+                    if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions)) {
 
                         menuItems.push({
                             name: _options.menuTitle.edit || 'Bearbeiten',
@@ -776,6 +775,7 @@ class JsonDomHelper extends React.Component {
                                 delete newJsonElement.defaults
 
                                 newJsonElement.options = Object.assign({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
+                                newJsonElement.groupOptions = Object.assign({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
 
                                 Object.keys(newJsonElement.options).forEach(key => {
 
@@ -795,28 +795,26 @@ class JsonDomHelper extends React.Component {
                                     }
                                 })
 
-                                if (newJsonElement.groupOptions) {
-                                    Object.keys(newJsonElement.groupOptions).forEach(key => {
-                                        let val = propertyByPath(key, subJson, '_')
-                                        if (val) {
-                                            newJsonElement.options['!' + key + '!add'] = {
-                                                uitype: 'button',
-                                                key,
-                                                group: newJsonElement.groupOptions[key],
-                                                label: 'Hinzufügen',
-                                                newLine: true
-                                            }
-                                            val.forEach((groupValue, idx) => {
-                                                Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
-                                                    newJsonElement.options['!' + key + '!' + fieldKey + '!' + idx] = {
-                                                        ...newJsonElement.groupOptions[key][fieldKey],
-                                                        value: groupValue[fieldKey]
-                                                    }
-                                                })
-                                            })
+                                Object.keys(newJsonElement.groupOptions).forEach(key => {
+                                    let val = propertyByPath(key, subJson, '_')
+                                    if (val) {
+                                        newJsonElement.options['!' + key + '!add'] = {
+                                            uitype: 'button',
+                                            key,
+                                            group: newJsonElement.groupOptions[key],
+                                            label: 'Hinzufügen',
+                                            newLine: true
                                         }
-                                    })
-                                }
+                                        val.forEach((groupValue, idx) => {
+                                            Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
+                                                newJsonElement.options['!' + key + '!' + fieldKey + '!' + idx] = {
+                                                    ...newJsonElement.groupOptions[key][fieldKey],
+                                                    value: groupValue[fieldKey]
+                                                }
+                                            })
+                                        })
+                                    }
+                                })
 
 
                                 if (isCms) {

@@ -85,6 +85,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                             } else {
                                 ele.setAttribute('data-loading', true)
                                 if (tagName === 'SmartImage') {
+
                                     if(eleProps.inlineSvg){
                                         this.fetchSvg()
                                     }else {

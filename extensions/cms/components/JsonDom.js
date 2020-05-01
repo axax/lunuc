@@ -106,7 +106,10 @@ class JsonDom extends React.Component {
         },
         Print,
         'input': props => {
-            if (props.type === 'radio') {
+            if( props.defaultChecked && props.defaultChecked.constructor === String){
+                props.defaultChecked = props.defaultChecked==='true'?true:false
+            }
+            if (props.type === 'radio' || !props.name) {
                 return <input {...props} />
             }
             return <JsonDomInput {...props} />
@@ -666,6 +669,13 @@ class JsonDom extends React.Component {
                         try {
                             // get data from scope by path (foo.bar)
                             data = propertyByPath($d, scope)
+                            if( data && data.constructor === String){
+                                try {
+                                    data = JSON.parse(data)
+                                }catch (e) {
+                                    
+                                }
+                            }
                         } catch (e) {
                             //this.parseError = e
                             this.emitJsonError(e, {loc: 'Loop Datasrouce'})

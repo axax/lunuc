@@ -839,6 +839,20 @@ const baseElements = [
     },
     {
         tagName: 'div',
+        name: 'Custom',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'custom'
+            },
+            p: {
+                ['data-element-key']: 'custom'
+            }
+        },
+        options: {
+        }
+    },
+    {
+        tagName: 'div',
         name: 'Query',
         defaults: {
             $inlineEditor: {

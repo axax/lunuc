@@ -299,8 +299,15 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                             reducePipe.forEach(re => {
                                 if (re.path) {
                                     if (re.key) {
-                                        const value = propertyByPath(re.path, currentData)
-                                        resolvedData[re.key] = re.assign ? assignIfObjectOrArray(value) : value
+                                        const value = propertyByPath(re.path, currentData, '.', re.assign)
+                                        if( re.assign && value && value.constructor === Object){
+                                            Object.keys(value).forEach(key=>{
+                                                if(  value[key] &&  value[key].constructor === Object) {
+                                                    value[key] = Object.assign({},  value[key])
+                                                }
+                                            })
+                                        }
+                                        resolvedData[re.key] = value
                                     } else if (re.loop) {
 
 
@@ -325,6 +332,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                         const lookupData = propertyByPath(re.lookup.path, rootData)
                                         const value = propertyByPath(re.path, currentData)
                                         const lookedupData = []
+                                        let count = 0
                                         value.forEach(key => {
                                             if( re.lookup.facets) {
                                                 const facets = propertyByPath(re.lookup.facets.path,rootData)
@@ -332,14 +340,25 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                                     Object.keys(facets).forEach(facetKey=>{
                                                         const facet = facets[facetKey]
                                                         if( facet ){
-                                                            if( facet.min === undefined || facet.min > lookupData[key][facetKey] ){
-                                                                if( !isNaN(lookupData[key][facetKey])) {
-                                                                    facet.min = lookupData[key][facetKey]
+                                                            if(facet.type==='slider') {
+                                                                if (facet.min === undefined || facet.min > lookupData[key][facetKey]) {
+                                                                    if (!isNaN(lookupData[key][facetKey])) {
+                                                                        facet.min = lookupData[key][facetKey]
+                                                                    }
                                                                 }
-                                                            }
-                                                            if( facet.max === undefined || facet.max < lookupData[key][facetKey] ){
-                                                                if( !isNaN(lookupData[key][facetKey])) {
-                                                                    facet.max = lookupData[key][facetKey]
+                                                                if (facet.max === undefined || facet.max < lookupData[key][facetKey]) {
+                                                                    if (!isNaN(lookupData[key][facetKey])) {
+                                                                        facet.max = lookupData[key][facetKey]
+                                                                    }
+                                                                }
+                                                            }else{
+                                                                if( !facet.values ){
+                                                                    facet.values = {}
+                                                                }
+                                                                if(!facet.values[lookupData[key][facetKey]]){
+                                                                    facet.values[lookupData[key][facetKey]] = {value: lookupData[key][facetKey], count:1}
+                                                                }else{
+                                                                    facet.values[lookupData[key][facetKey]].count++
                                                                 }
                                                             }
                                                         }
@@ -347,10 +366,14 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                                 }
                                             }
 
+
+                                            if(re.lookup.limit && re.lookup.limit<=count){
+                                                return
+                                            }
                                             if (checkFilter(re.lookup.filter, lookupData, key)) {
                                                 return
                                             }
-
+                                            count++
                                             lookedupData.push(lookupData[key])
                                         })
                                         setPropertyByPath(lookedupData, re.path, currentData)
