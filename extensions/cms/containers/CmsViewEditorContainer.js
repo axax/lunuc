@@ -54,22 +54,22 @@ class CmsViewEditorContainer extends React.Component {
 
     templateChangeHistory = []
 
-    static defaultSettings = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth:500}
-    static generalSettingsKeys = ['inlineEditor', 'fixedLayout', 'drawerOpen','drawerWidth']
+    static defaultSettings = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
+    static generalSettingsKeys = ['inlineEditor', 'fixedLayout', 'drawerOpen', 'drawerWidth']
 
     constructor(props) {
         super(props)
         this.state = CmsViewEditorContainer.propsToState(props, null)
     }
 
-    static isLoadingState(props){
+    static isLoadingState(props) {
         return props.loadingKeyValues || props.loading || props.aboutToChange
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if( nextProps.cmsPage && nextProps.keyValues && !CmsViewEditorContainer.isLoadingState(nextProps)){
+        if (nextProps.cmsPage && nextProps.keyValues && !CmsViewEditorContainer.isLoadingState(nextProps)) {
 
-            if (prevState.slug==undefined || nextProps.cmsPage.slug !== prevState.slug ) {
+            if (prevState.slug == undefined || nextProps.cmsPage.slug !== prevState.slug) {
                 console.log('update state')
                 return CmsViewEditorContainer.propsToState(nextProps, prevState)
             }
@@ -102,7 +102,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, style,  serverScript, resources, dataResolver, ssr, slug, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, compress} = props.cmsPage || {}
+        const {template, script, style, serverScript, resources, dataResolver, ssr, slug, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, compress} = props.cmsPage || {}
         const {settings} = CmsViewEditorContainer.getSettingsByKeyValue(props)
         const result = {
             keyValues: props.keyValues,
@@ -122,7 +122,9 @@ class CmsViewEditorContainer extends React.Component {
             compress,
             addNewSite: null
         }
-        if (props.cmsPage && !props.cmsPage._id) {
+        if (state && state.addNewSite) {
+            result.addNewSite = state.addNewSite
+        } else if (props.cmsPage && !props.cmsPage._id) {
             result.addNewSite = {slugNoExist: props.slug, slug: props.slug}
         }
         return result
@@ -196,7 +198,7 @@ class CmsViewEditorContainer extends React.Component {
             }
         }
 
-        const loadingState=CmsViewEditorContainer.isLoadingState(this.props)
+        const loadingState = CmsViewEditorContainer.isLoadingState(this.props)
 
         const isSmallScreen = window.innerWidth < 1000
         // extend with value from state because they are more update to date
@@ -258,10 +260,15 @@ class CmsViewEditorContainer extends React.Component {
                                 }
 
                                 if (error) return `Error! ${error.message}`
-                                if (data.genericDatas.results.length === 0){
+                                if (data.genericDatas.results.length === 0) {
 
                                     this.props._cmsActions.editCmsData(null)
-                                    this.setState({simpleDialog:{title:"Keine Daten", text:"Sie haben vermutlich keine Berechtigung diese Daten zu bearbeiten"}})
+                                    this.setState({
+                                        simpleDialog: {
+                                            title: "Keine Daten",
+                                            text: "Sie haben vermutlich keine Berechtigung diese Daten zu bearbeiten"
+                                        }
+                                    })
                                     return null
                                 }
 
@@ -311,38 +318,38 @@ class CmsViewEditorContainer extends React.Component {
 
 
         const inner = [
-        !loadingState && <WrappedComponent key="cmsView" cmsEditData={cmsEditData}
-                          onChange={this.handleTemplateChange}
-                          inEditor={canManageCmsPages}
-                          onError={this.handleCmsError.bind(this)}
-                          onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
-                          settings={settings}
-                          cmsPage={cmsPageWithState}
-                          {...props} />
+            !loadingState && <WrappedComponent key="cmsView" cmsEditData={cmsEditData}
+                                               onChange={this.handleTemplateChange}
+                                               inEditor={canManageCmsPages}
+                                               onError={this.handleCmsError.bind(this)}
+                                               onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
+                                               settings={settings}
+                                               cmsPage={cmsPageWithState}
+                                               {...props} />
             ,
             <ErrorHandler key="errorHandler" snackbar/>,
             <NetworkStatusHandler key="networkStatus"/>,
             simpleDialog && <SimpleDialog open={true}
-                          onClose={()=>{
-                              this.setState({simpleDialog:null})
-                          }}
-                          actions={[
-                              {
-                                  key: 'ok',
-                                  label: 'Ok',
-                                  type: 'primary'
-                              }]}
-                          title={simpleDialog.title}>
+                                          onClose={() => {
+                                              this.setState({simpleDialog: null})
+                                          }}
+                                          actions={[
+                                              {
+                                                  key: 'ok',
+                                                  label: 'Ok',
+                                                  type: 'primary'
+                                              }]}
+                                          title={simpleDialog.title}>
                 {simpleDialog.text}
             </SimpleDialog>,
             cmsComponentEdit.key && <SimpleDialog fullWidth={true} maxWidth="md" key="templateEditor" open={true}
-                          onClose={this.handleComponentEditClose.bind(this)}
-                          actions={[{
-                              key: 'ok',
-                              label: 'Ok',
-                              type: 'primary'
-                          }]}
-                          title="Edit Component">
+                                                  onClose={this.handleComponentEditClose.bind(this)}
+                                                  actions={[{
+                                                      key: 'ok',
+                                                      label: 'Ok',
+                                                      type: 'primary'
+                                                  }]}
+                                                  title="Edit Component">
 
                 <TemplateEditor
                     fabButtonStyle={{bottom: '3rem', right: '1rem'}}
@@ -699,11 +706,14 @@ class CmsViewEditorContainer extends React.Component {
                                                       },
                                                       update: (store, {data}) => {
                                                           if (!data.errors) {
-
-                                                              this.setState({addNewSite: null},()=>{
+                                                              setTimeout(() => {
+                                                                      window.location.href = `/${slug}`
+                                                                  }, 500
+                                                              )
+                                                              /*,()=>{
                                                                   //this.props.history.push(`/${slug}`)
-                                                                  window.location.href = `/${slug}`
-                                                              })
+
+                                                              })*/
 
                                                           }
                                                       }
@@ -970,9 +980,9 @@ class CmsViewEditorContainer extends React.Component {
 
 
         clearTimeout(this._setStyleDelayed)
-        this._setStyleDelayed = setTimeout(()=>{
+        this._setStyleDelayed = setTimeout(() => {
             this.setState({style})
-        },1000)
+        }, 1000)
 
         this._autoSaveStyle = () => {
             clearTimeout(this._autoSaveStyleTimeout)
@@ -1142,7 +1152,7 @@ class CmsViewEditorContainer extends React.Component {
 
             Object.keys(settings).forEach(key => {
                 if (CmsViewEditorContainer.generalSettingsKeys.indexOf(key) > -1) {
-                    if ( Util.shallowCompare(generalSettings[key],settings[key])) {
+                    if (Util.shallowCompare(generalSettings[key], settings[key])) {
                         generalSettingsChanged = true
                         generalSettings[key] = settings[key]
                     }

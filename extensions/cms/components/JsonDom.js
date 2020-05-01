@@ -673,7 +673,7 @@ class JsonDom extends React.Component {
                                 try {
                                     data = JSON.parse(data)
                                 }catch (e) {
-                                    
+
                                 }
                             }
                         } catch (e) {

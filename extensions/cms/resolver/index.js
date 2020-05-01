@@ -75,7 +75,7 @@ export default db => ({
 
                 throw new Error('Cms page doesn\'t exist')
             }
-            const scope = {...createScopeForDataResolver(query, props), page: {slug, host: getHostFromHeaders(headers)}}
+            const scope = {...createScopeForDataResolver(query, props), page: {slug, host: getHostFromHeaders(headers)}, editmode}
             const {_id, createdBy, template, script, style, resources, dataResolver, parseResolvedData,alwaysLoadAssets,compress,
                 ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public

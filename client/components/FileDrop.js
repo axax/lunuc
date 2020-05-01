@@ -13,9 +13,9 @@ _app_.UploadUtil = UploadUtil
 
 /* TODO: make it configurable */
 const DEFAULT_MAX_FILE_SIZE_MB = 10,
-    IMAGE_QUALITY = 0.6,
-    IMAGE_MAX_WIDTH = 1000,
-    IMAGE_MAX_HEIGHT = 1000,
+    IMAGE_QUALITY = 0.85,
+    IMAGE_MAX_WIDTH = 1400,
+    IMAGE_MAX_HEIGHT = 1400,
     DEFAULT_ACCEPT = 'image/*'
 
 const styles = theme => ({
@@ -231,7 +231,6 @@ class FileDrop extends React.Component {
                 if (isImage) {
                     images.push(URL.createObjectURL(file))
                 }
-
                 if (resizeImages && isImage) {
                     UploadUtil.resizeImageFromFile({
                         file,

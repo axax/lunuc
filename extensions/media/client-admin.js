@@ -100,7 +100,17 @@ export default () => {
                     [
                         <div style={{position: 'relative', zIndex: 3}} key="typePicker">
                             <TypePicker onChange={(e) => {
+
+
                                 setConversion(e.target.value && e.target.value.length ? JSON.parse(e.target.value[0].conversion) : null)
+
+                                let conversion = []
+                                e.target.value.forEach(value => {
+                                    conversion = JSON.parse(value.conversion)
+                                })
+
+                                meta._this.setSettingsForType(type, {conversion})
+
                             }} name="conversion" placeholder="Select a conversion"
                                         type="MediaConversion"/>
 
@@ -149,13 +159,13 @@ export default () => {
 
     Hook.on('TypesContainerRender', function ({type, content}) {
         if (type === 'Media'){
-
             content.splice(1, 1,<FileDrop key="fileDrop" multi={true} accept="*/*"
                                           uploadTo="/graphql/upload"
                                           resizeImages={true}
                                           imagePreview={false}
                                           maxSize={3000}
                                           data={{group: this.settings.Media ? this.settings.Media.groups: null}}
+                                          conversion={this.settings.Media ? this.settings.Media.conversion: null}
                                           onSuccess={r => {
                                               setTimeout(()=> {
                                                   this.getData(this.pageParams, false)
