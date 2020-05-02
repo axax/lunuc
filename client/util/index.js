@@ -191,7 +191,22 @@ const Util = {
     getMediaSrc(media, src) {
         return src ? src : (media.src ? media.src : _app_.config.UPLOAD_URL + '/' + media._id)
     },
-    getImageObject(raw) {
+    canUseWebP() {
+        if( _app_.webpSupported !== undefined){
+            return _app_.webpSupported
+        }
+        _app_.webpSupported = false
+        const elem = document.createElement('canvas')
+
+        if (!!(elem.getContext && elem.getContext('2d'))) {
+            // was able or not to get WebP representation
+            _app_.webpSupported = elem.toDataURL('image/webp').indexOf('data:image/webp') == 0
+        }
+
+        // very old browser like IE 8, canvas not supported
+        return _app_.webpSupported
+    },
+    getImageObject(raw, options) {
         let image
         if (!raw) {
             return {
@@ -219,6 +234,37 @@ const Util = {
         const data = {alt: image.name}
         if (!image.src) {
             data.src = _app_.config.UPLOAD_URL + '/' + image._id + '/' + config.PRETTYURL_SEPERATOR + '/' + image.name
+
+            if (options) {
+                let params = '?'
+                if (options.resize) {
+
+                    if (options.resize === 'auto') {
+                        if (window.innerWidth <= 800) {
+                            params += `width=800`
+                        } else if (window.innerWidth <= 1200) {
+                            params += `width=1200`
+                        }
+                    } else {
+                        params += `width=${options.resize.width}&height=${options.resize.height}`
+                    }
+                }
+                if (options.quality) {
+                    if (params !== '?') {
+                        params += '&'
+                    }
+                    params += `quality=${options.quality}`
+                }
+
+                if(options.webp && Util.canUseWebP()){
+
+                    if (params !== '?') {
+                        params += '&'
+                    }
+                    params += 'format=webp'
+                }
+                data.src += params
+            }
         } else {
             data.src = image.src
         }
@@ -275,14 +321,14 @@ const Util = {
     // a simple implementation of the shallowCompare.
     // only compares the first level properties and hence shallow.
     shallowCompare(newObj, prevObj) {
-        if( !newObj || newObj.constructor !== Object){
+        if (!newObj || newObj.constructor !== Object) {
             return newObj !== prevObj
         }
-        if( !prevObj || prevObj.constructor !== Object){
+        if (!prevObj || prevObj.constructor !== Object) {
             return newObj !== prevObj
         }
         for (const key in newObj) {
-            if (newObj[key] !== prevObj[key]){
+            if (newObj[key] !== prevObj[key]) {
                 return true
             }
         }

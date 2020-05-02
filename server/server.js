@@ -12,7 +12,7 @@ import {getHostFromHeaders} from 'util/host'
 import finalhandler from 'finalhandler'
 import {AUTH_HEADER} from 'api/constants'
 import {decodeToken} from 'api/util/jwt'
-
+import sharp from 'sharp'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX} = config
 
@@ -197,11 +197,7 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
 }
 
 
-// Initialize http api
-const app = (USE_HTTPX ? httpx : http).createServer(options, function (req, res) {
-
-    const host = getHostFromHeaders(req.headers)
-
+function hasHttpsWwwRedirect(host, req, res) {
     if (host !== 'localhost' && !net.isIP(host)) {
 
         // force www
@@ -239,7 +235,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, function (req, res)
                 } else {
                     res.writeHead(301, {"Location": "https://" + newhost + req.url})
                     res.end()
-                    return
+                    return true
                 }
             }
         }
@@ -248,12 +244,154 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, function (req, res)
             console.log(`${req.connection.remoteAddress}: Redirect to ${newhost}`)
             res.writeHead(301, {"Location": (this.constructor.name === 'Server' ? 'http' : 'https') + "://" + newhost + req.url})
             res.end()
-            return
+            return true
         }
+    }
+    return false
+}
+
+async function handleUploadFiles(uri, parsedUrl, req, res) {
+    const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
+
+    // remove pretty url part
+    const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/')
+    let modUri
+    if (pos >= 0) {
+        modUri = uri.substring(0, pos)
+    } else {
+        modUri = uri
+    }
+
+
+    let filename = path.join(upload_dir, modUri.substring(UPLOAD_URL.length + 1).replace(/\.\.\//g, ''))
+
+
+    if (fs.existsSync(filename)) {
+
+
+        // resize file
+        if (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format) {
+            const width = parseInt(parsedUrl.query.width),
+                height = parseInt(parsedUrl.query.height),
+                format = parsedUrl.query.format
+
+
+            if (!isNaN(width) || !isNaN(height) || format) {
+
+                const resizeOptions = {fit: sharp.fit.cover}
+
+                if (!isNaN(width)) {
+                    resizeOptions.width = width
+                }
+
+                if (!isNaN(height)) {
+                    resizeOptions.height = height
+                }
+
+                let quality = parseInt(parsedUrl.query.quality)
+                if (isNaN(quality)) {
+                    quality = 80
+                }
+
+                let modfilename = `${filename}@${width}x${height}-${quality}${format?'-'+format:''}`
+
+                if (!fs.existsSync(modfilename)) {
+                    console.log(`modify file ${filename} to ${modfilename}`)
+                    //resize image
+                    try {
+                        const resizedFile = await sharp(filename).resize(resizeOptions)
+
+                        if (format==='webp') {
+                            await resizedFile.webp({quality, alphaQuality: quality, lossless: false, force: true}).toFile(modfilename)
+                        } else {
+                            await resizedFile.jpeg({
+                                quality,
+                                chromaSubsampling: '4:2:0',
+                                force: false
+                            }).toFile(modfilename)
+                        }
+                        filename = modfilename
+                    } catch (e) {
+                        console.error(e)
+                    }
+                } else {
+                    filename = modfilename
+                }
+            }
+        }
+
+
+        const stat = fs.statSync(filename)
+
+        const headerExtra = {
+            'Vary': 'Accept-Encoding',
+            'Last-Modified': stat.mtime.toUTCString(),
+            'Connection': 'Keep-Alive',
+            'Cache-Control': 'public, max-age=31536000',
+            'Content-Length': stat.size
+        }
+
+
+        let code = 200, streamOption
+
+        let ext = parsedUrl.query.ext
+
+        if (!ext) {
+            const pos = filename.lastIndexOf('.')
+            if (pos >= 0) {
+                ext = filename.substring(pos + 1).toLocaleLowerCase()
+            }
+        }
+        if (ext) {
+            const mimeType = MimeType.detectByExtension(ext)
+
+            headerExtra['Content-Type'] = mimeType
+
+            if (ext === 'mp3' || ext === 'mp4') {
+
+                delete headerExtra['Cache-Control']
+                headerExtra['Accept-Ranges'] = 'bytes'
+
+                const range = req.headers.range
+
+                if (req.headers.range) {
+                    const parts = range.replace(/bytes=/, "").split("-"),
+                        partialstart = parts[0],
+                        partialend = parts[1],
+                        start = parseInt(partialstart, 10),
+                        end = partialend ? parseInt(partialend, 10) : stat.size - 1,
+                        chunksize = (end - start) + 1
+
+                    code = 206
+                    streamOption = {start, end}
+                    headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
+                    headerExtra['Content-Length'] = chunksize
+
+                }
+            }
+        }
+
+        const fileStream = fs.createReadStream(filename, streamOption)
+        res.writeHead(code, {...headerExtra})
+        fileStream.pipe(res)
+    } else {
+        console.log('not exists: ' + filename)
+        sendError(res, 404)
+    }
+}
+
+// Initialize http api
+const app = (USE_HTTPX ? httpx : http).createServer(options, async (req, res) => {
+
+    const host = getHostFromHeaders(req.headers)
+
+    if (hasHttpsWwwRedirect(host, req, res)) {
+        return
     }
 
     const parsedUrl = url.parse(req.url, true), uri = parsedUrl.pathname
 
+    //small security check
     if (uri.indexOf('..') >= 0) {
         sendError(res, 403)
         return
@@ -301,81 +439,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, function (req, res)
 
 
         } else if (uri.startsWith(UPLOAD_URL + '/')) {
-            const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
-            // uploads
-
-            const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/')
-            let modUri
-            if (pos >= 0) {
-                modUri = uri.substring(0, pos)
-            } else {
-                modUri = uri
-            }
-
-
-            const filename = path.join(upload_dir, modUri.substring(UPLOAD_URL.length + 1).replace(/\.\.\//g, ''))
-
-
-            fs.exists(filename, (exists) => {
-                if (exists) {
-                    const stat = fs.statSync(filename)
-
-                    const headerExtra = {
-                        'Vary': 'Accept-Encoding',
-                        'Last-Modified': stat.mtime.toUTCString(),
-                        'Connection': 'Keep-Alive',
-                        'Cache-Control': 'public, max-age=31536000',
-                        'Content-Length': stat.size
-                    }
-                    let code = 200, streamOption
-
-                    let ext = parsedUrl.query.ext
-
-                    if (!ext) {
-                        const pos = filename.lastIndexOf('.')
-                        if (pos >= 0) {
-                            ext = filename.substring(pos + 1).toLocaleLowerCase()
-                        }
-                    }
-                    if (ext) {
-                        const mimeType = MimeType.detectByExtension(ext)
-
-                        headerExtra['Content-Type'] = mimeType
-
-                        if (ext === 'mp3' || ext === 'mp4') {
-
-                            delete headerExtra['Cache-Control']
-                            headerExtra['Accept-Ranges'] = 'bytes'
-
-                            const range = req.headers.range
-
-                            if (req.headers.range) {
-                                const parts = range.replace(/bytes=/, "").split("-"),
-                                    partialstart = parts[0],
-                                    partialend = parts[1],
-                                    start = parseInt(partialstart, 10),
-                                    end = partialend ? parseInt(partialend, 10) : stat.size - 1,
-                                    chunksize = (end - start) + 1
-
-                                code = 206
-                                streamOption = {start, end}
-                                headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
-                                headerExtra['Content-Length'] = chunksize
-
-                            }
-                        }
-                    }
-
-                    const fileStream = fs.createReadStream(filename, streamOption)
-                    res.writeHead(code, {...headerExtra})
-                    fileStream.pipe(res)
-                } else {
-                    console.log('not exists: ' + filename)
-                    sendError(res, 404)
-                }
-            })
-
-
+            await handleUploadFiles(uri, parsedUrl, req, res)
         } else {
 
             // check with and without www

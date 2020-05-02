@@ -79,8 +79,8 @@ class JsonDom extends React.Component {
         /* Other components */
         FileDrop,
         MarkDown,
-        'SmartImage': ({src, caption, wrapper, alt,inlineSvg,svgData, ...props}) => {
-            let imageData = Util.getImageObject(src)
+        'SmartImage': ({src, options, caption, wrapper, alt,inlineSvg,svgData, ...props}) => {
+            let imageData = Util.getImageObject(src, options)
             imageData['data-smartimage'] = true
             const imgTag = props =>{
                 if(svgData){
