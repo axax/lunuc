@@ -272,8 +272,12 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
         // resize file
         if (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format) {
             const width = parseInt(parsedUrl.query.width),
-                height = parseInt(parsedUrl.query.height),
-                format = parsedUrl.query.format
+                height = parseInt(parsedUrl.query.height)
+
+            let format = parsedUrl.query.format
+            if( format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp')<0){
+                format = false
+            }
 
 
             if (!isNaN(width) || !isNaN(height) || format) {

@@ -191,21 +191,6 @@ const Util = {
     getMediaSrc(media, src) {
         return src ? src : (media.src ? media.src : _app_.config.UPLOAD_URL + '/' + media._id)
     },
-    canUseWebP() {
-        if( _app_.webpSupported !== undefined){
-            return _app_.webpSupported
-        }
-        _app_.webpSupported = false
-        const elem = document.createElement('canvas')
-
-        if (!!(elem.getContext && elem.getContext('2d'))) {
-            // was able or not to get WebP representation
-            _app_.webpSupported = elem.toDataURL('image/webp').indexOf('data:image/webp') == 0
-        }
-
-        // very old browser like IE 8, canvas not supported
-        return _app_.webpSupported
-    },
     getImageObject(raw, options) {
         let image
         if (!raw) {
@@ -256,7 +241,7 @@ const Util = {
                     params += `quality=${options.quality}`
                 }
 
-                if(options.webp && Util.canUseWebP()){
+                if(options.webp){
 
                     if (params !== '?') {
                         params += '&'
