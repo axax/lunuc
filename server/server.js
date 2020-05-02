@@ -385,7 +385,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async (req, res) =>
 
     const host = getHostFromHeaders(req.headers)
 
-    if (hasHttpsWwwRedirect(host, req, res)) {
+    if (hasHttpsWwwRedirect.call(this,host, req, res)) {
         return
     }
 
