@@ -106,9 +106,6 @@ class JsonDom extends React.Component {
         },
         Print,
         'input': props => {
-            if( props.defaultChecked && props.defaultChecked.constructor === String){
-                props.defaultChecked = props.defaultChecked==='true'?true:false
-            }
             if (props.type === 'radio' || !props.name) {
                 return <input {...props} />
             }
@@ -845,7 +842,7 @@ class JsonDom extends React.Component {
                             //Parses a string of inline styles into a javascript object with casing for react
                             eleProps.style = parseStyles(eleProps.style)
                         }
-                        if (eleProps.name) {
+                        if (eleProps.name && eleProps.binding !== false) {
                             // handle controlled input here
                             if (eleProps.type === 'radio') {
                                 if (eleProps.defaultChecked && !this.bindings[eleProps.name]) {

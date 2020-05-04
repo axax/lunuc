@@ -75,7 +75,7 @@ const DomUtil = {
                     allowReturnOutsideFunction: true
                 },
                 presets: [
-                    ['es2015', {modules: false}]
+                    ['es2015', {modules: false, loose: true}]
                 ]
             })
 
@@ -85,7 +85,7 @@ const DomUtil = {
                 }
                 DomUtil.es5Cache[code] = result.code
             }
-            console.log(`Js to es5 in ${new Date().getTime() - startTime}ms for ${code.substring(0, 20)}...`)
+            console.log(`Js to es5 in ${new Date().getTime() - startTime}ms for ${code.substring(0, 60)}...`)
             return result.code
         }
         return code

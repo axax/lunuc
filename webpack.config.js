@@ -257,7 +257,14 @@ if (DEV_MODE) {
                 {
                     from: /.*\/-\/.*/,
                     to: function (context) {
-                        return context.request.url.split('/' + APP_CONFIG.options.PRETTYURL_SEPERATOR + '/')[0]
+                        const url=context.request.url,match = '/' + APP_CONFIG.options.PRETTYURL_SEPERATOR + '/'
+                        if( url.indexOf(match)> -1){
+                            if( url.indexOf(APP_VALUES.UPLOAD_DIR)===0 ){
+                                return url.split(match)[0]
+                            }
+                            return '/'
+                        }
+                        return context.request.url
                     }
                 }
             ]

@@ -154,6 +154,7 @@ const baseElements = [
                                 $inlineEditor: false,
                                 t: 'li',
                                 p: {
+                                    ['data-slide-count']: '$.slide{this.scope.__sliderData.length}',
                                     style: {
                                         left: "$.slide{slide._index*100}%"
                                     }
@@ -530,6 +531,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=pdf',
+
                 template: '${_app_.config.UPLOAD_URL}/${_id}/-/${name}'
             },
             c: {
