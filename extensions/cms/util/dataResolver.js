@@ -357,6 +357,15 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                             }
                                         }
 
+                                        if(re.lookup.sum){
+                                            let sum = propertyByPath(re.lookup.sum.path, rootData)
+                                            if( !sum ){
+                                                sum = 0
+                                            }
+                                            sum += lookedupData.length
+                                            setPropertyByPath(sum, re.lookup.sum.path, rootData)
+                                        }
+
                                         if( re.key){
                                             resolvedData[re.key] = lookedupData
                                         }else {
@@ -373,7 +382,11 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                             })
                                         }
                                         if(re.get){
-                                            resolvedData[re.key] = value[re.get]
+                                            let getKey = propertyByPath(re.get, currentData)
+                                            if( getKey === null){
+                                                getKey = re.get
+                                            }
+                                            resolvedData[re.key] = value[getKey]
                                         }else {
                                             resolvedData[re.key] = value
                                         }
