@@ -13,6 +13,7 @@
   "core.address.place": "Ort",
   "core.login.invalid": "Benutzer oder Passwort sind ungültig",
   "core.login.blocked": "Benutzer gesperrt. Probieren Sie es in ein paar Minuten nochmals.",
+  "core.update.permission.error": "Type %name% konnte nicht geändert werden. Sie haben möglicherweise keine Berechtigung Daten von anderen Benutzer zu ändern.",
   "FileDrop.dropArea": "Ziehen Sie Dateien hierhin oder klicken Sie hier und wählen Sie Dateien zum Hochladen aus.",
   "FileDrop.uploadSuccess": "Dateiupload war erfolgreich",
   "TypesContainer.filter": "Suche (spezifisches Feld z.B. name=xyz)",

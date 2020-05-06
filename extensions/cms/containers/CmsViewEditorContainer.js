@@ -41,7 +41,7 @@ import {getTypeQueries} from 'util/types'
 import TypeEdit from '../../../client/components/types/TypeEdit'
 import withType from '../../../client/components/types/withType'
 import Util from '../../../client/util'
-import {CAPABILITY_MANAGE_CMS_PAGES, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
+import {CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 import CodeEditor from 'client/components/CodeEditor'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import GenericForm from '../../../client/components/GenericForm'
@@ -206,7 +206,7 @@ class CmsViewEditorContainer extends React.Component {
 
         console.log('render CmsViewEditorContainer')
 
-        const canManageCmsPages = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_PAGES),
+        const canManageCmsPages = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_CONTENT),
             canMangeCmsTemplate = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
 
         let cmsEditDataProps, cmsEditDataValue
@@ -625,15 +625,24 @@ class CmsViewEditorContainer extends React.Component {
                 </div>
             </div>
 
-            const moreMenu = [{
-                divider: true,
-                name: _t('CmsViewEditorContainer.addnewpage'), onClick: () => {
-                    this.setState({addNewSite: {}})
+            const moreMenu = [
+                {
+                    divider: true,
+                    name: _t('CmsViewEditorContainer.addnewpage'), onClick: () => {
+                        this.setState({addNewSite: {}})
 
+                    }
                 }
-            }
             ]
+           /* config.LANGUAGES.forEach(lang=>{
+                moreMenu.push({
+                    name: 'Sprache '+lang, onClick: () => {
 
+
+                    }
+                })
+            })
+*/
             if (this.templateChangeHistory.length > 0) {
                 moreMenu.push(
                     {

@@ -21,7 +21,6 @@ import {
 import GenericForm from 'client/components/GenericForm'
 import classNames from 'classnames'
 import AddToBody from './AddToBody'
-import DomUtil from 'client/util/dom'
 import DomUtilAdmin from 'client/util/domAdmin'
 import Util from 'client/util'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
@@ -32,6 +31,7 @@ import {ApolloClient} from '@apollo/client'
 import {withApollo} from '@apollo/react-hoc'
 import {gql} from '@apollo/client'
 import {deepMergeToFirst} from 'util/deepMerge'
+import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 
 const {UPLOAD_URL} = config
 
@@ -619,7 +619,7 @@ class JsonDomHelper extends React.Component {
     }
 
     render() {
-        const {classes, _WrappedComponent, _json, _cmsActions, _onChange, _onDataResolverPropertyChange, children, _tagName, _options, _inlineEditor, onChange, onClick, ...rest} = this.props
+        const {classes, _WrappedComponent, _json, _cmsActions, _onChange, _onDataResolverPropertyChange, children, _tagName, _options, _user, _inlineEditor, onChange, onClick, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         const menuItems = []
@@ -827,7 +827,7 @@ class JsonDomHelper extends React.Component {
                     }
                 }
 
-                if (_options.menu.editTemplate !== false) {
+                if (_options.menu.editTemplate !== false && Util.hasCapability(_user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
                     menuItems.push({
                         name: 'Template bearbeiten',
                         icon: <BuildIcon/>,

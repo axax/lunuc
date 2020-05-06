@@ -10,6 +10,7 @@ import {
 import Hook from 'util/hook'
 import AggregationBuilder from './AggregationBuilder'
 import Cache from 'util/cache'
+import _t from "../../../util/i18nServer";
 
 const {DEFAULT_LANGUAGE} = config
 
@@ -28,7 +29,7 @@ const buildCollectionName = async (db, context, typeName, _version) => {
 const postConvertData = (data, typeName) => {
 
     // here is a good place to handle: Cannot return null for non-nullable
-    const repairMode =false
+    const repairMode = false
 
     if (data.results) {
         const typeDefinition = getType(typeName) || {}
@@ -38,8 +39,8 @@ const postConvertData = (data, typeName) => {
             for (let i = 0; i < data.results.length; i++) {
                 const item = data.results[i]
 
-                if( item.createdBy === null){
-                    item.createdBy = {_id:0, username: 'null reference'}
+                if (item.createdBy === null) {
+                    item.createdBy = {_id: 0, username: 'null reference'}
                 }
 
                 for (let y = 0; y < typeDefinition.fields.length; y++) {
@@ -68,8 +69,6 @@ const postConvertData = (data, typeName) => {
                      }
                      }*/
                 }
-
-
 
 
                 if (!repairMode && !hasField) {
@@ -108,23 +107,22 @@ const GenericResolver = {
                         if (await Util.userHasCapability(db, context, typeDefinition.access.read)) {
                             match = {}
                             userFilter = false
-                        }else if(typeDefinition.noUserRelation){
+                        } else if (typeDefinition.noUserRelation) {
                             throw new Error(`no permission to access data ${typeName}`)
                         }
                     }
                 }
 
                 if (userFilter) {
-                    match = {createdBy: ObjectId(context.id)}
+                    match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
                 }
             }
         }
 
-
         let cacheKey, cacheTime
-        if( cache !== undefined) {
+        if (cache !== undefined) {
             if (cache.constructor === Object) {
-                if( cache.if!=='false') {
+                if (cache.if !== 'false') {
                     cacheTime = cache.expires
                     cacheKey = cache.key
                 }
@@ -152,9 +150,9 @@ const GenericResolver = {
         })
 
         const {dataQuery, countQuery} = aggregationBuilder.query()
-       /* if (typeName.indexOf("GenericData") >= 0) {
-            console.log(JSON.stringify(dataQuery, null, 4))
-        }*/
+        /* if (typeName.indexOf("GenericData") >= 0) {
+             console.log(JSON.stringify(dataQuery, null, 4))
+         }*/
         //console.log(JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
@@ -172,9 +170,9 @@ const GenericResolver = {
                 results: null
             }
         } else {
-            if( postConvert === false) {
+            if (postConvert === false) {
                 result = results[0]
-            }else{
+            } else {
                 result = postConvertData(results[0], typeName)
             }
         }
@@ -311,7 +309,7 @@ const GenericResolver = {
             _id: ObjectId(data._id)
         }
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            options.createdBy = ObjectId(context.id)
+            options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
         }
 
         const collection = db.collection(collectionName)
@@ -356,7 +354,7 @@ const GenericResolver = {
         }
 
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            options.createdBy = ObjectId(context.id)
+            options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
         }
 
         const collection = db.collection(collectionName)
@@ -388,7 +386,7 @@ const GenericResolver = {
 
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
 
-            if( data.createdBy && data.createdBy !== context.id){
+            if (data.createdBy && data.createdBy !== context.id) {
                 throw new Error('user is not allow to change field createdBy')
             }
 
@@ -403,7 +401,7 @@ const GenericResolver = {
             }
 
             if (userFilter) {
-                params.createdBy = ObjectId(context.id)
+                params.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
             }
         }
 
@@ -442,7 +440,7 @@ const GenericResolver = {
         }, {returnOriginal: false}))
 
         if (result.ok !== 1 || !result.lastErrorObject.updatedExisting) {
-            throw new Error(collectionName + ' could not be changed. You might not have premissions to manage other users')
+            throw new Error( _t('core.update.permission.error', context.lang, {name: collectionName}))
         }
         const returnValue = {
             ...data,
@@ -499,12 +497,12 @@ const GenericResolver = {
             if (fields) {
                 Object.keys(result).forEach(field => {
                     if (fields[field]) {
-                        if( fields[field].reference && result[field].constructor !== Object) {
+                        if (fields[field].reference && result[field].constructor !== Object) {
                             // is a reference
                             // TODO also resolve fields of subtype
                             result[field] = {_id: result[field]}
-                        }else if(fields[field].type==='Object' && result[field].constructor === Object){
-                            result[field] =JSON.stringify(result[field])
+                        } else if (fields[field].type === 'Object' && result[field].constructor === Object) {
+                            result[field] = JSON.stringify(result[field])
                         }
                     }
                 })

@@ -138,13 +138,13 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                 const anonymousUser = await Util.userByName(db, 'anonymous')
                                 context.id = anonymousUser._id.toString()
                             }
-                            match = {createdBy: ObjectId(context.id)}
+                            match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
                         } else if (restriction.type === 'role') {
 
                             if (await Util.userHasCapability(db, context, restriction.role)) {
                                 match = {}
                             } else {
-                                match = {createdBy: ObjectId(context.id)}
+                                match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
                             }
                         } else {
                             match = {}

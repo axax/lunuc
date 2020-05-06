@@ -267,9 +267,9 @@ Hook.on('Types', ({types}) => {
                 readOnly: true
             },
             {
-                name: 'superior',
+                name: 'junior',
                 type: 'User',
-                label: 'Superior User',
+                label: 'Junior User',
                 reference: true,
                 multi:true,
                 fields: ['username']

@@ -27,7 +27,7 @@ export const userSchemaRaw = `
         note: [Note]
         meta: String
         role: UserRole
-        superior: [User]
+        junior: [User]
     }
     
     type UserResult {
@@ -99,7 +99,7 @@ export const userSchemaRaw = `
 			picture: ID
 			emailConfirmed: Boolean
             role: ID
-            superior: [ID]
+            junior: [ID]
 		): User
 		
 		updateUser (
@@ -110,7 +110,7 @@ export const userSchemaRaw = `
 			password: String
 			emailConfirmed: Boolean
             role: ID
-            superior: [ID]
+            junior: [ID]
 		): User
 		
 		updateUserRole (

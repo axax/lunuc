@@ -910,6 +910,7 @@ class JsonDom extends React.Component {
                             eleProps._options = $inlineEditor || {}
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
+                            eleProps._user = this.props.user
                             eleProps._onChange = this.props.onChange
                             eleProps._onDataResolverPropertyChange = this.props.onDataResolverPropertyChange
                             eleType = JsonDomHelper

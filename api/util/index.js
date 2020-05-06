@@ -214,6 +214,19 @@ const Util = {
 
         return user
     },
+    userAndJuniorIds: async (db, id) => {
+
+        const user = await Util.userById(db, id)
+
+        const ids = []
+        ids.push(ObjectId(id))
+        if (user.junior) {
+            user.junior.forEach(jun => {
+                ids.push(ObjectId(jun))
+            })
+        }
+        return ids
+    },
     userByName: async (db, name) => {
         const cacheKeyUser = 'User' + name
         let user = Cache.get(cacheKeyUser)
