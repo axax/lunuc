@@ -33,7 +33,7 @@ exports.createServer = (opts, handler) => {
             // connection hangs, potentially crashing
             // the process. Prior to NodeJS 10.x
             // the socket may be resumed synchronously.
-            process.nextTick(() =>{
+            process.nextTick(() => {
                 socket.resume()
             })
         })
@@ -42,6 +42,12 @@ exports.createServer = (opts, handler) => {
             console.log('server socket end')
         })
 
+        socket.on("error", (err) => {
+                console.log("Caught httpx server socket error: ")
+                console.log(err.stack)
+            }
+        )
+
     })
 
 
@@ -49,11 +55,11 @@ exports.createServer = (opts, handler) => {
     server.https = http2.createSecureServer(opts, handler)
 
 
-    server.on('error',err=>{
+    server.on('error', err => {
         console.log('net err', err)
     })
 
-    server.https.on('error',err=>{
+    server.https.on('error', err => {
         console.log('https err', err)
     })
     return server

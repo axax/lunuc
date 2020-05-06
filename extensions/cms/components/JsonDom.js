@@ -306,6 +306,10 @@ class JsonDom extends React.Component {
     componentDidMount() {
         this._ismounted = true
         this.node = ReactDOM.findDOMNode(this)
+
+
+        this.addStyle(this.props.style)
+
         this.runJsEvent('mount', true)
 
         let pr = this.props._parentRef
@@ -319,7 +323,6 @@ class JsonDom extends React.Component {
             }
         }
 
-        this.addStyle(this.props.style)
         this.checkResources()
         this._historyUnlisten = this.props.history.listen(() => {
             const before = {pathname: this.scope.pathname, params: this.scope.params, hashParams: this.scope.params}

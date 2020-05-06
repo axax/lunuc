@@ -85,42 +85,37 @@ export default () => {
             props.actions.splice(1, 1)
 
             const MediaUploader = () => {
+
                 const [conversion, setConversion] = useState(
-                    []
+                    meta._this.settings.Media && meta._this.settings.Media.conversion ? meta._this.settings.Media.conversion : []
                 )
 
                 const [group, setGroup] = useState(
-                    []
+                    meta._this.settings.Media && meta._this.settings.Media.group ? meta._this.settings.Media.group : []
                 )
 
                 const [useCdn, setUseCdn] = useState(
                     false
                 )
+
+                const groupIds = []
+                group.forEach(value => {
+                    groupIds.push(value._id)
+                })
+
                 return (
                     [
                         <div style={{position: 'relative', zIndex: 3}} key="typePicker">
-                            <TypePicker onChange={(e) => {
-
-
-                                setConversion(e.target.value && e.target.value.length ? JSON.parse(e.target.value[0].conversion) : null)
-
-                                let conversion = []
-                                e.target.value.forEach(value => {
-                                    conversion = JSON.parse(value.conversion)
-                                })
-
-                                meta._this.setSettingsForType(type, {conversion})
+                            <TypePicker value={conversion} onChange={(e) => {
+                                setConversion(e.target.value)
+                                meta._this.setSettingsForType(type, {conversion: e.target.value})
 
                             }} name="conversion" placeholder="Select a conversion"
                                         type="MediaConversion"/>
 
-                            <TypePicker onChange={(e) => {
-                                const groups = []
-                                e.target.value.forEach(value => {
-                                    groups.push(value._id)
-                                })
-                                meta._this.setSettingsForType(type, {groups})
-                                setGroup(groups)
+                            <TypePicker value={group} onChange={(e) => {
+                                meta._this.setSettingsForType(type, {group:e.target.value})
+                                setGroup(e.target.value)
                             }} multi={true} name="group" placeholder="Select a group"
                                         type="MediaGroup"/>
                         </div>,
@@ -128,9 +123,9 @@ export default () => {
                                       onChange={(e) => {
                                           setUseCdn(e.target.checked)
                                       }} checked={useCdn}/>,
-                        <FileDrop key="fileDrop" multi={true} conversion={conversion} accept="*/*"
+                        <FileDrop key="fileDrop" multi={true} conversion={conversion && conversion.length>0?JSON.parse(conversion[0].conversion):null} accept="*/*"
                                   uploadTo="/graphql/upload" resizeImages={true}
-                                  data={{group, useCdn}}
+                                  data={{group: groupIds, useCdn}}
                                   maxSize={3000}
                                   imagePreview={false}
                                   onSuccess={r => {
@@ -159,6 +154,15 @@ export default () => {
 
     Hook.on('TypesContainerRender', function ({type, content}) {
         if (type === 'Media'){
+            let info=''
+            if( this.settings.Media ){
+                if(this.settings.Media.group){
+                    info += ' Group='+this.settings.Media.group[0].name
+                }
+                if(this.settings.Media.conversion){
+                    info += ' Conversion='+this.settings.Media.conversion[0].name
+                }
+            }
             content.splice(1, 1,<FileDrop key="fileDrop" multi={true} accept="*/*"
                                           uploadTo="/graphql/upload"
                                           resizeImages={true}
@@ -170,7 +174,7 @@ export default () => {
                                               setTimeout(()=> {
                                                   this.getData(this.pageParams, false)
                                               },1000)
-                                          }}/>)
+                                          }}/>,<small>{info}</small>)
         }
     })
 

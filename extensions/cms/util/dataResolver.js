@@ -305,6 +305,9 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                         if( value!== undefined) {
                                             if (value.constructor === Number) {
                                                 lookedupData  = lookupData[value]
+                                                if( lookupData === undefined){
+                                                    console.warn(`${value} not found in`, lookupData)
+                                                }
                                             }else if (value.constructor === Array) {
                                                 lookedupData = []
                                                 let count = 0
@@ -383,7 +386,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                         }
                                         if(re.get){
                                             let getKey = propertyByPath(re.get, currentData)
-                                            if( getKey === null){
+                                            if( getKey === null || getKey === undefined){
                                                 getKey = re.get
                                             }
                                             resolvedData[re.key] = value[getKey]

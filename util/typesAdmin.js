@@ -10,7 +10,6 @@ export const typeDataToLabel = (item, pickerField) => {
     let label = []
 
     let pickers = []
-
     if (pickerField) {
         pickers.push(pickerField)
     } else {
@@ -74,9 +73,11 @@ export const getFormFields = (type) => {
             label,
             uitype,
             multi: !!field.multi,
+            fullWidth: !!field.fullWidth,
             readOnly: !!field.readOnly,
             alwaysUpdate: !!field.alwaysUpdate,
             type: field.type,
+            tab: field.tab,
             required: !!field.required,
             localized: !!field.localized,
             pickerField: field.pickerField,
@@ -225,20 +226,39 @@ Hook.on('Types', ({types}) => {
         fields: [
             {
                 name: 'username',
-                required: true
+                fullWidth: true,
+                required: true,
+                tab: 'General'
+            },
+            {
+                name: 'password',
+                fullWidth: true,
+                required: true,
+                uitype: 'password',
+                tab: 'General'
             },
             {
                 name: 'email',
-                required: true
+                fullWidth: true,
+                required: true,
+                tab: 'General'
+            },
+            {
+                name: 'emailConfirmed',
+                type: 'Boolean',
+                tab: 'General'
+            },
+            {
+                name: 'role',
+                type: 'UserRole',
+                reference: true,
+                fields: ['name'],
+                tab: 'General'
             },
             {
                 name: 'picture',
                 type: 'Media',
                 reference: true
-            },
-            {
-                name: 'emailConfirmed',
-                type: 'Boolean'
             },
             {
                 name: 'lastLogin',
@@ -247,15 +267,12 @@ Hook.on('Types', ({types}) => {
                 readOnly: true
             },
             {
-                name: 'password',
-                required: true,
-                uitype: 'password'
-            },
-            {
-                name: 'role',
-                type: 'UserRole',
+                name: 'superior',
+                type: 'User',
+                label: 'Superior User',
                 reference: true,
-                fields: ['name']
+                multi:true,
+                fields: ['username']
             }
         ]
     }

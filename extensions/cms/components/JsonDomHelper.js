@@ -1040,8 +1040,9 @@ class JsonDomHelper extends React.Component {
                                               this.handleDeleteClick()
                                           }
 
-                                          JsonDomHelper.disableEvents = false
-                                          this.setState({deleteConfirmDialog: null})
+                                          this.setState({deleteConfirmDialog: null},()=>{
+                                              JsonDomHelper.disableEvents = false
+                                          })
                                       }}
                                       actions={[
                                           {

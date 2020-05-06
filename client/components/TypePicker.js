@@ -41,7 +41,10 @@ const styles = theme => {
             flexWrap: 'wrap'
         },
         clip: {
-            margin: theme.spacing(1) + 'px auto 0px ' + theme.spacing(1) + 'px;'
+            margin: theme.spacing(2) + 'px auto 0px ' + theme.spacing(1) + 'px;',
+            '&:first-child':{
+                marginLeft: 0
+            }
         },
         clipMulti: {
             margin: theme.spacing(1) + 'px 0',
@@ -333,7 +336,7 @@ class TypePicker extends React.Component {
             } else {
                 queryFields = queryStatemantForType(type)
             }
-            const variables = {filter},
+            const variables = {filter, limit:99},
                 gqlQuery = gql`query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){
                 ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id ${queryFields}}}}`
 

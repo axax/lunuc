@@ -7,10 +7,20 @@
         {
           "name": "name",
           "required": true,
-          "index": 1
+          "fullWidth": true,
+          "index": 1,
+          "tab": "Allgemein"
         },
         {
-          "name": "src"
+          "name": "src",
+          "fullWidth": true,
+          "tab": "Allgemein"
+        },
+        {
+          "name": "group",
+          "type": "MediaGroup",
+          "multi": true,
+          "tab": "Allgemein"
         },
         {
           "name": "mimeType"
@@ -31,11 +41,6 @@
         {
           "name": "private",
           "type": "Boolean"
-        },
-        {
-          "name": "group",
-          "type": "MediaGroup",
-          "multi": true
         },
         {
           "name": "conversion",

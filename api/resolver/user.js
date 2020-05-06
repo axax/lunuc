@@ -17,7 +17,7 @@ const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 3,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, password, email, picture, db, context}) => {
+const createUser = async ({username, role, superior, password, email, picture, db, context}) => {
 
     const errors = []
 
@@ -55,14 +55,22 @@ const createUser = async ({username, role, password, email, picture, db, context
     const hashedPw = Util.hashPassword(password)
 
     let roleId
-    if (role && await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
+    if (role && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
         roleId = ObjectId(role)
     } else {
         const userRole = (await db.collection('UserRole').findOne({name: 'subscriber'}))
         roleId = userRole._id
     }
+    const superiorIds = []
+    if( superior && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)){
+        superior.forEach(sup=>{
+            superiorIds.push(ObjectId(sup))
+        })
+    }
+
     const insertResult = await userCollection.insertOne({
         role: roleId,
+        superior: superiorIds,
         emailConfirmed: false,
         email: email,
         username: username,
@@ -79,7 +87,7 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'picture', 'email', 'emailConfirmed', 'role$UserRole', 'lastLogin'], {
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'picture', 'email', 'emailConfirmed', 'role$UserRole', 'superior$[User]', 'lastLogin'], {
                 limit,
                 page,
                 offset,
@@ -259,8 +267,8 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, picture, emailConfirmed, role}, {context}) => {
-            const insertResult = await createUser({db, context, username, picture, email, emailConfirmed, password})
+        createUser: async ({username, password, email, picture, emailConfirmed, role, superior}, {context}) => {
+            const insertResult = await createUser({db, context, username, picture, email, emailConfirmed, password, role, superior})
 
             if (insertResult.insertedCount) {
                 const doc = insertResult.ops[0]
@@ -287,7 +295,7 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, picture, emailConfirmed, role}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, emailConfirmed, role, superior}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             const user = {}
@@ -344,7 +352,14 @@ export const userResolver = (db) => ({
             if (role) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
                 user.role = ObjectId(role)
+            }
 
+            if (superior) {
+                await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
+                user.superior = []
+                superior.forEach(sup=>{
+                    user.superior.push(ObjectId(sup))
+                })
             }
 
             const result = (await userCollection.findOneAndUpdate({_id: ObjectId(_id)}, {$set: user}, {returnOriginal: false}))

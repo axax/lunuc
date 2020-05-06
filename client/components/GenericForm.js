@@ -26,6 +26,7 @@ const styles = theme => {
         },
         formFieldFull: {
             width: 'calc(100% - ' + theme.spacing(2) + 'px)',
+            margin: theme.spacing(1) + 'px',
         },
         tabContainer: {
             backgroundColor: theme.palette.background.paper
@@ -257,7 +258,6 @@ class GenericForm extends React.Component {
             if( field.replaceBreaks && value){
                 value = value.replace(/<br>/g, '\n');
             }
-
 
             let currentFormFields = formFields
 
