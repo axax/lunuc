@@ -29,7 +29,7 @@ export function matchExpr(expr, scope){
     if (expr === 'false') {
         return true
     }
-    const match = expr.match(/([\w|\.]*)(==|\!=|>=|<=|>|<| in )(.*)/)
+    const match = expr.match(/([\w|$|\.]*)(==|\!=|>=|<=|>|<| in )(.*)/)
     if (match && match.length === 4) {
         let prop
         try {

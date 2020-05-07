@@ -122,7 +122,7 @@ class CmsViewEditorContainer extends React.Component {
             compress,
             addNewSite: null
         }
-        if (state && state.addNewSite) {
+        if (state && state.addNewSite && props.cmsPage && props.cmsPage.slug === state.slug) {
             result.addNewSite = state.addNewSite
         } else if (props.cmsPage && !props.cmsPage._id) {
             result.addNewSite = {slugNoExist: props.slug, slug: props.slug}
