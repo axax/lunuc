@@ -57,7 +57,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@apollo/client": "^3.0.0-beta.44",
+    "@apollo/client": "^3.0.0-beta.45",
     "@apollo/link-context": "^2.0.0-beta.3",
     "@apollo/link-error": "^2.0.0-beta.3",
     "@apollo/link-ws": "^2.0.0-beta.3",
@@ -123,7 +123,7 @@
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",
     "fluent-ffmpeg": "^2.1.2",
-    "puppeteer": "^3.0.3",
+    "puppeteer": "^3.0.4",
     "nodemon": "^2.0.3",
     "mssql": "^6.2.0",
     "native-dns": "^0.7.0",

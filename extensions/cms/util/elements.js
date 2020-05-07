@@ -173,11 +173,17 @@ const baseElements = [
                                             $d: 'slide.data',
                                             s: 'item',
                                             c: {
-                                                $inlineEditor: false,
-                                                t: 'SmartImage',
-                                                p: {
-                                                    caption: "$.item{Util.escapeForJson(item.text)}",
-                                                    src: "$.item{Util.escapeForJson(item.image)}"
+                                                t:'$.item{item.link?\'Link\':\'li\'}',
+                                                p:{
+                                                  'href': '$.item{item.link?item.link:\'\'}'
+                                                },
+                                                c: {
+                                                    $inlineEditor: false,
+                                                    t: 'SmartImage',
+                                                    p: {
+                                                        caption: "$.item{Util.escapeForJson(item.text)}",
+                                                        src: "$.item{Util.escapeForJson(item.image)}"
+                                                    }
                                                 }
                                             }
                                         }
@@ -233,6 +239,10 @@ const baseElements = [
                     uitype: 'type_picker',
                     type: 'Media',
                     filter: 'mimeType=image'
+                },
+                link: {
+                    label: 'Link',
+                    fullWidth: true
                 },
                 text: {
                     label: 'Text',

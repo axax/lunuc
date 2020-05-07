@@ -241,7 +241,7 @@ const Util = {
                     params += `quality=${options.quality}`
                 }
 
-                if(options.webp){
+                if (options.webp) {
 
                     if (params !== '?') {
                         params += '&'
@@ -320,7 +320,13 @@ const Util = {
         return false
     },
     chunkArray(arr, chunk) {
-        const chunkInt = parseInt(chunk)
+
+        let chunkInt = parseInt(chunk)
+
+        if (!isNaN(chunkInt)) {
+            chunkInt = parseInt(new Function('return `' + chunk + '`').call({}))
+        }
+
         if (!isNaN(chunkInt)) {
             return arr.reduce((all, one, i) => {
                 const ch = Math.floor(i / chunkInt)
