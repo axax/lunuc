@@ -62,21 +62,51 @@ const styles = theme => ({
         textShadow: '1px 1px 2px white'
     },
     dropArea: {
+        whiteSpace: 'pre',
+        transition: 'display .5s ease-out,visibility .5s ease-out, opacity .5s ease-out',
+        opacity: 0,
+        zIndex: 999,
         display: 'none',
-        borderRadius: '10px',
-        background: '#fff',
-        margin: '0px',
+        visibility: 'hidden',
+        position: 'absolute',
+        fontWeight: 'bold',
+        borderRadius: '5px',
+        background: '#000',
+        padding: '0 50px',
+        margin: '-40px 0 10px 0 !important',
         border: '1px dashed #c1c1c1',
         height: '30px',
         lineHeight: '30px',
-        color: '#c1c1c1',
+        color: '#fff',
         textAlign: 'center',
-        fontSize: '0.8rem',
-        fontWeight: 'normal'
+        fontSize: '1rem',
+        '&:after': {
+            top: '100%',
+            left: '50%',
+            border: 'solid transparent',
+            content: '""',
+            height: 0,
+            width: 0,
+            position: 'absolute',
+            pointerEvents: 'none',
+            borderColor: 'rgba(0, 0, 0, 0)',
+            borderTopColor: '#000',
+            borderWidth: '10px',
+            marginLeft: '-10px'
+        }
+    },
+    dropAreaOverlap: {
+        position: 'relative',
+        marginTop: '0px !important',
     },
     dropAreaOver: {
-        background: 'rgba(255, 0, 0, 0.2)',
-        borderColor: 'red',
+        zIndex: 1000,
+        opacity: '1 !important',
+        visibility: 'visible !important',
+        background: 'red',
+        '&:after': {
+            borderTopColor: 'red'
+        }
     },
     toolbar: {
         zIndex: 999,
@@ -321,7 +351,7 @@ class JsonDomHelper extends React.Component {
 
     onDrag(e) {
         e.stopPropagation()
-        if (Math.abs(e.clientY - this._clientY) > 10) {
+        if (e.clientY>0 && Math.abs(e.clientY - this._clientY) > 25) {
 
             this._clientX = e.clientX
             this._clientY = e.clientY
@@ -337,10 +367,11 @@ class JsonDomHelper extends React.Component {
                 const fromTagName = JsonDomHelper.currentDragElement ? JsonDomHelper.currentDragElement.props._tagName : '',
                     allowDropIn = ALLOW_DROP_IN[fromTagName]
 
+                const allTags = []
                 for (let i = 0; i < tags.length; ++i) {
                     const tag = tags[i]
                     if (draggable === tag.nextSibling || draggable === tag.previousSibling /*|| !elementOnMouseOver.contains(tag)*/) {
-                        tag.style.display = 'none'
+                        tag.style.display = null
                         continue
                     }
 
@@ -358,23 +389,80 @@ class JsonDomHelper extends React.Component {
                         const tagName = tag.getAttribute('data-tag-name')
                         if (!allowDropIn || allowDropIn.indexOf(tagName) >= 0) {
 
+
                             const allowDropFrom = ALLOW_DROP_FROM[tagName]
                             if (!allowDropFrom || allowDropFrom.indexOf(fromTagName) >= 0) {
                                 const pos = DomUtilAdmin.elemOffset(node)
-                                const distanceTop = Math.abs(this._clientY - (pos.top))
+                                const distanceTop = Math.abs(this._clientY - pos.top)
                                 const distanceMiddle = Math.abs(this._clientY - (pos.top + node.offsetHeight / 2))
                                 const distanceBottom = Math.abs(this._clientY - (pos.top + node.offsetHeight))
+
+
                                 if (distanceTop < 100 || distanceMiddle < 100 || distanceBottom < 100) {
+
                                     tag.style.display = 'block'
+                                    tag.style.visibility = 'visible'
+                                    tag.style.opacity = 0.8
+                                    tag.style.minWidth = node.innerWidth+'px'
+                                    allTags.push(tag)
+
+                                    /*const rect = tag.getBoundingClientRect()
+                                    const offY = Math.abs(this._clientY - (rect.top + (rect.top - rect.bottom) / 2)),
+                                        offX = Math.abs(this._clientX - (rect.left + (rect.left - rect.right) / 2))
+const m = Math.max((offX+offY) / 2,100)
+
+                                    tag.style.transform= 'scale('+(100/m)+')'*/
+
+                                    /*if (!(rect.right < this._clientX - 50 ||
+                                        rect.left > this._clientX + 50 ||
+                                        rect.bottom < this._clientY - 50 ||
+                                        rect.top > this._clientY + 50)) {
+
+                                        // tag.style.position='relative'
+                                        //   tag.style.margin='0'
+                                        // tag.style.background = 'green'
+                                    } else {
+                                        //   tag.style.background = null
+                                        //  tag.style.position=null
+                                        //  tag.style.margin=null
+                                    }*/
+
+
                                 } else {
-                                    if (distanceTop > 250 && distanceMiddle > 250 && distanceBottom > 250)
-                                        tag.style.display = 'none'
+                                    if (distanceTop > 200 && distanceMiddle > 200 && distanceBottom > 200) {
+
+                                        tag.style.visibility = null
+                                        tag.style.opacity = null
+                                    }else{
+                                        allTags.push(tag)
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }, 50) // prevent flickering
+
+
+                // check for overlapping elements
+                for (let y = 0; y < allTags.length; y++) {
+                    const rect = allTags[y].getBoundingClientRect()
+                    for (let z = 0; z < allTags.length; z++) {
+                        if( allTags[y]!==allTags[z]){
+                            const rect2 = allTags[z].getBoundingClientRect()
+                            if (!(rect.right < rect2.left ||
+                                rect.left > rect2.right ||
+                                rect.bottom < rect2.top ||
+                                rect.top > rect2.bottom)) {
+
+                                allTags[z].classList.add(this.props.classes.dropAreaOverlap)
+                                allTags[y].classList.add(this.props.classes.dropAreaOverlap)
+                                break
+                            }
+                        }
+                    }
+                }
+
+            }, 100) // prevent flickering
         }
     }
 
@@ -434,18 +522,17 @@ class JsonDomHelper extends React.Component {
             }
         }
 
-        setTimeout(()=>{
+        setTimeout(() => {
 
             JsonDomHelper.disableEvents = false
-        },200)
+        }, 200)
 
         this.resetDragState()
     }
 
 
     resetDragState() {
-        console.log('.' + this.props.classes.dropArea)
-        DomUtilAdmin.setAttrForSelector('.' + this.props.classes.dropArea, {style: 'display:none'})
+        DomUtilAdmin.setAttrForSelector('.' + this.props.classes.dropArea, {style: 'display:none;visibility:none'})
         JsonDomHelper.currentDragElement = null
         this.setState({toolbarHovered: false, hovered: false, dragging: false})
     }
@@ -669,7 +756,7 @@ class JsonDomHelper extends React.Component {
                 hasJsonToEdit = false
             }
 
-            if( isElementActive || _options.mode==='source' ) {
+            if (isElementActive || _options.mode === 'source') {
                 // in source mode source is even editable when element is not active
                 parsedSource = this.parseInlineEditorSource(_options.source)
             }
@@ -768,7 +855,7 @@ class JsonDomHelper extends React.Component {
 
                     if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions)) {
 
-                        editElementEvent = ()=>{
+                        editElementEvent = () => {
                             this.handleEditElement(jsonElement, subJson, isCms)
                         }
                         menuItems.push({
@@ -982,20 +1069,20 @@ class JsonDomHelper extends React.Component {
                 isEmpty = true
             }
             comp = <_WrappedComponent
-                                    onDoubleClick={editElementEvent}
-                                    onChange={overrideOnChange || onChange}
-                                      onClick={overrideOnClick || onClick}
-                                      _inlineeditor={_inlineEditor}
-                                      data-isempty={isEmpty}
-                                      key={rest._key}
-                                      {...events}
-                                      {...rest}
-                                      children={kids}/>
+                onDoubleClick={editElementEvent}
+                onChange={overrideOnChange || onChange}
+                onClick={overrideOnClick || onClick}
+                _inlineeditor={_inlineEditor}
+                data-isempty={isEmpty}
+                key={rest._key}
+                {...events}
+                {...rest}
+                children={kids}/>
         }
         if (toolbar) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>]
         } else {
-            const jsonElements = getJsonDomElements(null, {advanced:Util.hasCapability(_user, CAPABILITY_MANAGE_CMS_TEMPLATE)})
+            const jsonElements = getJsonDomElements(null, {advanced: Util.hasCapability(_user, CAPABILITY_MANAGE_CMS_TEMPLATE)})
             return <React.Fragment>{comp}
                 {(deleteConfirmDialog &&
                     <AddToBody>
@@ -1005,7 +1092,7 @@ class JsonDomHelper extends React.Component {
                                               this.handleDeleteClick()
                                           }
 
-                                          this.setState({deleteConfirmDialog: null},()=>{
+                                          this.setState({deleteConfirmDialog: null}, () => {
                                               JsonDomHelper.disableEvents = false
                                           })
                                       }}
@@ -1121,7 +1208,7 @@ class JsonDomHelper extends React.Component {
                                               // determine position to insert in parent node
                                               if (addChildDialog.addbelow) {
                                                   pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
-                                              }else if (addChildDialog.addabove) {
+                                              } else if (addChildDialog.addabove) {
                                                   pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
                                               }
 
