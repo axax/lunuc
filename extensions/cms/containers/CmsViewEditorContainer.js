@@ -632,17 +632,25 @@ class CmsViewEditorContainer extends React.Component {
                         this.setState({addNewSite: {}})
 
                     }
-                }
-            ]
-           /* config.LANGUAGES.forEach(lang=>{
-                moreMenu.push({
-                    name: 'Sprache '+lang, onClick: () => {
+                },
+                {
+                    divider: true,
+                    name: _t('CmsViewEditorContainer.languages'),
+                    items: [
 
+
+                    ]
+                },
+            ]
+            config.LANGUAGES.forEach(lang=>{
+                moreMenu[1].items.push({
+                    name: lang, onClick: () => {
+                        window.location.href = Util.translateUrl(lang)
 
                     }
                 })
             })
-*/
+
             if (this.templateChangeHistory.length > 0) {
                 moreMenu.push(
                     {

@@ -26,6 +26,7 @@
   "CmsViewEditorContainer.fixed": "Fix menu",
   "CmsViewEditorContainer.preview": "Preview",
   "CmsViewEditorContainer.addnewpage": "Add new page",
+  "CmsViewEditorContainer.languages": "Language variants",
   "CmsViewEditorContainer.undochange": "Undo change",
   "GenericForm.fieldIsRequired": "Field is required"
 }

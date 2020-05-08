@@ -1,8 +1,9 @@
 const baseElements = [
     {
-        subHeader: 'Basic components',
+        subHeader: 'Allgemeine Elemente',
         tagName: 'SmartImage',
         name: 'Bild',
+        xhint: 'Ein Bild von der Mediatheke hinzufügen',
         defaults: {
             $inlineEditor: {
                 elementKey: 'image',
@@ -108,8 +109,235 @@ const baseElements = [
         }
     },
     {
+        tagName: '', name: 'Überschrift',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'headline'
+            },
+            p: {
+                ['data-element-key']: 'headline'
+            },
+            c: 'Headline'
+        },
+        options: {
+            t: {
+                enum: [
+                    {
+                        name: 'H1',
+                        value: 'h1'
+                    },
+                    {
+                        name: 'H2',
+                        value: 'h2'
+                    },
+                    {
+                        name: 'H3',
+                        value: 'h3'
+                    },
+                    {
+                        name: 'H4',
+                        value: 'h4'
+                    },
+                    {
+                        name: 'H5',
+                        value: 'h5'
+                    },
+                    {
+                        name: 'H6',
+                        value: 'h6'
+                    }
+                ]
+            },
+            c: {
+                label: 'Text',
+                fullWidth: true
+            },
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
+            }
+        }
+    },
+    {
+        tagName: 'div',
+        name: 'Texteditor',
+        defaults: {
+            $c: '',
+            $inlineEditor: {
+                elementKey: 'richText'
+            },
+            p: {
+                ['data-element-key']: 'richText'
+            }
+        },
+        options: {
+            $c: {
+                label: 'Text',
+                uitype: 'html'
+            },
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            }
+        }
+    },
+    {
+        tagName: 'Link',
+        name: 'Link',
+        options: {
+            c: {fullWidth: true, value: '', placeholder: 'Name eingeben', label: 'Name'},
+            p_href: {fullWidth: true, value: '', placeholder: 'Url eingeben', label: 'Url'},
+            p_className: {
+                label: 'Style',
+                uitype: 'select',
+                enum: [
+                    {
+                        name: 'Kein Style',
+                        value: ''
+                    },
+                    {
+                        name: 'Button',
+                        value: 'button'
+                    },
+                    {
+                        name: 'Button 1',
+                        value: 'button1'
+                    },
+                    {
+                        name: 'Button 2',
+                        value: 'button2'
+                    },
+                    {
+                        name: 'Button 3',
+                        value: 'button3'
+                    }
+                ]
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            }
+        },
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'link'
+            },
+            p: {
+                ['data-element-key']: 'link'
+            }
+        }
+    },
+    {
+        tagName: 'Link',
+        name: 'Link mit Bild',
+        options: {
+            c_0_p_src: {
+                fullWidth: true,
+                value: '',
+                label: 'Bild',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=image'
+            },
+            c_1_c: {fullWidth: true, value: '', placeholder: 'Text eingeben', label: 'Text'},
+            p_href: {fullWidth: true, value: '', placeholder: 'Url eingeben', label: 'Url'},
+            p_className: {value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse'}
+        },
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'imageLink'
+            },
+            p: {
+                ['data-element-key']: 'imageLink'
+            },
+            c: [
+                {
+                    $inlineEditor: false,
+                    t: 'SmartImage'
+                },
+                {
+                    $inlineEditor: false,
+                    t: 'span',
+                    c: ''
+                }
+            ]
+        }
+    },
+    {
+        tagName: 'a',
+        name: 'Dokument Link',
+        xicon: '/icons/pdf.svg',
+        defaults: {
+            c: '',
+            p: {
+                title: '',
+                target: '_blank',
+                rel: 'noopener',
+                href: '',
+                ['data-element-key']: 'documentLink'
+            },
+            $inlineEditor: {
+                elementKey: 'documentLink'
+            }
+        },
+        options: {
+            p_href: {
+                fullWidth: true,
+                value: '',
+                label: 'Datei',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=pdf',
+
+                template: '${_app_.config.UPLOAD_URL}/${_id}/-/${name}'
+            },
+            c: {
+                fullWidth: true,
+                value: '',
+                label: 'Bezeichnung'
+            },
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
+            }
+        }
+    },
+    {
+        tagName: 'hr', name: 'Trennlinie',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'hr'
+            },
+            p: {
+                ['data-element-key']: 'hr'
+            }
+        },
+        options: {
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
+            }
+        }
+    },
+    {
         tagName: 'section',
-        name: 'Slider',
+        name: 'Slideshow',
         defaults: {
             $inlineEditor: {
                 elementKey: 'slider',
@@ -173,9 +401,9 @@ const baseElements = [
                                             $d: 'slide.data',
                                             s: 'item',
                                             c: {
-                                                t:'$.item{item.link?\'Link\':\'li\'}',
-                                                p:{
-                                                  'href': '$.item{item.link?item.link:\'\'}'
+                                                t: '$.item{item.link?\'Link\':\'li\'}',
+                                                p: {
+                                                    'href': '$.item{item.link?item.link:\'\'}'
                                                 },
                                                 c: {
                                                     $inlineEditor: false,
@@ -256,164 +484,6 @@ const baseElements = [
         }
     },
     {
-        tagName: 'Link',
-        name: 'Link',
-        options: {
-            c: {fullWidth: true, value: '', placeholder: 'Name eingeben', label: 'Name'},
-            p_href: {fullWidth: true, value: '', placeholder: 'Url eingeben', label: 'Url'},
-            p_className: {
-                label: 'Style',
-                uitype: 'select',
-                enum: [
-                    {
-                        name: 'Kein Style',
-                        value: ''
-                    },
-                    {
-                        name: 'Button',
-                        value: 'button'
-                    },
-                    {
-                        name: 'Button 1',
-                        value: 'button1'
-                    },
-                    {
-                        name: 'Button 2',
-                        value: 'button2'
-                    },
-                    {
-                        name: 'Button 3',
-                        value: 'button3'
-                    }
-                ]
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            }
-        },
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'link'
-            },
-            p: {
-                ['data-element-key']: 'link'
-            }
-        }
-    },
-    {
-        tagName: 'Link',
-        name: 'Image Link',
-        options: {
-            c_0_p_src: {
-                fullWidth: true,
-                value: '',
-                label: 'Bild',
-                uitype: 'type_picker',
-                type: 'Media',
-                filter: 'mimeType=image'
-            },
-            c_1_c: {fullWidth: true, value: '', placeholder: 'Text eingeben', label: 'Text'},
-            p_href: {fullWidth: true, value: '', placeholder: 'Url eingeben', label: 'Url'},
-            p_className: {value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse'}
-        },
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'imageLink'
-            },
-            p: {
-                ['data-element-key']: 'imageLink'
-            },
-            c: [
-                {
-                    $inlineEditor: false,
-                    t: 'SmartImage'
-                },
-                {
-                    $inlineEditor: false,
-                    t: 'span',
-                    c: ''
-                }
-            ]
-        }
-    },
-    {
-        tagName: 'hr', name: 'Trennlinie',
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'hr'
-            },
-            p: {
-                ['data-element-key']: 'hr'
-            }
-        },
-        options: {
-            p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            },
-            p_className: {
-                label: 'Klassname'
-            }
-        }
-    },
-    {
-        tagName: '', name: 'Überschrift',
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'headline'
-            },
-            p: {
-                ['data-element-key']: 'headline'
-            },
-            c: 'Headline'
-        },
-        options: {
-            t: {
-                enum: [
-                    {
-                        name: 'H1',
-                        value: 'h1'
-                    },
-                    {
-                        name: 'H2',
-                        value: 'h2'
-                    },
-                    {
-                        name: 'H3',
-                        value: 'h3'
-                    },
-                    {
-                        name: 'H4',
-                        value: 'h4'
-                    },
-                    {
-                        name: 'H5',
-                        value: 'h5'
-                    },
-                    {
-                        name: 'H6',
-                        value: 'h6'
-                    }
-                ]
-            },
-            c: {
-                label: 'Text',
-                fullWidth: true
-            },
-            p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            },
-            p_className: {
-                label: 'Klassname'
-            }
-        }
-    },
-    {
         tagName: '', name: 'Überschrift (sprachabhänig)',
         defaults: {
             $inlineEditor: {
@@ -489,98 +559,6 @@ const baseElements = [
             },
             p_style_marginBottom: {
                 label: 'Abstand unten'
-            }
-        }
-    },
-    {
-        tagName: 'div',
-        name: 'Rich-Text block',
-        defaults: {
-            $c: '',
-            $inlineEditor: {
-                elementKey: 'richText'
-            },
-            p: {
-                ['data-element-key']: 'richText'
-            }
-        },
-        options: {
-            $c: {
-                label: 'Text',
-                uitype: 'html'
-            },
-            p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            }
-        }
-    },
-    {
-        tagName: 'a',
-        name: 'Dokument',
-        defaults: {
-            c: '',
-            p: {
-                title: '',
-                target: '_blank',
-                rel: 'noopener',
-                href: '',
-                ['data-element-key']: 'documentLink'
-            },
-            $inlineEditor: {
-                elementKey: 'documentLink'
-            }
-        },
-        options: {
-            p_href: {
-                fullWidth: true,
-                value: '',
-                label: 'Datei',
-                uitype: 'type_picker',
-                type: 'Media',
-                filter: 'mimeType=pdf',
-
-                template: '${_app_.config.UPLOAD_URL}/${_id}/-/${name}'
-            },
-            c: {
-                fullWidth: true,
-                value: '',
-                label: 'Bezeichnung'
-            },
-            p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            },
-            p_className: {
-                label: 'Klassname'
-            }
-        }
-    },
-    {
-        tagName: 'div',
-        name: 'Container',
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'container'
-            },
-            c: '',
-            p: {
-                ['data-element-key']: 'container'
-            }
-        },
-        options: {
-            p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            },
-            p_className: {
-                label: 'Klassname'
             }
         }
     },
@@ -798,7 +776,9 @@ const baseElements = [
                 label: 'Klassname'
             }
         }
-    },
+    }
+]
+const advancedElements = [
     {
         subHeader: 'Advanced components',
         tagName: 'div',
@@ -861,6 +841,15 @@ const baseElements = [
             }
         },
         options: {
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
+            p_style_marginBottom: {
+                label: 'Abstand unten'
+            },
+            p_className: {
+                label: 'Klassname'
+            }
         }
     },
     {
@@ -935,19 +924,29 @@ const baseElements = [
     }
 ]
 
-let baseElementsMap
+let elementsMap, elementsMapAdvanced
 
 
-export function getJsonDomElements(value) {
-    if (!baseElementsMap) {
-        baseElementsMap = {}
+export function getJsonDomElements(value, options) {
+    if (!elementsMap) {
+        elementsMap = {}
         baseElements.forEach(element => {
             element.value = element.defaults.$inlineEditor.elementKey
-            baseElementsMap[element.value] = element
+            elementsMap[element.value] = element
+        })
+    }
+    if(!elementsMapAdvanced){
+        elementsMapAdvanced = {}
+        advancedElements.forEach(element => {
+            element.value = element.defaults.$inlineEditor.elementKey
+            elementsMapAdvanced[element.value] = element
         })
     }
     if (value) {
-        return baseElementsMap[value]
+        return elementsMap[value] || elementsMapAdvanced[value]
+    }
+    if(options && options.advanced){
+        return [...baseElements, ...advancedElements]
     }
     return baseElements
 }

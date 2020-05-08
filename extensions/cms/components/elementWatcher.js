@@ -80,7 +80,8 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
             if (ele) {
                 let observer = new IntersectionObserver((entries, observer) => {
                     entries.forEach(entry => {
-                        if (entry.isIntersecting) {
+                        if (entry.isIntersecting ) {
+
                             observer.unobserve(entry.target)
                             if (this.state.initialVisible) {
                                 ele.classList.add(options.visibleClass)
@@ -109,6 +110,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                                     }
 
                                 } else {
+
                                     hasLoaded[tagSrc] = true
                                     this.setState({madeVisible: true})
                                 }

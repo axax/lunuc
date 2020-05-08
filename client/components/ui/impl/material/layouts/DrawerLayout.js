@@ -143,6 +143,7 @@ class DrawerLayout extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
+            dragEntered: false,
             open: !!this.props.open,
             drawerWidth: this.props.drawerWidth || DRAWER_WIDTH_DEFAULT,
             drawerWidthOriginal: this.props.drawerWidth,
@@ -163,7 +164,7 @@ class DrawerLayout extends React.Component {
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        return nextProps !== this.props || this.state.open !== nextState.open || this.state.drawerWidth !== nextState.drawerWidth
+        return nextProps !== this.props || this.state.open !== nextState.open || this.state.drawerWidth !== nextState.drawerWidth || this.state.dragEntered !== nextState.dragEntered
     }
 
     handleDrawerOpen = () => {
@@ -203,6 +204,9 @@ class DrawerLayout extends React.Component {
     }
 
     dividerMouseUp = (e) => {
+        if(this.state.dragEntered) {
+            this.setState({dragEntered: false})
+        }
         const {onDrawerWidthChange} = this.props
         if (onDrawerWidthChange && this.props.drawerWidth !== this.state.drawerWidth) {
             onDrawerWidthChange(this.state.drawerWidth)
@@ -225,18 +229,29 @@ class DrawerLayout extends React.Component {
 
     render() {
         const {classes, theme, title, sidebar, toolbarRight, children, fixedLayout} = this.props
-        const {open, drawerWidth} = this.state
+        const {open, drawerWidth, dragEntered} = this.state
         const contentFixed = {}
         if (fixedLayout && open) {
             contentFixed.marginLeft = drawerWidth + 'px'
             contentFixed.width = 'calc(100% - ' + drawerWidth + 'px)'
         }
+        const style = {}
+        if( open){
+            style.width= `calc(100% - ${drawerWidth}px)`
+        }
+        if(dragEntered){
+            style.pointerEvents ='none'
+        }
         return (
             <div className={classes.root}>
                 <div className={classes.appFrame}>
                     <AppBar
+                        ondragenter={(e)=>{
+                            this.setState({dragEntered:true})
+                        }}
                         className={classNames(classes.appBar, fixedLayout && classes.appBarFixed)}
-                        style={open ? {width: `calc(100% - ${drawerWidth}px)`} : {}}
+                        style={style}
+                        id="drawerLayoutHeader"
                     >
                         <Toolbar>
                             <IconButton

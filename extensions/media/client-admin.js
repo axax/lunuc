@@ -3,6 +3,7 @@ import Hook from 'util/hook'
 import Async from 'client/components/Async'
 import config from 'gen/config'
 import {gql} from '@apollo/client'
+import Util from "../../client/util";
 
 const {UPLOAD_URL} = config
 
@@ -31,7 +32,7 @@ export default () => {
                     const mimeType = item.mimeType ? item.mimeType.split('/') : ['file'],
                         image =
                             (mimeType[0] === 'image' ?
-                                    <img height="40" src={item.src || (UPLOAD_URL + '/' + item._id)}/>
+                                    <img style={{maxWidth: '6rem', maxHeight: '6rem', objectFit:'cover'}} src={item.src || (UPLOAD_URL + '/' + item._id)}/>
                                     :
                                     <div className="file-icon"
                                          data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
@@ -80,72 +81,92 @@ export default () => {
 
     // add some extra data to the table
     Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, meta}) {
-        if (type === 'Media' && !dataToEdit && meta.option === 'upload') {
-            // remove save button
-            props.actions.splice(1, 1)
+        if (type === 'Media' ) {
 
-            const MediaUploader = () => {
+            if(!dataToEdit && meta.option === 'upload') {
+                // remove save button
+                props.actions.splice(1, 1)
 
-                const [conversion, setConversion] = useState(
-                    meta._this.settings.Media && meta._this.settings.Media.conversion ? meta._this.settings.Media.conversion : []
-                )
+                const MediaUploader = () => {
 
-                const [group, setGroup] = useState(
-                    meta._this.settings.Media && meta._this.settings.Media.group ? meta._this.settings.Media.group : []
-                )
+                    const [conversion, setConversion] = useState(
+                        meta._this.settings.Media && meta._this.settings.Media.conversion ? meta._this.settings.Media.conversion : []
+                    )
 
-                const [useCdn, setUseCdn] = useState(
-                    false
-                )
+                    const [group, setGroup] = useState(
+                        meta._this.settings.Media && meta._this.settings.Media.group ? meta._this.settings.Media.group : []
+                    )
 
-                const groupIds = []
-                group.forEach(value => {
-                    groupIds.push(value._id)
-                })
+                    const [useCdn, setUseCdn] = useState(
+                        false
+                    )
 
-                return (
-                    [
-                        <div style={{position: 'relative', zIndex: 3}} key="typePicker">
-                            <TypePicker value={conversion} onChange={(e) => {
-                                setConversion(e.target.value)
-                                meta._this.setSettingsForType(type, {conversion: e.target.value})
+                    const groupIds = []
+                    group.forEach(value => {
+                        groupIds.push(value._id)
+                    })
 
-                            }} name="conversion" placeholder="Select a conversion"
-                                        type="MediaConversion"/>
+                    return (
+                        [
+                            <div style={{position: 'relative', zIndex: 3}} key="typePicker">
+                                <TypePicker value={conversion} onChange={(e) => {
+                                    setConversion(e.target.value)
+                                    meta._this.setSettingsForType(type, {conversion: e.target.value})
 
-                            <TypePicker value={group} onChange={(e) => {
-                                meta._this.setSettingsForType(type, {group:e.target.value})
-                                setGroup(e.target.value)
-                            }} multi={true} name="group" placeholder="Select a group"
-                                        type="MediaGroup"/>
-                        </div>,
-                        <SimpleSwitch key="useCdn" label="Upload file to CDN" name="useCdn"
-                                      onChange={(e) => {
-                                          setUseCdn(e.target.checked)
-                                      }} checked={useCdn}/>,
-                        <FileDrop key="fileDrop" multi={true} conversion={conversion && conversion.length>0?JSON.parse(conversion[0].conversion):null} accept="*/*"
-                                  uploadTo="/graphql/upload" resizeImages={true}
-                                  data={{group: groupIds, useCdn}}
-                                  maxSize={3000}
-                                  imagePreview={false}
-                                  onSuccess={r => {
-                                      if (meta._this) {
-                                          setTimeout(()=> {
-                                              meta._this.setState({createEditDialog: false, createEditDialogOption: null})
+                                }} name="conversion" placeholder="Select a conversion"
+                                            type="MediaConversion"/>
 
-                                              meta._this.getData(meta, false)
-                                          },1000)
+                                <TypePicker value={group} onChange={(e) => {
+                                    meta._this.setSettingsForType(type, {group: e.target.value})
+                                    setGroup(e.target.value)
+                                }} multi={true} name="group" placeholder="Select a group"
+                                            type="MediaGroup"/>
+                            </div>,
+                            <SimpleSwitch key="useCdn" label="Upload file to CDN" name="useCdn"
+                                          onChange={(e) => {
+                                              setUseCdn(e.target.checked)
+                                          }} checked={useCdn}/>,
+                            <FileDrop key="fileDrop" multi={true}
+                                      conversion={conversion && conversion.length > 0 ? JSON.parse(conversion[0].conversion) : null}
+                                      accept="*/*"
+                                      uploadTo="/graphql/upload" resizeImages={true}
+                                      data={{group: groupIds, useCdn}}
+                                      maxSize={3000}
+                                      imagePreview={false}
+                                      onSuccess={r => {
+                                          if (meta._this) {
+                                              setTimeout(() => {
+                                                  meta._this.setState({
+                                                      createEditDialog: false,
+                                                      createEditDialogOption: null
+                                                  })
 
-                                      }
-                                      // TODO: but it directly into the store instead of reload
-                                      //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
+                                                  meta._this.getData(meta, false)
+                                              }, 1000)
+
+                                          }
+                                          // TODO: but it directly into the store instead of reload
+                                          //const queries = this.getQueries(type), storeKey = this.getStoreKey(type)
 
 
-                                  }}/>]
-                )
+                                      }}/>]
+                    )
+                }
+
+                props.children = <MediaUploader/>
+            }else if( dataToEdit ){
+                const medieData = Util.getImageObject(dataToEdit)
+                if(dataToEdit.mimeType.indexOf('image')===0) {
+                    props.children = [props.children,
+                        <img style={{border: 'solid 0.4rem black', maxWidth: '100%', maxHeight: '20rem'}}
+                             src={medieData.src}/>]
+                }else if(dataToEdit.mimeType.indexOf('video')===0) {
+                    props.children = [props.children,
+                        <video width="320" height="240" controls>
+                            <source src={medieData.src} type="video/mp4" />
+                        </video>]
+                }
             }
-
-            props.children = <MediaUploader/>
         }
     })
 

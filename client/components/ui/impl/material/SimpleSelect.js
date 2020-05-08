@@ -5,6 +5,9 @@ import Chip from '@material-ui/core/Chip'
 import Select from '@material-ui/core/Select'
 import MenuItem from '@material-ui/core/MenuItem'
 import ListSubheader from '@material-ui/core/ListSubheader'
+import ListItemText from '@material-ui/core/ListItemText'
+import ListItemAvatar from '@material-ui/core/ListItemAvatar'
+import Avatar from '@material-ui/core/Avatar'
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormHelperText from '@material-ui/core/FormHelperText';
@@ -80,8 +83,14 @@ class SimpleSelect extends React.Component {
                     items.map(item => {
                         if (item.constructor === Object) {
                             return [item.subHeader?<ListSubheader>{item.subHeader}</ListSubheader>:null,<MenuItem key={item.value}
-                                             value={item.value}>{item.name}{item.hint &&
-                            <em>&nbsp;({item.hint})</em>}</MenuItem>]
+                                             value={item.value}>
+
+                                {item.icon && <ListItemAvatar>
+                                    <Avatar src={item.icon} />
+                                </ListItemAvatar>}
+
+                                <ListItemText primary={item.name} secondary={item.hint}/>
+                            </MenuItem>]
                         } else {
                             return <MenuItem key={item} value={item}>{item}</MenuItem>
                         }

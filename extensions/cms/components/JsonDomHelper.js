@@ -330,9 +330,8 @@ class JsonDomHelper extends React.Component {
             const draggable = ReactDOM.findDOMNode(JsonDomHelper.currentDragElement)
             this._onDragTimeout = setTimeout(() => {
 
-                /*if( !JsonDomHelper.currentDragElement ){
-                 return
-                 }*/
+                /*const elementOnMouseOver = document.elementFromPoint(this._clientX, this._clientY)*/
+
                 const tags = document.querySelectorAll('.' + this.props.classes.dropArea)
 
                 const fromTagName = JsonDomHelper.currentDragElement ? JsonDomHelper.currentDragElement.props._tagName : '',
@@ -340,7 +339,7 @@ class JsonDomHelper extends React.Component {
 
                 for (let i = 0; i < tags.length; ++i) {
                     const tag = tags[i]
-                    if (draggable === tag.nextSibling || draggable === tag.previousSibling) {
+                    if (draggable === tag.nextSibling || draggable === tag.previousSibling /*|| !elementOnMouseOver.contains(tag)*/) {
                         tag.style.display = 'none'
                         continue
                     }
@@ -403,6 +402,7 @@ class JsonDomHelper extends React.Component {
     onDrop(e) {
         e.stopPropagation()
         e.preventDefault()
+        JsonDomHelper.disableEvents = true
 
         const {classes, _json, _onChange} = this.props
         e.currentTarget.classList.remove(classes.dropAreaOver)
@@ -424,16 +424,20 @@ class JsonDomHelper extends React.Component {
                     // 3. add it to new position
                     addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
 
-                    _onChange(_json)
+                    _onChange(_json, true)
 
                 }
             } else {
                 addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
                 removeComponent(sourceKey, _json)
-                _onChange(_json)
+                _onChange(_json, true)
             }
         }
 
+        setTimeout(()=>{
+
+            JsonDomHelper.disableEvents = false
+        },200)
 
         this.resetDragState()
     }
@@ -626,7 +630,7 @@ class JsonDomHelper extends React.Component {
         const isCms = _tagName === 'Cms', isInLoop = rest._key.indexOf('$loop') >= 0,
             isElementActive = !JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)
 
-        let hasJsonToEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow,
+        let hasJsonToEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, editElementEvent,
             overrideOnChange, overrideOnClick, parsedSource
 
         const events = {
@@ -764,65 +768,13 @@ class JsonDomHelper extends React.Component {
 
                     if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions)) {
 
+                        editElementEvent = ()=>{
+                            this.handleEditElement(jsonElement, subJson, isCms)
+                        }
                         menuItems.push({
                             name: _options.menuTitle.edit || 'Bearbeiten',
                             icon: <EditIcon/>,
-                            onClick: () => {
-                                JsonDomHelper.disableEvents = true
-
-                                //clone
-                                const newJsonElement = JSON.parse(JSON.stringify(jsonElement))
-                                delete newJsonElement.defaults
-
-                                newJsonElement.options = Object.assign({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
-                                newJsonElement.groupOptions = Object.assign({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
-
-                                Object.keys(newJsonElement.options).forEach(key => {
-
-                                    let val = propertyByPath('$original_' + key, subJson, '_')
-                                    if (!val) {
-                                        val = propertyByPath(key, subJson, '_')
-                                    }
-
-                                    const pos = val && val.constructor === String ? val.indexOf('${_t(\'') : -1
-                                    if (pos > -1) {
-                                        const trKey = val.substring(6, val.indexOf('\')}'))
-                                        if (this.props._scope.data.tr) {
-                                            newJsonElement.options[key].value = this.props._scope.data.tr[trKey]
-                                        }
-                                    } else {
-                                        newJsonElement.options[key].value = val
-                                    }
-                                })
-
-                                Object.keys(newJsonElement.groupOptions).forEach(key => {
-                                    let val = propertyByPath(key, subJson, '_')
-                                    if (val) {
-                                        newJsonElement.options['!' + key + '!add'] = {
-                                            uitype: 'button',
-                                            key,
-                                            group: newJsonElement.groupOptions[key],
-                                            label: 'Hinzufügen',
-                                            newLine: true
-                                        }
-                                        val.forEach((groupValue, idx) => {
-                                            Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
-                                                newJsonElement.options['!' + key + '!' + fieldKey + '!' + idx] = {
-                                                    ...newJsonElement.groupOptions[key][fieldKey],
-                                                    value: groupValue[fieldKey]
-                                                }
-                                            })
-                                        })
-                                    }
-                                })
-
-
-                                if (isCms) {
-                                    this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
-                                }
-
-                                this.setState({addChildDialog: {selected: newJsonElement, edit: true}})
-                            }
+                            onClick: editElementEvent
                         })
                     }
                 }
@@ -858,6 +810,16 @@ class JsonDomHelper extends React.Component {
                     }
 
                     if (_options.menu.addBelow !== false) {
+
+                        menuItems.push({
+                            name: 'Element oberhalb einfügen',
+                            icon: <PlaylistAddIcon/>,
+                            onClick: () => {
+                                JsonDomHelper.disableEvents = true
+                                this.setState({addChildDialog: {selected: false, addabove: true}})
+                            }
+                        })
+
                         menuItems.push({
                             name: 'Element unterhalb einfügen',
                             icon: <PlaylistAddIcon/>,
@@ -890,8 +852,9 @@ class JsonDomHelper extends React.Component {
                         }
                     })
 
+
                     menuItems.push({
-                        name: 'Element von Zwischenablage unterhalb einfügen',
+                        name: 'Element von Zwischenablage einfügen',
                         icon: <FileCopyIcon/>,
                         onClick: () => {
 
@@ -1018,7 +981,9 @@ class JsonDomHelper extends React.Component {
             } else if (children && children.constructor === Array && children.length === 0) {
                 isEmpty = true
             }
-            comp = <_WrappedComponent onChange={overrideOnChange || onChange}
+            comp = <_WrappedComponent
+                                    onDoubleClick={editElementEvent}
+                                    onChange={overrideOnChange || onChange}
                                       onClick={overrideOnClick || onClick}
                                       _inlineeditor={_inlineEditor}
                                       data-isempty={isEmpty}
@@ -1030,7 +995,7 @@ class JsonDomHelper extends React.Component {
         if (toolbar) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>]
         } else {
-            const jsonElements = getJsonDomElements()
+            const jsonElements = getJsonDomElements(null, {advanced:Util.hasCapability(_user, CAPABILITY_MANAGE_CMS_TEMPLATE)})
             return <React.Fragment>{comp}
                 {(deleteConfirmDialog &&
                     <AddToBody>
@@ -1153,9 +1118,11 @@ class JsonDomHelper extends React.Component {
                                                   })
                                               }
 
+                                              // determine position to insert in parent node
                                               if (addChildDialog.addbelow) {
-                                                  // determine position to insert in parent node
                                                   pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+                                              }else if (addChildDialog.addabove) {
+                                                  pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
                                               }
 
                                               if (addChildDialog.edit) {
@@ -1288,6 +1255,63 @@ class JsonDomHelper extends React.Component {
 
                         </SimpleDialog></AddToBody>)}</React.Fragment>
         }
+    }
+
+    handleEditElement(jsonElement, subJson, isCms) {
+        JsonDomHelper.disableEvents = true
+
+        //clone
+        const newJsonElement = JSON.parse(JSON.stringify(jsonElement))
+        delete newJsonElement.defaults
+
+        newJsonElement.options = Object.assign({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
+        newJsonElement.groupOptions = Object.assign({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
+
+        Object.keys(newJsonElement.options).forEach(key => {
+
+            let val = propertyByPath('$original_' + key, subJson, '_')
+            if (!val) {
+                val = propertyByPath(key, subJson, '_')
+            }
+
+            const pos = val && val.constructor === String ? val.indexOf('${_t(\'') : -1
+            if (pos > -1) {
+                const trKey = val.substring(6, val.indexOf('\')}'))
+                if (this.props._scope.data.tr) {
+                    newJsonElement.options[key].value = this.props._scope.data.tr[trKey]
+                }
+            } else {
+                newJsonElement.options[key].value = val
+            }
+        })
+
+        Object.keys(newJsonElement.groupOptions).forEach(key => {
+            let val = propertyByPath(key, subJson, '_')
+            if (val) {
+                newJsonElement.options['!' + key + '!add'] = {
+                    uitype: 'button',
+                    key,
+                    group: newJsonElement.groupOptions[key],
+                    label: 'Hinzufügen',
+                    newLine: true
+                }
+                val.forEach((groupValue, idx) => {
+                    Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
+                        newJsonElement.options['!' + key + '!' + fieldKey + '!' + idx] = {
+                            ...newJsonElement.groupOptions[key][fieldKey],
+                            value: groupValue[fieldKey]
+                        }
+                    })
+                })
+            }
+        })
+
+
+        if (isCms) {
+            this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
+        }
+
+        this.setState({addChildDialog: {selected: newJsonElement, edit: true}})
     }
 }
 
