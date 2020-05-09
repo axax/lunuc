@@ -131,11 +131,7 @@ class TinyEditor extends React.Component {
                             const {onChange, name} = this.props
                             if (onChange) {
 
-
-                                let html = e.level.content
-                                if (html === '<p><br data-mce-bogus="1"></p>') {
-                                    html = ''
-                                }
+                                let html = editor.getContent()
 
                                 if (name) {
                                     onChange({target: {name, value: html}})

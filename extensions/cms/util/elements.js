@@ -461,6 +461,7 @@ const baseElements = [
         groupOptions: {
             $set_0_value: {
                 image: {
+                    expandable:"Slide",
                     fullWidth: true,
                     value: '',
                     label: 'Bild',
@@ -473,6 +474,7 @@ const baseElements = [
                     fullWidth: true
                 },
                 text: {
+                    expandable:false,
                     label: 'Text',
                     uitype: 'html'
                 }
@@ -484,7 +486,8 @@ const baseElements = [
         }
     },
     {
-        tagName: '', name: 'Überschrift (sprachabhänig)',
+        tagName: '',
+        name: 'Überschrift (sprachabhänig)',
         defaults: {
             $inlineEditor: {
                 elementKey: 'headlinetr'

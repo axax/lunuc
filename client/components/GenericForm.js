@@ -1,6 +1,18 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {Button, TextField, SimpleSwitch, SimpleSelect, InputLabel, FormHelperText, FormControl, Tabs, Tab, Typography, Box} from 'ui/admin'
+import {
+    Button,
+    TextField,
+    SimpleSwitch,
+    SimpleSelect,
+    InputLabel,
+    FormHelperText,
+    FormControl,
+    Tabs,
+    Tab,
+    Typography,
+    Box
+} from 'ui/admin'
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
 import config from 'gen/config'
@@ -12,6 +24,7 @@ import Hook from '../../util/hook'
 import classNames from 'classnames'
 import Expandable from 'client/components/Expandable'
 import _t from '../../util/i18n'
+import TemplateEditor from "../../extensions/cms/components/TemplateEditor";
 
 const styles = theme => {
     return {
@@ -78,9 +91,8 @@ const AntTab = withStyles((theme) => ({
 }))((props) => <Tab disableRipple {...props} />)
 
 
-
 function TabPanel(props) {
-    const { children, value, index, ...other } = props
+    const {children, value, index, ...other} = props
 
     return (
         <Typography
@@ -104,7 +116,7 @@ class GenericForm extends React.Component {
             updatekey: props.updatekey,
             fieldsOri: props.fields,
             fields: {},
-            tabValue:0
+            tabValue: 0
         }
         Object.keys(props.fields).map(k => {
             const field = props.fields[k]
@@ -136,7 +148,7 @@ class GenericForm extends React.Component {
         return null
     }
 
-    static staticValidate(state, props){
+    static staticValidate(state, props) {
         const {fields, onValidate} = props
         const fieldErrors = {}
         Object.keys(fields).forEach(fieldKey => {
@@ -169,14 +181,14 @@ class GenericForm extends React.Component {
         })
         let validationState
         if (Object.keys(fieldErrors).length) {
-            validationState = {isValid:false, fieldErrors}
-        }else if (onValidate) {
+            validationState = {isValid: false, fieldErrors}
+        } else if (onValidate) {
             validationState = onValidate(state.fields)
-            if( !validationState.fieldErrors){
+            if (!validationState.fieldErrors) {
                 validationState.fieldErrors = {}
             }
-        }else{
-            validationState = {isValid:true, fieldErrors}
+        } else {
+            validationState = {isValid: true, fieldErrors}
         }
         return validationState
     }
@@ -185,11 +197,11 @@ class GenericForm extends React.Component {
         return state !== this.state || state.fieldErrors !== this.state.fieldErrors
     }
 
-    validate(state = this.state, updateState=true) {
+    validate(state = this.state, updateState = true) {
 
         const validationState = GenericForm.staticValidate(state, this.props)
 
-        if( updateState ){
+        if (updateState) {
             this.setState(validationState)
         }
         return validationState
@@ -248,6 +260,7 @@ class GenericForm extends React.Component {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
         const fieldKeys = Object.keys(fields), formFields = [], tabs = {}
 
+        let expandableField, expandableData
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
             const fieldKey = fieldKeys[fieldIndex],
                 field = fields[fieldKey]
@@ -255,14 +268,19 @@ class GenericForm extends React.Component {
                 continue
             }
             let value = this.state.fields[fieldKey]
-            if( field.replaceBreaks && value){
-                value = value.replace(/<br>/g, '\n');
+            if (field.replaceBreaks && value) {
+                value = value.replace(/<br>/g, '\n')
             }
 
             let currentFormFields = formFields
 
-            if( field.tab){
-                if(!tabs[field.tab]){
+            if (expandableField) {
+                currentFormFields = expandableData
+            } else if (field.expandable) {
+                expandableField = field
+                expandableData = currentFormFields = []
+            } else if (field.tab) {
+                if (!tabs[field.tab]) {
                     tabs[field.tab] = []
                 }
                 currentFormFields = tabs[field.tab]
@@ -291,7 +309,8 @@ class GenericForm extends React.Component {
 
                     }
                 }
-                currentFormFields.push(<FormControl key={'control' + fieldKey} className={classNames(classes.formFieldFull)}>
+                currentFormFields.push(<FormControl key={'control' + fieldKey}
+                                                    className={classNames(classes.formFieldFull)}>
                     <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><CodeEditor
                     className={classes.editor} key={fieldKey}
                     onChange={(newValue) => this.handleInputChange({
@@ -304,7 +323,7 @@ class GenericForm extends React.Component {
             } else if (uitype === 'html') {
                 const hasError = !!this.state.fieldErrors[fieldKey]
                 currentFormFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldKey}
-                                             className={classNames(classes.formFieldFull)}>
+                                                    className={classNames(classes.formFieldFull)}>
                     <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel>
                     <TinyEditor key={fieldKey} id={fieldKey} error={hasError} style={{marginTop: '1.5rem'}}
 
@@ -314,20 +333,20 @@ class GenericForm extends React.Component {
                                         value: newValue
                                     }
                                 })}>{value}</TinyEditor>
-                    {(hasError?
+                    {(hasError ?
                         <FormHelperText error>Bitte
                             ausfüllen</FormHelperText> : '')}
                 </FormControl>)
 
             } else if (uitype === 'hr') {
 
-                currentFormFields.push(<hr />)
+                currentFormFields.push(<hr/>)
 
             } else if (uitype === 'button') {
 
                 currentFormFields.push(<Button key={fieldKey}
                                                color="primary" variant="contained"
-                                               onClick={()=>{
+                                               onClick={() => {
                                                    if (this.props.onButtonClick)
                                                        this.props.onButtonClick(field)
                                                }}>{field.label}</Button>)
@@ -339,21 +358,22 @@ class GenericForm extends React.Component {
 
 
             } else if (uitype === 'type_picker') {
-                currentFormFields.push(<TypePicker value={(value ? (value.constructor === Array ? value : [value]) : null)}
-                                            error={!!this.state.fieldErrors[fieldKey]}
-                                            helperText={this.state.fieldErrors[fieldKey]}
-                                            onChange={this.handleInputChange}
-                                            className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                            fullWidth={field.fullWidth}
-                                            key={fieldKey}
-                                            name={fieldKey}
-                                            label={field.label}
-                                            filter={field.filter}
-                                            multi={field.multi}
-                                            pickerField={field.pickerField}
-                                            searchFields={field.searchFields}
-                                            fields={field.fields}
-                                            type={field.type} placeholder={field.placeholder}/>)
+                currentFormFields.push(<TypePicker
+                    value={(value ? (value.constructor === Array ? value : [value]) : null)}
+                    error={!!this.state.fieldErrors[fieldKey]}
+                    helperText={this.state.fieldErrors[fieldKey]}
+                    onChange={this.handleInputChange}
+                    className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                    fullWidth={field.fullWidth}
+                    key={fieldKey}
+                    name={fieldKey}
+                    label={field.label}
+                    filter={field.filter}
+                    multi={field.multi}
+                    pickerField={field.pickerField}
+                    searchFields={field.searchFields}
+                    fields={field.fields}
+                    type={field.type} placeholder={field.placeholder}/>)
             } else if (uitype === 'select') {
                 currentFormFields.push(<SimpleSelect
                     key={fieldKey} name={fieldKey}
@@ -370,10 +390,10 @@ class GenericForm extends React.Component {
                     value={value || []}/>)
             } else if (field.type === 'Boolean') {
                 currentFormFields.push(<SimpleSwitch key={fieldKey}
-                                              label={field.label || field.placeholder}
-                                              name={fieldKey}
-                                              className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                              onChange={this.handleInputChange} checked={value ? true : false}/>)
+                                                     label={field.label || field.placeholder}
+                                                     name={fieldKey}
+                                                     className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                                                     onChange={this.handleInputChange} checked={value ? true : false}/>)
 
 
             } else {
@@ -413,58 +433,83 @@ class GenericForm extends React.Component {
                     }, []))
                 } else {
                     currentFormFields.push(<TextField autoFocus={autoFocus && fieldIndex === 0}
-                                               error={!!this.state.fieldErrors[fieldKey]}
-                                               key={fieldKey}
-                                               id={fieldKey}
-                                               label={field.label || field.name}
-                                               className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                               InputLabelProps={{
-                                                   shrink: true,
-                                               }}
-                                               helperText={this.state.fieldErrors[fieldKey]}
-                                               fullWidth={field.fullWidth}
-                                               type={uitype}
-                                               multiline={uitype === 'textarea'}
-                                               placeholder={field.placeholder}
-                                               value={value || field.defaultValue || ''}
-                                               name={fieldKey}
-                                               onKeyDown={(e) => {
-                                                   onKeyDown && onKeyDown(e, value)
-                                               }}
-                                               onBlur={this.handleBlur}
-                                               onChange={this.handleInputChange}/>)
+                                                      error={!!this.state.fieldErrors[fieldKey]}
+                                                      key={fieldKey}
+                                                      id={fieldKey}
+                                                      label={field.label || field.name}
+                                                      className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                                                      InputLabelProps={{
+                                                          shrink: true,
+                                                      }}
+                                                      helperText={this.state.fieldErrors[fieldKey]}
+                                                      fullWidth={field.fullWidth}
+                                                      type={uitype}
+                                                      multiline={uitype === 'textarea'}
+                                                      placeholder={field.placeholder}
+                                                      value={value || field.defaultValue || ''}
+                                                      name={fieldKey}
+                                                      onKeyDown={(e) => {
+                                                          onKeyDown && onKeyDown(e, value)
+                                                      }}
+                                                      onBlur={this.handleBlur}
+                                                      onChange={this.handleInputChange}/>)
                 }
 
             }
+
+            if (field.expandable === false) {
+
+
+                let holder = formFields
+
+                if (expandableField.tab) {
+                    if (!tabs[expandableField.tab]) {
+                        tabs[expandableField.tab] = []
+                    }
+                    holder = tabs[expandableField.tab]
+                }
+
+                holder.push(<Expandable title={expandableField.expandable}
+                                        onChange={() => {
+                                        }}
+                                        expanded={false}>
+                    {currentFormFields}
+                </Expandable>)
+
+                expandableField = null
+            }
+
         }
+
         const {tabValue} = this.state
         const tabKeys = Object.keys(tabs)
         console.log('render GenericForm')
 
         return (
             <form className={classes.form}>
-                {tabKeys.length===0 && formFields}
-                {tabKeys.length>0 && <div className={classes.tabContainer}>
+                {tabKeys.length === 0 && formFields}
+                {tabKeys.length > 0 && <div className={classes.tabContainer}>
                     <AntTabs
                         value={tabValue}
-                        onChange={(e, newValue)=>{
-                            this.setState({tabValue:newValue})
+                        onChange={(e, newValue) => {
+                            this.setState({tabValue: newValue})
                         }}
                     >
                         {tabKeys.map((value, i) =>
-                            <AntTab key={'tab-'+i} label={value}/>
+                            <AntTab key={'tab-' + i} label={value}/>
                         )}
 
-                        {formFields.length>0 && <AntTab key={'tab-'+tabKeys.length} label="Verwaltung"/>}
+                        {formFields.length > 0 && <AntTab key={'tab-' + tabKeys.length} label="Verwaltung"/>}
 
                     </AntTabs>
 
                     {tabKeys.map((value, i) =>
-                        <TabPanel key={'tabPanel-'+i} value={tabValue} index={i}>
+                        <TabPanel key={'tabPanel-' + i} value={tabValue} index={i}>
                             {tabs[value]}
                         </TabPanel>
                     )}
-                    {formFields.length>0 && <TabPanel key={'tabPanel-'+tabKeys.length} value={tabValue} index={tabKeys.length}>
+                    {formFields.length > 0 &&
+                    <TabPanel key={'tabPanel-' + tabKeys.length} value={tabValue} index={tabKeys.length}>
                         {formFields}
                     </TabPanel>}
 

@@ -62,21 +62,23 @@ const styles = theme => ({
         textShadow: '1px 1px 2px white'
     },
     dropArea: {
+        overflow:'hidden',
         whiteSpace: 'pre',
         transition: 'display .5s ease-out,visibility .5s ease-out, opacity .5s ease-out',
         opacity: 0,
         zIndex: 999,
-        display: 'none',
+        display: 'table',
         visibility: 'hidden',
         position: 'absolute',
         fontWeight: 'bold',
         borderRadius: '5px',
         background: '#000',
-        padding: '0 50px',
-        margin: '-40px 0 10px 0 !important',
+        padding: '0',
+        maxWidth: '100%',
+        margin: '-28px 0 0 0 !important',
         border: '1px dashed #c1c1c1',
-        height: '30px',
-        lineHeight: '30px',
+        height: '28px',
+        lineHeight: '28px',
         color: '#fff',
         textAlign: 'center',
         fontSize: '1rem',
@@ -94,6 +96,10 @@ const styles = theme => ({
             borderWidth: '10px',
             marginLeft: '-10px'
         }
+    },
+    dropAreaActive: {
+        visibility: 'visible',
+        opacity: 0.8
     },
     dropAreaOverlap: {
         position: 'relative',
@@ -371,7 +377,7 @@ class JsonDomHelper extends React.Component {
                 for (let i = 0; i < tags.length; ++i) {
                     const tag = tags[i]
                     if (draggable === tag.nextSibling || draggable === tag.previousSibling /*|| !elementOnMouseOver.contains(tag)*/) {
-                        tag.style.display = null
+                        tag.classList.remove(this.props.classes.dropAreaActive)
                         continue
                     }
 
@@ -400,10 +406,17 @@ class JsonDomHelper extends React.Component {
 
                                 if (distanceTop < 100 || distanceMiddle < 100 || distanceBottom < 100) {
 
-                                    tag.style.display = 'block'
-                                    tag.style.visibility = 'visible'
-                                    tag.style.opacity = 0.8
-                                    tag.style.minWidth = node.innerWidth+'px'
+                                    const nodeForWidth = ['DIV'].indexOf(node.tagName)<0?node.parentNode:node
+
+                                    const computedStyle = window.getComputedStyle(nodeForWidth, null)
+
+
+                                    let elementWidth = nodeForWidth.clientWidth
+                                    elementWidth -= parseFloat(computedStyle.paddingLeft) + parseFloat(computedStyle.paddingRight)
+
+
+                                    tag.classList.add(this.props.classes.dropAreaActive)
+                                    tag.style.width =(elementWidth)+'px'
                                     allTags.push(tag)
 
                                     /*const rect = tag.getBoundingClientRect()
@@ -430,9 +443,7 @@ const m = Math.max((offX+offY) / 2,100)
 
                                 } else {
                                     if (distanceTop > 200 && distanceMiddle > 200 && distanceBottom > 200) {
-
-                                        tag.style.visibility = null
-                                        tag.style.opacity = null
+                                        tag.classList.remove(this.props.classes.dropAreaActive)
                                     }else{
                                         allTags.push(tag)
                                     }
@@ -445,14 +456,14 @@ const m = Math.max((offX+offY) / 2,100)
 
                 // check for overlapping elements
                 for (let y = 0; y < allTags.length; y++) {
-                    const rect = allTags[y].getBoundingClientRect()
                     for (let z = 0; z < allTags.length; z++) {
                         if( allTags[y]!==allTags[z]){
+                            const rect = allTags[y].getBoundingClientRect()
                             const rect2 = allTags[z].getBoundingClientRect()
-                            if (!(rect.right < rect2.left ||
+                            if (!(rect.right < rect2.left||
                                 rect.left > rect2.right ||
-                                rect.bottom < rect2.top ||
-                                rect.top > rect2.bottom)) {
+                                rect.bottom < rect2.top||
+                                rect.top > rect2.bottom )) {
 
                                 allTags[z].classList.add(this.props.classes.dropAreaOverlap)
                                 allTags[y].classList.add(this.props.classes.dropAreaOverlap)
@@ -532,7 +543,7 @@ const m = Math.max((offX+offY) / 2,100)
 
 
     resetDragState() {
-        DomUtilAdmin.setAttrForSelector('.' + this.props.classes.dropArea, {style: 'display:none;visibility:none'})
+        DomUtilAdmin.setAttrForSelector('.' + this.props.classes.dropArea, {className: this.props.classes.dropArea})
         JsonDomHelper.currentDragElement = null
         this.setState({toolbarHovered: false, hovered: false, dragging: false})
     }
@@ -563,7 +574,7 @@ const m = Math.max((offX+offY) / 2,100)
                 index++
             }
             addComponent({key, json: _json, index, component: source})
-            _onChange(_json)
+            _onChange(_json, true)
         }
 
     }
@@ -637,7 +648,7 @@ const m = Math.max((offX+offY) / 2,100)
             _onDataResolverPropertyChange({value: null, key: source.$inlineEditor.dataResolver})
         }
         removeComponent(_key, _json)
-        _onChange(_json)
+        _onChange(_json, true)
     }
 
 
