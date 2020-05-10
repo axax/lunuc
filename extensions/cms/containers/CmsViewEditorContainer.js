@@ -359,7 +359,7 @@ class CmsViewEditorContainer extends React.Component {
                     onChange={this.handleTemplateChange.bind(this)}/>
 
             </SimpleDialog>,
-            <DataEditDialog/>
+            <DataEditDialog key="dataEditDialog"/>
         ]
 
 
@@ -1211,7 +1211,7 @@ CmsViewEditorContainer.propTypes = {
     cmsPage: PropTypes.object,
     cmsComponentEdit: PropTypes.object,
     cmsEditData: PropTypes.object,
-    keyValues: PropTypes.array,
+    keyValues: PropTypes.any,
     setKeyValue: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
     user: PropTypes.object.isRequired,

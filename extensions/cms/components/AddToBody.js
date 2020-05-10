@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 
 class AddToBody extends React.Component {
     constructor(props) {
-        super(props);
+        super(props)
     }
 
     render() {

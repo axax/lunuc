@@ -12,6 +12,7 @@
   "core.address.postcode": "Postcode",
   "core.address.place": "Place",
   "core.login.invalid": "Invalid user or password",
+  "core.signup.usertaken": "Username or email already taken",
   "core.login.blocked": "User locked. Try again in a few minutes.",
   "core.update.permission.error": "%name% could not be changed. You might not have premissions to manage other users",
   "FileDrop.dropArea": "Drop files here, or click to select files to upload.",

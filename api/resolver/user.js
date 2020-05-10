@@ -47,7 +47,7 @@ const createUser = async ({username, role, junior, password, email, picture, db,
     const userExists = (await userCollection.findOne({$or: [{'email': email}, {'username': username}]})) != null
 
     if (userExists) {
-        errors.push({key: 'usernameError', message: 'Username or email already taken'})
+        errors.push({key: 'usernameError', message: _t('core.signup.usertaken')})
         throw new ValidationError(errors)
     }
 

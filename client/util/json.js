@@ -2,12 +2,28 @@ export function propertyByPath(path, obj, separator = '.', assign = false) {
     if (!path) {
         return assign ? assignIfObjectOrArray(obj) : obj
     }
+    let escapedPath
     return path.split(separator).reduce((res, prop) => {
         if (res) {
-            if (assign) {
-                res[prop] = assignIfObjectOrArray(res[prop])
+            if (prop.lastIndexOf('\\') === prop.length-1) {
+                if (!escapedPath) {
+                    escapedPath = ''
+                }
+                escapedPath += prop.substring(0, prop.length - 1)+'_'
+                return res
             }
-            return res[prop]
+            let finalPath
+            if (escapedPath) {
+                finalPath = escapedPath + prop
+                escapedPath = ''
+            } else {
+                finalPath = prop
+            }
+
+            if (assign) {
+                res[finalPath] = assignIfObjectOrArray(res[finalPath])
+            }
+            return res[finalPath]
         }
         return null
 
@@ -25,7 +41,7 @@ export function assignIfObjectOrArray(obj) {
     return obj
 }
 
-export function matchExpr(expr, scope){
+export function matchExpr(expr, scope) {
     if (expr === 'false') {
         return true
     }
@@ -40,28 +56,28 @@ export function matchExpr(expr, scope){
             if (match[3] !== String(prop)) {
                 return true
             }
-        }else if (match[2] === '!=') {
+        } else if (match[2] === '!=') {
             if (match[3] === String(prop)) {
                 return true
             }
-        }else if (match[2] === '>') {
+        } else if (match[2] === '>') {
             if (!(prop > parseInt(match[3]))) {
                 return true
             }
-        }else if (match[2] === '>=') {
+        } else if (match[2] === '>=') {
             if (!(prop >= parseInt(match[3]))) {
                 return true
             }
-        }else if (match[2] === '<') {
+        } else if (match[2] === '<') {
             if (!(prop < parseInt(match[3]))) {
                 return true
             }
-        }else if (match[2] === '<=') {
+        } else if (match[2] === '<=') {
             if (!(prop <= parseInt(match[3]))) {
                 return true
             }
-        }else if (match[2] === ' in ') {
-            if (match[3].indexOf('"'+prop+'"')===-1) {
+        } else if (match[2] === ' in ') {
+            if (match[3].indexOf('"' + prop + '"') === -1) {
                 return true
             }
         }
@@ -71,19 +87,38 @@ export function matchExpr(expr, scope){
 
 export function setPropertyByPath(value, path, obj, separator = '.') {
     const fields = path.split(separator)
+    let escapedPath
     for (let i = 0, n = fields.length; i < n; i++) {
+
         let field = fields[i]
+        if (field.lastIndexOf('\\') === field.length-1) {
+            if (!escapedPath) {
+                escapedPath = ''
+            }
+            escapedPath += field.substring(0, field.length - 1)+'_'
+            continue
+        }
+        let finalPath
+        if (escapedPath) {
+            finalPath = escapedPath + field
+            escapedPath = ''
+        } else {
+            finalPath = field
+        }
+
+
+
         if (i === n - 1) {
             if (value && value.constructor === String) {
-                obj[field] = value //Util.escapeForJson(value) //.replace(/"/g, '\\\\\\\"')
+                obj[finalPath] = value //Util.escapeForJson(value) //.replace(/"/g, '\\\\\\\"')
             } else {
-                obj[field] = value
+                obj[finalPath] = value
             }
         } else {
-            if (obj[field] == undefined) {
-                obj[field] = {}
+            if (obj[finalPath] == undefined) {
+                obj[finalPath] = {}
             }
-            obj = obj[field]
+            obj = obj[finalPath]
         }
     }
 }

@@ -112,7 +112,12 @@ const baseElements = [
         tagName: '', name: 'Überschrift',
         defaults: {
             $inlineEditor: {
-                elementKey: 'headline'
+                elementKey: 'headline',
+                options: {
+                    c: {
+                        trKey: '__uid__'
+                    }
+                }
             },
             p: {
                 ['data-element-key']: 'headline'
@@ -121,6 +126,8 @@ const baseElements = [
         },
         options: {
             t: {
+                tab: 'Allgemein',
+                label: 'Type',
                 enum: [
                     {
                         name: 'H1',
@@ -148,18 +155,31 @@ const baseElements = [
                     }
                 ]
             },
+            $inlineEditor_options_c_trKey: {
+                label: 'Übersetzungsschlüssel',
+                value: '__uid__'
+            },
+            $inlineEditor_options_c_tr: {
+                label: 'Sprachabhängig',
+                type: 'Boolean',
+                tab: 'Allgemein'
+            },
             c: {
                 label: 'Text',
-                fullWidth: true
+                fullWidth: true,
+                tab: 'Allgemein'
             },
             p_style_marginTop: {
-                label: 'Abstand oben'
+                label: 'Abstand oben',
+                tab: 'Allgemein'
             },
             p_style_marginBottom: {
-                label: 'Abstand unten'
+                label: 'Abstand unten',
+                tab: 'Allgemein'
             },
             p_className: {
-                label: 'Klassname'
+                label: 'Klassname',
+                tab: 'Allgemein'
             }
         }
     },
@@ -169,13 +189,22 @@ const baseElements = [
         defaults: {
             $c: '',
             $inlineEditor: {
-                elementKey: 'richText'
+                elementKey: 'richText',
+                options: {
+                    $c: {
+                        trKey: '__uid__'
+                    }
+                }
             },
             p: {
                 ['data-element-key']: 'richText'
             }
         },
         options: {
+            $inlineEditor_options_$c_tr: {
+                label: 'Sprachabhängig',
+                type: 'Boolean'
+            },
             $c: {
                 label: 'Text',
                 uitype: 'html'
@@ -192,6 +221,10 @@ const baseElements = [
         tagName: 'Link',
         name: 'Link',
         options: {
+            $inlineEditor_options_c_tr: {
+                label: 'Sprachabhängig',
+                type: 'Boolean'
+            },
             c: {fullWidth: true, value: '', placeholder: 'Name eingeben', label: 'Name'},
             p_href: {fullWidth: true, value: '', placeholder: 'Url eingeben', label: 'Url'},
             p_className: {
@@ -226,7 +259,12 @@ const baseElements = [
         },
         defaults: {
             $inlineEditor: {
-                elementKey: 'link'
+                elementKey: 'link',
+                options: {
+                    c: {
+                        trKey: '__uid__'
+                    }
+                }
             },
             p: {
                 ['data-element-key']: 'link'
@@ -341,7 +379,14 @@ const baseElements = [
         defaults: {
             $inlineEditor: {
                 elementKey: 'slider',
-                allowDrop: false
+                allowDrop: false,
+                groupOptions: {
+                    $set_0_value: {
+                        text: {
+                            trKey: '__uid__'
+                        }
+                    }
+                }
             },
             p: {
                 ['data-element-key']: 'slider'
@@ -401,6 +446,7 @@ const baseElements = [
                                             $d: 'slide.data',
                                             s: 'item',
                                             c: {
+                                                $inlineEditor: false,
                                                 t: '$.item{item.link?\'Link\':\'li\'}',
                                                 p: {
                                                     'href': '$.item{item.link?item.link:\'\'}'
@@ -461,7 +507,7 @@ const baseElements = [
         groupOptions: {
             $set_0_value: {
                 image: {
-                    expandable:"Slide",
+                    expandable: "Slide",
                     fullWidth: true,
                     value: '',
                     label: 'Bild',
@@ -474,71 +520,19 @@ const baseElements = [
                     fullWidth: true
                 },
                 text: {
-                    expandable:false,
+                    expandable: false,
                     label: 'Text',
                     uitype: 'html'
                 }
             }
         },
         options: {
+            ['$inlineEditor_groupOptions_$set\\_0\\_value_text_tr']: {
+                label: 'Sprachabhängig',
+                type: 'Boolean'
+            },
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
             p_className: {value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse'}
-        }
-    },
-    {
-        tagName: '',
-        name: 'Überschrift (sprachabhänig)',
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'headlinetr'
-            },
-            p: {
-                ['data-element-key']: 'headlinetr'
-            },
-            c: "${_t('__uid__')}"
-        },
-        options: {
-            t: {
-                enum: [
-                    {
-                        name: 'H1',
-                        value: 'h1'
-                    },
-                    {
-                        name: 'H2',
-                        value: 'h2'
-                    },
-                    {
-                        name: 'H3',
-                        value: 'h3'
-                    },
-                    {
-                        name: 'H4',
-                        value: 'h4'
-                    },
-                    {
-                        name: 'H5',
-                        value: 'h5'
-                    },
-                    {
-                        name: 'H6',
-                        value: 'h6'
-                    }
-                ]
-            },
-            c: {
-                label: 'Text',
-                fullWidth: true
-            },
-            p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            },
-            p_className: {
-                label: 'Klassname'
-            }
         }
     },
     {
@@ -547,10 +541,19 @@ const baseElements = [
         defaults: {
             $c: "Paragraph",
             $inlineEditor: {
-                elementKey: 'p'
+                elementKey: 'p',
+                options: {
+                    $c: {
+                        trKey: '__uid__'
+                    }
+                }
             }
         },
         options: {
+            $inlineEditor_options_$c_tr: {
+                label: 'Sprachabhängig',
+                type: 'Boolean'
+            },
             $c: {
                 label: 'Text',
                 fullWidth: true,
@@ -580,12 +583,12 @@ const baseElements = [
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 1'}]
+                    c: []
                 },
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 1'}]
+                    c: []
                 }
             ]
         },
@@ -620,17 +623,17 @@ const baseElements = [
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 1'}]
+                    c: []
                 },
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 2'}]
+                    c: []
                 },
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 3'}]
+                    c: []
                 },
             ]
         },
@@ -669,22 +672,22 @@ const baseElements = [
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 1'}]
+                    c: []
                 },
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 2'}]
+                    c: []
                 },
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 3'}]
+                    c: []
                 },
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 4'}]
+                    c: []
                 }
             ]
         },
@@ -727,27 +730,27 @@ const baseElements = [
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 1'}]
+                    c: []
                 },
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 2'}]
+                    c: []
                 },
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 3'}]
+                    c: []
                 },
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 4'}]
+                    c: []
                 },
                 {
                     $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
                     t: 'Col',
-                    c: [{c: 'Spalte 5'}]
+                    c: []
                 }
             ]
         },
@@ -938,7 +941,7 @@ export function getJsonDomElements(value, options) {
             elementsMap[element.value] = element
         })
     }
-    if(!elementsMapAdvanced){
+    if (!elementsMapAdvanced) {
         elementsMapAdvanced = {}
         advancedElements.forEach(element => {
             element.value = element.defaults.$inlineEditor.elementKey
@@ -948,7 +951,7 @@ export function getJsonDomElements(value, options) {
     if (value) {
         return elementsMap[value] || elementsMapAdvanced[value]
     }
-    if(options && options.advanced){
+    if (options && options.advanced) {
         return [...baseElements, ...advancedElements]
     }
     return baseElements

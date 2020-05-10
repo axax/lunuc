@@ -246,7 +246,7 @@ class DrawerLayout extends React.Component {
             <div className={classes.root}>
                 <div className={classes.appFrame}>
                     <AppBar
-                        ondragenter={(e)=>{
+                        onDragEnter={(e)=>{
                             this.setState({dragEntered:true})
                         }}
                         className={classNames(classes.appBar, fixedLayout && classes.appBarFixed)}

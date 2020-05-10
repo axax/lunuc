@@ -30,7 +30,7 @@ import {getJsonDomElements} from '../util/elements'
 import {ApolloClient} from '@apollo/client'
 import {withApollo} from '@apollo/react-hoc'
 import {gql} from '@apollo/client'
-import {deepMergeToFirst} from 'util/deepMerge'
+import {deepMergeToFirst, deepMerge} from 'util/deepMerge'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 
 const {UPLOAD_URL} = config
@@ -62,7 +62,7 @@ const styles = theme => ({
         textShadow: '1px 1px 2px white'
     },
     dropArea: {
-        overflow:'hidden',
+        overflow: 'hidden',
         whiteSpace: 'pre',
         transition: 'display .5s ease-out,visibility .5s ease-out, opacity .5s ease-out',
         opacity: 0,
@@ -357,7 +357,7 @@ class JsonDomHelper extends React.Component {
 
     onDrag(e) {
         e.stopPropagation()
-        if (e.clientY>0 && Math.abs(e.clientY - this._clientY) > 25) {
+        if (e.clientY > 0 && Math.abs(e.clientY - this._clientY) > 25) {
 
             this._clientX = e.clientX
             this._clientY = e.clientY
@@ -406,7 +406,7 @@ class JsonDomHelper extends React.Component {
 
                                 if (distanceTop < 100 || distanceMiddle < 100 || distanceBottom < 100) {
 
-                                    const nodeForWidth = ['DIV'].indexOf(node.tagName)<0?node.parentNode:node
+                                    const nodeForWidth = ['DIV'].indexOf(node.tagName) < 0 ? node.parentNode : node
 
                                     const computedStyle = window.getComputedStyle(nodeForWidth, null)
 
@@ -416,7 +416,7 @@ class JsonDomHelper extends React.Component {
 
 
                                     tag.classList.add(this.props.classes.dropAreaActive)
-                                    tag.style.width =(elementWidth)+'px'
+                                    tag.style.width = (elementWidth) + 'px'
                                     allTags.push(tag)
 
                                     /*const rect = tag.getBoundingClientRect()
@@ -444,7 +444,7 @@ const m = Math.max((offX+offY) / 2,100)
                                 } else {
                                     if (distanceTop > 200 && distanceMiddle > 200 && distanceBottom > 200) {
                                         tag.classList.remove(this.props.classes.dropAreaActive)
-                                    }else{
+                                    } else {
                                         allTags.push(tag)
                                     }
                                 }
@@ -457,13 +457,13 @@ const m = Math.max((offX+offY) / 2,100)
                 // check for overlapping elements
                 for (let y = 0; y < allTags.length; y++) {
                     for (let z = 0; z < allTags.length; z++) {
-                        if( allTags[y]!==allTags[z]){
+                        if (allTags[y] !== allTags[z]) {
                             const rect = allTags[y].getBoundingClientRect()
                             const rect2 = allTags[z].getBoundingClientRect()
-                            if (!(rect.right < rect2.left||
+                            if (!(rect.right < rect2.left ||
                                 rect.left > rect2.right ||
-                                rect.bottom < rect2.top||
-                                rect.top > rect2.bottom )) {
+                                rect.bottom < rect2.top ||
+                                rect.top > rect2.bottom)) {
 
                                 allTags[z].classList.add(this.props.classes.dropAreaOverlap)
                                 allTags[y].classList.add(this.props.classes.dropAreaOverlap)
@@ -595,14 +595,23 @@ const m = Math.max((offX+offY) / 2,100)
     parseInlineEditorSource(source) {
         let parsedSource
         if (source && source.constructor === String) {
+
+            // source expression: Type:_id
+            // or = :tr.de.key
+
             const pos = source.indexOf(':'), pos2 = source.indexOf(':', pos + 1)
 
-            const type = source.substring(0, pos),
-                _id = source.substring(pos + 1, pos2 >= 0 ? pos2 : source.length)
+            if (pos > -1) {
 
-            const parts = source.split(':')
-            if (parts.length >= 2) {
-                parsedSource = {type, _id, props: pos2 >= 0 ? source.substring(pos2 + 1) : null}
+                parsedSource = {
+                    type: source.substring(0, pos),
+                    _id: source.substring(pos + 1, pos2 > -1 ? pos2 : source.length)
+                }
+
+                if (pos2 > -1) {
+                    parsedSource.props = source.substring(pos2 + 1)
+                }
+
             }
         } else {
             parsedSource = source
@@ -1083,7 +1092,7 @@ const m = Math.max((offX+offY) / 2,100)
                 onDoubleClick={editElementEvent}
                 onChange={overrideOnChange || onChange}
                 onClick={overrideOnClick || onClick}
-                _inlineeditor={_inlineEditor}
+                _inlineeditor={_inlineEditor.toString()}
                 data-isempty={isEmpty}
                 key={rest._key}
                 {...events}
@@ -1180,7 +1189,18 @@ const m = Math.max((offX+offY) / 2,100)
                                                               groupIdx = parseInt(parts[3])
 
                                                           if (selected.groupOptions[groupKey]) {
+
+
+                                                              const groupFieldOption = selected.groupOptions[groupKey][groupProp]
+
                                                               if (selected.groupOptions[groupKey][groupProp]) {
+
+
+                                                                  const groupFieldOption = Object.assign({},
+                                                                      selected.groupOptions[groupKey][groupProp],
+                                                                      comp.$inlineEditor && comp.$inlineEditor.groupOptions && comp.$inlineEditor.groupOptions[groupKey] && comp.$inlineEditor.groupOptions[groupKey][groupProp])
+
+
                                                                   let groupArray = propertyByPath(groupKey, subJson, '_')
                                                                   if (!groupArray) {
                                                                       groupArray = propertyByPath(groupKey, comp, '_')
@@ -1188,27 +1208,50 @@ const m = Math.max((offX+offY) / 2,100)
                                                                   while (groupIdx >= groupArray.length) {
                                                                       groupArray.push({})
                                                                   }
-                                                                  groupArray[groupIdx][groupProp] = val
-                                                                  setPropertyByPath(groupArray, groupKey, comp, '_')
+                                                                  if (groupFieldOption.tr && groupFieldOption.trKey) {
+                                                                      groupArray[groupIdx][groupProp] = `$\{_t('${groupFieldOption.trKey}-${groupIdx}')\}`
+
+                                                                      setPropertyByPath(groupArray, groupKey, comp, '_')
+
+                                                                      if (val !== null) {
+                                                                          _onDataResolverPropertyChange({
+                                                                              value: val,
+                                                                              path: 'tr.' + _app_.lang + '.' + groupFieldOption.trKey+'-'+groupIdx,
+                                                                              instantSave: true
+                                                                          })
+                                                                      }
+
+                                                                  } else {
+                                                                      groupArray[groupIdx][groupProp] = val
+
+                                                                      setPropertyByPath(groupArray, groupKey, comp, '_')
+                                                                  }
+
+
                                                               }
                                                           }
                                                       } else {
-                                                          if (selected.options && selected.options[key] && selected.options[key].template) {
+
+                                                          const currentOpt = Object.assign({},
+                                                              selected.options && selected.options[key],
+                                                              comp.$inlineEditor && comp.$inlineEditor.options && comp.$inlineEditor.options[key])
+
+                                                          if (currentOpt.template) {
                                                               setPropertyByPath(val, '$original_' + key, comp, '_')
-                                                              val = Util.replacePlaceholders(selected.options[key].template, val[0])
+                                                              val = Util.replacePlaceholders(currentOpt.template, val[0])
                                                           }
 
-                                                          let oldVal = propertyByPath(key, addChildDialog.edit ? subJson : selected.defaults, '_')
-                                                          const pos = oldVal && oldVal.constructor === String ? oldVal.indexOf('${_t(\'') : -1
+                                                          if (currentOpt.tr && currentOpt.trKey) {
 
-                                                          if (pos > -1) {
-                                                              const trKey = oldVal.substring(6, oldVal.indexOf('\')}'))
+                                                              setPropertyByPath(`$\{_t('${currentOpt.trKey}')\}`, key, comp, '_')
+                                                              if (val !== null) {
+                                                                  _onDataResolverPropertyChange({
+                                                                      value: val,
+                                                                      path: 'tr.' + _app_.lang + '.' + currentOpt.trKey,
+                                                                      instantSave: true
+                                                                  })
+                                                              }
 
-                                                              _onDataResolverPropertyChange({
-                                                                  value: val,
-                                                                  path: 'tr.' + _app_.lang + '.' + trKey,
-                                                                  instantSave: true
-                                                              })
                                                           } else {
                                                               setPropertyByPath(val, key, comp, '_')
                                                           }
@@ -1224,8 +1267,6 @@ const m = Math.max((offX+offY) / 2,100)
                                               }
 
                                               if (addChildDialog.edit) {
-
-                                                  const mySubJson = getComponentByKey(rest._key, _json)
 
                                                   Object.keys(comp).forEach((key) => {
                                                       if (!subJson[key]) {
@@ -1303,13 +1344,19 @@ const m = Math.max((offX+offY) / 2,100)
                                             })
                                         })
                                     }
+
                                     this.setState({
-                                        addChildDialog: {
-                                            ...addChildDialog,
-                                            selected: item,
-                                            form: null
-                                        }
+                                        addChildDialog: null
+                                    }, () => {
+                                        this.setState({
+                                            addChildDialog: {
+                                                ...addChildDialog,
+                                                selected: item,
+                                                form: null
+                                            }
+                                        })
                                     })
+
                                 }}
                                 items={jsonElements}
                             />}
@@ -1362,9 +1409,8 @@ const m = Math.max((offX+offY) / 2,100)
         const newJsonElement = JSON.parse(JSON.stringify(jsonElement))
         delete newJsonElement.defaults
 
-        newJsonElement.options = Object.assign({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
-        newJsonElement.groupOptions = Object.assign({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
-
+        newJsonElement.options = deepMerge({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
+        newJsonElement.groupOptions = deepMerge({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
         Object.keys(newJsonElement.options).forEach(key => {
 
             let val = propertyByPath('$original_' + key, subJson, '_')
@@ -1372,11 +1418,9 @@ const m = Math.max((offX+offY) / 2,100)
                 val = propertyByPath(key, subJson, '_')
             }
 
-            const pos = val && val.constructor === String ? val.indexOf('${_t(\'') : -1
-            if (pos > -1) {
-                const trKey = val.substring(6, val.indexOf('\')}'))
+            if (newJsonElement.options[key].tr && newJsonElement.options[key].trKey) {
                 if (this.props._scope.data.tr) {
-                    newJsonElement.options[key].value = this.props._scope.data.tr[trKey]
+                    newJsonElement.options[key].value = this.props._scope.data.tr[newJsonElement.options[key].trKey]
                 }
             } else {
                 newJsonElement.options[key].value = val
@@ -1395,9 +1439,19 @@ const m = Math.max((offX+offY) / 2,100)
                 }
                 val.forEach((groupValue, idx) => {
                     Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
+                        const groupFieldOption = newJsonElement.groupOptions[key][fieldKey]
+                        let groupFieldValue
+                        if (groupFieldOption.tr && groupFieldOption.trKey) {
+                            if (this.props._scope.data.tr) {
+                                groupFieldValue = this.props._scope.data.tr[groupFieldOption.trKey+'-'+idx]
+                            }
+                        } else {
+                            groupFieldValue = groupValue[fieldKey]
+                        }
+
                         newJsonElement.options['!' + key + '!' + fieldKey + '!' + idx] = {
                             ...newJsonElement.groupOptions[key][fieldKey],
-                            value: groupValue[fieldKey]
+                            value: groupFieldValue
                         }
                     })
                 })
@@ -1423,7 +1477,8 @@ JsonDomHelper.propTypes = {
     _scope: PropTypes.object.isRequired,
     _json: PropTypes.any,
     _onChange: PropTypes.func,
-    _onDataResolverPropertyChange: PropTypes.func
+    _onDataResolverPropertyChange: PropTypes.func,
+    _inlineEditor: PropTypes.bool
 }
 
 
