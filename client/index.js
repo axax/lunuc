@@ -205,7 +205,7 @@ if (!Object.assign || !window.fetch || !window.Intl) {
         onload
     })
 
-    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CIntl.~locale.en%2CIntl.~locale.de', {
+    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CIntl.~locale.en%2CIntl.~locale.de%2CObject.values', {
         async: true,
         onload
     })
