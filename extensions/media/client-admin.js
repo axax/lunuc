@@ -3,9 +3,8 @@ import Hook from 'util/hook'
 import Async from 'client/components/Async'
 import config from 'gen/config'
 import {gql} from '@apollo/client'
-import Util from "../../client/util";
-
-const {UPLOAD_URL} = config
+import Util from '../../client/util'
+const {UPLOAD_URL,ADMIN_BASE_URL} = config
 
 const FileDrop = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
@@ -13,6 +12,8 @@ const TypePicker = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "admin" */ '../../client/components/TypePicker')}/>
 const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch"
                                        load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+const ImageIcon = (props) => <Async {...props} expose="ImageIcon"
+                                  load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 export default () => {
 
@@ -200,4 +201,8 @@ export default () => {
     })
 
 
+    // add entry to main menu
+    Hook.on('MenuMenu', ({menuItems}) => {
+        menuItems.push({name: 'Medias', to: ADMIN_BASE_URL + '/medias', auth: true, icon: <ImageIcon/>})
+    })
 }

@@ -90,10 +90,11 @@ class TinyEditor extends React.Component {
                             left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
 
                         const newwindow = window.open(
-                            `/admin/types/?noLayout=true&fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`, '_blank',
+                            `/${_app_.lang}/admin/types/?noLayout=true&fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`, '_blank',
                             'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
                         setTimeout(() => {
                             newwindow.addEventListener('beforeunload', (e) => {
+                                console.log(newwindow.resultValue)
                                 if (newwindow.resultValue) {
 
                                     const mediaObj = Util.getImageObject(newwindow.resultValue)
@@ -146,7 +147,7 @@ class TinyEditor extends React.Component {
 
             }
             if (!window.tinymce) {
-                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.2.1/tinymce.min.js', {
+                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.2.2/tinymce.min.js', {
                     onload: assestLoaded
                 })
             } else {
