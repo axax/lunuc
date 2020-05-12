@@ -40,7 +40,7 @@ export const keyvalueSchemaRaw = `
     
 		
 	type Mutation {
-		createKeyValue(key: String!, value: String, createdBy: ID!): KeyValue	
+		createKeyValue(key: String!, value: String, createdBy: ID): KeyValue	
 		updateKeyValue(_id: ID!, key: String, value: String, createdBy: ID): KeyValue
 		deleteKeyValue(_id: ID!): KeyValue
 		deleteKeyValues(_id: [ID]): [KeyValue]

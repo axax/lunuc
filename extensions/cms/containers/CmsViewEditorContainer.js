@@ -697,7 +697,7 @@ class CmsViewEditorContainer extends React.Component {
                                   }}>Admin</Button>,
                                   <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
                                       this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname)}`)
-                                  }}>Logout</Button>,
+                                  }}>{_t('CmsViewEditorContainer.logout')}</Button>,
                                   <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>
                               ]
                               }

@@ -38,13 +38,15 @@ const styles = theme => {
         clips: {
             display: 'flex',
             width: '100%',
-            flexWrap: 'wrap'
+            flexWrap: 'wrap',
+            marginBottom: theme.spacing(2)
         },
         clip: {
             margin: theme.spacing(2) + 'px auto 0px ' + theme.spacing(1) + 'px;',
             '&:first-child':{
                 marginLeft: 0
-            }
+            },
+            position:'relative'
         },
         clipMulti: {
             margin: theme.spacing(1) + 'px 0',
@@ -60,9 +62,13 @@ const styles = theme => {
         },
         dummyImg: {
             pointerEvents: 'none',
+            maxWidth: '100%',
+            maxHeight: '12rem',
+            objectFit: 'cover'
+        },
+        dummyImgMulti: {
+            maxWidth: 'none',
             width: '100%',
-            height: 'auto',
-            objectFit: 'cover',
             maxHeight: '6rem'
         },
         dummyTxt:{
@@ -75,8 +81,8 @@ const styles = theme => {
         },
         dummyRemove:{
             position: 'absolute',
-            right: '0.1rem',
-            top: '0.2rem',
+            left: '5px',
+            top: '5px',
             zIndex:2,
             margin:0,
             padding:'0.2rem',
@@ -153,7 +159,7 @@ class TypePicker extends React.Component {
                                                    top = (screen.height / 2) - (h / 2)
 
                                                const newwindow = window.open(
-                                                   `/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
+                                                   `/${_app_.lang}/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
                                                    'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
 
                                                setTimeout(() => {
@@ -174,7 +180,7 @@ class TypePicker extends React.Component {
             <div className={classes.clips}>
                 {value.map((value, i) =>
                     [
-                        (multi && value.__typename === 'Media' ?
+                        (value.__typename === 'Media' ?
                             <div draggable={true}
                                  data-index={i}
                                  onDragStart={(e) => {
@@ -182,7 +188,7 @@ class TypePicker extends React.Component {
                                  }}
                                  key={i}
                                  className={classNames(classes.clip, multi && classes.clipMulti)}>
-                                <img className={classes.dummyImg} src={getImageSrc(value)}/>
+                                <img className={classNames(classes.dummyImg, multi && classes.dummyImgMulti)} src={getImageSrc(value)}/>
                                 <div className={classes.dummyTxt}>{typeDataToLabel(value, pickerField)}</div>
 
                                 <IconButton className={classes.dummyRemove}

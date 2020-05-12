@@ -1,3 +1,8 @@
+import {
+    CAPABILITY_MANAGE_CMS_PAGES
+} from '../constants'
+
+
 const baseElements = [
     {
         subHeader: 'Allgemeine Elemente',
@@ -21,13 +26,16 @@ const baseElements = [
                 label: 'Bild',
                 uitype: 'type_picker',
                 type: 'Media',
-                filter: 'mimeType=image'
+                filter: 'mimeType=image',
+                tab: 'Allgemein'
             },
             p_style_marginTop: {
-                label: 'Abstand oben'
+                label: 'Abstand oben',
+                tab: 'Allgemein'
             },
             p_style_marginBottom: {
-                label: 'Abstand unten'
+                label: 'Abstand unten',
+                tab: 'Allgemein'
             },
             p_style_float: {
                 label: 'Ausrichtung',
@@ -44,10 +52,12 @@ const baseElements = [
                         name: 'Links',
                         value: 'left'
                     },
-                ]
+                ],
+                tab: 'Allgemein'
             },
             p_className: {
-                label: 'Klassname'
+                label: 'Klassname',
+                tab: 'Allgemein'
             },
             p_wrapper: {
                 label: 'Zoom',
@@ -162,7 +172,8 @@ const baseElements = [
             $inlineEditor_options_c_tr: {
                 label: 'Sprachabhängig',
                 type: 'Boolean',
-                tab: 'Allgemein'
+                tab: 'Allgemein',
+                role: CAPABILITY_MANAGE_CMS_PAGES
             },
             c: {
                 label: 'Text',
@@ -203,7 +214,8 @@ const baseElements = [
         options: {
             $inlineEditor_options_$c_tr: {
                 label: 'Sprachabhängig',
-                type: 'Boolean'
+                type: 'Boolean',
+                role: CAPABILITY_MANAGE_CMS_PAGES
             },
             $c: {
                 label: 'Text',
@@ -223,7 +235,8 @@ const baseElements = [
         options: {
             $inlineEditor_options_c_tr: {
                 label: 'Sprachabhängig',
-                type: 'Boolean'
+                type: 'Boolean',
+                role: CAPABILITY_MANAGE_CMS_PAGES
             },
             c: {fullWidth: true, value: '', placeholder: 'Name eingeben', label: 'Name'},
             p_href: {fullWidth: true, value: '', placeholder: 'Url eingeben', label: 'Url'},
@@ -447,7 +460,7 @@ const baseElements = [
                                             s: 'item',
                                             c: {
                                                 $inlineEditor: false,
-                                                t: '$.item{item.link?\'Link\':\'li\'}',
+                                                t: '$.item{item.link?\'Link\':\'#\'}',
                                                 p: {
                                                     'href': '$.item{item.link?item.link:\'\'}'
                                                 },
@@ -529,7 +542,8 @@ const baseElements = [
         options: {
             ['$inlineEditor_groupOptions_$set\\_0\\_value_text_tr']: {
                 label: 'Sprachabhängig',
-                type: 'Boolean'
+                type: 'Boolean',
+                role: CAPABILITY_MANAGE_CMS_PAGES
             },
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
             p_className: {value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse'}
@@ -552,7 +566,8 @@ const baseElements = [
         options: {
             $inlineEditor_options_$c_tr: {
                 label: 'Sprachabhängig',
-                type: 'Boolean'
+                type: 'Boolean',
+                role: CAPABILITY_MANAGE_CMS_PAGES
             },
             $c: {
                 label: 'Text',

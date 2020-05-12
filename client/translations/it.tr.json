@@ -13,6 +13,7 @@
   "core.address.place": "Ort",
   "core.login.invalid": "Benutzer oder Passwort sind ungültig",
   "core.login.blocked": "Benutzer gesperrt. Probieren Sie es in ein paar Minuten nochmals.",
+  "core.signup.usertaken": "Benutzername oder E-Mail Adresse bereits verwendet",
   "core.update.permission.error": "Type %name% konnte nicht geändert werden. Sie haben möglicherweise keine Berechtigung Daten von anderen Benutzer zu ändern.",
   "FileDrop.dropArea": "Ziehen Sie Dateien hierhin oder klicken Sie hier und wählen Sie Dateien zum Hochladen aus.",
   "FileDrop.uploadSuccess": "Dateiupload war erfolgreich",
@@ -28,5 +29,6 @@
   "CmsViewEditorContainer.addnewpage": "Neue Seite erstellen",
   "CmsViewEditorContainer.languages": "Sprachvarianten",
   "CmsViewEditorContainer.undochange": "Änderung Rückgängig",
+  "CmsViewEditorContainer.logout": "Abmelden",
   "GenericForm.fieldIsRequired": "Bitte ausfüllen"
 }

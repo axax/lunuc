@@ -261,6 +261,11 @@ Hook.on('Types', ({types}) => {
                 reference: true
             },
             {
+                name: 'meta',
+                type: 'Object',
+                uitype: 'json'
+            },
+            {
                 name: 'lastLogin',
                 label: 'Last login',
                 uitype: 'datetime',

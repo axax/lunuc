@@ -29,5 +29,6 @@
   "CmsViewEditorContainer.addnewpage": "Neue Seite erstellen",
   "CmsViewEditorContainer.languages": "Sprachvarianten",
   "CmsViewEditorContainer.undochange": "Änderung Rückgängig",
+  "CmsViewEditorContainer.logout": "Abmelden",
   "GenericForm.fieldIsRequired": "Bitte ausfüllen"
 }

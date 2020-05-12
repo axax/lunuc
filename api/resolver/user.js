@@ -87,7 +87,7 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'picture', 'email', 'emailConfirmed', 'role$UserRole', 'junior$[User]', 'lastLogin'], {
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'picture', 'email', 'meta', 'emailConfirmed', 'role$UserRole', 'junior$[User]', 'lastLogin'], {
                 limit,
                 page,
                 offset,
@@ -115,6 +115,10 @@ export const userResolver = (db) => ({
 
                 if( user.picture){
                     user.picture = {_id: user.picture}
+                }
+
+                if( user.meta ){
+                    user.meta = JSON.stringify(user.meta)
                 }
                 /*if( user.picture){
                     user.picture = await db.collection('Media').findOne({_id: ObjectId(user.picture)})
@@ -295,7 +299,7 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, picture, emailConfirmed, role, junior}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, emailConfirmed, role, junior, meta}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             const user = {}
@@ -362,6 +366,10 @@ export const userResolver = (db) => ({
                         user.junior.push(ObjectId(sup))
                     })
                 }
+            }
+
+            if( meta!==undefined){
+                user.meta = JSON.parse(meta)
             }
 
             const result = (await userCollection.findOneAndUpdate({_id: ObjectId(_id)}, {$set: user}, {returnOriginal: false}))

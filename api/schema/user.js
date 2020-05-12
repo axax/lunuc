@@ -92,6 +92,7 @@ export const userSchemaRaw = `
             role: ID
 		): Token
 		
+			
 		createUser (
 			email: String!
 			username: String!
@@ -99,6 +100,7 @@ export const userSchemaRaw = `
 			picture: ID
 			emailConfirmed: Boolean
             role: ID
+            meta: String
             junior: [ID]
 		): User
 		
@@ -110,6 +112,7 @@ export const userSchemaRaw = `
 			password: String
 			emailConfirmed: Boolean
             role: ID
+            meta: String
             junior: [ID]
 		): User
 		

@@ -25,6 +25,7 @@ import classNames from 'classnames'
 import Expandable from 'client/components/Expandable'
 import _t from '../../util/i18n'
 import TemplateEditor from "../../extensions/cms/components/TemplateEditor";
+import Util from "../util";
 
 const styles = theme => {
     return {
@@ -264,7 +265,7 @@ class GenericForm extends React.Component {
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
             const fieldKey = fieldKeys[fieldIndex],
                 field = fields[fieldKey]
-            if (field.readOnly) {
+            if (field.readOnly || (field.role && !Util.hasCapability({userData:_app_.user}, field.role))) {
                 continue
             }
             let value = this.state.fields[fieldKey]
@@ -499,7 +500,7 @@ class GenericForm extends React.Component {
                             <AntTab key={'tab-' + i} label={value}/>
                         )}
 
-                        {formFields.length > 0 && <AntTab key={'tab-' + tabKeys.length} label="Verwaltung"/>}
+                        {formFields.length > 0 && <AntTab key={'tab-' + tabKeys.length} label="Weitere Einstellungen"/>}
 
                     </AntTabs>
 

@@ -684,7 +684,7 @@ const m = Math.max((offX+offY) / 2,100)
             left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
 
         const newwindow = window.open(
-            `/admin/types/?noLayout=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`, '_blank',
+            `/${_app_.lang}/admin/types/?noLayout=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`, '_blank',
             'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
         setTimeout(() => {
             newwindow.addEventListener('beforeunload', (e) => {
@@ -1209,13 +1209,13 @@ const m = Math.max((offX+offY) / 2,100)
                                                                       groupArray.push({})
                                                                   }
                                                                   if (groupFieldOption.tr && groupFieldOption.trKey) {
-                                                                      groupArray[groupIdx][groupProp] = `$\{_t('${groupFieldOption.trKey}-${groupIdx}')\}`
+                                                                      groupArray[groupIdx][groupProp] = `$\{Util.escapeForJson(_t('${groupFieldOption.trKey}-${groupIdx}'))\}`
 
                                                                       setPropertyByPath(groupArray, groupKey, comp, '_')
 
                                                                       if (val !== null) {
                                                                           _onDataResolverPropertyChange({
-                                                                              value: val,
+                                                                              value: Util.escapeForJson(val),
                                                                               path: 'tr.' + _app_.lang + '.' + groupFieldOption.trKey+'-'+groupIdx,
                                                                               instantSave: true
                                                                           })
