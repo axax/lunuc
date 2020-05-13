@@ -696,7 +696,7 @@ class CmsViewEditorContainer extends React.Component {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
                                   }}>Admin</Button>,
                                   <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
-                                      this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname)}`)
+                                      this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname+'?logout=true')}`)
                                   }}>{_t('CmsViewEditorContainer.logout')}</Button>,
                                   <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>
                               ]
@@ -812,7 +812,6 @@ class CmsViewEditorContainer extends React.Component {
 
 
     handleDataResolverPropertySave({value, path, key, instantSave}) {
-
         const {segment, index, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path, key})
 
         if (segment) {
@@ -862,16 +861,17 @@ class CmsViewEditorContainer extends React.Component {
 
 
     findSegmentInDataResolverByKeyOrPath({path, key}) {
-        let dataResolver
-        if (this.state.dataResolver) {
-            try {
-                dataResolver = JSON.parse(this.state.dataResolver)
-            } catch (e) {
-                console.log(e)
-                return {}
+        if(!this._tmpDataResolver) {
+            if (this.state.dataResolver) {
+                try {
+                    this._tmpDataResolver = JSON.parse(this.state.dataResolver)
+                } catch (e) {
+                    console.log(e)
+                    return {}
+                }
+            } else {
+                this._tmpDataResolver = []
             }
-        } else {
-            dataResolver = []
         }
 
         let firstOfPath
@@ -879,8 +879,8 @@ class CmsViewEditorContainer extends React.Component {
             firstOfPath = path.substring(0, path.indexOf('.'))
         }
         let segment, index = -1
-        for (let i = 0; i < dataResolver.length; i++) {
-            const json = dataResolver[i]
+        for (let i = 0; i < this._tmpDataResolver.length; i++) {
+            const json = this._tmpDataResolver[i]
             if (key) {
                 if (json.key === key) {
                     index = i
@@ -899,10 +899,10 @@ class CmsViewEditorContainer extends React.Component {
             } else {
                 segment = {[firstOfPath]: {}}
             }
-            dataResolver.push(segment)
+            this._tmpDataResolver.push(segment)
         }
 
-        return {dataResolver, segment, index}
+        return {dataResolver: this._tmpDataResolver, segment, index}
     }
 
     handleCmsError(e, meta) {
@@ -1032,7 +1032,9 @@ class CmsViewEditorContainer extends React.Component {
     handleDataResolverChange = (str, instantSave) => {
         if (this._saveSettings)
             this._saveSettings()
-        this.setState({dataResolver: str})
+        this.setState({dataResolver: str},()=>{
+            this._tmpDataResolver=null
+        })
         this._autoSaveDataResolver = () => {
             clearTimeout(this._autoSaveDataResolverTimeout)
             this._autoSaveDataResolverTimeout = 0
@@ -1040,10 +1042,10 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         clearTimeout(this._autoSaveDataResolverTimeout)
-        if (instantSave) {
+        if (instantSave===true) {
             this._autoSaveDataResolver()
         } else {
-            this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, 5000)
+            this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, instantSave || 5000)
         }
     }
 

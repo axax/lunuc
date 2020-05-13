@@ -44,7 +44,7 @@ class LogoutContainer extends React.Component {
         }
 
 
-        return <Redirect to={to} push={false}/>
+        return <Redirect to={to} push={true}/>
     }
 }
 

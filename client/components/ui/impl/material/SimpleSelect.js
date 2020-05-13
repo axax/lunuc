@@ -57,7 +57,6 @@ class SimpleSelect extends React.Component {
                 value = [value]
             }
         }
-
         return <FormControl className={className || classes.formControl} disabled={disabled} fullWidth={fullWidth}
                             error={error}>
             {label && <InputLabel htmlFor={name}>{label}</InputLabel>}

@@ -57,12 +57,12 @@ class CodeEditor extends React.Component {
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        let refresh = false
+        this._refresh = false
         if (nextState.data !== this._data) {
             this._data = nextState.data
-            refresh = true
+            this._refresh = true
         }
-        return refresh || nextState.stateError !== this.state.stateError || nextState.error !== this.state.error
+        return this._refresh || nextState.stateError !== this.state.stateError || nextState.error !== this.state.error
     }
 
     autoFormatSelection() {
@@ -183,6 +183,11 @@ class CodeEditor extends React.Component {
                     }
                 }}
                 onChange={(editor, dataObject, data) => {
+                    if( this._refresh ) {
+                        // initial onchange
+                        this._refresh = false
+                        return
+                    }
                     if (this._data && (this._data.constructor === Object || this._data.constructor === Array)) {
                         // if input was Object output is an Object to
                         try {

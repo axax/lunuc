@@ -1,7 +1,8 @@
 import translations from 'gensrc/tr'
+import config from 'gen/config'
+const {DEFAULT_LANGUAGE} = config
 
-
-const _t = function (key, lang, replacements) {
+const _t = function (key, lang=DEFAULT_LANGUAGE, replacements) {
     const tr = translations[lang]
     let str
     if (tr && tr[key]) {

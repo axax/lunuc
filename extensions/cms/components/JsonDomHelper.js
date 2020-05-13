@@ -139,7 +139,7 @@ const styles = theme => ({
     }
 })
 
-const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section']
+const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section','Cms']
 const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul']}
 const ALLOW_DROP_FROM = {'Row': ['Col']}
 const ALLOW_CHILDREN = ['div', 'main', 'ul', 'Col']
@@ -639,7 +639,6 @@ const m = Math.max((offX+offY) / 2,100)
             // replace with key only
             component.$inlineEditor.dataResolver = dataResolver.key
 
-            console.log(dataResolver)
 
             _onDataResolverPropertyChange({value: dataResolver, key: dataResolver.key, instantSave: true})
 
@@ -814,7 +813,7 @@ const m = Math.max((offX+offY) / 2,100)
                     name: `Komponente ${subJson.p.id || subJson.p.slug} öffnen`,
                     icon: <LaunchIcon/>,
                     onClick: () => {
-                        window.location = '/' + subJson.p.slug
+                        this.props.history.push('/' + subJson.p.slug)
                     }
                 })
             }
@@ -1036,7 +1035,7 @@ const m = Math.max((offX+offY) / 2,100)
                         onClick={(e) => {
                             e.stopPropagation()
                             if (isCms) {
-                                window.location = '/' + subJson.p.slug
+                                this.props.history.push('/' + subJson.p.slug)
                             } else {
                                 this.openPicker(_options.picker)
                             }
@@ -1209,6 +1208,8 @@ const m = Math.max((offX+offY) / 2,100)
                                                                       groupArray.push({})
                                                                   }
                                                                   if (groupFieldOption.tr && groupFieldOption.trKey) {
+
+
                                                                       groupArray[groupIdx][groupProp] = `$\{Util.escapeForJson(_t('${groupFieldOption.trKey}-${groupIdx}'))\}`
 
                                                                       setPropertyByPath(groupArray, groupKey, comp, '_')
@@ -1217,9 +1218,10 @@ const m = Math.max((offX+offY) / 2,100)
                                                                           _onDataResolverPropertyChange({
                                                                               value: Util.escapeForJson(val),
                                                                               path: 'tr.' + _app_.lang + '.' + groupFieldOption.trKey+'-'+groupIdx,
-                                                                              instantSave: true
+                                                                              instantSave: 200
                                                                           })
                                                                       }
+
 
                                                                   } else {
                                                                       groupArray[groupIdx][groupProp] = val
@@ -1248,7 +1250,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                                   _onDataResolverPropertyChange({
                                                                       value: val,
                                                                       path: 'tr.' + _app_.lang + '.' + currentOpt.trKey,
-                                                                      instantSave: true
+                                                                      instantSave: 200
                                                                   })
                                                               }
 
@@ -1337,8 +1339,10 @@ const m = Math.max((offX+offY) / 2,100)
                                                 group: item.groupOptions[key],
                                                 key,
                                                 newLine: true,
-                                                label: 'Hinzufügen'
+                                                label: 'Hinzufügen',
+                                                style:{marginBottom:'2rem'}
                                             }
+
                                             Object.keys(item.groupOptions[key]).forEach(fieldKey => {
                                                 item.options['!' + key + '!' + fieldKey + '!0'] = item.groupOptions[key][fieldKey]
                                             })
@@ -1375,7 +1379,6 @@ const m = Math.max((offX+offY) / 2,100)
                                                  if (formField) {
                                                      item.options[optionKey].value = formField
                                                  }
-                                                 console.log(item.options[optionKey])
 
                                                  if (optionKey.startsWith(curKey)) {
                                                      const parts = optionKey.split('!'),
@@ -1435,7 +1438,8 @@ const m = Math.max((offX+offY) / 2,100)
                     key,
                     group: newJsonElement.groupOptions[key],
                     label: 'Hinzufügen',
-                    newLine: true
+                    newLine: true,
+                    style:{marginBottom:'2rem'}
                 }
                 val.forEach((groupValue, idx) => {
                     Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {

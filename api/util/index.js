@@ -220,7 +220,7 @@ const Util = {
 
         const ids = []
         ids.push(ObjectId(id))
-        if (user.junior) {
+        if (user && user.junior) {
             user.junior.forEach(jun => {
                 ids.push(ObjectId(jun))
             })

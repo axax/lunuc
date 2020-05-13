@@ -1227,7 +1227,7 @@ class TypesContainer extends React.Component {
                         if (storeData.collections) {
                             const newData = {...storeData.collections, results: [...storeData.collections.results]}
 
-                            storeData.collections.results.push(data.cloneCollection.collection)
+                            newData.results.push(data.cloneCollection.collection)
                             store.writeQuery({
                                 query: gqlCollectionsQuery,
                                 variables,

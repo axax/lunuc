@@ -24,6 +24,7 @@ class UserDataContainer extends React.PureComponent {
             query: gql(USER_DATA_QUERY)
         }).then(response => {
             _app_.user = response.data.me
+
             userActions.setUser(response.data.me, !!response.data.me)
             this.setState({loading: false, loaded: true})
         }).catch(error => {

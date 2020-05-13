@@ -17,7 +17,7 @@ const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 3,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, junior, password, email, picture, db, context}) => {
+const createUser = async ({username, role, junior, password, email, meta, picture, db, context}) => {
 
     const errors = []
 
@@ -47,9 +47,15 @@ const createUser = async ({username, role, junior, password, email, picture, db,
     const userExists = (await userCollection.findOne({$or: [{'email': email}, {'username': username}]})) != null
 
     if (userExists) {
-        errors.push({key: 'usernameError', message: _t('core.signup.usertaken')})
+        errors.push({key: 'usernameError', message: _t('core.signup.usertaken',context.lang)})
         throw new ValidationError(errors)
     }
+
+
+    if( meta!==undefined){
+        meta = JSON.parse(meta)
+    }
+
 
     const signupToken = crypto.randomBytes(16).toString("hex")
     const hashedPw = Util.hashPassword(password)
@@ -76,6 +82,7 @@ const createUser = async ({username, role, junior, password, email, picture, db,
         username: username,
         password: hashedPw,
         picture,
+        meta,
         signupToken: signupToken
     })
     return insertResult
@@ -271,17 +278,17 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, picture, emailConfirmed, role, junior}, {context}) => {
-            const insertResult = await createUser({db, context, username, picture, email, emailConfirmed, password, role, junior})
+        createUser: async ({username, password, email, meta, picture, emailConfirmed, role, junior}, {context}) => {
+            const insertResult = await createUser({db, context, username, picture, meta, email, emailConfirmed, password, role, junior})
 
             if (insertResult.insertedCount) {
                 const doc = insertResult.ops[0]
                 return doc
             }
         },
-        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, role}, {context}) => {
+        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, role, meta}, {context}) => {
 
-            const insertResult = await createUser({db, context, username, email, password})
+            const insertResult = await createUser({db, context, username, email, password, meta})
 
             if (insertResult.insertedCount) {
                 if (mailTemplate) {
