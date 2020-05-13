@@ -325,7 +325,7 @@ function gensrcExtension(name, options) {
                     if (refResolversObjectId !== '') refResolversObjectId += ','
                     refResolvers += field.name
                     if (field.multi) {
-                        refResolversObjectId += field.name + ':' + '(' + field.name + '?' + field.name + '.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):' + field.name + ')'
+                        refResolversObjectId += field.name + ':' + '(' + field.name + ' && '+ field.name+'.reduce?' + field.name + '.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):' + field.name + ')'
 
                     } else {
                         refResolversObjectId += field.name + ':' + '(' + field.name + '?' + 'ObjectId(' + field.name + '):' + field.name + ')'

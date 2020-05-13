@@ -94,7 +94,7 @@ export const handleUpload = db => async (req, res) => {
                 try {
                     data[key] = JSON.parse(value)
                 } catch (e) {
-                    console.warn(e)
+                    console.warn(e, value)
                     data[key] = value
                 }
             })

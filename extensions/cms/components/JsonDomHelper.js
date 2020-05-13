@@ -268,6 +268,7 @@ class JsonDomHelper extends React.Component {
         clearTimeout(this.helperTimeoutOut)
         clearTimeout(this.helperTimeoutIn)
 
+        console.log(node)
         if (!hovered) {
             const stat = {
                 hovered: true,
@@ -555,6 +556,7 @@ const m = Math.max((offX+offY) / 2,100)
         const {_cmsActions, _key, _json, _scope} = this.props
 
         _cmsActions.editCmsComponent(_key, _json, _scope)
+        this.setState({toolbarHovered: false, hovered: false, dragging: false})
 
     }
 
@@ -575,6 +577,8 @@ const m = Math.max((offX+offY) / 2,100)
             }
             addComponent({key, json: _json, index, component: source})
             _onChange(_json, true)
+
+            this.setState({toolbarHovered: false, hovered: false, dragging: false})
         }
 
     }
@@ -1467,7 +1471,8 @@ const m = Math.max((offX+offY) / 2,100)
             this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
         }
 
-        this.setState({addChildDialog: {selected: newJsonElement, edit: true}})
+
+        this.setState({toolbarHovered: false, hovered: false, dragging: false, addChildDialog: {selected: newJsonElement, edit: true}})
     }
 }
 

@@ -190,8 +190,8 @@ export default () => {
                                           resizeImages={true}
                                           imagePreview={false}
                                           maxSize={3000}
-                                          data={{group: this.settings.Media ? this.settings.Media.groups: null}}
-                                          conversion={this.settings.Media ? this.settings.Media.conversion: null}
+                                          data={{group: this.settings.Media && this.settings.Media.group? this.settings.Media.group: null}}
+                                          conversion={this.settings.Media && this.settings.Media.conversion? this.settings.Media.conversion: null}
                                           onSuccess={r => {
                                               setTimeout(()=> {
                                                   this.getData(this.pageParams, false)
