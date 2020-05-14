@@ -212,20 +212,28 @@ const baseElements = [
             }
         },
         options: {
+            $inlineEditor_options_$c_trKey: {
+                label: 'Übersetzungsschlüssel',
+                value: '__uid__'
+            },
             $inlineEditor_options_$c_tr: {
                 label: 'Sprachabhängig',
                 type: 'Boolean',
-                role: CAPABILITY_MANAGE_CMS_PAGES
+                role: CAPABILITY_MANAGE_CMS_PAGES,
+                tab: 'Allgemein'
             },
             $c: {
                 label: 'Text',
-                uitype: 'html'
+                uitype: 'html',
+                tab: 'Allgemein'
             },
             p_style_marginTop: {
-                label: 'Abstand oben'
+                label: 'Abstand oben',
+                tab: 'Allgemein'
             },
             p_style_marginBottom: {
-                label: 'Abstand unten'
+                label: 'Abstand unten',
+                tab: 'Allgemein'
             }
         }
     },
@@ -233,13 +241,30 @@ const baseElements = [
         tagName: 'Link',
         name: 'Link',
         options: {
+            $inlineEditor_options_c_trKey: {
+                label: 'Übersetzungsschlüssel',
+                value: '__uid__'
+            },
             $inlineEditor_options_c_tr: {
                 label: 'Sprachabhängig',
                 type: 'Boolean',
-                role: CAPABILITY_MANAGE_CMS_PAGES
+                role: CAPABILITY_MANAGE_CMS_PAGES,
+                tab: 'Allgemein'
             },
-            c: {fullWidth: true, value: '', placeholder: 'Name eingeben', label: 'Name'},
-            p_href: {fullWidth: true, value: '', placeholder: 'Url eingeben', label: 'Url'},
+            c: {
+                fullWidth: true,
+                value: '',
+                placeholder: 'Name eingeben',
+                label: 'Name',
+                tab: 'Allgemein'
+            },
+            p_href: {
+                fullWidth: true,
+                value: '',
+                placeholder: 'Url eingeben',
+                label: 'Url',
+                tab: 'Allgemein'
+            },
             p_className: {
                 label: 'Style',
                 uitype: 'select',
@@ -264,10 +289,16 @@ const baseElements = [
                         name: 'Button 3',
                         value: 'button3'
                     }
-                ]
+                ],
+                tab: 'Allgemein'
+            },
+            p_style_marginTop: {
+                label: 'Abstand oben',
+                tab: 'Allgemein'
             },
             p_style_marginBottom: {
-                label: 'Abstand unten'
+                label: 'Abstand unten',
+                tab: 'Allgemein'
             }
         },
         defaults: {
@@ -564,22 +595,30 @@ const baseElements = [
             }
         },
         options: {
+            $inlineEditor_options_$c_trKey: {
+                label: 'Übersetzungsschlüssel',
+                value: '__uid__'
+            },
             $inlineEditor_options_$c_tr: {
                 label: 'Sprachabhängig',
                 type: 'Boolean',
-                role: CAPABILITY_MANAGE_CMS_PAGES
+                role: CAPABILITY_MANAGE_CMS_PAGES,
+                tab: 'Allgemein'
             },
             $c: {
                 label: 'Text',
                 fullWidth: true,
                 uitype: 'textarea',
-                replaceBreaks: true
+                replaceBreaks: true,
+                tab: 'Allgemein'
             },
             p_style_marginTop: {
-                label: 'Abstand oben'
+                label: 'Abstand oben',
+                tab: 'Allgemein'
             },
             p_style_marginBottom: {
-                label: 'Abstand unten'
+                label: 'Abstand unten',
+                tab: 'Allgemein'
             }
         }
     },

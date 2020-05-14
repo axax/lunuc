@@ -71,7 +71,7 @@ export default db => ({
 
             if (!cmsPages.results || cmsPages.results.length === 0) {
 
-                Hook.call('trackUser', {req, event: '404', slug, db, context})
+                Hook.call('trackUser', {req, event: '404', slug, db, context, data:query} )
 
                 throw new Error('Cms page doesn\'t exist')
             }

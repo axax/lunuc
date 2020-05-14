@@ -5,7 +5,6 @@ export default () => {
     Hook.on('JsonDomUserEvent', ({event, payload, container}) => {
         if (payload._track) {
             const queries = getTypeQueries('UserTracking')
-            console.log(queries.create)
             container.props.clientQuery(queries.create, {
                 variables: {
                     slug: container.props.slug,
