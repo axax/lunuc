@@ -275,16 +275,33 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
                 } else if (segment.reduce) {
                     try {
-                        const checkFilter = (filters, value, key)=>{
+                        const checkFilter = (filters, value, key) => {
                             if (filters) {
                                 for (let i = 0; i < filters.length; i++) {
                                     const filter = filters[i]
-                                    if(!filter.is || filter.is==='true') {
-                                        if (matchExpr(filter.expr, {key, value: value[key]})) {
-                                            if (filter.elseRemove) {
-                                                delete value[key]
+                                    if (!filter.is || filter.is === 'true') {
+
+                                        if (filter.search) {
+                                            const re = new RegExp(filter.search.expr, 'i'),
+                                                keys = Object.keys(filter.search.fields)
+
+
+                                            for (let y = 0; y < keys.length; y++) {
+                                                const fieldKey = keys[y]
+                                                if (value[key][fieldKey] && re.test(value[key][fieldKey])) {
+                                                    return false
+                                                }
                                             }
+
                                             return true
+
+                                        } else {
+                                            if (matchExpr(filter.expr, {key, value: value[key]})) {
+                                                if (filter.elseRemove) {
+                                                    delete value[key]
+                                                }
+                                                return true
+                                            }
                                         }
                                     }
                                 }
@@ -302,13 +319,13 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                         const lookupData = propertyByPath(re.lookup.path, rootData)
                                         const value = propertyByPath(re.path, currentData)
                                         let lookedupData
-                                        if( value!== undefined) {
+                                        if (value !== undefined) {
                                             if (value.constructor === Number) {
-                                                lookedupData  = lookupData[value]
-                                                if( lookupData === undefined){
+                                                lookedupData = lookupData[value]
+                                                if (lookupData === undefined) {
                                                     console.warn(`${value} not found in`, lookupData)
                                                 }
-                                            }else if (value.constructor === Array) {
+                                            } else if (value.constructor === Array) {
                                                 lookedupData = []
                                                 let count = 0
                                                 value.forEach(key => {
@@ -360,37 +377,37 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                             }
                                         }
 
-                                        if(re.lookup.sum){
+                                        if (re.lookup.sum) {
                                             let sum = propertyByPath(re.lookup.sum.path, rootData)
-                                            if( !sum ){
+                                            if (!sum) {
                                                 sum = 0
                                             }
                                             sum += lookedupData.length
                                             setPropertyByPath(sum, re.lookup.sum.path, rootData)
                                         }
 
-                                        if( re.key){
+                                        if (re.key) {
                                             resolvedData[re.key] = lookedupData
-                                        }else {
+                                        } else {
                                             setPropertyByPath(lookedupData, re.path, currentData)
                                         }
 
-                                    }else if (re.key) {
+                                    } else if (re.key) {
                                         const value = propertyByPath(re.path, currentData, '.', re.assign)
-                                        if( re.assign && value && value.constructor === Object){
-                                            Object.keys(value).forEach(key=>{
-                                                if(  value[key] &&  value[key].constructor === Object) {
-                                                    value[key] = Object.assign({},  value[key])
+                                        if (re.assign && value && value.constructor === Object) {
+                                            Object.keys(value).forEach(key => {
+                                                if (value[key] && value[key].constructor === Object) {
+                                                    value[key] = Object.assign({}, value[key])
                                                 }
                                             })
                                         }
-                                        if(re.get){
+                                        if (re.get) {
                                             let getKey = propertyByPath(re.get, currentData)
-                                            if( getKey === null || getKey === undefined){
+                                            if (getKey === null || getKey === undefined) {
                                                 getKey = re.get
                                             }
                                             resolvedData[re.key] = value[getKey]
-                                        }else {
+                                        } else {
                                             resolvedData[re.key] = value
                                         }
                                     } else if (re.loop) {
