@@ -268,7 +268,6 @@ class JsonDomHelper extends React.Component {
         clearTimeout(this.helperTimeoutOut)
         clearTimeout(this.helperTimeoutIn)
 
-        console.log(node)
         if (!hovered) {
             const stat = {
                 hovered: true,

@@ -120,7 +120,8 @@ class CmsViewEditorContainer extends React.Component {
             parseResolvedData,
             alwaysLoadAssets,
             compress,
-            addNewSite: null
+            addNewSite: null,
+            ignoreStatus: false
         }
         if (state && state.addNewSite && props.cmsPage && props.cmsPage.slug === state.slug) {
             result.addNewSite = state.addNewSite
@@ -140,6 +141,41 @@ class CmsViewEditorContainer extends React.Component {
         })
     }
 
+    watchCmsPageStatus(instant) {
+        clearTimeout(this._watchCmsPageStatus)
+        this._watchCmsPageStatus = setTimeout(() => {
+            if (!this.state.ignoreStatus && this.props.slug !== undefined) {
+                this.props.client.query({
+                    fetchPolicy: 'network-only',
+                    query: gql`query cmsPageStatus($slug: String!){cmsPageStatus(slug: $slug){user{username _id}}}`,
+                    variables: {
+                        slug: this.props.slug
+                    },
+                }).then((res) => {
+                    this.watchCmsPageStatus()
+                    if (res.data.cmsPageStatus.user._id !== this.props.user.userData._id) {
+                        this.setState({
+                            simpleDialog: {
+                                title: "Seite in Bearbeitung von einem anderen Benutzer",
+                                text: "Die Seite wird gerade von " + res.data.cmsPageStatus.user.username + " bearbeitet. Möchten Sie die Seite trotzdem bearbeiten?",
+                                actions: [
+                                    {
+                                        key: 'ok',
+                                        label: 'Ja trotzdem bearbeiten',
+                                        type: 'primary'
+                                    }
+                                ],
+                                onClose: action => {
+                                    this.setState({ignoreStatus: true})
+                                }
+                            }
+                        })
+                    }
+                })
+            }
+        }, instant?0:5000)
+    }
+
     componentWillUnmount() {
         this.saveUnsafedChanges()
         window.removeEventListener('beforeunload', this._handleWindowClose)
@@ -148,12 +184,16 @@ class CmsViewEditorContainer extends React.Component {
 
 
     shouldComponentUpdate(props, state) {
+        const noCmsPage = !props.cmsPage || !this.props.cmsPage,
+            slugChanged = noCmsPage || props.cmsPage.slug !== this.props.cmsPage.slug
 
+        if( slugChanged){
+            this.watchCmsPageStatus(true)
+        }
         // only update if it is needed
-        return !props.cmsPage ||
-            !this.props.cmsPage ||
+        return noCmsPage ||
             CmsViewEditorContainer.isLoadingState(props) !== CmsViewEditorContainer.isLoadingState(this.props) ||
-            props.cmsPage.slug !== this.props.cmsPage.slug ||
+            slugChanged ||
             /*props.cmsPage.modifiedAt !== this.props.cmsPage.modifiedAt ||*/
             props.cmsComponentEdit !== this.props.cmsComponentEdit ||
             props.cmsEditData !== this.props.cmsEditData ||
@@ -330,10 +370,13 @@ class CmsViewEditorContainer extends React.Component {
             <ErrorHandler key="errorHandler" snackbar/>,
             <NetworkStatusHandler key="networkStatus"/>,
             simpleDialog && <SimpleDialog open={true}
-                                          onClose={() => {
+                                          onClose={(action) => {
+                                              if (simpleDialog.onClose) {
+                                                  simpleDialog.onClose(action)
+                                              }
                                               this.setState({simpleDialog: null})
                                           }}
-                                          actions={[
+                                          actions={simpleDialog.actions || [
                                               {
                                                   key: 'ok',
                                                   label: 'Ok',
@@ -636,13 +679,59 @@ class CmsViewEditorContainer extends React.Component {
                 {
                     divider: true,
                     name: _t('CmsViewEditorContainer.languages'),
-                    items: [
-
-
-                    ]
+                    items: []
                 },
+                {
+                    divider: true,
+                    name: _t('CmsViewEditorContainer.autotranslate'), onClick: () => {
+                        const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path: 'tr'})
+                        if (segment.tr && segment.tr[config.DEFAULT_LANGUAGE]) {
+                            let timeout
+                            const saveResolver = () => {
+                                clearTimeout(timeout)
+                                timeout = setTimeout(() => {
+                                    this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2), true)
+                                }, 100)
+                            }
+                            const transRec = (o, base, path) => {
+                                if (!o || o.constructor !== Object) {
+                                    return
+                                }
+
+                                Object.keys(o).forEach(key => {
+                                    if (o[key] && o[key].constructor === String) {
+                                        config.LANGUAGES.forEach(lang => {
+                                            if (lang !== config.DEFAULT_LANGUAGE) {
+                                                const text = o[key].replace(/\\n/g, '\n')
+                                                this.props.client.query({
+                                                    fetchPolicy: 'cache-first',
+                                                    query: gql`query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}`,
+                                                    variables: {
+                                                        text,
+                                                        toIso: lang,
+                                                        fromIso: config.DEFAULT_LANGUAGE
+                                                    },
+                                                }).then((res) => {
+                                                    setPropertyByPath(res.data.translate.text, lang + path + '.' + key, base)
+                                                    saveResolver()
+                                                })
+
+                                            }
+                                        })
+                                    } else {
+                                        //transRec(o[key], base, path + '.' + key)
+                                    }
+                                })
+                            }
+                            transRec(segment.tr[config.DEFAULT_LANGUAGE], segment.tr, '')
+
+
+                        }
+
+                    }
+                }
             ]
-            config.LANGUAGES.forEach(lang=>{
+            config.LANGUAGES.forEach(lang => {
                 moreMenu[1].items.push({
                     name: lang, onClick: () => {
                         window.location.href = Util.translateUrl(lang)
@@ -696,7 +785,7 @@ class CmsViewEditorContainer extends React.Component {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
                                   }}>Admin</Button>,
                                   <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
-                                      this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname+'?logout=true')}`)
+                                      this.props.history.push(`${config.ADMIN_BASE_URL}/logout#forward=${encodeURIComponent(window.location.pathname + '?logout=true')}`)
                                   }}>{_t('CmsViewEditorContainer.logout')}</Button>,
                                   <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>
                               ]
@@ -861,7 +950,7 @@ class CmsViewEditorContainer extends React.Component {
 
 
     findSegmentInDataResolverByKeyOrPath({path, key}) {
-        if(!this._tmpDataResolver) {
+        if (!this._tmpDataResolver) {
             if (this.state.dataResolver) {
                 try {
                     this._tmpDataResolver = JSON.parse(this.state.dataResolver)
@@ -876,7 +965,12 @@ class CmsViewEditorContainer extends React.Component {
 
         let firstOfPath
         if (path) {
-            firstOfPath = path.substring(0, path.indexOf('.'))
+            if (path.indexOf('.') < 0) {
+                firstOfPath = path
+            } else {
+                firstOfPath = path.substring(0, path.indexOf('.'))
+
+            }
         }
         let segment, index = -1
         for (let i = 0; i < this._tmpDataResolver.length; i++) {
@@ -1032,8 +1126,8 @@ class CmsViewEditorContainer extends React.Component {
     handleDataResolverChange = (str, instantSave) => {
         if (this._saveSettings)
             this._saveSettings()
-        this.setState({dataResolver: str},()=>{
-            this._tmpDataResolver=null
+        this.setState({dataResolver: str}, () => {
+            this._tmpDataResolver = null
         })
         this._autoSaveDataResolver = () => {
             clearTimeout(this._autoSaveDataResolverTimeout)
@@ -1042,7 +1136,7 @@ class CmsViewEditorContainer extends React.Component {
         }
 
         clearTimeout(this._autoSaveDataResolverTimeout)
-        if (instantSave===true) {
+        if (instantSave === true) {
             this._autoSaveDataResolver()
         } else {
             this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, instantSave || 5000)

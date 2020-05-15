@@ -30,11 +30,13 @@ const createClientCacheKey = (query, props) => {
     return ''
 }
 
+const cmsPageStatus = {}
+
 export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets','compress']
+            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'compress']
             if (filter) {
                 // search in fields
                 fields.push('dataResolver')
@@ -71,13 +73,19 @@ export default db => ({
 
             if (!cmsPages.results || cmsPages.results.length === 0) {
 
-                Hook.call('trackUser', {req, event: '404', slug, db, context, data:query} )
+                Hook.call('trackUser', {req, event: '404', slug, db, context, data: query})
 
                 throw new Error('Cms page doesn\'t exist')
             }
-            const scope = {...createScopeForDataResolver(query, props), page: {slug, host: getHostFromHeaders(headers)}, editmode}
-            const {_id, createdBy, template, script, style, resources, dataResolver, parseResolvedData,alwaysLoadAssets,compress,
-                ssr, modifiedAt, urlSensitiv, name, serverScript} = cmsPages.results[0]
+            const scope = {
+                ...createScopeForDataResolver(query, props),
+                page: {slug, host: getHostFromHeaders(headers)},
+                editmode
+            }
+            const {
+                _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, compress,
+                ssr, modifiedAt, urlSensitiv, name, serverScript
+            } = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
 
             const {resolvedData, subscriptions} = await resolveData({
@@ -171,6 +179,17 @@ export default db => ({
 
             }
         },
+        cmsPageStatus: async ({slug}, req) => {
+            if (!cmsPageStatus[slug] || (new Date() - cmsPageStatus[slug].time) > 6000) {
+                cmsPageStatus[slug] = {user: {username: req.context.username, _id: req.context.id}}
+            }
+
+            if(cmsPageStatus[slug].user._id === req.context.id){
+                cmsPageStatus[slug].time = new Date()
+            }
+
+            return {user: cmsPageStatus[slug].user}
+        },
         cmsServerMethod: async ({slug, methodName, args, query, props, _version}, req) => {
             const {context, headers} = req
             const startTime = (new Date()).getTime()
@@ -214,8 +233,8 @@ export default db => ({
                 result = {error: error.message}
             }
 
-            if( result && result.constructor !== String){
-                result= JSON.stringify(result)
+            if (result && result.constructor !== String) {
+                result = JSON.stringify(result)
             }
 
             return {result}
@@ -245,12 +264,18 @@ export default db => ({
             const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + rest.slug
 
             Cache.clearStartWith(cacheKey)
-            const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {_id,createdBy:(createdBy?ObjectId(createdBy):createdBy), ...rest})
+            const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {
+                _id,
+                createdBy: (createdBy ? ObjectId(createdBy) : createdBy), ...rest
+            })
 
 
             // if dataResolver has changed resolveData and return it
             if (rest.dataResolver) {
-                const scope = {...createScopeForDataResolver(query, props), page: {slug: rest.slug, host: getHostFromHeaders(headers)}}
+                const scope = {
+                    ...createScopeForDataResolver(query, props),
+                    page: {slug: rest.slug, host: getHostFromHeaders(headers)}
+                }
                 const {resolvedData, subscriptions} = await resolveData({
                     db,
                     context,

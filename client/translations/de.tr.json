@@ -27,6 +27,7 @@
   "CmsViewEditorContainer.fixed": "Menü fixieren",
   "CmsViewEditorContainer.preview": "Vorschau",
   "CmsViewEditorContainer.addnewpage": "Neue Seite erstellen",
+  "CmsViewEditorContainer.autotranslate": "Automatisch übersetzen",
   "CmsViewEditorContainer.languages": "Sprachvarianten",
   "CmsViewEditorContainer.undochange": "Änderung Rückgängig",
   "CmsViewEditorContainer.logout": "Abmelden",

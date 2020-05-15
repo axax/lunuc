@@ -6,7 +6,7 @@ export const trackUser = async ({req, event, slug, db, context, data})=>{
 
     const ip = clientAddress(req)
 
-  //  if( ip && ip !== '::ffff:127.0.0.1' && ip !== '::ffff:144.91.119.30' ) {
+    if( ip && ip !== '::ffff:127.0.0.1' && ip !== '::ffff:144.91.119.30' ) {
         const host = getHostFromHeaders(req.headers)
 
         const insertData = {
@@ -21,6 +21,6 @@ export const trackUser = async ({req, event, slug, db, context, data})=>{
         }
         db.collection('UserTracking').insertOne(insertData)
         Hook.call('tracking', {insertData, db, context})
-  //  }
+    }
 
 }
