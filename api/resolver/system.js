@@ -2,7 +2,7 @@ import Util from '../util'
 import {execSync, spawn} from 'child_process'
 import path from 'path'
 import fs from 'fs'
-import config from 'gen/config'
+import config from '../../gensrc/config'
 import zipper from 'zip-local'
 import {
     CAPABILITY_MANAGE_BACKUPS,
@@ -241,7 +241,7 @@ export const systemResolver = (db) => ({
                 ${script}            
             })`)
 
-            tpl.call({entries, save, ObjectId, Util, require})
+            tpl.call({entries, save, ObjectId, Util, require, __dirname, db, context})
 
             return {result: `Successful executed`}
         },

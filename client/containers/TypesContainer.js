@@ -683,7 +683,7 @@ class TypesContainer extends React.Component {
 
                 <CodeEditor lineNumbers
                             type="js"
-                            onChange={(bulkEditScript) => {
+                            onBlur={(bulkEditScript) => {
                                 this.setState({bulkEditScript})
                             }}>{this.props.keyValueMap.TypesContainerBulkEdit}</CodeEditor>
 
