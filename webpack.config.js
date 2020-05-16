@@ -176,8 +176,8 @@ const config = {
 
                  }*/
                 if (resource.indexOf('optimism') > -1) {
-                     // console.log(resource, context)
-                   // return true
+                    // console.log(resource, context)
+                    // return true
 
                 }
 
@@ -215,28 +215,31 @@ const config = {
 
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 config.plugins.push(
-    new CopyWebpackPlugin([
-        {
-            from: 'index.html', to: 'index.html',
-            transform: replacePlaceholders
-        },
-        {
-            from: 'index.min.html', to: 'index.min.html',
-            transform: replacePlaceholders
-        },
-        {
-            from: 'serviceworker.js', to: 'serviceworker.js',
-            transform: replacePlaceholders
-        },
-        {
-            from: 'manifest.json', to: 'manifest.json',
-            transform: replacePlaceholders
-        },
-        {from: 'favicon.ico', to: 'favicon.ico'},
-        {from: 'favicon.svg', to: 'favicon.svg'},
-        {from: 'favicon-192x192.png', to: 'favicon-192x192.png'},
-        {from: 'favicon-512x512.png', to: 'favicon-512x512.png'}
-    ])
+    new CopyWebpackPlugin({
+        patterns:
+            [
+                {
+                    from: 'index.html', to: 'index.html',
+                    transform: replacePlaceholders
+                },
+                {
+                    from: 'index.min.html', to: 'index.min.html',
+                    transform: replacePlaceholders
+                },
+                {
+                    from: 'serviceworker.js', to: 'serviceworker.js',
+                    transform: replacePlaceholders
+                },
+                {
+                    from: 'manifest.json', to: 'manifest.json',
+                    transform: replacePlaceholders
+                },
+                {from: 'favicon.ico', to: 'favicon.ico'},
+                {from: 'favicon.svg', to: 'favicon.svg'},
+                {from: 'favicon-192x192.png', to: 'favicon-192x192.png'},
+                {from: 'favicon-512x512.png', to: 'favicon-512x512.png'}
+            ]
+    })
 )
 
 /**
@@ -257,9 +260,9 @@ if (DEV_MODE) {
                 {
                     from: /.*\/-\/.*/,
                     to: function (context) {
-                        const url=context.request.url,match = '/' + APP_CONFIG.options.PRETTYURL_SEPERATOR + '/'
-                        if( url.indexOf(match)> -1){
-                            if( url.indexOf(APP_VALUES.UPLOAD_DIR)===0 ){
+                        const url = context.request.url, match = '/' + APP_CONFIG.options.PRETTYURL_SEPERATOR + '/'
+                        if (url.indexOf(match) > -1) {
+                            if (url.indexOf(APP_VALUES.UPLOAD_DIR) === 0) {
                                 return url.split(match)[0]
                             }
                             return '/'
@@ -310,14 +313,13 @@ if (DEV_MODE) {
         extractComments: 'all',
         compress: {
             drop_console: true,
-            pure_getters:true, /* 1kb */
+            pure_getters: true, /* 1kb */
             //unsafe_proto:true /* 20 bytes */
             //booleans_as_integers:true, /* 200 bytes */
             //unsafe_Function: true /* 10 Bytes */
             //unsafe_proto:true /* 10 Bytes */
         },
-        mangle: {
-        },
+        mangle: {},
         output: {
             comments: false,
             semicolons: true,
