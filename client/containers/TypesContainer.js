@@ -156,7 +156,7 @@ class TypesContainer extends React.Component {
     saveSettings() {
         const value = JSON.stringify(this.settings)
         if (value !== JSON.stringify(this.props.keyValueMap.TypesContainerSettings)) {
-            console.log('save settings')
+            console.log('save settings', value)
             this.props.setKeyValue({key: 'TypesContainerSettings', value})
         }
     }
@@ -683,7 +683,8 @@ class TypesContainer extends React.Component {
 
                 <CodeEditor lineNumbers
                             type="js"
-                            onBlur={(bulkEditScript) => {
+                            onBlur={(e, bulkEditScript) => {
+                                console.log(bulkEditScript)
                                 this.setState({bulkEditScript})
                             }}>{this.props.keyValueMap.TypesContainerBulkEdit}</CodeEditor>
 

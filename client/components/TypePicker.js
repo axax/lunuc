@@ -180,7 +180,7 @@ class TypePicker extends React.Component {
             <div className={classes.clips}>
                 {value.map((value, i) =>
                     [
-                        (value.__typename === 'Media' ?
+                        (value.__typename === 'Media' && value.mimeType.indexOf('image')===0 ?
                             <div draggable={true}
                                  data-index={i}
                                  onDragStart={(e) => {
