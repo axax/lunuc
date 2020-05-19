@@ -1219,7 +1219,7 @@ const m = Math.max((offX+offY) / 2,100)
 
                                                                       if (val !== null) {
                                                                           _onDataResolverPropertyChange({
-                                                                              value: Util.escapeForJson(val),
+                                                                              value: Util.escapeForJson(val.replace(/\n/g, '')),
                                                                               path: 'tr.' + _app_.lang + '.' + groupFieldOption.trKey+'-'+groupIdx,
                                                                               instantSave: 200
                                                                           })
@@ -1251,7 +1251,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                               setPropertyByPath(`$\{_t('${currentOpt.trKey}')\}`, key, comp, '_')
                                                               if (val !== null) {
                                                                   _onDataResolverPropertyChange({
-                                                                      value: val,
+                                                                      value: Util.escapeForJson(val.replace(/\n/g, '')),
                                                                       path: 'tr.' + _app_.lang + '.' + currentOpt.trKey,
                                                                       instantSave: 200
                                                                   })

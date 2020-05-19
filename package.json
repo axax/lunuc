@@ -57,7 +57,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@apollo/client": "^3.0.0-beta.48",
+    "@apollo/client": "^3.0.0-beta.49",
     "@apollo/link-context": "^2.0.0-beta.3",
     "@apollo/link-error": "^2.0.0-beta.3",
     "@apollo/link-ws": "^2.0.0-beta.3",
@@ -101,7 +101,7 @@
     "natural": "^2.1.5",
     "node-cron": "^2.0.3",
     "nodemailer": "^6.4.6",
-    "preact": "^10.4.1",
+    "preact": "^10.4.4",
     "react": "^16.13.1",
     "react-autosuggest": "^10.0.2",
     "react-codemirror2": "^7.1.0",
@@ -112,6 +112,7 @@
     "redux": "^4.0.5",
     "request-promise": "^4.2.5",
     "sharp": "^0.25.3",
+    "socket.io": "^2.3.0",
     "subscriptions-transport-ws": "^0.9.16",
     "telegraf": "^3.38.0",
     "zip-local": "^0.3.4"
@@ -119,11 +120,11 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.0.0",
     "@google-cloud/translate": "^5.3.0",
-    "aws-sdk": "^2.678.0",
+    "aws-sdk": "^2.679.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",
     "fluent-ffmpeg": "^2.1.2",
-    "puppeteer": "^3.0.4",
+    "puppeteer": "^3.1.0",
     "nodemon": "^2.0.4",
     "mssql": "^6.2.0",
     "native-dns": "^0.7.0",
@@ -143,7 +144,7 @@
     "terser-webpack-plugin": "^3.0.1",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11",
-    "webpack-bundle-analyzer": "^3.7.0",
+    "webpack-bundle-analyzer": "^3.8.0",
     "webpack-dev-server": "^3.11.0",
     "babel-eslint": "^10.1.0",
     "babel-jest": "^26.0.1",
