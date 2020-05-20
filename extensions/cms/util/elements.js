@@ -635,12 +635,12 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false,addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -675,17 +675,17 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
@@ -724,22 +724,22 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -782,27 +782,27 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, editTemplate: false, addBelow: false}},
+                    $inlineEditor: {menu: {remove: false,addBelow: false}},
                     t: 'Col',
                     c: []
                 }

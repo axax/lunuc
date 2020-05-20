@@ -177,9 +177,15 @@ export default () => {
     Hook.on('TypesContainerRender', function ({type, content}) {
         if (type === 'Media'){
             let info=''
+            let group = null
             if( this.settings.Media ){
                 if(this.settings.Media.group){
                     info += ' Group='+this.settings.Media.group[0].name
+                    group = []
+                    this.settings.Media.group.forEach((g)=>{
+                        group.push(g._id)
+                    })
+
                 }
                 if(this.settings.Media.conversion){
                     info += ' Conversion='+this.settings.Media.conversion[0].name
@@ -190,7 +196,7 @@ export default () => {
                                           resizeImages={true}
                                           imagePreview={false}
                                           maxSize={3000}
-                                          data={{group: this.settings.Media && this.settings.Media.group? this.settings.Media.group: null}}
+                                          data={{group}}
                                           conversion={this.settings.Media && this.settings.Media.conversion? this.settings.Media.conversion: null}
                                           onSuccess={r => {
                                               setTimeout(()=> {

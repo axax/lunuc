@@ -48,6 +48,9 @@ class TinyEditor extends React.Component {
                 tinymce.init({
                     selector:'#TinyEditor' + this.instanceId,
                     height: 450,
+                    relative_urls : false,
+                    remove_script_host : false,
+                    convert_urls : false,
                     formats: {
                         // Changes the alignment buttons to add a class to each of the matching selector elements
                         alignleft: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'left' },

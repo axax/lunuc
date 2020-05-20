@@ -323,6 +323,10 @@ class GenericForm extends React.Component {
 
             } else if (uitype === 'html') {
                 const hasError = !!this.state.fieldErrors[fieldKey]
+
+
+                console.log(value)
+
                 currentFormFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldKey}
                                                     className={classNames(classes.formFieldFull)}>
                     <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel>
