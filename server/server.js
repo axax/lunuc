@@ -507,9 +507,11 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function(req,
 
 let stream = require('./stream')
 
-let io = require('socket.io')(app.http)
-io.on('connection', stream)
+let ioHttp = require('socket.io')(app.http)
+ioHttp.on('connection', stream)
 
+let ioHttps = require('socket.io')(app.https)
+ioHttps.on('connection', stream)
 
 
 
