@@ -136,6 +136,7 @@ export const userSchemaRaw = `
 			password: String
 			picture: ID
             role: ID
+            meta: String
 		): User
 		
 		updateNote (

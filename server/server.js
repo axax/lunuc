@@ -77,11 +77,13 @@ const defaultWSHandler = (err, req, socket, head) => {
 }
 
 const webSocket = function (req, socket, head) {
-    proxy.ws(req, socket, head, {
-        hostname: 'localhost',
-        port: API_PORT,
-        path: '/ws'
-    }, defaultWSHandler)
+    if(req.url==='/ws') {
+        proxy.ws(req, socket, head, {
+            hostname: 'localhost',
+            port: API_PORT,
+            path: '/ws'
+        }, defaultWSHandler)
+    }
 }
 
 const sendError = (res, code) => {
@@ -500,6 +502,16 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function(req,
         }
     }
 })
+
+
+
+let stream = require('./stream')
+
+let io = require('socket.io')(app.http)
+io.on('connection', stream)
+
+
+
 
 //
 // Listen to the `upgrade` event and proxy the

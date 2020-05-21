@@ -420,6 +420,11 @@ export const userResolver = (db) => ({
                     user.picture = user.picture ? ObjectId(user.picture) :null
                 }
 
+
+                if( user.meta!==undefined){
+                    user.meta = JSON.parse(user.meta)
+                }
+
                 const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}, {returnOriginal: false}))
                 if (result.ok !== 1) {
                     throw new ApiError('User could not be changed')
