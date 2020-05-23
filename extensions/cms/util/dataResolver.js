@@ -402,11 +402,24 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                             })
                                         }
                                         if (re.get) {
-                                            let getKey = propertyByPath(re.get, currentData)
-                                            if (getKey === null || getKey === undefined) {
-                                                getKey = re.get
+                                            if (re.separator) {
+                                                const aGet = re.get.split(re.separator)
+                                                const aValue = []
+                                                aGet.forEach(sget => {
+                                                    let getKey = propertyByPath(sget, currentData)
+                                                    if (getKey === null || getKey === undefined) {
+                                                        getKey = sget
+                                                    }
+                                                    aValue.push(value[getKey])
+                                                })
+                                                resolvedData[re.key] = aValue
+                                            } else {
+                                                let getKey = propertyByPath(re.get, currentData)
+                                                if (getKey === null || getKey === undefined) {
+                                                    getKey = re.get
+                                                }
+                                                resolvedData[re.key] = value[getKey]
                                             }
-                                            resolvedData[re.key] = value[getKey]
                                         } else {
                                             resolvedData[re.key] = value
                                         }

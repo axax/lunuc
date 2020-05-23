@@ -92,11 +92,9 @@ class LoginContainer extends React.Component {
             from = location.state.from
         }
         if (!from) {
-            if (window.location.hash) {
-                const params = Util.extractQueryParams(window.location.hash.substring(1))
-                if (params.forward) {
-                    from = {pathname: params.forward}
-                }
+            const params = Util.extractQueryParams()
+            if (params.forward) {
+                from = {pathname: params.forward}
             }
         }
         if (!from) {

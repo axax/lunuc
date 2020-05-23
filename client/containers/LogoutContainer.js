@@ -36,11 +36,9 @@ class LogoutContainer extends React.Component {
 
     render() {
         let to = {pathname: '/'}
-        if (window.location.hash) {
-            const params = Util.extractQueryParams(window.location.hash.substring(1))
-            if (params.forward) {
-                to = {pathname: params.forward}
-            }
+        const params = Util.extractQueryParams()
+        if (params.forward) {
+            to = {pathname: params.forward}
         }
 
 
