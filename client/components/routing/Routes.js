@@ -65,13 +65,12 @@ class Routes extends React.Component {
 
             if( path.constructor === Object)
                 path = path.pathname
-            if (path.split('#')[0]!==_app_.contextPath && path.indexOf(_app_.contextPath + '/') < 0) {
+            if (path.split('#')[0]!==_app_.contextPath && path.indexOf(_app_.contextPath + '/') !== 0) {
                 newPath = _app_.contextPath + path
             } else {
                 newPath = path
             }
             this.history._last = this.history.location.pathname
-
             this.history._push(newPath, state)
         }
         this.history.replace = (o, state) => {
@@ -85,7 +84,6 @@ class Routes extends React.Component {
     render() {
         const {user: {isAuthenticated, userData}} = this.props
         const capabilities = (userData && userData.role && userData.role.capabilities) || []
-
         return <Router history={this.history}>
             <Switch>
                 {this.routes.map((o, i) => {
