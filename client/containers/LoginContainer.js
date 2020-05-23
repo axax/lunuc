@@ -64,18 +64,18 @@ class LoginContainer extends React.Component {
                 password: this.state.password
             },
             operationName: 'login'
-        }).then(response => {
+        }).then( response => {
             this.setState({loading: false})
             if (response.data && response.data.login) {
 
                 if (!response.data.login.error) {
                     // clear cache completely
-                    client.resetStore()
-
-                    localStorage.setItem('token', response.data.login.token)
-                    userActions.setUser(response.data.login.user, true)
-                    errorHandlerAction.clearErrors()
-                    this.setState({redirectToReferrer: true})
+                    client.resetStore().then(()=>{
+                        localStorage.setItem('token', response.data.login.token)
+                        userActions.setUser(response.data.login.user, true)
+                        errorHandlerAction.clearErrors()
+                        this.setState({redirectToReferrer: true})
+                    })
 
                 } else {
                     this.setState({error: response.data.login.error})

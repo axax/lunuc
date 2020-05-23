@@ -30,7 +30,7 @@ export default function (WrappedComponent) {
         }
 
         render() {
-            const {slug, dynamic, cmsPage, loading, aboutToChange, networkStatus} = this.props
+            const {slug, dynamic, cmsPage, loading, aboutToChange} = this.props
             if (!cmsPage) {
                 if (!loading && !aboutToChange) {
                     console.warn(`cmsPage ${slug} missing`)
@@ -43,7 +43,8 @@ export default function (WrappedComponent) {
                             id: 'errorPageNoindex'
                         })
 
-                        if (networkStatus === 8) {
+                        if (this.props.cmsNetworkStatus === 8) {
+                            console.log('Network status = 8')
                             setTimeout(() => {
                                 window.location.href = window.location.href
                             }, 10000)
