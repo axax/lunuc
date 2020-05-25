@@ -5,7 +5,7 @@ require("@babel/register")
 
 // define some global vars for server side rendering
 global.document = {documentElement: {}}
-global._app_ = {lang: 'en', ssr: true}
+global._app_ = {lang: 'en', ssr: true, tr:{}}
 
 // Entry point for our server
 const server = require('./server')
