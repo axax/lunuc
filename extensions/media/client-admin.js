@@ -4,7 +4,10 @@ import Async from 'client/components/Async'
 import config from 'gen/config'
 import {gql} from '@apollo/client'
 import Util from '../../client/util'
-const {UPLOAD_URL,ADMIN_BASE_URL} = config
+
+const {UPLOAD_URL, ADMIN_BASE_URL} = config
+import {Row, Col} from 'ui/admin'
+import _t from 'util/i18n'
 
 const FileDrop = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
@@ -13,7 +16,7 @@ const TypePicker = (props) => <Async {...props}
 const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch"
                                        load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 const ImageIcon = (props) => <Async {...props} expose="ImageIcon"
-                                  load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
+                                    load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 export default () => {
 
@@ -33,14 +36,15 @@ export default () => {
                     const mimeType = item.mimeType ? item.mimeType.split('/') : ['file'],
                         image =
                             (mimeType[0] === 'image' ?
-                                    <img style={{maxWidth: '6rem', maxHeight: '6rem', objectFit:'cover'}} src={item.src || (UPLOAD_URL + '/' + item._id)}/>
+                                    <img style={{maxWidth: '6rem', maxHeight: '6rem', objectFit: 'cover'}}
+                                         src={item.src || (UPLOAD_URL + '/' + item._id)}/>
                                     :
                                     <div className="file-icon"
                                          data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
                             )
                     if (window.opener) {
                         d.data = image
-                    }else {
+                    } else {
                         d.data =
                             <a target="_blank" onDoubleClick={(e) => {
                                 e.preventDefault()
@@ -82,9 +86,9 @@ export default () => {
 
     // add some extra data to the table
     Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, meta}) {
-        if (type === 'Media' ) {
+        if (type === 'Media') {
 
-            if(!dataToEdit && meta.option === 'upload') {
+            if (!dataToEdit && meta.option === 'upload') {
                 // remove save button
                 props.actions.splice(1, 1)
 
@@ -120,7 +124,7 @@ export default () => {
                                 <TypePicker value={group} onChange={(e) => {
                                     meta._this.setSettingsForType(type, {group: e.target.value})
                                     setGroup(e.target.value)
-                                }} multi={true} name="group" placeholder="Select a group"
+                                }} multi={true} name="group" placeholder={_t('Media.selectGroup')}
                                             type="MediaGroup"/>
                             </div>,
                             <SimpleSwitch key="useCdn" label="Upload file to CDN" name="useCdn"
@@ -132,7 +136,7 @@ export default () => {
                                       accept="*/*"
                                       uploadTo="/graphql/upload" resizeImages={true}
                                       data={{group: groupIds, useCdn}}
-                                      maxSize={3000}
+                                      maxSize={10000}
                                       imagePreview={false}
                                       onSuccess={r => {
                                           if (meta._this) {
@@ -155,16 +159,16 @@ export default () => {
                 }
 
                 props.children = <MediaUploader/>
-            }else if( dataToEdit ){
+            } else if (dataToEdit) {
                 const medieData = Util.getImageObject(dataToEdit)
-                if(dataToEdit.mimeType.indexOf('image')===0) {
+                if (dataToEdit.mimeType.indexOf('image') === 0) {
                     props.children = [props.children,
                         <img style={{border: 'solid 0.4rem black', maxWidth: '100%', maxHeight: '20rem'}}
                              src={medieData.src}/>]
-                }else if(dataToEdit.mimeType.indexOf('video')===0) {
+                } else if (dataToEdit.mimeType.indexOf('video') === 0) {
                     props.children = [props.children,
                         <video width="320" height="240" controls>
-                            <source src={medieData.src} type="video/mp4" />
+                            <source src={medieData.src} type="video/mp4"/>
                         </video>]
                 }
             }
@@ -172,37 +176,55 @@ export default () => {
     })
 
 
-
-
     Hook.on('TypesContainerRender', function ({type, content}) {
-        if (type === 'Media'){
-            let info=''
-            let group = null
-            if( this.settings.Media ){
-                if(this.settings.Media.group){
-                    info += ' Group='+this.settings.Media.group[0].name
-                    group = []
-                    this.settings.Media.group.forEach((g)=>{
-                        group.push(g._id)
-                    })
+        if (type === 'Media') {
+            let info = ''
 
-                }
-                if(this.settings.Media.conversion){
-                    info += ' Conversion='+this.settings.Media.conversion[0].name
-                }
+
+            const [group, setGroup] = useState(
+                this.settings.Media && this.settings.Media.group ? this.settings.Media.group : []
+            )
+
+
+            let groupIds = null
+
+            if (group.length>0) {
+                groupIds = []
+                group.forEach((g) => {
+                    groupIds.push(g._id)
+                })
+
             }
-            content.splice(1, 1,<FileDrop key="fileDrop" multi={true} accept="*/*"
-                                          uploadTo="/graphql/upload"
-                                          resizeImages={true}
-                                          imagePreview={false}
-                                          maxSize={3000}
-                                          data={{group}}
-                                          conversion={this.settings.Media && this.settings.Media.conversion? this.settings.Media.conversion: null}
-                                          onSuccess={r => {
-                                              setTimeout(()=> {
-                                                  this.getData(this.pageParams, false)
-                                              },1000)
-                                          }}/>,<small>{info}</small>)
+
+            if (this.settings.Media && this.settings.Media.conversion) {
+                info += ' Conversion=' + this.settings.Media.conversion[0].name
+            }
+
+
+            content.splice(1, 1, <Row spacing={1} style={{marginBottom:'16px'}}>
+                <Col md={9}>
+                    <FileDrop key="fileDrop" multi={true} accept="*/*"
+                              uploadTo="/graphql/upload"
+                              resizeImages={true}
+                              imagePreview={false}
+                              maxSize={10000}
+                              data={{group}}
+                              conversion={this.settings.Media && this.settings.Media.conversion ? this.settings.Media.conversion : null}
+                              onSuccess={r => {
+                                  setTimeout(() => {
+                                      this.getData(this.pageParams, false)
+                                  }, 1000)
+                              }}/>
+                </Col>
+                <Col md={3}>
+
+                    <TypePicker value={group} onChange={(e) => {
+                        // meta._this.setSettingsForType(type, {group: e.target.value})
+                        setGroup(e.target.value)
+                    }} multi={true} name="group" placeholder={_t('Media.selectGroup')}
+                                type="MediaGroup"/>
+                </Col>
+            </Row>, <small>{info}</small>)
         }
     })
 

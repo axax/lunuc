@@ -22,14 +22,18 @@ import {
     SimpleMenu,
     AppBar,
     Button,
-    Toolbar
+    Toolbar,
+    IconButton,
+    InputBase,
+    SettingsIcon,
+    Divider,
+    Paper
 } from 'ui/admin'
 import {Query} from '@apollo/react-components'
 import {withApollo} from '@apollo/react-hoc'
 import {ApolloClient} from '@apollo/client'
 import {gql} from '@apollo/client'
 import Util from 'client/util'
-import GenericForm from 'client/components/GenericForm'
 import TypeEdit from 'client/components/types/TypeEdit'
 import config from 'gen/config'
 import Hook from 'util/hook'
@@ -52,6 +56,7 @@ import _t from 'util/i18n'
 const {ADMIN_BASE_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
 import {COLLECTIONS_QUERY} from '../constants'
 import CodeEditor from "../components/CodeEditor";
+import GenericForm from "../components/GenericForm";
 
 const gqlCollectionsQuery = gql(COLLECTIONS_QUERY)
 
@@ -74,28 +79,35 @@ const styles = theme => ({
     script: {
         fontFamily: '"Courier 10 Pitch", Courier, monospace',
         fontSize: '85%'
+    },
+    searchRoot: {
+        padding: '2px 4px',
+        display: 'flex',
+        alignItems: 'center',
+        marginBottom: theme.spacing(2),
+    },
+    searchInput: {
+        marginLeft: theme.spacing(1),
+        flex: 1,
+    },
+    searchIconButton: {
+        padding: 10,
+    },
+    searchDivider: {
+        height: 28,
+        margin: 4,
     }
 })
 
 
 class TypesContainer extends React.Component {
 
-    // default labels can be repalced
-    labels = {searchPlaceholder: _t('TypesContainer.filter')}
 
     types = null
     pageParams = null
     createEditForm = null
     typesToSelect = []
     settings = {}
-    searchFields = {
-        term: {
-            autoFocus: true,
-            uitype: 'search',
-            fullWidth: true,
-            placeholder: this.labels.searchPlaceholder
-        }
-    }
     fixType = null
     baseFilter = null
     noLayout = false
@@ -120,6 +132,7 @@ class TypesContainer extends React.Component {
             selectedrows: {},
             confirmDeletionDialog: true,
             viewSettingDialog: undefined,
+            viewFilterDialog: undefined,
             manageColDialog: undefined,
             confirmCloneColDialog: undefined,
             dataToDelete: null,
@@ -534,11 +547,10 @@ class TypesContainer extends React.Component {
 
     render() {
         const startTime = new Date()
-        const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
-        const {title, client} = this.props
+        const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, viewFilterDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
+        const {title, client, classes} = this.props
         const {type, filter} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
-        this.searchFields.term.value = filter
 
         if (!this.types[type]) {
             return <BaseLayout><Typography variant="subtitle1" color="error">Type {type} does not
@@ -551,7 +563,64 @@ class TypesContainer extends React.Component {
         }
 
 
-        let viewSettingDialogProps, editDialogProps, manageColDialogProps
+        let viewSettingDialogProps, editDialogProps, manageColDialogProps, viewFilterDialogProps
+
+        if (viewFilterDialog !== undefined) {
+
+            const formFields = getFormFields(type), activeFormFields = {}
+
+
+            columns.map(c => {
+                if( formFields[c.id] && this.isColumnActive(type, c.id) ){
+                    activeFormFields[c.id]= Object.assign({},formFields[c.id])
+                    activeFormFields[c.id].fullWidth = true
+                    delete activeFormFields[c.id].tab
+                    delete activeFormFields[c.id].required
+                }
+            })
+
+            let formRef
+            viewFilterDialogProps = {
+                title: 'Filter',
+                open: this.state.viewFilterDialog,
+                onClose: ()=>{
+                    let newFilter = ''
+                    Object.keys(formRef.state.fields).forEach(fieldKey=>{
+                        const value = formRef.state.fields[fieldKey]
+                        if( value ){
+                            if(newFilter){
+                                newFilter += ' && '
+                            }
+
+                            if(value.constructor===String) {
+                                newFilter += `${fieldKey}=${value}`
+                            }else{
+                                let ids = []
+                                value.forEach(item=>{
+                                    ids.push(item._id)
+                                })
+                                newFilter += `${fieldKey}=[${ids.join(',')}]`
+                            }
+
+                        }
+                    })
+                    this.setState({viewFilterDialog: false},()=>{
+                        this.handleFilter({value: newFilter}, true)
+                    })
+
+                },
+                actions: [{
+                    key: 'ok',
+                    label: 'Ok',
+                    type: 'primary'
+                }],
+                children: <div>
+                    <GenericForm primaryButton={false} ref={(e) => {
+                        formRef = e
+                    }} fields={activeFormFields}/>
+                </div>
+            }
+        }
 
         if (viewSettingDialog !== undefined) {
             viewSettingDialogProps = {
@@ -628,13 +697,34 @@ class TypesContainer extends React.Component {
                 </Col>
                 }
                 <Col xs={12} md={(this.fixType ? 12 : 6)} align="right">
-                    <GenericForm key="searchType"
-                                 autoFocus={true}
-                                 onChange={this.handleFilter}
-                                 onKeyDown={this.handelFilterKeyDown}
-                                 primaryButton={false}
-                                 updatekey={type}
-                                 fields={this.searchFields}/>
+
+                    <Paper elevation={1} component="form" className={classes.searchRoot}>
+                        <InputBase
+                            value={filter}
+                            onChange={(e) => {
+                                this.handleFilter({value: e.target.value, target: e.target}, false)
+                            }}
+                            onKeyDown={(e) => {
+                                this.handelFilterKeyDown(e, e.target.value)
+                            }}
+                            className={classes.searchInput}
+                            placeholder={_t('TypesContainer.filter')}
+                        />
+                        <IconButton onClick={() => {
+                            this.handleFilter({value: ''}, true)
+                        }} className={classes.searchIconButton}>
+                            <DeleteIcon/>
+                        </IconButton>
+                        <Divider className={classes.searchDivider} orientation="vertical"/>
+                        <IconButton color="primary"
+                                    onClick={() => {
+                                        this.setState({viewFilterDialog: true})
+                                    }}
+                                    className={classes.searchIconButton}>
+                            <SettingsIcon/>
+                        </IconButton>
+                    </Paper>
+
                 </Col>
             </Row>,
             this.renderTable(columns),
@@ -711,6 +801,7 @@ class TypesContainer extends React.Component {
             </SimpleDialog>,
             createEditDialog !== undefined && <TypeEdit key="editDialog" {...editDialogProps}/>,
             viewSettingDialog !== undefined && <SimpleDialog key="settingDialog" {...viewSettingDialogProps}/>,
+            viewFilterDialog !== undefined && <SimpleDialog key="settingDialog" {...viewFilterDialogProps}/>,
             manageColDialog !== undefined && <SimpleDialog key="collectionDialog" {...manageColDialogProps}/>,
             window.opener && selectedLength > 0 &&
             <AppBar key="appbar" position="fixed" color="primary" style={{
@@ -972,9 +1063,9 @@ class TypesContainer extends React.Component {
                         })
                         if (storeData && storeData[storeKey]) {
                             // oh data are available in cache. show them first
-                            setTimeout(()=> {
+                            setTimeout(() => {
                                 this.setState({data: storeData[storeKey]})
-                            },0)
+                            }, 0)
                         }
                     } catch (e) {
                     }
@@ -1264,6 +1355,7 @@ class TypesContainer extends React.Component {
 
     handleFilterTimeout = null
     handleFilter = ({value, target}, immediate) => {
+
         clearTimeout(this.handleFilterTimeout)
         if (immediate) {
             this.runFilter(value)

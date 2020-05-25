@@ -325,19 +325,19 @@ class GenericForm extends React.Component {
                 const hasError = !!this.state.fieldErrors[fieldKey]
 
 
-                console.log(value)
+                const fieldName = fieldKey + (field.localized? '.' + _app_.lang:'')
 
-                currentFormFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldKey}
+                currentFormFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldName}
                                                     className={classNames(classes.formFieldFull)}>
-                    <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel>
-                    <TinyEditor key={fieldKey} id={fieldKey} error={hasError} style={{marginTop: '1.5rem'}}
+                    <InputLabel key={'label' + fieldName} shrink>{field.label}</InputLabel>
+                    <TinyEditor key={fieldName} id={fieldName} error={hasError} style={{marginTop: '1.5rem'}}
 
                                 onChange={(newValue) => this.handleInputChange({
                                     target: {
-                                        name: fieldKey,
+                                        name: fieldName,
                                         value: newValue
                                     }
-                                })}>{value}</TinyEditor>
+                                })}>{field.localized?value[_app_.lang]:value}</TinyEditor>
                     {(hasError ?
                         <FormHelperText error>Bitte
                             ausfüllen</FormHelperText> : '')}
