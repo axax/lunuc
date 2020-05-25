@@ -1,7 +1,7 @@
 export const notificationSchemaRaw = `
 
     type Notification {
-        key: String!
+        key: String
         message: String
         link: String
         linkText: String

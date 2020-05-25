@@ -55,7 +55,6 @@ class LoginContainer extends React.Component {
         this.setState({loading: true, error: null})
         const {client, userActions, errorHandlerAction} = this.props
 
-
         client.query({
             fetchPolicy: 'no-cache',
             query: gql`query login($username:String!,$password:String!){login(username:$username,password:$password){token error user{username email _id role{_id capabilities}}}}`,
@@ -74,7 +73,12 @@ class LoginContainer extends React.Component {
                         localStorage.setItem('token', response.data.login.token)
                         userActions.setUser(response.data.login.user, true)
                         errorHandlerAction.clearErrors()
-                        this.setState({redirectToReferrer: true})
+
+
+                        //this.setState({redirectToReferrer: true})
+                        // make sure translations are loaded
+                        window.location = this.getFromUrl().pathname
+
                     })
 
                 } else {
@@ -84,8 +88,8 @@ class LoginContainer extends React.Component {
         })
     }
 
-    render() {
-        const {signupLink, location} = this.props
+    getFromUrl(){
+        const {location} = this.props
         let from
 
         if (location && location.state) {
@@ -101,10 +105,17 @@ class LoginContainer extends React.Component {
             from = {pathname: config.ADMIN_BASE_URL}
         }
 
+        return from
+    }
+
+    render() {
+        const {signupLink} = this.props
+        const from = this.getFromUrl()
+
         const {redirectToReferrer, loading, username, password, error} = this.state
 
         if (redirectToReferrer) {
-            return <Redirect to={from} push={false}/>
+            return <Redirect to={from} push={true}/>
         }
 
         return (

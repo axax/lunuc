@@ -3,6 +3,7 @@ import config from 'gen/config'
 import {getAllCapabilites} from 'util/capabilities'
 import {getType, getTypes} from './types'
 import Util from '../client/util'
+import _t from 'util/i18n'
 
 const {LANGUAGES} = config, typeFormFields = {}
 
@@ -48,7 +49,7 @@ export const getFormFields = (type) => {
     if (!types[type].noUserRelation && Util.hasCapability({userData:_app_.user}, 'manage_other_users')) {
         // add field so the createdBy User can be changed
         typeFormFields[type].createdBy = {
-            label: 'Created by user',
+            label: _t('Types.createdBy'),
             uitype: 'type_picker',
             pickerField: 'username',
             type: 'User',
@@ -62,11 +63,11 @@ export const getFormFields = (type) => {
         // if uitype is not defined and if it is a reference to another type use type_picker
         if (!uitype && field.reference) {
             uitype = 'type_picker'
-            placeholder = `Select a ${field.type}`
-            label = `${field.name} -> ${field.type}`
+            placeholder = _t('Types.selectType',field)
+            label = _t(`${type}.field.${field.name}`,null,`${field.name} -> ${field.type}`)
         } else {
-            label = `${field.name}`
-            placeholder = `Enter ${field.name}`
+            label = _t(`${type}.field.${field.name}`,null,field.name)
+            placeholder = _t('Types.enterField',field)
         }
         typeFormFields[type][field.name] = {
             placeholder,

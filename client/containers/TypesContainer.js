@@ -363,12 +363,12 @@ class TypesContainer extends React.Component {
                     if (columnsMap['_action']) {
 
                         const entryActions = [{
-                            name: 'Delete entry',
+                            name:  _t('TypesContainer.deleteEntry'),
                             disabled: (item.status == 'deleting' || item.status == 'updating'),
                             onClick: this.handleDeleteDataClick.bind(this, item),
                             icon: <DeleteIcon/>
                         }, {
-                            name: 'Edit entry',
+                            name:  _t('TypesContainer.editEntry'),
                             disabled: (item.status == 'deleting' || item.status == 'updating'),
                             onClick: this.handleEditDataClick.bind(this, item),
                             icon: <EditIcon/>
@@ -377,7 +377,7 @@ class TypesContainer extends React.Component {
                         if (this.types[type].entryClonable) {
                             entryActions.push(
                                 {
-                                    name: 'Clone entry',
+                                    name:  _t('TypesContainer.cloneEntry'),
                                     disabled: (item.status == 'deleting' || item.status == 'updating'),
                                     onClick: this.handleCopyClick.bind(this, item, fields),
                                     icon: <FileCopyIcon/>
@@ -960,7 +960,7 @@ class TypesContainer extends React.Component {
         typeDefinition.fields.forEach(field => {
             if (!field.hidden && field.name !== 'createdBy') {
                 typeColumns.push({
-                    title: (field.label || field.name) + (field.localized ? ' [' + _app_.lang + ']' : ''),
+                    title: _t(`${type}.field.${field.name}`,null,(field.label || field.name) + (field.localized ? ' [' + _app_.lang + ']' : '')),
                     id: field.name,
                     sortable: true
                 })
@@ -969,19 +969,19 @@ class TypesContainer extends React.Component {
 
         if (!typeDefinition.noUserRelation) {
             typeColumns.push({
-                title: 'User',
+                title:  _t('TypesContainer.user'),
                 id: '_user'
             })
         }
         typeColumns.push(
             {
-                title: 'Created at / id',
+                title: _t('TypesContainer.createdAt'),
                 id: 'date',
                 sortid: '_id',
                 sortable: true
             },
             {
-                title: 'Actions',
+                title: _t('TypesContainer.actions'),
                 id: '_action'
             })
 
