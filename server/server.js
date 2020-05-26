@@ -283,7 +283,7 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
     if (fs.existsSync(filename)) {
 
 
-        // resize file
+        // resize image file
         if (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format) {
             const width = parseInt(parsedUrl.query.width),
                 height = parseInt(parsedUrl.query.height)
@@ -365,7 +365,7 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
 
             headerExtra['Content-Type'] = mimeType
 
-            if (ext === 'mp3' || ext === 'mp4') {
+            if ((ext === 'mp3' || ext === 'mp4') && !parsedUrl.query.transcode) {
 
                 delete headerExtra['Cache-Control']
                 headerExtra['Accept-Ranges'] = 'bytes'
@@ -390,8 +390,52 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
         }
 
         const fileStream = fs.createReadStream(filename, streamOption)
-        res.writeHead(code, {...headerExtra})
-        fileStream.pipe(res)
+
+
+        if (parsedUrl.query.transcode ) {
+            // make sure ffmpeg is install on your device
+            // brew install ffmpeg
+
+            let options  = {"audioQuality":1, "videoBitrate": 300, "fps": 15, "size": "640x?", "crf":0}
+
+            try{
+                Object.assign(options,JSON.parse(parsedUrl.query.transcode))
+            }catch (e) {
+                console.log(e)
+            }
+            console.log(options)
+            const ffprobePath = require('@ffprobe-installer/ffprobe').path,
+                ffmpeg = require('fluent-ffmpeg')
+
+            ffmpeg.setFfprobePath(ffprobePath)
+
+            delete headerExtra['Content-Length']
+            res.writeHead(code, {...headerExtra})
+
+            const outputOptions = ['-movflags isml+frag_keyframe']
+            if( options.crf ){
+                outputOptions.push('-crf '+options.crf)
+            }
+            ffmpeg(fileStream)
+                .audioCodec('libmp3lame')
+                .audioQuality(options.audioQuality)
+                .videoCodec('libx264')
+                .videoBitrate(options.videoBitrate)
+                .fps(options.fps)
+                .outputOptions(outputOptions)
+                .format('mp4')
+                .size(options.size)
+                .on('start', console.log)
+                .on('error', console.error)
+                .pipe(res,  { end: true })
+
+
+
+        }else{
+            res.writeHead(code, {...headerExtra})
+            fileStream.pipe(res)
+        }
+
     } else {
         console.log('not exists: ' + filename)
         sendError(res, 404)
