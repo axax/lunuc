@@ -549,7 +549,7 @@ class TypesContainer extends React.Component {
         const startTime = new Date()
         const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, viewFilterDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
         const {title, client, classes} = this.props
-        const {type, filter} = this.pageParams
+        const {type} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
         if (!this.types[type]) {
@@ -700,7 +700,7 @@ class TypesContainer extends React.Component {
 
                     <Paper elevation={1} component="form" className={classes.searchRoot}>
                         <InputBase
-                            value={filter}
+                            value={this.pageParams.filter}
                             onChange={(e) => {
                                 this.handleFilter({value: e.target.value, target: e.target}, false)
                             }}

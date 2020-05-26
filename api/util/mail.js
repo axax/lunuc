@@ -8,7 +8,7 @@ import nodemailer from 'nodemailer'
  */
 
 
-export const sendMail = async (db, context, {recipient, subject, body, html, text, slug, attachments}) => {
+export const sendMail = async (db, context, {recipient, from, subject, body, html, text, slug, attachments}) => {
     const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
 
     const mailSettings = values.MailSettings
@@ -33,7 +33,7 @@ export const sendMail = async (db, context, {recipient, subject, body, html, tex
     }
 
     const message = {
-        from: mailSettings.from,
+        from: from || mailSettings.from,
         to: recipient,
         subject: subject,
         text, //'Plaintext version of the message'

@@ -43,7 +43,7 @@ export default function (WrappedComponent) {
                             id: 'errorPageNoindex'
                         })
 
-                        if (this.props.cmsNetworkStatus === 8) {
+                        if (this.props.networkStatus === 8) {
                             console.log('Network status = 8')
                             setTimeout(() => {
                                 window.location.href = window.location.href
