@@ -395,6 +395,7 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
         if (parsedUrl.query.transcode ) {
             // make sure ffmpeg is install on your device
             // brew install ffmpeg
+            //sudo apt install ffmpeg
 
             let options  = {"audioQuality":1, "videoBitrate": 300, "fps": 15, "size": "640x?", "crf":0}
 
@@ -412,7 +413,7 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
             delete headerExtra['Content-Length']
             res.writeHead(code, {...headerExtra})
 
-            const outputOptions = ['-movflags isml+frag_keyframe']
+            const outputOptions = ['-movflags isml+frag_keyframe+faststart']
             if( options.crf ){
                 outputOptions.push('-crf '+options.crf)
             }

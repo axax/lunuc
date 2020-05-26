@@ -92,14 +92,13 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
 
 const createMediaEntry = async ({db, _id, file, data, context}) => {
     // const mimeType = MimeType.detectByFileName(file.name)
-
     // call image classifier if requested
     if (data.classifyImage) {
         data.meta = JSON.stringify(await ImageClassfier.classifyByUrl(data.url || ('http://www.lunuc.com' + UPLOAD_URL + '/' + _id.toString()) )) //)
     }
-
     const media = {
         name: file.name,
+        size: file.size,
         mimeType: file.type || 'application/octet-stream',
         ...data
     }

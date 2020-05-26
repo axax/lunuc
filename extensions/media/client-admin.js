@@ -208,7 +208,7 @@ export default () => {
                               resizeImages={true}
                               imagePreview={false}
                               maxSize={10000}
-                              data={{group}}
+                              data={{group: groupIds}}
                               conversion={this.settings.Media && this.settings.Media.conversion ? this.settings.Media.conversion : null}
                               onSuccess={r => {
                                   setTimeout(() => {

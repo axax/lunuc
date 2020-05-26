@@ -31,6 +31,10 @@
           "uitype": "json"
         },
         {
+          "name": "size",
+          "type": "Float"
+        },
+        {
           "name": "classifyImage",
           "type": "Boolean"
         },
