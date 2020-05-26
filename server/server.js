@@ -105,7 +105,19 @@ const sendFile = function (req, res, headerExtra, filename) {
     if (!acceptEncoding) {
         acceptEncoding = ''
     }
-    if (acceptEncoding.match(/\bgzip\b/)) {
+    if (acceptEncoding.match(/\bbr\b/)) {
+        res.writeHead(200, {...headerExtra, 'content-encoding': 'br'})
+
+        if (fs.existsSync(filename + '.br')) {
+            // if br version is available send this instead
+            const fileStream = fs.createReadStream(filename + '.br')
+            fileStream.pipe(res)
+        } else {
+            const fileStream = fs.createReadStream(filename)
+            fileStream.pipe(zlib.createBrotliCompress()).pipe(res)
+        }
+
+    }else if (acceptEncoding.match(/\bgzip\b/)) {
         res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
 
         if (fs.existsSync(filename + '.gz')) {

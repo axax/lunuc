@@ -305,6 +305,15 @@ if (DEV_MODE) {
     config.plugins.push(
         new CompressionPlugin({
             minRatio: 0.95
+        }),
+        new CompressionPlugin({
+            filename: '[path].br[query]',
+            algorithm: 'brotliCompress',
+            compressionOptions: {
+                level: 11,
+            },
+            threshold: 10240,
+            minRatio: 0.95,
         })
     )
 
