@@ -319,7 +319,8 @@ if (DEV_MODE) {
             //unsafe_Function: true /* 10 Bytes */
             //unsafe_proto:true /* 10 Bytes */
         },
-        mangle: {},
+        mangle: {
+        },
         output: {
             comments: false,
             semicolons: true,
@@ -340,7 +341,7 @@ if (DEV_MODE) {
         },
     }
 
-   /* const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+  /*  const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
     config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'

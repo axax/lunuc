@@ -17,13 +17,12 @@ import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
 import NetworkStatusHandler from './NetworkStatusHandler'
 import Hook from 'util/hook'
-import {withRouter} from 'react-router-dom'
 import config from 'gen/config'
 import * as UserActions from 'client/actions/UserAction'
 import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
 import {withKeyValues} from '../../containers/generic/withKeyValues'
-
+import { useHistory } from 'react-router-dom'
 const {ADMIN_BASE_URL, APP_NAME} = config
 
 
@@ -44,11 +43,12 @@ class BaseLayout extends React.Component {
     }
 
     linkTo(item) {
-        this.props.history.push(item.to);
+        const history = useHistory()
+        history.push(item.to);
     }
 
     render() {
-        const {history, children, isAuthenticated, username, keyValueMap} = this.props
+        const {children, isAuthenticated, username, keyValueMap} = this.props
 
         const settings = keyValueMap.BaseLayoutSettings
 
@@ -74,6 +74,7 @@ class BaseLayout extends React.Component {
                                             <HomeIconButton
                                                 key="home"
                                                 onClick={() => {
+                                                    const history = useHistory()
                                                     history.push('/')
                                                 }}
                                                 color="inherit"/>
@@ -128,4 +129,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withRouter(withKeyValues(BaseLayout, ['BaseLayoutSettings'])))
+)(withKeyValues(BaseLayout, ['BaseLayoutSettings']))

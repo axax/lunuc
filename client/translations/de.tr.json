@@ -24,6 +24,7 @@
   "TypesContainer.deleteEntry": "Eintrag löschen",
   "TypesContainer.editEntry": "Eintrag bearbeiten",
   "TypesContainer.cloneEntry": "Eintrag kopieren",
+  "TypesContainer.addNew": "Neue “%type%“ erstellen",
   "Types.selectType": "Bitte “%type%“ wählen",
   "Types.enterField": "Bitte “%name%“ eingeben",
   "Types.createdBy": "Erstellt von Benutzer",

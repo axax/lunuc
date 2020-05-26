@@ -1,13 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
-import {withRouter} from 'react-router-dom'
 import {withStyles} from '@material-ui/core/styles'
 import AppBar from '@material-ui/core/AppBar'
 import Toolbar from '@material-ui/core/Toolbar'
 import Button from '@material-ui/core/Button'
 import config from 'gen/config'
 import Typography from '@material-ui/core/Typography'
+import { useHistory } from 'react-router-dom'
 
 const styles = theme => ({
     toolbarLeft: {
@@ -20,15 +20,16 @@ class SimpleHeaderMenu extends React.Component {
 
     constructor(props) {
         super(props)
-        this.currentLinkParts = this.props.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
+        this.currentLinkParts = window.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
     }
 
     UNSAFE_componentWillReceiveProps(nextProps) {
-        this.currentLinkParts = nextProps.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
+        this.currentLinkParts = window.location.pathname.substring(config.ADMIN_BASE_URL.length + 1).split('/')
     }
 
     linkTo(item) {
-        this.props.history.push(item.to);
+        const history = useHistory()
+        history.push(item.to);
     }
 
     isActive(link) {
@@ -90,4 +91,4 @@ const mapStateToProps = (store) => {
  */
 export default connect(
     mapStateToProps
-)(withRouter(withStyles(styles, {withTheme: true})(SimpleHeaderMenu)))
+)(withStyles(styles, {withTheme: true})(SimpleHeaderMenu))

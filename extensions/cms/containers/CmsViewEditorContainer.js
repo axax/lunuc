@@ -153,7 +153,7 @@ class CmsViewEditorContainer extends React.Component {
                     },
                 }).then((res) => {
                     this.watchCmsPageStatus()
-                    if (res.data.cmsPageStatus && this.props.user.userData && res.data.cmsPageStatus.user._id !== this.props.user.userData._id) {
+                    if (res.data.cmsPageStatus && res.data.cmsPageStatus.user && this.props.user.userData && res.data.cmsPageStatus.user._id !== this.props.user.userData._id) {
                         this.setState({
                             simpleDialog: {
                                 title: "Seite in Bearbeitung von einem anderen Benutzer",

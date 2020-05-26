@@ -399,7 +399,7 @@ class TypesContainer extends React.Component {
             const selectedLength = Object.keys(this.state.selectedrows).length
             const actions = [
                 {
-                    name: 'Add new ' + type, onClick: () => {
+                    name: _t('TypesContainer.addNew',{type}), onClick: () => {
                         setTimeout(() => {
                             this.setState({createEditDialog: true})
                         }, 0)

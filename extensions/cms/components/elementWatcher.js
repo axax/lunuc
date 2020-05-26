@@ -10,7 +10,6 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
     }else{
         tagSrc = jsonDom.instanceId
     }
-
 // ...and returns another component...
     return class extends React.Component {
 
@@ -118,7 +117,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
 
                         }
                     })
-                }, {rootMargin: options.rootMargin||'0px'})
+                }, {rootMargin: options.rootMargin||'0px 0px 0px 0px'})
                 observer.observe(ele)
             }
         }

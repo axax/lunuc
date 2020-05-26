@@ -148,7 +148,6 @@ const GenericResolver = {
             includeCount: (includeCount !== false),
             lang: context.lang, ...otherOptions
         })
-
         const {dataQuery, countQuery} = aggregationBuilder.query()
         /* if (typeName.indexOf("GenericData") >= 0) {
              console.log(JSON.stringify(dataQuery, null, 4))

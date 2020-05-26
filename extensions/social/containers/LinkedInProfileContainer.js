@@ -5,7 +5,7 @@ import compose from 'util/compose'
 import {gql} from '@apollo/client'
 import {Button, Typography, Col, Row} from 'ui/admin'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
-import {withRouter} from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
 import PrettyResume from '../components/PrettyResume'
 import FileDrop from 'client/components/FileDrop'
 import _t from 'util/i18n'
@@ -17,14 +17,15 @@ const withLinkedInCallback = (Container) => {
 
     return (props) => {
 
-        const {location, history} = props
-        const params = new URLSearchParams(location.search)
+        const history = useHistory(), loc = window.location
+
+        const params = new URLSearchParams(loc.search)
         const code = params.get('code'), state = params.get('state')
         if (code) {
             if (state === sessionStorage.getItem('linkedInState')) {
                 sessionStorage.removeItem('linkedInState')
                 sessionStorage.setItem('linkedInCode', code)
-                history.push(location.pathname)
+                history.push(loc.pathname)
             }
         }
         return <Container linkedInCode={sessionStorage.getItem('linkedInCode')} {...props} />
@@ -360,7 +361,7 @@ const LinkedInProfileContainerWithGql = compose(
 )(LinkedInProfileContainer)
 
 
-export default withKeyValues(withRouter(withLinkedInCallback(LinkedInProfileContainerWithGql)), ['linkedInData'])
+export default withKeyValues(withLinkedInCallback(LinkedInProfileContainerWithGql), ['linkedInData'])
 
 
 function CSVToArray(strData, strDelimiter) {

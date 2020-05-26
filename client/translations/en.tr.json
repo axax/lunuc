@@ -24,6 +24,7 @@
   "TypesContainer.deleteEntry": "Delete entry",
   "TypesContainer.editEntry": "Edit entry",
   "TypesContainer.cloneEntry": "Clone entry",
+  "TypesContainer.addNew": "Add new “%type%“",
   "Types.selectType": "Select a %type%",
   "Types.enterField": "Enter %name%",
   "Types.createdBy": "Created by user",

@@ -13,9 +13,8 @@ import List from '@material-ui/core/List'
 import ListItem from '@material-ui/core/ListItem'
 import ListItemText from '@material-ui/core/ListItemText'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
-import {withRouter} from 'react-router-dom'
 import {connect} from 'react-redux'
-import Routes from 'client/components/routing/Routes'
+import { useHistory } from 'react-router-dom'
 
 const drawerWidth = 300;
 
@@ -86,7 +85,8 @@ class ResponsiveDrawer extends React.Component {
     }
 
     linkTo(item) {
-        this.props.history.push(item.to)
+        const history = useHistory()
+        history.push(item.to)
     }
 
     removeTrailingSlash(link){
@@ -97,7 +97,7 @@ class ResponsiveDrawer extends React.Component {
     }
 
     findActiveItem(){
-        let currentLink = this.removeTrailingSlash(this.props.location.pathname)
+        let currentLink = this.removeTrailingSlash(window.location.pathname)
         const contextLang = currentLink.split('/')[1].toLowerCase()
 
         if (contextLang === _app_.lang) {
@@ -219,7 +219,6 @@ class ResponsiveDrawer extends React.Component {
 
 ResponsiveDrawer.propTypes = {
     classes: PropTypes.object.isRequired,
-    history: PropTypes.object.isRequired,
     theme: PropTypes.object.isRequired,
     menuItems: PropTypes.array.isRequired,
     isAuthenticated: PropTypes.bool,
@@ -247,4 +246,4 @@ const mapStateToProps = (store) => {
  */
 export default connect(
     mapStateToProps
-)(withRouter(withStyles(styles, {withTheme: true})(ResponsiveDrawer)))
+)(withStyles(styles, {withTheme: true})(ResponsiveDrawer))
