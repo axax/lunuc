@@ -101,7 +101,6 @@ function mainInit() {
         _app_.contextPath = ''
         _app_.lang = config.DEFAULT_LANGUAGE
     }
-
     const start = () => {
         render(
             <App store={store}/>,

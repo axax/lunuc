@@ -12,7 +12,7 @@
         {
           "name": "hook",
           "required": true,
-          "enum": ["appready","typeCreated","typeUpdated","typeDeleted","typeCloned","index","tracking"]
+          "enum": ["appready","typeCreated","typeUpdated","typeDeleted","typeCloned","index","tracking","cmsCustomResolver"]
         },
         {
           "name": "script",

@@ -196,7 +196,6 @@ export default function (WrappedComponent) {
             }
         }
     }
-
     const withGql = compose(
         graphql(gqlQuery(), {
             skip: props => props.aboutToChange,

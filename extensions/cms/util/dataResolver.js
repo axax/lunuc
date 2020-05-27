@@ -14,6 +14,7 @@ import config from 'gen/config'
 import path from 'path'
 import {propertyByPath, setPropertyByPath, assignIfObjectOrArray, matchExpr} from '../../../client/util/json'
 
+
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode}) => {
     const startTime = new Date().getTime()
     const resolvedData = {_meta: {}}, subscriptions = []
@@ -171,68 +172,10 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     debugInfo += ' result=true'
 
                     resolvedData[segment.key || type] = result
+
+
                 } else if (segment.request) {
-                    console.log(`resolve request ${segment.request.url}`)
-                    const dataKey = segment.key || 'request'
-                    const cacheKey = createCacheKey(segment, 'request')
-                    if (cacheKey) {
-                        const cachedData = Cache.cache[cacheKey]
-                        if (cachedData) {
-                            resolvedData[dataKey] = cachedData.data
-                            if (Cache.isValid(cachedData)) {
-                                // no need to renew cache
-                                continue
-                            }
-                        }
-                    }
-
-                    if (segment.async !== false) {
-                        request(segment.request).then((body) => {
-                            const result = {body}
-                            if (segment.meta) {
-                                result.meta = segment.meta
-                            }
-                            if (cacheKey) {
-                                Cache.set(cacheKey, result, segment.cache.expiresIn)
-                            }
-
-                            pubsubDelayed.publish('cmsPageData', {
-                                userId: context.id,
-                                session: context.session,
-                                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: result})}
-                            }, context)
-
-                        }).catch(function (error) {
-                            const result = {error: error.message}
-                            if (segment.meta) {
-                                result.meta = segment.meta
-                            }
-                            pubsubDelayed.publish('cmsPageData', {
-                                userId: context.id,
-                                session: context.session,
-                                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: result})}
-                            }, context)
-                        })
-                        addDataResolverSubsription = true
-                        if (!resolvedData[dataKey]) {
-                            resolvedData[dataKey] = {}
-                        }
-                        resolvedData[dataKey].meta = segment.meta
-                    } else {
-                        let result
-                        try {
-                            result = {body: await request(segment.request)}
-                            if (segment.meta) {
-                                result.meta = segment.meta
-                            }
-                        } catch (error) {
-                            result = {error}
-                        }
-                        if (cacheKey) {
-                            Cache.set(cacheKey, result, segment.cache.expiresIn)
-                        }
-                        resolvedData[dataKey] = result
-                    }
+                    addDataResolverSubsription = await resolveRequest(segment, resolvedData, context, addDataResolverSubsription)
 
                 } else if (segment.tr) {
 
@@ -275,185 +218,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
                 } else if (segment.reduce) {
                     try {
-                        const checkFilter = (filters, value, key) => {
-                            if (filters) {
-                                for (let i = 0; i < filters.length; i++) {
-                                    const filter = filters[i]
-                                    if (!filter.is || filter.is === 'true') {
-
-                                        if (filter.search) {
-                                            const re = new RegExp(filter.search.expr, 'i'),
-                                                keys = Object.keys(filter.search.fields)
-
-
-                                            for (let y = 0; y < keys.length; y++) {
-                                                const fieldKey = keys[y]
-                                                if (value[key][fieldKey] && re.test(value[key][fieldKey])) {
-                                                    return false
-                                                }
-                                            }
-
-                                            return true
-
-                                        } else {
-                                            if (matchExpr(filter.expr, {key, value: value[key]})) {
-                                                if (filter.elseRemove) {
-                                                    delete value[key]
-                                                }
-                                                return true
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            return false
-                        }
-
-                        const reduce = (reducePipe, rootData, currentData) => {
-                            if (!currentData) {
-                                currentData = rootData
-                            }
-                            reducePipe.forEach(re => {
-                                if (re.path) {
-                                    if (re.lookup) {
-                                        const lookupData = propertyByPath(re.lookup.path, rootData)
-                                        const value = propertyByPath(re.path, currentData)
-                                        let lookedupData
-                                        if (value !== undefined) {
-                                            if (value.constructor === Number) {
-                                                lookedupData = lookupData[value]
-                                                if (lookupData === undefined) {
-                                                    console.warn(`${value} not found in`, lookupData)
-                                                }
-                                            } else if (value.constructor === Array) {
-                                                lookedupData = []
-                                                let count = 0
-                                                value.forEach(key => {
-                                                    if (re.lookup.facets) {
-                                                        const facets = propertyByPath(re.lookup.facets.path, rootData)
-                                                        if (facets) {
-                                                            Object.keys(facets).forEach(facetKey => {
-                                                                const facet = facets[facetKey]
-                                                                if (facet) {
-                                                                    if (facet.type === 'slider') {
-                                                                        if (facet.min === undefined || facet.min > lookupData[key][facetKey]) {
-                                                                            if (!isNaN(lookupData[key][facetKey])) {
-                                                                                facet.min = lookupData[key][facetKey]
-                                                                            }
-                                                                        }
-                                                                        if (facet.max === undefined || facet.max < lookupData[key][facetKey]) {
-                                                                            if (!isNaN(lookupData[key][facetKey])) {
-                                                                                facet.max = lookupData[key][facetKey]
-                                                                            }
-                                                                        }
-                                                                    } else {
-                                                                        if (!facet.values) {
-                                                                            facet.values = {}
-                                                                        }
-                                                                        if (!facet.values[lookupData[key][facetKey]]) {
-                                                                            facet.values[lookupData[key][facetKey]] = {
-                                                                                value: lookupData[key][facetKey],
-                                                                                count: 1
-                                                                            }
-                                                                        } else {
-                                                                            facet.values[lookupData[key][facetKey]].count++
-                                                                        }
-                                                                    }
-                                                                }
-                                                            })
-                                                        }
-                                                    }
-
-
-                                                    if (re.lookup.limit && re.lookup.limit <= count) {
-                                                        return
-                                                    }
-                                                    if (checkFilter(re.lookup.filter, lookupData, key)) {
-                                                        return
-                                                    }
-                                                    count++
-                                                    lookedupData.push(lookupData[key])
-                                                })
-                                            }
-                                        }
-
-                                        if (re.lookup.sum) {
-                                            let sum = propertyByPath(re.lookup.sum.path, rootData)
-                                            if (!sum) {
-                                                sum = 0
-                                            }
-                                            sum += lookedupData.length
-                                            setPropertyByPath(sum, re.lookup.sum.path, rootData)
-                                        }
-
-                                        if (re.key) {
-                                            resolvedData[re.key] = lookedupData
-                                        } else {
-                                            setPropertyByPath(lookedupData, re.path, currentData)
-                                        }
-
-                                    } else if (re.key) {
-                                        const value = propertyByPath(re.path, currentData, '.', re.assign)
-                                        if (re.assign && value && value.constructor === Object) {
-                                            Object.keys(value).forEach(key => {
-                                                if (value[key] && value[key].constructor === Object) {
-                                                    value[key] = Object.assign({}, value[key])
-                                                }
-                                            })
-                                        }
-                                        if (re.get) {
-                                            if (re.separator) {
-                                                const aGet = re.get.split(re.separator)
-                                                const aValue = []
-                                                aGet.forEach(sget => {
-                                                    let getKey = propertyByPath(sget, currentData)
-                                                    if (getKey === null || getKey === undefined) {
-                                                        getKey = sget
-                                                    }
-                                                    aValue.push(value[getKey])
-                                                })
-                                                resolvedData[re.key] = aValue
-                                            } else {
-                                                let getKey = propertyByPath(re.get, currentData)
-                                                if (getKey === null || getKey === undefined) {
-                                                    getKey = re.get
-                                                }
-                                                resolvedData[re.key] = value[getKey]
-                                            }
-                                        } else {
-                                            resolvedData[re.key] = value
-                                        }
-                                    } else if (re.loop) {
-
-
-                                        let value = propertyByPath(re.path, currentData, '.', re.assign)
-                                        if (value.constructor === Object) {
-                                            Object.keys(value).forEach(key => {
-                                                if (re.loop.reduce) {
-                                                    value[key] = re.assign ? assignIfObjectOrArray(value[key]) : value[key]
-                                                    if (checkFilter(re.loop.filter, value, key)) {
-                                                        return
-                                                    }
-                                                    reduce(re.loop.reduce, rootData, value[key])
-                                                }
-                                            })
-                                        }
-                                    } else if (re.reduce) {
-                                        const arr = propertyByPath(re.path, currentData)
-
-                                        reduce(re.reduce, rootData, arr)
-
-                                    }
-                                    if (re.remove) {
-                                        const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))
-                                        const ob = propertyByPath(parentPath, currentData)
-                                        delete ob[re.path.substring(re.path.lastIndexOf('.') + 1)]
-                                    }
-                                }
-                            })
-                        }
-
-                        reduce(segment.reduce, resolvedData)
+                        resolveReduce(segment.reduce, resolvedData)
                     } catch (e) {
                         console.warn(`segment ${segment.key} can not be reduced`, e)
                     }
@@ -481,10 +246,25 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                 } else if (segment.user) {
 
                     resolvedData.user = {id: context.id}
-                    if (context.id && segment.user.roles) {
+                    if (context.id) {
                         const user = await Util.userById(db, context.id)
 
-                        resolvedData.user.roles = await Util.getUserRoles(db, user.role)
+                        if( segment.user.meta){
+                            if(segment.user.meta.constructor === Array){
+                                resolvedData.user.meta = {}
+                                if(user.meta) {
+                                    segment.user.meta.forEach(m => {
+                                        resolvedData.user.meta[m] = user.meta[m]
+                                    })
+                                }
+                            }else{
+                                resolvedData.user.meta = user.meta
+                            }
+                        }
+
+                        if(segment.user.roles) {
+                            resolvedData.user.roles = await Util.getUserRoles(db, user.role)
+                        }
                     }
                 } else if (segment.keyValues) {
 
@@ -617,4 +397,260 @@ function resolveSystemData(segment, req, resolvedData) {
     }
     resolvedData._meta.system = segment.key || 'system'
     resolvedData[resolvedData._meta.system] = data
+}
+
+
+
+async function resolveRequest(segment, resolvedData, context, addDataResolverSubsription) {
+    console.log(`resolve request ${segment.request.url}`)
+    const dataKey = segment.key || 'request'
+    const cacheKey = createCacheKey(segment, 'request')
+    if (cacheKey) {
+        const cachedData = Cache.cache[cacheKey]
+        if (cachedData) {
+            resolvedData[dataKey] = cachedData.data
+            if (Cache.isValid(cachedData)) {
+                // no need to renew cache
+                return;
+            }
+        }
+    }
+
+    if (segment.async !== false) {
+        request(segment.request).then((body) => {
+            const result = {body}
+            if (segment.meta) {
+                result.meta = segment.meta
+            }
+            if (cacheKey) {
+                Cache.set(cacheKey, result, segment.cache.expiresIn)
+            }
+
+            pubsubDelayed.publish('cmsPageData', {
+                userId: context.id,
+                session: context.session,
+                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: result})}
+            }, context)
+
+        }).catch(function (error) {
+            const result = {error: error.message}
+            if (segment.meta) {
+                result.meta = segment.meta
+            }
+            pubsubDelayed.publish('cmsPageData', {
+                userId: context.id,
+                session: context.session,
+                cmsPageData: {resolvedData: JSON.stringify({[dataKey]: result})}
+            }, context)
+        })
+        addDataResolverSubsription = true
+        if (!resolvedData[dataKey]) {
+            resolvedData[dataKey] = {}
+        }
+        resolvedData[dataKey].meta = segment.meta
+    } else {
+        let result
+        try {
+            result = {body: await request(segment.request)}
+            if (segment.meta) {
+                result.meta = segment.meta
+            }
+        } catch (error) {
+            result = {error}
+        }
+        if (cacheKey) {
+            Cache.set(cacheKey, result, segment.cache.expiresIn)
+        }
+        resolvedData[dataKey] = result
+    }
+    return addDataResolverSubsription
+}
+
+
+
+const checkFilter = (filters, value, key) => {
+    if (filters) {
+        for (let i = 0; i < filters.length; i++) {
+            const filter = filters[i]
+            if (!filter.is || filter.is === 'true') {
+
+                if (filter.search) {
+                    const re = new RegExp(filter.search.expr, 'i'),
+                        keys = Object.keys(filter.search.fields)
+
+
+                    for (let y = 0; y < keys.length; y++) {
+                        const fieldKey = keys[y]
+                        if (value[key][fieldKey] && re.test(value[key][fieldKey])) {
+                            return false
+                        }
+                    }
+
+                    return true
+
+                } else {
+                    if (matchExpr(filter.expr, {key, value: value[key]})) {
+                        if (filter.elseRemove) {
+                            delete value[key]
+                        }
+                        return true
+                    }
+                }
+            }
+        }
+    }
+    return false
+}
+
+const resolveReduce = (reducePipe, rootData, currentData) => {
+    if (!currentData) {
+        currentData = rootData
+    }
+    reducePipe.forEach(re => {
+        if (re.path) {
+            if (re.lookup) {
+                const lookupData = propertyByPath(re.lookup.path, rootData)
+                const value = propertyByPath(re.path, currentData)
+                let lookedupData
+                if (value !== undefined) {
+                    if (value.constructor === Number) {
+                        lookedupData = lookupData[value]
+                        if (lookupData === undefined) {
+                            console.warn(`${value} not found in`, lookupData)
+                        }
+                    } else if (value.constructor === Array) {
+                        lookedupData = []
+                        let count = 0
+                        value.forEach(key => {
+                            if (re.lookup.facets) {
+                                const facets = propertyByPath(re.lookup.facets.path, rootData)
+                                if (facets) {
+                                    Object.keys(facets).forEach(facetKey => {
+                                        const facet = facets[facetKey]
+                                        if (facet) {
+                                            if (facet.type === 'slider') {
+                                                if (facet.min === undefined || facet.min > lookupData[key][facetKey]) {
+                                                    if (!isNaN(lookupData[key][facetKey])) {
+                                                        facet.min = lookupData[key][facetKey]
+                                                    }
+                                                }
+                                                if (facet.max === undefined || facet.max < lookupData[key][facetKey]) {
+                                                    if (!isNaN(lookupData[key][facetKey])) {
+                                                        facet.max = lookupData[key][facetKey]
+                                                    }
+                                                }
+                                            } else {
+                                                if (!facet.values) {
+                                                    facet.values = {}
+                                                }
+                                                if (!facet.values[lookupData[key][facetKey]]) {
+                                                    facet.values[lookupData[key][facetKey]] = {
+                                                        value: lookupData[key][facetKey],
+                                                        count: 1
+                                                    }
+                                                } else {
+                                                    facet.values[lookupData[key][facetKey]].count++
+                                                }
+                                            }
+                                        }
+                                    })
+                                }
+                            }
+
+
+                            if (re.lookup.limit && re.lookup.limit <= count) {
+                                return
+                            }
+                            if (checkFilter(re.lookup.filter, lookupData, key)) {
+                                return
+                            }
+                            count++
+                            lookedupData.push(lookupData[key])
+                        })
+                    }
+                }
+
+                if (re.lookup.sum) {
+                    let sum = propertyByPath(re.lookup.sum.path, rootData)
+                    if (!sum) {
+                        sum = 0
+                    }
+                    sum += lookedupData.length
+                    setPropertyByPath(sum, re.lookup.sum.path, rootData)
+                }
+
+                if (re.key) {
+                    rootData[re.key] = lookedupData
+                } else {
+                    setPropertyByPath(lookedupData, re.path, currentData)
+                }
+
+            } else if (re.key) {
+                const value = propertyByPath(re.path, currentData, '.', re.assign)
+                if (re.assign && value && value.constructor === Object) {
+                    Object.keys(value).forEach(key => {
+                        if (value[key] && value[key].constructor === Object) {
+                            value[key] = Object.assign({}, value[key])
+                        }
+                    })
+                }
+                if (re.get) {
+                    if (re.separator ) {
+                        const aGet = re.get.split(re.separator)
+                        const aValue = []
+                        aGet.forEach(sget => {
+                            let getKey = propertyByPath(sget, currentData)
+                            if (getKey === null || getKey === undefined) {
+                                getKey = sget
+                            }
+                            aValue.push(value[getKey])
+                        })
+                        rootData[re.key] = aValue
+                    } else {
+                        let getKey = propertyByPath(re.get, currentData)
+                        if (getKey === null || getKey === undefined) {
+                            getKey = re.get
+                        }
+                        if(getKey && getKey.constructor === Array){
+                            const aValue = []
+                            getKey.forEach(key => {
+                                aValue.push(value[key])
+                            })
+                            rootData[re.key] = aValue
+
+                        }else {
+                            rootData[re.key] = value[getKey]
+                        }
+                    }
+                } else {
+                    rootData[re.key] = value
+                }
+            } else if (re.loop) {
+
+
+                let value = propertyByPath(re.path, currentData, '.', re.assign)
+                if (value.constructor === Object) {
+                    Object.keys(value).forEach(key => {
+                        if (re.loop.reduce) {
+                            value[key] = re.assign ? assignIfObjectOrArray(value[key]) : value[key]
+                            if (checkFilter(re.loop.filter, value, key)) {
+                                return
+                            }
+                            resolveReduce(re.loop.reduce, rootData, value[key])
+                        }
+                    })
+                }
+            } else if (re.reduce) {
+                const arr = propertyByPath(re.path, currentData)
+
+                resolveReduce(re.reduce, rootData, arr)
+
+            }
+            if (re.remove) {
+                const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))
+                const ob = propertyByPath(parentPath, currentData)
+                delete ob[re.path.substring(re.path.lastIndexOf('.') + 1)]
+            }
+        }
+    })
 }

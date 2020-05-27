@@ -14,11 +14,12 @@ const register = async (db) => {
             console.log(`register hook ${entry.name} (${entry.hook})`)
 
             try {
-                const fun = new Function(`const require = this.require;${entry.script}`),
+                const fun = new Function(`const require = this.require;
+                    ${entry.script}`),
                     name = entry.hook,
                     key = entry._id.toString()
                 Hook.on(`${name}.${key}`, (args) => {
-                    fun.call({require,...args})
+                    fun.call({require,Util,...args})
                 })
 
                 registeredHook.push({name, key, fun})

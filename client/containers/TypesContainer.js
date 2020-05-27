@@ -700,8 +700,9 @@ class TypesContainer extends React.Component {
 
                     <Paper elevation={1} component="form" className={classes.searchRoot}>
                         <InputBase
-                            value={this.pageParams.filter}
+                            value={this._tempFilter || this.pageParams.filter}
                             onChange={(e) => {
+                                this._tempFilter = e.target.value
                                 this.handleFilter({value: e.target.value, target: e.target}, false)
                             }}
                             onKeyDown={(e) => {
@@ -1391,6 +1392,7 @@ class TypesContainer extends React.Component {
         const v = event.target.value
         if (v !== this.pageParams.type) {
             this.settings.lastType = v
+            this._tempFilter=null
             this.props.history.push(`${ADMIN_BASE_URL}/types/${v}`)
         }
     }

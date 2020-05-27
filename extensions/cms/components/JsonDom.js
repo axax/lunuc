@@ -79,13 +79,13 @@ class JsonDom extends React.Component {
         /* Other components */
         FileDrop,
         MarkDown,
-        'SmartImage': ({src, options, caption, wrapper, alt,inlineSvg,svgData, ...props}) => {
+        'SmartImage': ({src, options, caption, wrapper, alt, inlineSvg, svgData, ...props}) => {
             let imageData = Util.getImageObject(src, options)
             imageData['data-smartimage'] = true
-            const imgTag = props =>{
-                if(svgData){
+            const imgTag = props => {
+                if (svgData) {
                     return <span data-inline-svg={true} {...props} dangerouslySetInnerHTML={{__html: svgData}}/>
-                }else{
+                } else {
                     return <img alt={alt} {...imageData} {...props} />
                 }
             }
@@ -138,9 +138,9 @@ class JsonDom extends React.Component {
                     }
 
                     if (gotop) {
-                        setTimeout(()=> {
+                        setTimeout(() => {
                             window.scrollTo({top: 0})
-                        },0)
+                        }, 0)
                     }
 
                     if (onClick) {
@@ -596,7 +596,7 @@ class JsonDom extends React.Component {
                  $if = condition (only parse if condition is fullfilled)
                  p = prop
                  */
-                if(t==='#'){
+                if (t === '#') {
                     // hidden element
                     h.push(this.parseRec(c, rootKey, scope))
                     return
@@ -614,7 +614,7 @@ class JsonDom extends React.Component {
 
 
                 if ($is && $is !== 'true') {
-                    if( matchExpr($is, scope)){
+                    if (matchExpr($is, scope)) {
                         return
                     }
                 }
@@ -674,10 +674,10 @@ class JsonDom extends React.Component {
                         try {
                             // get data from scope by path (foo.bar)
                             data = propertyByPath($d, scope)
-                            if( data && data.constructor === String){
+                            if (data && data.constructor === String) {
                                 try {
                                     data = JSON.parse(data)
-                                }catch (e) {
+                                } catch (e) {
 
                                 }
                             }
@@ -902,7 +902,7 @@ class JsonDom extends React.Component {
                     }
                     if (editMode && $inlineEditor !== false) {
 
-                        if (this.props.inlineEditor || ($inlineEditor && $inlineEditor.mode==='source')) {
+                        if (this.props.inlineEditor || ($inlineEditor && $inlineEditor.mode === 'source')) {
                             const rawJson = this.getJsonRaw(this.props, true)
                             if (rawJson) {
                                 eleProps._json = rawJson
@@ -926,7 +926,7 @@ class JsonDom extends React.Component {
                         eleProps.dangerouslySetInnerHTML = {__html: $c}
                     }
 
-                    if ((( (eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) && (!!window.IntersectionObserver || eleProps.inlineSvg)) {
+                    if ((((eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) && (!!window.IntersectionObserver || eleProps.inlineSvg)) {
 
                         h.push(React.createElement(
                             elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
@@ -1320,13 +1320,13 @@ class JsonDom extends React.Component {
         }
 
         if (nodeToRefresh) {
-            if (!nodeToRefresh._ismounted) {
-                console.warn(`Component ${id} is not mounted`, nodeToRefresh)
-                return false
-            }
             nodeToRefresh.json = null
             if (runScript) {
                 nodeToRefresh.runScript = true
+            }
+            if (!nodeToRefresh._ismounted) {
+                console.warn(`Component ${id} is not mounted`, nodeToRefresh)
+                return false
             }
             nodeToRefresh.forceUpdate()
         } else {

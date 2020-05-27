@@ -162,7 +162,7 @@ export default db => ({
                     public: ispublic,
                     online: _version === 'default',
                     slug,
-                    name,
+                    name: {[context.lang]: name[context.lang]},
                     template,
                     script,
                     resources,
