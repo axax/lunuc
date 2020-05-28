@@ -36,7 +36,7 @@ class JsonDomInput extends React.Component {
     }
 
     render() {
-        const {onChange, textarea, select, type, value, ...rest} = this.props
+        const {onChange, textarea, select, type, value, binding, ...rest} = this.props
         const stateValue = this.state.value
         if( select ){
             return <select onChange={this.valueChange.bind(this)} {...rest} value={stateValue} />

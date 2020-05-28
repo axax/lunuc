@@ -172,7 +172,9 @@ class TinyEditor extends React.Component {
     }
 
     componentWillUnmount() {
-        tinymce.remove('#TinyEditor' + this.instanceId)
+        if(window.tinymce) {
+            tinymce.remove('#TinyEditor' + this.instanceId)
+        }
         //document.body.removeChild(this.css)
     }
 
