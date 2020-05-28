@@ -100,7 +100,7 @@
     "mongodb": "^3.5.7",
     "natural": "^2.1.5",
     "node-cron": "^2.0.3",
-    "nodemailer": "^6.4.6",
+    "nodemailer": "^6.4.7",
     "preact": "^10.4.4",
     "react": "^16.13.1",
     "react-autosuggest": "^10.0.2",
