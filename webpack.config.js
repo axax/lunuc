@@ -287,12 +287,12 @@ if (DEV_MODE) {
         }
     }
 
-    config.resolve = {
+   /* config.resolve = {
         alias: {
             'react': 'preact/compat',
             'react-dom': 'preact/compat'
         },
-    }
+    }*/
     /* For Debugging porpuses */
     //config.devtool = 'eval'
 

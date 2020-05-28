@@ -206,12 +206,10 @@ const Util = {
     userById: async (db, id) => {
         const cacheKeyUser = 'User' + id
         let user = Cache.get(cacheKeyUser)
-
         if (!user) {
             user = (await db.collection('User').findOne({_id: ObjectId(id)}))
             Cache.set(cacheKeyUser, user, 86400000) // cache expires in 1 day
         }
-
         return user
     },
     userAndJuniorIds: async (db, id) => {

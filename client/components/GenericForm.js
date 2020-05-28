@@ -475,6 +475,7 @@ class GenericForm extends React.Component {
                 }
 
                 holder.push(<Expandable title={expandableField.expandable}
+                                        key={"expandable"+fieldKey}
                                         onChange={() => {
                                         }}
                                         expanded={false}>

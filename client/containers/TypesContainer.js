@@ -228,6 +228,9 @@ class TypesContainer extends React.Component {
     }
 
     renderTable(columns) {
+        if( this._renderedTable ){
+      //      return this._renderedTable
+        }
         const {classes, client} = this.props
         const {data, selectedrows} = this.state
         if (data) {
@@ -928,6 +931,7 @@ class TypesContainer extends React.Component {
         } else {
             update(value)
         }
+        this._renderedTable=null
         this.setState({selectedrows, selectAllRows})
 
     }
@@ -1052,7 +1056,7 @@ class TypesContainer extends React.Component {
             const queries = getTypeQueries(type)
 
             if (queries) {
-
+                this._renderedTable=null
                 const storeKey = this.getStoreKey(type),
                     variables = {limit, page, sort, _version, filter: this.extendFilter(filter)},
                     gqlQuery = gql(queries.query)

@@ -1,6 +1,5 @@
-import React from 'react'
 import PropTypes from 'prop-types'
-import {withStyles} from '@material-ui/core/styles'
+import {makeStyles} from '@material-ui/core/styles'
 import Drawer from '@material-ui/core/Drawer'
 import AppBar from '@material-ui/core/AppBar'
 import Toolbar from '@material-ui/core/Toolbar'
@@ -14,11 +13,12 @@ import ListItem from '@material-ui/core/ListItem'
 import ListItemText from '@material-ui/core/ListItemText'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import {connect} from 'react-redux'
-import { useHistory } from 'react-router-dom'
+import {useHistory} from 'react-router-dom'
+import React, {useState} from 'react'
 
 const drawerWidth = 300;
 
-const styles = theme => ({
+const useStyles = makeStyles(theme => ({
     root: {
         width: '100%',
         height: '100%',
@@ -73,153 +73,147 @@ const styles = theme => ({
     listItemActive: {
         fontWeight: 'bold'
     }
-})
+}))
 
-class ResponsiveDrawer extends React.Component {
-    state = {
-        mobileOpen: false,
+
+const removeTrailingSlash = (link) => {
+    if (link.endsWith('/')) {
+        link = link.substring(0, link.length - 1)
+    }
+    return link
+}
+
+const findActiveItem = (props) => {
+    let currentLink = removeTrailingSlash(window.location.pathname)
+    const contextLang = currentLink.split('/')[1].toLowerCase()
+
+    if (contextLang === _app_.lang) {
+        currentLink = currentLink.substring(3)
     }
 
-    constructor(props) {
-        super(props)
-    }
-
-    linkTo(item) {
-        const history = useHistory()
-        history.push(item.to)
-    }
-
-    removeTrailingSlash(link){
-        if( link.endsWith('/') ){
-            link = link.substring(0, link.length-1)
-        }
-        return link
-    }
-
-    findActiveItem(){
-        let currentLink = this.removeTrailingSlash(window.location.pathname)
-        const contextLang = currentLink.split('/')[1].toLowerCase()
-
-        if (contextLang === _app_.lang) {
-            currentLink = currentLink.substring(3)
-        }
-
-        let maybeItem = null
-        for(let i=0;i<this.props.menuItems.length;i++){
-            const item = this.props.menuItems[i]
-            const to = this.removeTrailingSlash(item.to)
-            if( to===currentLink){
-                // exact match
-                return item
-            }else if(currentLink.startsWith(to)){
-                // take the longest one
-                if( !maybeItem || item.to.length > maybeItem.to.length) {
-                    maybeItem = item
-                }
+    let maybeItem = null
+    for (let i = 0; i < props.menuItems.length; i++) {
+        const item = props.menuItems[i]
+        const to = removeTrailingSlash(item.to)
+        if (to === currentLink) {
+            // exact match
+            return item
+        } else if (currentLink.startsWith(to)) {
+            // take the longest one
+            if (!maybeItem || item.to.length > maybeItem.to.length) {
+                maybeItem = item
             }
         }
-        return maybeItem
+    }
+    return maybeItem
+}
+
+const ResponsiveDrawer = (props) => {
+
+    const [mobileOpen, setMobileOpen] = useState(false)
+
+    const handleDrawerToggle = () => {
+        setMobileOpen(!mobileOpen)
     }
 
-    handleDrawerToggle = () => {
-        this.setState({mobileOpen: !this.state.mobileOpen})
-    }
+    const {menuItems, isAuthenticated, children, headerRight, title, toolbarStyle, headerStyle} = props
 
-    render() {
-        const {classes, theme, menuItems, isAuthenticated, children, headerRight, title, toolbarStyle, headerStyle} = this.props
-        const activeItem = this.findActiveItem()
-        const drawer = (
-            <div>
+    const classes = useStyles()
 
-                <div className={classes.drawerHeader}/>
-                <Divider/>
-                <List>
+    const activeItem = findActiveItem(props)
+    const history = useHistory()
+    const drawer = (
+        <div>
 
-                    {menuItems.map((item, i) => {
-                        if (item.auth && isAuthenticated || !item.auth) {
-                            return <ListItem onClick={this.linkTo.bind(this, item)}
-                                             key={i}
-                                             button>
-                                {
-                                    item.icon && <ListItemIcon>
-                                        {item.icon.constructor===String?<div dangerouslySetInnerHTML={{__html: item.icon}}/>:item.icon}
-                                    </ListItemIcon>
-                                }
-                                <ListItemText disableTypography
-                                              primary={<Typography variant="subtitle1"
-                                                                   component="h3"
-                                                                   className={(activeItem===item ? classes.listItemActive : '')}>{item.name}</Typography>}/>
-                            </ListItem>
+            <div className={classes.drawerHeader}/>
+            <Divider/>
+            <List>
 
-                        }
-                    })}
-                </List>
-                <Divider/>
-            </div>
-        )
+                {menuItems.map((item, i) => {
+                    if (item.auth && isAuthenticated || !item.auth) {
+                        return <ListItem onClick={() => {
+                            history.push(item.to)
+                        }}
+                                         key={i}
+                                         button>
+                            {
+                                item.icon && <ListItemIcon>
+                                    {item.icon.constructor === String ?
+                                        <div dangerouslySetInnerHTML={{__html: item.icon}}/> : item.icon}
+                                </ListItemIcon>
+                            }
+                            <ListItemText disableTypography
+                                          primary={<Typography variant="subtitle1"
+                                                               component="h3"
+                                                               className={(activeItem === item ? classes.listItemActive : '')}>{item.name}</Typography>}/>
+                        </ListItem>
 
-        return (
-            <div className={classes.root}>
-                <div className={classes.appFrame}>
-                    <AppBar style={headerStyle} className={classes.appBar}>
-                        <Toolbar style={toolbarStyle}>
+                    }
+                })}
+            </List>
+            <Divider/>
+        </div>
+    )
 
-                            <IconButton
-                                color="inherit"
-                                aria-label="open drawer"
-                                onClick={this.handleDrawerToggle}
-                                className={classes.navIconHide}
-                            >
-                                <MenuIcon/>
-                            </IconButton>
-                            <Typography className={classes.flex} variant="h6" color="inherit" noWrap>
-                                {title}
-                            </Typography>
+    return (
+        <div className={classes.root}>
+            <div className={classes.appFrame}>
+                <AppBar style={headerStyle} className={classes.appBar}>
+                    <Toolbar style={toolbarStyle}>
 
-                            {headerRight}
-
-
-                        </Toolbar>
-                    </AppBar>
-                    <Hidden lgUp>
-                        <Drawer
-                            variant="temporary"
-                            anchor={theme.direction === 'rtl' ? 'right' : 'left'}
-                            open={this.state.mobileOpen}
-                            classes={{
-                                paper: classes.drawerPaper,
-                            }}
-                            onClose={this.handleDrawerToggle}
-                            ModalProps={{
-                                keepMounted: true, // Better open performance on mobile.
-                            }}
+                        <IconButton
+                            color="inherit"
+                            aria-label="open drawer"
+                            onClick={handleDrawerToggle}
+                            className={classes.navIconHide}
                         >
-                            {drawer}
-                        </Drawer>
-                    </Hidden>
-                    <Hidden mdDown implementation="css">
-                        <Drawer
-                            variant="permanent"
-                            open
-                            classes={{
-                                paper: classes.drawerPaper,
-                            }}
-                        >
-                            {drawer}
-                        </Drawer>
-                    </Hidden>
-                    <main className={classes.content}>
-                        {children}
-                    </main>
-                </div>
+                            <MenuIcon/>
+                        </IconButton>
+                        <Typography className={classes.flex} variant="h6" color="inherit" noWrap>
+                            {title}
+                        </Typography>
+
+                        {headerRight}
+
+
+                    </Toolbar>
+                </AppBar>
+                <Hidden lgUp>
+                    <Drawer
+                        variant="temporary"
+                        open={mobileOpen}
+                        classes={{
+                            paper: classes.drawerPaper,
+                        }}
+                        onClose={handleDrawerToggle}
+                        ModalProps={{
+                            keepMounted: true, // Better open performance on mobile.
+                        }}
+                    >
+                        {drawer}
+                    </Drawer>
+                </Hidden>
+                <Hidden mdDown implementation="css">
+                    <Drawer
+                        variant="permanent"
+                        open
+                        classes={{
+                            paper: classes.drawerPaper,
+                        }}
+                    >
+                        {drawer}
+                    </Drawer>
+                </Hidden>
+                <main className={classes.content}>
+                    {children}
+                </main>
             </div>
-        );
-    }
+        </div>
+    )
+
 }
 
 ResponsiveDrawer.propTypes = {
-    classes: PropTypes.object.isRequired,
-    theme: PropTypes.object.isRequired,
     menuItems: PropTypes.array.isRequired,
     isAuthenticated: PropTypes.bool,
     headerRight: PropTypes.any,
@@ -246,4 +240,4 @@ const mapStateToProps = (store) => {
  */
 export default connect(
     mapStateToProps
-)(withStyles(styles, {withTheme: true})(ResponsiveDrawer))
+)(ResponsiveDrawer)

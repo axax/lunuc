@@ -218,7 +218,7 @@ CodeEditor.propTypes = {
     lineNumbers: PropTypes.bool,
     readOnly: PropTypes.bool,
     onChange: PropTypes.func,
-    error: PropTypes.string,
+    error: PropTypes.any,
     onError: PropTypes.func,
     onScroll: PropTypes.func,
     onBlur: PropTypes.func,

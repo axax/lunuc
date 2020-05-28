@@ -37,7 +37,7 @@ export default () => {
                         image =
                             (mimeType[0] === 'image' ?
                                     <img style={{maxWidth: '6rem', maxHeight: '6rem', objectFit: 'cover'}}
-                                         src={item.src || (UPLOAD_URL + '/' + item._id+'?width=96')}/>
+                                         src={item.src || (UPLOAD_URL + '/' + item._id + '?width=96')}/>
                                     :
                                     <div className="file-icon"
                                          data-type={mimeType.length > 1 ? mimeType[1] : 'doc'}></div>
@@ -178,53 +178,59 @@ export default () => {
 
     Hook.on('TypesContainerRender', function ({type, content}) {
         if (type === 'Media') {
-            let info = ''
 
 
-            const [group, setGroup] = useState(
-                this.settings.Media && this.settings.Media.group ? this.settings.Media.group : []
-            )
+            const QuickMediaUploader = () => {
+
+                let info = ''
+                const [group, setGroup] = useState(
+                    this.settings.Media && this.settings.Media.group ? this.settings.Media.group : []
+                )
 
 
-            let groupIds = null
+                let groupIds = null
 
-            if (group.length>0) {
-                groupIds = []
-                group.forEach((g) => {
-                    groupIds.push(g._id)
-                })
+                if (group.length > 0) {
+                    groupIds = []
+                    group.forEach((g) => {
+                        groupIds.push(g._id)
+                    })
 
+                }
+
+                if (this.settings.Media && this.settings.Media.conversion) {
+                    info += ' Conversion=' + this.settings.Media.conversion[0].name
+                }
+
+
+                return <Row spacing={1} style={{marginBottom: '16px'}}>
+                    <Col md={9}>
+                        <FileDrop key="fileDrop" multi={true} accept="*/*"
+                                  uploadTo="/graphql/upload"
+                                  resizeImages={true}
+                                  imagePreview={false}
+                                  maxSize={10000}
+                                  data={{group: groupIds}}
+                                  conversion={this.settings.Media && this.settings.Media.conversion ? this.settings.Media.conversion : null}
+                                  onSuccess={r => {
+                                      setTimeout(() => {
+                                          this.getData(this.pageParams, false)
+                                      }, 1000)
+                                  }}/>
+                    </Col>
+                    <Col md={3}>
+
+                        <TypePicker value={group} onChange={(e) => {
+                            // meta._this.setSettingsForType(type, {group: e.target.value})
+                            setGroup(e.target.value)
+                        }} multi={true} name="group" placeholder={_t('Media.selectGroup')}
+                                    type="MediaGroup"/>
+                        <br /><small>{info}</small>
+                    </Col>
+                </Row>
             }
 
-            if (this.settings.Media && this.settings.Media.conversion) {
-                info += ' Conversion=' + this.settings.Media.conversion[0].name
-            }
-
-
-            content.splice(1, 1, <Row spacing={1} style={{marginBottom:'16px'}}>
-                <Col md={9}>
-                    <FileDrop key="fileDrop" multi={true} accept="*/*"
-                              uploadTo="/graphql/upload"
-                              resizeImages={true}
-                              imagePreview={false}
-                              maxSize={10000}
-                              data={{group: groupIds}}
-                              conversion={this.settings.Media && this.settings.Media.conversion ? this.settings.Media.conversion : null}
-                              onSuccess={r => {
-                                  setTimeout(() => {
-                                      this.getData(this.pageParams, false)
-                                  }, 1000)
-                              }}/>
-                </Col>
-                <Col md={3}>
-
-                    <TypePicker value={group} onChange={(e) => {
-                        // meta._this.setSettingsForType(type, {group: e.target.value})
-                        setGroup(e.target.value)
-                    }} multi={true} name="group" placeholder={_t('Media.selectGroup')}
-                                type="MediaGroup"/>
-                </Col>
-            </Row>, <small>{info}</small>)
+            content.splice(1, 1, <QuickMediaUploader key="quickMediaUploader"/>)
         }
     })
 
