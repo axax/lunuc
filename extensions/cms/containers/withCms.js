@@ -11,6 +11,7 @@ import Async from 'client/components/Async'
 import compose from '../../../util/compose'
 import DomUtil from '../../../client/util/dom'
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
+import {setPropertyByPath} from "../../../client/util/json";
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}
@@ -64,49 +65,44 @@ export default function (WrappedComponent) {
                     }
                 }
             }
+
             if (!dynamic && isEditMode(this.props) && window.self === window.top) {
                 return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
                                                setKeyValue={this.setKeyValue.bind(this)}
                                                WrappedComponent={WrappedComponent} {...this.props}/>
             } else {
-                return <WrappedComponent setKeyValue={this.setKeyValue.bind(this)} {...this.props} cmsPage={cmsPage}/>
+                return <WrappedComponent updateResolvedData={this.updateResolvedData.bind(this)}
+                                         setKeyValue={this.setKeyValue.bind(this)}
+                                         {...this.props}
+                                         cmsPage={cmsPage}/>
             }
         }
 
 
-        setKeyValue(arg1, arg2, arg3, arg4) {
-            let key, value, server, internal
-            if (arg1.constructor === String) {
-                key = arg1
-                value = arg2
-                server = arg3
-                internal = arg4
-            } else if (arg1.constructor === Object) {
-                key = arg1.key
-                value = arg1.value
-                server = arg1.server
-                internal = arg1.internal
-            }
+        setKeyValue({key, value, server, internal}) {
 
             const {client, user, cmsPage, slug} = this.props
             if (!key || !value || !cmsPage) {
                 return
             }
-            const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
-            const kvk = resolvedDataJson._meta && resolvedDataJson._meta.keyValueKey
-            if (kvk) {
-                if (!resolvedDataJson[kvk]) {
-                    resolvedDataJson[kvk] = {}
+
+            let resolvedDataJson
+            if(!internal) {
+                resolvedDataJson = JSON.parse(cmsPage.resolvedData)
+
+                // Update data in resolved data
+                const kvk = resolvedDataJson._meta && resolvedDataJson._meta.keyValueKey
+                if (kvk) {
+                    if (!resolvedDataJson[kvk]) {
+                        resolvedDataJson[kvk] = {}
+                    }
+                    resolvedDataJson[kvk][key] = value
                 }
-                resolvedDataJson[kvk][key] = value
             }
 
-            if (value.constructor === Object) {
-                value = JSON.stringify(value)
-            }
             const variables = {
                 key,
-                value
+                value: value.constructor === Object ? JSON.stringify(value) : value
             }
 
             if (user.isAuthenticated) {
@@ -114,7 +110,9 @@ export default function (WrappedComponent) {
                     mutation: gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`,
                     variables,
                     update: (store, {data: {setKeyValue}}) => {
-                        if (internal) {
+                        if(resolvedDataJson){
+                            this.updateResolvedData({json:resolvedDataJson})
+                        }else{
 
                             try {
                                 const storedData = store.readQuery({
@@ -138,9 +136,6 @@ export default function (WrappedComponent) {
                             }catch (e) {
 
                             }
-
-                        } else {
-                            this.updateResolvedData(resolvedDataJson)
                         }
                     },
                 })
@@ -163,15 +158,15 @@ export default function (WrappedComponent) {
                 }
                 json[key] = value
                 localStorage.setItem(localStorageKey, JSON.stringify(json))
-                if (!internal) {
-                    this.updateResolvedData(resolvedDataJson)
+                if (resolvedDataJson) {
+                    this.updateResolvedData({json:resolvedDataJson})
                 }
             }
 
         }
 
 
-        updateResolvedData(json) {
+        updateResolvedData({json, path, value}) {
 
             const {client, cmsPageVariables, cmsPage} = this.props
 
@@ -182,11 +177,14 @@ export default function (WrappedComponent) {
 
             // upadate data in resolvedData string
             if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
-
                 const newData = Object.assign({}, storeData.cmsPage)
-
-                newData.resolvedData = JSON.stringify(json)
-
+                if(path && value){
+                    const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
+                    setPropertyByPath(value, path, resolvedDataJson)
+                    newData.resolvedData = JSON.stringify(resolvedDataJson)
+                }else{
+                    newData.resolvedData = JSON.stringify(json)
+                }
                 client.writeQuery({
                     query: gqlQuery(),
                     variables: cmsPageVariables,

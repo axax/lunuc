@@ -83,7 +83,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, cmsPage, children, dynamic, fetchMore, settings, setKeyValue, ...props} = this.props
+        const {slug, cmsPage, children, dynamic, fetchMore, settings, setKeyValue, updateResolvedData, ...props} = this.props
         const editMode = isEditMode(this.props)
 
         if (!cmsPage) {
@@ -104,6 +104,7 @@ class CmsViewContainer extends React.Component {
             clientQuery={this.clientQuery.bind(this)}
             serverMethod={this.serverMethod.bind(this)}
             setKeyValue={setKeyValue}
+            updateResolvedData={updateResolvedData}
             template={cmsPage.template}
             script={cmsPage.script}
             style={cmsPage.style}
@@ -395,6 +396,7 @@ CmsViewContainer.propTypes = {
     cmsPages: PropTypes.object,
     keyValue: PropTypes.object,
     setKeyValue: PropTypes.func.isRequired,
+    updateResolvedData: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,
     user: PropTypes.object.isRequired,
     /* with Router */

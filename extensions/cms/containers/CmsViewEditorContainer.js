@@ -173,7 +173,7 @@ class CmsViewEditorContainer extends React.Component {
                     }
                 })
             }
-        }, instant?0:5000)
+        }, instant ? 0 : 5000)
     }
 
     componentWillUnmount() {
@@ -187,7 +187,7 @@ class CmsViewEditorContainer extends React.Component {
         const noCmsPage = !props.cmsPage || !this.props.cmsPage,
             slugChanged = noCmsPage || props.cmsPage.slug !== this.props.cmsPage.slug
 
-        if( slugChanged){
+        if (slugChanged) {
             this.watchCmsPageStatus(true)
         }
         // only update if it is needed
@@ -1231,7 +1231,7 @@ class CmsViewEditorContainer extends React.Component {
                         }
                     })
 
-                    updateResolvedData(resolvedDataJson)
+                    updateResolvedData({json:resolvedDataJson})
                 }
             }
         }
@@ -1277,10 +1277,18 @@ class CmsViewEditorContainer extends React.Component {
                 }
             })
             if (generalSettingsChanged) {
-                this.props.setKeyValue(settingKeyPrefix, generalSettings, false, true)
+                this.props.setKeyValue({
+                    key: settingKeyPrefix,
+                    value: generalSettings,
+                    internal: true
+                })
             }
             if (pageSettingsChanged) {
-                this.props.setKeyValue(settingKeyPrefix + this.props.slug, pageSettings, false, true)
+                this.props.setKeyValue({
+                    key: settingKeyPrefix + this.props.slug,
+                    value: pageSettings,
+                    internal: true
+                })
             }
 
 
