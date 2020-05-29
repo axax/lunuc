@@ -718,6 +718,8 @@ class TypesContainer extends React.Component {
                             placeholder={_t('TypesContainer.filter')}
                         />
                         <IconButton onClick={() => {
+                            this.setState({filter:''})
+
                             this.handleFilter({value: ''}, true)
                         }} className={classes.searchIconButton}>
                             <DeleteIcon/>
@@ -1154,6 +1156,7 @@ class TypesContainer extends React.Component {
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
+                        this._renderedTable = null
                         this.setState({data: newData})
                     }
 
@@ -1201,6 +1204,7 @@ class TypesContainer extends React.Component {
                                 variables,
                                 data: {...storeData, [storeKey]: newData}
                             })
+                            this._renderedTable = null
                             this.setState({data: newData})
                         }
                     }
@@ -1259,6 +1263,7 @@ class TypesContainer extends React.Component {
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
+                        this._renderedTable = null
                         this.setState({data: newData})
 
                     }
@@ -1313,6 +1318,7 @@ class TypesContainer extends React.Component {
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
+                        this._renderedTable = null
                         this.setState({data: newData})
                     }
 

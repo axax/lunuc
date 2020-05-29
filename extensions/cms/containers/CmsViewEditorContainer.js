@@ -136,8 +136,12 @@ class CmsViewEditorContainer extends React.Component {
         this._handleWindowClose = this.saveUnsafedChanges.bind(this)
         window.addEventListener('beforeunload', this._handleWindowClose)
         window.addEventListener('blur', this._handleWindowClose)
-        this.props.history.listen(() => {
-            this.saveUnsafedChanges()
+
+        const {history} = this.props
+
+       const unblock = history.block((e)=>{
+           this.saveUnsafedChanges()
+           return true
         })
     }
 
@@ -1040,7 +1044,6 @@ class CmsViewEditorContainer extends React.Component {
             console.log('save cms', key)
 
             const {updateCmsPage} = this.props
-
             updateCmsPage(
                 Object.assign({}, data, {[key]: value}), key, () => {
                 }
@@ -1361,6 +1364,10 @@ const CmsViewEditorContainerWithGql = compose(
             updateCmsPage: ({_id, ...rest}, key, cb) => {
 
                 const variables = getGqlVariables(ownProps)
+                if( variables.slug !== rest.slug){
+                    console.warn(`slug changed from ${rest.slug} to ${variables.slug}`)
+                    return
+                }
                 const variablesWithNewValue = {...variables, _id, [key]: rest[key]}
 
                 if (rest[key].constructor === Object) {

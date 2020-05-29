@@ -127,6 +127,9 @@ export function configureMiddleware(store) {
 
     let link = null, wsLink = null
     try {
+        if(navigator.userAgent.indexOf('Chrome-Lighthouse')>-1){
+            throw Error('Chrome-Lighthouse does not support ws')
+        }
         wsLink = new WebSocketLink({
             uri: wsUri,
             options: {
