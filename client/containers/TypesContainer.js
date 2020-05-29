@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useState} from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
@@ -142,7 +142,8 @@ class TypesContainer extends React.Component {
             dataToEdit: null,
             data: null,
             collectionName: '',
-            simpleDialog: false
+            simpleDialog: false,
+            filter: this.pageParams.filter
         }
 
         if (!this.fixType) {
@@ -194,7 +195,8 @@ class TypesContainer extends React.Component {
 
     shouldComponentUpdate(props, state) {
         const settingsChanged = this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
-        const pageParams = this.determinPageParams(props)
+        const pageParams = this.determinPageParams(props),
+            typeChanged = this.pageParams.type !== pageParams.type
 
         if (settingsChanged) {
             this.parseSettings(props)
@@ -203,8 +205,8 @@ class TypesContainer extends React.Component {
         if (/*settingsChanged ||*/
             this.props.settings !== props.settings ||
             this.props.baseFilter !== props.baseFilter ||
-            this.pageParams.type !== pageParams.type ||
             this.pageParams.page !== pageParams.page ||
+            typeChanged ||
             this.pageParams._version !== pageParams._version ||
             this.pageParams.limit !== pageParams.limit ||
             this.pageParams.sort !== pageParams.sort ||
@@ -214,13 +216,14 @@ class TypesContainer extends React.Component {
             if (props.baseFilter) {
                 this.baseFilter = props.baseFilter
             }
-            this.getData(pageParams, true)
+            this.getData(pageParams, true, typeChanged)
 
             return false
         }
 
         return this.state !== state ||
             this.state.data !== state.data ||
+            this.state.filter !== state.filter ||
             this.state.selectedrows !== state.selectedrows ||
             this.props.location !== props.location ||
             this.props.baseFilter !== props.baseFilter ||
@@ -229,7 +232,7 @@ class TypesContainer extends React.Component {
 
     renderTable(columns) {
         if( this._renderedTable ){
-      //      return this._renderedTable
+            return this._renderedTable
         }
         const {classes, client} = this.props
         const {data, selectedrows} = this.state
@@ -703,9 +706,9 @@ class TypesContainer extends React.Component {
 
                     <Paper elevation={1} component="form" className={classes.searchRoot}>
                         <InputBase
-                            value={this._tempFilter || this.pageParams.filter}
-                            onChange={(e) => {
-                                this._tempFilter = e.target.value
+                            value={this.state.filter}
+                            onChange={(e) =>{
+                                this.setState({filter:e.target.value})
                                 this.handleFilter({value: e.target.value, target: e.target}, false)
                             }}
                             onKeyDown={(e) => {
@@ -1050,13 +1053,12 @@ class TypesContainer extends React.Component {
         return filter + (this.baseFilter ? (filter ? ' && ' : '') + this.baseFilter : '')
     }
 
-    getData({type, page, limit, sort, filter, _version}, cacheFirst) {
+    getData({type, page, limit, sort, filter, _version}, cacheFirst, typeChanged) {
         const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
 
             if (queries) {
-                this._renderedTable=null
                 const storeKey = this.getStoreKey(type),
                     variables = {limit, page, sort, _version, filter: this.extendFilter(filter)},
                     gqlQuery = gql(queries.query)
@@ -1069,7 +1071,14 @@ class TypesContainer extends React.Component {
                         if (storeData && storeData[storeKey]) {
                             // oh data are available in cache. show them first
                             setTimeout(() => {
-                                this.setState({data: storeData[storeKey]})
+
+                                this._renderedTable=null
+                                const newState = {data:storeData[storeKey]}
+
+                                if(typeChanged){
+                                    newState.filter = filter
+                                }
+                                this.setState(newState)
                             }, 0)
                         }
                     } catch (e) {
@@ -1082,9 +1091,17 @@ class TypesContainer extends React.Component {
                     variables
                 }).then(response => {
                     const o = response.data[storeKey]
-                    this.setState({data: o})
+                    this._renderedTable=null
+                    const newState = {data:o}
+
+                    if(typeChanged){
+                        newState.filter = filter
+                    }
+                    this.setState(newState)
+
                 }).catch(error => {
                     console.log(error.message)
+                    this._renderedTable=null
                     this.setState({data: null})
                 })
 
@@ -1396,7 +1413,6 @@ class TypesContainer extends React.Component {
         const v = event.target.value
         if (v !== this.pageParams.type) {
             this.settings.lastType = v
-            this._tempFilter=null
             this.props.history.push(`${ADMIN_BASE_URL}/types/${v}`)
         }
     }

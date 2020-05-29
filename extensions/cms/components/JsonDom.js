@@ -459,7 +459,6 @@ class JsonDom extends React.Component {
         if (content && this._inHtmlComponents.length > 0) {
             content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
         }
-
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
         if (this.parseError) {
             return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
