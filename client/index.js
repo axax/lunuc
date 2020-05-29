@@ -156,7 +156,7 @@ function mainInit() {
         }
     }
     /* Register serviceworker only on production. only works with https */
-    if (false && 'serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator) {
         console.log('Service Worker is supported')
 
         if ('PushManager' in window) {
@@ -214,5 +214,7 @@ if (!Object.assign || !window.fetch || !window.Intl) {
         onload
     })
 } else {
+    //console.info(`Time ${(new Date()).getTime() - _app_.start.getTime()}ms`)
+
     mainInit()
 }

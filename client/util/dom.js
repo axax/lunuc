@@ -50,7 +50,7 @@ const DomUtil = {
             } else if (attrs[key])
                 tag[key] = attrs[key]
         }
-        document.getElementsByTagName(target)[0].appendChild(tag)
+        document[target].appendChild(tag)
         return tag
     },
     styleObjectToString(style) {

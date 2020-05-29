@@ -335,7 +335,7 @@ class JsonDom extends React.Component {
 
     checkMetaTags(props) {
         if (!props.dynamic && !props.editMode) {
-            const meta = document.querySelector('meta[name=description]')
+            const meta = document.head.querySelector('meta[name=description]')
             if (!meta) {
                 const content = document.body.innerText.substring(0, 160).replace(/(\r\n|\n|\r)/gm, ' ')
                 if (content) {
@@ -502,7 +502,7 @@ class JsonDom extends React.Component {
     checkResources() {
         // check if all scripts are loaded
         let allloaded = true, counter = 0
-        const resources = document.querySelectorAll(`script[data-cms-view="true"]`)
+        const resources = document.head.querySelectorAll(`script[data-cms-view="true"]`)
         if (resources) {
             const check = () => {
                 counter--
