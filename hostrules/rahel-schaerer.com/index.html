@@ -7,9 +7,9 @@
     <meta name="theme-color" content="#2196f3">
     <link rel="manifest" href="/manifest.json">
     <style>
-        #app:empty {height: 4px;left: -100%;width: 100%;position: fixed;background: #2980b9;animation: l 1.3s linear infinite;animation-delay: 0.5s;}
+        #app:empty {height: 4px;left: -100%;width: 100%;position: fixed;background: #2980b9;visibility: hidden;animation: l 1.5s linear infinite;animation-delay: 1.5s;}
         #app:empty:before {position: fixed;left:0;top:20px;width:100%;text-align: center;content: 'loading...'}
-        @keyframes l {from {left: -100%;} to {left: 100%;}}
+        @keyframes l {from {visibility: visible;left: -100%;} to {left: 100%;}}
     </style>
 </head>
 <body>
