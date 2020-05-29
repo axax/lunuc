@@ -18,7 +18,8 @@ function GenSourceCode(o) {
 }
 
 GenSourceCode.prototype.apply = function (compiler) {
-    compiler.plugin("compile", function (p) {
+
+    compiler.hooks.compile.tap('Gensources', function (p) {
         if (this.compiled) return
         this.compiled = true
 

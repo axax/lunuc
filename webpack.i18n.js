@@ -14,8 +14,7 @@ WebpackI18nPlugin.prototype.apply = function (compiler) {
     var self = this;
 
     this.filesTimeStamps = {};
-
-    compiler.plugin('emit', function (compilation, callback) {
+    compiler.hooks.compile.tap('I18n', function (compilation, callback) {
         glob(self.src, function (error, files) {
             var json = {},
                 filesChanged = [],
@@ -59,8 +58,8 @@ WebpackI18nPlugin.prototype.apply = function (compiler) {
 };
 
 WebpackI18nPlugin.prototype.addFileToWebPackDependencies = function (compilation, filePath) {
-    compilation.fileDependencies.add(filePath);
-};
+    compilation.fileDependencies.push(filePath)
+}
 
 WebpackI18nPlugin.prototype.addJsonToWebPackAssets = function (compilation, json) {
 
