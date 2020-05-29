@@ -2,7 +2,7 @@ import {ObjectId} from 'mongodb'
 import GenericResolver from '../../../api/resolver/generic/genericResolver'
 import Cache from '../../../util/cache'
 import request from 'request-promise'
-//import translations from 'gensrc/tr'
+import translations from 'gensrc/tr'
 import Util from '../../../api/util'
 import ClientUtil from 'client/util'
 import {CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities'
@@ -13,7 +13,6 @@ import fs from 'fs'
 import config from 'gen/config'
 import path from 'path'
 import {propertyByPath, setPropertyByPath, assignIfObjectOrArray, matchExpr} from '../../../client/util/json'
-const translations={}
 
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode}) => {
     const startTime = new Date().getTime()

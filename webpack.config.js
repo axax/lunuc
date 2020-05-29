@@ -164,7 +164,10 @@ const config = {
             filename: 'style.css',
             allChunks: true
         }), /* Extract css from bundle */
-
+        new WebpackI18nPlugin({
+            src: './**/*.tr.json',
+            dest: '[name].js'
+        }),
         new webpack.IgnorePlugin({
             checkResource(resource, context) {
                 /* if( resource.indexOf('useQuery.js')>-1 || resource.indexOf('useMutation.js')>-1 || resource.indexOf('useSubscription.js')>-1 ) {

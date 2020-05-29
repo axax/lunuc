@@ -14,7 +14,7 @@ WebpackI18nPlugin.prototype.apply = function (compiler) {
     var self = this;
 
     this.filesTimeStamps = {};
-    compiler.hooks.compile.tap('I18n', function (compilation, callback) {
+    compiler.hooks.emit.tap('I18n', function (compilation) {
         glob(self.src, function (error, files) {
             var json = {},
                 filesChanged = [],
@@ -52,13 +52,13 @@ WebpackI18nPlugin.prototype.apply = function (compiler) {
                 self.addJsonToWebPackAssets(compilation, json);
             }
 
-            callback();
-        });
-    });
-};
+        })
+    })
+}
 
 WebpackI18nPlugin.prototype.addFileToWebPackDependencies = function (compilation, filePath) {
-    compilation.fileDependencies.push(filePath)
+    compilation.fileDependencies.add(filePath)
+    console.log(filePath)
 }
 
 WebpackI18nPlugin.prototype.addJsonToWebPackAssets = function (compilation, json) {

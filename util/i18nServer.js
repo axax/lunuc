@@ -1,7 +1,6 @@
-//import translations from 'gensrc/tr'
+import translations from 'gensrc/tr'
 import config from 'gen/config'
 const {DEFAULT_LANGUAGE} = config
-const translations={}
 
 const _t = function (key, lang=DEFAULT_LANGUAGE, replacements) {
     const tr = translations[lang]
