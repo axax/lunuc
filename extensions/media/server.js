@@ -96,6 +96,26 @@ const createMediaEntry = async ({db, _id, file, data, context}) => {
     if (data.classifyImage) {
         data.meta = JSON.stringify(await ImageClassfier.classifyByUrl(data.url || ('http://www.lunuc.com' + UPLOAD_URL + '/' + _id.toString()) )) //)
     }
+
+    if( file.type === 'audio/mpeg'){
+
+        const ffprobePath = require('@ffprobe-installer/ffprobe').path,
+            ffmpeg = require('fluent-ffmpeg')
+
+        ffmpeg.setFfprobePath(ffprobePath)
+
+
+        const {meta} = await (new Promise((resolve) => {
+            ffmpeg.ffprobe(file.path, function(error, meta) {
+                resolve({error,meta})
+            })
+        }))
+        data.info = meta
+    }
+
+
+
+
     const media = {
         name: file.name,
         size: file.size,

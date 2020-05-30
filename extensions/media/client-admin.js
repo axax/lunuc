@@ -166,9 +166,13 @@ export default () => {
                         <img style={{border: 'solid 0.4rem black', maxWidth: '100%', maxHeight: '20rem'}}
                              src={medieData.src}/>]
                 } else if (dataToEdit.mimeType.indexOf('video') === 0) {
+                    let src = medieData.src
+                    if( dataToEdit.mimeType === 'video/mpeg'){
+                        src += '?ext=mp4&transcode={"audioQuality":2,"videoBitrate":800,"fps":25,"size":"640x?","crf":25}'
+                    }
                     props.children = [props.children,
                         <video width="320" height="240" controls>
-                            <source src={medieData.src} type="video/mp4"/>
+                            <source src={src} type="video/mp4"/>
                         </video>]
                 }
             }
