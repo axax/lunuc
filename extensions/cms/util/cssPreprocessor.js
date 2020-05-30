@@ -17,7 +17,8 @@ export const preprocessCss = (ncss, sub) => {
             let atRule = null
             let ll
             for (let token = get(); token; token = get()) {
-                if (/^@/.test(token)) {
+                //console.log(token)
+                if ( /^@/.test(token)) {
                     atRule = '';
                     ll = 0;
                 }
@@ -53,14 +54,17 @@ export const preprocessCss = (ncss, sub) => {
         return result
     }
 
-    const startTime = new Date()
+    let startTime
+    if(!sub) {
+        startTime = new Date()
+    }
     const tokens = []
     const quotes = []
     const quoteToken = ':Q=' + (Math.random() + '=Q:').substr(2)
 
     ncss
         .replace(/(['"])(.*?[^\\])?\1|\([^)]+:\/\/[^)]+\)/g, q => quoteToken + quotes.push(q)) // store and remove quotes
-        .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '') // remove remarks
+        //.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '') // remove remarks
         .replace(/([\s\S]*?)\s*([;{}]|$)/g, (_, g1, g2) => tokens.push.apply(tokens, [g1, g2].map(s => s.trim()).filter(s => s))) // tokenize
 
     const result = flattenRules(tokens)

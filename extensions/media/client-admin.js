@@ -178,7 +178,7 @@ export default () => {
 
                     props.children = [props.children,
                         <audio controls>
-                            <source src={medieData.src} type={dataToEdit.mimeType}/>
+                            <source src={medieData.src+'?ext=mp3'} type={dataToEdit.mimeType}/>
                         </audio>]
                 }
             }

@@ -55,7 +55,7 @@ const AdminSwitch = (props) => <Async {...props} expose="Switch"
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['Click', 'KeyDown', 'KeyUp', 'Blur', 'Change', 'Submit', 'Success', 'ContextMenu', 'CustomEvent', 'FileContent', 'Files', 'Input']
+    static events = ['onClick', 'onKeyDown', 'onKeyUp', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput']
 
     /*
      * Default components
@@ -471,21 +471,25 @@ class JsonDom extends React.Component {
         const id = 'jsondomstyle' + this.instanceId
         if (style) {
             let parsedStyle
-            try {
-                parsedStyle = new Function(DomUtil.toES5(`const {scope} = this
+            if( style.indexOf('${')>-1) {
+                try {
+                    parsedStyle = new Function(DomUtil.toES5(`const {scope} = this
                              return \`${style}\``)).call({
-                    scope: this.scope,
-                    set: (key, value) => {
-                        this.styles[key] = value
-                        return ''
-                    },
-                    get: (key) => {
-                        return this.styles[key]
-                    }
-                })
-            } catch (e) {
+                        scope: this.scope,
+                        set: (key, value) => {
+                            this.styles[key] = value
+                            return ''
+                        },
+                        get: (key) => {
+                            return this.styles[key]
+                        }
+                    })
+                } catch (e) {
+                    parsedStyle = style
+                    console.log(e)
+                }
+            }else{
                 parsedStyle = style
-                console.log(e)
             }
 
 
@@ -827,24 +831,22 @@ class JsonDom extends React.Component {
                         // remove properties with empty values unless they start with $
                         Object.keys(p).forEach(key => {
                             if (key.startsWith('$')) {
-                                p[key.substring(1)] = p[key]
-                                delete p[key]
-                            } else {
-                                p[key] === '' && delete p[key]
-                            }
-                        })
-                        Object.assign(eleProps, p)
-                        // replace events with real functions and pass payload
-                        JsonDom.events.forEach((e) => {
-                            if (eleProps['on' + e] && eleProps['on' + e].constructor === Object) {
-                                const payload = eleProps['on' + e]
-                                eleProps['on' + e] = (...args) => {
-                                    const eLower = e.toLowerCase()
-                                    Hook.call('JsonDomUserEvent', {event: eLower, payload, container: this})
-                                    this.runJsEvent(eLower, false, payload, ...args)
+                                eleProps[key.substring(1)] = p[key]
+                            } else if(p[key] !== '') {
+                                if( JsonDom.events.indexOf(key)>-1 && p[key].constructor === Object){
+                                    // replace events with real functions and pass payload
+                                    const payload = p[key]
+                                    eleProps[key] = (...args) => {
+                                        const eLower = key.substring(2).toLowerCase()
+                                        Hook.call('JsonDomUserEvent', {event: eLower, payload, container: this})
+                                        this.runJsEvent(eLower, false, payload, ...args)
+                                    }
+                                }else {
+                                    eleProps[key] = p[key]
                                 }
                             }
                         })
+
                         if (eleProps.style && eleProps.style.constructor === String) {
                             //Parses a string of inline styles into a javascript object with casing for react
                             eleProps.style = parseStyles(eleProps.style)
