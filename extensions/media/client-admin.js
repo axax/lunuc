@@ -167,13 +167,19 @@ export default () => {
                              src={medieData.src}/>]
                 } else if (dataToEdit.mimeType.indexOf('video') === 0) {
                     let src = medieData.src
-                    if( dataToEdit.mimeType === 'video/mpeg'){
+                    if (dataToEdit.mimeType === 'video/mpeg') {
                         src += '?ext=mp4&transcode={"audioQuality":2,"videoBitrate":800,"fps":25,"size":"640x?","crf":25}'
                     }
                     props.children = [props.children,
                         <video width="320" height="240" controls>
-                            <source src={src} type="video/mp4"/>
+                            <source src={src} type={dataToEdit.mimeType}/>
                         </video>]
+                } else if (dataToEdit.mimeType.indexOf('audio') === 0) {
+
+                    props.children = [props.children,
+                        <audio controls>
+                            <source src={medieData.src} type={dataToEdit.mimeType}/>
+                        </audio>]
                 }
             }
         }
@@ -229,7 +235,8 @@ export default () => {
                             setGroup(e.target.value)
                         }} multi={true} name="group" placeholder={_t('Media.selectGroup')}
                                     type="MediaGroup"/>
-                        <br /><small>{info}</small>
+                        <br/>
+                        <small>{info}</small>
                     </Col>
                 </Row>
             }

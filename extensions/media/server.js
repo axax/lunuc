@@ -97,7 +97,7 @@ const createMediaEntry = async ({db, _id, file, data, context}) => {
         data.meta = JSON.stringify(await ImageClassfier.classifyByUrl(data.url || ('http://www.lunuc.com' + UPLOAD_URL + '/' + _id.toString()) )) //)
     }
 
-    if( file.type === 'audio/mpeg'){
+    if( file.type.indexOf('audio/')===0 || file.type.indexOf('video/')===0){
 
         const ffprobePath = require('@ffprobe-installer/ffprobe').path,
             ffmpeg = require('fluent-ffmpeg')

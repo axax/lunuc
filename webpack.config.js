@@ -188,7 +188,6 @@ const config = {
     ],
     optimization: {
         usedExports: true,
-        sideEffects: true,
         /*splitChunks: {
          cacheGroups: {
          style: {
@@ -350,7 +349,7 @@ if (DEV_MODE) {
         },
     }
 
-  /*  const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+    /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
     config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'

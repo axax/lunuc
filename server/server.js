@@ -365,7 +365,7 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
 
             headerExtra['Content-Type'] = mimeType
 
-            if ((ext === 'mp3' || ext === 'mp4') && !parsedUrl.query.transcode) {
+            if ((ext === 'mp3' || ext === 'mp4' || ext === 'm4a') && !parsedUrl.query.transcode) {
 
                 delete headerExtra['Cache-Control']
                 headerExtra['Accept-Ranges'] = 'bytes'
