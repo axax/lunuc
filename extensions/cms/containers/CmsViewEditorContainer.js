@@ -139,9 +139,9 @@ class CmsViewEditorContainer extends React.Component {
 
         const {history} = this.props
 
-       const unblock = history.block((e)=>{
-           this.saveUnsafedChanges()
-           return true
+        const unblock = history.block((e) => {
+            this.saveUnsafedChanges()
+            return true
         })
     }
 
@@ -789,7 +789,7 @@ class CmsViewEditorContainer extends React.Component {
                                       this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
                                   }}>Admin</Button>,
                                   <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
-                                      this.props.history.push(`${config.ADMIN_BASE_URL}/logout?forward=${encodeURIComponent(props.slug + '?logout=true')}`)
+                                      this.props.history.push(`${config.ADMIN_BASE_URL}/logout?forward=${encodeURIComponent('/' + props.slug + '?logout=true')}`)
                                   }}>{_t('CmsViewEditorContainer.logout')}</Button>,
                                   <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>
                               ]
@@ -1234,7 +1234,7 @@ class CmsViewEditorContainer extends React.Component {
                         }
                     })
 
-                    updateResolvedData({json:resolvedDataJson})
+                    updateResolvedData({json: resolvedDataJson})
                 }
             }
         }
@@ -1364,7 +1364,7 @@ const CmsViewEditorContainerWithGql = compose(
             updateCmsPage: ({_id, ...rest}, key, cb) => {
 
                 const variables = getGqlVariables(ownProps)
-                if( variables.slug !== rest.slug){
+                if (variables.slug !== rest.slug) {
                     console.warn(`slug changed from ${rest.slug} to ${variables.slug}`)
                     return
                 }
