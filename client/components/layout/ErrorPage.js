@@ -232,7 +232,7 @@ hr:after {
     componentWillUnmount() {
         document.title = this.titleOri
         document.body.removeChild(this.css)
-        DomUtil.removeElements('#errorPageNoindex')
+        DomUtil.removeElements('#errorPageNoindex', null, document.head)
     }
 
     render() {

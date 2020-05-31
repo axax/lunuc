@@ -143,7 +143,7 @@ class CmsViewContainer extends React.Component {
             const {resources} = cmsPage
 
             if( !dynamic) {
-                DomUtil.removeElements(`[data-cms-view]`)
+                DomUtil.removeElements('[data-cms-view]', null, document.head)
             }
 
             if (resources) {

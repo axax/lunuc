@@ -34,7 +34,7 @@ class LoginContainer extends React.Component {
     }
 
     componentWillUnmount() {
-        DomUtil.removeElements('#metaTagNoIndex')
+        DomUtil.removeElements('#metaTagNoIndex', null, document.head)
     }
 
 

@@ -455,7 +455,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function(req,
     const parsedUrl = url.parse(req.url, true), uri = parsedUrl.pathname
 
     //small security check
-    if (uri.indexOf('..') >= 0) {
+    if (uri.indexOf('../') >= 0) {
         sendError(res, 403)
         return
     }

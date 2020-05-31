@@ -2,8 +2,8 @@
  * Html dom helper methods
  */
 const DomUtil = {
-    removeElements(selector, butIds) {
-        const addedElements = document.querySelectorAll(selector)
+    removeElements(selector, butIds, container = document) {
+        const addedElements = container.querySelectorAll(selector)
         if (addedElements) {
             for (let i = 0; i < addedElements.length; ++i) {
                 const ele = addedElements[i]

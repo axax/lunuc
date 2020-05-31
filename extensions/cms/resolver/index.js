@@ -180,8 +180,11 @@ export default db => ({
             }
         },
         cmsPageStatus: async ({slug}, req) => {
+            if( !req.context.id ){
+                return {user:null}
+            }
             if (!cmsPageStatus[slug] || (new Date() - cmsPageStatus[slug].time) > 6000) {
-                cmsPageStatus[slug] = {user: {username: req.context.username || 'anonymous', _id: req.context.id}}
+                cmsPageStatus[slug] = {user: {username: req.context.username, _id: req.context.id}}
             }
 
             if(cmsPageStatus[slug].user._id === req.context.id){
