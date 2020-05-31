@@ -37,7 +37,13 @@ const registerCronJobs = async (db) => {
 
                 const context = {lang: 'en', id: cronJob.createdBy, username: 'unknown'}
 
-                processCronJobQueue({cronjobId: cronJob._id, script: cronJob.script, context, db})
+                processCronJobQueue({
+                    cronjobId: cronJob._id,
+                    script: cronJob.script,
+                    noEnrty: cronJob.noEntry,
+                    context,
+                    db
+                })
 
             }))
         }

@@ -31,6 +31,10 @@
         {
           "name": "active",
           "type": "Boolean"
+        },
+        {
+          "name": "noEntry",
+          "type": "Boolean"
         }
       ]
     },

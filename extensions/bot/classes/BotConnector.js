@@ -41,6 +41,16 @@ class BotConnector {
         return {message_id: this.messageCount}
     }
 
+    replyWithAudio(data){
+        this.messageCount++
+        if (this._ons['text']) {
+            this._ons['text'].forEach(cb => {
+                cb(`<audio controls><source src="${data.url}" type="audio/wav"></audio>`, this.messageCount)
+            })
+        }
+        return {message_id: this.messageCount}
+    }
+
     deleteMessage(id) {
         if (this._ons['deleteMessage']) {
             this._ons['deleteMessage'].forEach(cb => {

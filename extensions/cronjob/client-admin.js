@@ -32,7 +32,7 @@ export default () => {
                     scriptLanguage: createEditForm.state.fields.scriptLanguage,
                     cronjobId: dataToEdit ? dataToEdit._id : 'none',
                     sync: runOnlyScript,
-                    noEntry: runOnlyScript
+                    noEntry: runOnlyScript || dataToEdit.noEntry
                 }
             }).then(response => {
                 if( meta && meta._this) {
