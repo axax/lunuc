@@ -1,6 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {SimpleMenu} from 'ui/admin'
+import {withStyles} from '@material-ui/core/styles'
+import classNames from 'classnames'
+
 import {UnControlled as CodeMirror} from 'react-codemirror2'
 import './codemirror/javascript'
 import './codemirror/search'
@@ -30,6 +33,41 @@ import 'codemirror/addon/fold/markdown-fold'
 import 'codemirror/addon/fold/comment-fold'
 import 'codemirror/addon/fold/foldgutter.css'
 
+const styles = theme => ({
+    root: {
+        display: 'flex',
+        flexDirection: 'column'
+    },
+    rootError: {
+        border: 'solid 1px red'
+    },
+    codemirror:{
+        height:'30rem'
+    },
+    files: {},
+    file: {
+        display: 'inline-block',
+        padding: '0.5rem',
+        background: '#efefef',
+        borderRadius: '0.1rem',
+        cursor: 'pointer',
+        '&:hover': {
+            background: '#aaa'
+        }
+    },
+    fileActive:{
+        background: '#aaa'
+    }
+})
+
+
+function getFirstLine(text) {
+    let index = text.indexOf('\n')
+    if (index === -1) index = undefined
+    return text.substring(0, index)
+}
+
+
 //https://codemirror.net/doc/manual.html#addon_rulers
 class CodeEditor extends React.Component {
 
@@ -40,7 +78,9 @@ class CodeEditor extends React.Component {
         this.state = {
             data: props.children,
             stateError: false,
-            error: props.error
+            error: props.error,
+            fileIndex: 0,
+            showFileSplit:true
         }
     }
 
@@ -57,23 +97,22 @@ class CodeEditor extends React.Component {
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        this._refresh = false
         if (nextState.data !== this._data) {
             this._data = nextState.data
             this._refresh = true
         }
-        return this._refresh || nextState.stateError !== this.state.stateError || nextState.error !== this.state.error
+        return this._refresh || nextState.stateError !== this.state.stateError || nextState.error !== this.state.error || nextState.fileIndex !== this.state.fileIndex || nextState.showFileSplit !== this.state.showFileSplit
     }
 
     autoFormatSelection() {
-        const {type,onChange} = this.props
+        const {type, onChange} = this.props
 
         if (type === 'json') {
             try {
-                this._data = JSON.stringify(JSON.parse(this._data),null, 2)
+                this._data = JSON.stringify(JSON.parse(this._data), null, 2)
 
                 if (onChange) {
-                   onChange(this._data)
+                    onChange(this._data)
                 }
                 const scrollInfo = this._editor.getScrollInfo()
                 this._editor.setValue(this._data)
@@ -93,18 +132,19 @@ class CodeEditor extends React.Component {
     }
 
     render() {
-        const {onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition} = this.props
-        const {stateError} = this.state
+        const {onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
+        const {stateError, showFileSplit, fileIndex} = this.state
+
         const options = {
             mode: {},
             readOnly,
             lineNumbers,
             tabSize: 2,
-            foldGutter:true,
+            foldGutter: true,
             lint: true,
             gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
             indentWithTabs: true,
-            autoClearEmptyLines:false,
+            autoClearEmptyLines: false,
             /*  lineWrapping: false,
              matchBrackets: true,*/
             extraKeys: {
@@ -148,19 +188,65 @@ class CodeEditor extends React.Component {
         }
 
         console.log('render CodeEditor', fabButtonStyle)
-        const baseStyle = {height: '25rem'}
 
-        if (error || stateError) {
-            baseStyle.border = 'solid 1px red'
+        let value = this._data && (this._data.constructor === Object || this._data.constructor === Array) ? JSON.stringify(this._data, null, 2) : this._data
+
+        let files, filenames
+        if (fileSplit) {
+
+            if(showFileSplit) {
+                files = value.split('\n//!#')
+                if( files.length>1) {
+                    filenames = []
+
+                    files.forEach((file, i) => {
+                        if (i === 0 ) {
+                            if(value.indexOf('//!#') === 0) {
+                                files[i] = files[i].substring(files[i].indexOf('\n') + 1)
+                                filenames.push(getFirstLine(value).substring(4))
+                            }else{
+                                filenames.push('main')
+                            }
+                        } else {
+                            files[i] = files[i].substring(files[i].indexOf('\n') + 1)
+                            filenames.push(getFirstLine(file))
+                        }
+                    })
+
+                    value = files[fileIndex]
+                }
+            }
+
+            allActions.push({
+                name: (showFileSplit?'Hide':'Show')+' File split', onClick: () => {
+                    this._refresh=true
+                    this.setState({showFileSplit:!showFileSplit})
+                }
+            })
         }
-        return <div className={className} style={{...baseStyle, ...style}}>
+
+        return <div className={classNames(classes.root, (error || stateError) && classes.rootError, className)}
+                    style={{style}}>
             {showFab && <SimpleMenu key="menu" mini fab color="secondary" style={{
                 zIndex: 999,
                 position: 'absolute',
                 bottom: '8px',
                 right: '8px', ...fabButtonStyle
             }} items={allActions}/>}
+            {filenames ?
+                <div className={classes.files}>{filenames.map((entry, i) => {
+                    return (
+                        <a key={'file' + i}
+                           onClick={()=>{
+                               this._refresh=true
+                               this.setState({fileIndex:i})
+                           }}
+                           className={classNames(classes.file, i===fileIndex && classes.fileActive)}>{entry}</a>
+                    )
+                })}</div>
+                : null}
             <CodeMirror
+                className={classes.codemirror}
                 autoCursor={false}
                 key="editor"
                 editorDidMount={editor => {
@@ -170,7 +256,7 @@ class CodeEditor extends React.Component {
                     }
                     //  editor.setSize(width, height);
                 }}
-                value={this._data && (this._data.constructor === Object || this._data.constructor === Array) ? JSON.stringify(this._data, null, 2) : this._data}
+                value={value}
                 options={options}
                 onScroll={(editor, e) => {
                     if (onScroll) {
@@ -183,16 +269,32 @@ class CodeEditor extends React.Component {
                     }
                 }}
                 onChange={(editor, dataObject, data) => {
-                    if( this._refresh ) {
+                    if (this._refresh) {
                         // initial onchange
                         this._refresh = false
                         return
+                    }
+                    let newData
+
+                    if( filenames ) {
+                        newData = ''
+                        filenames.forEach((file, i) => {
+                            newData += '//!#'+file+'\n'
+                            if (i !== fileIndex) {
+                                newData += files[i].trim()+'\n'
+                            } else {
+                                newData += data+'\n'
+                               // filenames.push(getFirstLine(file))
+                            }
+                        })
+                    }else {
+                        newData = data
                     }
                     if (this._data && (this._data.constructor === Object || this._data.constructor === Array)) {
                         // if input was Object output is an Object to
                         try {
                             this.setState({stateError: false})
-                            this._data = JSON.parse(data)
+                            this._data = JSON.parse(newData)
                         } catch (e) {
                             console.error(e)
                             if (onError) {
@@ -202,14 +304,15 @@ class CodeEditor extends React.Component {
                             return
                         }
                     } else {
-                        this._data = data
+                        this._data = newData
                     }
                     if (onChange) {
                         onChange(this._data)
                     }
 
                 }}
-            />{(error || stateError) && <div style={{color: 'red'}}>{error?error + ' ':''}{stateError?stateError:''}</div>}</div>
+            />{(error || stateError) &&
+        <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError : ''}</div>}</div>
     }
 }
 
@@ -233,5 +336,5 @@ CodeEditor.propTypes = {
 }
 
 
-export default CodeEditor
+export default withStyles(styles, {withTheme: true})(CodeEditor)
 

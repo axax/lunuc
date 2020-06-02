@@ -64,7 +64,7 @@ export const preprocessCss = (ncss, sub) => {
 
     ncss
         .replace(/(['"])(.*?[^\\])?\1|\([^)]+:\/\/[^)]+\)/g, q => quoteToken + quotes.push(q)) // store and remove quotes
-        //.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '') // remove remarks
+        .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '') // remove remarks
         .replace(/([\s\S]*?)\s*([;{}]|$)/g, (_, g1, g2) => tokens.push.apply(tokens, [g1, g2].map(s => s.trim()).filter(s => s))) // tokenize
 
     const result = flattenRules(tokens)

@@ -482,7 +482,10 @@ class CmsViewEditorContainer extends React.Component {
                                                         onChange={this.handleSettingChange.bind(this, 'styleExpanded')}
                                                         expanded={settings.styleExpanded}>
 
-                        <CodeEditor showFab lineNumbers type="css"
+                        <CodeEditor showFab
+                                    lineNumbers
+                                    fileSplit
+                                    type="css"
                                     onScroll={this.handleSettingChange.bind(this, 'styleScroll')}
                                     scrollPosition={settings.styleScroll}
                                     onChange={this.handleStyleChange.bind(this)}>{style}</CodeEditor>
