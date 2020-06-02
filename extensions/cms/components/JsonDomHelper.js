@@ -1177,7 +1177,9 @@ const m = Math.max((offX+offY) / 2,100)
                                           if (e.key === 'save' && selected) {
 
                                               const comp = {'t': selected.tagName, ...selected.defaults}
-
+                                              if(addChildDialog.edit && subJson.t){
+                                                  comp.t = subJson.t
+                                              }
                                               let pos
 
                                               if (addChildDialog.form) {
@@ -1455,11 +1457,28 @@ const m = Math.max((offX+offY) / 2,100)
                         } else {
                             groupFieldValue = groupValue[fieldKey]
                         }
+                        const optKey = '!' + key + '!' + fieldKey + '!' + idx,
+                            optData = {
+                                ...newJsonElement.groupOptions[key][fieldKey],
+                                value: groupFieldValue
+                            }
 
-                        newJsonElement.options['!' + key + '!' + fieldKey + '!' + idx] = {
-                            ...newJsonElement.groupOptions[key][fieldKey],
-                            value: groupFieldValue
+                        if(optData.expandable && optData.expandable.constructor === String){
+                            optData.expandable += ' ' +(idx+1)
                         }
+
+                        newJsonElement.options[optKey] = optData
+
+                        if(optData.expandable===false){
+                            delete optData.expandable
+                            newJsonElement.options[optKey + '!delete'] = {
+                                uitype: 'button',
+                                label: 'Löschen',
+                                newLine: true,
+                                expandable: false
+                            }
+                        }
+
                     })
                 })
             }

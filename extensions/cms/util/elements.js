@@ -619,6 +619,10 @@ const baseElements = [
             p_style_marginBottom: {
                 label: 'Abstand unten',
                 tab: 'Allgemein'
+            },
+            p_className: {
+                value: '', placeholder: 'Klasse eingeben', label: 'CSS Klasse',
+                tab: 'Allgemein'
             }
         }
     },
@@ -635,7 +639,7 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {remove: false,addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 },
@@ -802,7 +806,7 @@ const baseElements = [
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false,addBelow: false}},
+                    $inlineEditor: {menu: {remove: false, addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -909,6 +913,9 @@ const advancedElements = [
             },
             p_className: {
                 label: 'Klassname'
+            },
+            $is: {
+                label: 'Bedingung'
             }
         }
     },

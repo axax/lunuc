@@ -397,7 +397,6 @@ class CmsViewEditorContainer extends React.Component {
                                                       type: 'primary'
                                                   }]}
                                                   title="Edit Component">
-
                 <TemplateEditor
                     fabButtonStyle={{bottom: '3rem', right: '1rem'}}
                     component={cmsComponentEdit}
@@ -405,6 +404,10 @@ class CmsViewEditorContainer extends React.Component {
                     onTabChange={this.handleSettingChange.bind(this, 'templateTab')}
                     onChange={this.handleTemplateChange.bind(this)}/>
 
+
+                <Button key="editParent" size="small" variant="contained" color="primary" onClick={e => {
+                    this.props._cmsActions.editCmsComponent(cmsComponentEdit.key.substring(0,cmsComponentEdit.key.lastIndexOf('.')), cmsComponentEdit.json, cmsComponentEdit.scope)
+                }}>Edit parent component</Button>
             </SimpleDialog>,
             <DataEditDialog key="dataEditDialog"/>
         ]

@@ -8,7 +8,8 @@ import configureStore from './store/index'
 import config from 'gen/config'
 import DomUtil from 'client/util/dom'
 
-/*if (typeof localStorage === 'object') {
+if (typeof localStorage === 'object') {
+    // for ios 9.3.5
     try {
         localStorage.setItem('localStorage', 1)
         localStorage.removeItem('localStorage')
@@ -17,7 +18,7 @@ import DomUtil from 'client/util/dom'
         }
         console.log('Your web browser does not support storing settings locally. In Safari, the most common cause of this is using "Private Browsing Mode". Some settings may not save or some features may not work properly for you.')
     }
-}*/
+}
 
 function removeTrailingSlash(url){
     // has trailing slash

@@ -173,6 +173,10 @@ create lunuc-api.service file under /etc/systemd/system
 #### List port forwarding
 `sudo iptables -t nat -vnL`
 
+#### Forward port 443 and 80 to 8080
+`iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 8080`
+`iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8080`
+
 ### Create cert with letsencrypt
 
 `sudo certbot certonly --manual`

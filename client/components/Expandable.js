@@ -29,7 +29,7 @@ class Expandable extends React.Component {
                                heading={<Typography variant="h5">{title}</Typography>}>
             {this.state.expanded ? <div style={{width: '100%'}}>
                 {children}
-            </div>: <div /> }
+            </div>: null }
         </ExpansionPanel>
     }
 

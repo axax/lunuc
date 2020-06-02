@@ -11,7 +11,8 @@ import {
     Tabs,
     Tab,
     Typography,
-    Box
+    Box,
+    DeleteIconButton
 } from 'ui/admin'
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
@@ -24,7 +25,6 @@ import Hook from '../../util/hook'
 import classNames from 'classnames'
 import Expandable from 'client/components/Expandable'
 import _t from '../../util/i18n'
-import TemplateEditor from "../../extensions/cms/components/TemplateEditor";
 import Util from "../util";
 
 const styles = theme => {
@@ -476,9 +476,10 @@ class GenericForm extends React.Component {
 
                 holder.push(<Expandable title={expandableField.expandable}
                                         key={"expandable"+fieldKey}
-                                        onChange={() => {
+                                        onChange={(e) => {
+                                            this.setState({expanded: fieldKey})
                                         }}
-                                        expanded={false}>
+                                        expanded={this.state.expanded===fieldKey}>
                     {currentFormFields}
                 </Expandable>)
 

@@ -980,7 +980,9 @@ class TypesContainer extends React.Component {
         if (!typeDefinition.noUserRelation) {
             typeColumns.push({
                 title:  _t('TypesContainer.user'),
-                id: '_user'
+                id: '_user',
+                sortid:'createdBy',
+                sortable: true
             })
         }
         typeColumns.push(
