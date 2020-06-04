@@ -30,7 +30,7 @@ const createClientCacheKey = (query, props) => {
     return ''
 }
 
-const cmsPageStatus = {}
+const cmsPageStatus = {}, globalScope = {}
 
 export default db => ({
     Query: {
@@ -215,7 +215,6 @@ export default db => ({
             let result
             try {
                 const script = await new Promise(resolve => {
-
                     const tpl = new Function(`
                     const require = this.require
                     const data = (async () => {
@@ -228,7 +227,7 @@ export default db => ({
                         }
                     })()`)
 
-                    tpl.call({args, require, resolve, db, __dirname, context, req, GenericResolver, ObjectId})
+                    tpl.call({args, require, resolve, db, __dirname, context, req, GenericResolver, ObjectId, globalScope})
 
                 })
                 result = await script.result

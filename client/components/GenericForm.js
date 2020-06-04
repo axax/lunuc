@@ -31,8 +31,7 @@ const styles = theme => {
     return {
         editor: {
             border: '1px solid ' + theme.palette.grey['200'],
-            margin: theme.spacing(3) + 'px 0',
-            height: '20rem'
+            margin: theme.spacing(3) + 'px 0'
         },
         formField: {
             minWidth: 'calc(25% - ' + theme.spacing(2) + 'px)',

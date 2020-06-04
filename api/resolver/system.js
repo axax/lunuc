@@ -466,8 +466,8 @@ export const systemResolver = (db) => ({
             const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lunuc'))
             files.forEach((file) => {
                 const stat = fs.lstatSync(media_dir + '/' + file)
-                if (!stat.isDirectory() && stat.size < 10000000) {
-                    // only include files small then 10MBs
+                if (!stat.isDirectory() && stat.size < 2000000) {
+                    // only include files small then 2MBs
                     fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
                 }
             })
