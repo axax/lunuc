@@ -44,6 +44,14 @@
 <body>
 <div id="app">Javascript is not supported</div>
 <script>
+    window.onerror = function(message, url, lineNumber) {
+        //save error and send to server for example.
+        var xmlhttp = new XMLHttpRequest()
+        xmlhttp.open('GET', '/error?msg='+message, true)
+        xmlhttp.send()
+        return true
+    }
+
     document.getElementById('app').innerHTML=''
 
     if( !window.Map){

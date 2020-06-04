@@ -37,6 +37,14 @@ const baseElements = [
                 label: 'Abstand unten',
                 tab: 'Allgemein'
             },
+            p_style_marginLeft: {
+                label: 'Abstand links',
+                tab: 'Allgemein'
+            },
+            p_style_marginRight: {
+                label: 'Abstand recht',
+                tab: 'Allgemein'
+            },
             p_style_float: {
                 label: 'Ausrichtung',
                 enum: [

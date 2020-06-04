@@ -16,6 +16,13 @@
 
 <div id="app">Javascript is not supported</div>
 <script>
+    window.onerror = function(message, url, lineNumber) {
+        //save error and send to server for example.
+        var xmlhttp = new XMLHttpRequest()
+        xmlhttp.open('GET', '/error?msg='+message, true)
+        xmlhttp.send()
+        return true
+    }
     document.getElementById('app').innerHTML=''
     if( !window.Map){
         document.write('<scr'+'ipt type="text/javascript" src="https://polyfill.io/v3/polyfill.min.js?features=Set%2CMap"></sc'+'ript>')
