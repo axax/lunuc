@@ -79,7 +79,7 @@ class CodeEditor extends React.Component {
             data: props.children,
             stateError: false,
             error: props.error,
-            fileIndex: 0,
+            fileIndex: props.fileIndex || 0,
             showFileSplit:true
         }
     }
@@ -90,7 +90,8 @@ class CodeEditor extends React.Component {
             return {
                 data: nextProps.children,
                 stateError: false,
-                error: nextProps.error
+                error: nextProps.error,
+                fileIndex: nextProps.fileIndex || 0
             }
         }
         return null
@@ -132,7 +133,7 @@ class CodeEditor extends React.Component {
     }
 
     render() {
-        const {onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
+        const {onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
         const {stateError, showFileSplit, fileIndex} = this.state
 
         const options = {
@@ -190,8 +191,7 @@ class CodeEditor extends React.Component {
         console.log('render CodeEditor', fabButtonStyle)
 
         let value = this._data && (this._data.constructor === Object || this._data.constructor === Array) ? JSON.stringify(this._data, null, 2) : this._data
-
-        let files, filenames
+        let files, filenames, finalFileIndex
         if (fileSplit) {
 
             if(showFileSplit) {
@@ -213,7 +213,13 @@ class CodeEditor extends React.Component {
                         }
                     })
 
-                    value = files[fileIndex]
+                    if( fileIndex>= files.length){
+                        finalFileIndex = 0
+                    }else{
+                        finalFileIndex = fileIndex
+                    }
+
+                    value = files[finalFileIndex]
                 }
             }
 
@@ -240,8 +246,12 @@ class CodeEditor extends React.Component {
                            onClick={()=>{
                                this._refresh=true
                                this.setState({fileIndex:i})
+
+                               if (onFileChange) {
+                                   onFileChange(i)
+                               }
                            }}
-                           className={classNames(classes.file, i===fileIndex && classes.fileActive)}>{entry}</a>
+                           className={classNames(classes.file, i===finalFileIndex && classes.fileActive)}>{entry}</a>
                     )
                 })}</div>
                 : null}
@@ -280,7 +290,7 @@ class CodeEditor extends React.Component {
                         newData = ''
                         filenames.forEach((file, i) => {
                             newData += '//!#'+file+'\n'
-                            if (i !== fileIndex) {
+                            if (i !== finalFileIndex) {
                                 newData += files[i].trim()+'\n'
                             } else {
                                 newData += data+'\n'
@@ -324,6 +334,8 @@ CodeEditor.propTypes = {
     error: PropTypes.any,
     onError: PropTypes.func,
     onScroll: PropTypes.func,
+    onFileChange: PropTypes.func,
+    fileIndex:PropTypes.number,
     onBlur: PropTypes.func,
     type: PropTypes.string,
     children: PropTypes.any,

@@ -416,7 +416,6 @@ class CmsViewEditorContainer extends React.Component {
         if (!canManageCmsPages) {
             return inner
         } else {
-
             const {slug, _version} = getSlugVersion(props.slug)
             const sidebar = cmsPage._id && <div>
                 <MenuList>
@@ -485,6 +484,8 @@ class CmsViewEditorContainer extends React.Component {
                         <CodeEditor showFab
                                     lineNumbers
                                     fileSplit
+                                    fileIndex={settings.styleFileIndex}
+                                    onFileChange={this.handleSettingChange.bind(this, 'styleFileIndex')}
                                     type="css"
                                     onScroll={this.handleSettingChange.bind(this, 'styleScroll')}
                                     scrollPosition={settings.styleScroll}
@@ -1250,7 +1251,6 @@ class CmsViewEditorContainer extends React.Component {
 
     handleSettingChange(key, any) {
         let value
-
         if (any.target) {
             if (any.target.type === 'checkbox') {
                 value = any.target.checked

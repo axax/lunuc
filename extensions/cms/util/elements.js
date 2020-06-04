@@ -659,6 +659,9 @@ const baseElements = [
                 label: 'Spalte 2',
                 value: 'col-sm-6'
             },
+            p_style_marginTop: {
+                label: 'Abstand oben'
+            },
             p_style_marginBottom: {
                 label: 'Abstand unten'
             },
