@@ -195,7 +195,7 @@ function mainInit() {
 }
 
 
-if (!Object.assign || !window.fetch || !window.Intl) {
+if (!Object.assign || !window.fetch || !window.Intl || !Promise.prototype.finally) {
 
     let counter = 0
     const onload = () => {

@@ -129,7 +129,7 @@
     "mssql": "^6.2.0",
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
-    "ytdl-core": "^3.1.0"
+    "ytdl-core": "^3.1.1"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
