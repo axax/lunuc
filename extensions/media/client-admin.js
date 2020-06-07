@@ -178,7 +178,7 @@ export default () => {
 
                     props.children = [props.children,
                         <audio controls>
-                            <source src={medieData.src+'?ext=mp3'} type={dataToEdit.mimeType}/>
+                            <source src={medieData.src + '?ext=mp3'} type={dataToEdit.mimeType}/>
                         </audio>]
                 }
             }
@@ -208,7 +208,7 @@ export default () => {
 
                 }
 
-                if (this.settings.Media && this.settings.Media.conversion) {
+                if (this.settings.Media && this.settings.Media.conversion && this.settings.Media.conversion.length > 0) {
                     info += ' Conversion=' + this.settings.Media.conversion[0].name
                 }
 

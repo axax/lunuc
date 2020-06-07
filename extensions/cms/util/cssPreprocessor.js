@@ -74,6 +74,21 @@ export const preprocessCss = (ncss, sub) => {
     if( !sub ) {
         console.log(`css preprocessed in ${new Date() - startTime}ms`)
     }
+
+    /*startTime = new Date()
+    let newSelector
+    for(let i = 0;i < ncss.length;i++){
+
+        let c = ncss.charAt(i)
+        if(c==='{'){
+            newSelector = true
+        }else if(c==='}') {
+            newSelector = false
+        }
+
+    }
+    console.log(`css preprocessed in ${new Date() - startTime}ms`)*/
+
     return result
 
 }

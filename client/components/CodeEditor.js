@@ -191,6 +191,9 @@ class CodeEditor extends React.Component {
         console.log('render CodeEditor', fabButtonStyle)
 
         let value = this._data && (this._data.constructor === Object || this._data.constructor === Array) ? JSON.stringify(this._data, null, 2) : this._data
+        if(!value){
+            value=''
+        }
         let files, filenames, finalFileIndex
         if (fileSplit) {
 
