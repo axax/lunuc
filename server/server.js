@@ -413,7 +413,7 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
             delete headerExtra['Content-Length']
             res.writeHead(code, {...headerExtra})
 
-            const outputOptions = ['-movflags isml+frag_keyframe+faststart']
+            const outputOptions = ['-movflags isml+frag_keyframe+empty_moov+faststart']
             if( options.crf ){
                 outputOptions.push('-crf '+options.crf)
             }
