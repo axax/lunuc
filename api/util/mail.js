@@ -8,12 +8,17 @@ import nodemailer from 'nodemailer'
  */
 
 
-export const sendMail = async (db, context, {recipient, from, subject, body, html, text, slug, attachments}) => {
-    const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
+export const sendMail = async (db, context, {settings, recipient, from, subject, body, html, text, slug, attachments}) => {
+    let mailSettings
+    if(settings){
+        mailSettings = settings
+    }else {
+        const values = await Util.keyValueGlobalMap(db, context, ['MailSettings'])
 
-    const mailSettings = values.MailSettings
-    if (!mailSettings) {
-        throw new Error('Mail settings are missing. Please add MailSettings as a global value')
+        mailSettings = values.MailSettings
+        if (!mailSettings) {
+            throw new Error('Mail settings are missing. Please add MailSettings as a global value')
+        }
     }
 
     let finalHtml

@@ -26,7 +26,8 @@ const MIME_TYPES = {
     'eot': 'application/vnd.ms-fontobject',
     'ttf': 'font/ttf',
     'woff': 'font/woff',
-    'woff2': 'font/woff2'
+    'woff2': 'font/woff2',
+    'otf': 'font/otf'
 }
 
 
