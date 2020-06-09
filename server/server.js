@@ -1,6 +1,7 @@
 import proxy from 'http2-proxy'
 import httpx from './httpx'
 import http from 'http'
+import tls from 'tls'
 import url from 'url'
 import path from 'path'
 import net from 'net'
@@ -30,7 +31,19 @@ fs.readdir(HOSTRULES_DIR, (err, filenames) => {
                 if (err) {
                     return
                 }
-                hostrules[filename.substring(0, filename.length - 5)] = JSON.parse(content)
+                let hostrule
+                hostrule = hostrules[filename.substring(0, filename.length - 5)] = JSON.parse(content)
+                if(hostrule.certDir){
+                    console.log(hostrule.certDir)
+                    try {
+                        hostrule.certContext = tls.createSecureContext({
+                            key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
+                            cert: fs.readFileSync(path.join(hostrule.certDir, './cert.pem'))
+                        })
+                    }catch (e) {
+                        console.warn(e.message)
+                    }
+                }
             })
         }
     })
@@ -52,7 +65,19 @@ const CERT_DIR = process.env.LUNUC_CERT_DIR || __dirname
 const options = {
     key: fs.readFileSync(path.join(CERT_DIR, './privkey.pem')),
     cert: fs.readFileSync(path.join(CERT_DIR, './cert.pem')),
-    allowHTTP1: true
+    allowHTTP1: true,
+    SNICallback:  (domain, cb) => {
+
+        if(domain.startsWith('www.')){
+            domain = domain.substring(4)
+        }
+console.log(domain)
+        if (hostrules[domain].certContext) {
+            cb(null, hostrules[domain].certContext)
+        } else {
+            cb()
+        }
+    }
 }
 
 if (fs.existsSync(path.join(CERT_DIR, './chain.pem'))) {

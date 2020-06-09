@@ -181,6 +181,10 @@ create lunuc-api.service file under /etc/systemd/system
 
 `sudo certbot certonly --manual`
 
+### Add new domain to certificate (Ubuntu)
+
+`sudo certbot certonly --cert-name example.com -d m.example.com,www.m.example.com`
+
 #### Auto renewal 
 `sudo crontab -e`
 
@@ -202,6 +206,10 @@ Add this to the file:
 
 4. run
 `sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf`
+
+#Locations on server
+/opt/lunuc
+/srv/uploads
 
 ## Contributors
 

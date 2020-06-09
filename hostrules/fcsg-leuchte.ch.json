@@ -1,0 +1,4 @@
+{
+  "forceWWW": true,
+  "certDir": "/etc/letsencrypt/live/fcsg-leuchte.ch"
+}
