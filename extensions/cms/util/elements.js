@@ -170,6 +170,18 @@ const baseElements = [
                     {
                         name: 'H6',
                         value: 'h6'
+                    },
+                    {
+                        name: 'p',
+                        value: 'p'
+                    },
+                    {
+                        name: 'div',
+                        value: 'div'
+                    },
+                    {
+                        name: 'span',
+                        value: 'span'
                     }
                 ]
             },

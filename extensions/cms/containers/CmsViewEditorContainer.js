@@ -181,6 +181,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     componentWillUnmount() {
+        clearTimeout(this._watchCmsPageStatus)
         this.saveUnsafedChanges()
         window.removeEventListener('beforeunload', this._handleWindowClose)
         window.removeEventListener('blur', this._handleWindowClose)
@@ -615,7 +616,17 @@ class CmsViewEditorContainer extends React.Component {
                                 if (data.historys.results === 0) return 'No entry'
                                 const parsedData = JSON.parse(data.historys.results[0].data)
 
-                                if (parsedData.template) {
+                                if (parsedData.dataResolver) {
+
+                                    return <div>
+                                        <Typography gutterBottom>Data resolver changed</Typography>
+
+                                        <CodeEditor lineNumbers
+                                                    type="json"
+                                                    readOnly={true}>{JSON.stringify(JSON.parse(parsedData.dataResolver), null, 2)}</CodeEditor>
+                                    </div>
+
+                                } else if (parsedData.template) {
 
                                     return <div>
                                         <Typography gutterBottom>Template changed</Typography>
