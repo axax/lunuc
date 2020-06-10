@@ -1,4 +1,7 @@
 {
+  "fileMapping": {
+    "/index.html": "/hostrules/fcsg-leuchte.ch/index.html"
+  },
   "forceWWW": true,
   "certDir": "/etc/letsencrypt/live/fcsg-leuchte.ch"
 }

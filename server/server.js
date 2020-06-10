@@ -34,7 +34,6 @@ fs.readdir(HOSTRULES_DIR, (err, filenames) => {
                 let hostrule
                 hostrule = hostrules[filename.substring(0, filename.length - 5)] = JSON.parse(content)
                 if(hostrule.certDir){
-                    console.log(hostrule.certDir)
                     try {
                         hostrule.certContext = tls.createSecureContext({
                             key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
@@ -71,7 +70,6 @@ const options = {
         if(domain.startsWith('www.')){
             domain = domain.substring(4)
         }
-console.log(domain)
         if (hostrules[domain].certContext) {
             cb(null, hostrules[domain].certContext)
         } else {
