@@ -36,7 +36,7 @@ export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'compress']
+            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'ssrStyle', 'compress']
             if (filter) {
                 // search in fields
                 fields.push('dataResolver')
@@ -70,7 +70,6 @@ export default db => ({
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
             let cmsPages = await getCmsPage({db, context, slug, _version, headers, editmode})
-
             if (!cmsPages.results || cmsPages.results.length === 0) {
 
                 Hook.call('trackUser', {req, event: '404', slug, db, context, data: query})
@@ -83,7 +82,7 @@ export default db => ({
                 editmode
             }
             const {
-                _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, compress,
+                _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets,ssrStyle, compress,
                 ssr, modifiedAt, urlSensitiv, name, serverScript
             } = cmsPages.results[0]
             const ispublic = cmsPages.results[0].public
@@ -138,6 +137,7 @@ export default db => ({
                     resolvedData: JSON.stringify(resolvedData),
                     parseResolvedData,
                     alwaysLoadAssets,
+                    ssrStyle,
                     compress,
                     html,
                     subscriptions,
@@ -171,6 +171,7 @@ export default db => ({
                     resolvedData: JSON.stringify(resolvedData),
                     parseResolvedData,
                     alwaysLoadAssets,
+                    ssrStyle,
                     compress,
                     subscriptions,
                     urlSensitiv,

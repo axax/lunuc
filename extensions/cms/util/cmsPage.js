@@ -2,6 +2,7 @@ import GenericResolver from 'api/resolver/generic/genericResolver'
 import Util from 'api/util'
 import {getHostFromHeaders} from 'util/host'
 import Cache from 'util/cache'
+import {preprocessCss} from './cssPreprocessor'
 
 export const getCmsPage = async ({db, context, slug, editmode, _version, headers}) => {
     let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
@@ -42,7 +43,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         } else {
             match = {$or: ors}
         }
-        cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'compress'], {
+        cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'ssrStyle', 'compress'], {
             match,
             limit: 1,
             _version
@@ -51,37 +52,44 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         if (cmsPages.results && cmsPages.results.length) {
 
             if (!editmode) {
-
+                const result = cmsPages.results[0]
                 //minify script
-                if (cmsPages.results[0].compress) {
-                    cmsPages.results[0].script = cmsPages.results[0].script.replace(/\t/g, ' ').replace(/ +(?= )/g, '').replace(/(^[ \t]*\n)/gm, "")
-                    cmsPages.results[0].style = cmsPages.results[0].style
-                        .replace(/\t/g, ' ') // remove tabs
-                        .replace(/ +(?= )/g, '') // remove double whitespace
-                        .replace(/(^[ \t]*\n)/gm, "") // remove empty lines
-                        .replace(/;$\n/gm, ';') // remove line break after ;
+
+                if(result.ssrStyle){
+                    result.style =preprocessCss(result.style)
+                }
+                if (result.compress) {
+                    result.script = result.script.replace(/\t/g, ' ').replace(/ +(?= )/g, '').replace(/(^[ \t]*\n)/gm, "")
+
+                    if(!result.ssrStyle){
+                        result.style = result.style
+                            .replace(/\t/g, ' ') // remove tabs
+                            .replace(/ +(?= )/g, '') // remove double whitespace
+                            .replace(/(^[ \t]*\n)/gm, "") // remove empty lines
+                            .replace(/;$\n/gm, ';') // remove line break after ;
+                    }
                 }
                 try {
                     // TODO: Include sub CMS component to reduce number of requests
                     // TODO: also check if template is html
 
-                    const template = JSON.parse(cmsPages.results[0].template)
+                    const template = JSON.parse(result.template)
 
-                    if (cmsPages.results[0].compress) {
+                    if (result.compress) {
                         Util.findProperties(template, '$inlineEditor').forEach(({element}) => {
                             delete element.$inlineEditor
                         })
                     }
 
-                    cmsPages.results[0].template = JSON.stringify(template, null, 0)
+                    result.template = JSON.stringify(template, null, 0)
                 } catch (e) {
-                    console.warn(`${cmsPages.results[0].slug} is not a valid json template`)
+                    console.warn(`${result.slug} is not a valid json template`)
                 }
             }
 
 
             //only cache if public
-            if (cmsPages.results[0].public) {
+            if (!editmode && cmsPages.results[0].public) {
                 Cache.set(cacheKey, cmsPages, 6000000) // cache expires in 1h40min
             }
         }

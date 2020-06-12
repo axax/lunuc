@@ -29,6 +29,8 @@ export default () => {
                         const json = JSON.parse(item.data)
                         if (json.title.constructor === String) {
                             d.data = json.title
+                        }else{
+                            d.data = json.title[_app_.lang]
                         }
                     } catch (e) {
                     }
@@ -114,7 +116,6 @@ export default () => {
                             }
                         }
                     })
-
                     // override default
                     props.children = <React.Fragment>
                         <GenericForm autoFocus

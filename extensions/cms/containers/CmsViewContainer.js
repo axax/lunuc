@@ -108,6 +108,7 @@ class CmsViewContainer extends React.Component {
             template={cmsPage.template}
             script={cmsPage.script}
             style={cmsPage.style}
+            ssrStyle={cmsPage.ssrStyle}
             resolvedData={cmsPage.resolvedData}
             parseResolvedData={cmsPage.parseResolvedData}
             resources={cmsPage.resources}

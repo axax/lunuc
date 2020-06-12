@@ -5,7 +5,7 @@
 
 export const preprocessCss = (ncss, sub) => {
 
-    if( ncss instanceof MessageEvent){
+    if(!_app_.ssr &&  ncss instanceof MessageEvent){
         // if it is called directly from a web worker
         ncss = ncss.data
     }

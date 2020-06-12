@@ -102,7 +102,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, style, serverScript, resources, dataResolver, ssr, slug, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, compress} = props.cmsPage || {}
+        const {template, script, style, serverScript, resources, dataResolver, ssr, slug, urlSensitiv, status, parseResolvedData, alwaysLoadAssets,ssrStyle, compress} = props.cmsPage || {}
         const {settings} = CmsViewEditorContainer.getSettingsByKeyValue(props)
         const result = {
             keyValues: props.keyValues,
@@ -119,6 +119,7 @@ class CmsViewEditorContainer extends React.Component {
             urlSensitiv,
             parseResolvedData,
             alwaysLoadAssets,
+            ssrStyle,
             compress,
             addNewSite: null,
             ignoreStatus: false
@@ -217,6 +218,7 @@ class CmsViewEditorContainer extends React.Component {
             state.style !== this.state.style ||
             state.parseResolvedData !== this.state.parseResolvedData ||
             state.alwaysLoadAssets !== this.state.alwaysLoadAssets ||
+            state.ssrStyle !== this.state.ssrStyle ||
             state.public !== this.state.public ||
             state.ssr !== this.state.ssr ||
             state.urlSensitiv !== this.state.urlSensitiv ||
@@ -545,6 +547,11 @@ class CmsViewEditorContainer extends React.Component {
                                 label="Compress response"
                                 checked={!!this.state.compress}
                                 onChange={this.handleFlagChange.bind(this, 'compress')}
+                            /><br/>
+                            <SimpleSwitch
+                                label="Server side style rendering"
+                                checked={!!this.state.ssrStyle}
+                                onChange={this.handleFlagChange.bind(this, 'ssrStyle')}
                             /><br/>
                             <SimpleSwitch
                                 label="Parse resolvedData in frontend (replace placeholders)"
@@ -1376,7 +1383,7 @@ const CmsViewEditorContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,compress:$compress,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$ssrStyle:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,compress:$compress,ssrStyle:$ssrStyle,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, ...rest}, key, cb) => {
 

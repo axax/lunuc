@@ -12,6 +12,8 @@ import {
     Tab,
     Typography,
     Box,
+    InputAdornment,
+    TranslateIconButton,
     DeleteIconButton
 } from 'ui/admin'
 import FileDrop from './FileDrop'
@@ -43,6 +45,12 @@ const styles = theme => {
         },
         tabContainer: {
             backgroundColor: theme.palette.background.paper
+        },
+        translation:{
+            right: '3.55rem',
+            marginTop: '3.55rem',
+            position: 'absolute',
+            zIndex: 2
         }
     }
 }
@@ -116,13 +124,25 @@ class GenericForm extends React.Component {
             updatekey: props.updatekey,
             fieldsOri: props.fields,
             fields: {},
+            showTranslations: {},
             tabValue: 0
         }
         Object.keys(props.fields).map(k => {
             const field = props.fields[k]
             let fieldValue
             if (field.localized) {
-                fieldValue = props.values && props.values[k] ? Object.assign({}, props.values[k]) : null
+                if (props.values && props.values[k]) {
+                    if (props.values[k].constructor === String) {
+                        fieldValue = {}
+                        config.LANGUAGES.forEach(lang => {
+                            fieldValue[lang] = props.values[k]
+                        })
+                    } else {
+                        fieldValue = Object.assign({}, props.values[k])
+                    }
+                } else {
+                    fieldValue = null
+                }
             } else {
                 if (props.values) {
                     fieldValue = props.values[k]
@@ -194,7 +214,7 @@ class GenericForm extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        return state !== this.state || state.fieldErrors !== this.state.fieldErrors
+        return state !== this.state || state.fieldErrors !== this.state.fieldErrors || state.showTranslations !== this.state.showTranslations
     }
 
     validate(state = this.state, updateState = true) {
@@ -264,7 +284,7 @@ class GenericForm extends React.Component {
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
             const fieldKey = fieldKeys[fieldIndex],
                 field = fields[fieldKey]
-            if (field.readOnly || (field.role && !Util.hasCapability({userData:_app_.user}, field.role))) {
+            if (field.readOnly || (field.role && !Util.hasCapability({userData: _app_.user}, field.role))) {
                 continue
             }
             let value = this.state.fields[fieldKey]
@@ -323,24 +343,43 @@ class GenericForm extends React.Component {
             } else if (uitype === 'html') {
                 const hasError = !!this.state.fieldErrors[fieldKey]
 
+                const createHtmlField =(fieldName, value, languageCode)=>{
+                    return <FormControl style={{zIndex: 1}} key={'control' + fieldName}
+                                        className={classNames(classes.formFieldFull)}>
+                        <InputLabel key={'label' + fieldName} shrink>{field.label + (languageCode?' [' + languageCode + ']':'')}</InputLabel>
+                        <TinyEditor key={fieldName} id={fieldName} error={hasError} style={{marginTop: '1.5rem'}}
 
-                const fieldName = fieldKey + (field.localized? '.' + _app_.lang:'')
+                                    onChange={(newValue) => this.handleInputChange({
+                                        target: {
+                                            name: fieldName,
+                                            value: newValue
+                                        }
+                                    })}>{value}</TinyEditor>
+                        {(hasError ?
+                            <FormHelperText error>Bitte
+                                ausfüllen</FormHelperText> : '')}
+                    </FormControl>
+                }
+                if (field.localized) {
+                    const showTranslations = this.state.showTranslations[fieldKey]
 
-                currentFormFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldName}
-                                                    className={classNames(classes.formFieldFull)}>
-                    <InputLabel key={'label' + fieldName} shrink>{field.label}</InputLabel>
-                    <TinyEditor key={fieldName} id={fieldName} error={hasError} style={{marginTop: '1.5rem'}}
+                    currentFormFields.push( <TranslateIconButton className={classes.translation} key={fieldKey+"translation"}
+                            onClick={() => {
 
-                                onChange={(newValue) => this.handleInputChange({
-                                    target: {
-                                        name: fieldName,
-                                        value: newValue
-                                    }
-                                })}>{field.localized?value[_app_.lang]:value}</TinyEditor>
-                    {(hasError ?
-                        <FormHelperText error>Bitte
-                            ausfüllen</FormHelperText> : '')}
-                </FormControl>)
+                                this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
+                            }}
+                        >
+                        </TranslateIconButton>)
+                    currentFormFields.push(config.LANGUAGES.reduce((arr, languageCode) => {
+                        const fieldName = fieldKey + '.' + languageCode
+                        if (languageCode === _app_.lang || showTranslations) {
+                            arr.push(createHtmlField(fieldName,value.constructor===Object? value[languageCode] : value,languageCode))
+                        }
+                        return arr
+                    }, []))
+                }else {
+                    currentFormFields.push(createHtmlField(fieldKey, value))
+                }
 
             } else if (uitype === 'hr') {
 
@@ -412,27 +451,46 @@ class GenericForm extends React.Component {
                 }
 
                 if (field.localized) {
+                    const showTranslations = this.state.showTranslations[fieldKey]
+
                     currentFormFields.push(config.LANGUAGES.reduce((arr, languageCode) => {
                         const fieldName = fieldKey + '.' + languageCode
-                        arr.push(<TextField key={fieldName}
-                                            error={!!this.state.fieldErrors[fieldName]}
-                                            helperText={this.state.fieldErrors[fieldName]}
-                                            label={field.label + ' [' + languageCode + ']'}
-                                            className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                            InputLabelProps={{
-                                                shrink: true,
-                                            }}
-                                            multiline={uitype === 'textarea'}
-                                            fullWidth={field.fullWidth}
-                                            type={uitype}
-                                            placeholder={(field.placeholder ? field.placeholder + ' ' : '') + '[' + languageCode + ']'}
-                                            value={(value && value[languageCode] ? value[languageCode] : '')}
-                                            name={fieldName}
-                                            onKeyDown={(e) => {
-                                                onKeyDown && onKeyDown(e, value[languageCode])
-                                            }}
-                                            onBlur={this.handleBlur}
-                                            onChange={this.handleInputChange}/>)
+                        if (languageCode === _app_.lang || showTranslations) {
+
+                            arr.push(<TextField key={fieldName}
+                                                error={!!this.state.fieldErrors[fieldName]}
+                                                helperText={this.state.fieldErrors[fieldName]}
+                                                label={field.label + ' [' + languageCode + ']'}
+                                                className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                                                InputLabelProps={{
+                                                    shrink: true,
+                                                }}
+
+                                                InputProps={{
+                                                    endAdornment: languageCode === _app_.lang &&
+                                                        <InputAdornment position="end">
+                                                            <TranslateIconButton
+                                                                onClick={() => {
+
+                                                                    this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
+                                                                }}
+                                                            >
+                                                            </TranslateIconButton>
+                                                        </InputAdornment>
+                                                }}
+
+                                                multiline={uitype === 'textarea'}
+                                                fullWidth={field.fullWidth}
+                                                type={uitype}
+                                                placeholder={(field.placeholder ? field.placeholder + ' ' : '') + '[' + languageCode + ']'}
+                                                value={(value && value[languageCode] ? value[languageCode] : '')}
+                                                name={fieldName}
+                                                onKeyDown={(e) => {
+                                                    onKeyDown && onKeyDown(e, value[languageCode])
+                                                }}
+                                                onBlur={this.handleBlur}
+                                                onChange={this.handleInputChange}/>)
+                        }
                         return arr
                     }, []))
                 } else {
@@ -474,11 +532,11 @@ class GenericForm extends React.Component {
                 }
 
                 holder.push(<Expandable title={expandableField.expandable}
-                                        key={"expandable"+fieldKey}
+                                        key={"expandable" + fieldKey}
                                         onChange={(e) => {
                                             this.setState({expanded: fieldKey})
                                         }}
-                                        expanded={this.state.expanded===fieldKey}>
+                                        expanded={this.state.expanded === fieldKey}>
                     {currentFormFields}
                 </Expandable>)
 

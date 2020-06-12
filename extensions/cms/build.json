@@ -100,6 +100,12 @@
           "type": "Boolean"
         },
         {
+          "name": "ssrStyle",
+          "label": "Server side style render",
+          "hidden": true,
+          "type": "Boolean"
+        },
+        {
           "name": "subscriptions",
           "hidden": true,
           "multi": true
