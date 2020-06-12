@@ -57,7 +57,7 @@ Hook.on('TypeTable', ({type, dataSource, data, container}) => {
 // Hook when db is ready
 Hook.on('FileUpload', async ({db, context, file, data, response}) => {
 
-    const _id = ObjectId()
+    const _id = data._id ? ObjectId(data._id): ObjectId()
 
     if( !response.fileIds){
         response.fileIds = []
@@ -80,10 +80,12 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
 
         fs.copyFile(file.path, path.join(upload_dir, _id.toString()), async (err) => {
             if (err) throw err
-            createMediaEntry({db, _id, file, data, context})
+            if(!data._id)
+                createMediaEntry({db, _id, file, data, context})
         })
     }else{
-        createMediaEntry({db, file, data, context, _id})
+        if( !data._id)
+            createMediaEntry({db, file, data, context, _id})
     }
 
 })

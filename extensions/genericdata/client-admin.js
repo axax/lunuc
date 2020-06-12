@@ -152,20 +152,20 @@ export default () => {
         }
     })
 
-    Hook.on('TypeCreateEditBeforeSave', function ({type, dataToEdit, formFields}) {
-        if (type === 'GenericData' && dataToEdit && dataToEdit.definition) {
+    Hook.on('TypeCreateEditBeforeSave', function ({type, editedData, formFields}) {
+        if (type === 'GenericData' && editedData && editedData.definition) {
 
-            const definition = dataToEdit.definition.constructor === Array ? dataToEdit.definition[0] : dataToEdit.definition
+            const definition = editedData.definition.constructor === Array ? editedData.definition[0] : editedData.definition
 
             const struct = JSON.parse(definition.structure)
 
             const data = {}
             struct.fields.forEach(field => {
-                data[field.name] = dataToEdit['data_' + field.name]
-                delete dataToEdit['data_' + field.name]
+                data[field.name] = editedData['data_' + field.name]
+                delete editedData['data_' + field.name]
             })
 
-            dataToEdit.data = JSON.stringify(data)
+            editedData.data = JSON.stringify(data)
 
 
         }

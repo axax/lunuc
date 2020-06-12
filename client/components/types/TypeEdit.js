@@ -94,7 +94,7 @@ class TypeEdit extends React.Component {
             }
             editedData = Object.assign({}, this.createEditForm.state.fields)
             const formFields = getFormFields(type)
-            Hook.call('TypeCreateEditBeforeSave', {type, dataToEdit: editedData, formFields})
+            Hook.call('TypeCreateEditBeforeSave', {type, dataToEdit, editedData, formFields})
 
             // convert array to single value for not multivalue references
             Object.keys(formFields).forEach(key => {

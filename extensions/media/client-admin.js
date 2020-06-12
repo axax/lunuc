@@ -4,10 +4,16 @@ import Async from 'client/components/Async'
 import config from 'gen/config'
 import {gql} from '@apollo/client'
 import Util from '../../client/util'
+import DomUtil from '../../client/util/dom'
+import {
+    Row,
+    Col,
+    Button
+} from 'ui/admin'
 
 const {UPLOAD_URL, ADMIN_BASE_URL} = config
-import {Row, Col} from 'ui/admin'
 import _t from 'util/i18n'
+import UploadUtil from "../../client/util/upload";
 
 const FileDrop = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
@@ -19,7 +25,7 @@ const ImageIcon = (props) => <Async {...props} expose="ImageIcon"
                                     load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
 export default () => {
-
+    let fileToUpload
     // add an extra column for Media at the beginning
     Hook.on('TypeTableColumns', ({type, columns}) => {
         if (type === 'Media') {
@@ -86,8 +92,9 @@ export default () => {
 
     // add some extra data to the table
     Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, meta}) {
+        console.log(dataToEdit)
         if (type === 'Media') {
-
+            fileToUpload=false
             if (!dataToEdit && meta.option === 'upload') {
                 // remove save button
                 props.actions.splice(1, 1)
@@ -163,9 +170,51 @@ export default () => {
                 const medieData = Util.getImageObject(dataToEdit)
                 if (dataToEdit.mimeType.indexOf('image') === 0) {
                     props.children = [props.children,
-                        <img style={{border: 'solid 0.4rem black', maxWidth: '100%', maxHeight: '20rem'}}
-                             src={medieData.src}/>]
-                } else if (dataToEdit.mimeType.indexOf('video') === 0) {
+                        <img key="mediaImage"
+                             id="mediaImage"
+                             style={{border: 'solid 0.4rem black', maxWidth: '100%', maxHeight: '20rem'}}
+                             src={medieData.src}/>, <Button color="primary" variant="contained" key="mediaImageEdit" onClick={() => {
+                            DomUtil.addScript('https://cdn.scaleflex.it/plugins/filerobot-image-editor/3.7.7/filerobot-image-editor.min.js', {
+                                async: true,
+                                onload: (e) => {
+                                    e.preventDefault()
+                                    const onComplete = function(data) {
+                                        fileToUpload = data.canvas.toDataURL(dataToEdit.mimeType.substring(6), 0.85)
+                                        Util.$('#mediaImage').src=fileToUpload
+                                    }
+
+                                    const ImageEditor = new FilerobotImageEditor({
+                                        translations: {
+                                            en: {
+                                                'toolbar.download': 'Übernehmen'
+                                            }
+                                        },
+                                        theme: {
+                                            colors: {
+                                                primaryBg: '#1e262c',
+                                                primaryBgHover: '#637381',
+                                                secondaryBg: '#263138',
+                                                secondaryBgHover: '#34444c',
+                                                text: '#F9FAFB',
+                                                textHover: '#fff',
+                                                textMute: '#aaa',
+                                                textWarn: '#f7931e',
+                                                secondaryBgOpacity: 'rgba(0, 0, 0, 0.75)',
+
+                                                border: '#161e23',
+                                                borderLight: '#70777f'
+                                            }
+                                        }
+                                    },{onBeforeComplete:onComplete})
+
+                                    ImageEditor.open(medieData.src)
+
+                                }
+                            })
+
+                        }
+                        }>Bild bearbeiten</Button>]
+                        } else if (dataToEdit.mimeType.indexOf('video') === 0) {
                     let src = medieData.src
                     if (dataToEdit.mimeType === 'video/mpeg') {
                         src += '?ext=mp4&transcode={"audioQuality":2,"videoBitrate":800,"fps":25,"size":"640x?","crf":25}'
@@ -245,6 +294,26 @@ export default () => {
         }
     })
 
+    Hook.on('TypeCreateEditBeforeSave', function ({type, dataToEdit, formFields}) {
+        if (type === 'Media' && fileToUpload) {
+
+            UploadUtil.uploadData({
+                dataUrl:fileToUpload,
+                data: {_id:dataToEdit._id},
+                fileName: dataToEdit._id,
+                uploadTo:'/graphql/upload',
+                onProgress: ()=>{},
+                onLoad: (e) => {
+
+                },
+                onError: (e) => {
+
+                }
+            })
+            fileToUpload = false
+            delete dataToEdit.upload
+        }
+    })
 
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
