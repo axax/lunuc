@@ -1301,8 +1301,7 @@ class TypesContainer extends React.Component {
                         storeKey = this.getStoreKey(type)
 
                     const extendedFilter = this.extendFilter(filter)
-                    const variables = {page, limit, sort, _version, filter: extendedFilter}
-
+                    const variables = {limit, page, sort, _version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: gqlQuery,

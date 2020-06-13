@@ -1199,19 +1199,19 @@ const m = Math.max((offX+offY) / 2,100)
 
                                                               if (selected.groupOptions[groupKey][groupProp]) {
 
-
                                                                   const groupFieldOption = Object.assign({},
                                                                       selected.groupOptions[groupKey][groupProp],
                                                                       comp.$inlineEditor && comp.$inlineEditor.groupOptions && comp.$inlineEditor.groupOptions[groupKey] && comp.$inlineEditor.groupOptions[groupKey][groupProp])
 
-
-                                                                  let groupArray = propertyByPath(groupKey, subJson, '_')
-                                                                  if (!groupArray) {
-                                                                      groupArray = propertyByPath(groupKey, comp, '_')
+                                                                 let groupArray = propertyByPath(groupKey, comp, '_')
+                                                                  if(!groupArray){
+                                                                      groupArray=[]
                                                                   }
+
                                                                   while (groupIdx >= groupArray.length) {
                                                                       groupArray.push({})
                                                                   }
+
                                                                   if (groupFieldOption.tr && groupFieldOption.trKey) {
 
 
@@ -1291,6 +1291,8 @@ const m = Math.max((offX+offY) / 2,100)
                                                       }
                                                   })
 
+                                                  Util.removeNullValues(subJson,{recursiv:true, emptyObject:true, emptyArray:true})
+
                                                   if (subJson.$inlineEditor && subJson.$inlineEditor.options) {
                                                       Object.keys(subJson.$inlineEditor.options).forEach(optKey => {
                                                           delete subJson.$inlineEditor.options[optKey].value
@@ -1300,6 +1302,8 @@ const m = Math.max((offX+offY) / 2,100)
                                                   _onChange(_json, true)
 
                                               } else {
+
+                                                  Util.removeNullValues(comp,{recursiv:true, emptyObject:true, emptyArray:true})
                                                   // add new
                                                   this.handleAddChildClick(comp, pos)
                                               }
@@ -1345,6 +1349,8 @@ const m = Math.max((offX+offY) / 2,100)
                                                 key,
                                                 newLine: true,
                                                 label: 'Hinzufügen',
+                                                tab:'Slides',
+                                                action: 'add',
                                                 style:{marginBottom:'2rem'}
                                             }
 
@@ -1373,31 +1379,38 @@ const m = Math.max((offX+offY) / 2,100)
                             {addChildDialog.selected && addChildDialog.selected.options &&
                             <GenericForm primaryButton={false}
                                          onButtonClick={(field) => {
-
-                                             const item = addChildDialog.selected
+                                             const item = addChildDialog.selected,
+                                                 curKey = '!' + field.key + '!'
                                              item.options = Object.assign({}, item.options)
 
-                                             const curKey = '!' + field.key + '!'
-                                             let curIdx = 0
-                                             Object.keys(item.options).forEach(optionKey => {
-                                                 const formField = addChildDialog.form.state.fields[optionKey]
-                                                 if (formField) {
-                                                     item.options[optionKey].value = formField
-                                                 }
-
-                                                 if (optionKey.startsWith(curKey)) {
-                                                     const parts = optionKey.split('!'),
-                                                         newIdx = parseInt(parts[parts.length - 1])
-                                                     if (newIdx > curIdx) {
-                                                         curIdx = newIdx
+                                             if(field.action==='add') {
+                                                 let curIdx = 0
+                                                 Object.keys(item.options).forEach(optionKey => {
+                                                     const formField = addChildDialog.form.state.fields[optionKey]
+                                                     if (formField) {
+                                                         item.options[optionKey].value = formField
                                                      }
-                                                 }
-                                             })
-                                             Object.keys(field.group).forEach(groupKey => {
-                                                 const newItem = Object.assign({}, item.groupOptions[field.key][groupKey])
-                                                 delete newItem.value
-                                                 item.options[curKey + groupKey + '!' + (curIdx + 1)] = newItem
-                                             })
+
+                                                     if (optionKey.startsWith(curKey)) {
+                                                         const parts = optionKey.split('!'),
+                                                             newIdx = parseInt(parts[parts.length - 1])
+                                                         if (newIdx > curIdx) {
+                                                             curIdx = newIdx
+                                                         }
+                                                     }
+                                                 })
+                                                 Object.keys(field.group).forEach(groupKey => {
+                                                     const newItem = Object.assign({}, item.groupOptions[field.key][groupKey])
+                                                     delete newItem.value
+                                                     item.options[curKey + groupKey + '!' + (curIdx + 1)] = newItem
+                                                 })
+                                             }else if(field.action==='delete'){
+                                                 Object.keys(field.group).forEach(groupKey => {
+                                                     delete item.options[curKey + groupKey + '!' + field.index]
+                                                 })
+                                                delete item.options[curKey +  'delete!' + field.index]
+
+                                             }
 
                                              this.setState({addChildDialog: {...addChildDialog, selected: item}})
                                          }}
@@ -1443,7 +1456,9 @@ const m = Math.max((offX+offY) / 2,100)
                     key,
                     group: newJsonElement.groupOptions[key],
                     label: 'Hinzufügen',
+                    action:'add',
                     newLine: true,
+                    tab:'Slides',
                     style:{marginBottom:'2rem'}
                 }
                 val.forEach((groupValue, idx) => {
@@ -1471,9 +1486,13 @@ const m = Math.max((offX+offY) / 2,100)
 
                         if(optData.expandable===false){
                             delete optData.expandable
-                            newJsonElement.options[optKey + '!delete'] = {
+                            newJsonElement.options[ '!' + key + '!delete!' + idx] = {
                                 uitype: 'button',
                                 label: 'Löschen',
+                                action:'delete',
+                                key,
+                                group: newJsonElement.groupOptions[key],
+                                index:idx,
                                 newLine: true,
                                 expandable: false
                             }

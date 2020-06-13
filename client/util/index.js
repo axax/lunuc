@@ -124,17 +124,30 @@ const Util = {
         })
     },*/
     removeNullValues: (obj, options = {}) => {
-        let newObj = {}
         Object.keys(obj).forEach((prop) => {
             if (obj[prop] !== null) {
-                if (options.emptyArray && obj[prop].constructor === Array && obj[prop].length === 0) {
-                    //skip empty arrays
-                } else {
-                    newObj[prop] = obj[prop]
+                if (obj[prop].constructor === Array) {
+                    if( options.emptyArray &&  obj[prop].length === 0) {
+                        //remove empty arrays
+                        delete obj[prop]
+                    }else if(options.recursiv){
+                        obj[prop].forEach(aObj=>{
+                            if( aObj && aObj.constructor===Object){
+                                Util.removeNullValues(aObj, options)
+                            }
+                        })
+                    }
+                }else if(options.recursiv && obj[prop].constructor === Object ){
+                    Util.removeNullValues(obj[prop], options)
+                    if( options.emptyObject && Object.keys(obj[prop]).length === 0){
+                        delete obj[prop]
+                    }
                 }
+            }else{
+                delete obj[prop]
             }
         })
-        return newObj
+        return obj
     },
     extractQueryParams: (query, typeDetection) => {
         if (!query) {
