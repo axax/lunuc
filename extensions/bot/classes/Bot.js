@@ -191,11 +191,13 @@ class Bot {
     createResult(text) {
         const startTime = new Date()
         let bestMatch = {key: '', lang: '', context: {}}, highestAccuracy = 0
-        this.result = {}
+        this.result = {tokens:{}}
         for (let i = 0; i < this.languages.length; i++) {
 
             const lang = this.languages[i]
             const textTokens = this.stemmer[lang].tokenizeAndStemFull(text)
+
+            this.result.tokens[lang] = textTokens
 
             // 1. check if there is a match
             let match = this.findBestMatch(lang, textTokens)

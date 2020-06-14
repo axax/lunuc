@@ -641,21 +641,16 @@ const baseElements = [
         options: {
             c_0_p_className: {
                 label: 'Spalte 1',
-                value: 'col-sm-6'
+                value: 'col-sm-6',
+                tab: DEFAULT_TAB
             },
             c_1_p_className: {
                 label: 'Spalte 2',
-                value: 'col-sm-6'
+                value: 'col-sm-6',
+                tab: DEFAULT_TAB
             },
-            p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            },
-            p_className: {
-                label: 'Klassname'
-            }
+            ...marginOptions('p_'),
+            ...classOptions('p_')
         }
     },
     {
@@ -689,22 +684,21 @@ const baseElements = [
         options: {
             c_0_p_className: {
                 label: 'Spalte 1',
-                value: 'col-md-4 col-sm-4 col-xs-12'
+                value: 'col-md-4 col-sm-4 col-xs-12',
+                tab: DEFAULT_TAB
             },
             c_1_p_className: {
                 label: 'Spalte 2',
-                value: 'col-md-4 col-sm-4 col-xs-12'
+                value: 'col-md-4 col-sm-4 col-xs-12',
+                tab: DEFAULT_TAB
             },
             c_2_p_className: {
                 label: 'Spalte 3',
-                value: 'col-md-4 col-sm-4 col-xs-12'
+                value: 'col-md-4 col-sm-4 col-xs-12',
+                tab: DEFAULT_TAB
             },
-            p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            }
+            ...marginOptions('p_'),
+            ...classOptions('p_')
         }
     },
     {
@@ -743,26 +737,26 @@ const baseElements = [
         options: {
             c_0_p_className: {
                 label: 'Spalte 1',
-                value: 'col-md-3 col-sm-3 col-xs-6'
+                value: 'col-md-3 col-sm-3 col-xs-6',
+                tab: DEFAULT_TAB
             },
             c_1_p_className: {
                 label: 'Spalte 2',
-                value: 'col-md-3 col-sm-3 col-xs-6'
+                value: 'col-md-3 col-sm-3 col-xs-6',
+                tab: DEFAULT_TAB
             },
             c_2_p_className: {
                 label: 'Spalte 3',
-                value: 'col-md-3 col-sm-3 col-xs-6'
+                value: 'col-md-3 col-sm-3 col-xs-6',
+                tab: DEFAULT_TAB
             },
             c_3_p_className: {
                 label: 'Spalte 4',
-                value: 'col-md-3 col-sm-3 col-xs-6'
+                value: 'col-md-3 col-sm-3 col-xs-6',
+                tab: DEFAULT_TAB
             },
-            p_style_marginTop: {
-                label: 'Abstand oben'
-            },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            }
+            ...marginOptions('p_'),
+            ...classOptions('p_')
         }
     },
     {
@@ -806,30 +800,31 @@ const baseElements = [
         options: {
             c_0_p_className: {
                 label: 'Spalte 1',
-                value: 'col-md-1-5 col-sm-4 col-xs-6'
+                value: 'col-md-1-5 col-sm-4 col-xs-6',
+                tab: DEFAULT_TAB
             },
             c_1_p_className: {
                 label: 'Spalte 2',
-                value: 'col-md-1-5 col-sm-4 col-xs-6'
+                value: 'col-md-1-5 col-sm-4 col-xs-6',
+                tab: DEFAULT_TAB
             },
             c_2_p_className: {
                 label: 'Spalte 3',
-                value: 'col-md-1-5 col-sm-4 col-xs-6'
+                value: 'col-md-1-5 col-sm-4 col-xs-6',
+                tab: DEFAULT_TAB
             },
             c_3_p_className: {
                 label: 'Spalte 4',
-                value: 'col-md-1-5 col-sm-4 col-xs-6'
+                value: 'col-md-1-5 col-sm-4 col-xs-6',
+                tab: DEFAULT_TAB
             },
             c_4_p_className: {
                 label: 'Spalte 5',
-                value: 'col-md-1-5 col-sm-4 col-xs-6'
+                value: 'col-md-1-5 col-sm-4 col-xs-6',
+                tab: DEFAULT_TAB
             },
-            p_style_marginBottom: {
-                label: 'Abstand unten'
-            },
-            p_className: {
-                label: 'Klassname'
-            }
+            ...marginOptions('p_'),
+            ...classOptions('p_')
         }
     }
 ]
