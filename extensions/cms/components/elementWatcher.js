@@ -2,7 +2,7 @@ import React from 'react'
 import Util from 'client/util'
 
 const hasLoaded = {}
-export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps, c, $c, scope}, options = {}) {
+export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps, c, $c, scope}, watchOptions = {}) {
 
     let tagSrc
     if(tagName === 'SmartImage'){
@@ -15,7 +15,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
 
         state = {
             madeVisible: false,
-            initialVisible: tagName === 'SmartImage' ? false : (options.initialClass && !options.waitVisible) || !!options.waitVisible
+            initialVisible: tagName === 'SmartImage' ? false : (watchOptions.initialClass && !watchOptions.waitVisible) || !!watchOptions.waitVisible
         }
 
         constructor(props) {
@@ -52,6 +52,20 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
 
             if (!initialVisible && !madeVisible && !hasLoaded[tagSrc]) {
                 const {_tagName,_options,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, inlineSvg, options, id,_inlineEditor, ...rest} = eleProps
+                if(tagName === 'SmartImage' && watchOptions.lazyImage){
+                    const tmpSrc = Util.getImageObject(eleProps.src, {
+                        quality:watchOptions.lazyImage.quality || 25,
+                        resize:{
+                            width:watchOptions.lazyImage.width || 100,
+                            height:watchOptions.lazyImage.height
+                        },
+                        webp:true}).src
+                    return React.createElement(
+                        eleType,
+                        {...eleProps,src:tmpSrc,_key:key},
+                        ($c ? null : jsonDom.parseRec(c, key, scope))
+                    )
+                }
                 return <div _key={key} data-wait-visible={jsonDom.instanceId} {...rest} style={{minHeight:'1rem', minWidth:'1rem'}}></div>
             } else {
                 if( hasLoaded[tagSrc] && hasLoaded[tagSrc].svgData){
@@ -60,11 +74,11 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                 if (!eleProps.className) {
                     eleProps.className = ''
                 }
-                if (madeVisible && options.visibleClass) {
-                    eleProps.className += ' ' + options.visibleClass
+                if (madeVisible && watchOptions.visibleClass) {
+                    eleProps.className += ' ' + watchOptions.visibleClass
                 }
-                if (options.initialClass) {
-                    eleProps.className += ' ' + options.initialClass
+                if (watchOptions.initialClass) {
+                    eleProps.className += ' ' + watchOptions.initialClass
                 }
                 return React.createElement(
                     eleType,
@@ -83,11 +97,10 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
 
                             observer.unobserve(entry.target)
                             if (this.state.initialVisible) {
-                                ele.classList.add(options.visibleClass)
+                                ele.classList.add(watchOptions.visibleClass)
                             } else {
                                 ele.setAttribute('data-loading', true)
                                 if (tagName === 'SmartImage') {
-
                                     if(eleProps.inlineSvg){
                                         this.fetchSvg()
                                     }else {
@@ -97,7 +110,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                                             // gifs can be show even if they are not fully loaded
                                             img.onerror = img.onload = null
                                             this.setState({madeVisible: true})
-                                        }, 1000)
+                                        }, 20000)
 
                                         img.onerror = img.onload = () => {
                                             clearTimeout(timeout)
@@ -117,7 +130,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
 
                         }
                     })
-                }, {rootMargin: options.rootMargin||'0px 0px 0px 0px'})
+                }, {rootMargin: watchOptions.rootMargin||'0px 0px 0px 0px'})
                 observer.observe(ele)
             }
         }
