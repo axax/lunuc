@@ -125,7 +125,10 @@ const Util = {
     },*/
     removeNullValues: (obj, options = {}) => {
         Object.keys(obj).forEach((prop) => {
-            if (obj[prop] !== null) {
+
+            if (obj[prop] === undefined) {
+                // do nothing
+            }else if (obj[prop] !== null) {
                 if (obj[prop].constructor === Array) {
                     if( options.emptyArray &&  obj[prop].length === 0) {
                         //remove empty arrays
@@ -244,7 +247,15 @@ const Util = {
                             params += `width=1200`
                         }
                     } else {
-                        params += `width=${options.resize.width}&height=${options.resize.height}`
+                        if(options.resize.width) {
+                            params += `width=${options.resize.width}`
+                        }
+                        if(options.resize.height) {
+                            if (params !== '?') {
+                                params += '&'
+                            }
+                            params += `height=${options.resize.height}`
+                        }
                     }
                 }
                 if (options.quality) {

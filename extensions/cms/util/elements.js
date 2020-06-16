@@ -349,6 +349,20 @@ const baseElements = [
                 label: 'Url',
                 tab: DEFAULT_TAB
             },
+            p_title: {
+                fullWidth: true,
+                value: '',
+                placeholder: 'Url Titel eingeben',
+                label: 'Url Titel',
+                tab: DEFAULT_TAB
+            },
+            p_target: {
+                fullWidth: true,
+                value: '',
+                placeholder: 'Target',
+                label: 'Target',
+                tab: DEFAULT_TAB
+            },
             ...classOptions('p_'),
             ...imageOptions('c_0_p_')
         },
@@ -357,7 +371,8 @@ const baseElements = [
                 elementKey: 'imageLink'
             },
             p: {
-                ['data-element-key']: 'imageLink'
+                ['data-element-key']: 'imageLink',
+                'rel':'noopener'
             },
             c: [
                 {
@@ -615,6 +630,56 @@ const baseElements = [
         }
     },
     {
+        tagName: 'iframe',
+        name: 'iFrame',
+        options: {
+            p_src: {
+                fullWidth: true,
+                value: '',
+                label: 'Url',
+                tab: DEFAULT_TAB
+            },
+            p_width: {
+                value: '',
+                label: 'Breite',
+                tab: DEFAULT_TAB
+            },
+            p_height: {
+                value: '',
+                label: 'Höhe',
+                tab: DEFAULT_TAB
+            },
+            p_frameBorder: {
+                fullWidth: true,
+                value: '',
+                label: 'Frameborder',
+                tab: DEFAULT_TAB
+            },
+            p_style: {
+                fullWidth: true,
+                value: '',
+                label: 'Style',
+                tab: DEFAULT_TAB
+            },
+            ...classOptions('p_')
+        },
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'iframe',
+                options: {
+                    c: {
+                        trKey: '__uid__'
+                    }
+                }
+            },
+            p: {
+                ['data-element-key']: 'iframe',
+                'frameBorder':'0',
+                'style':'border:0;'
+            }
+        }
+    },
+    {
         subHeader: 'Layout Elemente',
         tagName: 'Row',
         name: 'Layout 1/2',
@@ -825,6 +890,42 @@ const baseElements = [
             },
             ...marginOptions('p_'),
             ...classOptions('p_')
+        }
+    },
+    {
+        tagName: 'div',
+        name: 'Hintergrund',
+        options: {
+            p_style_backgroundImage: {
+                fullWidth: true,
+                value: '',
+                label: 'Hintergrundbild',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=image',
+                template: 'url(${_app_.config.UPLOAD_URL}/${_id}/-/${name})',
+                tab: DEFAULT_TAB
+            },
+            p_style_backgroundSize: {
+                value: '',
+                label: 'Grösse',
+                tab: DEFAULT_TAB
+            },
+            ...classOptions('p_'),
+            ...marginOptions('p_')
+        },
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'background',
+                options: {
+                    c: {
+                        trKey: '__uid__'
+                    }
+                }
+            },
+            p: {
+                ['data-element-key']: 'background'
+            }
         }
     }
 ]
