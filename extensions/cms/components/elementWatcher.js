@@ -52,7 +52,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
 
             if (!initialVisible && !madeVisible && !hasLoaded[tagSrc]) {
                 const {_tagName,_options,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, inlineSvg, options, id,_inlineEditor, ...rest} = eleProps
-                if(tagName === 'SmartImage' && watchOptions.lazyImage){
+                if(watchOptions.lazyImage){
                     const tmpSrc = Util.getImageObject(eleProps.src, {
                         quality:watchOptions.lazyImage.quality || 25,
                         resize:{
