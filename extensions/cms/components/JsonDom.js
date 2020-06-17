@@ -55,7 +55,7 @@ const AdminSwitch = (props) => <Async {...props} expose="Switch"
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onClick', 'onKeyDown', 'onKeyUp', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput']
+    static events = ['onMouseOver','onMouseOut','onClick', 'onKeyDown', 'onKeyUp', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput']
 
     /*
      * Default components
