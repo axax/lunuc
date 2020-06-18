@@ -14,9 +14,14 @@ import config from 'gen/config'
 import path from 'path'
 import {propertyByPath, setPropertyByPath, assignIfObjectOrArray, matchExpr} from '../../../client/util/json'
 
+const DEFAULT_PARAM_MAX_LENGTH = 100,
+    DEFAULT_PARAM_NOT_ALLOWED_CHARS = ['\\(','\\)','\\{','\\}',';','<','>'],
+    DEFAULT_PARAM_NOT_ALLOWED_REGEX = new RegExp(DEFAULT_PARAM_NOT_ALLOWED_CHARS.join('|'), 'gi')
+
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode}) => {
     const startTime = new Date().getTime()
     const resolvedData = {_meta: {}}, subscriptions = []
+
 
     if (dataResolver && dataResolver.trim() !== '') {
         let debugInfo = null
@@ -24,6 +29,20 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             let segments = JSON.parse(dataResolver),
                 addDataResolverSubsription = false
             if (segments.constructor === Object) segments = [segments]
+
+
+
+            // check params
+            const keys = Object.keys(scope.params)
+            if(keys.length>0){
+                keys.forEach(key=>{
+                    // param limit length is 50
+                    if( scope.params[key].length > DEFAULT_PARAM_MAX_LENGTH ) {
+                        scope.params[key] = scope.params[key].substring(0, 50)
+                    }
+                    scope.params[key] = scope.params[key].replace(DEFAULT_PARAM_NOT_ALLOWED_REGEX,'')
+                })
+            }
 
             for (let i = 0; i < segments.length; i++) {
 
@@ -49,6 +68,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     config,
                     ObjectId
                 }).replace(/"###/g, '').replace(/###"/g, '')
+
+
                 const segment = JSON.parse(replacedSegmentStr)
                 if (tempBrowser) {
                     segment.website.pipeline = tempBrowser

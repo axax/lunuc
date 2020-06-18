@@ -195,6 +195,11 @@ export default db => ({
             return {user: cmsPageStatus[slug].user}
         },
         cmsServerMethod: async ({slug, methodName, args, query, props, _version}, req) => {
+
+            if (!methodName.match(/^[0-9a-zA-Z_]+$/) || methodName.trim()==='require') {
+                throw new Error('Invalid methodName')
+            }
+
             const {context, headers} = req
             const startTime = (new Date()).getTime()
             let cmsPages = await getCmsPage({db, context, slug, _version, headers})
@@ -204,6 +209,10 @@ export default db => ({
             }
 
             const {serverScript} = cmsPages.results[0]
+
+            if( !serverScript ){
+                throw new Error('serverScript doesn\'t exist')
+            }
 
             if (args) {
                 try {

@@ -692,12 +692,12 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -730,17 +730,17 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
@@ -778,22 +778,22 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -836,27 +836,27 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {remove: false, addBelow: false}},
+                    $inlineEditor: {menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 }

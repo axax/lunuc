@@ -207,7 +207,15 @@ Add this to the file:
 4. run
 `sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf`
 
-#Locations on server
+###Security
+
+#### ssh brute force protection
+
+`iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set --name SSH -j ACCEPT
+ iptables -A INPUT -p tcp --dport 22 -m recent --update --seconds 60 --hitcount 4 --rttl --name SSH -j LOG --log-prefix "SSH_brute_force "
+ iptables -A INPUT -p tcp --dport 22 -m recent --update --seconds 60 --hitcount 4 --rttl --name SSH -j DROP`
+
+###Locations on server
 /opt/lunuc
 /srv/uploads
 

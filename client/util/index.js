@@ -157,11 +157,11 @@ const Util = {
             query = window && window.location.search.substring(1)
         }
 
-        var a = query.split('&')
+        const a = query.split('&')
 
-        var b = {}
+        const b = {}
         for (let i = 0; i < a.length; ++i) {
-            var p = a[i].split('=', 2)
+            const p = a[i].split('=', 2)
             if (p[0]) {
                 if (p.length === 1)
                     b[p[0]] = ''
@@ -347,10 +347,9 @@ const Util = {
 
         let chunkInt = parseInt(chunk)
 
-        if (!isNaN(chunkInt)) {
+        if (isNaN(chunkInt)) {
             chunkInt = parseInt(new Function('return `' + chunk + '`').call({}))
         }
-
         if (!isNaN(chunkInt)) {
             return arr.reduce((all, one, i) => {
                 const ch = Math.floor(i / chunkInt)

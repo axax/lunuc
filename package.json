@@ -57,7 +57,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@apollo/client": "^3.0.0-rc.4",
+    "@apollo/client": "^3.0.0-rc.6",
     "@apollo/link-context": "^2.0.0-beta.3",
     "@apollo/link-error": "^2.0.0-beta.3",
     "@apollo/link-ws": "^2.0.0-beta.3",
@@ -100,7 +100,7 @@
     "mongodb": "^3.5.9",
     "natural": "^2.1.5",
     "node-cron": "^2.0.3",
-    "nodemailer": "^6.4.8",
+    "nodemailer": "^6.4.10",
     "preact": "^10.4.4",
     "react": "^16.13.1",
     "react-autosuggest": "^10.0.2",
@@ -120,11 +120,11 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.1.0",
     "@google-cloud/translate": "^6.0.0",
-    "aws-sdk": "^2.697.0",
+    "aws-sdk": "^2.699.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",
     "fluent-ffmpeg": "^2.1.2",
-    "puppeteer": "^3.3.0",
+    "puppeteer": "^4.0.0",
     "nodemon": "^2.0.4",
     "mssql": "^6.2.0",
     "native-dns": "^0.7.0",
