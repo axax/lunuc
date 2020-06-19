@@ -172,4 +172,34 @@ export default () => {
         }
     })
 
+
+
+    // add some extra data to the table
+    Hook.on('TypeTableAction', function ({type, actions}) {
+        if (type === 'GenericData') {
+
+            actions.push({
+                    name: 'Export GenericData to csv', onClick: () => {
+                        const items = []
+                        this.state.data.results.forEach(res=>{
+                            items.push({date: Util.formattedDatetimeFromObjectId(res._id),...JSON.parse(res.data)})
+                        })
+                        const replacer = (key, value) => value === null ? '' : value // specify how you want to handle null values here
+                        const header = Object.keys(items[0])
+                        let csv = items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
+                        csv.unshift(header.join(','))
+                        csv = csv.join('\r\n')
+
+
+                        const a = document.createElement('a'),
+                            blob = new Blob([csv], {'type': 'text/comma-separated-values'})
+                        a.href = window.URL.createObjectURL(blob)
+                        a.download = 'genericdata.csv'
+                        a.target = '_blank'
+                        a.click()
+                    }
+                })
+        }
+    })
+
 }

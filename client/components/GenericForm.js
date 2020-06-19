@@ -231,29 +231,31 @@ class GenericForm extends React.Component {
         this.setState(GenericForm.getInitalState(this.props))
     }
 
+    newStateForField(prevState, name,value){
+        const newState = Object.assign({}, {fields: {}}, prevState)
+
+        // for localization --> name.de / name.en
+        const path = name.split('.')
+        if (path.length == 2) {
+            if (!newState.fields[path[0]]) {
+                newState.fields[path[0]] = {}
+            }
+            newState.fields[path[0]][path[1]] = value
+        } else {
+            newState.fields[name] = value
+        }
+        return newState
+    }
 
     handleInputChange = (e) => {
         const {fields} = this.props
-
         const target = e.target, name = target.name
         let value = target.type === 'checkbox' ? target.checked : target.value
-
-        if (fields[name]) {
+        if(target.type!=='datetime-local' && fields[name]) {
             value = checkFieldType(value, fields[name])
         }
         this.setState((prevState) => {
-            const newState = Object.assign({}, {fields: {}}, prevState)
-
-            // for localization --> name.de / name.en
-            const path = name.split('.')
-            if (path.length == 2) {
-                if (!newState.fields[path[0]]) {
-                    newState.fields[path[0]] = {}
-                }
-                newState.fields[path[0]][path[1]] = value
-            } else {
-                newState.fields[name] = value
-            }
+            const newState = this.newStateForField(prevState, name, value)
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
             }
@@ -264,7 +266,15 @@ class GenericForm extends React.Component {
 
 
     handleBlur = (e) => {
-        const {onBlur} = this.props
+        const {onBlur, fields} = this.props
+        if(e.target.type==='datetime-local'){
+            const field = fields[e.target.name]
+            if( field.type === 'Float') {
+                // a float value is expected so convert the iso date to an unix timestamp
+                const newState = this.newStateForField(this.state, e.target.name, Date.parse(e.target.value))
+                this.setState(newState)
+            }
+        }
         if (onBlur) {
             onBlur(e)
         }
@@ -291,6 +301,10 @@ class GenericForm extends React.Component {
             if (field.replaceBreaks && value) {
                 value = value.replace(/<br>/g, '\n')
             }
+            if( !isNaN(value) && field.uitype==='datetime'){
+                // it is a unix timestamp so convert it to an iso date
+                value = Util.toLocalISODate(value)
+            }
 
             let currentFormFields = formFields
 
@@ -311,7 +325,6 @@ class GenericForm extends React.Component {
                 currentFormFields.push(<br key={'br' + fieldKey}/>)
             }
             const uitype = (field.uitype === 'datetime' ? 'datetime-local' : 0) || field.uitype || (field.enum ? 'select' : 'text')
-
 
             if (['json', 'editor', 'jseditor'].indexOf(uitype) >= 0) {
 

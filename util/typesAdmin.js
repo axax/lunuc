@@ -140,7 +140,6 @@ export const referencesToIds = (data, type) => {
 }
 
 export const checkFieldType = (value, field) => {
-
     if (field.type === 'Float') {
         value = parseFloat(value)
         if (isNaN(value)) {

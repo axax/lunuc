@@ -251,7 +251,6 @@ class CmsViewContainer extends React.Component {
                 }
 
                 if (!query) return
-
                 const qqlSubscribe = gql`subscription{${subscriptionName}{${query}}}`
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,
@@ -270,7 +269,6 @@ class CmsViewContainer extends React.Component {
                         }
                         const {action, data} = supscriptionData.data['subscribe' + subs]
                         if (data) {
-
                             const storedData = client.readQuery({
                                 query: gqlQuery(),
                                 variables: _this.props.cmsPageVariables
@@ -285,41 +283,40 @@ class CmsViewContainer extends React.Component {
 
                                     const refResults = resolvedDataJson[subs].results
 
-                                    // remove null values from new data
-                                    const noNullData = Util.removeNullValues(data)
-                                    Object.keys(noNullData).map(k => {
-                                        // check for localized values
-                                        if (noNullData[k].constructor === Object && noNullData[k].__typename === 'LocalizedString') {
-                                            const v = noNullData[k][_app_.lang]
-                                            if (v) {
-                                                noNullData[k] = v
+                                    data.forEach(entry=>{
+                                        // remove null values from new data
+                                        const noNullData = Util.removeNullValues(entry)
+                                        Object.keys(noNullData).map(k => {
+                                            // check for localized values
+                                            if (noNullData[k].constructor === Object && noNullData[k].__typename === 'LocalizedString') {
+                                                const v = noNullData[k][_app_.lang]
+                                                if (v) {
+                                                    noNullData[k] = v
+                                                }
                                             }
+                                        })
+                                        if (['update', 'delete'].indexOf(action) >= 0) {
+
+                                            // find data to update
+                                            const idx = refResults.findIndex(o => o._id === entry._id)
+
+                                            if (idx > -1) {
+                                                if (action === 'update') {
+                                                    // update data
+                                                    refResults[idx] = Object.assign({}, refResults[idx], noNullData)
+                                                } else {
+                                                    // delete data
+                                                    refResults.splice(idx, 1)
+                                                }
+                                            } else {
+                                                console.warn(`Data ${entry._id} does not exist.`)
+                                            }
+
+                                        } else {
+                                            //create
+                                            refResults.unshift(noNullData)
                                         }
                                     })
-
-
-                                    if (['update', 'delete'].indexOf(action) >= 0) {
-
-                                        // find data to update
-                                        const idx = refResults.findIndex(o => o._id === data._id)
-
-                                        if (idx > -1) {
-                                            if (action === 'update') {
-                                                // update data
-                                                refResults[idx] = Object.assign({}, refResults[idx], noNullData)
-                                            } else {
-                                                // delete data
-                                                refResults.splice(idx, 1)
-                                            }
-                                        } else {
-                                            console.warn(`Data ${data._id} does not exist.`)
-                                        }
-
-                                    } else {
-                                        //create
-                                        refResults.unshift(noNullData)
-
-                                    }
 
                                     // back to string data
                                     const newStoreData = Object.assign({}, storedData)

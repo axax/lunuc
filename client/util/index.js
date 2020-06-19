@@ -83,14 +83,13 @@ const Util = {
         }
         return Util.getDateTimeFormat().format(Util.dateFromObjectId(objectId))
     },
-    formattedDatetime(stamp) {
+    formattedDatetime(stamp, options) {
         if (!stamp) return ''
         if (typeof stamp === 'string') {
             stamp = parseFloat(stamp);
         }
 
-        return Util.getDateTimeFormat().format(new Date(stamp))
-        //return new Date(stamp).toLocaleString()
+        return Util.getDateTimeFormat(options).format(new Date(stamp))
     },
     formatDate(d, options) {
         try {
@@ -98,11 +97,10 @@ const Util = {
         } catch (e) {
             return ''
         }
-        /*(new Date(d)).toLocaleString(options && options.lang ? options.lang : _app_.lang, Object.assign({
-        year: 'numeric',
-        month: '2-digit',
-        day: 'numeric'
-    }, options))*/
+    },
+    toLocalISODate(d){
+        const tzoffset = (new Date()).getTimezoneOffset() * 60000 //offset in milliseconds
+        return (new Date(new Date(d) - tzoffset)).toISOString().slice(0, -1)
     },
     textFromHtml: str => {
         if (str.constructor !== String) return str

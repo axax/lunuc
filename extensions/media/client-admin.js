@@ -92,7 +92,6 @@ export default () => {
 
     // add some extra data to the table
     Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, meta}) {
-        console.log(dataToEdit)
         if (type === 'Media') {
             fileToUpload=false
             if (!dataToEdit && meta.option === 'upload') {
