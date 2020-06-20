@@ -190,16 +190,13 @@ class JsonDom extends React.Component {
     // Data bindings on form input, textarea, and select elements
     bindings = {}
 
-    // Is set to true when there is an error
-    hasError = false
-
     extendedComponents = {}
     json = null
     jsonRaw = null
     _inHtmlComponents = []
     scope = {}
     updateScope = true
-    parseError = null
+    error = null
     runScript = true
     scriptResult = null
     componentRefs = {} // this is the object with references to elements with identifier
@@ -250,11 +247,8 @@ class JsonDom extends React.Component {
 
         if (updateIsNeeded) {
 
-            // set error to false before render
-            this.hasError = false
-
             // reset parsing error
-            this.parseError = null
+            this.error = null
 
             if (resolvedDataChanged) {
                 // renew resolved data json
@@ -299,7 +293,7 @@ class JsonDom extends React.Component {
 
     componentDidCatch(err, info) {
         console.error(err, info)
-        this.hasError = true
+        this.error = {type:'unknown', msg: err.message}
         this.forceUpdate()
     }
 
@@ -379,96 +373,86 @@ class JsonDom extends React.Component {
             console.warn('Template is missing.', this.props)
             return null
         }
-
-        if (this.hasError) {
-            return <strong>There is something wrong with one of the components defined in the json content. See
-                console.log in the browser for more detail.</strong>
-        }
         const startTime = (new Date()).getTime(),
             scope = this.getScope(this.props)
-
-        let resolveDataError
-
-        if (this.resolvedDataJson === undefined) {
-            try {
-
-                if (parseResolvedData) {
-                    // if there are placeholders ${} in the resolvedData String that needs to be parsed with the client scope
-                    // the flag parseResolvedData needs to be set to true
-                    this.resolvedDataJson = JSON.parse(new Function(DomUtil.toES5(`const Util = this.Util; const {${Object.keys(scope).join(',')}} = this.scope; return \`${resolvedData.replace(/\\/g, '\\\\')}\``)).call({
-                        scope,
-                        Util
-                    }))
-                } else {
-                    this.resolvedDataJson = JSON.parse(resolvedData)
-                }
-                if (this.resolvedDataJson.error) {
-                    resolveDataError = this.resolvedDataJson.error
-                }
-            } catch (e) {
-                resolveDataError = e.message
-                console.log(e, resolvedData)
-            }
-
-            if (resolveDataError) {
-                return <div>Error in data resolver: <strong>{resolveDataError}</strong></div>
-            }
-        }
-        scope.data = this.resolvedDataJson
-        scope.props = _props
-        scope.renewing = renewing
-
-        // find root parent
-        let root = this, parent = this.props._parentRef
-        while (root.props._parentRef) {
-            root = root.props._parentRef
-        }
-        scope.root = root
-        scope.parent = parent
-
-        if (script) {
-            if (this.runScript) {
-                this.runScript = false
-                this.runJsEvent('beforerunscript', false, scope)
+        let content
+        if (!this.error) {
+            if (this.resolvedDataJson === undefined) {
                 try {
-                    this.jsOnStack = {}
-                    this.scriptResult = new Function(DomUtil.toES5(`
-                const   __this=this._this
-                const {serverMethod, on, setLocal, getLocal, refresh, getComponent, addMetaTag, setStyle, fetchMore} = __this
-                const {history, clientQuery, setKeyValue, updateResolvedData} = __this.props
-                const {scope, getKeyValueFromLS, parent, root, Util, DomUtil} = this
-                const _t = this._t.bind(scope.data),forceUpdate = refresh
-                ${script}`)).call({
-                        _this: this,
-                        scope,
-                        Util,
-                        DomUtil,
-                        _t,
-                        getKeyValueFromLS,
-                        root,
-                        parent
-                    })
+                    if (parseResolvedData) {
+                        // if there are placeholders ${} in the resolvedData String that needs to be parsed with the client scope
+                        // the flag parseResolvedData needs to be set to true
+                        this.resolvedDataJson = JSON.parse(new Function(DomUtil.toES5(`const Util = this.Util; const {${Object.keys(scope).join(',')}} = this.scope; return \`${resolvedData.replace(/\\/g, '\\\\')}\``)).call({
+                            scope,
+                            Util
+                        }))
+                    } else {
+                        this.resolvedDataJson = JSON.parse(resolvedData)
+                    }
+                    if (this.resolvedDataJson.error) {
+                        this.error = {type:'dataResolver', msg: '<br /><i>'+this.resolvedDataJson.error+'</i>'}
+                    }
                 } catch (e) {
-                    console.error(e)
-                    return <div>Error in the script: <strong>{e.message}</strong></div>
+                    console.log(e, resolvedData)
+                    this.error = {type:'dataResolver', msg: this.prettyErrorMessage(e, resolvedData)}
                 }
-                scope.script = this.scriptResult || {}
             }
-            if (!this.runJsEvent('beforerender', false, scope)) {
-                return <div>Error in beforerender event. See details in console log: <span
-                    dangerouslySetInnerHTML={{__html: this.lastEventError}}/></div>
+            if( !this.error) {
+                scope.data = this.resolvedDataJson
+                scope.props = _props
+                scope.renewing = renewing
+
+                // find root parent
+                let root = this, parent = this.props._parentRef
+                while (root.props._parentRef) {
+                    root = root.props._parentRef
+                }
+                scope.root = root
+                scope.parent = parent
+
+                if (script) {
+                    if (this.runScript) {
+                        this.runScript = false
+                        this.runJsEvent('beforerunscript', false, scope)
+                        try {
+                            this.jsOnStack = {}
+                            this.scriptResult = new Function(DomUtil.toES5(`
+                    const  __this=this._this
+                    const {serverMethod, on, setLocal, getLocal, refresh, getComponent, addMetaTag, setStyle, fetchMore} = __this
+                    const {history, clientQuery, setKeyValue, updateResolvedData} = __this.props
+                    const {scope, getKeyValueFromLS, parent, root, Util, DomUtil} = this
+                    const _t = this._t.bind(scope.data),forceUpdate = refresh
+                    ${script}`)).call({
+                                _this: this,
+                                scope,
+                                Util,
+                                DomUtil,
+                                _t,
+                                getKeyValueFromLS,
+                                root,
+                                parent
+                            })
+                        } catch (e) {
+                            this.error = {type:'script', msg: this.prettyErrorMessage(e, script, 9)}
+                            console.error(e)
+                        }
+                        scope.script = this.scriptResult || {}
+                    }
+                    this.runJsEvent('beforerender', false, scope)
+                } else {
+                    this.jsOnStack = {}
+                }
+                content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
+                if (content && this._inHtmlComponents.length > 0) {
+                    content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
+                }
             }
-        } else {
-            this.jsOnStack = {}
-        }
-        let content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
-        if (content && this._inHtmlComponents.length > 0) {
-            content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
         }
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
-        if (this.parseError) {
-            console.log(this.parseError)
-            return <div>Error in the template: <strong>{this.parseError.message}</strong></div>
+
+        if (this.error) {
+            return <div>Error in <strong>{this.error.type}</strong>. See details in console log: <span
+                dangerouslySetInnerHTML={{__html: this.error.msg}}/></div>
         } else {
             return content
         }
@@ -996,8 +980,7 @@ class JsonDom extends React.Component {
              */
             this.json = JSON.parse(this.renderTemplate(template, scope))
         } catch (e) {
-            console.log(e, this.renderTemplate(template, scope))
-            this.parseError = e
+            this.error = {type:'template',msg:this.prettyErrorMessage(e, this.renderTemplate(template, scope))}
         }
         return this.json
     }
@@ -1018,7 +1001,7 @@ class JsonDom extends React.Component {
         } catch (e) {
             console.log(e, template)
             if (!ignoreError) {
-                this.parseError = e
+                this.error = {type:'template',msg:this.prettyErrorMessage(e, template)}
             }
         }
         return this.jsonRaw
@@ -1092,25 +1075,30 @@ class JsonDom extends React.Component {
     }
 
     runJsEvent(name, async, ...args) {
-        let hasError = false, t = this.jsOnStack[name]
+        let t = this.jsOnStack[name]
 
-        if (t && t.length) {
+        if (t && t.length && !this.error) {
             for (let i = 0; i < t.length; i++) {
                 const cb = t[i]
                 if (cb) {
-                    try {
-                        if (async) {
-                            setTimeout(() => {
-                                cb(...args)
-                            }, 0)
-                        } else {
+                    const callCb =()=>{
+                        try {
                             cb(...args)
+                        } catch (e) {
+                            console.log(e)
+                            this.error = {type: `script event ${name}`, msg: this.prettyErrorMessage(e, this.props.script,9)}
+                            if(async){
+                                this.forceUpdate()
+                            }
                         }
-                    } catch (e) {
-                        console.log(e)
-                        this.lastEventError = this.prettyErrorMessage(e, this.props.script)
-                        hasError = true
                     }
+
+                    if (async) {
+                        setTimeout(callCb, 0)
+                    } else {
+                        callCb()
+                    }
+
                 }
             }
         }
@@ -1119,29 +1107,35 @@ class JsonDom extends React.Component {
         if (this.props._parentRef && args.length && args[0]._passEvent) {
             this.props._parentRef.runJsEvent(name, async, ...args)
         }
-        return !hasError
     }
 
-    prettyErrorMessage = (e, code) => {
-        const line = e.stack.split('\n')[1], matches = line.match(/:(\d*):(\d*)/)
+    prettyErrorMessage = (e, code, offset=0) => {
         let lineNrStr, column, errorMsg = '<pre style="margin-top:2rem">'
 
-        if (matches && matches.length > 2) {
-            lineNrStr = matches[1]
-            column = matches[2]
-        } else {
-            lineNrStr = column = 0
+        if(e.message.indexOf('in JSON at')>0){
+            const pos = parseInt(e.message.substring(e.message.lastIndexOf(' ')))
+            lineNrStr = code.substring(0,pos).split('\n').length - 1
+            column=0
+        }else {
+            const line = e.stack.split('\n')[1], matches = line.match(/:(\d*):(\d*)/)
+            console.log(line,matches)
+            if (matches && matches.length > 2) {
+                lineNrStr = matches[1]
+                column = matches[2]
+            } else {
+                lineNrStr = column = 0
+            }
         }
-        if (lineNrStr) {
+        if (lineNrStr !== undefined) {
             const lineNr = parseInt(lineNrStr)
             const cbLines = code.split('\n'),
                 start = Math.max(0, lineNr - 3),
                 end = Math.min(cbLines.length, lineNr + 4)
             for (let i = start; i < end; i++) {
 
-                const str = cbLines[i - 9]
+                const str = cbLines[i - offset]
                 if (i === lineNr) {
-                    errorMsg += `<i style="background:red;color:#fff">Line ${i - 10}: ${e.message}</i>\n<i style="background:yellow">${str}</i>\n`
+                    errorMsg += `<i style="background:red;color:#fff">Line ${i - (offset-1)}: ${e.message}</i>\n<i style="background:yellow">${str}</i>\n`
                 } else {
                     errorMsg += str + '\n'
                 }
