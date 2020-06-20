@@ -52,12 +52,13 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
 
             if (!initialVisible && !madeVisible && !hasLoaded[tagSrc]) {
                 const {_tagName,_options,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, inlineSvg, options, id,_inlineEditor, ...rest} = eleProps
-                if(watchOptions.lazyImage){
+                const lazyImage = watchOptions.lazyImage
+                if(lazyImage && lazyImage.width){
                     const tmpSrc = Util.getImageObject(eleProps.src, {
-                        quality:watchOptions.lazyImage.quality || 25,
+                        quality:lazyImage.quality || 25,
                         resize:{
-                            width:watchOptions.lazyImage.width || 100,
-                            height:watchOptions.lazyImage.height
+                            width:lazyImage.width,
+                            height:lazyImage.height
                         },
                         webp:true}).src
                     return React.createElement(

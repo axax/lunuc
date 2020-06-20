@@ -9,7 +9,7 @@ export function propertyByPath(path, obj, separator = '.', assign = false) {
                 if (!escapedPath) {
                     escapedPath = ''
                 }
-                escapedPath += prop.substring(0, prop.length - 1)+'_'
+                escapedPath += prop.substring(0, prop.length - 1)+separator
                 return res
             }
             let finalPath
@@ -88,6 +88,7 @@ export function matchExpr(expr, scope) {
 export function setPropertyByPath(value, path, obj, separator = '.') {
     const fields = path.split(separator)
     let escapedPath
+    let objLast, finalPathLast
     for (let i = 0, n = fields.length; i < n; i++) {
 
         let field = fields[i]
@@ -95,7 +96,7 @@ export function setPropertyByPath(value, path, obj, separator = '.') {
             if (!escapedPath) {
                 escapedPath = ''
             }
-            escapedPath += field.substring(0, field.length - 1)+'_'
+            escapedPath += field.substring(0, field.length - 1)+separator
             continue
         }
         let finalPath
@@ -106,8 +107,6 @@ export function setPropertyByPath(value, path, obj, separator = '.') {
             finalPath = field
         }
 
-
-
         if (i === n - 1) {
             if (value && value.constructor === String) {
                 obj[finalPath] = value //Util.escapeForJson(value) //.replace(/"/g, '\\\\\\\"')
@@ -116,9 +115,18 @@ export function setPropertyByPath(value, path, obj, separator = '.') {
             }
         } else {
             if (obj[finalPath] == undefined) {
+                if( !isNaN(finalPath)){
+                    if(obj.constructor !== Array){
+                        obj = objLast[finalPathLast]=[]
+                    }
+                }
                 obj[finalPath] = {}
             }
+
+            objLast = obj
+            finalPathLast =finalPath
             obj = obj[finalPath]
         }
+
     }
 }

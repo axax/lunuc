@@ -97,7 +97,7 @@ const Util = {
             return ''
         }
     },
-    toLocalISODate(d){
+    toLocalISODate(d) {
         const tzoffset = (new Date()).getTimezoneOffset() * 60000 //offset in milliseconds
         return (new Date(new Date(d) - tzoffset)).toISOString().slice(0, -1)
     },
@@ -125,25 +125,25 @@ const Util = {
 
             if (obj[prop] === undefined) {
                 // do nothing
-            }else if (obj[prop] !== null) {
+            } else if (obj[prop] !== null) {
                 if (obj[prop].constructor === Array) {
-                    if( options.emptyArray &&  obj[prop].length === 0) {
+                    if (options.emptyArray && obj[prop].length === 0) {
                         //remove empty arrays
                         delete obj[prop]
-                    }else if(options.recursiv){
-                        obj[prop].forEach(aObj=>{
-                            if( aObj && aObj.constructor===Object){
+                    } else if (options.recursiv) {
+                        obj[prop].forEach(aObj => {
+                            if (aObj && aObj.constructor === Object) {
                                 Util.removeNullValues(aObj, options)
                             }
                         })
                     }
-                }else if(options.recursiv && obj[prop].constructor === Object ){
+                } else if (options.recursiv && obj[prop].constructor === Object) {
                     Util.removeNullValues(obj[prop], options)
-                    if( options.emptyObject && Object.keys(obj[prop]).length === 0){
+                    if (options.emptyObject && Object.keys(obj[prop]).length === 0) {
                         delete obj[prop]
                     }
                 }
-            }else{
+            } else {
                 delete obj[prop]
             }
         })
@@ -234,42 +234,46 @@ const Util = {
             data.src = _app_.config.UPLOAD_URL + '/' + image._id + '/' + config.PRETTYURL_SEPERATOR + '/' + image.name
 
             if (options) {
-                let params = '?'
-                if (options.resize) {
+                let resize = options.resize, h, w, params=''
+                if (resize) {
 
-                    if (options.resize === 'auto') {
-                        if (window.innerWidth <= 800) {
-                            params += `width=800`
-                        } else if (window.innerWidth <= 1200) {
-                            params += `width=1200`
-                        }
-                    } else {
-                        if(options.resize.width) {
-                            params += `width=${options.resize.width}`
-                        }
-                        if(options.resize.height) {
-                            if (params !== '?') {
-                                params += '&'
+                    if (resize.width) {
+                        w = resize.width
+                    }
+                    if (resize.height) {
+                        h = resize.height
+                    }
+                    if (resize === 'auto' || resize.responsive) {
+                        const ww = window.innerWidth
+                        if (!w || w > ww) {
+                            if (ww <= 800) {
+                                w = 800
+                            } else if (ww) {
+                                w = 1200
                             }
-                            params += `height=${options.resize.height}`
+
+                            if (h) {
+                                h = Math.ceil((w/resize.width) * h)
+                            }
                         }
+                    }
+                    if( w ){
+                        params+=`&width=${w}`
+                    }
+                    if( h ){
+                        params+=`&height=${h}`
                     }
                 }
                 if (options.quality) {
-                    if (params !== '?') {
-                        params += '&'
-                    }
-                    params += `quality=${options.quality}`
+                    params+=`&quality=${options.quality}`
                 }
 
                 if (options.webp) {
-
-                    if (params !== '?') {
-                        params += '&'
-                    }
-                    params += 'format=webp'
+                    params+='&format=webp'
                 }
-                data.src += params
+                if (params) {
+                    data.src += '?' + params.substring(1)
+                }
             }
         } else {
             data.src = image.src
@@ -292,7 +296,7 @@ const Util = {
         }
         try {
             return new Function(DomUtil.toES5('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`')).call({context})
-        }catch (e) {
+        } catch (e) {
             console.warn(e)
             return e.message
         }

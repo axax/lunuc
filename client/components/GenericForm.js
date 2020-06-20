@@ -116,16 +116,16 @@ function TabPanel(props) {
 class GenericForm extends React.Component {
     constructor(props) {
         super(props)
-        this.state = GenericForm.getInitalState(props)
+        this.state = GenericForm.getInitalState(props,{})
     }
 
-    static getInitalState = (props) => {
+    static getInitalState = (props, prevState) => {
         const initalState = {
             updatekey: props.updatekey,
             fieldsOri: props.fields,
             fields: {},
             showTranslations: {},
-            tabValue: 0
+            tabValue: prevState.tabValue || 0
         }
         Object.keys(props.fields).map(k => {
             const field = props.fields[k]
@@ -163,7 +163,7 @@ class GenericForm extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         if (nextProps.updatekey !== prevState.updatekey || (!nextProps.updatekey && nextProps.fields !== prevState.fieldsOri)) {
             console.log('GenericForm fields changed')
-            return GenericForm.getInitalState(nextProps)
+            return GenericForm.getInitalState(nextProps, prevState)
         }
         return null
     }

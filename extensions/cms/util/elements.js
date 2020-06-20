@@ -4,11 +4,6 @@ import {
 
 const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung'
 const imageOptions = key => ({
-    [`${key}options_webp`]: {
-        type: 'Boolean',
-        label: 'WebP',
-        tab: IMAGE_OPTIMIZATION_TAB
-    },
     [`${key}options_quality`]: {
         type: 'number',
         label: 'Qualität (Wert zwischen 1 und 100)',
@@ -21,8 +16,33 @@ const imageOptions = key => ({
     [`${key}options_resize_height`]: {
         label: 'Höhe in Pixel',
         tab: IMAGE_OPTIMIZATION_TAB
+    },
+    [`${key}options_webp`]: {
+        type: 'Boolean',
+        newLine:true,
+        label: 'WebP',
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
+    [`${key}options_resize_responsive`]: {
+        type: 'Boolean',
+        label: 'Auto responsive',
+        tab: IMAGE_OPTIMIZATION_TAB
     }
 })
+
+const lazyImageOptions = key => ({
+    [`${key}lazyImage_width`]: {
+        newLine: true,
+        label: 'LazyImage: Breite in Pixel',
+        tab: IMAGE_OPTIMIZATION_TAB
+    },
+    [`${key}lazyImage_height`]: {
+        label: 'LazyImage: Höhe in Pixel',
+        tab: IMAGE_OPTIMIZATION_TAB
+    }
+})
+
+
 
 const trOptions = key => ({
     [`${key}trKey`]: {
@@ -119,7 +139,8 @@ const baseElements = [
                 uitype: 'html',
                 fullWidth: true
             },
-            ...imageOptions('p_')
+            ...imageOptions('p_'),
+            ...lazyImageOptions('$observe_')
         }
     },
     {
@@ -364,7 +385,8 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...classOptions('p_'),
-            ...imageOptions('c_0_p_')
+            ...imageOptions('c_0_p_'),
+            ...lazyImageOptions('c_0_$observe_')
         },
         defaults: {
             $inlineEditor: {
@@ -599,7 +621,9 @@ const baseElements = [
         options: {
             ...trOptions('$inlineEditor_groupOptions_$set\\_0\\_value_text_'),
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
-            ...classOptions('p_')
+            ...classOptions('p_'),
+            ...imageOptions('c_1_c_$for_c_c_1_$for_c_c_p_'),
+            ...lazyImageOptions('c_1_c_$for_c_c_1_$for_c_c_$observe_')
         }
     },
     {
@@ -903,7 +927,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
-                template: 'url(${_app_.config.UPLOAD_URL}/${_id}/-/${name})',
+                template: 'url(${_app_.config.UPLOAD_URL}/${_id}/-/${name}?format=webp&quality=85&width=1400)',
                 tab: DEFAULT_TAB
             },
             p_style_backgroundSize: {
@@ -916,12 +940,7 @@ const baseElements = [
         },
         defaults: {
             $inlineEditor: {
-                elementKey: 'background',
-                options: {
-                    c: {
-                        trKey: '__uid__'
-                    }
-                }
+                elementKey: 'background'
             },
             p: {
                 ['data-element-key']: 'background'

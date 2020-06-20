@@ -30,7 +30,7 @@ import {getJsonDomElements} from '../util/elements'
 import {ApolloClient} from '@apollo/client'
 import {withApollo} from '@apollo/react-hoc'
 import {gql} from '@apollo/client'
-import {deepMergeToFirst, deepMerge} from 'util/deepMerge'
+import {deepMergeOptional, deepMerge} from 'util/deepMerge'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 
 const {UPLOAD_URL} = config
@@ -695,7 +695,7 @@ const m = Math.max((offX+offY) / 2,100)
                     const source = getComponentByKey(_key, _json)
                     if (source) {
                         if (picker.template) {
-                            source.$c = Util.replacePlaceholders(picker.template.replace(/\\\{/g, '{'), newwindow.resultValue)
+                            source.$c = Util.replacePlaceholders(picker.template.replace(/\\\{/g, '{'),newwindow.resultValue)
                         } else {
                             if (!source.p) {
                                 source.p = {}
@@ -1180,7 +1180,6 @@ const m = Math.max((offX+offY) / 2,100)
                                               if(addChildDialog.edit && subJson.t){
                                                   comp.t = subJson.t
                                               }
-                                              let pos
 
                                               if (addChildDialog.form) {
                                                   const fields = addChildDialog.form.state.fields
@@ -1266,26 +1265,14 @@ const m = Math.max((offX+offY) / 2,100)
                                                   })
                                               }
 
-                                              // determine position to insert in parent node
-                                              if (addChildDialog.addbelow) {
-                                                  pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
-                                              } else if (addChildDialog.addabove) {
-                                                  pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
-                                              }
 
                                               if (addChildDialog.edit) {
 
                                                   Object.keys(comp).forEach((key) => {
                                                       if (!subJson[key]) {
                                                           subJson[key] = comp[key]
-                                                      } else if (subJson[key].constructor === Object) {
-                                                          deepMergeToFirst(subJson[key], comp[key])
-                                                      } else if (subJson[key].constructor === Array) {
-                                                          subJson[key].forEach((item, i) => {
-                                                              if (comp[key] && comp[key][i]) {
-                                                                  subJson[key][i] = {...item, ...comp[key][i]}
-                                                              }
-                                                          })
+                                                      } else if (subJson[key].constructor === Object || subJson[key].constructor === Array) {
+                                                          subJson[key] = deepMergeOptional({mergeArray:true, arrayCutToLast: key==='$set'}, subJson[key], comp[key])
                                                       } else {
                                                           subJson[key] = comp[key]
                                                       }
@@ -1304,7 +1291,15 @@ const m = Math.max((offX+offY) / 2,100)
                                               } else {
 
                                                   Util.removeNullValues(comp,{recursiv:true, emptyObject:true, emptyArray:true})
+
                                                   // add new
+                                                  let pos
+                                                  // determine position to insert in parent node
+                                                  if (addChildDialog.addbelow) {
+                                                      pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+                                                  } else if (addChildDialog.addabove) {
+                                                      pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
+                                                  }
                                                   this.handleAddChildClick(comp, pos)
                                               }
                                           }
