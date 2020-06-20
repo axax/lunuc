@@ -294,7 +294,7 @@ const Util = {
             return new Function(DomUtil.toES5('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`')).call({context})
         }catch (e) {
             console.warn(e)
-            return template
+            return e.message
         }
     },
     translateUrl(lang) {

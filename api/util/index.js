@@ -386,17 +386,20 @@ const Util = {
 
                         let key = i.substring(0, comparator.index)
                         let value = i.substring(comparator.index + comparator[0].length)
+                        let inDoubleQuotes = false
 
                         if (value.length > 1 && value.endsWith('"') && value.startsWith('"')) {
                             value = value.substring(1, value.length - 1)
+                            inDoubleQuotes=true
+
                         }
                         if (parts[key]) {
                             if (parts[key].constructor !== Array) {
                                 parts[key] = [parts[key]]
                             }
-                            parts[key].push({value, operator, comparator: comparator[0]})
+                            parts[key].push({value, operator, comparator: comparator[0], inDoubleQuotes})
                         } else {
-                            parts[key] = {value, operator, comparator: comparator[0]}
+                            parts[key] = {value, operator, comparator: comparator[0], inDoubleQuotes}
                         }
 
                     } else {

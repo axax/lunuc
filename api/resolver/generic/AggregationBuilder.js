@@ -245,7 +245,6 @@ export default class AggregationBuilder {
      type: of the collection field
      */
     addFilterToMatch({filterKey, filterValue, type, multi, filterOptions, match}) {
-
         let comparator = '$regex' // default comparator
         const comparatorMap = {
             ':': '$regex',
@@ -333,7 +332,13 @@ export default class AggregationBuilder {
 
         if (['$gt', '$gte', '$lt', '$lte'].indexOf(comparator) >= 0) {
             matchExpression = {[comparator]: type === 'ID'?filterValue:parseFloat(filterValue)}
-        } else {
+        } else if( comparator === '$ne'){
+            if( !filterOptions.inDoubleQuotes && filterValue==='null'){
+                matchExpression = {[comparator]: null}
+            }else {
+                matchExpression = {[comparator]: filterValue}
+            }
+        }else {
             matchExpression = {[comparator]: filterValue}
         }
 
