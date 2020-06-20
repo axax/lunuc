@@ -192,6 +192,9 @@ Add this to the file:
 
 `* 3 * * 6 certbot renew && sudo systemctl restart lunuc-client`
 
+#### List all certificates
+`certbot certificates`
+
 ### enable DNS extension
 
 1. check if port 53 is used

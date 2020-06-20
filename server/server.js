@@ -544,7 +544,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
             if (hostrule.fileMapping && hostrule.fileMapping[uri]) {
                 staticFile = path.join(__dirname, '../' + hostrule.fileMapping[uri])
-          /*  } else if (fs.existsSync(STATIC_TEMPLATE_DIR + uri)) {
+            } else if (fs.statSync(STATIC_TEMPLATE_DIR + uri).isFile()) {
 
                 console.log(STATIC_TEMPLATE_DIR + uri)
                 fs.readFile(STATIC_TEMPLATE_DIR + uri, 'utf8', function (err, data) {
@@ -565,7 +565,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 })
 
 
-                return*/
+                return
             } else {
                 staticFile = path.join(STATIC_DIR, uri)
             }
