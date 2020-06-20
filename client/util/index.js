@@ -30,7 +30,6 @@ const Util = {
             .replace(/[\r]/g, '\\r')
             .replace(/[\t]/g, '\\t')
     },
-    /* don't use arrow function use regular function instead. otherwise bind cannot be applied */
     tryCatch: function (str, ignoreError) {
         try {
             return new Function(`const {${Object.keys(this).join(',')}} = this; return ${str}`).bind(this).call()
@@ -291,7 +290,12 @@ const Util = {
             const re = new RegExp('\\$\\.' + name + '{', 'g')
             template = template.replace(re, '${')
         }
-        return new Function(DomUtil.toES5('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`')).call({context})
+        try {
+            return new Function(DomUtil.toES5('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`')).call({context})
+        }catch (e) {
+            console.warn(e)
+            return template
+        }
     },
     translateUrl(lang) {
         if (lang === _app_.lang) return

@@ -16,10 +16,6 @@ class CmsViewContainer extends React.Component {
 
     constructor(props) {
         super(props)
-
-        if (!props.dynamic && props.slug)
-            document.title = props.slug
-
         this.setUpSubsciptions(props)
         this.addResources(props)
     }

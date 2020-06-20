@@ -14,6 +14,7 @@ import finalhandler from 'finalhandler'
 import {AUTH_HEADER} from 'api/constants'
 import {decodeToken} from 'api/util/jwt'
 import sharp from 'sharp'
+import Util from '../client/util'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX} = config
 
@@ -33,13 +34,13 @@ fs.readdir(HOSTRULES_DIR, (err, filenames) => {
                 }
                 let hostrule
                 hostrule = hostrules[filename.substring(0, filename.length - 5)] = JSON.parse(content)
-                if(hostrule.certDir){
+                if (hostrule.certDir) {
                     try {
                         hostrule.certContext = tls.createSecureContext({
                             key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
                             cert: fs.readFileSync(path.join(hostrule.certDir, './cert.pem'))
                         })
-                    }catch (e) {
+                    } catch (e) {
                         console.warn(e.message)
                     }
                 }
@@ -58,6 +59,7 @@ const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 // Build dir
 const BUILD_DIR = path.join(__dirname, '../build')
 const STATIC_DIR = path.join(__dirname, '../' + config.STATIC_DIR)
+const STATIC_TEMPLATE_DIR = path.join(__dirname, '../' + config.STATIC_TEMPLATE_DIR)
 const CERT_DIR = process.env.LUNUC_CERT_DIR || __dirname
 
 
@@ -65,9 +67,9 @@ const options = {
     key: fs.readFileSync(path.join(CERT_DIR, './privkey.pem')),
     cert: fs.readFileSync(path.join(CERT_DIR, './cert.pem')),
     allowHTTP1: true,
-    SNICallback:  (domain, cb) => {
+    SNICallback: (domain, cb) => {
 
-        if(domain.startsWith('www.')){
+        if (domain.startsWith('www.')) {
             domain = domain.substring(4)
         }
         if (hostrules[domain].certContext) {
@@ -100,7 +102,7 @@ const defaultWSHandler = (err, req, socket, head) => {
 }
 
 const webSocket = function (req, socket, head) {
-    if(req.url==='/ws') {
+    if (req.url === '/ws') {
         proxy.ws(req, socket, head, {
             hostname: 'localhost',
             port: API_PORT,
@@ -140,7 +142,7 @@ const sendFile = function (req, res, headerExtra, filename) {
             fileStream.pipe(zlib.createBrotliCompress()).pipe(res)
         }
 
-    }else if (acceptEncoding.match(/\bgzip\b/)) {
+    } else if (acceptEncoding.match(/\bgzip\b/)) {
         res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
 
         if (fs.existsSync(filename + '.gz')) {
@@ -287,7 +289,45 @@ function hasHttpsWwwRedirect(host, req, res) {
     return false
 }
 
-async function handleUploadFiles(uri, parsedUrl, req, res) {
+function transcodeVideo(parsedUrl, headerExtra, res, code, fileStream) {
+    // make sure ffmpeg is install on your device
+    // brew install ffmpeg
+    //sudo apt install ffmpeg
+
+    let options = {"audioQuality": 1, "videoBitrate": 300, "fps": 15, "size": "640x?", "crf": 0}
+
+    try {
+        Object.assign(options, JSON.parse(parsedUrl.query.transcode))
+    } catch (e) {
+        console.log(e)
+    }
+    const ffprobePath = require('@ffprobe-installer/ffprobe').path,
+        ffmpeg = require('fluent-ffmpeg')
+
+    ffmpeg.setFfprobePath(ffprobePath)
+
+    delete headerExtra['Content-Length']
+    res.writeHead(code, {...headerExtra})
+
+    const outputOptions = ['-movflags isml+frag_keyframe+empty_moov+faststart']
+    if (options.crf) {
+        outputOptions.push('-crf ' + options.crf)
+    }
+    ffmpeg(fileStream)
+        .audioCodec('libmp3lame')
+        .audioQuality(options.audioQuality)
+        .videoCodec('libx264')
+        .videoBitrate(options.videoBitrate)
+        .fps(options.fps)
+        .outputOptions(outputOptions)
+        .format('mp4')
+        .size(options.size)
+        .on('start', console.log)
+        .on('error', console.error)
+        .pipe(res, {end: true})
+}
+
+async function resolveUploadedFile(uri, parsedUrl, req, res) {
     const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
 
     // remove pretty url part
@@ -312,7 +352,7 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
                 height = parseInt(parsedUrl.query.height)
 
             let format = parsedUrl.query.format
-            if( format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp')<0){
+            if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
                 format = false
             }
 
@@ -334,7 +374,7 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
                     quality = 80
                 }
 
-                let modfilename = `${filename}@${width}x${height}-${quality}${format?'-'+format:''}`
+                let modfilename = `${filename}@${width}x${height}-${quality}${format ? '-' + format : ''}`
 
                 if (!fs.existsSync(modfilename)) {
                     console.log(`modify file ${filename} to ${modfilename}`)
@@ -342,8 +382,13 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
                     try {
                         const resizedFile = await sharp(filename).resize(resizeOptions)
 
-                        if (format==='webp') {
-                            await resizedFile.webp({quality, alphaQuality: quality, lossless: false, force: true}).toFile(modfilename)
+                        if (format === 'webp') {
+                            await resizedFile.webp({
+                                quality,
+                                alphaQuality: quality,
+                                lossless: false,
+                                force: true
+                            }).toFile(modfilename)
                         } else {
                             await resizedFile.jpeg({
                                 quality,
@@ -415,47 +460,9 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
         const fileStream = fs.createReadStream(filename, streamOption)
 
 
-        if (parsedUrl.query.transcode ) {
-            // make sure ffmpeg is install on your device
-            // brew install ffmpeg
-            //sudo apt install ffmpeg
-
-            let options  = {"audioQuality":1, "videoBitrate": 300, "fps": 15, "size": "640x?", "crf":0}
-
-            try{
-                Object.assign(options,JSON.parse(parsedUrl.query.transcode))
-            }catch (e) {
-                console.log(e)
-            }
-            console.log(options)
-            const ffprobePath = require('@ffprobe-installer/ffprobe').path,
-                ffmpeg = require('fluent-ffmpeg')
-
-            ffmpeg.setFfprobePath(ffprobePath)
-
-            delete headerExtra['Content-Length']
-            res.writeHead(code, {...headerExtra})
-
-            const outputOptions = ['-movflags isml+frag_keyframe+empty_moov+faststart']
-            if( options.crf ){
-                outputOptions.push('-crf '+options.crf)
-            }
-            ffmpeg(fileStream)
-                .audioCodec('libmp3lame')
-                .audioQuality(options.audioQuality)
-                .videoCodec('libx264')
-                .videoBitrate(options.videoBitrate)
-                .fps(options.fps)
-                .outputOptions(outputOptions)
-                .format('mp4')
-                .size(options.size)
-                .on('start', console.log)
-                .on('error', console.error)
-                .pipe(res,  { end: true })
-
-
-
-        }else{
+        if (parsedUrl.query.transcode) {
+            transcodeVideo(parsedUrl, headerExtra, res, code, fileStream)
+        } else {
             res.writeHead(code, {...headerExtra})
             fileStream.pipe(res)
         }
@@ -467,7 +474,7 @@ async function handleUploadFiles(uri, parsedUrl, req, res) {
 }
 
 // Initialize http api
-const app = (USE_HTTPX ? httpx : http).createServer(options, async function(req, res) {
+const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
     const host = getHostFromHeaders(req.headers)
 
@@ -525,7 +532,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function(req,
 
 
         } else if (uri.startsWith(UPLOAD_URL + '/')) {
-            await handleUploadFiles(uri, parsedUrl, req, res)
+            await resolveUploadedFile(uri, parsedUrl, req, res)
         } else {
 
             // check with and without www
@@ -537,9 +544,32 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function(req,
 
             if (hostrule.fileMapping && hostrule.fileMapping[uri]) {
                 staticFile = path.join(__dirname, '../' + hostrule.fileMapping[uri])
+            } else if (fs.existsSync(STATIC_TEMPLATE_DIR + uri)) {
+
+                console.log(STATIC_TEMPLATE_DIR + uri)
+                fs.readFile(STATIC_TEMPLATE_DIR + uri, 'utf8', function (err, data) {
+                    console.log(data)
+
+                    const ext = path.extname(uri).split('.')[1]
+                    const mimeType = MimeType.detectByExtension(ext)
+
+                    const headerExtra = {
+                        'Cache-Control': 'public, max-age=31536000',
+                        'Content-Type': mimeType,
+                        'Last-Modified': new Date().toUTCString(),
+                        ...hostrule.headers[uri]
+                    }
+                    res.writeHead(200, {'Content-Type': 'text/plain'})
+                    res.write(Util.replacePlaceholders(data, {parsedUrl, host, config}))
+                    res.end()
+                })
+
+
+                return
             } else {
                 staticFile = path.join(STATIC_DIR, uri)
             }
+
 
             fs.stat(staticFile, function (errStats, staticStats) {
                 if (errStats || !staticStats.isFile()) {
@@ -584,7 +614,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function(req,
 })
 
 
-
 let stream = require('./stream')
 
 let ioHttp = require('socket.io')(app.http)
@@ -592,7 +621,6 @@ ioHttp.on('connection', stream)
 
 let ioHttps = require('socket.io')(app.https)
 ioHttps.on('connection', stream)
-
 
 
 //

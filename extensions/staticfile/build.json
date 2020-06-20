@@ -21,6 +21,10 @@
           "type": "Boolean"
         },
         {
+          "name": "template",
+          "type": "Boolean"
+        },
+        {
           "name": "content",
           "uitype": "editor"
         }

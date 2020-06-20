@@ -134,6 +134,7 @@
     "ADMIN_BASE_URL": "/admin",
     "STATIC_DIR": "/static",
     "STATIC_PRIVATE_DIR": "/static_private",
+    "STATIC_TEMPLATE_DIR": "/static_template",
     "BACKUP_DIR": "/backups",
     "BACKUP_URL": "/backups",
     "UPLOAD_DIR": "/uploads",

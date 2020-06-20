@@ -487,6 +487,7 @@ class CmsViewEditorContainer extends React.Component {
                         <CodeEditor showFab
                                     lineNumbers
                                     fileSplit
+                                    height={800}
                                     fileIndex={settings.styleFileIndex}
                                     onFileChange={this.handleSettingChange.bind(this, 'styleFileIndex')}
                                     type="css"

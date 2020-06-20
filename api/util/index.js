@@ -5,9 +5,11 @@ import fs from 'fs'
 import Cache from 'util/cache'
 import * as os from 'os'
 import {
-    CAPABILITY_MANAGE_KEYVALUES
+    CAPABILITY_MANAGE_KEYVALUES,
+    CAPABILITY_MANAGE_OTHER_USERS
 } from 'util/capabilities'
 import {ApiError} from '../error'
+import {getType} from '../../util/types'
 
 const PASSWORD_MIN_LENGTH = 5
 
@@ -250,6 +252,16 @@ const Util = {
             }
         }
         return false
+    },
+    userCanSubscribe: async (db, context, type, payload)=>{
+        const typeDefinition = getType(type)
+        if( typeDefinition.access && typeDefinition.access.subscribe ){
+            return Util.userHasCapability(db, context, typeDefinition.access.subscribe)
+        }else{
+            return Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+        }
+        return false
+
     },
     getUserRoles: async (db, id) => {
         const cacheKeyUserRole = 'UserRole' + id

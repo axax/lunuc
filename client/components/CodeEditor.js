@@ -133,7 +133,7 @@ class CodeEditor extends React.Component {
     }
 
     render() {
-        const {onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
+        const {height,onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
         const {stateError, showFileSplit, fileIndex} = this.state
 
         const options = {
@@ -259,7 +259,7 @@ class CodeEditor extends React.Component {
                 })}</div>
                 : null}
             <CodeMirror
-                className={classes.codemirror}
+                className={!height && classes.codemirror}
                 autoCursor={false}
                 key="editor"
                 editorDidMount={editor => {
@@ -267,7 +267,9 @@ class CodeEditor extends React.Component {
                     if (scrollPosition) {
                         editor.scrollTo(scrollPosition.left, scrollPosition.top)
                     }
-                    //  editor.setSize(width, height);
+                    if( height) {
+                        editor.setSize(null, 800);
+                    }
                 }}
                 value={value}
                 options={options}
@@ -333,6 +335,7 @@ class CodeEditor extends React.Component {
 CodeEditor.propTypes = {
     lineNumbers: PropTypes.bool,
     readOnly: PropTypes.bool,
+    height: PropTypes.number,
     onChange: PropTypes.func,
     error: PropTypes.any,
     onError: PropTypes.func,

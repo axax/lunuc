@@ -289,7 +289,7 @@ function gensrcExtension(name, options) {
 
 
         let schema = GENSRC_HEADER + 'export default `\n'
-        let resolver = GENSRC_HEADER + `import {ObjectId} from 'mongodb'\nimport {pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
+        let resolver = GENSRC_HEADER + `import Util from 'api/util'\nimport {ObjectId} from 'mongodb'\nimport {pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
         resolver += `import GenericResolver from 'api/resolver/generic/genericResolver'\n\nexport default db => ({\n`
         let resolverQuery = '\tQuery:{\n'
         let resolverMutation = '\tMutation:{\n'
@@ -438,10 +438,10 @@ function gensrcExtension(name, options) {
             return GenericResolver.deleteEnities(db, context, '${type.name}', {_id})
         },\n`
                 resolverSubscription += `       subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),
-            (payload, context) => {
+            async (payload, context) => {
                 if( payload ) {
                     //return payload.userId === context.id
-                    return true
+                    return await Util.userCanSubscribe(db,context,'${type.name}',payload)
                 }
             }
         ),\n`
