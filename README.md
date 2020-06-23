@@ -4,8 +4,7 @@
 
 __This is a boilerplate / app template / framework. A full-stack setup to build progressive web apps and to play around with the latest web technologies.__
 
-This demo app is also deployed on heroku 
-https://lunuc.herokuapp.com/
+https://www.lunuc.com/
 
 *Here is a list with the main features:*
 * React for UI
@@ -64,6 +63,25 @@ You need to pass the environment variable MONGO_URL with the path to the mongodb
  
 Now the app should be accessable through the port 49160
 http://localhost:49160/
+
+### Install on ubuntu
+
+#### Install requirements
+`sudo apt install git-all`
+
+`sudo apt install nodejs`
+
+`sudo apt install npm`
+
+#### Clone repo into /opt
+`cd /opt`
+
+`sudo git clone https://github.com/axax/lunuc.git`
+
+#### Run install script
+`sudo chmod +x /opt/lunuc/shell/install.sh`
+
+`sudo /opt/lunuc/shell/install.sh`
 
 ## Implementation
 
