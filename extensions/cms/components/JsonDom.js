@@ -17,7 +17,7 @@ import {
 } from 'ui'
 import {Link, Redirect} from 'react-router-dom'
 import JsonDomInput from './JsonDomInput'
-import {deepMergeConcatArrays} from 'util/deepMerge'
+import {deepMergeOptional} from 'util/deepMerge'
 import {preprocessCss} from '../util/cssPreprocessor'
 import {parseStyles} from 'client/util/style'
 import elementWatcher from './elementWatcher'
@@ -1172,7 +1172,7 @@ class JsonDom extends React.Component {
             if (res.cmsPage && res.cmsPage.resolvedData) {
                 const newData = JSON.parse(res.cmsPage.resolvedData)
 
-                this.resolvedDataJson = deepMergeConcatArrays(this.resolvedDataJson, newData)
+                this.resolvedDataJson = deepMergeOptional({mergeArray:true}, this.resolvedDataJson, newData)
                 scope.fetchingMore = false
 
                 if (this._ismounted)

@@ -61,11 +61,19 @@ const BUILD_DIR = path.join(__dirname, '../build')
 const STATIC_DIR = path.join(__dirname, '../' + config.STATIC_DIR)
 const STATIC_TEMPLATE_DIR = path.join(__dirname, '../' + config.STATIC_TEMPLATE_DIR)
 const CERT_DIR = process.env.LUNUC_CERT_DIR || __dirname
-
+const PKEY_FILE_DIR = path.join(CERT_DIR, './privkey.pem')
+const CERT_FILE_DIR = path.join(CERT_DIR, './cert.pem')
+let pkey, cert
+if(fs.existsSync(pkey)){
+    pkey = fs.readFileSync(PKEY_FILE_DIR)
+}
+if(fs.existsSync(pkey)){
+    cert = fs.readFileSync(CERT_FILE_DIR)
+}
 
 const options = {
-    key: fs.readFileSync(path.join(CERT_DIR, './privkey.pem')),
-    cert: fs.readFileSync(path.join(CERT_DIR, './cert.pem')),
+    key: pkey,
+    cert,
     allowHTTP1: true,
     SNICallback: (domain, cb) => {
 

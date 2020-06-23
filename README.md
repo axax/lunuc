@@ -69,7 +69,11 @@ http://localhost:49160/
 #### Install requirements
 `sudo apt install git-all`
 
-`sudo apt install nodejs`
+`sudo apt -y update && sudo apt -y upgrade`
+
+`curl -sL https://deb.nodesource.com/setup_14.x | sudo bash -`
+
+`sudo apt-get install -y nodejs`
 
 `sudo apt install npm`
 
@@ -82,6 +86,26 @@ http://localhost:49160/
 `sudo chmod +x /opt/lunuc/shell/install.sh`
 
 `sudo /opt/lunuc/shell/install.sh`
+
+#### Edit config
+`sudo vi /etc/lunuc/buildconfig.json`
+
+#### Edit services and enviroment
+`sudo vi /etc/systemd/system/lunuc-api.service`
+
+`sudo vi /etc/systemd/system/lunuc-client.service`
+
+#### Start
+`sudo chmod +x /opt/lunuc/shell/start.sh`
+
+`sudo chmod +x /opt/lunuc/shell/start-client.sh`
+
+`sudo chmod +x /opt/lunuc/shell/api-client.sh`
+
+`sudo chmod 777 /opt/lunuc`
+
+`sudo /opt/lunuc/shell/start.sh`
+
 
 ## Implementation
 
