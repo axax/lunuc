@@ -212,6 +212,9 @@ create lunuc-api.service file under /etc/systemd/system
 `sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080`
 `sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 8080`
 
+### if interface is not eth0 check for other interfaces
+`netstat -i`
+
 #### List port forwarding
 `sudo iptables -t nat -vnL`
 
@@ -219,6 +222,8 @@ create lunuc-api.service file under /etc/systemd/system
 `iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 8080`
 `iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8080`
 
+##### Remove iptables entry
+`sudo iptables -t nat -D PREROUTING 1`
 ### Create cert with letsencrypt
 
 `sudo certbot certonly --manual`

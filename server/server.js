@@ -257,7 +257,7 @@ function hasHttpsWwwRedirect(host, req, res) {
         }
 
         if (!config.DEV_MODE && this.constructor.name === 'Server') {
-            if (process.env.LUNUC_FORCE_HTTPS) {
+            if (process.env.LUNUC_FORCE_HTTPS==='true') {
 
                 const agent = req.headers['user-agent'], agentParts = agent ? agent.split(' ') : []
 
