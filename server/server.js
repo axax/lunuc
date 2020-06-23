@@ -64,10 +64,10 @@ const CERT_DIR = process.env.LUNUC_CERT_DIR || __dirname
 const PKEY_FILE_DIR = path.join(CERT_DIR, './privkey.pem')
 const CERT_FILE_DIR = path.join(CERT_DIR, './cert.pem')
 let pkey, cert
-if(fs.existsSync(pkey)){
+if(fs.existsSync(PKEY_FILE_DIR)){
     pkey = fs.readFileSync(PKEY_FILE_DIR)
 }
-if(fs.existsSync(pkey)){
+if(fs.existsSync(CERT_FILE_DIR)){
     cert = fs.readFileSync(CERT_FILE_DIR)
 }
 
