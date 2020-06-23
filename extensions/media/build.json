@@ -20,6 +20,7 @@
           "name": "group",
           "type": "MediaGroup",
           "multi": true,
+          "index": 1,
           "tab": "Allgemein"
         },
         {

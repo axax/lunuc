@@ -1118,18 +1118,17 @@ class JsonDom extends React.Component {
             column=0
         }else {
             const line = e.stack.split('\n')[1], matches = line.match(/:(\d*):(\d*)/)
-            console.log(line,matches)
             if (matches && matches.length > 2) {
                 lineNrStr = matches[1]
                 column = matches[2]
             } else {
-                lineNrStr = column = 0
+                lineNrStr = column = offset
             }
         }
         if (lineNrStr !== undefined) {
             const lineNr = parseInt(lineNrStr)
             const cbLines = code.split('\n'),
-                start = Math.max(0, lineNr - 3),
+                start = Math.max(offset, lineNr - 3),
                 end = Math.min(cbLines.length, lineNr + 4)
             for (let i = start; i < end; i++) {
 

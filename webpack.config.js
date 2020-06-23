@@ -30,7 +30,13 @@ const EXCLUDE_FROM_BUILD = [
 
 const INCLUDE_IN_BUILD = []
 
-const APP_CONFIG = require('./buildconfig.json')
+let APP_CONFIG
+
+if( fs.existsSync('/etc/lunuc/buildconfig.json')){
+    APP_CONFIG = require('/etc/lunuc/buildconfig.json')
+}else{
+    APP_CONFIG = require('./buildconfig.json')
+}
 const PACKAGE_JSON = require('./package.json')
 
 

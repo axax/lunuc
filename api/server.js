@@ -106,7 +106,8 @@ export const start = (done) => {
             // fix graphql limit of 100kb body size
             app.use(bodyParser.json({ limit: '100mb' }))
 
-            app.use('/graphql', (req, res, next) => {
+            // only allow post methode
+            app.post('/graphql', (req, res, next) => {
 
                 //var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 //console.log(ip)*

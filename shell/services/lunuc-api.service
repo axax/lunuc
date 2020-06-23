@@ -1,0 +1,20 @@
+[Unit]
+Description=Lunuc Api
+
+[Service]
+Environment="PATH=/root/.nvm/versions/node/v13.11.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+Environment="LUNUC_MONGO_URL=mongodb+srv://xxx:xxx@cluster0-ullnt.gcp.mongodb.net/lunuc?retryWrites=true&w=majority"
+Environment="LUNUC_ALPHA_VANTAGE_API_KEY=xxx"
+Environment="AWS_KEY=xxx"
+Environment="AWS_SECRET=xxx"
+Environment="GOOGLE_API_KEY=xxx"
+Environment="LUNUC_UPLOAD_DIR=/../../srv/uploads"
+Environment="LUNUC_SECRET_KEY=xxx"
+Environment="LUNUC_GROUP=active"
+WorkingDirectory=/opt/lunuc/
+ExecStart=/opt/lunuc/shell/start-api.sh
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
