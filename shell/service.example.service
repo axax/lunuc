@@ -8,7 +8,6 @@ Environment="LUNUC_ALPHA_VANTAGE_API_KEY=xxxxx"
 Environment="AWS_KEY=xxxxx"
 Environment="AWS_SECRET=xxxx"
 Environment="GOOGLE_API_KEY=xxxx"
-Environment="LUNUC_UPLOAD_DIR=/../../srv/uploads"
 Environment="LUNUC_SECRET_KEY=xxxx"
 WorkingDirectory=/opt/lunuc/
 ExecStart=/opt/lunuc/shell/start-api.sh

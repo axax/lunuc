@@ -51,9 +51,6 @@ const APP_VALUES = {
     ...APP_CONFIG.options
 }
 
-if (process.env.LUNUC_UPLOAD_DIR) {
-    APP_VALUES.UPLOAD_DIR = process.env.LUNUC_UPLOAD_DIR
-}
 if (APP_CONFIG.extensions) {
     for (const extensionName in APP_CONFIG.extensions) {
         if (APP_CONFIG.extensions[extensionName].active) {

@@ -392,7 +392,6 @@ LUNUC_CERT_DIR --> SSL cert location
 LUNUC_API_PORT = API_PORT --> Graphql API port
 LUNUC_PORT = PORT --> Webserver port
 LUNUC_GROUP --> Is used for execution rule
-LUNUC_UPLOAD_DIR --> Location of uploaded files default is ./uploads
 AWS_SECRET --> Amason web service secret key
 GOOGLE_API_KEY --> Google cloud key
 LUNUC_ALPHA_VANTAGE_API_KEY --> Alpha vantage spi key

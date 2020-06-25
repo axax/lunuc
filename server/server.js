@@ -28,7 +28,8 @@ const loadHostRules = dir => {
         }
         filenames.forEach((filename) => {
             if (filename.endsWith('.json')) {
-                fs.readFile(dir + filename, 'utf-8', function (err, content) {
+                const absFilePaht = path.join(dir, filename)
+                fs.readFile(absFilePaht, 'utf-8', function (err, content) {
                     if (err) {
                         return
                     }
@@ -273,7 +274,7 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
         let indexfile
 
         if (hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
-            indexfile = hostrule.basedir + hostrule.fileMapping['/index.html']
+            indexfile = path.join(hostrule.basedir, hostrule.fileMapping['/index.html'])
         } else {
             // default index
             indexfile = path.join(BUILD_DIR, '/index.min.html')
@@ -590,7 +591,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             let staticFile
 
             if (hostrule.fileMapping && hostrule.fileMapping[uri]) {
-                staticFile = path.join(hostrule.basedir + hostrule.fileMapping[uri])
+                staticFile = path.join(hostrule.basedir, hostrule.fileMapping[uri])
             } else if (uri.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + uri)) {
 
                 fs.readFile(STATIC_TEMPLATE_DIR + uri, 'utf8', function (err, data) {

@@ -2,6 +2,5 @@
   "fileMapping": {
     "/index.html": "/fcsg-leuchte.ch/index.html"
   },
-  "forceWWW": true,
-  "certDir": "/etc/letsencrypt/live/fcsg-leuchte.ch"
+  "forceWWW": true
 }
