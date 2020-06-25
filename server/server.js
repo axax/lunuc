@@ -273,7 +273,7 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
         let indexfile
 
         if (hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
-            indexfile = path.join(__dirname, '../' + hostrule.fileMapping['/index.html'])
+            indexfile = hostrule.basedir + hostrule.fileMapping['/index.html']
         } else {
             // default index
             indexfile = path.join(BUILD_DIR, '/index.min.html')
