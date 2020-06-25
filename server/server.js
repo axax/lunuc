@@ -16,38 +16,50 @@ import {decodeToken} from 'api/util/jwt'
 import sharp from 'sharp'
 import Util from '../client/util'
 
-const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX} = config
+const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, HOSTRULES_ABSPATH, WEBROOT_ABSPATH} = config
 
 // load hostrules
-const HOSTRULES_DIR = path.join(__dirname, '../hostrules/')
 const hostrules = {}
 
-fs.readdir(HOSTRULES_DIR, (err, filenames) => {
-    if (err) {
-        return;
-    }
-    filenames.forEach((filename) => {
-        if (filename.endsWith('.json')) {
-            fs.readFile(HOSTRULES_DIR + filename, 'utf-8', function (err, content) {
-                if (err) {
-                    return
-                }
-                let hostrule
-                hostrule = hostrules[filename.substring(0, filename.length - 5)] = JSON.parse(content)
-                if (hostrule.certDir) {
-                    try {
-                        hostrule.certContext = tls.createSecureContext({
-                            key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
-                            cert: fs.readFileSync(path.join(hostrule.certDir, './cert.pem'))
-                        })
-                    } catch (e) {
-                        console.warn(e.message)
-                    }
-                }
-            })
+const loadHostRules = dir => {
+    fs.readdir(dir, (err, filenames) => {
+        if (err) {
+            return;
         }
+        filenames.forEach((filename) => {
+            if (filename.endsWith('.json')) {
+                fs.readFile(dir + filename, 'utf-8', function (err, content) {
+                    if (err) {
+                        return
+                    }
+                    const domainname = filename.substring(0, filename.length - 5)
+                    let hostrule
+                    hostrule = hostrules[domainname] = JSON.parse(content)
+
+                    hostrule.basedir = dir
+
+                    if (!hostrule.certDir) {
+                        hostrule.certDir = '/etc/letsencrypt/live/' + domainname
+                    }
+
+                    if (hostrule.certDir) {
+                        try {
+                            hostrule.certContext = tls.createSecureContext({
+                                key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
+                                cert: fs.readFileSync(path.join(hostrule.certDir, './cert.pem'))
+                            })
+                        } catch (e) {
+                            console.warn(e.message)
+                        }
+                    }
+                })
+            }
+        })
     })
-})
+}
+loadHostRules(path.join(__dirname, '../hostrules/'))
+loadHostRules(HOSTRULES_ABSPATH)
+
 
 // Use Httpx
 const USE_HTTPX = process.env.LUNUC_HTTPX === 'false' ? false : true
@@ -64,10 +76,10 @@ const CERT_DIR = process.env.LUNUC_CERT_DIR || __dirname
 const PKEY_FILE_DIR = path.join(CERT_DIR, './privkey.pem')
 const CERT_FILE_DIR = path.join(CERT_DIR, './cert.pem')
 let pkey, cert
-if(fs.existsSync(PKEY_FILE_DIR)){
+if (fs.existsSync(PKEY_FILE_DIR)) {
     pkey = fs.readFileSync(PKEY_FILE_DIR)
 }
-if(fs.existsSync(CERT_FILE_DIR)){
+if (fs.existsSync(CERT_FILE_DIR)) {
     cert = fs.readFileSync(CERT_FILE_DIR)
 }
 
@@ -132,6 +144,33 @@ const sendError = (res, code) => {
     res.write(`${code} ${msg}\n`)
     res.end()
 }
+
+
+const sendFileFromDir = (req, res, filePath, headers) => {
+    let stats
+    try {
+        stats = fs.statSync(filePath)
+    } catch (e) {
+        return false
+    }
+    if (stats.isFile()) {
+
+        // static file
+        const ext = path.extname(filePath).split('.')[1]
+        const mimeType = MimeType.detectByExtension(ext),
+            headerExtra = {
+                'Cache-Control': 'public, max-age=31536000',
+                'Content-Type': mimeType,
+                'Last-Modified': stats.mtime.toUTCString(),
+                ...headers
+            }
+        sendFile(req, res, headerExtra, filePath);
+
+        return true
+    }
+    return false
+}
+
 
 const sendFile = function (req, res, headerExtra, filename) {
     let acceptEncoding = req.headers['accept-encoding']
@@ -257,7 +296,7 @@ function hasHttpsWwwRedirect(host, req, res) {
         }
 
         if (!config.DEV_MODE && this.constructor.name === 'Server') {
-            if (process.env.LUNUC_FORCE_HTTPS==='true') {
+            if (process.env.LUNUC_FORCE_HTTPS === 'true') {
 
                 const agent = req.headers['user-agent'], agentParts = agent ? agent.split(' ') : []
 
@@ -551,8 +590,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             let staticFile
 
             if (hostrule.fileMapping && hostrule.fileMapping[uri]) {
-                staticFile = path.join(__dirname, '../' + hostrule.fileMapping[uri])
-            } else if (uri.length>1 && fs.existsSync(STATIC_TEMPLATE_DIR + uri)) {
+                staticFile = path.join(hostrule.basedir + hostrule.fileMapping[uri])
+            } else if (uri.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + uri)) {
 
                 fs.readFile(STATIC_TEMPLATE_DIR + uri, 'utf8', function (err, data) {
                     const ext = path.extname(uri).split('.')[1]
@@ -575,45 +614,17 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 staticFile = path.join(STATIC_DIR, uri)
             }
 
+            const headers = hostrule.headers[uri]
 
-            fs.stat(staticFile, function (errStats, staticStats) {
-                if (errStats || !staticStats.isFile()) {
-                    // it is not a static file so check in build dir
+            if (!sendFileFromDir(req, res, staticFile, headers)) {
 
-                    const filename = path.join(BUILD_DIR, uri)
-                    const ext = path.extname(filename).split('.')[1]
-                    if (ext) {
-                        fs.stat(filename, function (err, stats) {
-                            if (err || !stats.isFile()) {
-                                console.log('not exists: ' + filename)
-                                sendIndexFile(req, res, uri, hostrule, host)
-                            } else {
-                                const mimeType = MimeType.detectByExtension(ext),
-                                    headerExtra = {
-                                        'Cache-Control': 'public, max-age=31536000',
-                                        'Content-Type': mimeType,
-                                        'Last-Modified': stats.mtime.toUTCString(),
-                                        ...hostrule.headers[uri]
-                                    }
-                                sendFile(req, res, headerExtra, filename);
-                            }
-                        })
-                    } else {
+                if (!sendFileFromDir(req, res, WEBROOT_ABSPATH + uri, headers)) {
+                    if (!sendFileFromDir(req, res, BUILD_DIR + uri, headers)) {
+                        console.log('not exists: ' + uri)
                         sendIndexFile(req, res, uri, hostrule, host)
                     }
-                } else {
-                    // static file
-                    const ext = path.extname(staticFile).split('.')[1]
-                    const mimeType = MimeType.detectByExtension(ext),
-                        headerExtra = {
-                            'Cache-Control': 'public, max-age=31536000',
-                            'Content-Type': mimeType,
-                            'Last-Modified': staticStats.mtime.toUTCString(),
-                            ...hostrule.headers[uri]
-                        }
-                    sendFile(req, res, headerExtra, staticFile);
                 }
-            })
+            }
         }
     }
 })

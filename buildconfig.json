@@ -129,6 +129,8 @@
     }
   ],
   "options": {
+    "HOSTRULES_ABSPATH": "/etc/lunuc/hostrules",
+    "WEBROOT_ABSPATH": "/srv/lunuc",
     "APOLLO_CACHE": false,
     "DEBUG": true,
     "ADMIN_BASE_URL": "/admin",
