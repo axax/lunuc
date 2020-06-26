@@ -70,7 +70,7 @@ export default db => ({
 
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
-            let cmsPages = await getCmsPage({db, context, slug, _version, headers, editmode})
+            let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules:!dynamic, headers, editmode})
             if (!cmsPages.results || cmsPages.results.length === 0) {
 
                 Hook.call('trackUser', {req, event: '404', slug, db, context, data: query})

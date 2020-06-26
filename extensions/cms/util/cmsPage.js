@@ -8,7 +8,7 @@ import {loadAllHostrules} from 'util/hostrules'
 const hostrules = loadAllHostrules(false)
 
 
-export const getCmsPage = async ({db, context, slug, editmode, dynamic, _version, headers}) => {
+export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _version, headers}) => {
     let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
 
     if (host && host.startsWith('www.')) {
@@ -16,7 +16,7 @@ export const getCmsPage = async ({db, context, slug, editmode, dynamic, _version
     }
 
     let modSlug
-    if (!dynamic && hostrules[host] && hostrules[host].slugContext && slug.indexOf(hostrules[host].slugContext)<0 ) {
+    if (checkHostrules && hostrules[host] && hostrules[host].slugContext && slug.indexOf(hostrules[host].slugContext)<0 ) {
         modSlug = hostrules[host].slugContext + (slug.length > 0 ? '/' : '') + slug
     }else{
         modSlug = slug

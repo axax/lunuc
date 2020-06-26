@@ -44,7 +44,7 @@ Hook.on('createUserRoles', ({userRoles}) => {
 
 Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
 
-    let cmsPages = await getCmsPage({db, context, slug})
+    let cmsPages = await getCmsPage({db, context, slug, checkHostrules: false})
     if (!cmsPages.results) {
         throw new Error(`Template ${slug} doesn't exist`)
     }
