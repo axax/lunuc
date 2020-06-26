@@ -228,6 +228,7 @@ create lunuc-api.service file under /etc/systemd/system
 
 `sudo certbot certonly --manual`
 
+
 ### Add new domain to certificate (Ubuntu)
 
 `sudo certbot certonly --cert-name example.com -d m.example.com,www.m.example.com`

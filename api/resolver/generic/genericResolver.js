@@ -51,7 +51,7 @@ const postConvertData = (data, typeName) => {
                         hasField = true
 
                         // TODO: with mongodb 4 this can be removed as convert and toString is supported
-                        if (item[field.name] && item[field.name].constructor === Object) {
+                        if (item[field.name] && (item[field.name].constructor === Object || item[field.name].constructor === Array)) {
                             console.log(`convert ${typeName}.${field.name} to string`)
                             item[field.name] = JSON.stringify(item[field.name])
                         }

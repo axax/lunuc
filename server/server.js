@@ -1,7 +1,6 @@
 import proxy from 'http2-proxy'
 import httpx from './httpx'
 import http from 'http'
-import tls from 'tls'
 import url from 'url'
 import path from 'path'
 import net from 'net'
@@ -15,51 +14,11 @@ import {AUTH_HEADER} from 'api/constants'
 import {decodeToken} from 'api/util/jwt'
 import sharp from 'sharp'
 import Util from '../client/util'
+import {loadAllHostrules} from '../util/hostrules'
 
-const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, HOSTRULES_ABSPATH, WEBROOT_ABSPATH} = config
+const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 
-// load hostrules
-const hostrules = {}
-
-const loadHostRules = dir => {
-    fs.readdir(dir, (err, filenames) => {
-        if (err) {
-            return;
-        }
-        filenames.forEach((filename) => {
-            if (filename.endsWith('.json')) {
-                const absFilePaht = path.join(dir, filename)
-                fs.readFile(absFilePaht, 'utf-8', function (err, content) {
-                    if (err) {
-                        return
-                    }
-                    const domainname = filename.substring(0, filename.length - 5)
-                    let hostrule
-                    hostrule = hostrules[domainname] = JSON.parse(content)
-
-                    hostrule.basedir = dir
-
-                    if (!hostrule.certDir) {
-                        hostrule.certDir = '/etc/letsencrypt/live/' + domainname
-                    }
-
-                    if (hostrule.certDir) {
-                        try {
-                            hostrule.certContext = tls.createSecureContext({
-                                key: fs.readFileSync(path.join(hostrule.certDir, './privkey.pem')),
-                                cert: fs.readFileSync(path.join(hostrule.certDir, './cert.pem'))
-                            })
-                        } catch (e) {
-                            console.warn(e.message)
-                        }
-                    }
-                })
-            }
-        })
-    })
-}
-loadHostRules(path.join(__dirname, '../hostrules/'))
-loadHostRules(HOSTRULES_ABSPATH)
+const hostrules = loadAllHostrules(true)
 
 
 // Use Httpx
@@ -471,9 +430,9 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
         let ext = parsedUrl.query.ext
 
         if (!ext) {
-            const pos = filename.lastIndexOf('.')
+            const pos = uri.lastIndexOf('.')
             if (pos >= 0) {
-                ext = filename.substring(pos + 1).toLocaleLowerCase()
+                ext = uri.substring(pos + 1).toLocaleLowerCase()
             }
         }
         if (ext) {

@@ -732,7 +732,7 @@ class CmsViewEditorContainer extends React.Component {
                                     if (o[key] && o[key].constructor === String) {
                                         config.LANGUAGES.forEach(lang => {
                                             if (lang !== config.DEFAULT_LANGUAGE) {
-                                                const text = o[key].replace(/\\n/g, '\n')
+                                                const text = o[key].replace(/\\n/g, '\n').replace(/%(\w+)%/g,'@_$1_')
                                                 this.props.client.query({
                                                     fetchPolicy: 'cache-first',
                                                     query: gql`query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}`,
@@ -742,7 +742,8 @@ class CmsViewEditorContainer extends React.Component {
                                                         fromIso: config.DEFAULT_LANGUAGE
                                                     },
                                                 }).then((res) => {
-                                                    setPropertyByPath(res.data.translate.text, lang + path + '.' + key, base)
+                                                    const newText = res.data.translate.text.replace(/@_(\w+)_/g,'%$1%')
+                                                    setPropertyByPath(newText, lang + path + '.' + key, base)
                                                     saveResolver()
                                                 })
 

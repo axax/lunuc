@@ -67,7 +67,21 @@ export default () => {
     Hook.on('TypeTableAction', function ({type, actions}) {
         if (type === 'Media') {
 
-            actions.unshift({
+            actions.unshift(
+                {
+                    name: 'Find references for all medias', onClick: () => {
+                        this.props.client.query({
+                            fetchPolicy: 'network-only',
+                            forceFetch: true,
+                            query: gql('{findReferencesForMedia{status}}')
+                        }).then(response => {
+                            if (response.data && response.data.findReferencesForMedia) {
+                                this.setState({simpleDialog: {children: response.data.findReferencesForMedia.status}})
+                            }
+                        })
+                    }
+                },
+                {
                     name: 'CleanUp Medias', onClick: () => {
                         this.props.client.query({
                             fetchPolicy: 'network-only',

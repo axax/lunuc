@@ -2,5 +2,6 @@
   "fileMapping": {
     "/index.html": "/fcsg-leuchte.ch/index.html"
   },
-  "forceWWW": true
+  "forceWWW": true,
+  "slugContext": "fluora/fcsg"
 }

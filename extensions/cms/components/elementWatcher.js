@@ -53,7 +53,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
             if (!initialVisible && !madeVisible && !hasLoaded[tagSrc]) {
                 const {_tagName,_options,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, inlineSvg, options, id,_inlineEditor, ...rest} = eleProps
                 const lazyImage = watchOptions.lazyImage
-                if(lazyImage && lazyImage.width){
+                if(lazyImage ){
                     const tmpSrc = Util.getImageObject(eleProps.src, {
                         quality:lazyImage.quality || 25,
                         resize:{

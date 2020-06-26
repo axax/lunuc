@@ -37,6 +37,11 @@
           "uitype": "json"
         },
         {
+          "name": "references",
+          "type": "Object",
+          "uitype": "json"
+        },
+        {
           "name": "size",
           "type": "Float"
         },

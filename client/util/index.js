@@ -251,8 +251,10 @@ const Util = {
                         if (!w || w > ww) {
                             if (ww <= 800) {
                                 w = 800
-                            } else if (ww) {
+                            } else if (ww <= 1200) {
                                 w = 1200
+                            }else{
+                                w = 1400
                             }
 
                             if (h) {

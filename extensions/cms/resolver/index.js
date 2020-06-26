@@ -43,6 +43,7 @@ export default db => ({
                 fields.push('script')
                 fields.push('serverScript')
                 fields.push('template')
+                fields.push('style')
             }
 
             const data = await GenericResolver.entities(db, context, 'CmsPage', fields, {

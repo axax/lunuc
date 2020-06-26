@@ -57,7 +57,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@apollo/client": "^3.0.0-rc.8",
+    "@apollo/client": "^3.0.0-rc.9",
     "@apollo/link-context": "^2.0.0-beta.3",
     "@apollo/link-error": "^2.0.0-beta.3",
     "@apollo/link-ws": "^2.0.0-beta.3",
@@ -120,7 +120,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.1.1",
     "@google-cloud/translate": "^6.0.0",
-    "aws-sdk": "^2.704.0",
+    "aws-sdk": "^2.705.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",
     "fluent-ffmpeg": "^2.1.2",

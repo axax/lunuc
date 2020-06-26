@@ -3,12 +3,20 @@ import Util from 'api/util'
 import {getHostFromHeaders} from 'util/host'
 import Cache from 'util/cache'
 import {preprocessCss} from './cssPreprocessor'
+import {loadAllHostrules} from 'util/hostrules'
+
+const hostrules = loadAllHostrules(true)
+
 
 export const getCmsPage = async ({db, context, slug, editmode, _version, headers}) => {
     let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
 
     if (host && host.startsWith('www.')) {
         host = host.substring(4)
+    }
+
+    if (hostrules[host] && hostrules[host].slugContext) {
+        slug = hostrules[host].slugContext + (slug.length > 0 ? '/' : '') + slug
     }
 
 
@@ -20,13 +28,14 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
     if (!cmsPages) {
 
 
-        let match, hostRule
+        let match
 
         const ors = []
 
         if (host) {
 
-            hostRule = {$regex: `(^|;)${host.replace(/\./g, '\\.')}=${slug}($|;)`, $options: 'i'}
+            //TODO remove
+            let hostRule = {$regex: `(^|;)${host.replace(/\./g, '\\.')}=${slug}($|;)`, $options: 'i'}
             ors.push({hostRule})
         }
         ors.push({slug})
@@ -55,13 +64,13 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
                 const result = cmsPages.results[0]
                 //minify script
 
-                if(result.ssrStyle){
-                    result.style =preprocessCss(result.style)
+                if (result.ssrStyle) {
+                    result.style = preprocessCss(result.style)
                 }
                 if (result.compress) {
                     result.script = result.script.replace(/\t/g, ' ').replace(/ +(?= )/g, '').replace(/(^[ \t]*\n)/gm, "")
 
-                    if(!result.ssrStyle){
+                    if (!result.ssrStyle) {
                         result.style = result.style
                             .replace(/\t/g, ' ') // remove tabs
                             .replace(/ +(?= )/g, '') // remove double whitespace
