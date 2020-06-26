@@ -1,3 +1,4 @@
 {
-  "forceWWW": true
+  "forceWWW": true,
+  "slugContext": "ossermare"
 }

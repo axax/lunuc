@@ -65,7 +65,7 @@ export default db => ({
             }
             return data
         },
-        cmsPage: async ({slug, query, props, nosession, editmode, _version}, req) => {
+        cmsPage: async ({slug, query, props, nosession, editmode, dynamic, _version}, req) => {
             const {context, headers} = req
 
             const userIsLoggedIn = Util.isUserLoggedIn(context)
@@ -77,15 +77,18 @@ export default db => ({
 
                 throw new Error('Cms page doesn\'t exist')
             }
-            const scope = {
-                ...createScopeForDataResolver(query, props),
-                page: {slug, host: getHostFromHeaders(headers)},
-                editmode
-            }
+
             const {
                 _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets,ssrStyle, compress,
                 ssr, modifiedAt, urlSensitiv, name, serverScript
             } = cmsPages.results[0]
+            const cmsPageSlug = cmsPages.results[0].slug
+
+            const scope = {
+                ...createScopeForDataResolver(query, props),
+                page: {slug: cmsPageSlug, host: getHostFromHeaders(headers)},
+                editmode
+            }
             const ispublic = cmsPages.results[0].public
 
             const {resolvedData, subscriptions} = await resolveData({
@@ -113,7 +116,7 @@ export default db => ({
                     html = e.message
                 }
             }
-            console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
+            console.log(`cms resolver for ${cmsPageSlug} got data in ${(new Date()).getTime() - startTime}ms`)
 
             // this is used to locate the proper client cache value
             const clientCacheKey = createClientCacheKey(urlSensitiv && query ? query : null, props)
@@ -124,7 +127,7 @@ export default db => ({
                     _id,
                     modifiedAt,
                     createdBy,
-                    slug,
+                    slug: cmsPageSlug,
                     name,
                     template,
                     script,
@@ -162,7 +165,7 @@ export default db => ({
                     ssr,
                     public: ispublic,
                     online: _version === 'default',
-                    slug,
+                    slug: cmsPageSlug,
                     name: {[context.lang]: name[context.lang]},
                     template,
                     script,

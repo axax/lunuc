@@ -2,5 +2,6 @@
   "fileMapping": {
     "/index.html": "/k-l-treuhand.ch/index.html"
   },
-  "forceWWW": true
+  "forceWWW": true,
+  "slugContext": "rahel"
 }

@@ -55,8 +55,10 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
         throw new Error(`Error in body: ${e.message}`)
         mailContext = {}
     }
-    const scope = {context: mailContext, page: {slug}}
     const {template, script, dataResolver} = cmsPages.results[0]
+    const cmsPageSlug = cmsPages.results[0].slug
+
+    const scope = {context: mailContext, page: {slug: cmsPageSlug}}
     const {resolvedData} = await resolveData({db, context, dataResolver, scope})
 
     try {
@@ -65,7 +67,7 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
                      script={script}
                      resolvedData={JSON.stringify(resolvedData)}
                      editMode={false}
-                     slug={slug}
+                     slug={cmsPageSlug}
                      _props={{context: mailContext}}/>
         </UIProvider>)
     } catch (e) {

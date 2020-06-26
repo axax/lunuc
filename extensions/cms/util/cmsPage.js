@@ -5,10 +5,10 @@ import Cache from 'util/cache'
 import {preprocessCss} from './cssPreprocessor'
 import {loadAllHostrules} from 'util/hostrules'
 
-const hostrules = loadAllHostrules(true)
+const hostrules = loadAllHostrules(false)
 
 
-export const getCmsPage = async ({db, context, slug, editmode, _version, headers}) => {
+export const getCmsPage = async ({db, context, slug, editmode, dynamic, _version, headers}) => {
     let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
 
     if (host && host.startsWith('www.')) {
@@ -16,7 +16,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
     }
 
     let modSlug
-    if (hostrules[host] && hostrules[host].slugContext && slug.indexOf(hostrules[host].slugContext)<0 ) {
+    if (!dynamic && hostrules[host] && hostrules[host].slugContext && slug.indexOf(hostrules[host].slugContext)<0 ) {
         modSlug = hostrules[host].slugContext + (slug.length > 0 ? '/' : '') + slug
     }else{
         modSlug = slug
@@ -33,7 +33,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
 
         let match
 
-        const ors = []
+       /* const ors = []
 
         if (host) {
 
@@ -41,7 +41,7 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
             let hostRule = {$regex: `(^|;)${host.replace(/\./g, '\\.')}=${modSlug}($|;)`, $options: 'i'}
             ors.push({hostRule})
         }
-        ors.push({slug:modSlug})
+        ors.push({slug:modSlug})*/
 
         /*const parts = slug.split('/')
         for(let i = parts.length; i>0;i--){
@@ -51,9 +51,9 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
 
         if (!Util.isUserLoggedIn(context)) {
             // if no user only match public entries
-            match = {$and: [{$or: ors}, {public: true}]}
+            match = {$and: [{slug:modSlug}, {public: true}]}
         } else {
-            match = {$or: ors}
+            match = {slug:modSlug}
         }
         cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'ssrStyle', 'compress'], {
             match,

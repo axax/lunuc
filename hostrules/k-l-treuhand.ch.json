@@ -3,5 +3,6 @@
     "/favicon.ico": "/k-l-treuhand.ch/favicon.ico",
     "/index.html": "/k-l-treuhand.ch/index.html"
   },
-  "forceWWW": true
+  "forceWWW": true,
+  "slugContext": "k_l_treuhand"
 }
