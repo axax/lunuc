@@ -386,7 +386,7 @@ class GenericForm extends React.Component {
                     currentFormFields.push(config.LANGUAGES.reduce((arr, languageCode) => {
                         const fieldName = fieldKey + '.' + languageCode
                         if (languageCode === _app_.lang || showTranslations) {
-                            arr.push(createHtmlField(fieldName,value.constructor===Object? value[languageCode] : value,languageCode))
+                            arr.push(createHtmlField(fieldName,value ? value.constructor===Object? value[languageCode] : value : '',languageCode))
                         }
                         return arr
                     }, []))

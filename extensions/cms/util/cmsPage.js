@@ -15,12 +15,15 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         host = host.substring(4)
     }
 
-    if (hostrules[host] && hostrules[host].slugContext) {
-        slug = hostrules[host].slugContext + (slug.length > 0 ? '/' : '') + slug
+    let modSlug
+    if (hostrules[host] && hostrules[host].slugContext && slug.indexOf(hostrules[host].slugContext)<0 ) {
+        modSlug = hostrules[host].slugContext + (slug.length > 0 ? '/' : '') + slug
+    }else{
+        modSlug = slug
     }
 
 
-    const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '')
+    const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + modSlug + (host ? '-' + host : '')
     let cmsPages
     if (!editmode) {
         cmsPages = Cache.get(cacheKey)
@@ -35,10 +38,10 @@ export const getCmsPage = async ({db, context, slug, editmode, _version, headers
         if (host) {
 
             //TODO remove
-            let hostRule = {$regex: `(^|;)${host.replace(/\./g, '\\.')}=${slug}($|;)`, $options: 'i'}
+            let hostRule = {$regex: `(^|;)${host.replace(/\./g, '\\.')}=${modSlug}($|;)`, $options: 'i'}
             ors.push({hostRule})
         }
-        ors.push({slug})
+        ors.push({slug:modSlug})
 
         /*const parts = slug.split('/')
         for(let i = parts.length; i>0;i--){

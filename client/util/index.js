@@ -16,7 +16,7 @@ const Util = {
         }
         return str
     },
-    safeTags: str=> {
+    safeTags: str => {
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     },
     escapeForJson: (str) => {
@@ -237,7 +237,7 @@ const Util = {
             data.src = _app_.config.UPLOAD_URL + '/' + image._id + '/' + config.PRETTYURL_SEPERATOR + '/' + image.name
 
             if (options) {
-                let resize = options.resize, h, w, params=''
+                let resize = options.resize, h, w, params = ''
                 if (resize) {
 
                     if (resize.width) {
@@ -253,28 +253,30 @@ const Util = {
                                 w = 800
                             } else if (ww <= 1200) {
                                 w = 1200
-                            }else{
+                            } else if (ww <= 1400) {
                                 w = 1400
+                            } else {
+                                w = 1600
                             }
 
                             if (h) {
-                                h = Math.ceil((w/resize.width) * h)
+                                h = Math.ceil((w / resize.width) * h)
                             }
                         }
                     }
-                    if( w ){
-                        params+=`&width=${w}`
+                    if (w) {
+                        params += `&width=${w}`
                     }
-                    if( h ){
-                        params+=`&height=${h}`
+                    if (h) {
+                        params += `&height=${h}`
                     }
                 }
                 if (options.quality) {
-                    params+=`&quality=${options.quality}`
+                    params += `&quality=${options.quality}`
                 }
 
                 if (options.webp) {
-                    params+='&format=webp'
+                    params += '&format=webp'
                 }
                 if (params) {
                     data.src += '?' + params.substring(1)

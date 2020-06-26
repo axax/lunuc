@@ -610,7 +610,7 @@ class TypesContainer extends React.Component {
 
                         }
                     })
-                    this.setState({viewFilterDialog: false},()=>{
+                    this.setState({viewFilterDialog: false, filter: newFilter},()=>{
                         this.handleFilter({value: newFilter}, true)
                     })
 
