@@ -115,7 +115,7 @@ export default db => ({
                     html = e.message
                 }
             }
-            console.log(`cms resolver for ${cmsPageSlug} got data in ${(new Date()).getTime() - startTime}ms`)
+            console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
             // this is used to locate the proper client cache value
             const clientCacheKey = createClientCacheKey(urlSensitiv && query ? query : null, props)
