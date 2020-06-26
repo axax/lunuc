@@ -92,7 +92,8 @@
         },
         {
           "name": "style",
-          "hidden": true
+          "hidden": true,
+          "searchable": true
         },
         {
           "name": "ssr",
@@ -130,6 +131,10 @@
         },
         {
           "name": "props",
+          "hidden": true
+        },
+        {
+          "name": "realSlug",
           "hidden": true
         }
       ]

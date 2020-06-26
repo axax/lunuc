@@ -82,11 +82,10 @@ export default db => ({
                 _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets,ssrStyle, compress,
                 ssr, modifiedAt, urlSensitiv, name, serverScript
             } = cmsPages.results[0]
-            const cmsPageSlug = cmsPages.results[0].slug
 
             const scope = {
                 ...createScopeForDataResolver(query, props),
-                page: {slug: cmsPageSlug, host: getHostFromHeaders(headers)},
+                page: {slug, host: getHostFromHeaders(headers)},
                 editmode
             }
             const ispublic = cmsPages.results[0].public
@@ -127,7 +126,8 @@ export default db => ({
                     _id,
                     modifiedAt,
                     createdBy,
-                    slug: cmsPageSlug,
+                    slug,
+                    realSlug: cmsPages.results[0].slug,
                     name,
                     template,
                     script,
@@ -165,7 +165,8 @@ export default db => ({
                     ssr,
                     public: ispublic,
                     online: _version === 'default',
-                    slug: cmsPageSlug,
+                    slug,
+                    realSlug: cmsPages.results[0].slug,
                     name: {[context.lang]: name[context.lang]},
                     template,
                     script,
