@@ -1,4 +1,5 @@
 {
   "forceWWW": true,
-  "slugContext": "onyou"
+  "slugContext": "onyou",
+  "slugFallback": true
 }

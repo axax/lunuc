@@ -25,6 +25,9 @@ import elementWatcher from './elementWatcher'
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
 
+const PrettyErrorMessage = (props) => <Async {...props}
+                                        load={import(/* webpackChunkName: "admin" */ './PrettyErrorMessage')}/>
+
 const ContentEditable = (props) => <Async {...props}
                                           load={import(/* webpackChunkName: "admin" */ '../../../client/components/ContentEditable')}/>
 
@@ -55,7 +58,7 @@ const AdminSwitch = (props) => <Async {...props} expose="Switch"
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onMouseOver','onMouseOut','onClick', 'onKeyDown', 'onKeyUp', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput']
+    static events = ['onMouseOver', 'onMouseOut', 'onClick', 'onKeyDown', 'onKeyUp', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput']
 
     /*
      * Default components
@@ -291,9 +294,8 @@ class JsonDom extends React.Component {
         return false
     }
 
-    componentDidCatch(err, info) {
-        console.error(err, info)
-        this.error = {type:'unknown', msg: err.message}
+    componentDidCatch(e, info) {
+        this.error = {type: 'unknown', e}
         this.forceUpdate()
     }
 
@@ -334,12 +336,12 @@ class JsonDom extends React.Component {
                 const content = document.body.innerText.substring(0, 160).replace(/(\r\n|\n|\r)/gm, ' ')
                 if (content) {
                     this.addMetaTag('description', content)
-                }else{
+                } else {
                     const observer = new MutationObserver((mutations) => {
                         observer.disconnect()
                         this.checkMetaTags(props)
                     })
-                    observer.observe(document.body,  { childList:true, subtree:true })
+                    observer.observe(document.body, {childList: true, subtree: true})
                 }
             }
         }
@@ -390,14 +392,14 @@ class JsonDom extends React.Component {
                         this.resolvedDataJson = JSON.parse(resolvedData)
                     }
                     if (this.resolvedDataJson.error) {
-                        this.error = {type:'dataResolver', msg: '<br /><i>'+this.resolvedDataJson.error+'</i>'}
+                        this.error = {type: 'dataResolver', msg: this.resolvedDataJson.error}
                     }
                 } catch (e) {
                     console.log(e, resolvedData)
-                    this.error = {type:'dataResolver', msg: this.prettyErrorMessage(e, resolvedData)}
+                    this.error = {type: 'dataResolver', e, code:resolvedData}
                 }
             }
-            if( !this.error) {
+            if (!this.error) {
                 scope.data = this.resolvedDataJson
                 scope.props = _props
                 scope.renewing = renewing
@@ -433,7 +435,7 @@ class JsonDom extends React.Component {
                                 parent
                             })
                         } catch (e) {
-                            this.error = {type:'script', msg: this.prettyErrorMessage(e, script, 9)}
+                            this.error = {type: 'script', e, code: script, offset: 9}
                             console.error(e)
                         }
                         scope.script = this.scriptResult || {}
@@ -451,8 +453,7 @@ class JsonDom extends React.Component {
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
 
         if (this.error) {
-            return <div>Error in <strong>{this.error.type}</strong>. See details in console log: <span
-                dangerouslySetInnerHTML={{__html: this.error.msg}}/></div>
+            return <div>Error in <strong>{this.error.type}</strong>. See details in console log: <PrettyErrorMessage {...this.error}/></div>
         } else {
             return content
         }
@@ -462,7 +463,7 @@ class JsonDom extends React.Component {
         const id = 'jsondomstyle' + this.instanceId
         if (style) {
             let parsedStyle
-            if( style.indexOf('${')>-1) {
+            if (style.indexOf('${') > -1) {
                 try {
                     parsedStyle = new Function(DomUtil.toES5(`const {scope} = this
                              return \`${style}\``)).call({
@@ -479,7 +480,7 @@ class JsonDom extends React.Component {
                     parsedStyle = style
                     console.log(e)
                 }
-            }else{
+            } else {
                 parsedStyle = style
             }
             this.setStyle(parsedStyle, this.props.editMode || !this.props.ssrStyle, id)
@@ -821,8 +822,8 @@ class JsonDom extends React.Component {
                         Object.keys(p).forEach(key => {
                             if (key.startsWith('$')) {
                                 eleProps[key.substring(1)] = p[key]
-                            } else if(p[key] !== '') {
-                                if( JsonDom.events.indexOf(key)>-1 && p[key].constructor === Object){
+                            } else if (p[key] !== '') {
+                                if (JsonDom.events.indexOf(key) > -1 && p[key].constructor === Object) {
                                     // replace events with real functions and pass payload
                                     const payload = p[key]
                                     eleProps[key] = (...args) => {
@@ -830,7 +831,7 @@ class JsonDom extends React.Component {
                                         Hook.call('JsonDomUserEvent', {event: eLower, payload, container: this})
                                         this.runJsEvent(eLower, false, payload, ...args)
                                     }
-                                }else {
+                                } else {
                                     eleProps[key] = p[key]
                                 }
                             }
@@ -974,13 +975,14 @@ class JsonDom extends React.Component {
         const {template} = props
         const scope = this.getScope(props)
         this._inHtmlComponents = []
+        const renderedTemplate = this.renderTemplate(template, scope)
         try {
             /*
              This is the modified version of the json (placeholder are replaced)
              */
-            this.json = JSON.parse(this.renderTemplate(template, scope))
+            this.json = JSON.parse(renderedTemplate)
         } catch (e) {
-            this.error = {type:'template',msg:this.prettyErrorMessage(e, this.renderTemplate(template, scope))}
+            this.error = {type: 'template', e, code: renderedTemplate}
         }
         return this.json
     }
@@ -1001,7 +1003,7 @@ class JsonDom extends React.Component {
         } catch (e) {
             console.log(e, template)
             if (!ignoreError) {
-                this.error = {type:'template',msg:this.prettyErrorMessage(e, template)}
+                this.error = {type: 'template', e, code: template}
             }
         }
         return this.jsonRaw
@@ -1081,13 +1083,13 @@ class JsonDom extends React.Component {
             for (let i = 0; i < t.length; i++) {
                 const cb = t[i]
                 if (cb) {
-                    const callCb =()=>{
+                    const callCb = () => {
                         try {
                             cb(...args)
                         } catch (e) {
                             console.log(e)
-                            this.error = {type: `script event ${name}`, msg: this.prettyErrorMessage(e, this.props.script,9)}
-                            if(async){
+                            this.error = {type: `script event ${name}`, e, code: this.props.script, offset: 9}
+                            if (async) {
                                 this.forceUpdate()
                             }
                         }
@@ -1107,43 +1109,6 @@ class JsonDom extends React.Component {
         if (this.props._parentRef && args.length && args[0]._passEvent) {
             this.props._parentRef.runJsEvent(name, async, ...args)
         }
-    }
-
-    prettyErrorMessage = (e, code, offset=0) => {
-        let lineNrStr, column, errorMsg = '<pre style="margin-top:2rem">'
-
-        if(e.message.indexOf('in JSON at')>0){
-            const pos = parseInt(e.message.substring(e.message.lastIndexOf(' ')))
-            lineNrStr = code.substring(0,pos).split('\n').length - 1
-            column=0
-        }else {
-            const line = e.stack.split('\n')[1], matches = line.match(/:(\d*):(\d*)/)
-            if (matches && matches.length > 2) {
-                lineNrStr = matches[1]
-                column = matches[2]
-            } else {
-                lineNrStr = column = offset
-            }
-        }
-        if (lineNrStr !== undefined) {
-            const lineNr = parseInt(lineNrStr)
-            const cbLines = code.split('\n'),
-                start = Math.max(offset, lineNr - 3),
-                end = Math.min(cbLines.length, lineNr + 4)
-            for (let i = start; i < end; i++) {
-
-                const str = cbLines[i - offset]
-                if (i === lineNr) {
-                    errorMsg += `<i style="background:red;color:#fff">Line ${i - (offset-1)}: ${e.message}</i>\n<i style="background:yellow">${str}</i>\n`
-                } else {
-                    errorMsg += str + '\n'
-                }
-            }
-        } else {
-            errorMsg += e.message
-        }
-        errorMsg += '</pre>'
-        return errorMsg
     }
 
 
@@ -1172,7 +1137,7 @@ class JsonDom extends React.Component {
             if (res.cmsPage && res.cmsPage.resolvedData) {
                 const newData = JSON.parse(res.cmsPage.resolvedData)
 
-                this.resolvedDataJson = deepMergeOptional({mergeArray:true}, this.resolvedDataJson, newData)
+                this.resolvedDataJson = deepMergeOptional({mergeArray: true}, this.resolvedDataJson, newData)
                 scope.fetchingMore = false
 
                 if (this._ismounted)

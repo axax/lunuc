@@ -15,11 +15,18 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
         host = host.substring(4)
     }
 
+    let slugMatch={}
     let modSlug
     if (checkHostrules && hostrules[host] && hostrules[host].slugContext && slug.indexOf(hostrules[host].slugContext)<0 ) {
         modSlug = hostrules[host].slugContext + (slug.length > 0 ? '/' : '') + slug
+        if( hostrules[host].slugFallback ){
+            slugMatch = {$or:[{slug:modSlug},{slug}]}
+        }else{
+            slugMatch = {slug: modSlug}
+        }
     }else{
         modSlug = slug
+        slugMatch = {slug}
     }
 
 
@@ -33,16 +40,6 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
 
         let match
 
-       /* const ors = []
-
-        if (host) {
-
-            //TODO remove
-            let hostRule = {$regex: `(^|;)${host.replace(/\./g, '\\.')}=${modSlug}($|;)`, $options: 'i'}
-            ors.push({hostRule})
-        }
-        ors.push({slug:modSlug})*/
-
         /*const parts = slug.split('/')
         for(let i = parts.length; i>0;i--){
             ors.push({slug: `${parts.join('/')}/*`})
@@ -51,9 +48,9 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
 
         if (!Util.isUserLoggedIn(context)) {
             // if no user only match public entries
-            match = {$and: [{slug:modSlug}, {public: true}]}
+            match = {$and: [slugMatch, {public: true}]}
         } else {
-            match = {slug:modSlug}
+            match = slugMatch
         }
         cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'ssrStyle', 'compress'], {
             match,
