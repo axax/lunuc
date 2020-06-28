@@ -1,3 +1,6 @@
 {
-  "forceWWW": true
+  "forceWWW": true,
+  "headers": {
+    "X-Frame-Options": "allow-from http://www.gallinasail.ch/"
+  }
 }
