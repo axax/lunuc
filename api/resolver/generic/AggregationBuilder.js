@@ -4,6 +4,17 @@ import {getFormFields} from 'util/typesAdmin'
 import {ObjectId} from 'mongodb'
 import config from 'gen/config'
 
+const comparatorMap = {
+    ':': '$regex',
+    '=': '$regex',
+    '==': '$eq',
+    '>': '$gt',
+    '>=': '$gte',
+    '<': '$lt',
+    '<=': '$lte',
+    '!=': '$regex',
+    '!==': '$ne'
+}
 
 export default class AggregationBuilder {
 
@@ -246,16 +257,7 @@ export default class AggregationBuilder {
      */
     addFilterToMatch({filterKey, filterValue, type, multi, filterOptions, match}) {
         let comparator = '$regex' // default comparator
-        const comparatorMap = {
-            ':': '$regex',
-            '=': '$regex',
-            '==': '$eq',
-            '>': '$gt',
-            '>=': '$gte',
-            '<': '$lt',
-            '<=': '$lte',
-            '!=': '$ne'
-        }
+
         if (filterOptions && filterOptions.comparator && comparatorMap[filterOptions.comparator]) {
             comparator = comparatorMap[filterOptions.comparator]
         }
@@ -339,13 +341,18 @@ export default class AggregationBuilder {
                 matchExpression = {[comparator]: filterValue}
             }
         }else {
-            matchExpression = {[comparator]: filterValue}
+            if(filterOptions && filterOptions.comparator==='!='){
+                matchExpression = { $not: {[comparator]: filterValue, $options: 'i'} }
+            }else {
+                matchExpression = {[comparator]: filterValue}
+
+                if (comparator === '$regex') {
+                    matchExpression.$options = 'i'
+                }
+            }
         }
 
 
-        if (comparator === '$regex') {
-            matchExpression.$options = 'i'
-        }
 
         if (!filterOptions || filterOptions.operator === 'or') {
             if (!match.$or) {

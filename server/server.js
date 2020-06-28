@@ -210,7 +210,11 @@ const parseWebsite = async (urlToFetch, host) => {
 const sendIndexFile = async (req, res, uri, hostrule, host) => {
     const headers = {
         'Cache-Control': 'public, max-age=60',
-        'content-type': MimeType.detectByExtension('html'),
+        'Content-Type': MimeType.detectByExtension('html'),
+        'X-Frame-Options': 'SAMEORIGIN',
+        'X-Content-Type-Options': 'nosniff',
+        'Strict-Transport-Security': 'max-age=31536000',
+        /*'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval'",*/
         ...hostrule.headers[uri]
     }
 
@@ -466,11 +470,10 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
         const fileStream = fs.createReadStream(filename, streamOption)
 
-
         if (parsedUrl.query.transcode) {
             transcodeVideo(parsedUrl, headerExtra, res, code, fileStream)
         } else {
-            res.writeHead(code, {...headerExtra})
+            res.writeHead(code, headerExtra)
             fileStream.pipe(res)
         }
 

@@ -1137,7 +1137,8 @@ class JsonDom extends React.Component {
             if (res.cmsPage && res.cmsPage.resolvedData) {
                 const newData = JSON.parse(res.cmsPage.resolvedData)
 
-                this.resolvedDataJson = deepMergeOptional({mergeArray: true}, this.resolvedDataJson, newData)
+                this.resolvedDataJson = deepMergeOptional({concatArrays: true}, this.resolvedDataJson, newData)
+
                 scope.fetchingMore = false
 
                 if (this._ismounted)

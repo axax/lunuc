@@ -42,7 +42,7 @@ export const auth = {
 
             req.context.session = currentSession || crypto.randomBytes(16).toString("hex")
 
-            res.header(SESSION_HEADER, req.context.session );
+            res.header(SESSION_HEADER, req.context.session )
 
             next()
         })
