@@ -215,6 +215,7 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
         'X-Content-Type-Options': 'nosniff',
         'Strict-Transport-Security': 'max-age=31536000',
         /*'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval'",*/
+        ...hostrule.headers.common,
         ...hostrule.headers[uri]
     }
 

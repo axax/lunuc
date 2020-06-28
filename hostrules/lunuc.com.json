@@ -1,6 +1,8 @@
 {
   "forceWWW": true,
   "headers": {
-    "X-Frame-Options": "allow-from http://www.gallinasail.ch/"
+    "common": {
+      "x-frame-options": "allow-from http://www.gallinasail.ch/"
+    }
   }
 }
