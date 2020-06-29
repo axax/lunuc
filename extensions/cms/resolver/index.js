@@ -120,70 +120,52 @@ export default db => ({
             // this is used to locate the proper client cache value
             const clientCacheKey = createClientCacheKey(urlSensitiv && query ? query : null, props)
 
+            const result = {
+                _id,
+                modifiedAt,
+                createdBy,
+                ssr,
+                public: ispublic,
+                online: _version === 'default',
+                slug,
+                realSlug: cmsPages.results[0].slug,
+                template,
+                script,
+                resources,
+                style,
+                html,
+                resolvedData: JSON.stringify(resolvedData),
+                parseResolvedData,
+                alwaysLoadAssets,
+                ssrStyle,
+                compress,
+                subscriptions,
+                urlSensitiv,
+                /* we return a cacheKey here because the resolvedData may be dependent on the query that gets passed.
+                 that leads to ambiguous results for the same id.
+                 */
+                cacheKey: clientCacheKey
+
+            }
+
+            if (slug !== cmsPages.results[0].slug) {
+                result.realSlug = cmsPages.results[0].slug
+            }
+
+
             if (userIsLoggedIn && editmode && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
                 // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
-                return {
-                    _id,
-                    modifiedAt,
-                    createdBy,
-                    slug,
-                    realSlug: cmsPages.results[0].slug,
-                    name,
-                    template,
-                    script,
-                    resources,
-                    style,
-                    dataResolver,
-                    serverScript,
-                    ssr,
-                    public: ispublic, // if public the content is visible to everyone
-                    online: _version === 'default',  // if true it is the active _version that is online
-                    resolvedData: JSON.stringify(resolvedData),
-                    parseResolvedData,
-                    alwaysLoadAssets,
-                    ssrStyle,
-                    compress,
-                    html,
-                    subscriptions,
-                    urlSensitiv,
-                    /* we return a cacheKey here because the resolvedData may be dependent on the query that gets passed.
-                     that leads to ambiguous results for the same id.
-                     */
-                    cacheKey: clientCacheKey,
-                    /* Return the current user settings of the view
-                     */
-                    settings: ''
-                }
+                result.name = name
+                result.dataResolver = dataResolver
+                result.serverScript = serverScript
             } else {
 
                 // if user is not looged in return only slug and rendered html
                 // never return sensitiv data here
-                return {
-                    _id,
-                    modifiedAt,
-                    createdBy,
-                    ssr,
-                    public: ispublic,
-                    online: _version === 'default',
-                    slug,
-                    realSlug: cmsPages.results[0].slug,
-                    name: {[context.lang]: name[context.lang]},
-                    template,
-                    script,
-                    resources,
-                    style,
-                    html,
-                    resolvedData: JSON.stringify(resolvedData),
-                    parseResolvedData,
-                    alwaysLoadAssets,
-                    ssrStyle,
-                    compress,
-                    subscriptions,
-                    urlSensitiv,
-                    cacheKey: clientCacheKey
-                }
-
+                result.name = {[context.lang]: name[context.lang]}
             }
+
+            return result
         },
         cmsPageStatus: async ({slug}, req) => {
             if (!req.context.id) {
@@ -282,16 +264,23 @@ export default db => ({
                 script: DEFAULT_SCRIPT
             })
         },
-        updateCmsPage: async ({_id, query, props, createdBy, ...rest}, req) => {
+        updateCmsPage: async ({_id, slug, realSlug, query, props, createdBy, ...rest}, req) => {
             const {context, headers} = req
 
             Util.checkIfUserIsLoggedIn(context)
 
             const {_version} = rest
             // clear server cache
-            const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + rest.slug
+            const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + slug
 
             Cache.clearStartWith(cacheKey)
+
+            if (!realSlug) {
+                // update slug
+                rest.slug = slug
+            }
+            console.log(slug, realSlug)
+
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {
                 _id,
                 createdBy: (createdBy ? ObjectId(createdBy) : createdBy), ...rest
@@ -302,7 +291,7 @@ export default db => ({
             if (rest.dataResolver) {
                 const scope = {
                     ...createScopeForDataResolver(query, props),
-                    page: {slug: rest.slug, host: getHostFromHeaders(headers)}
+                    page: {slug, host: getHostFromHeaders(headers)}
                 }
                 const {resolvedData, subscriptions} = await resolveData({
                     db,

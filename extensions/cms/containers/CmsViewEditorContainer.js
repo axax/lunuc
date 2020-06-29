@@ -102,7 +102,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, style, serverScript, resources, dataResolver, ssr, slug, urlSensitiv, status, parseResolvedData, alwaysLoadAssets,ssrStyle, compress} = props.cmsPage || {}
+        const {template, script, style, serverScript, resources, dataResolver, ssr, slug, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, ssrStyle, compress} = props.cmsPage || {}
         const {settings} = CmsViewEditorContainer.getSettingsByKeyValue(props)
         const result = {
             keyValues: props.keyValues,
@@ -409,7 +409,7 @@ class CmsViewEditorContainer extends React.Component {
 
 
                 <Button key="editParent" size="small" variant="contained" color="primary" onClick={e => {
-                    this.props._cmsActions.editCmsComponent(cmsComponentEdit.key.substring(0,cmsComponentEdit.key.lastIndexOf('.')), cmsComponentEdit.json, cmsComponentEdit.scope)
+                    this.props._cmsActions.editCmsComponent(cmsComponentEdit.key.substring(0, cmsComponentEdit.key.lastIndexOf('.')), cmsComponentEdit.json, cmsComponentEdit.scope)
                 }}>Edit parent component</Button>
             </SimpleDialog>,
             <DataEditDialog key="dataEditDialog"/>
@@ -732,7 +732,7 @@ class CmsViewEditorContainer extends React.Component {
                                     if (o[key] && o[key].constructor === String) {
                                         config.LANGUAGES.forEach(lang => {
                                             if (lang !== config.DEFAULT_LANGUAGE) {
-                                                const text = o[key].replace(/\\n/g, '\n').replace(/%(\w+)%/g,'@_$1_')
+                                                const text = o[key].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
                                                 this.props.client.query({
                                                     fetchPolicy: 'cache-first',
                                                     query: gql`query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}`,
@@ -742,7 +742,7 @@ class CmsViewEditorContainer extends React.Component {
                                                         fromIso: config.DEFAULT_LANGUAGE
                                                     },
                                                 }).then((res) => {
-                                                    const newText = res.data.translate.text.replace(/@_(\w+)_/g,'%$1%')
+                                                    const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%')
                                                     setPropertyByPath(newText, lang + path + '.' + key, base)
                                                     saveResolver()
                                                 })
@@ -1385,20 +1385,26 @@ const CmsViewEditorContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$ssrStyle:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,compress:$compress,ssrStyle:$ssrStyle,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
+    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$ssrStyle:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,compress:$compress,ssrStyle:$ssrStyle,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
         props: ({ownProps, mutate}) => ({
-            updateCmsPage: ({_id, ...rest}, key, cb) => {
+            updateCmsPage: ({_id, realSlug, ...rest}, key, cb) => {
 
                 const variables = getGqlVariables(ownProps)
+
                 if (variables.slug !== rest.slug) {
                     console.warn(`slug changed from ${rest.slug} to ${variables.slug}`)
                     return
                 }
                 const variablesWithNewValue = {...variables, _id, [key]: rest[key]}
 
+
                 if (rest[key].constructor === Object) {
                     variablesWithNewValue[key] = Object.assign({}, rest[key])
                     delete variablesWithNewValue[key].__typename
+                }
+
+                if (realSlug) {
+                    variablesWithNewValue.realSlug = realSlug
                 }
                 return mutate({
                     variables: variablesWithNewValue,
