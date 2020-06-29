@@ -134,11 +134,18 @@ const Util = {
                         //remove empty arrays
                         delete obj[prop]
                     } else if (options.recursiv) {
-                        obj[prop].forEach(aObj => {
+
+                        let index = obj[prop].length - 1
+
+                        while (index >= 0) {
+                            const aObj = obj[prop][index]
                             if (aObj && aObj.constructor === Object) {
                                 Util.removeNullValues(aObj, options)
+                            }else if(options.nullArrayItems && (aObj === null || aObj === undefined)){
+                                obj[prop].splice(index, 1)
                             }
-                        })
+                            index -= 1
+                        }
                     }
                 } else if (options.recursiv && obj[prop].constructor === Object) {
                     Util.removeNullValues(obj[prop], options)
