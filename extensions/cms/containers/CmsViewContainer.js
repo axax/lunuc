@@ -365,11 +365,12 @@ class CmsViewContainer extends React.Component {
         this.props.client.query({
             fetchPolicy: 'network-only',
             forceFetch: true,
-            query: gql('query cmsServerMethod($slug:String!,$methodName:String!,$args:String,$_version:String){cmsServerMethod(slug:$slug,methodName:$methodName,args:$args,_version:$_version){result}}'),
+            query: gql('query cmsServerMethod($slug:String!,$methodName:String!,$args:String,$_version:String,$dynamic:Boolean){cmsServerMethod(slug:$slug,methodName:$methodName,args:$args,_version:$_version,dynamic:$dynamic){result}}'),
             variables: {
                 _version,
                 slug,
                 methodName,
+                dynamic: this.props.dynamic,
                 args: args && (args.constructor === Object || args.constructor === Array) ? JSON.stringify(args) : args
             }
         }).then(cb).catch(cb)

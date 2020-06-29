@@ -109,6 +109,9 @@ const createMediaEntry = async ({db, _id, file, data, context}) => {
 
         const {meta} = await (new Promise((resolve) => {
             ffmpeg.ffprobe(file.path, function(error, meta) {
+                if(error){
+                    console.warn(error)
+                }
                 resolve({error,meta})
             })
         }))

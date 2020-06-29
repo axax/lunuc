@@ -70,7 +70,7 @@ export default db => ({
 
             const userIsLoggedIn = Util.isUserLoggedIn(context)
             const startTime = (new Date()).getTime()
-            let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules:!dynamic, headers, editmode})
+            let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, headers, editmode})
             if (!cmsPages.results || cmsPages.results.length === 0) {
 
                 Hook.call('trackUser', {req, event: '404', slug, db, context, data: query})
@@ -79,7 +79,7 @@ export default db => ({
             }
 
             const {
-                _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets,ssrStyle, compress,
+                _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, ssrStyle, compress,
                 ssr, modifiedAt, urlSensitiv, name, serverScript
             } = cmsPages.results[0]
 
@@ -186,28 +186,28 @@ export default db => ({
             }
         },
         cmsPageStatus: async ({slug}, req) => {
-            if( !req.context.id ){
-                return {user:null}
+            if (!req.context.id) {
+                return {user: null}
             }
             if (!cmsPageStatus[slug] || (new Date() - cmsPageStatus[slug].time) > 6000) {
                 cmsPageStatus[slug] = {user: {username: req.context.username, _id: req.context.id}}
             }
 
-            if(cmsPageStatus[slug].user._id === req.context.id){
+            if (cmsPageStatus[slug].user._id === req.context.id) {
                 cmsPageStatus[slug].time = new Date()
             }
 
             return {user: cmsPageStatus[slug].user}
         },
-        cmsServerMethod: async ({slug, methodName, args, query, props, _version}, req) => {
+        cmsServerMethod: async ({slug, methodName, args, query, props, dynamic, _version}, req) => {
 
-            if (!methodName.match(/^[0-9a-zA-Z_]+$/) || methodName.trim()==='require') {
+            if (!methodName.match(/^[0-9a-zA-Z_]+$/) || methodName.trim() === 'require') {
                 throw new Error('Invalid methodName')
             }
 
             const {context, headers} = req
             const startTime = (new Date()).getTime()
-            let cmsPages = await getCmsPage({db, context, slug, _version, headers})
+            let cmsPages = await getCmsPage({db, context, slug, checkHostrules: !dynamic, _version, headers})
 
             if (!cmsPages.results || cmsPages.results.length === 0) {
                 throw new Error('Cms page doesn\'t exist')
@@ -215,7 +215,7 @@ export default db => ({
 
             const {serverScript} = cmsPages.results[0]
 
-            if( !serverScript ){
+            if (!serverScript) {
                 throw new Error('serverScript doesn\'t exist')
             }
 
@@ -242,7 +242,18 @@ export default db => ({
                         }
                     })()`)
 
-                    tpl.call({args, require, resolve, db, __dirname, context, req, GenericResolver, ObjectId, globalScope})
+                    tpl.call({
+                        args,
+                        require,
+                        resolve,
+                        db,
+                        __dirname,
+                        context,
+                        req,
+                        GenericResolver,
+                        ObjectId,
+                        globalScope
+                    })
 
                 })
                 result = await script.result
