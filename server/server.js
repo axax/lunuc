@@ -124,13 +124,17 @@ const sendFileFromDir = (req, res, filePath, headers) => {
                 'Last-Modified': stats.mtime.toUTCString(),
                 ...headers
             }
-        sendFile(req, res, headerExtra, filePath);
+        sendFile(req, res, headerExtra, filePath)
 
         return true
     }
     return false
 }
 
+const writeStreamFile = function (fileName) {
+    const writeStream = fs.createWriteStream(fileName)
+    return writeStream
+}
 
 const sendFile = function (req, res, headerExtra, filename) {
     let acceptEncoding = req.headers['accept-encoding']
@@ -146,7 +150,10 @@ const sendFile = function (req, res, headerExtra, filename) {
             fileStream.pipe(res)
         } else {
             const fileStream = fs.createReadStream(filename)
-            fileStream.pipe(zlib.createBrotliCompress()).pipe(res)
+            const fileStreamCom = fileStream.pipe(zlib.createBrotliCompress())
+
+            fileStreamCom.pipe(res)
+            fileStreamCom.pipe(writeStreamFile(filename + '.br'))
         }
 
     } else if (acceptEncoding.match(/\bgzip\b/)) {
@@ -158,7 +165,9 @@ const sendFile = function (req, res, headerExtra, filename) {
             fileStream.pipe(res)
         } else {
             const fileStream = fs.createReadStream(filename)
-            fileStream.pipe(zlib.createGzip()).pipe(res)
+            const fileStreamCom = fileStream.pipe(zlib.createGzip())
+            fileStreamCom.pipe(res)
+            fileStreamCom.pipe(writeStreamFile(filename + '.gz'))
         }
 
     } else if (acceptEncoding.match(/\bdeflate\b/)) {

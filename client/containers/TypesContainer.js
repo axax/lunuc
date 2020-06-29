@@ -231,7 +231,7 @@ class TypesContainer extends React.Component {
     }
 
     renderTable(columns) {
-        if( this._renderedTable ){
+        if (this._renderedTable) {
             return this._renderedTable
         }
         const {classes, client} = this.props
@@ -369,12 +369,12 @@ class TypesContainer extends React.Component {
                     if (columnsMap['_action']) {
 
                         const entryActions = [{
-                            name:  _t('TypesContainer.deleteEntry'),
+                            name: _t('TypesContainer.deleteEntry'),
                             disabled: (item.status == 'deleting' || item.status == 'updating'),
                             onClick: this.handleDeleteDataClick.bind(this, item),
                             icon: <DeleteIcon/>
                         }, {
-                            name:  _t('TypesContainer.editEntry'),
+                            name: _t('TypesContainer.editEntry'),
                             disabled: (item.status == 'deleting' || item.status == 'updating'),
                             onClick: this.handleEditDataClick.bind(this, item),
                             icon: <EditIcon/>
@@ -383,7 +383,7 @@ class TypesContainer extends React.Component {
                         if (this.types[type].entryClonable) {
                             entryActions.push(
                                 {
-                                    name:  _t('TypesContainer.cloneEntry'),
+                                    name: _t('TypesContainer.cloneEntry'),
                                     disabled: (item.status == 'deleting' || item.status == 'updating'),
                                     onClick: this.handleCopyClick.bind(this, item, fields),
                                     icon: <FileCopyIcon/>
@@ -405,7 +405,7 @@ class TypesContainer extends React.Component {
             const selectedLength = Object.keys(this.state.selectedrows).length
             const actions = [
                 {
-                    name: _t('TypesContainer.addNew',{type}), onClick: () => {
+                    name: _t('TypesContainer.addNew', {type}), onClick: () => {
                         setTimeout(() => {
                             this.setState({createEditDialog: true})
                         }, 0)
@@ -577,8 +577,8 @@ class TypesContainer extends React.Component {
 
 
             columns.map(c => {
-                if( formFields[c.id] && this.isColumnActive(type, c.id) ){
-                    activeFormFields[c.id]= Object.assign({},formFields[c.id])
+                if (formFields[c.id] && this.isColumnActive(type, c.id)) {
+                    activeFormFields[c.id] = Object.assign({}, formFields[c.id])
                     activeFormFields[c.id].fullWidth = true
                     delete activeFormFields[c.id].tab
                     delete activeFormFields[c.id].required
@@ -589,20 +589,20 @@ class TypesContainer extends React.Component {
             viewFilterDialogProps = {
                 title: 'Filter',
                 open: this.state.viewFilterDialog,
-                onClose: ()=>{
+                onClose: () => {
                     let newFilter = ''
-                    Object.keys(formRef.state.fields).forEach(fieldKey=>{
+                    Object.keys(formRef.state.fields).forEach(fieldKey => {
                         const value = formRef.state.fields[fieldKey]
-                        if( value ){
-                            if(newFilter){
+                        if (value) {
+                            if (newFilter) {
                                 newFilter += ' && '
                             }
 
-                            if(value.constructor===String) {
+                            if (value.constructor === String) {
                                 newFilter += `${fieldKey}=${value}`
-                            }else{
+                            } else {
                                 let ids = []
-                                value.forEach(item=>{
+                                value.forEach(item => {
                                     ids.push(item._id)
                                 })
                                 newFilter += `${fieldKey}=[${ids.join(',')}]`
@@ -610,7 +610,7 @@ class TypesContainer extends React.Component {
 
                         }
                     })
-                    this.setState({viewFilterDialog: false, filter: newFilter},()=>{
+                    this.setState({viewFilterDialog: false, filter: newFilter}, () => {
                         this.handleFilter({value: newFilter}, true)
                     })
 
@@ -707,8 +707,8 @@ class TypesContainer extends React.Component {
                     <Paper elevation={1} component="form" className={classes.searchRoot}>
                         <InputBase
                             value={this.state.filter}
-                            onChange={(e) =>{
-                                this.setState({filter:e.target.value})
+                            onChange={(e) => {
+                                this.setState({filter: e.target.value})
                                 this.handleFilter({value: e.target.value, target: e.target}, false)
                             }}
                             onKeyDown={(e) => {
@@ -718,7 +718,7 @@ class TypesContainer extends React.Component {
                             placeholder={_t('TypesContainer.filter')}
                         />
                         <IconButton onClick={() => {
-                            this.setState({filter:''})
+                            this.setState({filter: ''})
 
                             this.handleFilter({value: ''}, true)
                         }} className={classes.searchIconButton}>
@@ -936,7 +936,7 @@ class TypesContainer extends React.Component {
         } else {
             update(value)
         }
-        this._renderedTable=null
+        this._renderedTable = null
         this.setState({selectedrows, selectAllRows})
 
     }
@@ -970,7 +970,7 @@ class TypesContainer extends React.Component {
         typeDefinition.fields.forEach(field => {
             if (!field.hidden && field.name !== 'createdBy') {
                 typeColumns.push({
-                    title: _t(`${type}.field.${field.name}`,null,(field.label || field.name) + (field.localized ? ' [' + _app_.lang + ']' : '')),
+                    title: _t(`${type}.field.${field.name}`, null, (field.label || field.name) + (field.localized ? ' [' + _app_.lang + ']' : '')),
                     id: field.name,
                     sortable: true
                 })
@@ -979,9 +979,9 @@ class TypesContainer extends React.Component {
 
         if (!typeDefinition.noUserRelation) {
             typeColumns.push({
-                title:  _t('TypesContainer.user'),
+                title: _t('TypesContainer.user'),
                 id: '_user',
-                sortid:'createdBy',
+                sortid: 'createdBy',
                 sortable: true
             })
         }
@@ -1076,10 +1076,10 @@ class TypesContainer extends React.Component {
                             // oh data are available in cache. show them first
                             setTimeout(() => {
 
-                                this._renderedTable=null
-                                const newState = {data:storeData[storeKey]}
+                                this._renderedTable = null
+                                const newState = {data: storeData[storeKey]}
 
-                                if(typeChanged){
+                                if (typeChanged) {
                                     newState.filter = filter
                                 }
                                 this.setState(newState)
@@ -1095,17 +1095,17 @@ class TypesContainer extends React.Component {
                     variables
                 }).then(response => {
                     const o = response.data[storeKey]
-                    this._renderedTable=null
-                    const newState = {data:o}
+                    this._renderedTable = null
+                    const newState = {data: o}
 
-                    if(typeChanged){
+                    if (typeChanged) {
                         newState.filter = filter
                     }
                     this.setState(newState)
 
                 }).catch(error => {
                     console.log(error.message)
-                    this._renderedTable=null
+                    this._renderedTable = null
                     this.setState({data: null})
                 })
 
@@ -1505,6 +1505,7 @@ class TypesContainer extends React.Component {
     }
 
     handleViewSettingClose = (action) => {
+        this._renderedTable = null
         this.setState({viewSettingDialog: false})
     }
 

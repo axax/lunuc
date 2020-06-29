@@ -14,7 +14,9 @@ const createStaticFiles = async (db) => {
     const staticPrivateDir = path.join(__dirname, '../../' + STATIC_PRIVATE_DIR)
     const staticTemplateDir = path.join(__dirname, '../../' + STATIC_TEMPLATE_DIR)
 
-    if (Util.ensureDirectoryExistence(staticDir) && Util.ensureDirectoryExistence(staticPrivateDir)) {
+    if (Util.ensureDirectoryExistence(staticDir) &&
+        Util.ensureDirectoryExistence(staticPrivateDir) &&
+        Util.ensureDirectoryExistence(staticTemplateDir)) {
 
 
         const staticFiles = (await db.collection('StaticFile').find({active: true}).toArray())
@@ -31,12 +33,16 @@ const createStaticFiles = async (db) => {
             if (Util.ensureDirectoryExistence(currentDir + pathParts.join('/'))) {
 
                 console.log(`create file ${staticFile.name}`)
-
-                fs.writeFile(currentDir + '/' + staticFile.name, staticFile.content, function (err) {
+                const filePath = currentDir + '/' + staticFile.name
+                fs.writeFile(filePath, staticFile.content, function (err) {
                     if (err) {
                         return console.log(err)
                     }
                 })
+
+                fs.unlink(filePath+'.br',()=>{})
+                fs.unlink(filePath+'.gz',()=>{})
+
             }
         })
     }
