@@ -381,7 +381,7 @@ const Util = {
                 } else if (i === '&&') {
                     operator = 'and'
                 } else {
-                    const comparator = i.match(/==|>=|<=|!=|=|>|<|:/)
+                    const comparator = i.match(/==|>=|<=|!==|!=|=|>|<|:/)
                     if (comparator) {
 
                         let key = i.substring(0, comparator.index)
