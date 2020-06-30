@@ -149,6 +149,7 @@ export const start = (done) => {
                 }
             })
 
+            server.timeout = 1000 * 60 * 10; // 10 mins
             server.setTimeout(10 * 60 * 1000)
 
             // attach index reference to server
