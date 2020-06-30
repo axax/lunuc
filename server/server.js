@@ -430,6 +430,11 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
         const stat = fs.statSync(filename)
 
+        if(!stat.isFile()){
+            sendError(res, 404)
+            return
+        }
+
         const headerExtra = {
             'Vary': 'Accept-Encoding',
             'Last-Modified': stat.mtime.toUTCString(),
