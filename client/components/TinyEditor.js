@@ -1,8 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import DomUtil from 'client/util/dom'
-import {getComponentByKey} from "../../extensions/cms/util/jsonDomUtil";
 import Util from '../util'
+import config from 'gen/config'
+
+const {DEFAULT_LANGUAGE} = config
 
 class TinyEditor extends React.Component {
 
@@ -93,7 +95,7 @@ class TinyEditor extends React.Component {
                             left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
 
                         const newwindow = window.open(
-                            `/${_app_.lang}/admin/types/?noLayout=true&fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`, '_blank',
+                            `${_app_.lang!==DEFAULT_LANGUAGE?'/'+_app_.lang:''}/admin/types/?noLayout=true&fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`, '_blank',
                             'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
                         setTimeout(() => {
                             newwindow.addEventListener('beforeunload', (e) => {

@@ -119,7 +119,7 @@
   },
   "optionalDependencies": {
     "@google-cloud/storage": "^5.1.1",
-    "@google-cloud/translate": "^6.0.0",
+    "@google-cloud/translate": "^6.0.1",
     "aws-sdk": "^2.707.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",

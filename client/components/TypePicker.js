@@ -21,6 +21,8 @@ import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
 import classNames from 'classnames'
+import config from 'gen/config'
+const {DEFAULT_LANGUAGE} = config
 
 const styles = theme => {
     return {
@@ -159,7 +161,7 @@ class TypePicker extends React.Component {
                                                    top = (screen.height / 2) - (h / 2)
 
                                                const newwindow = window.open(
-                                                   `/${_app_.lang}/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
+                                                   `${_app_.lang!==DEFAULT_LANGUAGE?'/'+_app_.lang:''}/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
                                                    'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
 
                                                setTimeout(() => {
