@@ -157,6 +157,7 @@ export const handleMediaDumpUpload = db => async (req, res) => {
 
             /* Process the uploads */
             const form = new formidable.IncomingForm()
+            form.maxFileSize = 1014 * 1024 * 1024
 
             res.writeHead(200, {'content-type': 'application/json'})
 
@@ -169,6 +170,7 @@ export const handleMediaDumpUpload = db => async (req, res) => {
 
             // log any errors that occur
             form.on('error', function (err) {
+                console.log(err)
                 res.end('{"status":"error","message":"' + err.message + '"}')
             })
             form.on('aborted', function () {
