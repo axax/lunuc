@@ -106,7 +106,7 @@ export const handleUpload = db => async (req, res) => {
             // every time a file has been uploaded successfully,
             // rename it to it's orignal name
             form.on('file', async (field, file) => {
-                setTimeout(()=> {
+                setTimeout(async()=> {
                     count++
                     if (Hook.hooks['FileUpload'] && Hook.hooks['FileUpload'].length) {
                         let c = Hook.hooks['FileUpload'].length
