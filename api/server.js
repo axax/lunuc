@@ -103,6 +103,7 @@ export const start = (done) => {
             })
 
 
+            app.use(bodyParser.urlencoded({ extended: false }))
             // fix graphql limit of 100kb body size
             app.use(bodyParser.json({ limit: '500mb' }))
 
