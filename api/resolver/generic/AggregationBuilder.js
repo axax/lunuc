@@ -280,7 +280,7 @@ export default class AggregationBuilder {
                         }
                     }
                     filterValue = ids
-                    if(comparator === '$ne'){
+                    if(comparator === '$ne' || (filterOptions && filterOptions.comparator==='!=')){
                         comparator = '$nin'
                     }else {
                         comparator = '$in'
@@ -341,7 +341,7 @@ export default class AggregationBuilder {
                 matchExpression = {[comparator]: filterValue}
             }
         }else {
-            if(filterOptions && filterOptions.comparator==='!='){
+            if(type !== 'ID' && filterOptions && filterOptions.comparator==='!='){
                 matchExpression = { $not: {[comparator]: filterValue, $options: 'i'} }
             }else {
                 matchExpression = {[comparator]: filterValue}
@@ -352,7 +352,7 @@ export default class AggregationBuilder {
             }
         }
 
-
+console.log(matchExpression)
 
         if (!filterOptions || filterOptions.operator === 'or') {
             if (!match.$or) {

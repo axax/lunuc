@@ -156,8 +156,7 @@ export const handleMediaDumpUpload = db => async (req, res) => {
         if (authContext) {
 
             /* Process the uploads */
-            const form = new formidable.IncomingForm()
-            form.maxFileSize = 1014 * 1024 * 1024
+            const form = formidable({maxFileSize: 1014 * 1024 * 1024})
 
             res.writeHead(200, {'content-type': 'application/json'})
 
