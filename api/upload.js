@@ -156,7 +156,7 @@ export const handleMediaDumpUpload = db => async (req, res) => {
         if (authContext) {
 
             /* Process the uploads */
-            const form = formidable({maxFileSize: 1014 * 1024 * 1024})
+            const form = formidable({maxFileSize: 1014 * 1024 * 1024, keepExtensions:true})
 
             res.writeHead(200, {'content-type': 'application/json'})
 
@@ -164,7 +164,12 @@ export const handleMediaDumpUpload = db => async (req, res) => {
             // every time a file has been uploaded successfully,
             // rename it to it's orignal name
             form.on('file', function (field, file) {
-                zipper.sync.unzip(file.path).save(upload_dir);
+                try {
+                    zipper.sync.unzip(file.path).save(upload_dir);
+                }catch (e) {
+                    console.log(file.path)
+                    console.error(e)
+                }
             })
 
             // log any errors that occur

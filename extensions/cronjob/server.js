@@ -40,7 +40,7 @@ const registerCronJobs = async (db) => {
                 processCronJobQueue({
                     cronjobId: cronJob._id,
                     script: cronJob.script,
-                    noEnrty: cronJob.noEntry,
+                    noEntry: cronJob.noEntry,
                     context,
                     db
                 })

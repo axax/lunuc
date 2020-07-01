@@ -15,7 +15,6 @@ const cronjobUtil = {
 
         const result = {scriptLog: '', scriptDebug: '', scriptError: ''}
 
-        console.log(noEntry)
         let dbResult
         if( !noEntry ) {
             dbResult = await GenericResolver.createEntity(db, {context}, 'CronJobExecution', {
