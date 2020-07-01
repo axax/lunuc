@@ -115,7 +115,7 @@ export const systemSchemaRaw = `
     	createDbDump(type: String): DbDump    	
     	removeDbDump(name: String!): RemoveDbDumpResult   
     	removeMediaDump(name: String!): RemoveMediaDumpResult   
-    	createMediaDump(type: String): MediaDump
+    	createMediaDump(type: String, ids: [ID]): MediaDump
     	cloneCollection(type: String!, name: String): CloneCollectionResult
     	deleteCollection(name: String!): DeleteCollectionResult
     }

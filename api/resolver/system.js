@@ -442,7 +442,7 @@ export const systemResolver = (db) => ({
 
             return {status: 'ok'}
         },
-        createMediaDump: async ({type}, {context}) => {
+        createMediaDump: async ({type,ids}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
 
             // make sure upload dir exists
@@ -466,10 +466,18 @@ export const systemResolver = (db) => ({
             const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lunuc'))
             files.forEach((file) => {
                 if(file.indexOf('@')===-1) {
-                    const stat = fs.lstatSync(media_dir + '/' + file)
-                    if (!stat.isDirectory() && stat.size < 2000000) {
-                        // only include files small then 2MBs
-                        fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
+                    if( ids ){
+                        if( ids.indexOf(file) >=0){
+                            fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
+                        }
+                    }else {
+                        const stat = fs.lstatSync(media_dir + '/' + file)
+
+
+                        if (!stat.isDirectory() && stat.size < 2000000) {
+                            // only include files small then 2MBs
+                            fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
+                        }
                     }
                 }
             })

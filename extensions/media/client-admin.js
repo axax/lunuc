@@ -69,6 +69,23 @@ export default () => {
 
             actions.unshift(
                 {
+                    name: 'Create Media dump (current results)', onClick: () => {
+                        const ids=[]
+                        this.state.data.results.forEach(item => {
+                          ids.push(item._id)
+                        })
+                        this.props.client.mutate({
+                            mutation: gql`mutation createMediaDump($type:String,$ids:[ID]){createMediaDump(type:$type,ids:$ids){name createdAt size}}`,
+                            variables: {ids},
+                            update: (store, {data: {createMediaDump}}) => {
+                                if (createMediaDump) {
+                                    this.setState({simpleDialog: {children: createMediaDump.name}})
+                                }
+                            }
+                        })
+                    }
+                },
+                {
                     name: 'Find references for all medias', onClick: () => {
                         this.props.client.query({
                             fetchPolicy: 'network-only',
