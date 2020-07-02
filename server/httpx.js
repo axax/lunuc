@@ -1,4 +1,6 @@
 'use strict'
+import {HEADER_TIMEOUT} from '../api/constants'
+
 let net = require('net')
 let http = require('http')
 let http2 = require('http2')
@@ -53,6 +55,9 @@ exports.createServer = (opts, handler) => {
 
     server.http = http.createServer(handler)
     server.https = http2.createSecureServer(opts, handler)
+
+    server.http.headersTimeout = HEADER_TIMEOUT
+    server.https.headersTimeout = HEADER_TIMEOUT
 
 
     server.on('error', err => {

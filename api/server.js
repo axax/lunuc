@@ -17,6 +17,7 @@ import Hook from 'util/hook'
 import compression from 'compression'
 import {pubsub} from './subscription'
 import {decodeToken} from './util/jwt'
+import {HEADER_TIMEOUT} from './constants'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -105,7 +106,7 @@ export const start = (done) => {
 
             //app.use(bodyParser.urlencoded({ extended: false }))
             // fix graphql limit of 100kb body size
-            app.use(bodyParser.json({ limit: '500mb' }))
+            app.use(bodyParser.json({ limit: '10000mb' }))
 
             // only allow post methode
             app.post('/graphql', (req, res, next) => {
@@ -150,8 +151,9 @@ export const start = (done) => {
                 }
             })
 
-            server.timeout = 1000 * 60 * 10; // 10 mins
-            server.setTimeout(10 * 60 * 1000)
+
+            //server.keepAliveTimeout = 11 * 60*1000;
+            server.headersTimeout = HEADER_TIMEOUT
 
             // attach index reference to server
             server._db = db
