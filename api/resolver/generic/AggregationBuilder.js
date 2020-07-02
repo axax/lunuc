@@ -352,7 +352,6 @@ export default class AggregationBuilder {
             }
         }
 
-console.log(matchExpression)
 
         if (!filterOptions || filterOptions.operator === 'or') {
             if (!match.$or) {

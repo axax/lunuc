@@ -212,7 +212,6 @@ class TypesContainer extends React.Component {
         if (settingsChanged) {
             this.parseSettings(props)
         }
-
         if (/*settingsChanged ||*/
             this.props.settings !== props.settings ||
             this.props.baseFilter !== props.baseFilter ||
@@ -1088,7 +1087,6 @@ class TypesContainer extends React.Component {
         const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
-
             if (queries) {
                 const storeKey = this.getStoreKey(type),
                     variables = {limit, page, sort, _version, filter: this.extendFilter(filter)},
@@ -1399,7 +1397,7 @@ class TypesContainer extends React.Component {
 
     goTo(args) {
         const {baseUrl, fixType} = this.props
-        const {type, page, limit, sort, filter, _version, layout, multi, baseFilter} = Object.assign(this.pageParams,args)
+        const {type, page, limit, sort, filter, _version, layout, multi, baseFilter} = Object.assign({},this.pageParams,args)
         this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
     }
 

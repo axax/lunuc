@@ -304,7 +304,7 @@ export default () => {
                                   onSuccess={r => {
                                       setTimeout(() => {
                                           this.getData(this.pageParams, false)
-                                      }, 1000)
+                                      }, 2000)
                                   }}/>
                     </Col>
                     <Col md={3}>
