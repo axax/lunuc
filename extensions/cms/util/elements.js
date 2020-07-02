@@ -144,7 +144,6 @@ const baseElements = [
         }
     },
     {
-        subHeader: 'Allgemeine Elemente',
         tagName: 'SmartImage',
         name: 'Screenshot',
         xhint: 'Erzeugt ein screenshot einer Webseite',

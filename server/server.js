@@ -223,7 +223,10 @@ const doScreenCapture = async (url, filename, options) => {
 
     console.log(`take screenshot ${url}`)
 
-    const browser = await puppeteer.launch()
+    const browser = await puppeteer.launch({
+        ignoreHTTPSErrors: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    })
     const page = await browser.newPage()
     await page.goto(url, {waitUntil: 'domcontentloaded'})
     await page.setViewport({ width: 1280, height: 800, ...options})
