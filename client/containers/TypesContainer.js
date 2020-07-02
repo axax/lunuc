@@ -27,7 +27,10 @@ import {
     InputBase,
     SettingsIcon,
     Divider,
-    Paper
+    Paper,
+    ButtonGroup,
+    ViewModuleIcon,
+    ViewListIcon
 } from 'ui/admin'
 import {Query} from '@apollo/react-components'
 import {withApollo} from '@apollo/react-hoc'
@@ -96,6 +99,14 @@ const styles = theme => ({
     searchDivider: {
         height: 28,
         margin: 4,
+    },
+    layoutChanger: {
+        position: 'absolute',
+        top: '5rem',
+        right: '2rem'
+    },
+    nomargin: {
+        margin: 0
     }
 })
 
@@ -210,6 +221,7 @@ class TypesContainer extends React.Component {
             this.pageParams._version !== pageParams._version ||
             this.pageParams.limit !== pageParams.limit ||
             this.pageParams.sort !== pageParams.sort ||
+            this.pageParams.layout !== pageParams.layout ||
             this.pageParams.filter !== pageParams.filter) {
 
             this.pageParams = pageParams
@@ -524,8 +536,8 @@ class TypesContainer extends React.Component {
                                          label="Select version to edit"
                                          value={_version}
                                          onChange={(e) => {
-                                             const {type, page, limit, sort, filter} = this.pageParams
-                                             this.goTo(type, page, limit, sort, filter, e.target.value)
+                                             const {type} = this.pageParams
+                                             this.goTo({_version:e.target.value})
                                              this.setSettingsForType(type, {_version: e.target.value})
                                          }}
                                          items={items}
@@ -695,6 +707,17 @@ class TypesContainer extends React.Component {
                             gutterBottom>{title || (this.fixType ? this.fixType : 'Types')}</Typography>,
             description ?
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : '',
+            <ButtonGroup size="small" key="layoutChanger" className={classes.layoutChanger} disableElevation
+                         variant="contained" color="primary">
+                <Button onClick={() => {
+                    this.setSettingsForType(this.pageParams.type, {layout: 'list'})
+                    this.goTo({layout: 'list'})
+                }} variant={this.pageParams.layout==='list'?'outlined':''} className={classes.nomargin}><ViewListIcon/></Button>
+                <Button onClick={() => {
+                    this.setSettingsForType(this.pageParams.type, {layout: 'module'})
+                    this.goTo({layout: 'module'})
+                }} variant={this.pageParams.layout==='module'?'outlined':''} className={classes.nomargin}><ViewModuleIcon/></Button>
+            </ButtonGroup>,
             <Row spacing={2} key="typeHeader">
                 {!this.fixType &&
                 <Col md={6}>
@@ -1008,7 +1031,7 @@ class TypesContainer extends React.Component {
 
     determinPageParams(props) {
         const {params} = props.match
-        const {p, l, s, f, v, noLayout, fixType, baseFilter, multi} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v, noLayout, fixType, baseFilter, multi, layout} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
@@ -1037,6 +1060,7 @@ class TypesContainer extends React.Component {
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',
             filter: f || typeSettings.filter || '',
+            layout: layout || typeSettings.layout || 'list',
             _version: v || typeSettings._version || 'default'
         }
         result.type = type
@@ -1373,16 +1397,17 @@ class TypesContainer extends React.Component {
         }
     }
 
-    goTo(type, page, limit, sort, filter, _version) {
+    goTo(args) {
         const {baseUrl, fixType} = this.props
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${this.pageParams.multi ? '&multi=' + this.pageParams.multi : ''}${this.pageParams.baseFilter ? '&baseFilter=' + encodeURIComponent(this.pageParams.baseFilter) : ''}`)
+        const {type, page, limit, sort, filter, _version, layout, multi, baseFilter} = Object.assign(this.pageParams,args)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
     }
 
 
     runFilter(f) {
-        const {type, limit, sort, _version} = this.pageParams
+        const {type} = this.pageParams
         this.setSettingsForType(type, {filter: f})
-        this.goTo(type, 1, limit, sort, f, _version)
+        this.goTo({page: 1, filter: f})
     }
 
     handleFilterTimeout = null
@@ -1407,7 +1432,7 @@ class TypesContainer extends React.Component {
     }
 
     handleSortChange = (orderBy) => {
-        const {type, limit, sort, filter, _version} = this.pageParams
+        const {type, sort} = this.pageParams
         const aSort = sort.split(' ')
         let orderDirection = 'desc'
         if (aSort.length > 1 && orderBy === aSort[0] && orderDirection === aSort[1]) {
@@ -1415,7 +1440,7 @@ class TypesContainer extends React.Component {
         }
         const newSort = `${orderBy} ${orderDirection}`
         this.setSettingsForType(type, {sort: newSort})
-        this.goTo(type, 1, limit, newSort, filter, _version)
+        this.goTo({page: 1, sort:newSort})
     }
 
 
@@ -1428,14 +1453,12 @@ class TypesContainer extends React.Component {
     }
 
     handleChangePage = (page) => {
-        const {type, limit, sort, filter, _version} = this.pageParams
-        this.goTo(type, page, limit, sort, filter, _version)
+        this.goTo({page})
     }
 
 
     handleChangeRowsPerPage = (limit) => {
-        const {type, sort, filter, _version} = this.pageParams
-        this.goTo(type, 1, limit, sort, filter, _version)
+        this.goTo({page:1, limit})
     }
 
     handleDataChange = (event, data, field, lang) => {

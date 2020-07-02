@@ -110,7 +110,9 @@
         "VolumeUp",
         "Image",
         "Launch",
-        "PlaylistAdd"
+        "PlaylistAdd",
+        "ViewModule",
+        "ViewList"
       ],
       "theme":{
         "colors":{

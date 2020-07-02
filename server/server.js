@@ -67,6 +67,7 @@ if (fs.existsSync(path.join(CERT_DIR, './chain.pem'))) {
 
 const defaultWebHandler = (err, req, res) => {
     if (err) {
+        console.log(req.url)
         console.error('proxy error', err)
         finalhandler(req, res)(err)
     } else {
@@ -521,6 +522,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         // there is also /graphql/upload
         return proxy.web(req, res, {
             hostname: 'localhost',
+            proxyTimeout:1000*60*10,
             port: API_PORT,
             path: req.url,
             onReq: (req, {headers}) => {
