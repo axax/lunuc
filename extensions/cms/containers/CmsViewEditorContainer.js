@@ -521,7 +521,7 @@ class CmsViewEditorContainer extends React.Component {
 
                                        this.saveCmsPage(value, this.props.cmsPage, 'name')
                                    }}
-                                   defaultValue={cmsPage.name[_app_.lang]}
+                                   defaultValue={cmsPage.name?cmsPage.name[_app_.lang]:''}
                                    fullWidth={true}/>
 
                         {canMangeCmsTemplate && <React.Fragment><SimpleSwitch

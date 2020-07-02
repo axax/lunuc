@@ -363,6 +363,9 @@ class TypesContainer extends React.Component {
                     if (columnsMap['_user']) {
                         dynamic._user = (item.createdBy ? item.createdBy.username : '???')
                     }
+                    if (columnsMap['modifiedAt']) {
+                        dynamic.modifiedAt = (item.modifiedAt ? Util.formattedDatetime(item.modifiedAt) : '')
+                    }
                     if (columnsMap['date']) {
                         dynamic.date = <span><span>{Util.formattedDateFromObjectId(item._id)}</span><br/><small>{item._id}</small></span>
                     }

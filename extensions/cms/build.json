@@ -118,7 +118,7 @@
         },
         {
           "name": "modifiedAt",
-          "hidden": true,
+          "hidden": false,
           "type": "Float"
         },
         {

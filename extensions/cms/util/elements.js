@@ -729,13 +729,15 @@ const baseElements = [
         },
         options: {
             c_0_p_className: {
+                fullWidth:true,
                 label: 'Spalte 1',
-                value: 'col-sm-6',
+                value: 'col-md-6 col-sm-6 col-xs-12',
                 tab: DEFAULT_TAB
             },
             c_1_p_className: {
+                fullWidth:true,
                 label: 'Spalte 2',
-                value: 'col-sm-6',
+                value: 'col-md-6 col-sm-6 col-xs-12',
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
@@ -773,16 +775,19 @@ const baseElements = [
         options: {
             c_0_p_className: {
                 label: 'Spalte 1',
+                fullWidth:true,
                 value: 'col-md-4 col-sm-4 col-xs-12',
                 tab: DEFAULT_TAB
             },
             c_1_p_className: {
                 label: 'Spalte 2',
+                fullWidth:true,
                 value: 'col-md-4 col-sm-4 col-xs-12',
                 tab: DEFAULT_TAB
             },
             c_2_p_className: {
                 label: 'Spalte 3',
+                fullWidth:true,
                 value: 'col-md-4 col-sm-4 col-xs-12',
                 tab: DEFAULT_TAB
             },
