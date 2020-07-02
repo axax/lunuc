@@ -141,7 +141,7 @@ const Util = {
                             const aObj = obj[prop][index]
                             if (aObj && aObj.constructor === Object) {
                                 Util.removeNullValues(aObj, options)
-                            }else if(options.nullArrayItems && (aObj === null || aObj === undefined)){
+                            } else if (options.nullArrayItems && (aObj === null || aObj === undefined)) {
                                 obj[prop].splice(index, 1)
                             }
                             index -= 1
@@ -225,9 +225,8 @@ const Util = {
             try {
                 image = JSON.parse(raw)
             } catch (e) {
-                return {
-                    src: raw,
-                    alt: raw
+                image = {
+                    src: raw
                 }
             }
         } else {
@@ -242,55 +241,55 @@ const Util = {
         const data = {alt: image.name}
         if (!image.src) {
             data.src = _app_.config.UPLOAD_URL + '/' + image._id + '/' + config.PRETTYURL_SEPERATOR + '/' + image.name
-
-            if (options) {
-                let resize = options.resize, h, w, params = ''
-                if (resize) {
-
-                    if (resize.width) {
-                        w = resize.width
-                    }
-                    if (resize.height) {
-                        h = resize.height
-                    }
-                    if (resize === 'auto' || resize.responsive) {
-                        const ww = window.innerWidth
-                        if (!w || w > ww) {
-                            if (ww <= 800) {
-                                w = 800
-                            } else if (ww <= 1200) {
-                                w = 1200
-                            } else if (ww <= 1400) {
-                                w = 1400
-                            } else {
-                                w = 1600
-                            }
-
-                            if (h) {
-                                h = Math.ceil((w / resize.width) * h)
-                            }
-                        }
-                    }
-                    if (w) {
-                        params += `&width=${w}`
-                    }
-                    if (h) {
-                        params += `&height=${h}`
-                    }
-                }
-                if (options.quality) {
-                    params += `&quality=${options.quality}`
-                }
-
-                if (options.webp) {
-                    params += '&format=webp'
-                }
-                if (params) {
-                    data.src += '?' + params.substring(1)
-                }
-            }
         } else {
             data.src = image.src
+        }
+
+        if (options) {
+            let resize = options.resize, h, w, params = ''
+            if (resize) {
+
+                if (resize.width) {
+                    w = resize.width
+                }
+                if (resize.height) {
+                    h = resize.height
+                }
+                if (resize === 'auto' || resize.responsive) {
+                    const ww = window.innerWidth
+                    if (!w || w > ww) {
+                        if (ww <= 800) {
+                            w = 800
+                        } else if (ww <= 1200) {
+                            w = 1200
+                        } else if (ww <= 1400) {
+                            w = 1400
+                        } else {
+                            w = 1600
+                        }
+
+                        if (h) {
+                            h = Math.ceil((w / resize.width) * h)
+                        }
+                    }
+                }
+                if (w) {
+                    params += `&width=${w}`
+                }
+                if (h) {
+                    params += `&height=${h}`
+                }
+            }
+            if (options.quality) {
+                params += `&quality=${options.quality}`
+            }
+
+            if (options.webp) {
+                params += '&format=webp'
+            }
+            if (params) {
+                data.src += '?' + params.substring(1)
+            }
         }
 
         return data

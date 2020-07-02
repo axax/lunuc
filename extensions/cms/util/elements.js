@@ -144,6 +144,60 @@ const baseElements = [
         }
     },
     {
+        subHeader: 'Allgemeine Elemente',
+        tagName: 'SmartImage',
+        name: 'Screenshot',
+        xhint: 'Erzeugt ein screenshot einer Webseite',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'screenshot'
+            },
+            p: {
+                ['data-element-key']: 'screenshot'
+            }
+        },
+        options: {
+            p_src: {
+                fullWidth: true,
+                value: '',
+                label: 'Url',
+                template: '/-/-/%7B%22screenshot%22%3A%7B%22url%22%3A%22${encodeURIComponent(data)}%22%2C%22options%22%3A%7B%22height%22%3A1600%2C%22width%22%3A1200%7D%7D%7D',
+                tab: DEFAULT_TAB
+            },
+            p_alt: {
+                label: 'Alt Text',
+                fullWidth: true
+            },
+            ...marginOptions('p_'),
+            p_style_float: {
+                label: 'Ausrichtung',
+                enum: [
+                    {
+                        name: 'Keine',
+                        value: 'none'
+                    },
+                    {
+                        name: 'Rechts',
+                        value: 'right'
+                    },
+                    {
+                        name: 'Links',
+                        value: 'left'
+                    },
+                ],
+                tab: DEFAULT_TAB
+            },
+            ...classOptions('p_'),
+            p_caption: {
+                label: 'Beschreibung',
+                uitype: 'html',
+                fullWidth: true
+            },
+            ...imageOptions('p_'),
+            ...lazyImageOptions('$observe_')
+        }
+    },
+    {
         tagName: 'div',
         name: 'Bildergalerie',
         defaults: {

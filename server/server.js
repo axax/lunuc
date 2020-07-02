@@ -17,6 +17,7 @@ import Util from '../client/util'
 import {loadAllHostrules} from '../util/hostrules'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
+const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
 
 const hostrules = loadAllHostrules(true)
 
@@ -217,6 +218,23 @@ const parseWebsite = async (urlToFetch, host) => {
 }
 
 
+const doScreenCapture = async (url, filename, options) => {
+    const puppeteer = require('puppeteer')
+
+    console.log(`take screenshot ${url}`)
+
+    const browser = await puppeteer.launch()
+    const page = await browser.newPage()
+    await page.goto(url, {waitUntil: 'domcontentloaded'})
+    await page.setViewport({ width: 1280, height: 800, ...options})
+    await page.screenshot({
+        fullPage: false,
+        path:filename,
+        ...options
+    })
+    await browser.close()
+}
+
 const sendIndexFile = async (req, res, uri, hostrule, host) => {
     const headers = {
         'Cache-Control': 'public, max-age=60',
@@ -350,7 +368,6 @@ function transcodeVideo(parsedUrl, headerExtra, res, code, fileStream) {
 }
 
 async function resolveUploadedFile(uri, parsedUrl, req, res) {
-    const upload_dir = path.join(__dirname, '../' + UPLOAD_DIR)
 
     // remove pretty url part
     const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/')
@@ -362,7 +379,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
     }
 
 
-    let filename = path.join(upload_dir, modUri.substring(UPLOAD_URL.length + 1).replace(/\.\.\//g, ''))
+    let filename = path.join(ABS_UPLOAD_DIR, modUri.substring(UPLOAD_URL.length + 1)) //.replace(/\.\.\//g, ''))
 
 
     if (fs.existsSync(filename)) {
@@ -600,8 +617,47 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                 if (!sendFileFromDir(req, res, WEBROOT_ABSPATH + uri, headers)) {
                     if (!sendFileFromDir(req, res, BUILD_DIR + uri, headers)) {
-                        console.log('not exists: ' + uri)
-                        sendIndexFile(req, res, uri, hostrule, host)
+
+
+                        // special url
+                        const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/'+config.PRETTYURL_SEPERATOR+'/')
+                        if (pos >= 0) {
+                            const decodedStr=decodeURIComponent(uri.substring(pos+5))
+
+                            try {
+                                const data = JSON.parse(decodedStr)
+                                if(data.screenshot){
+                                    //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
+                                    //console.log(decodeURI(uri.substring(pos+5)))
+
+                                    const filename=decodedStr.replace(/[^\w\s]/gi, '')+ '.png'
+
+                                    const absFilename = path.join(ABS_UPLOAD_DIR, 'screenshots', filename)
+
+                                    if(!fs.existsSync(absFilename)) {
+                                        await doScreenCapture(data.screenshot.url, absFilename, data.screenshot.options)
+                                    }
+
+                                    await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
+
+
+                                }else{
+                                    sendError(res, 404)
+                                }
+
+                               // sendIndexFile(req, res, uri, hostrule, host)
+                            }catch (e) {
+                                console.log(decodedStr)
+
+
+                                console.error(e)
+                                sendError(res, 500)
+                            }
+
+                        } else {
+                            console.log('not exists: ' + uri)
+                            sendIndexFile(req, res, uri, hostrule, host)
+                        }
                     }
                 }
             }

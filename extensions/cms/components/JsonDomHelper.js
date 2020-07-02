@@ -1244,7 +1244,7 @@ const m = Math.max((offX+offY) / 2,100)
 
                                                           if (currentOpt.template) {
                                                               setPropertyByPath(val, '$original_' + key, comp, '_')
-                                                              val = Util.replacePlaceholders(currentOpt.template, val[0])
+                                                              val = Util.replacePlaceholders(currentOpt.template, val.constructor===String?{data:val}:val[0])
                                                           }
 
                                                           if (currentOpt.tr && currentOpt.trKey) {
