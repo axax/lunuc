@@ -35,11 +35,11 @@ const FileDrop = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
 
 const Print = (props) => <Async {...props}
-                                load={import(/* webpackChunkName: "extra" */ '../../../client/components/Print')}/>
+                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
 
 
 const MarkDown = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "extra" */ '../../../client/components/MarkDown')}/>
+                                   load={import(/* webpackChunkName: "admin" */ '../../../client/components/MarkDown')}/>
 
 const DrawerLayout = (props) => <Async {...props} expose="ResponsiveDrawerLayout"
                                        load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
