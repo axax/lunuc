@@ -4,9 +4,10 @@ import Util from 'client/util'
 const hasLoaded = {}
 export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps, c, $c, scope}, watchOptions = {}) {
 
-    let tagSrc
+    let tagSrc, tagImg
     if(tagName === 'SmartImage'){
-        tagSrc = Util.getImageObject(eleProps.src, eleProps.options).src
+        tagImg = Util.getImageObject(eleProps.src, eleProps.options)
+        tagSrc = tagImg.src
     }else{
         tagSrc = jsonDom.instanceId
     }
@@ -54,7 +55,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                 const {_tagName,_options,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, inlineSvg, options, id,_inlineEditor, ...rest} = eleProps
                 const lazyImage = watchOptions.lazyImage
                 if(lazyImage ){
-                    const tmpImg = Util.getImageObject(eleProps.src, {
+                    const tmpSrc = Util.getImageObject(eleProps.src, {
                         quality:lazyImage.quality || 25,
                         resize:{
                             width:lazyImage.width,
@@ -63,7 +64,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                         webp:true})
                     return React.createElement(
                         eleType,
-                        {...eleProps,src:tmpImg.src,alt:tmpImg.alt,_key:key},
+                        {...eleProps,src:tmpSrc,alt:tagImg.alt,_key:key},
                         ($c ? null : jsonDom.parseRec(c, key, scope))
                     )
                 }

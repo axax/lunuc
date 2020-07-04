@@ -242,7 +242,10 @@ const Util = {
                 return {}
             }
         }
-        const data = {alt: image.name}
+        const data = {}
+        if(image.name){
+            data.alt = image.name
+        }
         if (!image.src) {
             data.src = _app_.config.UPLOAD_URL + '/' + image._id + '/' + config.PRETTYURL_SEPERATOR + '/' + image.name
         } else {
