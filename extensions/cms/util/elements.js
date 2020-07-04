@@ -195,7 +195,7 @@ const baseElements = [
                 fullWidth: true,
                 value: '',
                 label: 'Final url',
-                template: '/-/-/%7B%22screenshot%22%3A%7B%22url%22%3A%22${encodeURIComponent(_comp.$set.pdf || _comp.$set.url)}%22%2C%22options%22%3A%7B%22height%22%3A${(_comp.$set.height || 1600)}%2C%22width%22%3A${(_comp.$set.width || 1200)}%2C%22padding%22%3A${(_comp.$set.padding || 0)}%7D%7D%7D',
+                template: '/-/-/%7B%22screenshot%22%3A%7B%22url%22%3A%22${encodeURIComponent(_comp.$set.pdf || _comp.$set.url)}%22%2C%22options%22%3A%7B%22height%22%3A${(_comp.$set.height || 1600)}%2C%22delay%22%3A10000%2C%22width%22%3A${(_comp.$set.width || 1200)}%2C%22padding%22%3A${(_comp.$set.padding || 0)}%7D%7D%7D',
                 tab: DEFAULT_TAB
             },
             p_alt: {

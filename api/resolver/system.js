@@ -17,8 +17,11 @@ import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail'
 import {getType} from 'util/types'
 import os from 'os'
-
+import {rmDir} from '../util/dir'
 const {BACKUP_DIR, UPLOAD_DIR} = config
+
+
+const ABS_UPLOAD_DIR = path.join(__dirname, '../../' + UPLOAD_DIR)
 
 const SKIP_CAPABILITY_CHECK = ['ls -l', 'less ', 'pwd', 'ls', 'ping']
 const ENDOFCOMMAND = '__ENDOFCOMMAND__\n'
@@ -97,6 +100,12 @@ export const systemResolver = (db) => ({
                             id: currentId
                         }
                     })
+
+
+                    rmDir(path.join(ABS_UPLOAD_DIR,'/screenshots'),true)
+
+
+
                     Cache.cache = {}
 
                 } else if (command === 'memusage') {
@@ -456,7 +465,7 @@ export const systemResolver = (db) => ({
                 fullName = path.join(backup_dir, name)
 
 
-            const media_dir = path.join(__dirname, '../../' + UPLOAD_DIR)
+            const media_dir = ABS_UPLOAD_DIR
 
             const files = fs.readdirSync(media_dir)
             if (files.length === 0) {

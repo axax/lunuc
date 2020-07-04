@@ -231,8 +231,10 @@ const doScreenCapture = async (url, filename, options) => {
     await page.goto(url, {waitUntil: 'domcontentloaded'})
 
     await page.setViewport({width: 1280, height: 800, ...options})
-    await page.waitFor(1000)
-
+    if(options.delay) {
+        await page.waitFor(options.delay)
+    }
+console.log(options)
     if (options.padding) {
         options.clip = {
             x: options.padding,
@@ -242,7 +244,6 @@ const doScreenCapture = async (url, filename, options) => {
         }
     }
 
-console.log(options)
 
     await page.screenshot({
         fullPage: false,
