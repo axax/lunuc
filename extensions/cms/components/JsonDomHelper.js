@@ -686,7 +686,7 @@ const m = Math.max((offX+offY) / 2,100)
             left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
 
         const newwindow = window.open(
-            `${_app_.lang!==DEFAULT_LANGUAGE?'/'+_app_.lang:''}/admin/types/?noLayout=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`, '_blank',
+            `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&fixType=${picker.type}&baseFilter=${encodeURIComponent(picker.baseFilter || '')}`, '_blank',
             'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
         setTimeout(() => {
             newwindow.addEventListener('beforeunload', (e) => {
@@ -1244,7 +1244,8 @@ const m = Math.max((offX+offY) / 2,100)
 
                                                           if (currentOpt.template) {
                                                               setPropertyByPath(val, '$original_' + key, comp, '_')
-                                                              val = Util.replacePlaceholders(currentOpt.template, val.constructor===String?{data:val}:val[0])
+                                                              val = Util.replacePlaceholders(currentOpt.template, {_comp:comp,...(val.constructor===String?{data:val}:val[0])})
+
                                                           }
 
                                                           if (currentOpt.tr && currentOpt.trKey) {
@@ -1293,7 +1294,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                       recursiv: true,
                                                       emptyObject: true,
                                                       emptyArray: true,
-                                                      nullArrayItems:true
+                                                      nullArrayItems: true
                                                   })
 
                                                   // add new
@@ -1310,244 +1311,244 @@ const m = Math.max((offX+offY) / 2,100)
                                           JsonDomHelper.disableEvents = false
                                           this.setState({addChildDialog: null})
                                       }}
-                                          actions={[
-                                      {
-                                          key: 'cancel',
-                                          label: 'Abbrechen',
-                                          type: 'secondary'
-                                      },
-                                      {
-                                          key: 'save',
-                                          label: 'Speichern',
-                                          type: 'primary'
-                                      }]}
-                                          title={`Bearbeitung ${addChildDialog.selected ? '(' + addChildDialog.selected.name + ')' : ''}`}>
+                                      actions={[
+                                          {
+                                              key: 'cancel',
+                                              label: 'Abbrechen',
+                                              type: 'secondary'
+                                          },
+                                          {
+                                              key: 'save',
+                                              label: 'Speichern',
+                                              type: 'primary'
+                                          }]}
+                                      title={`Bearbeitung ${addChildDialog.selected ? '(' + addChildDialog.selected.name + ')' : ''}`}>
 
-                                      {!addChildDialog.edit && <SimpleSelect
-                                          fullWidth={true}
-                                          label="Element auswählen"
-                                          value={addChildDialog.selected && addChildDialog.selected.defaults && addChildDialog.selected.defaults.$inlineEditor.elementKey}
-                                          onChange={(e) => {
-                                              const value = e.target.value
-                                              let item
-                                              for (let i = 0; i < jsonElements.length; i++) {
-                                                  const comp = jsonElements[i]
-                                                  if (value === comp.defaults.$inlineEditor.elementKey) {
-                                                      // replace __uid__ placeholder
-                                                      const uid = 'genid_' + Math.random().toString(36).substr(2, 9)
-                                                      item = JSON.parse(JSON.stringify(comp).replace(/__uid__/g, uid))
-                                                      break
-                                                  }
-                                              }
+                            {!addChildDialog.edit && <SimpleSelect
+                                fullWidth={true}
+                                label="Element auswählen"
+                                value={addChildDialog.selected && addChildDialog.selected.defaults && addChildDialog.selected.defaults.$inlineEditor.elementKey}
+                                onChange={(e) => {
+                                    const value = e.target.value
+                                    let item
+                                    for (let i = 0; i < jsonElements.length; i++) {
+                                        const comp = jsonElements[i]
+                                        if (value === comp.defaults.$inlineEditor.elementKey) {
+                                            // replace __uid__ placeholder
+                                            const uid = 'genid_' + Math.random().toString(36).substr(2, 9)
+                                            item = JSON.parse(JSON.stringify(comp).replace(/__uid__/g, uid))
+                                            break
+                                        }
+                                    }
 
-                                              if (item.groupOptions) {
-                                                  Object.keys(item.groupOptions).forEach(key => {
-                                                      item.options['!' + key + '!add'] = {
-                                                          uitype: 'button',
-                                                          group: item.groupOptions[key],
-                                                          key,
-                                                          newLine: true,
-                                                          label: 'Hinzufügen',
-                                                          tab: 'Slides',
-                                                          action: 'add',
-                                                          style: {marginBottom: '2rem'}
-                                                      }
+                                    if (item.groupOptions) {
+                                        Object.keys(item.groupOptions).forEach(key => {
+                                            item.options['!' + key + '!add'] = {
+                                                uitype: 'button',
+                                                group: item.groupOptions[key],
+                                                key,
+                                                newLine: true,
+                                                label: 'Hinzufügen',
+                                                tab: 'Slides',
+                                                action: 'add',
+                                                style: {marginBottom: '2rem'}
+                                            }
 
-                                                      Object.keys(item.groupOptions[key]).forEach(fieldKey => {
-                                                          item.options['!' + key + '!' + fieldKey + '!0'] = item.groupOptions[key][fieldKey]
-                                                      })
-                                                  })
-                                              }
+                                            Object.keys(item.groupOptions[key]).forEach(fieldKey => {
+                                                item.options['!' + key + '!' + fieldKey + '!0'] = item.groupOptions[key][fieldKey]
+                                            })
+                                        })
+                                    }
 
-                                              this.setState({
-                                                  addChildDialog: null
-                                              }, () => {
-                                                  this.setState({
-                                                      addChildDialog: {
-                                                          ...addChildDialog,
-                                                          selected: item,
-                                                          form: null
-                                                      }
-                                                  })
-                                              })
+                                    this.setState({
+                                        addChildDialog: null
+                                    }, () => {
+                                        this.setState({
+                                            addChildDialog: {
+                                                ...addChildDialog,
+                                                selected: item,
+                                                form: null
+                                            }
+                                        })
+                                    })
 
-                                          }}
-                                          items={jsonElements}
-                                          />}
+                                }}
+                                items={jsonElements}
+                            />}
 
-                                      {addChildDialog.selected && addChildDialog.selected.options &&
-                                          <GenericForm primaryButton={false}
-                                          onButtonClick={(field) => {
-                                              const item = addChildDialog.selected,
-                                                  curKey = '!' + field.key + '!'
-                                              item.options = Object.assign({}, item.options)
+                            {addChildDialog.selected && addChildDialog.selected.options &&
+                            <GenericForm primaryButton={false}
+                                         onButtonClick={(field) => {
+                                             const item = addChildDialog.selected,
+                                                 curKey = '!' + field.key + '!'
+                                             item.options = Object.assign({}, item.options)
 
-                                              if (field.action === 'add') {
-                                                  let curIdx = 0
-                                                  Object.keys(item.options).forEach(optionKey => {
-                                                      const formField = addChildDialog.form.state.fields[optionKey]
-                                                      if (formField) {
-                                                          item.options[optionKey].value = formField
-                                                      }
+                                             if (field.action === 'add') {
+                                                 let curIdx = 0
+                                                 Object.keys(item.options).forEach(optionKey => {
+                                                     const formField = addChildDialog.form.state.fields[optionKey]
+                                                     if (formField) {
+                                                         item.options[optionKey].value = formField
+                                                     }
 
-                                                      if (optionKey.startsWith(curKey)) {
-                                                          const parts = optionKey.split('!'),
-                                                              newIdx = parseInt(parts[parts.length - 1])
-                                                          if (newIdx > curIdx) {
-                                                              curIdx = newIdx
-                                                          }
-                                                      }
-                                                  })
-                                                  Object.keys(field.group).forEach(groupKey => {
-                                                      const newItem = Object.assign({}, item.groupOptions[field.key][groupKey])
-                                                      delete newItem.value
-                                                      item.options[curKey + groupKey + '!' + (curIdx + 1)] = newItem
-                                                  })
-                                              } else if (field.action === 'delete') {
-                                                  Object.keys(field.group).forEach(groupKey => {
-                                                      delete item.options[curKey + groupKey + '!' + field.index]
-                                                  })
-                                                  delete item.options[curKey + 'delete!' + field.index]
+                                                     if (optionKey.startsWith(curKey)) {
+                                                         const parts = optionKey.split('!'),
+                                                             newIdx = parseInt(parts[parts.length - 1])
+                                                         if (newIdx > curIdx) {
+                                                             curIdx = newIdx
+                                                         }
+                                                     }
+                                                 })
+                                                 Object.keys(field.group).forEach(groupKey => {
+                                                     const newItem = Object.assign({}, item.groupOptions[field.key][groupKey])
+                                                     delete newItem.value
+                                                     item.options[curKey + groupKey + '!' + (curIdx + 1)] = newItem
+                                                 })
+                                             } else if (field.action === 'delete') {
+                                                 Object.keys(field.group).forEach(groupKey => {
+                                                     delete item.options[curKey + groupKey + '!' + field.index]
+                                                 })
+                                                 delete item.options[curKey + 'delete!' + field.index]
 
-                                              }
+                                             }
 
-                                              this.setState({addChildDialog: {...addChildDialog, selected: item}})
-                                          }}
-                                          ref={(e) => {
-                                              addChildDialog.form = e
-                                          }}
-                                          fields={addChildDialog.selected.options}/>}
+                                             this.setState({addChildDialog: {...addChildDialog, selected: item}})
+                                         }}
+                                         ref={(e) => {
+                                             addChildDialog.form = e
+                                         }}
+                                         fields={addChildDialog.selected.options}/>}
 
-                                          </SimpleDialog></AddToBody>)}</React.Fragment>
-                                          }
-                                          }
+                        </SimpleDialog></AddToBody>)}</React.Fragment>
+        }
+    }
 
-                                          handleEditElement(jsonElement, subJson, isCms) {
-                                          JsonDomHelper.disableEvents = true
+    handleEditElement(jsonElement, subJson, isCms) {
+        JsonDomHelper.disableEvents = true
 
-                                          //clone
-                                          const newJsonElement = JSON.parse(JSON.stringify(jsonElement))
-                                          delete newJsonElement.defaults
+        //clone
+        const newJsonElement = JSON.parse(JSON.stringify(jsonElement))
+        delete newJsonElement.defaults
 
-                                          newJsonElement.options = deepMerge({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
-                                          newJsonElement.groupOptions = deepMerge({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
-                                          Object.keys(newJsonElement.options).forEach(key => {
+        newJsonElement.options = deepMerge({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
+        newJsonElement.groupOptions = deepMerge({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
+        Object.keys(newJsonElement.options).forEach(key => {
 
-                                          let val = propertyByPath('$original_' + key, subJson, '_')
-                                          if (!val) {
-                                          val = propertyByPath(key, subJson, '_')
-                                          }
+            let val = propertyByPath('$original_' + key, subJson, '_')
+            if (!val) {
+                val = propertyByPath(key, subJson, '_')
+            }
 
-                                          if (newJsonElement.options[key].tr && newJsonElement.options[key].trKey) {
-                                          if (this.props._scope.data.tr) {
-                                          newJsonElement.options[key].value = this.props._scope.data.tr[newJsonElement.options[key].trKey]
-                                          }
-                                          } else {
-                                          newJsonElement.options[key].value = val
-                                          }
-                                          })
+            if (newJsonElement.options[key].tr && newJsonElement.options[key].trKey) {
+                if (this.props._scope.data.tr) {
+                    newJsonElement.options[key].value = this.props._scope.data.tr[newJsonElement.options[key].trKey]
+                }
+            } else {
+                newJsonElement.options[key].value = val
+            }
+        })
 
-                                          Object.keys(newJsonElement.groupOptions).forEach(key => {
-                                          let val = propertyByPath(key, subJson, '_')
-                                          if (val) {
-                                          newJsonElement.options['!' + key + '!add'] = {
-                                          uitype: 'button',
-                                          key,
-                                          group: newJsonElement.groupOptions[key],
-                                          label: 'Hinzufügen',
-                                          action:'add',
-                                          newLine: true,
-                                          tab:'Slides',
-                                          style:{marginBottom:'2rem'}
-                                          }
-                                          val.forEach((groupValue, idx) => {
-                                          Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
-                                          const groupFieldOption = newJsonElement.groupOptions[key][fieldKey]
-                                          let groupFieldValue
-                                          if (groupFieldOption.tr && groupFieldOption.trKey) {
-                                          if (this.props._scope.data.tr) {
-                                          groupFieldValue = this.props._scope.data.tr[groupFieldOption.trKey+'-'+idx]
-                                          }
-                                          } else {
-                                          groupFieldValue = groupValue[fieldKey]
-                                          }
-                                          const optKey = '!' + key + '!' + fieldKey + '!' + idx,
-                                          optData = {
-                                          ...newJsonElement.groupOptions[key][fieldKey],
-                                          value: groupFieldValue
-                                          }
+        Object.keys(newJsonElement.groupOptions).forEach(key => {
+            let val = propertyByPath(key, subJson, '_')
+            if (val) {
+                newJsonElement.options['!' + key + '!add'] = {
+                    uitype: 'button',
+                    key,
+                    group: newJsonElement.groupOptions[key],
+                    label: 'Hinzufügen',
+                    action:'add',
+                    newLine: true,
+                    tab:'Slides',
+                    style:{marginBottom:'2rem'}
+                }
+                val.forEach((groupValue, idx) => {
+                    Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
+                        const groupFieldOption = newJsonElement.groupOptions[key][fieldKey]
+                        let groupFieldValue
+                        if (groupFieldOption.tr && groupFieldOption.trKey) {
+                            if (this.props._scope.data.tr) {
+                                groupFieldValue = this.props._scope.data.tr[groupFieldOption.trKey+'-'+idx]
+                            }
+                        } else {
+                            groupFieldValue = groupValue[fieldKey]
+                        }
+                        const optKey = '!' + key + '!' + fieldKey + '!' + idx,
+                            optData = {
+                                ...newJsonElement.groupOptions[key][fieldKey],
+                                value: groupFieldValue
+                            }
 
-                                          if(optData.expandable && optData.expandable.constructor === String){
-                                          optData.expandable += ' ' +(idx+1)
-                                          }
+                        if(optData.expandable && optData.expandable.constructor === String){
+                            optData.expandable += ' ' +(idx+1)
+                        }
 
-                                          newJsonElement.options[optKey] = optData
+                        newJsonElement.options[optKey] = optData
 
-                                          if(optData.expandable===false){
-                                          delete optData.expandable
-                                          newJsonElement.options[ '!' + key + '!delete!' + idx] = {
-                                          uitype: 'button',
-                                          label: 'Löschen',
-                                          action:'delete',
-                                          key,
-                                          group: newJsonElement.groupOptions[key],
-                                          index:idx,
-                                          newLine: true,
-                                          expandable: false
-                                          }
-                                          }
+                        if(optData.expandable===false){
+                            delete optData.expandable
+                            newJsonElement.options[ '!' + key + '!delete!' + idx] = {
+                                uitype: 'button',
+                                label: 'Löschen',
+                                action:'delete',
+                                key,
+                                group: newJsonElement.groupOptions[key],
+                                index:idx,
+                                newLine: true,
+                                expandable: false
+                            }
+                        }
 
-                                          })
-                                          })
-                                          }
-                                          })
-
-
-                                          if (isCms) {
-                                          this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
-                                          }
+                    })
+                })
+            }
+        })
 
 
-                                          this.setState({toolbarHovered: false, hovered: false, dragging: false, addChildDialog: {selected: newJsonElement, edit: true}})
-                                          }
-                                          }
+        if (isCms) {
+            this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
+        }
 
 
-                                          JsonDomHelper.propTypes = {
-                                          client: PropTypes.instanceOf(ApolloClient).isRequired,
-                                          classes: PropTypes.object.isRequired,
-                                          _WrappedComponent: PropTypes.any.isRequired,
-                                          _cmsActions: PropTypes.object.isRequired,
-                                          _key: PropTypes.string.isRequired,
-                                          _scope: PropTypes.object.isRequired,
-                                          _json: PropTypes.any,
-                                          _onChange: PropTypes.func,
-                                          _onDataResolverPropertyChange: PropTypes.func,
-                                          _inlineEditor: PropTypes.bool
-                                          }
+        this.setState({toolbarHovered: false, hovered: false, dragging: false, addChildDialog: {selected: newJsonElement, edit: true}})
+    }
+}
 
 
-                                          /**
-                                          * Map the state to props.
-                                          */
-                                          const mapStateToProps = () => {
-                                          return {}
-                                          }
+JsonDomHelper.propTypes = {
+    client: PropTypes.instanceOf(ApolloClient).isRequired,
+    classes: PropTypes.object.isRequired,
+    _WrappedComponent: PropTypes.any.isRequired,
+    _cmsActions: PropTypes.object.isRequired,
+    _key: PropTypes.string.isRequired,
+    _scope: PropTypes.object.isRequired,
+    _json: PropTypes.any,
+    _onChange: PropTypes.func,
+    _onDataResolverPropertyChange: PropTypes.func,
+    _inlineEditor: PropTypes.bool
+}
 
 
-                                          /**
-                                          * Map the actions to props.
-                                          */
-                                          const mapDispatchToProps = (dispatch) => ({
-                                          _cmsActions: bindActionCreators(CmsActions, dispatch)
-                                          })
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = () => {
+    return {}
+}
 
 
-                                          /**
-                                          * Connect the component to
-                                          * the Redux store.
-                                          */
-                                          export default withApollo(connect(
-                                          mapStateToProps,
-                                          mapDispatchToProps
-                                          )(withStyles(styles)(JsonDomHelper)))
+/**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => ({
+    _cmsActions: bindActionCreators(CmsActions, dispatch)
+})
+
+
+/**
+ * Connect the component to
+ * the Redux store.
+ */
+export default withApollo(connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(withStyles(styles)(JsonDomHelper)))

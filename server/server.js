@@ -229,10 +229,24 @@ const doScreenCapture = async (url, filename, options) => {
     })
     const page = await browser.newPage()
     await page.goto(url, {waitUntil: 'domcontentloaded'})
-    await page.setViewport({ width: 1280, height: 800, ...options})
+
+    await page.setViewport({width: 1280, height: 800, ...options})
+    await page.waitFor(1000)
+
+    if (options.padding) {
+        options.clip = {
+            x: options.padding,
+            y: options.padding,
+            width:options.width - options.padding * 2,
+            height:options.height - options.padding * 2
+        }
+    }
+
+console.log(options)
+
     await page.screenshot({
         fullPage: false,
-        path:filename,
+        path: filename,
         ...options
     })
     await browser.close()
@@ -451,7 +465,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
         const stat = fs.statSync(filename)
 
-        if(!stat.isFile()){
+        if (!stat.isFile()) {
             sendError(res, 404)
             return
         }
@@ -542,7 +556,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         // there is also /graphql/upload
         return proxy.web(req, res, {
             hostname: 'localhost',
-            proxyTimeout:1000*60*10,
+            proxyTimeout: 1000 * 60 * 10,
             port: API_PORT,
             path: req.url,
             onReq: (req, {headers}) => {
@@ -623,33 +637,37 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
 
                         // special url
-                        const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/'+config.PRETTYURL_SEPERATOR+'/')
+                        const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
                         if (pos >= 0) {
-                            const decodedStr=decodeURIComponent(uri.substring(pos+5))
+                            const decodedStr = decodeURIComponent(uri.substring(pos + 5))
 
                             try {
                                 const data = JSON.parse(decodedStr)
-                                if(data.screenshot){
+                                if (data.screenshot) {
                                     //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
                                     //console.log(decodeURI(uri.substring(pos+5)))
 
-                                    const filename=decodedStr.replace(/[^\w\s]/gi, '')+ '.png'
+                                    const filename = decodedStr.replace(/[^\w\s]/gi, '') + '.png'
 
                                     const absFilename = path.join(ABS_UPLOAD_DIR, 'screenshots', filename)
 
-                                    if(!fs.existsSync(absFilename)) {
-                                        await doScreenCapture(data.screenshot.url, absFilename, data.screenshot.options)
+                                    if (!fs.existsSync(absFilename)) {
+                                        let url = data.screenshot.url
+                                        if (url.indexOf('/') === 0) {
+                                            url = 'http://' + req.headers.host + url
+                                        }
+                                        await doScreenCapture(url, absFilename, data.screenshot.options)
                                     }
 
                                     await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
 
 
-                                }else{
+                                } else {
                                     sendError(res, 404)
                                 }
 
-                               // sendIndexFile(req, res, uri, hostrule, host)
-                            }catch (e) {
+                                // sendIndexFile(req, res, uri, hostrule, host)
+                            } catch (e) {
                                 console.log(decodedStr)
 
 

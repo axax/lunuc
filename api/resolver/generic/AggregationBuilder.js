@@ -62,10 +62,9 @@ export default class AggregationBuilder {
             if (sort.constructor === String) {
 
                 const typeFields = getFormFields(this.type)
-
                 // sort looks like "field1 asc, field2 desc"
                 return sort.split(',').reduce((acc, val) => {
-                    const a = val.split(' ')
+                    const a = val.trim().split(' ')
                     let fieldName = a[0]
                     if (fieldName.indexOf('.') < 0 && typeFields[fieldName] && typeFields[fieldName].localized) {
                         fieldName += '.' + lang

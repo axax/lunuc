@@ -101,8 +101,12 @@ const Util = {
         }
     },
     toLocalISODate(d) {
-        const tzoffset = (new Date()).getTimezoneOffset() * 60000 //offset in milliseconds
-        return (new Date(new Date(d) - tzoffset)).toISOString().slice(0, -1)
+        try {
+            const tzoffset = (new Date()).getTimezoneOffset() * 60000 //offset in milliseconds
+            return (new Date(new Date(d) - tzoffset)).toISOString().slice(0, -1)
+        }catch (e) {
+            return d
+        }
     },
     textFromHtml: str => {
         if (str.constructor !== String) return str
@@ -380,3 +384,4 @@ const Util = {
     }
 }
 export default Util
+

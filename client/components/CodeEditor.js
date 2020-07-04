@@ -4,17 +4,19 @@ import {SimpleMenu} from 'ui/admin'
 import {withStyles} from '@material-ui/core/styles'
 import classNames from 'classnames'
 
-import {UnControlled as CodeMirror} from 'react-codemirror2'
+import {UnControlled as UnControlledCodeMirror} from 'react-codemirror2'
+import CodeMirror from 'codemirror'
 import './codemirror/javascript'
 import './codemirror/search'
 import 'codemirror/addon/display/rulers'
 import 'codemirror/mode/htmlmixed/htmlmixed'
 import 'codemirror/addon/hint/javascript-hint'
 import 'codemirror/addon/hint/show-hint'
+import 'codemirror/addon/hint/css-hint'
 import 'codemirror/lib/codemirror.css'
-import 'codemirror/addon/hint/show-hint.css'
 import './codemirror/style.css'
 import './codemirror/dialog.css'
+import './codemirror/hint.css'
 
 /* linter */
 /*import 'codemirror/addon/lint/lint'
@@ -41,8 +43,8 @@ const styles = theme => ({
     rootError: {
         border: 'solid 1px red'
     },
-    codemirror:{
-        height:'30rem'
+    codemirror: {
+        height: '30rem'
     },
     files: {},
     file: {
@@ -55,11 +57,17 @@ const styles = theme => ({
             background: '#aaa'
         }
     },
-    fileActive:{
+    fileActive: {
         background: '#aaa'
     }
 })
 
+
+const snippets = {
+    'customJs': [
+        {text: "on(['resourcesready'],()=>{})", displayText: 'on resourcesready event'}
+    ]
+}
 
 function getFirstLine(text) {
     let index = text.indexOf('\n')
@@ -80,7 +88,7 @@ class CodeEditor extends React.Component {
             stateError: false,
             error: props.error,
             fileIndex: props.fileIndex || 0,
-            showFileSplit:true
+            showFileSplit: true
         }
     }
 
@@ -132,8 +140,34 @@ class CodeEditor extends React.Component {
         }
     }
 
+
+    snippet() {
+        const mode = this._editor.options.mode.name
+        if (snippets[mode]) {
+            CodeMirror.showHint(this._editor, () => {
+                console.log(this._editor)
+                const cursor = this._editor.getCursor()
+                const token = this._editor.getTokenAt(cursor)
+                const start = token.start
+                const end = cursor.ch
+                const line = cursor.line
+                const currentWord = token.string
+
+                const list = snippets[mode].filter((item) => {
+                    return item.text.indexOf(currentWord) >= 0
+                })
+                return {
+                    list: list.length ? list : snippets[mode],
+                    from: CodeMirror.Pos(line, start),
+                    to: CodeMirror.Pos(line, end)
+                }
+            }, {completeSingle: false})
+        }
+    }
+
+
     render() {
-        const {height,onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
+        const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
         const {stateError, showFileSplit, fileIndex} = this.state
 
         const options = {
@@ -149,11 +183,17 @@ class CodeEditor extends React.Component {
             /*  lineWrapping: false,
              matchBrackets: true,*/
             extraKeys: {
+                'Ctrl-E': () => {
+                    this.snippet()
+                },
                 'Ctrl-Space': 'autocomplete',
                 'Ctrl-L': (cm) => {
                     this.autoFormatSelection()
                 }
             },
+            hintOptions: {
+                completeSingle: false,
+            }
         }
 
         if (['js', 'javascript', 'json'].indexOf(type) >= 0) {
@@ -191,23 +231,23 @@ class CodeEditor extends React.Component {
         console.log('render CodeEditor', fabButtonStyle)
 
         let value = this._data && (this._data.constructor === Object || this._data.constructor === Array) ? JSON.stringify(this._data, null, 2) : this._data
-        if(!value){
-            value=''
+        if (!value) {
+            value = ''
         }
         let files, filenames, finalFileIndex
         if (fileSplit) {
 
-            if(showFileSplit) {
+            if (showFileSplit) {
                 files = value.split('\n//!#')
-                if( files.length>1) {
+                if (files.length > 1) {
                     filenames = []
 
                     files.forEach((file, i) => {
-                        if (i === 0 ) {
-                            if(value.indexOf('//!#') === 0) {
+                        if (i === 0) {
+                            if (value.indexOf('//!#') === 0) {
                                 files[i] = files[i].substring(files[i].indexOf('\n') + 1)
                                 filenames.push(getFirstLine(value).substring(4))
-                            }else{
+                            } else {
                                 filenames.push('main')
                             }
                         } else {
@@ -216,9 +256,9 @@ class CodeEditor extends React.Component {
                         }
                     })
 
-                    if( fileIndex>= files.length){
+                    if (fileIndex >= files.length) {
                         finalFileIndex = 0
-                    }else{
+                    } else {
                         finalFileIndex = fileIndex
                     }
 
@@ -227,9 +267,9 @@ class CodeEditor extends React.Component {
             }
 
             allActions.push({
-                name: (showFileSplit?'Hide':'Show')+' File split', onClick: () => {
-                    this._refresh=true
-                    this.setState({showFileSplit:!showFileSplit})
+                name: (showFileSplit ? 'Hide' : 'Show') + ' File split', onClick: () => {
+                    this._refresh = true
+                    this.setState({showFileSplit: !showFileSplit})
                 }
             })
         }
@@ -246,19 +286,19 @@ class CodeEditor extends React.Component {
                 <div className={classes.files}>{filenames.map((entry, i) => {
                     return (
                         <a key={'file' + i}
-                           onClick={()=>{
-                               this._refresh=true
-                               this.setState({fileIndex:i})
+                           onClick={() => {
+                               this._refresh = true
+                               this.setState({fileIndex: i})
 
                                if (onFileChange) {
                                    onFileChange(i)
                                }
                            }}
-                           className={classNames(classes.file, i===finalFileIndex && classes.fileActive)}>{entry}</a>
+                           className={classNames(classes.file, i === finalFileIndex && classes.fileActive)}>{entry}</a>
                     )
                 })}</div>
                 : null}
-            <CodeMirror
+            <UnControlledCodeMirror
                 className={!height && classes.codemirror}
                 autoCursor={false}
                 key="editor"
@@ -267,7 +307,7 @@ class CodeEditor extends React.Component {
                     if (scrollPosition) {
                         editor.scrollTo(scrollPosition.left, scrollPosition.top)
                     }
-                    if( height) {
+                    if (height) {
                         editor.setSize(null, 800);
                     }
                 }}
@@ -276,6 +316,13 @@ class CodeEditor extends React.Component {
                 onScroll={(editor, e) => {
                     if (onScroll) {
                         onScroll(e)
+                    }
+                }}
+                onKeyUp={(cm, e) => {
+                     if (!cm.state.completionActive && /*Enables keyboard navigation in autocomplete list*/
+                         !e.ctrlKey &&
+                         e.keyCode > 64 && e.keyCode < 91){
+                        cm.execCommand("autocomplete")
                     }
                 }}
                 onBlur={(editor, e) => {
@@ -291,18 +338,18 @@ class CodeEditor extends React.Component {
                     }
                     let newData
 
-                    if( filenames ) {
+                    if (filenames) {
                         newData = ''
                         filenames.forEach((file, i) => {
-                            newData += '//!#'+file+'\n'
+                            newData += '//!#' + file + '\n'
                             if (i !== finalFileIndex) {
-                                newData += files[i].trim()+'\n'
+                                newData += files[i].trim() + '\n'
                             } else {
-                                newData += data+'\n'
-                               // filenames.push(getFirstLine(file))
+                                newData += data + '\n'
+                                // filenames.push(getFirstLine(file))
                             }
                         })
-                    }else {
+                    } else {
                         newData = data
                     }
                     if (this._data && (this._data.constructor === Object || this._data.constructor === Array)) {
@@ -326,8 +373,9 @@ class CodeEditor extends React.Component {
                     }
 
                 }}
-            />{(error || stateError) &&
-        <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError : ''}</div>}</div>
+            />
+            {(error || stateError) &&
+            <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError : ''}</div>}</div>
     }
 }
 
@@ -341,7 +389,7 @@ CodeEditor.propTypes = {
     onError: PropTypes.func,
     onScroll: PropTypes.func,
     onFileChange: PropTypes.func,
-    fileIndex:PropTypes.number,
+    fileIndex: PropTypes.number,
     onBlur: PropTypes.func,
     type: PropTypes.string,
     children: PropTypes.any,

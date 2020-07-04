@@ -536,7 +536,7 @@ class TypesContainer extends React.Component {
                                          value={_version}
                                          onChange={(e) => {
                                              const {type} = this.pageParams
-                                             this.goTo({_version:e.target.value})
+                                             this.goTo({_version: e.target.value})
                                              this.setSettingsForType(type, {_version: e.target.value})
                                          }}
                                          items={items}
@@ -711,11 +711,13 @@ class TypesContainer extends React.Component {
                 <Button onClick={() => {
                     this.setSettingsForType(this.pageParams.type, {layout: 'list'})
                     this.goTo({layout: 'list'})
-                }} variant={this.pageParams.layout==='list'?'outlined':''} className={classes.nomargin}><ViewListIcon/></Button>
+                }} variant={this.pageParams.layout === 'list' ? 'outlined' : ''}
+                        className={classes.nomargin}><ViewListIcon/></Button>
                 <Button onClick={() => {
                     this.setSettingsForType(this.pageParams.type, {layout: 'module'})
                     this.goTo({layout: 'module'})
-                }} variant={this.pageParams.layout==='module'?'outlined':''} className={classes.nomargin}><ViewModuleIcon/></Button>
+                }} variant={this.pageParams.layout === 'module' ? 'outlined' : ''}
+                        className={classes.nomargin}><ViewModuleIcon/></Button>
             </ButtonGroup>,
             <Row spacing={2} key="typeHeader">
                 {!this.fixType &&
@@ -1034,7 +1036,7 @@ class TypesContainer extends React.Component {
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
-            finalNoLayout = noLayout || props.noLayout
+            finalNoLayout = noLayout === 'true' ? true : noLayout === 'false' ? false : props.noLayout
 
         let type
         if (finalFixType) {
@@ -1397,8 +1399,8 @@ class TypesContainer extends React.Component {
 
     goTo(args) {
         const {baseUrl, fixType} = this.props
-        const {type, page, limit, sort, filter, _version, layout, multi, baseFilter} = Object.assign({},this.pageParams,args)
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
+        const {type, page, limit, sort, filter, _version, layout, multi, baseFilter, noLayout} = Object.assign({}, this.pageParams, args)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}&noLayout=${noLayout}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
     }
 
 
@@ -1438,7 +1440,7 @@ class TypesContainer extends React.Component {
         }
         const newSort = `${orderBy} ${orderDirection}`
         this.setSettingsForType(type, {sort: newSort})
-        this.goTo({page: 1, sort:newSort})
+        this.goTo({page: 1, sort: newSort})
     }
 
 
@@ -1456,7 +1458,7 @@ class TypesContainer extends React.Component {
 
 
     handleChangeRowsPerPage = (limit) => {
-        this.goTo({page:1, limit})
+        this.goTo({page: 1, limit})
     }
 
     handleDataChange = (event, data, field, lang) => {

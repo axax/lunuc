@@ -2,7 +2,7 @@ import {
     CAPABILITY_MANAGE_CMS_PAGES
 } from '../constants'
 
-const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung'
+const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände'
 const imageOptions = key => ({
     [`${key}options_quality`]: {
         type: 'number',
@@ -67,19 +67,19 @@ const classOptions = key => ({
 const marginOptions = key => ({
     [`${key}style_marginTop`]: {
         label: 'Abstand oben',
-        tab: DEFAULT_TAB
+        tab: MARGIN_TAB
     },
     [`${key}style_marginBottom`]: {
         label: 'Abstand unten',
-        tab: DEFAULT_TAB
+        tab: MARGIN_TAB
     },
     [`${key}style_marginLeft`]: {
         label: 'Abstand links',
-        tab: DEFAULT_TAB
+        tab: MARGIN_TAB
     },
     [`${key}style_marginRight`]: {
         label: 'Abstand recht',
-        tab: DEFAULT_TAB
+        tab: MARGIN_TAB
     }
 })
 
@@ -156,11 +156,46 @@ const baseElements = [
             }
         },
         options: {
-            p_src: {
+            $set_pdf: {
+                fullWidth: true,
+                value: '',
+                label: 'Datei',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=pdf',
+                template: '/core/pdfviewer?pdf=${_app_.config.UPLOAD_URL}/${_id}',
+                tab: DEFAULT_TAB
+            },
+            $set_url: {
                 fullWidth: true,
                 value: '',
                 label: 'Url',
-                template: '/-/-/%7B%22screenshot%22%3A%7B%22url%22%3A%22${encodeURIComponent(data)}%22%2C%22options%22%3A%7B%22height%22%3A1600%2C%22width%22%3A1200%7D%7D%7D',
+                tab: DEFAULT_TAB
+            },
+            $set_width: {
+                fullWidth: true,
+                value: '',
+                label: 'Breite',
+                tab: DEFAULT_TAB
+            },
+            $set_height: {
+                fullWidth: true,
+                value: '',
+                label: 'Höhe',
+                tab: DEFAULT_TAB
+            },
+            $set_padding: {
+                fullWidth: true,
+                value: '',
+                label: 'Padding',
+                tab: DEFAULT_TAB
+            },
+            p_src: {
+                readOnly:true,
+                fullWidth: true,
+                value: '',
+                label: 'Final url',
+                template: '/-/-/%7B%22screenshot%22%3A%7B%22url%22%3A%22${encodeURIComponent(_comp.$set.pdf || _comp.$set.url)}%22%2C%22options%22%3A%7B%22height%22%3A${(_comp.$set.height || 1600)}%2C%22width%22%3A${(_comp.$set.width || 1200)}%2C%22padding%22%3A${(_comp.$set.padding || 0)}%7D%7D%7D',
                 tab: DEFAULT_TAB
             },
             p_alt: {
