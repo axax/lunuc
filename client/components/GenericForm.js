@@ -13,8 +13,7 @@ import {
     Typography,
     Box,
     InputAdornment,
-    TranslateIconButton,
-    DeleteIconButton
+    TranslateIconButton
 } from 'ui/admin'
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'

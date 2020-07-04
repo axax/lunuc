@@ -35,11 +35,11 @@ const FileDrop = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
 
 const Print = (props) => <Async {...props}
-                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
+                                load={import(/* webpackChunkName: "print" */ '../../../client/components/Print')}/>
 
 
 const MarkDown = (props) => <Async {...props}
-                                   load={import(/* webpackChunkName: "admin" */ '../../../client/components/MarkDown')}/>
+                                   load={import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown')}/>
 
 const DrawerLayout = (props) => <Async {...props} expose="ResponsiveDrawerLayout"
                                        load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
@@ -49,11 +49,11 @@ const TypesContainer = (props) => <Async {...props}
 
 
 const AdminButton = (props) => <Async {...props} expose="Button"
-                                      load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')}/>
+                                      load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const AdminSelect = (props) => <Async {...props} expose="Select"
-                                      load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')}/>
+                                      load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const AdminSwitch = (props) => <Async {...props} expose="Switch"
-                                      load={import(/* webpackChunkName: "chat" */ '../../../gensrc/ui/admin')}/>
+                                      load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 
 class JsonDom extends React.Component {
 
