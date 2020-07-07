@@ -108,8 +108,10 @@ const sendError = (res, code) => {
 }
 
 
-const sendFileFromDir = (req, res, filePath, headers) => {
+const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
     let stats
+    filePath = await resizeImage(parsedUrl, req, filePath)
+
     try {
         stats = fs.statSync(filePath)
     } catch (e) {
@@ -118,7 +120,7 @@ const sendFileFromDir = (req, res, filePath, headers) => {
     if (stats.isFile()) {
 
         // static file
-        const ext = path.extname(filePath).split('.')[1]
+        const ext = path.extname(filePath).split('.')[1].trim().toLowerCase()
         const mimeType = MimeType.detectByExtension(ext),
             headerExtra = {
                 'Cache-Control': 'public, max-age=31536000',
@@ -385,6 +387,69 @@ function transcodeVideo(parsedUrl, headerExtra, res, code, fileStream) {
         .pipe(res, {end: true})
 }
 
+async function resizeImage(parsedUrl, req, filename) {
+    // resize image file
+    if (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format) {
+        const width = parseInt(parsedUrl.query.width),
+            height = parseInt(parsedUrl.query.height)
+
+        let format = parsedUrl.query.format
+        if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
+            format = false
+        }
+
+
+        if (!isNaN(width) || !isNaN(height) || format) {
+
+            const resizeOptions = {fit: sharp.fit.cover}
+
+            if (!isNaN(width)) {
+                resizeOptions.width = width
+            }
+
+            if (!isNaN(height)) {
+                resizeOptions.height = height
+            }
+
+            let quality = parseInt(parsedUrl.query.quality)
+            if (isNaN(quality)) {
+                quality = 80
+            }
+
+            let modfilename = `${filename}@${width}x${height}-${quality}${format ? '-' + format : ''}`
+
+            if (!fs.existsSync(modfilename)) {
+                console.log(`modify file ${filename} to ${modfilename}`)
+                //resize image
+                try {
+                    const resizedFile = await sharp(filename).resize(resizeOptions)
+
+                    if (format === 'webp') {
+                        await resizedFile.webp({
+                            quality,
+                            alphaQuality: quality,
+                            lossless: false,
+                            force: true
+                        }).toFile(modfilename)
+                    } else {
+                        await resizedFile.jpeg({
+                            quality,
+                            chromaSubsampling: '4:2:0',
+                            force: false
+                        }).toFile(modfilename)
+                    }
+                    filename = modfilename
+                } catch (e) {
+                    console.error(e)
+                }
+            } else {
+                filename = modfilename
+            }
+        }
+    }
+    return filename
+}
+
 async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
     // remove pretty url part
@@ -403,65 +468,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
     if (fs.existsSync(filename)) {
 
 
-        // resize image file
-        if (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format) {
-            const width = parseInt(parsedUrl.query.width),
-                height = parseInt(parsedUrl.query.height)
-
-            let format = parsedUrl.query.format
-            if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
-                format = false
-            }
-
-
-            if (!isNaN(width) || !isNaN(height) || format) {
-
-                const resizeOptions = {fit: sharp.fit.cover}
-
-                if (!isNaN(width)) {
-                    resizeOptions.width = width
-                }
-
-                if (!isNaN(height)) {
-                    resizeOptions.height = height
-                }
-
-                let quality = parseInt(parsedUrl.query.quality)
-                if (isNaN(quality)) {
-                    quality = 80
-                }
-
-                let modfilename = `${filename}@${width}x${height}-${quality}${format ? '-' + format : ''}`
-
-                if (!fs.existsSync(modfilename)) {
-                    console.log(`modify file ${filename} to ${modfilename}`)
-                    //resize image
-                    try {
-                        const resizedFile = await sharp(filename).resize(resizeOptions)
-
-                        if (format === 'webp') {
-                            await resizedFile.webp({
-                                quality,
-                                alphaQuality: quality,
-                                lossless: false,
-                                force: true
-                            }).toFile(modfilename)
-                        } else {
-                            await resizedFile.jpeg({
-                                quality,
-                                chromaSubsampling: '4:2:0',
-                                force: false
-                            }).toFile(modfilename)
-                        }
-                        filename = modfilename
-                    } catch (e) {
-                        console.error(e)
-                    }
-                } else {
-                    filename = modfilename
-                }
-            }
-        }
+        filename = await resizeImage(parsedUrl, req, filename)
 
 
         const stat = fs.statSync(filename)
@@ -631,10 +638,10 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
             const headers = hostrule.headers[uri]
 
-            if (!sendFileFromDir(req, res, staticFile, headers)) {
+            if (!await sendFileFromDir(req, res, staticFile, headers, parsedUrl)) {
 
-                if (!sendFileFromDir(req, res, WEBROOT_ABSPATH + uri, headers)) {
-                    if (!sendFileFromDir(req, res, BUILD_DIR + uri, headers)) {
+                if (!await sendFileFromDir(req, res, WEBROOT_ABSPATH + uri, headers, parsedUrl)) {
+                    if (!await sendFileFromDir(req, res, BUILD_DIR + uri, headers, parsedUrl)) {
 
 
                         // special url
