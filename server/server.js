@@ -140,12 +140,18 @@ const writeStreamFile = function (fileName) {
     return writeStream
 }
 
-const sendFile = function (req, res, headerExtra, filename) {
-    let acceptEncoding = req.headers['accept-encoding']
+const sendFile = function (req, res, headerExtra, filename, ext) {
+    let acceptEncoding = req.headers['accept-encoding'], neverCompress = false
+
+    // TODO make it configurable
+    if( headerExtra['Content-Type'] && (headerExtra['Content-Type'].indexOf('image/')===0 || headerExtra['Content-Type'].indexOf('video/')===0)){
+        neverCompress = true
+    }
+
     if (!acceptEncoding) {
         acceptEncoding = ''
     }
-    if (acceptEncoding.match(/\bbr\b/)) {
+    if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {
         res.writeHead(200, {...headerExtra, 'content-encoding': 'br'})
 
         if (fs.existsSync(filename + '.br')) {
@@ -160,7 +166,7 @@ const sendFile = function (req, res, headerExtra, filename) {
             fileStreamCom.pipe(writeStreamFile(filename + '.br'))
         }
 
-    } else if (acceptEncoding.match(/\bgzip\b/)) {
+    } else if (!neverCompress && acceptEncoding.match(/\bgzip\b/)) {
         res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
 
         if (fs.existsSync(filename + '.gz')) {
@@ -174,7 +180,7 @@ const sendFile = function (req, res, headerExtra, filename) {
             fileStreamCom.pipe(writeStreamFile(filename + '.gz'))
         }
 
-    } else if (acceptEncoding.match(/\bdeflate\b/)) {
+    } else if (!neverCompress && acceptEncoding.match(/\bdeflate\b/)) {
         res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate'})
 
         const fileStream = fs.createReadStream(filename)
