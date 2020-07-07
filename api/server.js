@@ -1,7 +1,7 @@
 import 'gen/extensions-server'
 import express from 'express'
 import {buildSchema} from 'graphql'
-import graphqlHTTP from 'express-graphql'
+import {graphqlHTTP} from 'express-graphql'
 import bodyParser from 'body-parser'
 //import {ApolloServer, gql} from 'apollo-server-express'
 import {createServer} from 'http'
