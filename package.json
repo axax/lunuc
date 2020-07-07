@@ -89,7 +89,7 @@
     "draft-js-linkify-plugin": "^2.0.2",
     "draft-js-plugins-editor": "^3.0.0",
     "express": "^4.17.1",
-    "express-graphql": "^0.9.0",
+    "express-graphql": "^0.11.0",
     "formidable": "^1.2.2",
     "graphql": "^15.2.0",
     "graphql-subscriptions": "^1.1.0",
@@ -120,7 +120,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.1.1",
     "@google-cloud/translate": "^6.0.1",
-    "aws-sdk": "^2.709.0",
+    "aws-sdk": "^2.710.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",
     "fluent-ffmpeg": "^2.1.2",

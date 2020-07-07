@@ -543,7 +543,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         return
     }
 
-    const parsedUrl = url.parse(req.url, true), uri = parsedUrl.pathname
+    const parsedUrl = url.parse(req.url, true), uri = decodeURI(parsedUrl.pathname)
 
     //small security check
     if (uri.indexOf('../') >= 0) {
