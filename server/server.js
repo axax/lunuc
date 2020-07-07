@@ -120,7 +120,7 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
     if (stats.isFile()) {
 
         // static file
-        const ext = path.extname(filePath).substring(1).trim().toLowerCase()
+        const ext = path.extname(filePath).substring(1).trim().toLowerCase().split('@')[0]
         console.log(filePath,ext)
         const mimeType = MimeType.detectByExtension(ext),
             headerExtra = {
