@@ -57,7 +57,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@apollo/client": "^3.0.0-rc.10",
+    "@apollo/client": "^3.0.0-rc.12",
     "@apollo/link-context": "^2.0.0-beta.3",
     "@apollo/link-error": "^2.0.0-beta.3",
     "@apollo/link-ws": "^2.0.0-beta.3",
@@ -91,7 +91,7 @@
     "express": "^4.17.1",
     "express-graphql": "^0.11.0",
     "formidable": "^1.2.2",
-    "graphql": "^15.2.0",
+    "graphql": "^15.3.0",
     "graphql-subscriptions": "^1.1.0",
     "http2-proxy": "^5.0.51",
     "jsonwebtoken": "^8.5.1",
@@ -113,14 +113,14 @@
     "request-promise": "^4.2.5",
     "sharp": "^0.25.4",
     "socket.io": "^2.3.0",
-    "subscriptions-transport-ws": "^0.9.16",
+    "subscriptions-transport-ws": "^0.9.17",
     "telegraf": "^3.38.0",
     "zip-local": "^0.3.4"
   },
   "optionalDependencies": {
-    "@google-cloud/storage": "^5.1.1",
+    "@google-cloud/storage": "^5.1.2",
     "@google-cloud/translate": "^6.0.1",
-    "aws-sdk": "^2.710.0",
+    "aws-sdk": "^2.713.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",
     "fluent-ffmpeg": "^2.1.2",
@@ -129,7 +129,7 @@
     "mssql": "^6.2.0",
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
-    "ytdl-core": "^3.1.1"
+    "ytdl-core": "^3.1.2"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",

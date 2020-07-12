@@ -521,7 +521,7 @@ class CmsViewEditorContainer extends React.Component {
 
                                        this.saveCmsPage(value, this.props.cmsPage, 'name')
                                    }}
-                                   defaultValue={cmsPage.name?cmsPage.name[_app_.lang]:''}
+                                   defaultValue={cmsPage.name ? cmsPage.name[_app_.lang] : ''}
                                    fullWidth={true}/>
 
                         {canMangeCmsTemplate && <React.Fragment><SimpleSwitch
@@ -586,7 +586,7 @@ class CmsViewEditorContainer extends React.Component {
                                                 menuItems.push(<MenuListItem key={'history' + i._id} onClick={e => {
                                                     this.setState({showRevision: i})
                                                 }} button primary={Util.formattedDateFromObjectId(i._id) + ' - ' + i.action}
-                                                                             secondary={meta.keys.indexOf('template') > -1 ? 'Inhalt wurde geändert' : 'Änderung'}
+                                                                             secondary={meta.keys.indexOf('template') > -1 ? 'Inhalt wurde geändert' : meta.keys.indexOf('style') > -1 ? 'Style hat geändert' : 'Änderung'}
                                                 />)
                                             }
                                         }
@@ -642,6 +642,15 @@ class CmsViewEditorContainer extends React.Component {
                                         <CodeEditor lineNumbers
                                                     type="json"
                                                     readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>
+                                    </div>
+                                } else if (parsedData.style) {
+
+                                    return <div>
+                                        <Typography gutterBottom>Style changed</Typography>
+
+                                        <CodeEditor lineNumbers
+                                                    type="css"
+                                                    readOnly={true}>{parsedData.style}</CodeEditor>
                                     </div>
 
                                 } else if (parsedData.script) {

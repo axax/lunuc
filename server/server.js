@@ -121,7 +121,6 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
 
         // static file
         const ext = path.extname(filePath).substring(1).trim().toLowerCase().split('@')[0]
-        console.log(filePath,ext)
         const mimeType = MimeType.detectByExtension(ext),
             headerExtra = {
                 'Cache-Control': 'public, max-age=31536000',
