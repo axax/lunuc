@@ -35,7 +35,7 @@ class CmsViewContainer extends React.Component {
             }
         }
 
-        if (!cmsPage && props.loading && this.props.loading) {
+        if (!cmsPage && props.loading ) {
             // if there is still no cmsPage and it is still loading
             // there is no need to update
             return false
@@ -62,10 +62,10 @@ class CmsViewContainer extends React.Component {
                 cmsPage.script !== cmsPageOld.script ||
                 cmsPage.style !== cmsPageOld.style ||
                 props.cmsEditData !== this.props.cmsEditData ||
-                /* becuase it is passed to the JsonDom */
+                /* because it is passed to the JsonDom */
                 this.props.settings.inlineEditor !== props.settings.inlineEditor))
 
-    }
+    }∆
 
     componentDidMount() {
         this.setUpSubsciptions(this.props)

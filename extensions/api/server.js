@@ -55,7 +55,6 @@ console.log('/'+config.API_PREFIX)
     app.use('/'+config.API_PREFIX, async (req, res) => {
 
         const slug = url.parse(req.url).pathname.substring(1)
-        console.log(slug)
 
         const api = await getApi({slug, db})
 

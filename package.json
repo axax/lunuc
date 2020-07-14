@@ -57,7 +57,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@apollo/client": "^3.0.0-rc.12",
+    "@apollo/client": "^3.0.0-rc.13",
     "@apollo/link-context": "^2.0.0-beta.3",
     "@apollo/link-error": "^2.0.0-beta.3",
     "@apollo/link-ws": "^2.0.0-beta.3",
@@ -124,7 +124,7 @@
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",
     "fluent-ffmpeg": "^2.1.2",
-    "puppeteer": "^5.0.0",
+    "puppeteer": "^5.1.0",
     "nodemon": "^2.0.4",
     "mssql": "^6.2.0",
     "native-dns": "^0.7.0",
@@ -141,7 +141,7 @@
     "eslint": "^7.4.0",
     "eslint-plugin-react": "^7.20.3",
     "jest-cli": "^26.1.0",
-    "less": "^3.11.3",
+    "less": "^3.12.0",
     "less-loader": "^6.2.0",
     "mini-css-extract-plugin": "^0.9.0",
     "prop-types": "^15.7.2",
