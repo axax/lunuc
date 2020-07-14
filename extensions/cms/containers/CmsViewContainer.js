@@ -65,7 +65,7 @@ class CmsViewContainer extends React.Component {
                 /* because it is passed to the JsonDom */
                 this.props.settings.inlineEditor !== props.settings.inlineEditor))
 
-    }∆
+    }
 
     componentDidMount() {
         this.setUpSubsciptions(this.props)
