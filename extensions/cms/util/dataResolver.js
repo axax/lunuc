@@ -33,15 +33,17 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
 
             // check params
-            const keys = Object.keys(scope.params)
-            if(keys.length>0){
-                keys.forEach(key=>{
-                    // param limit length is 50
-                    if( scope.params[key].length > DEFAULT_PARAM_MAX_LENGTH ) {
-                        scope.params[key] = scope.params[key].substring(0, 50)
-                    }
-                    scope.params[key] = scope.params[key].replace(DEFAULT_PARAM_NOT_ALLOWED_REGEX,'')
-                })
+            if(scope.param) {
+                const keys = Object.keys(scope.params)
+                if (keys.length > 0) {
+                    keys.forEach(key => {
+                        // param limit length is 50
+                        if (scope.params[key].length > DEFAULT_PARAM_MAX_LENGTH) {
+                            scope.params[key] = scope.params[key].substring(0, 50)
+                        }
+                        scope.params[key] = scope.params[key].replace(DEFAULT_PARAM_NOT_ALLOWED_REGEX, '')
+                    })
+                }
             }
 
             for (let i = 0; i < segments.length; i++) {

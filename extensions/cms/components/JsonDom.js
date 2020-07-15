@@ -1078,7 +1078,6 @@ class JsonDom extends React.Component {
 
     runJsEvent(name, async, ...args) {
         let t = this.jsOnStack[name]
-
         if (t && t.length && !this.error) {
             for (let i = 0; i < t.length; i++) {
                 const cb = t[i]
