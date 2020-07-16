@@ -119,6 +119,7 @@ export default () => {
             delete newFields.script
             delete newFields.serverScript
             delete newFields.dataResolver
+            delete newFields.style
 
             // override default
             props.children = [dataToEdit && <Typography key="CmsPageLabel" variant="subtitle1" gutterBottom>

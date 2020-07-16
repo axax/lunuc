@@ -59,33 +59,35 @@ export const getFormFields = (type) => {
         }
     }
     types[type].fields.map(field => {
-        let uitype = field.uitype, placeholder = '', label = ''
-        // if uitype is not defined and if it is a reference to another type use type_picker
-        if (!uitype && field.reference) {
-            uitype = 'type_picker'
-            placeholder = _t('Types.selectType',field)
-            label = _t(`${type}.field.${field.name}`,null,`${field.name} -> ${field.type}`)
-        } else {
-            label = _t(`${type}.field.${field.name}`,null,field.name)
-            placeholder = _t('Types.enterField',field)
-        }
-        typeFormFields[type][field.name] = {
-            placeholder,
-            label,
-            uitype,
-            multi: !!field.multi,
-            fullWidth: !!field.fullWidth,
-            readOnly: !!field.readOnly,
-            alwaysUpdate: !!field.alwaysUpdate,
-            type: field.type,
-            tab: field.tab,
-            required: !!field.required,
-            localized: !!field.localized,
-            pickerField: field.pickerField,
-            fields: field.fields,
-            reference: !!field.reference,
-            enum: field.enum,
-            name: field.name
+        if( field.name!=='modifiedAt') {
+            let uitype = field.uitype, placeholder = '', label = ''
+            // if uitype is not defined and if it is a reference to another type use type_picker
+            if (!uitype && field.reference) {
+                uitype = 'type_picker'
+                placeholder = _t('Types.selectType', field)
+                label = _t(`${type}.field.${field.name}`, null, `${field.name} -> ${field.type}`)
+            } else {
+                label = _t(`${type}.field.${field.name}`, null, field.name)
+                placeholder = _t('Types.enterField', field)
+            }
+            typeFormFields[type][field.name] = {
+                placeholder,
+                label,
+                uitype,
+                multi: !!field.multi,
+                fullWidth: !!field.fullWidth,
+                readOnly: !!field.readOnly,
+                alwaysUpdate: !!field.alwaysUpdate,
+                type: field.type,
+                tab: field.tab,
+                required: !!field.required,
+                localized: !!field.localized,
+                pickerField: field.pickerField,
+                fields: field.fields,
+                reference: !!field.reference,
+                enum: field.enum,
+                name: field.name
+            }
         }
     })
     return typeFormFields[type]

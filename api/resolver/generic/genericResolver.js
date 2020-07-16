@@ -29,7 +29,7 @@ const buildCollectionName = async (db, context, typeName, _version) => {
 const postConvertData = (data, typeName) => {
 
     // here is a good place to handle: Cannot return null for non-nullable
-    const repairMode = false
+    const repairMode = true
 
     if (data.results) {
         const typeDefinition = getType(typeName) || {}
