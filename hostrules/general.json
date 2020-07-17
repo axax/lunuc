@@ -2,6 +2,9 @@
   "headers":{
     "/serviceworker.js": {
       "Cache-Control": "max-age=0, no-cache, no-store, must-revalidate"
+    },
+    "/main.bundle.js": {
+      "Cache-Control": "max-age=86400"
     }
   }
 }

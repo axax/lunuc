@@ -144,7 +144,7 @@ const sendFile = function (req, res, headerExtra, filename, ext) {
     let acceptEncoding = req.headers['accept-encoding'], neverCompress = false
 
     // TODO make it configurable
-    if( headerExtra['Content-Type'] && (headerExtra['Content-Type'].indexOf('image/')===0 || headerExtra['Content-Type'].indexOf('video/')===0)){
+    if (headerExtra['Content-Type'] && (headerExtra['Content-Type'].indexOf('image/') === 0 || headerExtra['Content-Type'].indexOf('video/') === 0)) {
         neverCompress = true
     }
 
@@ -239,16 +239,16 @@ const doScreenCapture = async (url, filename, options) => {
     await page.goto(url, {waitUntil: 'domcontentloaded'})
 
     await page.setViewport({width: 1280, height: 800, ...options})
-    if(options.delay) {
+    if (options.delay) {
         await page.waitFor(options.delay)
     }
-console.log(options)
+    console.log(options)
     if (options.padding) {
         options.clip = {
             x: options.padding,
             y: options.padding,
-            width:options.width - options.padding * 2,
-            height:options.height - options.padding * 2
+            width: options.width - options.padding * 2,
+            height: options.height - options.padding * 2
         }
     }
 
@@ -614,6 +614,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
 
+            hostrule.headers = {...hostrules.general.headers, ...hostrule.headers}
 
             let staticFile
 
@@ -641,7 +642,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             } else {
                 staticFile = path.join(STATIC_DIR, uri)
             }
-
             const headers = hostrule.headers[uri]
 
             if (!await sendFileFromDir(req, res, staticFile, headers, parsedUrl)) {

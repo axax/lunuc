@@ -179,6 +179,9 @@ function mainInit() {
                 navigator.serviceWorker.register('/serviceworker.js?v=' + config.BUILD_NUMBER)
                     .then(function (swReg) {
                         console.log('Service Worker is registered')
+                        setTimeout(()=>{
+                            swReg.update()
+                        },5000)
                     })
                     .catch(function (error) {
                         console.error('Service Worker Error', error)
