@@ -120,11 +120,11 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.1.2",
     "@google-cloud/translate": "^6.0.2",
-    "aws-sdk": "^2.714.2",
+    "aws-sdk": "^2.715.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",
     "fluent-ffmpeg": "^2.1.2",
-    "puppeteer": "^5.1.0",
+    "puppeteer": "^5.2.0",
     "nodemon": "^2.0.4",
     "mssql": "^6.2.0",
     "native-dns": "^0.7.0",
