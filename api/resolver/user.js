@@ -271,7 +271,7 @@ export const userResolver = (db) => ({
                 slug: mailTemplate,
                 recipient: user.email,
                 subject: mailSubject,
-                body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${user.signupToken}","name":"${user.username || user.email}"}`
+                body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${user.signupToken}","name":"${user.username || user.email}","meta":${JSON.stringify(user.meta)}`
             })
 
             return {status: 'ok'}
@@ -292,14 +292,13 @@ export const userResolver = (db) => ({
 
             if (insertResult.insertedCount) {
                 if (mailTemplate) {
-                    context.meta = meta
                     const signupToken = insertResult.ops[0].signupToken
 
                     sendMail(db, context, {
                         slug: mailTemplate,
                         recipient: email,
                         subject: mailSubject,
-                        body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${signupToken}","name":"${username || email}"}`
+                        body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${signupToken}","name":"${username || email}","meta":${JSON.stringify(meta)}`
                     })
                 }
                 const result = await auth.createToken(email, password, db, context)
