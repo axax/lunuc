@@ -292,7 +292,7 @@ export const userResolver = (db) => ({
 
             if (insertResult.insertedCount) {
                 if (mailTemplate) {
-
+                    context.meta = meta
                     const signupToken = insertResult.ops[0].signupToken
 
                     sendMail(db, context, {
