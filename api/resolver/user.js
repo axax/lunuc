@@ -298,7 +298,7 @@ export const userResolver = (db) => ({
                         slug: mailTemplate,
                         recipient: email,
                         subject: mailSubject,
-                        body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${signupToken}","name":"${username || email}","meta":${JSON.stringify(meta)}}`
+                        body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${signupToken}","name":"${username || email}","meta":${meta}}`
                     })
                 }
                 const result = await auth.createToken(email, password, db, context)
