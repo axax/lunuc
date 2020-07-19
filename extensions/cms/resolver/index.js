@@ -1,5 +1,5 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
-import ReactDOMServer from 'react-dom/server'
+import { renderToStringWithData } from '@apollo/client/react/ssr'
 import JsonDom from '../components/JsonDom'
 import React from 'react'
 import Util from 'api/util'
@@ -12,8 +12,18 @@ import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, CAPABILITY_MANA
 import Cache from 'util/cache'
 import {withFilter} from 'graphql-subscriptions'
 import {getHostFromHeaders} from 'util/host'
-import Hook from "../../../util/hook";
+import Hook from '../../../util/hook'
 import {ObjectId} from "mongodb";
+import {
+    InMemoryCache,
+    createHttpLink,
+    ApolloProvider,
+    ApolloClient
+} from '@apollo/client'
+import configureStore from '../../../client/store/index'
+import {Provider} from 'react-redux'
+
+const PORT = (process.env.PORT || 3000)
 
 const createScopeForDataResolver = (query, _props) => {
     const queryParams = query ? ClientUtil.extractQueryParams(query) : {}
@@ -101,17 +111,43 @@ export default db => ({
             })
             let html
             if (ssr) {
+
                 // Server side rendering
-                // todo: ssr for apollo https://github.com/apollographql/apollo-client/blob/master/docs/source/recipes/server-side-rendering.md
                 try {
-                    html = ReactDOMServer.renderToString(<UIProvider>
-                        <JsonDom template={template}
-                                 script={script}
-                                 resolvedData={JSON.stringify(resolvedData)}
-                                 editMode={false}
-                                 scope={JSON.stringify(scope)}/>
+                    const client = new ApolloClient({
+                        ssrMode: true,
+                        // Remember that this is the interface the SSR server will use to connect to the
+                        // API server, so we need to ensure it isn't firewalled, etc
+                        link: createHttpLink({
+                            uri: 'http://localhost:' + PORT + '/graphql',
+                            credentials: 'same-origin',
+                            headers: {
+                                cookie: req.header('Cookie'),
+                            }
+                        }),
+                        cache: new InMemoryCache()
+                    })
+
+                    const {store} = configureStore()
+
+                    const loc = {pathname: req.url, search:''}
+                    window.location = loc
+                    html = await renderToStringWithData(<UIProvider>
+                        <Provider store={store}>
+                            <ApolloProvider client={client}>
+                                <JsonDom template={template}
+                                         script={script}
+                                         location={loc}
+                                         history={{location:loc}}
+                                         slug="_ssr"
+                                         resolvedData={JSON.stringify(resolvedData)}
+                                         editMode={false}
+                                         scope={JSON.stringify(scope)}/>
+                            </ApolloProvider>
+                        </Provider>
                     </UIProvider>)
                 } catch (e) {
+                    console.log(e)
                     html = e.message
                 }
             }
@@ -195,7 +231,7 @@ export default db => ({
                 throw new Error('Cms page doesn\'t exist')
             }
 
-            const {serverScript} = cmsPages.results[0]
+            const {serverScript, dataResolver} = cmsPages.results[0]
 
             if (!serverScript) {
                 throw new Error('serverScript doesn\'t exist')

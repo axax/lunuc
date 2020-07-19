@@ -1,5 +1,4 @@
 import React from 'react'
-import ReactDOMServer from 'react-dom/server'
 import {UIProvider} from 'ui'
 import JsonDom from './components/JsonDom'
 import genSchema from './gensrc/schema'
@@ -14,6 +13,17 @@ import {
 } from './constants'
 import {getCmsPage} from './util/cmsPage'
 import {resolveData} from './util/dataResolver'
+import {
+    InMemoryCache,
+    createHttpLink,
+    ApolloProvider,
+    ApolloClient
+} from '@apollo/client'
+import configureStore from '../../client/store/index'
+import {Provider} from 'react-redux'
+import {renderToStringWithData} from '@apollo/client/react/ssr'
+
+const PORT = (process.env.PORT || 3000)
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
@@ -60,13 +70,34 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
     const {resolvedData} = await resolveData({db, context, dataResolver, scope})
 
     try {
-        return ReactDOMServer.renderToString(<UIProvider>
-            <JsonDom template={template}
-                     script={script}
-                     resolvedData={JSON.stringify(resolvedData)}
-                     editMode={false}
-                     slug={slug}
-                     _props={{context: mailContext}}/>
+        const client = new ApolloClient({
+            ssrMode: true,
+            // Remember that this is the interface the SSR server will use to connect to the
+            // API server, so we need to ensure it isn't firewalled, etc
+            link: createHttpLink({
+                uri: 'http://localhost:' + PORT + '/graphql',
+                credentials: 'same-origin'
+            }),
+            cache: new InMemoryCache()
+        })
+
+        const {store} = configureStore()
+
+        const loc = {pathname: '', search:''}
+        window.location = loc
+        return await renderToStringWithData(<UIProvider>
+            <Provider store={store}>
+                <ApolloProvider client={client}>
+                    <JsonDom template={template}
+                             script={script}
+                             location={loc}
+                             history={{location:loc}}
+                             slug="_ssr"
+                             resolvedData={JSON.stringify(resolvedData)}
+                             editMode={false}
+                             scope={JSON.stringify(scope)}/>
+                </ApolloProvider>
+            </Provider>
         </UIProvider>)
     } catch (e) {
         throw new Error(`Error in template: ${e.message}`)
