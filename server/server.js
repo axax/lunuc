@@ -620,6 +620,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
             if (hostrule.fileMapping && hostrule.fileMapping[uri]) {
                 staticFile = path.join(hostrule.basedir, hostrule.fileMapping[uri])
+                console.log('mapped file: '+staticFile)
             } else if (uri.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + uri)) {
 
                 fs.readFile(STATIC_TEMPLATE_DIR + uri, 'utf8', function (err, data) {
