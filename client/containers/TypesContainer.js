@@ -102,8 +102,8 @@ const styles = theme => ({
     },
     layoutChanger: {
         position: 'absolute',
-        top: '5rem',
-        right: '2rem'
+        top: '1rem',
+        right: '1rem'
     },
     nomargin: {
         margin: 0
@@ -569,7 +569,7 @@ class TypesContainer extends React.Component {
         const startTime = new Date()
         const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, viewFilterDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
         const {title, client, classes} = this.props
-        const {type} = this.pageParams
+        const {type, layout} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
         if (!this.types[type]) {
@@ -763,7 +763,7 @@ class TypesContainer extends React.Component {
 
                 </Col>
             </Row>,
-            this.renderTable(columns),
+            layout==='list'?this.renderTable(columns):null,
             dataToDelete &&
             <SimpleDialog key="deleteDialog" open={confirmDeletionDialog} onClose={this.handleConfirmDeletion}
                           actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
@@ -1400,7 +1400,7 @@ class TypesContainer extends React.Component {
     goTo(args) {
         const {baseUrl, fixType} = this.props
         const {type, page, limit, sort, filter, _version, layout, multi, baseFilter, noLayout} = Object.assign({}, this.pageParams, args)
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}&noLayout=${noLayout}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${noLayout?'&noLayout='+noLayout:''}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
     }
 
 

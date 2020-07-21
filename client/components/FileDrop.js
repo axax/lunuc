@@ -204,7 +204,7 @@ class FileDrop extends React.Component {
     }
 
     handelDrop(e) {
-        const {onFileContent, onFiles, onChange, name, accept, uploadTo, resizeImages, maxSize} = this.props
+        const {onFileContent, onDataUrl, onFiles, onChange, name, accept, uploadTo, resizeImages, maxSize} = this.props
         const {conversion} = this.state
         this.setDragState(e, false)
 
@@ -254,6 +254,14 @@ class FileDrop extends React.Component {
                     reader.readAsText(file, 'UTF-8')
                     reader.onload = function (e) {
                         onFileContent(file, e.target.result)
+                    }
+                }
+
+                if (onDataUrl) {
+                    const reader = new FileReader()
+                    reader.readAsDataURL(file)
+                    reader.onload = function (e) {
+                        onDataUrl(file, e.target.result)
                     }
                 }
 
@@ -337,6 +345,7 @@ FileDrop.propTypes = {
     label: PropTypes.string,
     accept: PropTypes.string,
     onFileContent: PropTypes.func,
+    onDataUrl: PropTypes.func,
     onFiles: PropTypes.func,
     onChange: PropTypes.func,
     uploadTo: PropTypes.string,

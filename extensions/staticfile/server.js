@@ -34,7 +34,16 @@ const createStaticFiles = async (db) => {
 
                 console.log(`create file ${staticFile.name}`)
                 const filePath = currentDir + '/' + staticFile.name
-                fs.writeFile(filePath, staticFile.content, function (err) {
+
+                let content = staticFile.content
+                const regex = /^data:.+\/(.+);base64,(.*)$/
+
+                const matches = content.match(regex)
+                if( matches && matches.length===3){
+                    content = Buffer.from(matches[2], 'base64')
+                }
+
+                fs.writeFile(filePath, content, function (err) {
                     if (err) {
                         return console.log(err)
                     }

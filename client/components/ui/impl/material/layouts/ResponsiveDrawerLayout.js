@@ -56,6 +56,7 @@ const useStyles = makeStyles(theme => ({
         },
     },
     content: {
+        position:'relative',
         boxSizing: 'border-box',
         backgroundColor: theme.palette.background.default,
         width: '100%',
