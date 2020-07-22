@@ -549,7 +549,7 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                                 if (facets) {
                                     Object.keys(facets).forEach(facetKey => {
                                         const facet = facets[facetKey]
-                                        if (facet) {
+                                        if (facet && lookupData[key]) {
                                             if (facet.type === 'slider') {
                                                 if (facet.min === undefined || facet.min > lookupData[key][facetKey]) {
                                                     if (!isNaN(lookupData[key][facetKey])) {
