@@ -130,8 +130,13 @@ export default db => ({
 
                     const {store} = configureStore()
 
-                    const loc = {pathname: req.url, search:''}
-                    window.location = loc
+                    const loc = {pathname: '', search:'', origin: ''}
+                    if( req){
+                        const host = getHostFromHeaders(req.headers)
+                        loc.origin = req.isHttps ? 'https://' : 'http://' + host
+                    }
+                    window.location = globalThis.location = loc
+
                     html = await renderToStringWithData(<UIProvider>
                         <Provider store={store}>
                             <ApolloProvider client={client}>

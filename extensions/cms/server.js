@@ -91,7 +91,8 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
             const host = getHostFromHeaders(req.headers)
             loc.origin = req.isHttps ? 'https://' : 'http://' + host
         }
-        window.location = loc
+        window.location = globalThis.location = loc
+
         return await renderToStringWithData(<UIProvider>
             <Provider store={store}>
                 <ApolloProvider client={client}>
