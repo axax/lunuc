@@ -984,6 +984,13 @@ class JsonDom extends React.Component {
         } catch (e) {
             this.error = {type: 'template', e, code: renderedTemplate}
         }
+        if(_app_.ssr && props.style){
+            // add style
+            if( this.json.constructor !== Array){
+                this.json = [this.json]
+            }
+            this.json.unshift({t:'style',c:preprocessCss(props.style)})
+        }
         return this.json
     }
 

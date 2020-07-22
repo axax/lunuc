@@ -6,7 +6,6 @@ import Util from 'api/util'
 import ClientUtil from 'client/util'
 import {getCmsPage} from '../util/cmsPage'
 import {resolveData} from '../util/dataResolver'
-import {UIProvider} from 'ui'
 import {pubsub} from 'api/subscription'
 import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
 import Cache from 'util/cache'
@@ -137,11 +136,12 @@ export default db => ({
                     }
                     window.location = globalThis.location = loc
 
-                    html = await renderToStringWithData(<UIProvider>
+                    html = await renderToStringWithData(
                         <Provider store={store}>
                             <ApolloProvider client={client}>
                                 <JsonDom template={template}
                                          script={script}
+                                         style={style}
                                          location={loc}
                                          history={{location:loc}}
                                          slug="_ssr"
@@ -149,8 +149,8 @@ export default db => ({
                                          editMode={false}
                                          scope={JSON.stringify(scope)}/>
                             </ApolloProvider>
-                        </Provider>
-                    </UIProvider>)
+                        </Provider>)
+
                 } catch (e) {
                     console.log(e)
                     html = e.message

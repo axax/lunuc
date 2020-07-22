@@ -1,5 +1,4 @@
 import React from 'react'
-import {UIProvider} from 'ui'
 import JsonDom from './components/JsonDom'
 import genSchema from './gensrc/schema'
 import schema from './schema'
@@ -67,7 +66,7 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
         mailContext = {}
     }
     const scope = {page: {slug}}
-    const {template, script, dataResolver} = cmsPages.results[0]
+    const {template, script, dataResolver, style} = cmsPages.results[0]
     const {resolvedData} = await resolveData({db, context, dataResolver, scope})
 
 
@@ -94,11 +93,12 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
         console.log(req, loc)
         window.location = globalThis.location = loc
 
-        return await renderToStringWithData(<UIProvider>
+        return await renderToStringWithData(
             <Provider store={store}>
                 <ApolloProvider client={client}>
                     <JsonDom template={template}
                              script={script}
+                             style={style}
                              location={loc}
                              history={{location:loc}}
                              slug={slug}
@@ -106,8 +106,7 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
                              resolvedData={JSON.stringify(resolvedData)}
                              editMode={false}/>
                 </ApolloProvider>
-            </Provider>
-        </UIProvider>)
+            </Provider>)
     } catch (e) {
         throw new Error(`Error in template: ${e.message}`)
     }
