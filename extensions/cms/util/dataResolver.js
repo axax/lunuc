@@ -587,6 +587,7 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                                 return
                             }
                             count++
+                            console.log(lookupData[key])
                             lookedupData.push(lookupData[key])
                         })
                     }
