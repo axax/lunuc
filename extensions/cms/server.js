@@ -22,6 +22,7 @@ import {
 import configureStore from '../../client/store/index'
 import {Provider} from 'react-redux'
 import {renderToStringWithData} from '@apollo/client/react/ssr'
+import {getHostFromHeaders} from '../../util/host'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -52,7 +53,7 @@ Hook.on('createUserRoles', ({userRoles}) => {
     })
 })
 
-Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
+Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
 
     let cmsPages = await getCmsPage({db, context, slug, checkHostrules: false})
     if (!cmsPages.results) {
@@ -85,7 +86,11 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug}) => {
 
         const {store} = configureStore()
 
-        const loc = {pathname: '', search:''}
+        const loc = {pathname: '', search:'', origin: ''}
+        if( req){
+            const host = getHostFromHeaders(req.headers)
+            loc.origin = req.isHttps ? 'https://' : 'http://' + host
+        }
         window.location = loc
         return await renderToStringWithData(<UIProvider>
             <Provider store={store}>

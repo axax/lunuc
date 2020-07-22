@@ -551,6 +551,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
     const host = getHostFromHeaders(req.headers)
+    req.isHttps = this.constructor.name === 'Server'
 
     if (hasHttpsWwwRedirect.call(this, host, req, res)) {
         return
