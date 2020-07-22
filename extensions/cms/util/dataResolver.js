@@ -533,7 +533,7 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
             if (re.lookup) {
                 const lookupData = propertyByPath(re.lookup.path, rootData)
                 const value = propertyByPath(re.path, currentData)
-                let lookedupData
+                let lookedupData, groups
                 if (value !== undefined) {
                     if (value.constructor === Number) {
                         lookedupData = lookupData[value]
@@ -541,7 +541,7 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                             console.warn(`${value} not found in`, lookupData)
                         }
                     } else if (value.constructor === Array) {
-                        lookedupData = []
+                        lookedupData = [], groups = {}
                         let count = 0
                         value.forEach(key => {
                             if (re.lookup.facets) {
@@ -579,6 +579,11 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                                 }
                             }
 
+                            if (re.lookup.group && re.lookup.group.keepOnlyOne) {
+                                if(groups[lookupData[key][re.lookup.group.key]]){
+                                    return
+                                }
+                            }
 
                             if (re.lookup.limit && re.lookup.limit <= count) {
                                 return
@@ -587,7 +592,9 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                                 return
                             }
                             count++
-                            console.log(lookupData[key])
+                            if (re.lookup.group) {
+                                groups[lookupData[key][re.lookup.group.key]] = lookupData[key]
+                            }
                             lookedupData.push(lookupData[key])
                         })
                     }
