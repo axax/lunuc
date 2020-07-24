@@ -119,6 +119,8 @@ class TypePicker extends React.Component {
         return null
     }
 
+    pickTimeout = 0
+
     shouldComponentUpdate(props, state) {
         return state.value !== this.state.value ||
             state.textValue !== this.state.textValue ||
@@ -304,7 +306,12 @@ class TypePicker extends React.Component {
             } else {
                 filter = e.target.value
             }
-            this.getData(filter + (this.props.filter ? ' && ' + this.props.filter : ''))
+            clearTimeout(this.pickTimeout)
+            this.pickTimeout = setTimeout(() => {
+                clearTimeout(this.pickTimeout)
+                this.pickTimeout = 0
+                this.getData(filter + (this.props.filter ? ' && ' + this.props.filter : ''))
+            }, 250)
         }
     }
 
@@ -365,7 +372,9 @@ class TypePicker extends React.Component {
                 query: gqlQuery,
                 variables
             }).then(response => {
-                this.setState({hasFocus: true, selIdx: 0, data: response.data[nameStartLower]})
+                if( this.pickTimeout === 0) {
+                    this.setState({hasFocus: true, selIdx: 0, data: response.data[nameStartLower]})
+                }
             }).catch(error => {
                 console.log(error.message)
                 this.setState({selIdx: 0, data: null})

@@ -144,7 +144,7 @@ const baseElements = [
         }
     },
     {
-        tagName: 'SmartImage',
+        tagName: 'Link',
         name: 'Screenshot',
         xhint: 'Erzeugt ein screenshot einer Webseite',
         defaults: {
@@ -152,24 +152,35 @@ const baseElements = [
                 elementKey: 'screenshot'
             },
             p: {
-                ['data-element-key']: 'screenshot'
-            }
+                ['data-element-key']: 'screenshot',
+                'rel':'noopener'
+            },
+            c: [
+                {
+                    $inlineEditor: false,
+                    t: 'SmartImage'
+                },
+                {
+                    $inlineEditor: false,
+                    t: 'span',
+                    c: ''
+                }
+            ]
         },
         options: {
             $set_pdf: {
                 fullWidth: true,
                 value: '',
-                label: 'Datei',
+                label: 'Screenshot von Datei',
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=pdf',
-                template: '/core/pdfviewer?pdf=${_app_.config.UPLOAD_URL}/${_id}',
                 tab: DEFAULT_TAB
             },
             $set_url: {
                 fullWidth: true,
                 value: '',
-                label: 'Url',
+                label: 'Screenshot von Url',
                 tab: DEFAULT_TAB
             },
             $set_width: {
@@ -187,20 +198,44 @@ const baseElements = [
             $set_padding: {
                 fullWidth: true,
                 value: '',
-                label: 'Padding',
+                label: 'Bildrand reduzieren',
                 tab: DEFAULT_TAB
             },
-            p_src: {
+            $set_islink: {
+                type: 'Boolean',
+                newLine:true,
+                label: 'Verlinken',
+                value:true,
+                tab: DEFAULT_TAB
+            },
+            c_0_p_src: {
                 readOnly:true,
                 fullWidth: true,
                 value: '',
                 label: 'Final url',
-                template: '/-/-/%7B%22screenshot%22%3A%7B%22url%22%3A%22${encodeURIComponent(_comp.$set.pdf || _comp.$set.url)}%22%2C%22options%22%3A%7B%22height%22%3A${(_comp.$set.height || 1600)}%2C%22delay%22%3A10000%2C%22width%22%3A${(_comp.$set.width || 1200)}%2C%22padding%22%3A${(_comp.$set.padding || 0)}%7D%7D%7D',
+                template: '/-/-/%7B%22screenshot%22%3A%7B%22url%22%3A%22${encodeURIComponent(_comp.$set.pdf?\'/core/pdfviewer?pdf=\'+_app_.config.UPLOAD_URL+\'/\'+_comp.$set.pdf[0]._id :_comp.$set.url)}%22%2C%22options%22%3A%7B%22height%22%3A${(_comp.$set.height || 1600)}%2C%22delay%22%3A10000%2C%22width%22%3A${(_comp.$set.width || 1200)}%2C%22padding%22%3A${(_comp.$set.padding || 0)}%7D%7D%7D',
                 tab: DEFAULT_TAB
             },
-            p_alt: {
-                label: 'Alt Text',
+            c_1_c: {
+                label: 'Beschriftung',
+                fullWidth: true,
+                tab: DEFAULT_TAB
+            },
+            c_0_p_alt: {
+                value:'',
+                template: 'Screenshot ${_comp.$set.pdf?_comp.$set.pdf[0].name:\'Website\'}',
+                readOnly:true,
                 fullWidth: true
+            },
+            p_href: {
+                readOnly:true,
+                value:'',
+                template: '${_comp.$set.url?_comp.$set.url:_app_.config.UPLOAD_URL+\'/\'+_comp.$set.pdf[0]._id+\'/-/\'+_comp.$set.pdf[0].name}',
+            },
+            t: {
+                readOnly:true,
+                value:'',
+                template: "${_comp.$set.islink?'Link':'div'}"
             },
             ...marginOptions('p_'),
             p_style_float: {
@@ -222,11 +257,6 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...classOptions('p_'),
-            p_caption: {
-                label: 'Beschreibung',
-                uitype: 'html',
-                fullWidth: true
-            },
             ...imageOptions('p_'),
             ...lazyImageOptions('$observe_')
         }
