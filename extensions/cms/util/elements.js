@@ -153,7 +153,8 @@ const baseElements = [
             },
             p: {
                 ['data-element-key']: 'screenshot',
-                'rel':'noopener'
+                'rel':'noopener',
+                'target':'_blank'
             },
             c: [
                 {

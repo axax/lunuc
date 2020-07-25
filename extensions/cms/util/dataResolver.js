@@ -77,6 +77,9 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     segment.website.pipeline = tempBrowser
                 }
 
+                if (segment.if === false || segment.if === 'false') {
+                    continue
+                }
 
                 if (segment._data) {
                     resolvedData._data = segment._data
@@ -200,10 +203,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     addDataResolverSubsription = await resolveRequest(segment, resolvedData, context, addDataResolverSubsription)
 
                 } else if (segment.tr) {
-
-                    if (segment.if === false || segment.if === 'false') {
-                        continue
-                    }
 
                     if (!resolvedData.tr)
                         resolvedData.tr = {}
@@ -330,7 +329,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                 } else if (segment.website) {
 
-                    if (segment.if === false || !segment.website.url) {
+                    if (!segment.website.url) {
                         continue
                     }
 
