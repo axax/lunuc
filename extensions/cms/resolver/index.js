@@ -250,6 +250,7 @@ export default db => ({
                 }
             }
 
+            console.log(`Server methode call ${methodName}`)
             let result
             try {
                 const script = await new Promise(resolve => {
@@ -260,7 +261,7 @@ export default db => ({
                             ${serverScript}
                             let result = ${methodName}(this.args)
                             this.resolve({result: result})
-                        }catch(error){
+                        }catch(error){                       
                             this.resolve({error})
                         }
                     })()`)
@@ -279,8 +280,14 @@ export default db => ({
                     })
 
                 })
-                result = await script.result
+                if(script.error) {
+                    result = {error: script.error}
+                    console.log(script)
+                }else {
+                    result = await script.result
+                }
             } catch (error) {
+                console.log(error)
                 result = {error: error.message}
             }
 

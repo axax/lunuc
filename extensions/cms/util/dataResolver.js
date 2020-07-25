@@ -386,7 +386,8 @@ function resolveSystemData(segment, req, resolvedData) {
         segment.system.ls.forEach(ls => {
             if (ls.key) {
                 const files = []
-                fs.readdirSync(path.join(__dirname, ls.path)).forEach(file => {
+                const dir = ls.abspath || path.join(__dirname, ls.path)
+                fs.readdirSync(dir).forEach(file => {
                     files.push(file)
                 })
                 data.ls[ls.key] = files

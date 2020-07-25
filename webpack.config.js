@@ -51,6 +51,8 @@ const APP_VALUES = {
     ...APP_CONFIG.options
 }
 
+APP_VALUES.UPLOAD_DIR_ABSPATH = path.join(__dirname,APP_VALUES.UPLOAD_DIR)
+
 if (APP_CONFIG.extensions) {
     for (const extensionName in APP_CONFIG.extensions) {
         if (APP_CONFIG.extensions[extensionName].active) {
