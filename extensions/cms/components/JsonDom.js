@@ -527,7 +527,7 @@ class JsonDom extends React.Component {
     }
     removeParentRef(props) {
         const {id, _parentRef} = props
-        if (_parentRef && id) {
+        if (_parentRef && _parentRef.componentRefs && id && _parentRef.componentRefs[id]) {
             delete _parentRef.componentRefs[id]
         }
     }
