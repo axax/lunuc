@@ -32,6 +32,7 @@ import {withApollo} from '@apollo/react-hoc'
 import {gql} from '@apollo/client'
 import {deepMergeOptional, deepMerge} from 'util/deepMerge'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
+import DomUtil from "../../../client/util/dom";
 
 const {UPLOAD_URL, DEFAULT_LANGUAGE} = config
 
@@ -136,6 +137,19 @@ const styles = theme => ({
         background: '#fff',
         padding: '3px',
         zIndex: 99999
+    },
+    tooltip: {
+        zIndex: 99999,
+        position: 'fixed',
+        background: 'rgba(245, 245, 66,0.4)',
+        padding: '1rem',
+        visibility:'hidden',
+        opacity:0,
+        transition:'visibility 0.3s linear,opacity 0.3s linear'
+    },
+    tooltipShow: {
+        opacity: 1,
+        visibility: 'visible'
     }
 })
 
@@ -179,11 +193,19 @@ const highlighterHandler = (e, observer, after) => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Alt') {
         JsonDomHelper.altKeyDown = true
+        DomUtil.createAndAddTag('style', 'head', {
+            innerHTML: `select{pointer-events: none !important;}`,
+            id: 'JsonDomHelperNoEvents'
+        })
     }
 })
+const altKeyReleased = ()=>{
+    JsonDomHelper.altKeyDown = false
+    DomUtil.removeElements('#JsonDomHelperNoEvents', null, document.head)
+}
 document.addEventListener('keyup', (e) => {
     if (e.key === 'Alt') {
-        JsonDomHelper.altKeyDown = false
+        altKeyReleased()
     }
 })
 
@@ -545,9 +567,33 @@ const m = Math.max((offX+offY) / 2,100)
     resetDragState() {
         DomUtilAdmin.setAttrForSelector('.' + this.props.classes.dropArea, {className: this.props.classes.dropArea})
         JsonDomHelper.currentDragElement = null
+        if( JsonDomHelper.altKeyDown){
+            altKeyReleased()
+        }
         this.setState({toolbarHovered: false, hovered: false, dragging: false})
     }
 
+    showTooltip(msg, opt) {
+        const {classes} = this.props
+
+        let tooltip = document.querySelector('.' + classes.tooltip)
+        if (!tooltip) {
+            tooltip = document.createElement('div')
+            tooltip.classList.add(classes.tooltip)
+            document.body.appendChild(tooltip)
+        }
+
+        tooltip.classList.add(classes.tooltipShow)
+        tooltip.style.left = opt.left + 'px'
+        tooltip.style.top = opt.top + 'px'
+        tooltip.innerText = msg
+        if(opt.closeIn){
+            clearTimeout(this.tooltipTimeout)
+            this.tooltipTimeout = setTimeout(()=>{
+                tooltip.classList.remove(classes.tooltipShow)
+            }, opt.closeIn)
+        }
+    }
 
     handleEditClick(e) {
         e.stopPropagation()
@@ -791,6 +837,22 @@ const m = Math.max((offX+offY) / 2,100)
             events.onDragEnd = this.onDragEnd.bind(this)
             events.onDrag = this.onDrag.bind(this)
             events.onDrop = this.onDrop.bind(this)
+            events.onMouseDown = (e) => {
+                if (e.target.tagName === 'SELECT') {
+                    const rect = e.target.getBoundingClientRect()
+                    this.showTooltip('Formelement mit gedrückter alt Taste verschieben', {
+                        top: rect.top - 60,
+                        left: rect.left,
+                        closeIn: 2500
+                    })
+
+                    /*const mdown = document.createEvent("MouseEvents")
+                    mdown.initMouseEvent("mousedown", true, true, window, 0, e.screenX, e.screenY, e.clientX, e.clientY, true, false, false, true, 0, null)
+                    e.target.parentNode.dispatchEvent(mdown)
+                    e.target.style.pointerEvents = 'none'*/
+                    // e.preventDefault()
+                }
+            }
         }
 
         events.onDragStart = e => {
@@ -1244,7 +1306,7 @@ const m = Math.max((offX+offY) / 2,100)
 
                                                           if (currentOpt.template) {
                                                               setPropertyByPath(val, '$original_' + key, comp, '_')
-                                                              val = Util.replacePlaceholders(currentOpt.template, {_comp:comp,...(val.constructor===String?{data:val}:val[0])})
+                                                              val = Util.replacePlaceholders(currentOpt.template, {_comp: comp, ...(val.constructor === String ? {data: val} : val[0])})
 
                                                           }
 
@@ -1456,10 +1518,10 @@ const m = Math.max((offX+offY) / 2,100)
                     key,
                     group: newJsonElement.groupOptions[key],
                     label: 'Hinzufügen',
-                    action:'add',
+                    action: 'add',
                     newLine: true,
-                    tab:'Slides',
-                    style:{marginBottom:'2rem'}
+                    tab: 'Slides',
+                    style: {marginBottom: '2rem'}
                 }
                 val.forEach((groupValue, idx) => {
                     Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
@@ -1467,7 +1529,7 @@ const m = Math.max((offX+offY) / 2,100)
                         let groupFieldValue
                         if (groupFieldOption.tr && groupFieldOption.trKey) {
                             if (this.props._scope.data.tr) {
-                                groupFieldValue = this.props._scope.data.tr[groupFieldOption.trKey+'-'+idx]
+                                groupFieldValue = this.props._scope.data.tr[groupFieldOption.trKey + '-' + idx]
                             }
                         } else {
                             groupFieldValue = groupValue[fieldKey]
@@ -1478,21 +1540,21 @@ const m = Math.max((offX+offY) / 2,100)
                                 value: groupFieldValue
                             }
 
-                        if(optData.expandable && optData.expandable.constructor === String){
-                            optData.expandable += ' ' +(idx+1)
+                        if (optData.expandable && optData.expandable.constructor === String) {
+                            optData.expandable += ' ' + (idx + 1)
                         }
 
                         newJsonElement.options[optKey] = optData
 
-                        if(optData.expandable===false){
+                        if (optData.expandable === false) {
                             delete optData.expandable
-                            newJsonElement.options[ '!' + key + '!delete!' + idx] = {
+                            newJsonElement.options['!' + key + '!delete!' + idx] = {
                                 uitype: 'button',
                                 label: 'Löschen',
-                                action:'delete',
+                                action: 'delete',
                                 key,
                                 group: newJsonElement.groupOptions[key],
-                                index:idx,
+                                index: idx,
                                 newLine: true,
                                 expandable: false
                             }
@@ -1509,7 +1571,12 @@ const m = Math.max((offX+offY) / 2,100)
         }
 
 
-        this.setState({toolbarHovered: false, hovered: false, dragging: false, addChildDialog: {selected: newJsonElement, edit: true}})
+        this.setState({
+            toolbarHovered: false,
+            hovered: false,
+            dragging: false,
+            addChildDialog: {selected: newJsonElement, edit: true}
+        })
     }
 }
 

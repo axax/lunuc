@@ -351,6 +351,7 @@ class JsonDom extends React.Component {
         this.runJsEvent('unmount')
         this._historyUnlisten()
         this._ismounted = false
+        this.removeParentRef(this.props)
         this.removeAddedDomElements()
         this.json = this.jsonRaw = this.componentRefs = null
         if (this.node && this.node.oriParent) {
@@ -521,7 +522,13 @@ class JsonDom extends React.Component {
     addParentRef(props) {
         const {id, _parentRef} = props
         if (_parentRef && id) {
-            props._parentRef.componentRefs[id] = this
+            _parentRef.componentRefs[id] = this
+        }
+    }
+    removeParentRef(props) {
+        const {id, _parentRef} = props
+        if (_parentRef && id) {
+            delete _parentRef.componentRefs[id]
         }
     }
 
