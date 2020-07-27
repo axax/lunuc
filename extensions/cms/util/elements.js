@@ -397,6 +397,7 @@ const baseElements = [
                 uitype: 'html',
                 tab: DEFAULT_TAB
             },
+            ...classOptions('p_'),
             ...marginOptions('p_')
         }
     },
