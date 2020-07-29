@@ -193,15 +193,20 @@ const highlighterHandler = (e, observer, after) => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Alt') {
         JsonDomHelper.altKeyDown = true
-        DomUtil.createAndAddTag('style', 'head', {
-            innerHTML: `select{pointer-events: none !important;}`,
-            id: 'JsonDomHelperNoEvents'
+        JsonDomHelper.disabledSelect = []
+        document.querySelectorAll('select').forEach(el=> {
+            if(!el.disabled){
+                el.disabled=true
+                JsonDomHelper.disabledSelect.push(el)
+            }
         })
     }
 })
 const altKeyReleased = ()=>{
     JsonDomHelper.altKeyDown = false
-    DomUtil.removeElements('#JsonDomHelperNoEvents', null, document.head)
+    JsonDomHelper.disabledSelect.forEach(el=>{
+        el.disabled = false
+    })
 }
 document.addEventListener('keyup', (e) => {
     if (e.key === 'Alt') {
@@ -591,6 +596,9 @@ const m = Math.max((offX+offY) / 2,100)
             clearTimeout(this.tooltipTimeout)
             this.tooltipTimeout = setTimeout(()=>{
                 tooltip.classList.remove(classes.tooltipShow)
+                this.tooltipTimeout = setTimeout(()=> {
+                    tooltip.parentNode.removeChild(tooltip)
+                },300)
             }, opt.closeIn)
         }
     }
