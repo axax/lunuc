@@ -544,6 +544,11 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                         lookedupData = [], groups = {}
                         let count = 0
                         value.forEach(key => {
+
+                            if (checkFilter(re.lookup.filterBefore, lookupData, key)) {
+                                return
+                            }
+
                             if (re.lookup.facets) {
                                 const facets = propertyByPath(re.lookup.facets.path, rootData)
                                 if (facets) {
