@@ -286,7 +286,7 @@ class GenericForm extends React.Component {
     }
 
     render() {
-        const {fields, onKeyDown, primaryButton, caption, autoFocus, classes} = this.props
+        const {fields, onKeyDown, primaryButton, caption, autoFocus, classes, subForm} = this.props
         const fieldKeys = Object.keys(fields), formFields = [], tabs = {}
 
         let expandableField, expandableData
@@ -324,6 +324,38 @@ class GenericForm extends React.Component {
                 currentFormFields.push(<br key={'br' + fieldKey}/>)
             }
             const uitype = (field.uitype === 'datetime' ? 'datetime-local' : 0) || field.uitype || (field.enum ? 'select' : 'text')
+
+
+            if (field.subFields) {
+
+                /*  const subFields = {}
+                  Object.keys().forEach(k=>{
+                      subFields[k] = {value: value}
+                  })
+  */
+                let values
+                try{
+                    values = JSON.parse(value)
+                }catch (e) {
+                    values = {}
+                }
+
+                currentFormFields.push(<GenericForm onChange={(e)=>{
+
+                    values[e.name] = e.value
+                    this.handleInputChange({
+                        target: {
+                            name: fieldKey,
+                            value: JSON.stringify(values)
+                        }
+                    })
+
+                }} primaryButton={false} values={values} key={fieldKey} subForm={true} classes={classes} fields={field.subFields}/>)
+
+                currentFormFields.push(<br key={'brMeta' + fieldKey}/>)
+            }
+
+
 
             if (['json', 'editor', 'jseditor'].indexOf(uitype) >= 0) {
 
@@ -392,7 +424,6 @@ class GenericForm extends React.Component {
                 }else {
                     currentFormFields.push(createHtmlField(fieldKey, value))
                 }
-
             } else if (uitype === 'hr') {
 
                 currentFormFields.push(<hr/>)
@@ -560,9 +591,10 @@ class GenericForm extends React.Component {
         const {tabValue} = this.state
         const tabKeys = Object.keys(tabs)
         console.log('render GenericForm')
+        const Wrapper = subForm?'div':'form'
 
         return (
-            <form className={classes.form}>
+            <Wrapper className={classes.form}>
                 {tabKeys.length === 0 && formFields}
                 {tabKeys.length > 0 && <div className={classes.tabContainer}>
                     <AntTabs
@@ -594,7 +626,7 @@ class GenericForm extends React.Component {
                     <Button color="primary" variant="contained" disabled={!this.state.isValid}
                             onClick={this.onAddClick}>{caption || 'Add'}</Button>
                     : ''}
-            </form>
+            </Wrapper>
         )
     }
 }

@@ -46,7 +46,7 @@ export const getFormFields = (type) => {
         //throw new Error('Cannot find type "'+type+'" in getFormFields')
     }
     typeFormFields[type] = {}
-    if (!types[type].noUserRelation && Util.hasCapability({userData:_app_.user}, 'manage_other_users')) {
+    if (!types[type].noUserRelation && Util.hasCapability({userData: _app_.user}, 'manage_other_users')) {
         // add field so the createdBy User can be changed
         typeFormFields[type].createdBy = {
             label: _t('Types.createdBy'),
@@ -59,7 +59,7 @@ export const getFormFields = (type) => {
         }
     }
     types[type].fields.map(field => {
-        if( field.name!=='modifiedAt') {
+        if (field.name !== 'modifiedAt') {
             let uitype = field.uitype, placeholder = '', label = ''
             // if uitype is not defined and if it is a reference to another type use type_picker
             if (!uitype && field.reference) {
@@ -84,6 +84,7 @@ export const getFormFields = (type) => {
                 localized: !!field.localized,
                 pickerField: field.pickerField,
                 fields: field.fields,
+                subFields: field.subFields,
                 reference: !!field.reference,
                 enum: field.enum,
                 name: field.name
@@ -152,7 +153,7 @@ export const checkFieldType = (value, field) => {
         if (isNaN(value)) {
             value = null
         }
-    }else if( field.replaceBreaks){
+    } else if (field.replaceBreaks) {
         value = value.replace(/(?:\r\n|\r|\n)/g, '<br>')
     }
 
@@ -265,7 +266,11 @@ Hook.on('Types', ({types}) => {
             {
                 name: 'meta',
                 type: 'Object',
-                uitype: 'json'
+                uitype: 'json',
+                subFields: {
+                    erp: {value: '', label:'ERP Nummer'}
+                },
+                tab: 'Meta'
             },
             {
                 name: 'lastLogin',
@@ -278,7 +283,7 @@ Hook.on('Types', ({types}) => {
                 type: 'User',
                 label: 'Junior User',
                 reference: true,
-                multi:true,
+                multi: true,
                 fields: ['username']
             }
         ]
