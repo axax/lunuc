@@ -144,6 +144,15 @@ class JsonDom extends React.Component {
                         setTimeout(() => {
                             window.scrollTo({top: 0})
                         }, 0)
+                    }else if(url.indexOf('#')>=0){
+
+                        setTimeout(() => {
+                            const hash = url.split('#')[1]
+                            const element = document.getElementById(hash)
+                            if (element) element.scrollIntoView()
+                        }, 100)
+
+
                     }
 
                     if (onClick) {
