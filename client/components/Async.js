@@ -19,6 +19,8 @@ class Async extends React.Component {
                     this.Component = Component.default
                 }
                 this.forceUpdate()
+            }).catch((e)=>{
+                console.error(e)
             })
         }
     }

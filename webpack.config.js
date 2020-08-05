@@ -101,7 +101,8 @@ const config = {
         path: path.resolve(__dirname, 'build'),
         filename: '[name].bundle.js?v=' + BUILD_NUMBER,
         chunkFilename: '[name].bundle.js?v=' + BUILD_NUMBER,
-        publicPath: '/'
+        publicPath: '/',
+        chunkLoadTimeout: 30000
     },
     module: {
         rules: [
