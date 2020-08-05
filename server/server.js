@@ -140,6 +140,21 @@ const writeStreamFile = function (fileName) {
     return writeStream
 }
 
+function isFileNotNewer(filename, statsMainFile) {
+    let isFile = fs.existsSync(filename)
+
+    if (isFile) {
+        const statsFile = fs.statSync(filename)
+
+        // compare date
+        if (statsMainFile.mtime > statsFile.mtime) {
+            isFile = false
+            console.log(filename + ' is older')
+        }
+    }
+    return isFile
+}
+
 const sendFile = function (req, res, headerExtra, filename, ext) {
     let acceptEncoding = req.headers['accept-encoding'], neverCompress = false
 
@@ -151,10 +166,20 @@ const sendFile = function (req, res, headerExtra, filename, ext) {
     if (!acceptEncoding) {
         acceptEncoding = ''
     }
+
+    let statsMainFile
+    try {
+        statsMainFile = fs.statSync(filename)
+    } catch(err) {
+        console.error(err)
+        console.log(filename + ' does not exist')
+        sendError(res, 404)
+    }
+
     if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {
         res.writeHead(200, {...headerExtra, 'content-encoding': 'br'})
 
-        if (fs.existsSync(filename + '.br')) {
+        if (isFileNotNewer(filename + '.br', statsMainFile)) {
             // if br version is available send this instead
             const fileStream = fs.createReadStream(filename + '.br')
             fileStream.pipe(res)
@@ -169,7 +194,7 @@ const sendFile = function (req, res, headerExtra, filename, ext) {
     } else if (!neverCompress && acceptEncoding.match(/\bgzip\b/)) {
         res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
 
-        if (fs.existsSync(filename + '.gz')) {
+        if (isFileNotNewer(filename + '.gz', statsMainFile)) {
             // if gz version is available send this instead
             const fileStream = fs.createReadStream(filename + '.gz')
             fileStream.pipe(res)

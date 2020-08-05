@@ -80,9 +80,9 @@ class Print extends React.PureComponent {
     }
 
     render() {
-        const {classes, children, style} = this.props
+        const {classes, children, style, buttonLabel} = this.props
         return <div className={classes.root}>
-            <button className={classes.button} onClick={this.createPdf.bind(this)}>Create PDF</button>
+            <button className={classes.button} onClick={this.createPdf.bind(this)}>{buttonLabel || 'Create PDF'}</button>
             <div className={classes.overlay}></div>
             <div className={classes.wrapper}>
                 <div className={classes.printArea} style={style}>
@@ -99,7 +99,7 @@ class Print extends React.PureComponent {
         if (!html2canvas) return
         if (!pdfMake) return
 
-        const {classes} = this.props
+        const {classes, pdfName} = this.props
         const $ = (expr, p) => (p || document).querySelectorAll(expr),
             enlargeFac = 1,
             pageHeight = 1430 * enlargeFac,
@@ -203,7 +203,7 @@ class Print extends React.PureComponent {
 
                      },{ autoPrint: true } )
                      }else{*/
-                    pdfMake.createPdf(docDefinition).download('cv.pdf', () => {
+                    pdfMake.createPdf(docDefinition).download((pdfName||'file')+'.pdf', () => {
                         ol.style.display = 'none'
                     })
                     /*}*/
