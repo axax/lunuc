@@ -35,7 +35,7 @@ const FileDrop = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
 
 const Print = (props) => <Async {...props}
-                                load={import(/* webpackChunkName: "print" */ '../../../client/components/Print')}/>
+                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
 
 
 const MarkDown = (props) => <Async {...props}

@@ -3,8 +3,11 @@ import PropTypes from 'prop-types'
 import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
 import {gql} from '@apollo/client'
-import {Card} from 'ui/admin'
 import styles from './style.css'
+import Async from '../../../client/components/Async'
+
+const Card = (props) => <Async {...props} expose="Card"
+                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 
 class StockTicker extends React.Component {
 
