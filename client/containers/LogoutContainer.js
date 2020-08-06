@@ -30,17 +30,18 @@ class LogoutContainer extends React.Component {
                 console.log(e)
             }
             localStorage.removeItem('token')
+            let to = '/'
+            const params = Util.extractQueryParams()
+            if (params.forward) {
+                to = params.forward
+            }
+            location.href = to
+
         },250)
     }
 
     render() {
-        let to = '/'
-        const params = Util.extractQueryParams()
-        if (params.forward) {
-            to = params.forward
-        }
-        location.href = to
-
+        return null
     }
 }
 
