@@ -99,7 +99,7 @@
     "node-cron": "^2.0.3",
     "node-fetch": "^2.6.0",
     "nodemailer": "^6.4.11",
-    "preact": "^10.4.6",
+    "preact": "^10.4.7",
     "react": "^16.13.1",
     "react-autosuggest": "^10.0.2",
     "react-codemirror2": "^7.2.1",
@@ -118,7 +118,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.1.2",
     "@google-cloud/translate": "^6.0.2",
-    "aws-sdk": "^2.726.0",
+    "aws-sdk": "^2.727.1",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",
     "fluent-ffmpeg": "^2.1.2",

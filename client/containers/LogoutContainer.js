@@ -2,7 +2,6 @@ import React from 'react'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
-import {Redirect} from 'react-router-dom'
 import * as UserActions from 'client/actions/UserAction'
 import {withApollo} from '@apollo/react-hoc'
 import { ApolloClient } from '@apollo/client'
@@ -35,14 +34,13 @@ class LogoutContainer extends React.Component {
     }
 
     render() {
-        let to = {pathname: '/'}
+        let to = '/'
         const params = Util.extractQueryParams()
         if (params.forward) {
-            to = {pathname: params.forward}
+            to = params.forward
         }
+        location.href = to
 
-
-        return <Redirect to={to} push={true}/>
     }
 }
 
