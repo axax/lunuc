@@ -221,13 +221,21 @@ class Print extends React.PureComponent {
 
                      },{ autoPrint: true } )
                      }else{*/
-                    pdfMake.createPdf(docDefinition).download((pdfName||'file')+'.pdf', () => {
+                    if(!this.props.openPdf){
+                        pdfMake.createPdf(docDefinition).open()
                         ol.style.display = 'none'
-
-                        if(this.props.closeWindow){
+                        if (this.props.closeWindow) {
                             window.close()
                         }
-                    })
+                    }else {
+                        pdfMake.createPdf(docDefinition).download((pdfName || 'file') + '.pdf', () => {
+                            ol.style.display = 'none'
+
+                            if (this.props.closeWindow) {
+                                window.close()
+                            }
+                        })
+                    }
                     /*}*/
                 }
             })
