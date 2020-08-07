@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import DomUtil from 'client/util/dom'
 import injectSheet from 'react-jss'
+import _t from '../../util/i18n'
 
 const styles = {
     button: {
@@ -79,6 +80,12 @@ class Print extends React.PureComponent {
         DomUtil.addScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js')
     }
 
+    componentDidMount() {
+        if(this.props.createOnMount){
+            this.createPdf()
+        }
+    }
+
     render() {
         const {classes, children, style, buttonLabel} = this.props
         return <div className={classes.root}>
@@ -127,7 +134,7 @@ class Print extends React.PureComponent {
 
 
         const nextPage = page => {
-            ol.innerText = `Please be patient... It might take some time... Page ${page + 1} of ${breaks.length + 1} is being produced`
+            ol.innerText = _t('Print.createPage', {page: page+1, numberOfPages:breaks.length + 1})
 
             const fi = $(`.${classes.invisible}`, pa)
             if (fi && fi.length > 0) {
@@ -180,7 +187,7 @@ class Print extends React.PureComponent {
 
                         content: pdfContent
                     }
-                    ol.innerText = 'Please be patient... We are almost there... Enjoy!'
+                    ol.innerText = _t('Print.almostDone')
 
                     /* if( toprint ){
                      window.pdfMake.createPdf(docDefinition).getDataUrl((dataUrl) => {

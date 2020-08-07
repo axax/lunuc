@@ -41,5 +41,7 @@
   "CmsViewEditorContainer.languages": "Language variants",
   "CmsViewEditorContainer.undochange": "Undo change",
   "CmsViewEditorContainer.logout": "Logout",
-  "GenericForm.fieldIsRequired": "Field is required"
+  "GenericForm.fieldIsRequired": "Field is required",
+  "Print.almostDone": "Please be patient... We are almost there... Enjoy!",
+  "Print.createPage": "Please be patient... It might take some time... Page %page% of %numberOfPages% is being produced"
 }
