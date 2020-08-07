@@ -221,7 +221,7 @@ class Print extends React.PureComponent {
 
                      },{ autoPrint: true } )
                      }else{*/
-                    if(!this.props.openPdf){
+                    if(this.props.openPdf){
                         pdfMake.createPdf(docDefinition).open()
                         ol.style.display = 'none'
                         if (this.props.closeWindow) {
