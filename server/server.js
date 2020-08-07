@@ -717,7 +717,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                             }
 
                         } else {
-                            console.log('not exists: ' + uri)
                             sendIndexFile(req, res, uri, hostrule, host)
                         }
                     }
