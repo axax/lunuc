@@ -82,7 +82,9 @@ class Print extends React.PureComponent {
 
     componentDidMount() {
         if(this.props.createOnMount){
-            this.createPdfWait()
+            setTimeout(()=> {
+                this.createPdfWait()
+            },300)
         }
     }
 
