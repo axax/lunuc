@@ -82,7 +82,7 @@ class Print extends React.PureComponent {
 
     componentDidMount() {
         if(this.props.createOnMount){
-            this.createPdf()
+            this.createPdfWait()
         }
     }
 
@@ -101,10 +101,16 @@ class Print extends React.PureComponent {
 
     }
 
+    createPdfWait(){
+        if(!this.createPdf()){
+            setTimeout(this.createPdfWait,300)
+        }
+    }
+
 
     createPdf() {
-        if (!html2canvas) return
-        if (!pdfMake) return
+        if (!window.html2canvas) return false
+        if (!window.pdfMake) return false
 
         const {classes, pdfName} = this.props
         const $ = (expr, p) => (p || document).querySelectorAll(expr),
@@ -212,6 +218,10 @@ class Print extends React.PureComponent {
                      }else{*/
                     pdfMake.createPdf(docDefinition).download((pdfName||'file')+'.pdf', () => {
                         ol.style.display = 'none'
+
+                        if(this.props.closeWindow){
+                            window.close()
+                        }
                     })
                     /*}*/
                 }
@@ -226,6 +236,8 @@ class Print extends React.PureComponent {
 
          doc.text('Hello world!', 10, 10)
          doc.save('a4.pdf')*/
+
+        return true
     }
 
 
