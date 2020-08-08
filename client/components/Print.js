@@ -6,9 +6,9 @@ import _t from '../../util/i18n'
 
 const styles = {
     button: {
-        width: '100px',
         height: '30px',
         backgroundColor: '#46b8da',
+        cursor:'pointer',
         margin: 'auto',
         display: 'block',
         border: 'none',
@@ -43,7 +43,15 @@ const styles = {
             maxWidth: '100%'
         }
     },
-    scaled: {},
+    scaled: {
+        '& $pageBreak': {
+            border: 'none !important',
+            '&:after': {
+                display: 'none'
+            }
+        }
+
+    },
     cloneArea: {
         width: '1020px' /* this is the paper size */
     },
@@ -68,6 +76,21 @@ const styles = {
         '& *': {
             visibility: 'hidden !important'
         }
+    },
+    pageBreak: {
+        width: '100%',
+        borderTop: 'dashed 1px #ffd633',
+        position: 'relative',
+        '&:after': {
+            position: 'absolute',
+            right: '10px',
+            display: 'block',
+            content: 'Page break',
+            color: '#000',
+            fontSize: '0.7em',
+            background: '#ffd633',
+            padding: '3px'
+        }
     }
 }
 
@@ -81,17 +104,18 @@ class Print extends React.PureComponent {
     }
 
     componentDidMount() {
-        if(this.props.createOnMount){
-            setTimeout(()=> {
+        if (this.props.createOnMount) {
+            setTimeout(() => {
                 this.createPdfWait()
-            },300)
+            }, 300)
         }
     }
 
     render() {
         const {classes, children, style, buttonLabel} = this.props
         return <div className={classes.root}>
-            <button className={classes.button} onClick={this.createPdf.bind(this)}>{buttonLabel || 'Create PDF'}</button>
+            <button className={classes.button}
+                    onClick={this.createPdf.bind(this)}>{buttonLabel || 'Create PDF'}</button>
             <div className={classes.overlay}></div>
             <div className={classes.wrapper}>
                 <div className={classes.printArea} style={style}>
@@ -103,12 +127,12 @@ class Print extends React.PureComponent {
 
     }
 
-    createPdfWait(){
+    createPdfWait() {
         console.log('sss')
-        if(!this.createPdf()){
-            setTimeout(()=>{
+        if (!this.createPdf()) {
+            setTimeout(() => {
                 this.createPdfWait()
-            },300)
+            }, 300)
         }
     }
 
@@ -136,119 +160,121 @@ class Print extends React.PureComponent {
         })
         pa.className += ` ${classes.scaled}`
 
-        cpc.appendChild(pa)
+        setTimeout(()=> {
 
-        this.calculatePageBreaks($, pa, pageHeight)
+            cpc.appendChild(pa)
 
-        const breaks = $('.cv-pagebreak', pai),
-            offsetTop = this.offsetTop(pai)
+            this.calculatePageBreaks($, pa, pageHeight)
 
+            const breaks = $('.' + classes.pageBreak, pai),
+                offsetTop = this.offsetTop(pai)
 
-        const nextPage = page => {
-            ol.innerText = _t('Print.createPage', {page: page+1, numberOfPages:breaks.length + 1})
+            const nextPage = page => {
+                ol.innerText = _t('Print.createPage', {page: page + 1, numberOfPages: breaks.length + 1})
 
-            const fi = $(`.${classes.invisible}`, pa)
-            if (fi && fi.length > 0) {
-                for (let i = 0; i < fi.length; i++)
-                    fi[i].classList.remove(classes.invisible)
-            }
-
-            let marginTop = 0
-            if (page > 0) {
-                pai.style.marginTop = 0
-                let br = breaks[page - 1]
-                marginTop = this.offsetTop(br) - offsetTop
-            }
-            console.log('marginTop', marginTop)
-
-            if (page < breaks.length) {
-                let elem = breaks[page]
-                while (elem = elem.nextSibling) {
-                    if (elem.nodeType === 3) continue // text node
-                    elem.classList.add(classes.invisible)
+                const fi = $(`.${classes.invisible}`, pa)
+                if (fi && fi.length > 0) {
+                    for (let i = 0; i < fi.length; i++)
+                        fi[i].classList.remove(classes.invisible)
                 }
-            }
-            pai.style.marginTop = (-marginTop / enlargeFac) + 'px'
-            html2canvas(pa, {
-                imageTimeout: 20000,
-                width: pageWidth,
-                height: pageHeight,
-                /*logging: true,*/
-                /*proxy: ( (ENV=="development" )?"linkedin/src/php/html2canvasproxy.php":"php/html2canvasproxy.php"),*/
-            }).then(canvas => {
 
-                var data = canvas.toDataURL()
-                pdfContent.push({
-                    image: data,
-                    width: 600
-                })
+                let marginTop = 0
+                if (page > 0) {
+                    pai.style.marginTop = 0
+                    let br = breaks[page - 1]
+                    marginTop = this.offsetTop(br) - offsetTop + br.clientHeight
+                }
+                console.log('marginTop', marginTop)
 
                 if (page < breaks.length) {
-                    nextPage(page + 1)
-                } else {
-                    // $pai.css({marginTop:0})
-                    //$pa.css({overflow:"visible",height:"auto"})
-                    cpc.innerHTML = ''
-
-                    //window.open(data);
-
-                    var docDefinition = {
-                        pageMargins: [0, 0, 0, 0],
-                        pageSize: 'A4',
-
-                        content: pdfContent
+                    let elem = breaks[page]
+                    while (elem = elem.nextSibling) {
+                        if (elem.nodeType === 3) continue // text node
+                        elem.classList.add(classes.invisible)
                     }
-                    ol.innerText = _t('Print.almostDone')
+                }
+                pai.style.marginTop = (-marginTop / enlargeFac) + 'px'
 
-                    /* if( toprint ){
-                     window.pdfMake.createPdf(docDefinition).getDataUrl((dataUrl) => {
 
-                     var iFrame = document.createElement('iframe');
-                     iFrame.style.position = 'absolute';
-                     iFrame.style.left = '-99999px';
-                     iFrame.src = dataUrl;
-                     iFrame.onload = function() {
-                     function removeIFrame(){
-                     document.body.removeChild(iFrame);
-                     document.removeEventListener('click', removeIFrame);
-                     }
-                     document.addEventListener('click', removeIFrame, false);
-                     };
+                /*ol.style.display = 'none'
 
-                     document.body.appendChild(iFrame);
+                return*/
+                html2canvas(pa, {
+                    imageTimeout: 20000,
+                    width: pageWidth,
+                    height: pageHeight,
+                    /*logging: true,*/
+                    /*proxy: ( (ENV=="development" )?"linkedin/src/php/html2canvasproxy.php":"php/html2canvasproxy.php"),*/
+                }).then(canvas => {
 
-                     $(".cv-overlay").hide()
+                    var data = canvas.toDataURL()
+                    pdfContent.push({
+                        image: data,
+                        width: 600
+                    })
 
-                     },{ autoPrint: true } )
-                     }else{*/
-                    if(this.props.openPdf){
-                        pdfMake.createPdf(docDefinition).open()
-                        ol.style.display = 'none'
-                        if (this.props.closeWindow) {
-                            window.close()
+                    if (page < breaks.length) {
+                        nextPage(page + 1)
+                    } else {
+                        // $pai.css({marginTop:0})
+                        //$pa.css({overflow:"visible",height:"auto"})
+                        cpc.innerHTML = ''
+
+                        //window.open(data);
+
+                        var docDefinition = {
+                            pageMargins: [0, 0, 0, 0],
+                            pageSize: 'A4',
+
+                            content: pdfContent
                         }
-                    }else {
-                        pdfMake.createPdf(docDefinition).download((pdfName || 'file') + '.pdf', () => {
-                            ol.style.display = 'none'
+                        ol.innerText = _t('Print.almostDone')
 
+                        /* if( toprint ){
+                         window.pdfMake.createPdf(docDefinition).getDataUrl((dataUrl) => {
+
+                         var iFrame = document.createElement('iframe');
+                         iFrame.style.position = 'absolute';
+                         iFrame.style.left = '-99999px';
+                         iFrame.src = dataUrl;
+                         iFrame.onload = function() {
+                         function removeIFrame(){
+                         document.body.removeChild(iFrame);
+                         document.removeEventListener('click', removeIFrame);
+                         }
+                         document.addEventListener('click', removeIFrame, false);
+                         };
+
+                         document.body.appendChild(iFrame);
+
+                         $(".cv-overlay").hide()
+
+                         },{ autoPrint: true } )
+                         }else{*/
+                        if (this.props.openPdf) {
                             if (this.props.closeWindow) {
                                 window.close()
                             }
-                        })
+                            pdfMake.createPdf(docDefinition).open()
+                            ol.style.display = 'none'
+                        } else {
+                            pdfMake.createPdf(docDefinition).download((pdfName || 'file') + '.pdf', () => {
+                                ol.style.display = 'none'
+                            })
+                        }
+                        /*}*/
                     }
-                    /*}*/
-                }
-            })
+                })
 
 
-        }
-        nextPage(0)
-        console.log(pai)
+            }
+            nextPage(0)
 
-        /* const doc = new jsPDF()
+            /* const doc = new jsPDF()
 
-         doc.text('Hello world!', 10, 10)
-         doc.save('a4.pdf')*/
+             doc.text('Hello world!', 10, 10)
+             doc.save('a4.pdf')*/
+        },300) // little delay for images
 
         return true
     }
@@ -263,15 +289,16 @@ class Print extends React.PureComponent {
         if (pa.clientHeight < pageHeight || pa.clientHeight === this.lastprintheight) {
             return
         }
+        const {classes} = this.props
         this.lastprintheight = pa.clientHeight
 
 
         console.log('calculatePageBreaks')
 
-        const pai = $('.cv-printarea-inner', pa)[0],
+        const pai = $('.' + classes.printAreaInner, pa)[0],
             offsetTop = this.offsetTop(pai)
 
-        $('.cv-pagebreak', pa).forEach(n => {
+        $('.' + classes.pageBreak, pa).forEach(n => {
             n.parentNode.removeChild(n)
         })
         let marginTop = 0
@@ -281,39 +308,44 @@ class Print extends React.PureComponent {
             if (pos > marginTop + pageHeight) {
 
                 let breakWasSet = false
-                const kids = $('.timeline-section', section)
-                for (let i = 0; i < kids.length; i++) {
+                if(section.tagName==='TABLE') {
 
-                    const subsection = kids[i]
-                    pos = this.offsetTop(subsection) - offsetTop + subsection.clientHeight
+                    const kids = $('tr', section)
+                    for (let i = 0; i < kids.length; i++) {
 
-                    if (pos > marginTop + pageHeight) {
-                        breakWasSet = true
-                        const prevSubsction = subsection.previousSibling
+                        const subsection = kids[i]
+                        pos = this.offsetTop(subsection) - offsetTop + subsection.clientHeight + 20
 
-                        const br = document.createElement('div')
-                        br.className += 'cv-pagebreak'
+                        if (pos > marginTop + pageHeight) {
+                            console.log(pos, marginTop + pageHeight)
+                            breakWasSet = true
+                            const prevSubsction = subsection.previousSibling
 
-                        if (prevSubsction.classList.contains('timeline-seperator')) {
-                            prevSubsction.parentNode.insertBefore(br, prevSubsction)
-                        } else {
+                            const br = document.createElement('tr')
+
+                            const td = document.createElement('td')
+                            td.className += classes.pageBreak
+                            td.colSpan = 99
+                            td.style.height = subsection.clientHeight+pos - (marginTop + pageHeight)+'px'
+                            br.appendChild(td)
 
                             subsection.parentNode.insertBefore(br, subsection)
+
+
+                            marginTop = this.offsetTop(br) - offsetTop + br.clientHeight
+
                         }
 
-                        marginTop = this.offsetTop(br) - offsetTop
 
                     }
-
-
                 }
 
                 if (!breakWasSet) {
                     const br = document.createElement('div')
-                    br.className += 'cv-pagebreak'
+                    br.className += classes.pageBreak
 
                     section.parentNode.insertBefore(br, section)
-                    marginTop = this.offsetTop(br) - offsetTop
+                    marginTop = this.offsetTop(br) - offsetTop  + br.clientHeight
                     breakWasSet = true
                 }
 
