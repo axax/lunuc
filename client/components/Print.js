@@ -182,7 +182,7 @@ class Print extends React.PureComponent {
                 if (page > 0) {
                     pai.style.marginTop = 0
                     let br = breaks[page - 1]
-                    marginTop = this.offsetTop(br) - offsetTop + br.clientHeight
+                    marginTop = this.offsetTop(br) - offsetTop + this.outerHeight(br)
                 }
                 console.log('marginTop', marginTop)
 
@@ -285,6 +285,15 @@ class Print extends React.PureComponent {
         return r.top + document.documentElement.scrollTop
     }
 
+    outerHeight(element) {
+        const height = element.offsetHeight,
+            style = window.getComputedStyle(element)
+
+        return ['top', 'bottom']
+            .map(side => parseInt(style[`margin-${side}`]))
+            .reduce((total, side) => total + side, height)
+    }
+
     calculatePageBreaks($, pa, pageHeight) {
         if (pa.clientHeight < pageHeight || pa.clientHeight === this.lastprintheight) {
             return
@@ -304,7 +313,7 @@ class Print extends React.PureComponent {
         let marginTop = 0
 
         pai.childNodes.forEach(section => {
-            let pos = this.offsetTop(section) - offsetTop + section.offsetHeight
+            let pos = this.offsetTop(section) - offsetTop + this.outerHeight(section)
             if (pos > marginTop + pageHeight) {
 
                 let breakWasSet = false
@@ -314,10 +323,9 @@ class Print extends React.PureComponent {
                     for (let i = 0; i < kids.length; i++) {
 
                         const subsection = kids[i]
-                        pos = this.offsetTop(subsection) - offsetTop + subsection.clientHeight + 20
+                        pos = this.offsetTop(subsection) - offsetTop + this.outerHeight(subsection) + 30
 
                         if (pos > marginTop + pageHeight) {
-                            console.log(pos, marginTop + pageHeight)
                             breakWasSet = true
                             const prevSubsction = subsection.previousSibling
 
@@ -326,13 +334,13 @@ class Print extends React.PureComponent {
                             const td = document.createElement('td')
                             td.className += classes.pageBreak
                             td.colSpan = 99
-                            td.style.height = subsection.clientHeight+pos - (marginTop + pageHeight)+'px'
+                            td.style.height = this.outerHeight(subsection) + pos - (marginTop + pageHeight)+'px'
                             br.appendChild(td)
 
                             subsection.parentNode.insertBefore(br, subsection)
 
 
-                            marginTop = this.offsetTop(br) - offsetTop + br.clientHeight
+                            marginTop = this.offsetTop(br) - offsetTop + this.outerHeight(br)
 
                         }
 
@@ -345,7 +353,7 @@ class Print extends React.PureComponent {
                     br.className += classes.pageBreak
 
                     section.parentNode.insertBefore(br, section)
-                    marginTop = this.offsetTop(br) - offsetTop  + br.clientHeight
+                    marginTop = this.offsetTop(br) - offsetTop  + this.outerHeight(br)
                     breakWasSet = true
                 }
 
