@@ -228,6 +228,11 @@ const Util = {
         } else if (raw.constructor === String) {
             try {
                 image = JSON.parse(raw)
+                if(!image){
+                    image = {
+                        src: raw
+                    }
+                }
             } catch (e) {
                 image = {
                     src: raw
