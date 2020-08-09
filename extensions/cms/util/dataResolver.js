@@ -342,7 +342,14 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                 } else {
                     console.log('call cmsCustomResolver', segment)
-                    Hook.call('cmsCustomResolver', {db, resolvedData, segment, context, scope, req, editmode})
+
+                    if (Hook.hooks['cmsCustomResolver'] && Hook.hooks['cmsCustomResolver'].length) {
+                        let c = Hook.hooks['cmsCustomResolver'].length
+                        for (let i = 0; i < Hook.hooks['cmsCustomResolver'].length; ++i) {
+                            await Hook.hooks['cmsCustomResolver'][i].callback({db, resolvedData, segment, context, scope, req, editmode})
+                        }
+                    }
+                 //   await Hook.call('cmsCustomResolver', {db, resolvedData, segment, context, scope, req, editmode})
                 }
 
             }
