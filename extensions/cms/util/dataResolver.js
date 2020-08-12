@@ -593,6 +593,11 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
 
                             if (re.lookup.group && re.lookup.group.keepOnlyOne) {
                                 if(groups[lookupData[key][re.lookup.group.key]]){
+                                    if(re.lookup.group.lookup){
+                                        const data = propertyByPath(re.lookup.group.lookup, rootData)
+                                        groups[lookupData[key][re.lookup.group.key]] = data[lookupData[key][re.lookup.group.key]]
+                                    }
+
                                     return
                                 }
                             }
