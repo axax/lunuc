@@ -12,6 +12,7 @@ import {sendMail} from 'api/util/mail'
 import crypto from 'crypto'
 import {clientAddress} from '../../util/host'
 import _t from "../../util/i18nServer";
+import Hook from "../../util/hook";
 
 const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 3,
@@ -85,6 +86,9 @@ const createUser = async ({username, role, junior, password, email, meta, pictur
         meta,
         signupToken: signupToken
     })
+
+    Hook.call('NewUserCreated', {insertResult, meta, email, db})
+
     return insertResult
 
 }
@@ -164,7 +168,8 @@ export const userResolver = (db) => ({
 
             return users
         },
-        login: async ({username, password},req) => {
+        login: async ({username, password},req, res) => {
+            console.log(res)
             const {context} = req
             const ip = clientAddress(req)
 

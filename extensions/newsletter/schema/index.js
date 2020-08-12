@@ -1,7 +1,7 @@
 export default `
 
     type Query {
-    	subscribeNewsletter(email: String!,list:[ID]): NewsletterSubscriberStatus
+    	subscribeNewsletter(email: String!,meta: String,list:[ID]): NewsletterSubscriberStatus
     }
     
 `

@@ -11,9 +11,20 @@
           "unique": true
         },
         {
+          "name": "confirmed",
+          "type": "Boolean",
+          "tab": "General"
+        },
+        {
           "name": "list",
           "multi": true,
           "type": "NewsletterList"
+        },
+        {
+          "name": "meta",
+          "type": "Object",
+          "uitype": "json",
+          "tab": "Meta"
         }
       ]
     },

@@ -20,3 +20,18 @@ Hook.on('schema', ({schemas}) => {
 
 
 
+
+// Hook to add mongodb schema
+Hook.on('NewUserCreated', async ({meta, email, insertResult, db}) => {
+    if (insertResult.insertedCount) {
+        if( meta && meta.newsletter){
+            const collection = db.collection('NewsletterSubscriber')
+            const insertResult = await collection.insertOne(
+                {email, list:[]}
+            )
+        }
+    }
+})
+
+
+
