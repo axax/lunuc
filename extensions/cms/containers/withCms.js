@@ -24,7 +24,6 @@ const CmsViewEditorContainer = (props) => <Async {...props}
 // enhance cmsview with editor functionalities if in edit mode
 export default function (WrappedComponent) {
 
-
     class Wrapper extends React.Component {
         constructor(props) {
             super(props)
@@ -201,6 +200,7 @@ export default function (WrappedComponent) {
                 return {
                     /*context: {fetchOptions: {method: ownProps.dynamic?'POST':'GET'}},*/
                     variables: getGqlVariables(ownProps),
+                    nextFetchPolicy: 'cache-first',
                     fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network') // cache-first
                 }
             },
@@ -232,6 +232,7 @@ export default function (WrappedComponent) {
                     urlSensitivMap[cmsPage.slug] = !!cmsPage.urlSensitiv
 
                     if (!loading && !cmsPage.urlSensitiv && variables.query) {
+                        console.log('update cache')
                         // update cache to avoid second unneeded request
                         const data = ownProps.client.readQuery({
                             query: gqlQuery(),
