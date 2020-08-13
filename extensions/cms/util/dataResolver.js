@@ -593,11 +593,6 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
 
                             if (re.lookup.group && re.lookup.group.keepOnlyOne) {
                                 if(groups[lookupData[key][re.lookup.group.key]]){
-                                    if(re.lookup.group.lookup){
-                                        const data = propertyByPath(re.lookup.group.lookup, rootData)
-                                        lookupData[key][re.lookup.group.key] = data[lookupData[key][re.lookup.group.key]]
-                                    }
-
                                     return
                                 }
                             }
@@ -610,12 +605,10 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                             }
                             count++
                             if (re.lookup.group) {
-
+                                groups[lookupData[key][re.lookup.group.key]] = lookupData[key]
                                 if(re.lookup.group.lookup){
                                     const data = propertyByPath(re.lookup.group.lookup, rootData)
-                                    groups[lookupData[key][re.lookup.group.key]] = data[lookupData[key][re.lookup.group.key]]
-                                }else {
-                                    groups[lookupData[key][re.lookup.group.key]] = lookupData[key]
+                                    lookupData[key] = {...lookupData[key],[re.lookup.group.key]: data[lookupData[key][re.lookup.group.key]]}
                                 }
                             }
                             lookedupData.push(lookupData[key])
