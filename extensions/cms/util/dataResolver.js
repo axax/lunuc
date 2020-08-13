@@ -538,7 +538,7 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
     reducePipe.forEach(re => {
         if (re.path) {
             if (re.lookup) {
-                const lookupData = propertyByPath(re.lookup.path, rootData)
+                const lookupData = propertyByPath(re.lookup.path, rootData,'.', !!re.lookup.assign)
                 const value = propertyByPath(re.path, currentData)
                 let lookedupData, groups
                 if (value !== undefined) {
