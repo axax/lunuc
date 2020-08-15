@@ -169,7 +169,6 @@ export const userResolver = (db) => ({
             return users
         },
         login: async ({username, password},req, res) => {
-            console.log(res)
             const {context} = req
             const ip = clientAddress(req)
 

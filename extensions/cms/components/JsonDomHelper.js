@@ -1510,7 +1510,8 @@ const m = Math.max((offX+offY) / 2,100)
 
             if (newJsonElement.options[key].tr && newJsonElement.options[key].trKey) {
                 if (this.props._scope.data.tr) {
-                    newJsonElement.options[key].value = this.props._scope.data.tr[newJsonElement.options[key].trKey].replace(/\\"/g, '"')
+                    const trEl = this.props._scope.data.tr[newJsonElement.options[key].trKey]
+                    newJsonElement.options[key].value = trEl?trEl.replace(/\\"/g, '"'):''
                 }
             } else {
                 newJsonElement.options[key].value = val
