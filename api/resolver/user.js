@@ -196,6 +196,7 @@ export const userResolver = (db) => ({
                 if(LOGIN_ATTEMPTS_MAP[ip]){
                     delete LOGIN_ATTEMPTS_MAP[ip]
                 }
+                Hook.call('login', {context, db, user: result.user})
             }
             return result
         },

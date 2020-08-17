@@ -21,6 +21,7 @@ import {deepMergeOptional} from 'util/deepMerge'
 import {preprocessCss} from '../util/cssPreprocessor'
 import {parseStyles} from 'client/util/style'
 import elementWatcher from './elementWatcher'
+import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
@@ -117,8 +118,14 @@ class JsonDom extends React.Component {
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'QuillEditor': (props) => <QuillEditor {...props}/>,
         'select': (props) => <JsonDomInput select={true} {...props}/>,
-        'Redirect': ({to, push}) => {
-            return <Redirect to={{pathname: to}} push={push}/>
+        'Redirect': ({to, push,_this}) => {
+            if( _this && Util.hasCapability(_this.props.user, CAPABILITY_MANAGE_CMS_TEMPLATE) ){
+
+                _this.emitJsonError({message:'Redirect prevented for this user'}, {loc: 'Redirect'})
+                return null
+            }else {
+                return <Redirect to={{pathname: to}} push={push}/>
+            }
         },
         'Link': ({to, href, target, gotop, onClick, ...rest}) => {
             const url = to || href || '', newTarget = target && target !== 'undefined' ? target : '_self',
