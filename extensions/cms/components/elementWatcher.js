@@ -64,7 +64,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
                         webp:true})
                     return React.createElement(
                         eleType,
-                        {...eleProps,src:tmpSrc,alt:tagImg.alt,_key:key},
+                        {...eleProps,src:tmpSrc,alt:(tagImg.alt || eleProps.alt),_key:key},
                         ($c ? null : jsonDom.parseRec(c, key, scope))
                     )
                 }
