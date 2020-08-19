@@ -4,6 +4,25 @@ import DomUtil from 'client/util/dom'
 import injectSheet from 'react-jss'
 import _t from '../../util/i18n'
 
+
+const trans = {
+    de:{
+        "Print.almostDone": "Bitte warten... Das PDF ist gleich fertiggestellt!",
+        "Print.createPage": "Bitte warten... Es kann ein wenig dauern... Seite %page% von %numberOfPages% ist erstellt.",
+    },
+    en:{
+        "Print.almostDone": "Please be patient... We are almost there... Enjoy!",
+        "Print.createPage": "Please be patient... It might take some time... Page %page% of %numberOfPages% is being produced"
+    }
+}
+
+if(trans[_app_.lang]){
+    Object.keys(trans[_app_.lang]).forEach(t=>{
+        _app_.tr[t] = trans[_app_.lang][t]
+    })
+}
+
+
 const styles = {
     button: {
         height: '30px',
@@ -128,7 +147,6 @@ class Print extends React.PureComponent {
     }
 
     createPdfWait() {
-        console.log('sss')
         if (!this.createPdf()) {
             setTimeout(() => {
                 this.createPdfWait()

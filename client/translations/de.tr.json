@@ -25,8 +25,6 @@
   "TypesContainer.editEntry": "Eintrag bearbeiten",
   "TypesContainer.cloneEntry": "Eintrag kopieren",
   "TypesContainer.addNew": "Neue “%type%“ erstellen",
-  "Print.almostDone": "Bitte warten... Das PDF ist gleich fertiggestellt!",
-  "Print.createPage": "Bitte warten... Es kann ein wenig dauern... Seite %page% von %numberOfPages% ist erstellt.",
   "Types.selectType": "Bitte “%type%“ wählen",
   "Types.enterField": "Bitte “%name%“ eingeben",
   "Types.createdBy": "Erstellt von Benutzer",
