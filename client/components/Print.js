@@ -292,7 +292,7 @@ class Print extends React.PureComponent {
 
              doc.text('Hello world!', 10, 10)
              doc.save('a4.pdf')*/
-        },300) // little delay for images
+        },1000) // little delay for images
 
         return true
     }
