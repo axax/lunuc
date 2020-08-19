@@ -538,13 +538,15 @@ class JsonDom extends React.Component {
     addParentRef(props) {
         const {id, _parentRef} = props
         if (_parentRef && id) {
-            _parentRef.componentRefs[id] = this
+            _parentRef.componentRefs[id] = {comp:this, id: this.instanceId}
         }
     }
     removeParentRef(props) {
         const {id, _parentRef} = props
         if (_parentRef && _parentRef.componentRefs && id && _parentRef.componentRefs[id]) {
-            delete _parentRef.componentRefs[id]
+            if(_parentRef.componentRefs[id].id === this.instanceId) {
+                delete _parentRef.componentRefs[id]
+            }
         }
     }
 
@@ -1251,7 +1253,7 @@ class JsonDom extends React.Component {
             if (comp && comp.componentRefs) {
                 let k
                 for (k of Object.keys(comp.componentRefs)) {
-                    const o = comp.componentRefs[k]
+                    const o = comp.componentRefs[k].comp
                     if (id === k) {
                         res = o
                         break
