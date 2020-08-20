@@ -7,6 +7,27 @@ import {connect} from 'react-redux'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import {getKeyValuesFromLS, setKeyValueToLS} from 'client/util/keyvalue'
 
+const gqlKeyValueQuery = gql`query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}`,
+    gqlKeyValueGlobalsQuery = gql`query keyValuesGlobals($keys:[String]){keyValuesGlobals(keys:$keys){limit offset total results{key value status} }}`,
+    gqlKeyValueUpdate = gql`
+          mutation setKeyValue($key: String!, $value: String!) {
+            setKeyValue(key: $key, value: $value){
+                key value status createdBy{_id username}
+            }
+          }`,
+    gqlKeyValueGlobalUpdate = gql`
+          mutation setKeyValueGlobal($key: String!, $value: String!) {
+            setKeyValueGlobal(key: $key, value: $value){
+                key value status
+            }
+          }`,
+    gqlKeyValueDelete = gql`
+          mutation deleteKeyValueByKey($key: String!) {
+            deleteKeyValueByKey(key: $key){
+                key status
+            }
+          }`
+
 // This function takes a component...
 export function withKeyValues(WrappedComponent, keys, keysGlobal) {
 
@@ -102,35 +123,13 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         deleteKeyValueByKey: PropTypes.func.isRequired,
     }
 
-
-    const gqlKeyValueQuery = gql`query{keyValues${keys ? '(keys:' + JSON.stringify(keys) + ')' : ''}{limit offset total results{key value status createdBy{_id username}}}}`,
-        gqlKeyValueGlobalsQuery = gql`query{ 
-        keyValueGlobals${keysGlobal ? '(keys:' + JSON.stringify(keysGlobal) + ')' : ''}{limit offset total results{key value status} }
-        }`,
-        gqlKeyValueUpdate = gql`
-          mutation setKeyValue($key: String!, $value: String!) {
-            setKeyValue(key: $key, value: $value){
-                key value status createdBy{_id username}
-            }
-          }`,
-        gqlKeyValueGlobalUpdate = gql`
-          mutation setKeyValueGlobal($key: String!, $value: String!) {
-            setKeyValueGlobal(key: $key, value: $value){
-                key value status
-            }
-          }`,
-        gqlKeyValueDelete = gql`
-          mutation deleteKeyValueByKey($key: String!) {
-            deleteKeyValueByKey(key: $key){
-                key status
-            }
-          }`
-
+    const variables = {keys: keys}
     const WithKeyValuesWithGql = compose(
         graphql(gqlKeyValueQuery, {
             skip: props => !props.kvUser.isAuthenticated || keys === false, // skip request if user is not logged in
             options() {
                 return {
+                    variables,
                     fetchPolicy: 'cache-and-network',
                 }
             },
@@ -143,6 +142,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
             skip: props => !props.kvUser.isAuthenticated || !keysGlobal, // skip request if user is not logged in
             options() {
                 return {
+                    variables,
                     fetchPolicy: 'cache-and-network',
                 }
             },
@@ -181,7 +181,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                         },
                         update: (proxy, {data: {setKeyValue}}) => {
                             // Read the data from our cache for this query.
-                            const storeData = proxy.readQuery({query: gqlKeyValueQuery}),
+                            const storeData = proxy.readQuery({query: gqlKeyValueQuery, variables}),
                                 storeKeyValue = Object.assign({}, storeData.keyValues)
 
                             if (!storeKeyValue.results) {
@@ -200,7 +200,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                                 storeKeyValue.total++;
                             }
                             // Write our data back to the cache.
-                            proxy.writeQuery({query: gqlKeyValueQuery, data: {...storeData, keyValues: storeKeyValue}})
+                            proxy.writeQuery({query: gqlKeyValueQuery, variables, data: {...storeData, keyValues: storeKeyValue}})
                         }
                     })
                 }
@@ -226,7 +226,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                         },
                         update: (proxy, {data: {setKeyValueGlobal}}) => {
                             // Read the data from our cache for this query.
-                            const storeData = proxy.readQuery({query: gqlKeyValueGlobalsQuery}),
+                            const storeData = proxy.readQuery({query: gqlKeyValueGlobalsQuery, variables}),
                                 storekeyValueGlobals = Object.assign({}, storeData.keyValueGlobals)
 
                             if (!storekeyValueGlobals.results) {
@@ -243,7 +243,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                                 storekeyValueGlobals.total++;
                             }
                             // Write our data back to the cache.
-                            proxy.writeQuery({query: gqlKeyValueGlobalsQuery, data: {...storeData, keyValueGlobals: storekeyValueGlobals}})
+                            proxy.writeQuery({query: gqlKeyValueGlobalsQuery, variables, data: {...storeData, keyValueGlobals: storekeyValueGlobals}})
                         }
                     })
                 }
@@ -270,7 +270,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                         },
                         update: (proxy, {data: {deleteKeyValueByKey}}) => {
                             // Read the data from our cache for this query.
-                            const storeData = proxy.readQuery({query: gqlKeyValueQuery}),
+                            const storeData = proxy.readQuery({query: gqlKeyValueQuery, variables}),
                             storeKeyValue = Object.assign({}, storeData.keyValues)
 
                             if (storeKeyValue.results) {
@@ -284,7 +284,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                                     } else {
                                         storeKeyValue.results.splice(idx, 1)
                                     }
-                                    proxy.writeQuery({query: gqlKeyValueQuery, data: {...storeData, keyValues: storeKeyValue}})
+                                    proxy.writeQuery({query: gqlKeyValueQuery, variables, data: {...storeData, keyValues: storeKeyValue}})
                                 }
                             }
                         }

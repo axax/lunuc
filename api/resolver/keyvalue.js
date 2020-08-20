@@ -15,7 +15,7 @@ export const keyvalueResolver = (db) => ({
             if (!all || !await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
                 match.createdBy = ObjectId(context.id)
             }
-            if (keys) {
+            if (keys && keys.length > 0) {
                 match.key = {$in: keys}
             }
             return await GenericResolver.entities(db, context, 'KeyValue', ['key', 'value'], {
@@ -29,7 +29,7 @@ export const keyvalueResolver = (db) => ({
         },
         keyValueGlobals: async ({keys, limit, sort, offset, page, filter}, {context}) => {
             const match = {}
-            if (keys) {
+            if (keys && keys.length > 0) {
                 match.key = {$in: keys}
             }
             // if user don't have capability to manage keys he can only see the public ones
@@ -37,7 +37,7 @@ export const keyvalueResolver = (db) => ({
                 match.ispublic = true
             }
 
-            const data =  await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value', 'ispublic'], {
+            const data = await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value', 'ispublic'], {
                 limit,
                 offset,
                 sort,
@@ -49,7 +49,7 @@ export const keyvalueResolver = (db) => ({
 
             for (let i = 0; i < data.results.length; i++) {
                 const item = data.results[i]
-                if(item.value && item.value.constructor !== String){
+                if (item.value && item.value.constructor !== String) {
                     item.value = JSON.stringify(item.value)
                 }
             }
@@ -105,7 +105,13 @@ export const keyvalueResolver = (db) => ({
             // clear caches from dataResolver --> see method createCacheKey
             Cache.clearStartWith('dataresolver_keyValueGlobals')
 
-            return await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {_id, key, value, ispublic,createdBy})
+            return await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {
+                _id,
+                key,
+                value,
+                ispublic,
+                createdBy
+            })
         },
         deleteKeyValueGlobal: async ({_id}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)

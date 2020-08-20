@@ -349,13 +349,15 @@ class JsonDom extends React.Component {
         if (!props.dynamic && !props.editMode) {
             const meta = document.head.querySelector('meta[name=description]')
             if (!meta) {
-                const content = document.body.innerText.substring(0, 160).replace(/(\r\n|\n|\r)/gm, ' ')
+                const content = document.body.innerText.substring(0, 160).replace(/(\r\n|\n|\r)/gm, ' ').trim()
                 if (content) {
                     this.addMetaTag('description', content)
                 } else {
                     const observer = new MutationObserver((mutations) => {
                         observer.disconnect()
-                        this.checkMetaTags(props)
+                        setTimeout(()=> {
+                            this.checkMetaTags(props)
+                        },0)
                     })
                     observer.observe(document.body, {childList: true, subtree: true})
                 }
