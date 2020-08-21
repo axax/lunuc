@@ -13,6 +13,8 @@ import {
     Typography,
     Box,
     InputAdornment,
+    ExpandLessIconButton,
+    ExpandMoreIconButton,
     TranslateIconButton
 } from 'ui/admin'
 import FileDrop from './FileDrop'
@@ -26,7 +28,7 @@ import Hook from '../../util/hook'
 import classNames from 'classnames'
 import Expandable from 'client/components/Expandable'
 import _t from '../../util/i18n'
-import Util from "../util";
+import Util from '../util'
 
 const styles = theme => {
     return {
@@ -573,15 +575,29 @@ class GenericForm extends React.Component {
                     }
                     holder = tabs[expandableField.tab]
                 }
+                holder.push(<div key={"expandableWrap" + fieldKey} style={{position:'relative'}}>
+                    <ExpandLessIconButton
+                        onClick={(e)=>{
+                            if(this.props.onPosChange){
+                                this.props.onPosChange({field, newIndex:field.index - 1})
+                            }
+                        }}
+                        style={{position:'absolute', left:'-40px', top:'-10px'}} />
+                    <ExpandMoreIconButton style={{position:'absolute', left:'-40px', top:'10px'}}
+                                          onClick={()=>{
+                                              if(this.props.onPosChange){
+                                                  this.props.onPosChange({field, newIndex:field.index + 1})
+                                              }
+                                          }}/>
 
-                holder.push(<Expandable title={expandableField.expandable}
+                <Expandable title={expandableField.expandable}
                                         key={"expandable" + fieldKey}
                                         onChange={(e) => {
                                             this.setState({expanded: fieldKey})
                                         }}
                                         expanded={this.state.expanded === fieldKey}>
                     {currentFormFields}
-                </Expandable>)
+                </Expandable></div>)
 
                 expandableField = null
             }
@@ -640,6 +656,7 @@ GenericForm.propTypes = {
     onKeyDown: PropTypes.func,
     onValidate: PropTypes.func,
     onChange: PropTypes.func,
+    onPosChange: PropTypes.func,
     onBlur: PropTypes.func,
     caption: PropTypes.string,
     primaryButton: PropTypes.bool,

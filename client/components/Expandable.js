@@ -12,7 +12,7 @@ class Expandable extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if( !prevState || nextProps.expanded !== prevState.expandedOri){
+        if (!prevState || nextProps.expanded !== prevState.expandedOri) {
             return {
                 expanded: !!nextProps.expanded,
                 expandedOri: !!nextProps.expanded
@@ -29,7 +29,7 @@ class Expandable extends React.Component {
                                heading={<Typography variant="h5">{title}</Typography>}>
             {this.state.expanded ? <div style={{width: '100%'}}>
                 {children}
-            </div>: null }
+            </div> : null}
         </ExpansionPanel>
     }
 

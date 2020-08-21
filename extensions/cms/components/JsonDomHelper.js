@@ -941,7 +941,7 @@ const m = Math.max((offX+offY) / 2,100)
                         })
                     }
                 }
-                if (_options.elementKey) {
+                if (_options.menu.edit !== false && _options.elementKey) {
                     const jsonElement = getJsonDomElements(_options.elementKey)
 
                     if (jsonElement && (isCms || jsonElement.options || jsonElement.groupOptions)) {
@@ -1447,6 +1447,25 @@ const m = Math.max((offX+offY) / 2,100)
 
                             {addChildDialog.selected && addChildDialog.selected.options &&
                             <GenericForm primaryButton={false}
+                                         onPosChange={({field, newIndex})=>{
+
+                                             const item = addChildDialog.selected,
+                                                 curKey = '!' + field.key + '!'
+                                             item.options = Object.assign({}, item.options)
+
+
+                                             Object.keys(field.group).forEach(groupKey => {
+                                                 const from = item.options[curKey + groupKey + '!' + field.index],
+                                                     to = item.options[curKey + groupKey + '!' + newIndex]
+                                                 if( to && from ) {
+                                                     item.options[curKey + groupKey + '!' + field.index] = to
+                                                     item.options[curKey + groupKey + '!' + newIndex] = from
+                                                 }
+                                             })
+                                             console.log(item.options)
+                                             this.setState({addChildDialog: {...addChildDialog, selected: item}})
+
+                                         }}
                                          onButtonClick={(field) => {
                                              const item = addChildDialog.selected,
                                                  curKey = '!' + field.key + '!'

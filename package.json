@@ -57,10 +57,10 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@apollo/client": "^3.2.0-beta.2",
+    "@apollo/client": "^3.2.0-beta.4",
     "@apollo/react-components": "^4.0.0",
     "@apollo/react-hoc": "^4.0.0",
-    "@babel/core": "^7.11.1",
+    "@babel/core": "^7.11.4",
     "@babel/plugin-proposal-class-properties": "^7.10.4",
     "@babel/plugin-proposal-export-default-from": "^7.10.4",
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
@@ -77,7 +77,7 @@
     "body-parser": "^1.19.0",
     "cheerio": "^1.0.0-rc.3",
     "classnames": "^2.2.6",
-    "codemirror": "^5.56.0",
+    "codemirror": "^5.57.0",
     "compression": "^1.7.4",
     "draft-js": "^0.11.7",
     "draft-js-drag-n-drop-plugin": "^2.0.4",
@@ -118,7 +118,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.2.0",
     "@google-cloud/translate": "^6.0.2",
-    "aws-sdk": "^2.736.0",
+    "aws-sdk": "^2.738.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.0.12",
     "fluent-ffmpeg": "^2.1.2",
@@ -127,7 +127,7 @@
     "mssql": "^6.2.1",
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
-    "ytdl-core": "^3.2.1"
+    "ytdl-core": "^3.2.2"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
@@ -139,7 +139,7 @@
     "css-loader": "^4.2.1",
     "eslint": "^7.7.0",
     "eslint-plugin-react": "^7.20.6",
-    "jest-cli": "^26.4.0",
+    "jest-cli": "^26.4.1",
     "less": "^3.12.2",
     "less-loader": "^6.2.0",
     "mini-css-extract-plugin": "^0.10.0",
