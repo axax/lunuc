@@ -4,8 +4,7 @@ import {connect} from 'react-redux'
 import {gql} from '@apollo/client'
 import {
     getGqlVariables, gqlQuery, isEditMode, urlSensitivMap,
-    settingKeyPrefix,
-    gqlQueryKeyValue
+    settingKeyPrefix
 } from '../util/cmsView'
 import Async from 'client/components/Async'
 import compose from '../../../util/compose'
@@ -113,11 +112,12 @@ export default function (WrappedComponent) {
                             this.updateResolvedData({json:resolvedDataJson})
                         }else{
 
-                            try {
+                            /*try {
                                 const storedData = store.readQuery({
-                                    query: gqlQueryKeyValue,
+                                    query: gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`,
                                     variables: {key: settingKeyPrefix + slug}
                                 })
+                                console.log(storedData)
 
                                 let newData = {keyValue: null}
                                 if (storedData.keyValue) {
@@ -128,13 +128,14 @@ export default function (WrappedComponent) {
 
                                 // Write our data back to the cache.
                                 store.writeQuery({
-                                    query: gqlQueryKeyValue,
+                                    query: gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`,
                                     variables: {key: settingKeyPrefix + slug},
                                     data: newData
                                 })
                             }catch (e) {
+                                console.log(e)
 
-                            }
+                            }*/
                         }
                     },
                 })

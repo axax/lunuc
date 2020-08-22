@@ -1462,13 +1462,13 @@ const m = Math.max((offX+offY) / 2,100)
                                                      item.options[curKey + groupKey + '!' + newIndex] = from
                                                  }
                                              })
-                                             console.log(item.options)
                                              this.setState({addChildDialog: {...addChildDialog, selected: item}})
 
                                          }}
                                          onButtonClick={(field) => {
                                              const item = addChildDialog.selected,
                                                  curKey = '!' + field.key + '!'
+
                                              item.options = Object.assign({}, item.options)
 
                                              if (field.action === 'add') {

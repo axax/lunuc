@@ -2,7 +2,6 @@ import Util from '../../../client/util'
 import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants'
 import {NO_SESSION_KEY_VALUES_SERVER} from '../../../client/constants'
 import {gql} from '@apollo/client'
-import config from 'gen/config'
 //map with slugs that are url sensitive
 export const urlSensitivMap = {}
 
@@ -12,13 +11,11 @@ export const settingKeyPrefix = 'CmsViewContainerSettings'
 // the graphql query is also need to access and update the cache when data arrive from a subscription
 let _gqlQuery
 export const gqlQuery = ()=>{
-    return gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$dynamic:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,dynamic:$dynamic,_version:$_version){cacheKey slug realSlug name{de en fr it} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData style parseResolvedData alwaysLoadAssets ssrStyle compress html subscriptions _id modifiedAt createdBy{_id username} status}}`
+    if(!_gqlQuery) {
+        _gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$dynamic:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,dynamic:$dynamic,_version:$_version){cacheKey slug realSlug name{de en fr it} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData style parseResolvedData alwaysLoadAssets ssrStyle compress html subscriptions _id modifiedAt createdBy{_id username} status}}`
+    }
+    return _gqlQuery
 }
-
-
-// query to get a keyvalue pair
-export const gqlQueryKeyValue = gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`
-export const gqlQueryKeyValues = gql`query keyValues($keys:[String]){keyValues(keys:$keys){results{key value createdBy{_id}}}}`
 
 export const isPreview = () => {
     const params = new URLSearchParams(window.location.search)

@@ -4,7 +4,6 @@ import {
     getSlugVersion,
     getGqlVariables,
     settingKeyPrefix,
-    gqlQueryKeyValues,
     gqlQuery
 } from '../util/cmsView'
 import PropTypes from 'prop-types'
@@ -1377,7 +1376,7 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(gqlQueryKeyValues, {
+    graphql(gql`query keyValues($keys:[String]){keyValues(keys:$keys){results{key value createdBy{_id}}}}`, {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {
             return {
