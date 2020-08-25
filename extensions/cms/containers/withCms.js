@@ -77,7 +77,7 @@ export default function (WrappedComponent) {
         }
 
 
-        setKeyValue({key, value, server, internal}) {
+        setKeyValue({key, value, server, internal, callback}) {
 
             const {client, user, cmsPage, slug} = this.props
             if (!key || !value || !cmsPage) {
@@ -108,6 +108,9 @@ export default function (WrappedComponent) {
                     mutation: gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`,
                     variables,
                     update: (store, {data: {setKeyValue}}) => {
+                        if(callback){
+                            callback(setKeyValue)
+                        }
                         if(resolvedDataJson){
                             this.updateResolvedData({json:resolvedDataJson})
                         }else{

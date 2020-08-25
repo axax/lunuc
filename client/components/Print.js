@@ -47,7 +47,6 @@ const styles = {
         margin: 'auto',
         display: 'block',
         width: '1020px',
-        maxWidth: '100%',
         border: 'solid 1px #E5E5E5',
         boxShadow: '0 4px 8px 0 rgba(0,0,0,0.12),0 2px 4px 0 rgba(0,0,0,0.08)'
     },

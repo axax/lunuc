@@ -25,6 +25,12 @@
           "type": "Object",
           "uitype": "json",
           "tab": "Meta"
+        },
+        {
+          "name": "mailing",
+          "type": "NewsletterMailing",
+          "multi": true
+
         }
       ]
     },
@@ -34,6 +40,23 @@
         {
           "name": "name",
           "required": true
+        }
+      ]
+    },
+    {
+      "name": "NewsletterMailing",
+      "fields": [
+        {
+          "name": "name",
+          "required": true
+        },
+        {
+          "name": "list",
+          "type": "NewsletterList"
+        },
+        {
+          "name": "template",
+          "type": "CmsPage"
         }
       ]
     }

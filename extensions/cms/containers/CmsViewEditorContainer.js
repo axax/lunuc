@@ -47,6 +47,7 @@ import GenericForm from '../../../client/components/GenericForm'
 import _t from 'util/i18n'
 import config from 'gen/config'
 import {getFormFields} from '../../../util/typesAdmin'
+import Hook from '../../../util/hook'
 
 
 class CmsViewEditorContainer extends React.Component {
@@ -229,7 +230,8 @@ class CmsViewEditorContainer extends React.Component {
             state.settings.fixedLayout !== this.state.settings.fixedLayout ||
             state.settings.inlineEditor !== this.state.settings.inlineEditor ||
             state.settings.templateTab !== this.state.settings.templateTab ||
-            state.settings.drawerWidth !== this.state.settings.drawerWidth
+            state.settings.drawerWidth !== this.state.settings.drawerWidth ||
+            state.settings.tracking !== this.state.settings.tracking
 
     }
 
@@ -802,6 +804,32 @@ class CmsViewEditorContainer extends React.Component {
                 })
             }
 
+            const toolbarRight = []
+
+            if( !isSmallScreen ){
+                toolbarRight.push(<SimpleSwitch key="fixedLayoutSwitch" color="default"
+                                                    checked={!!settings.fixedLayout}
+                                                    onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
+                                                    contrast
+                                                    label={_t('CmsViewEditorContainer.fixed')}/>,
+                    <SimpleSwitch key="inlineEditorSwitch" color="default"
+                                                    checked={!!settings.inlineEditor}
+                                                    onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
+                                                    contrast
+                                                    label={_t('CmsViewEditorContainer.inlineEditor')}/>)
+            }
+            toolbarRight.push(
+                <Button key="buttonBack" size="small" color="inherit" onClick={e => {
+                    this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
+                }}>Admin</Button>,
+                <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
+                    this.props.history.push(`${config.ADMIN_BASE_URL}/logout?forward=${encodeURIComponent('/' + props.slug + '?logout=true')}`)
+                }}>{_t('CmsViewEditorContainer.logout')}</Button>,
+                <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>)
+
+
+            Hook.call('CmsViewEditorContainerRender', {isSmallScreen, toolbarRight, settings}, this)
+
             return <UIProvider>
                 <DrawerLayout sidebar={!loadingState && sidebar}
                               open={settings.drawerOpen}
@@ -809,26 +837,7 @@ class CmsViewEditorContainer extends React.Component {
                               drawerWidth={settings.drawerWidth}
                               onDrawerOpenClose={this.drawerOpenClose}
                               onDrawerWidthChange={this.drawerWidthChange}
-                              toolbarRight={[
-                                  !isSmallScreen && <SimpleSwitch key="fixedLayoutSwitch" color="default"
-                                                                  checked={!!settings.fixedLayout}
-                                                                  onChange={this.handleSettingChange.bind(this, 'fixedLayout')}
-                                                                  contrast
-                                                                  label={_t('CmsViewEditorContainer.fixed')}/>,
-                                  !isSmallScreen && <SimpleSwitch key="inlineEditorSwitch" color="default"
-                                                                  checked={!!settings.inlineEditor}
-                                                                  onChange={this.handleSettingChange.bind(this, 'inlineEditor')}
-                                                                  contrast
-                                                                  label={_t('CmsViewEditorContainer.inlineEditor')}/>,
-                                  <Button key="buttonBack" size="small" color="inherit" onClick={e => {
-                                      this.props.history.push(config.ADMIN_BASE_URL + '/cms' + (_app_._cmsLastSearch ? _app_._cmsLastSearch : ''))
-                                  }}>Admin</Button>,
-                                  <Button key="buttonLogout" size="small" color="inherit" onClick={() => {
-                                      this.props.history.push(`${config.ADMIN_BASE_URL}/logout?forward=${encodeURIComponent('/' + props.slug + '?logout=true')}`)
-                                  }}>{_t('CmsViewEditorContainer.logout')}</Button>,
-                                  <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>
-                              ]
-                              }
+                              toolbarRight={toolbarRight}
                               title={`${_t('CmsViewEditorContainer.editPage')} "${props.slug}" - ${cmsPage.online ? 'Online' : 'Online'}`}>
                     {inner}
                     {!loadingState && this.state.addNewSite &&
