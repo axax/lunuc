@@ -132,6 +132,7 @@ export const createUsers = async (db) => {
             $set: {
                 role: (await db.collection('UserRole').findOne({name: 'administrator'}))._id,
                 emailConfirmed: true,
+                requestNewPassword: false,
                 email: 'axax@gmx.net',
                 username: 'admin',
                 password: Util.hashPassword('password')
@@ -145,6 +146,7 @@ export const createUsers = async (db) => {
             $set: {
                 role: (await db.collection('UserRole').findOne({name: 'subscriber'}))._id,
                 emailConfirmed: true,
+                requestNewPassword: false,
                 email: '',
                 username: 'anonymous',
                 password: Util.hashPassword('password')

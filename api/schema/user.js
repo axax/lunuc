@@ -23,6 +23,7 @@ export const userSchemaRaw = `
         password: String!
         email: String!
         emailConfirmed: Boolean!
+        requestNewPassword: Boolean
         picture: Media
         note: [Note]
         meta: String
@@ -50,6 +51,7 @@ export const userSchemaRaw = `
 	
 	type Token {
 		token: String
+		resetToken: String
 		error: String
 		user: User
 	}
@@ -100,6 +102,7 @@ export const userSchemaRaw = `
 			password: String!
 			picture: ID
 			emailConfirmed: Boolean
+			requestNewPassword: Boolean
             role: ID
             meta: String
             junior: [ID]
@@ -112,6 +115,7 @@ export const userSchemaRaw = `
 			picture: ID
 			password: String
 			emailConfirmed: Boolean
+			requestNewPassword: Boolean
             role: ID
             meta: String
             junior: [ID]

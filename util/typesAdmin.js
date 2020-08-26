@@ -252,6 +252,11 @@ Hook.on('Types', ({types}) => {
                 tab: 'General'
             },
             {
+                name: 'requestNewPassword',
+                type: 'Boolean',
+                tab: 'General'
+            },
+            {
                 name: 'role',
                 type: 'UserRole',
                 reference: true,

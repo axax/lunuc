@@ -79,6 +79,7 @@ const createUser = async ({username, role, junior, password, email, meta, pictur
         role: roleId,
         junior: juniorIds,
         emailConfirmed: false,
+        requestNewPassword: false,
         email: email,
         username: username,
         password: hashedPw,
@@ -98,7 +99,7 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'picture', 'email', 'meta', 'emailConfirmed', 'role$UserRole', 'junior$[User]', 'lastLogin'], {
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'picture', 'email', 'meta', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'lastLogin'], {
                 limit,
                 page,
                 offset,
@@ -196,6 +197,17 @@ export const userResolver = (db) => ({
                 if(LOGIN_ATTEMPTS_MAP[ip]){
                     delete LOGIN_ATTEMPTS_MAP[ip]
                 }
+                if(result.user.requestNewPassword){
+                    // generate reset token
+                    const resetToken = crypto.randomBytes(16).toString("hex")
+                    db.collection('User').findOneAndUpdate({$_id: result.user._id}, {
+                        $set: {
+                            resetToken
+                        }
+                    })
+                    result.resetToken = resetToken
+                }
+
                 Hook.call('login', {context, db, user: result.user})
             }
             return result
@@ -245,7 +257,7 @@ export const userResolver = (db) => ({
             const hashPassword = Util.hashPassword(password)
 
 
-            const result = await userCollection.findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {$set: {password: hashPassword}})
+            const result = await userCollection.findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {$set: {password: hashPassword, requestNewPassword: false, resetToken: null}})
 
             const user = result.value
 
@@ -286,8 +298,8 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, meta, picture, emailConfirmed, role, junior}, {context}) => {
-            const insertResult = await createUser({db, context, username, picture, meta, email, emailConfirmed, password, role, junior})
+        createUser: async ({username, password, email, meta, picture, emailConfirmed, requestNewPassword, role, junior}, {context}) => {
+            const insertResult = await createUser({db, context, username, picture, meta, email, emailConfirmed, requestNewPassword, password, role, junior})
 
             if (insertResult.insertedCount) {
                 const doc = insertResult.ops[0]
@@ -313,7 +325,7 @@ export const userResolver = (db) => ({
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, picture, emailConfirmed, role, junior, meta}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, emailConfirmed, requestNewPassword, role, junior, meta}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             const user = {}
@@ -322,6 +334,9 @@ export const userResolver = (db) => ({
 
             if( emailConfirmed !== undefined){
                 user.emailConfirmed = emailConfirmed
+            }
+            if( requestNewPassword !== undefined){
+                user.requestNewPassword = requestNewPassword
             }
             if( picture !== undefined){
                 user.picture = picture?ObjectId(picture):null
