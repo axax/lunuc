@@ -11,7 +11,7 @@ import {
 import {ApiError} from '../error'
 import {getType} from '../../util/types'
 
-const PASSWORD_MIN_LENGTH = 5
+const PASSWORD_MIN_LENGTH = 8
 
 /**
  * Object with general server side helper methods

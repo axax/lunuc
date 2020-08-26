@@ -132,7 +132,7 @@ class JsonDom extends React.Component {
                 rel = target === '_blank' ? 'noopener' : ''
 
 
-            if (url.startsWith('https://') || url.startsWith('http://') || _app_.ssr) {
+            if (url.startsWith('https://') || url.startsWith('http://') || _app_.ssr || url.indexOf('/-/')>-1) {
                 return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
 
                     if (onClick) {

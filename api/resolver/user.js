@@ -248,6 +248,9 @@ export const userResolver = (db) => ({
             const result = await userCollection.findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {$set: {password: hashPassword}})
 
             const user = result.value
+
+            Hook.call('newPassword', {context, db, user})
+
             if (user) {
                 return {status: 'ok'}
             } else {
