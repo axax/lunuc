@@ -68,6 +68,9 @@ const Util = {
     },
     setKeyValue: async (db, context, key, value) => {
         if (Util.isUserLoggedIn(context)) {
+
+            Cache.clearStartWith('KeyValue_'+context.id+'_' + key)
+
             return db.collection('KeyValue').updateOne({
                 createdBy: ObjectId(context.id),
                 key
@@ -101,10 +104,31 @@ const Util = {
         const map = await Util.keyValueGlobalMap(db, context, [key], {parse})
         return map[key]
     },
-    keyvalueMap: async (db, context, keys) => {
+    keyvalueMap: async (db, context, keys, options) => {
         if (!Util.isUserLoggedIn(context)) {
             // return empty map if no user is logged in
             return {}
+        }
+        const allOptions = Object.assign({cache: false, parse: false}, options)
+
+        const cacheKeyPrefix = 'KeyValue_'+context.id+'_'
+
+        // check if all keys are in the cache
+        if (allOptions.cache) {
+            let map = {}
+            for (const k of keys) {
+                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse )
+                if (fromCache) {
+                    map[k] = fromCache
+                } else {
+                    map = false
+                    break
+                }
+            }
+            if (map) {
+                console.log(`load KeyValue "${keys.join(',')}" from cache`)
+                return map
+            }
         }
 
         const keyvalues = (await db.collection('KeyValue').find({
@@ -114,6 +138,24 @@ const Util = {
 
         return keyvalues.reduce((map, obj) => {
             map[obj.key] = obj.value
+
+            let v
+            if (allOptions.parse && obj.value && obj.value.constructor === String) {
+                try {
+                    v = JSON.parse(obj.value)
+                } catch (e) {
+                    console.warn(`load KeyValue - "${obj.key}" is not a json`)
+                    v = obj.value
+                }
+            } else {
+                v = obj.value
+            }
+            map[obj.key] = v
+            if (allOptions.cache) {
+                Cache.set(cacheKeyPrefix + obj.key + allOptions.parse, v)
+            }
+
+
             return map
         }, {})
 

@@ -1286,7 +1286,7 @@ class CmsViewEditorContainer extends React.Component {
         _cmsActions.editCmsData(null)
     }
 
-    handleSettingChange(key, any) {
+    handleSettingChange(key, any, callback) {
         let value
         if (any.target) {
             if (any.target.type === 'checkbox') {
@@ -1297,12 +1297,17 @@ class CmsViewEditorContainer extends React.Component {
         } else {
             value = any
         }
-        this.setState({settings: Object.assign({}, this.state.settings, {[key]: value})}, this.saveSettings)
+        this.setState({settings: Object.assign({}, this.state.settings, {[key]: value})}, ()=>{
+            this.saveSettings()
+            if(callback){
+                callback()
+            }
+        })
     }
 
     saveSettings() {
 
-        this._saveSettings = () => {
+        this._saveSettings = (callback) => {
 
             const settings = this.state.settings
             const {pageSettings, generalSettings} = CmsViewEditorContainer.getSettingsByKeyValue(this.props)
@@ -1326,14 +1331,16 @@ class CmsViewEditorContainer extends React.Component {
                 this.props.setKeyValue({
                     key: settingKeyPrefix,
                     value: generalSettings,
-                    internal: true
+                    internal: true,
+                    callback
                 })
             }
             if (pageSettingsChanged) {
                 this.props.setKeyValue({
                     key: settingKeyPrefix + this.props.slug,
                     value: pageSettings,
-                    internal: true
+                    internal: true,
+                    callback
                 })
             }
 

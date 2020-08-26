@@ -109,7 +109,7 @@ export default function (WrappedComponent) {
                     variables,
                     update: (store, {data: {setKeyValue}}) => {
                         if(callback){
-                            callback(setKeyValue)
+                            callback({key,value,setKeyValue})
                         }
                         if(resolvedDataJson){
                             this.updateResolvedData({json:resolvedDataJson})

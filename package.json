@@ -57,7 +57,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@apollo/client": "^3.2.0-beta.5",
+    "@apollo/client": "^3.2.0-beta.6",
     "@apollo/react-components": "^4.0.0",
     "@apollo/react-hoc": "^4.0.0",
     "@babel/core": "^7.11.4",
@@ -109,7 +109,7 @@
     "react-router-dom": "^5.2.0",
     "redux": "^4.0.5",
     "request-promise": "^4.2.6",
-    "sharp": "^0.25.4",
+    "sharp": "^0.26.0",
     "socket.io": "^2.3.0",
     "subscriptions-transport-ws": "^0.9.18",
     "telegraf": "^3.38.0",

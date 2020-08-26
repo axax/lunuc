@@ -161,7 +161,7 @@ const GenericResolver = {
         let result
 
         if (results.length === 0) {
-            return {
+            result = {
                 page: aggregationBuilder.getPage(),
                 limit: aggregationBuilder.getLimit(),
                 offset: aggregationBuilder.getOffset(),
@@ -175,6 +175,7 @@ const GenericResolver = {
                 result = postConvertData(results[0], typeName)
             }
         }
+        Hook.call('typeLoaded', {type: typeName, data, db, context, result})
 
 
         if (result.meta && result.meta.length) {
