@@ -9,7 +9,7 @@ const UploadUtil = {
         UploadUtil.dataURLtoBlob(dataUrl, (blob) => {
 
             const xhr = new XMLHttpRequest()
-            xhr.timeout = 1000 * 60 * 10
+            xhr.timeout = 1000 * 60 * 60
 
             xhr.responseType = 'json'
             // Progress bar
