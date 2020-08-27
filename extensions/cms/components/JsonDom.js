@@ -128,11 +128,15 @@ class JsonDom extends React.Component {
             }
         },
         'Link': ({to, href, target, gotop, onClick, ...rest}) => {
-            const url = to || href || '', newTarget = target && target !== 'undefined' ? target : '_self',
+            let url = to || href || ''
+            const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
 
+            if( _app_.ssr){
+                url = new URL(url, location.origin).href
+            }
 
-            if (url.startsWith('https://') || url.startsWith('http://') || _app_.ssr || url.indexOf('/-/')>-1) {
+            if (url.startsWith('https://') || url.startsWith('http://') || url.indexOf('/-/')>-1) {
                 return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
 
                     if (onClick) {

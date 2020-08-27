@@ -47,11 +47,12 @@
       "name": "NewsletterMailing",
       "fields": [
         {
-          "name": "name",
+          "name": "subject",
           "required": true
         },
         {
           "name": "list",
+          "multi": true,
           "type": "NewsletterList"
         },
         {

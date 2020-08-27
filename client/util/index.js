@@ -257,6 +257,10 @@ const Util = {
             data.src = image.src
         }
 
+        if( _app_.ssr){
+            data.src = new URL(data.src, location.origin).href
+        }
+
         if (options) {
             let resize = options.resize, h, w, params = ''
             if (resize) {

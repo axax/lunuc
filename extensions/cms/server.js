@@ -88,9 +88,10 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
         const loc = {pathname: '', search:'', origin: ''}
         if( req){
             const host = getHostFromHeaders(req.headers)
-            loc.origin = req.isHttps ? 'https://' : 'http://' + host
+            loc.origin = req.isHttps ? 'https://' : 'http://' + (host==='localhost'?host+':8080':host)
+        }else{
+            console.warn('request is missing')
         }
-        console.log(req, loc)
         window.location = globalThis.location = loc
 
         return await renderToStringWithData(

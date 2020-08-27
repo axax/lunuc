@@ -5,7 +5,7 @@ require("@babel/register")
 require('./util/localStorage')
 
 const fetch = require('node-fetch')
-const config = require('../gensrc/config')
+const config = require('../gensrc/config').default
 
 globalThis.fetch = fetch
 globalThis.window = {}

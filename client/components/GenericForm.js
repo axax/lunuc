@@ -169,11 +169,18 @@ class GenericForm extends React.Component {
         return null
     }
 
-    static staticValidate(state, props) {
+    static staticValidate(state, props, options = {changeTab:false}) {
         const {fields, onValidate} = props
-        const fieldErrors = {}
+        const fieldErrors = {}, tabs = []
         Object.keys(fields).forEach(fieldKey => {
             const field = fields[fieldKey]
+
+            if (field.tab && options.changeTab) {
+                if (tabs.indexOf(field.tab)<0) {
+                    tabs.push(field.tab)
+                }
+            }
+
             if (field.required) {
 
                 if (field.reference) {
@@ -211,6 +218,30 @@ class GenericForm extends React.Component {
         } else {
             validationState = {isValid: true, fieldErrors}
         }
+        if(!validationState.isValid && tabs.length>0 && options.changeTab){
+            // check tabs
+            let foundTab=false, relevantTabs = []
+            for (const key in validationState.fieldErrors) {
+                // = validationState.fieldErrors[key]
+                if(fields[key].tab) {
+                    if (fields[key].tab === tabs[state.tabValue]) {
+                        foundTab = true
+                        break
+                    } else {
+                        relevantTabs.push(tabs.indexOf(fields[key].tab))
+                    }
+                }
+            }
+            if(!foundTab){
+                if(relevantTabs.length>0){
+                    validationState.tabValue = relevantTabs[0]
+                }else{
+                    validationState.tabValue = tabs.length
+                }
+            }
+        }
+
+
         return validationState
     }
 
@@ -218,10 +249,9 @@ class GenericForm extends React.Component {
         return state !== this.state || state.fieldErrors !== this.state.fieldErrors || state.showTranslations !== this.state.showTranslations
     }
 
-    validate(state = this.state, updateState = true) {
+    validate(state = this.state, updateState = true, options) {
 
-        const validationState = GenericForm.staticValidate(state, this.props)
-
+        const validationState = GenericForm.staticValidate(state, this.props, options)
         if (updateState) {
             this.setState(validationState)
         }
