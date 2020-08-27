@@ -16,6 +16,16 @@
           "tab": "General"
         },
         {
+          "name": "unsubscribed",
+          "type": "Boolean",
+          "tab": "General"
+        },
+        {
+          "name": "token",
+          "type": "String",
+          "tab": "General"
+        },
+        {
           "name": "list",
           "multi": true,
           "type": "NewsletterList"
@@ -27,7 +37,7 @@
           "tab": "Meta"
         },
         {
-          "name": "mailing",
+          "name": "sentMailing",
           "type": "NewsletterMailing",
           "multi": true
         },

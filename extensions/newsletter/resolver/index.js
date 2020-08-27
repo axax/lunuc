@@ -2,6 +2,7 @@ import {ObjectId} from "mongodb";
 import Util from '../../../api/util'
 import {CAPABILITY_RUN_SCRIPT} from '../../../util/capabilities'
 import {sendMail} from "../../../api/util/mail";
+import crypto from "crypto";
 
 export default db => ({
     Query: {
@@ -9,17 +10,24 @@ export default db => ({
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_RUN_SCRIPT)
             let result
 
+
+
             const subscribers = await db.collection('NewsletterSubscriber').find(
                 { list: { $in: list.map(l=>ObjectId(l)) } }
             ).toArray()
 
             subscribers.forEach(async sub=>{
-                const user = await db.collection('User').findOne(
+                sub.account = await db.collection('User').findOne(
                     { _id: ObjectId(sub.account) }
                 )
-                console.log(user)
+                if( !sub.token){
+                    sub.token = crypto.randomBytes(32).toString("hex")
 
-                await sendMail(db, req.context, {slug:template, recipient: sub.email, subject, body: user, req})
+                    await this.db.collection('NewsletterSubscriber').updateOne({_id: ObjectId(sub._id)}, {$set: {token: sub.token}})
+
+                }
+
+                await sendMail(db, req.context, {slug:template, recipient: sub.email, subject, body: sub, req})
 
             })
 
