@@ -43,7 +43,8 @@
         },
         {
           "name": "account",
-          "type": "User"
+          "type": "User",
+          "fields": ["username"]
         }
       ]
     },

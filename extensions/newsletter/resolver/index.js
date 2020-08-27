@@ -23,7 +23,7 @@ export default db => ({
                 if( !sub.token){
                     sub.token = crypto.randomBytes(32).toString("hex")
 
-                    await this.db.collection('NewsletterSubscriber').updateOne({_id: ObjectId(sub._id)}, {$set: {token: sub.token}})
+                    await db.collection('NewsletterSubscriber').updateOne({_id: ObjectId(sub._id)}, {$set: {token: sub.token}})
 
                 }
 
