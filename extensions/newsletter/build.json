@@ -30,7 +30,10 @@
           "name": "mailing",
           "type": "NewsletterMailing",
           "multi": true
-
+        },
+        {
+          "name": "account",
+          "type": "User"
         }
       ]
     },

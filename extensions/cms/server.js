@@ -58,12 +58,18 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
     if (!cmsPages.results) {
         throw new Error(`Template ${slug} doesn't exist`)
     }
-    let mailContext
-    try {
-        mailContext = JSON.parse(body)
-    } catch (e) {
-        throw new Error(`Error in body: ${e.message}`)
-        mailContext = {}
+    let mailContext = {}
+    if( body ) {
+        if(body.constructor === Object){
+            mailContext = body
+        }else {
+            try {
+                mailContext = JSON.parse(body)
+            } catch (e) {
+                throw new Error(`Error in body: ${e.message}`)
+                mailContext = {}
+            }
+        }
     }
     const scope = {page: {slug}}
     const {template, script, dataResolver, style} = cmsPages.results[0]

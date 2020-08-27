@@ -14,7 +14,12 @@ export default db => ({
             ).toArray()
 
             subscribers.forEach(async sub=>{
-                await sendMail(db, req.context, {slug:template, recipient: sub.email, subject, body: '{}', req})
+                const user = await db.collection('User').findOne(
+                    { _id: ObjectId(sub.account) }
+                )
+                console.log(user)
+
+                await sendMail(db, req.context, {slug:template, recipient: sub.email, subject, body: user, req})
 
             })
 
