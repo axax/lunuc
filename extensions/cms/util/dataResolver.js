@@ -219,7 +219,9 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         }
 
                     } else {
-                        if (segment.defaultLanguage) {
+                        if (segment.forceLanguage) {
+                            resolvedData.tr = Object.assign(resolvedData.tr, segment.tr[segment.forceLanguage])
+                        } else if (segment.defaultLanguage) {
                             resolvedData.tr = Object.assign(resolvedData.tr, segment.tr[segment.defaultLanguage], segment.tr[context.lang])
                         } else {
                             resolvedData.tr = Object.assign(resolvedData.tr, segment.tr[context.lang])
