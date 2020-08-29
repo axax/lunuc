@@ -76,7 +76,7 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
     const {resolvedData} = await resolveData({db, context, dataResolver, scope})
 
 
-    console.log('sendmail', mailContext)
+    //console.log('sendmail', mailContext)
     try {
         const client = new ApolloClient({
             ssrMode: true,

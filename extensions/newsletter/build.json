@@ -16,8 +16,12 @@
           "tab": "General"
         },
         {
-          "name": "unsubscribed",
-          "type": "Boolean",
+          "name": "state",
+          "enum": [
+            "subscribed",
+            "unsubscribed",
+            "invalid"
+          ],
           "tab": "General"
         },
         {
@@ -35,11 +39,6 @@
           "type": "Object",
           "uitype": "json",
           "tab": "Meta"
-        },
-        {
-          "name": "sentMailing",
-          "type": "NewsletterMailing",
-          "multi": true
         },
         {
           "name": "account",
@@ -72,6 +71,24 @@
         {
           "name": "template",
           "type": "CmsPage"
+        }
+      ]
+    },
+    {
+      "name": "NewsletterSent",
+      "noUserRelation": true,
+      "fields": [
+        {
+          "name": "subscriber",
+          "type": "NewsletterSubscriber"
+        },
+        {
+          "name": "mailing",
+          "type": "NewsletterMailing"
+        },
+        {
+          "name": "mailResponse",
+          "type": "Object"
         }
       ]
     }
