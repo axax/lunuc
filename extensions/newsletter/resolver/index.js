@@ -6,7 +6,7 @@ import crypto from "crypto";
 
 export default db => ({
     Query: {
-        sendNewsletter: async ({subject, template, list}, req) => {
+        sendNewsletter: async ({mailing, subject, template, list}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_RUN_SCRIPT)
             let result
 
@@ -25,13 +25,14 @@ export default db => ({
                     await db.collection('NewsletterSubscriber').updateOne({_id: ObjectId(sub._id)}, {$set: {token: sub.token}})
 
                 }
+                sub.mailing = mailing
 
                 const result = await sendMail(db, req.context, {slug: template, recipient: sub.email, subject, body: sub, req})
 
                 db.collection('NewsletterSent').insertOne(
                     {
                         subscriber:sub._id,
-                        mailing:sub._id,
+                        mailing:ObjectId(mailing),
                         mailResponse: result
                     }
                 )

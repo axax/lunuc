@@ -89,6 +89,10 @@
         {
           "name": "mailResponse",
           "type": "Object"
+        },
+        {
+          "name": "openedAt",
+          "type": "Float"
         }
       ]
     }

@@ -1299,7 +1299,7 @@ class CmsViewEditorContainer extends React.Component {
         }
         this.setState({settings: Object.assign({}, this.state.settings, {[key]: value})}, ()=>{
             this.saveSettings()
-            if(callback){
+            if(callback && typeof callback === 'function'){
                 callback()
             }
         })

@@ -15,7 +15,7 @@ import _t from "../../util/i18nServer";
 import Hook from "../../util/hook";
 
 const LOGIN_ATTEMPTS_MAP = {},
-    MAX_LOGIN_ATTEMPTS = 3,
+    MAX_LOGIN_ATTEMPTS = 10,
     LOGIN_DELAY_IN_SEC = 180
 
 const createUser = async ({username, role, junior, password, email, meta, picture, db, context}) => {

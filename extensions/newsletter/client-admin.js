@@ -35,8 +35,9 @@ export default () => {
             }
             client.query({
                 fetchPolicy: 'network-only',
-                query: gql`query sendNewsletter($subject: String!,$template: String!, $list:[ID]){sendNewsletter(subject:$subject,template:$template,list:$list){status}}`,
+                query: gql`query sendNewsletter($mailing: ID!, $subject: String!,$template: String!, $list:[ID]){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list){status}}`,
                 variables: {
+                    mailing: dataToEdit._id,
                     subject: createEditForm.state.fields.subject,
                     template: template.slug,
                     list: listIds
@@ -50,8 +51,8 @@ export default () => {
     })
 
 
-    Hook.on('TypeCreateEdit', ({type, props}) => {
-        if (type === 'NewsletterMailing') {
+    Hook.on('TypeCreateEdit', ({type, props, dataToEdit}) => {
+        if (type === 'NewsletterMailing' && dataToEdit && dataToEdit._id) {
             props.actions.unshift({key: 'send', label: 'Send Newsletter'})
         }
     })
