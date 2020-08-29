@@ -80,11 +80,13 @@
       "fields": [
         {
           "name": "subscriber",
-          "type": "NewsletterSubscriber"
+          "type": "NewsletterSubscriber",
+          "index": 1
         },
         {
           "name": "mailing",
-          "type": "NewsletterMailing"
+          "type": "NewsletterMailing",
+          "index": 1
         },
         {
           "name": "mailResponse",
@@ -92,7 +94,29 @@
         },
         {
           "name": "openedAt",
-          "type": "Float"
+          "type": "Float",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "name": "NewsletterTracking",
+      "noUserRelation": true,
+      "fields": [
+        {
+          "name": "subscriber",
+          "type": "NewsletterSubscriber",
+          "index": 1
+        },
+        {
+          "name": "mailing",
+          "type": "NewsletterMailing",
+          "index": 1
+        },
+        {
+          "name": "url",
+          "type": "String",
+          "index": 1
         }
       ]
     }
