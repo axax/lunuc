@@ -127,13 +127,16 @@ class JsonDom extends React.Component {
                 return <Redirect to={{pathname: to}} push={push}/>
             }
         },
-        'Link': ({to, href, target, gotop, onClick, ...rest}) => {
+        'Link': ({to, href, target, gotop, onClick, tracking, ...rest}) => {
             let url = to || href || ''
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
 
             if( _app_.ssr){
                 url = new URL(url, location.origin).href
+            }
+            if(tracking){
+                url = location.origin + '/lunucapi/tracking?url='+encodeURI(url)+tracking
             }
 
             if (url.startsWith('https://') || url.startsWith('http://') || url.indexOf('/-/')>-1) {

@@ -15,7 +15,7 @@ const getApi = async ({slug, db}) => {
     return null
 }
 
-const runApiScript = ({api, db, req}) => {
+const runApiScript = ({api, db, req, res}) => {
     return new Promise(resolve => {
 
         try {
@@ -29,7 +29,7 @@ const runApiScript = ({api, db, req}) => {
                 }
             })()
             this.resolve({data})`)
-            tpl.call({require, resolve, db, req})
+            tpl.call({require, resolve, db, req, res})
         }catch (error) {
             resolve({error})
         }
@@ -62,14 +62,14 @@ console.log('/'+config.API_PREFIX)
             res.writeHead(404, {'content-type': 'application/json'})
             res.end(`{"status":"notfound","message":"Api for '${slug}' not found"}`)
         } else {
-            const result = await runApiScript({api, db, req})
+            const result = await runApiScript({api, db, req, res})
 
             if (result.error) {
                 res.writeHead(500, {'content-type': 'application/json'})
                 res.end(`{"status":"error","message":"${result.error.message}"}`)
             } else {
 
-                res.writeHead(200, {'content-type': api.mimeType || 'application/json'})
+                res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
                 const data = await result.data
                 res.end(data?data.toString():data)
             }
