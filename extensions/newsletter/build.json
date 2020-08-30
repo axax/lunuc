@@ -95,6 +95,7 @@
         {
           "name": "openedAt",
           "type": "Float",
+          "uitype": "datetime",
           "index": 1
         }
       ]

@@ -17,19 +17,19 @@ export default db => ({
 
             const emails = []
 
-            for(let i =0; i<subscribers.length;i++){
-                if(emails>10){
+            for (let i = 0; i < subscribers.length; i++) {
+                if (emails > 10) {
                     break
                 }
                 const sub = subscribers[i]
 
                 const sent = await db.collection('NewsletterSent').findOne(
                     {
-                        subscriber:sub._id,
-                        mailing:ObjectId(mailing)
+                        subscriber: sub._id,
+                        mailing: ObjectId(mailing)
                     }
                 )
-                if(!sent) {
+                if (!sent) {
 
                     sub.account = await db.collection('User').findOne(
                         {_id: ObjectId(sub.account)}
@@ -62,7 +62,7 @@ export default db => ({
 
             }
             return {
-                status: 'Newsletter sent to: '+emails.join(',')
+                status: 'Newsletter sent to: ' + emails.join(',')
             }
         },
         subscribeNewsletter: async ({email, meta, list}, {context}) => {
@@ -73,27 +73,31 @@ export default db => ({
             const user = (await db.collection('User').findOne({email}))
 
             // insert or update
-            const $set = {
-                email,
-                state: 'subscribed',
-                meta: meta ? JSON.parse(meta) : undefined
+            const data = {
+                $set: {
+                    email,
+                    state: 'subscribed',
+                    meta: meta ? JSON.parse(meta) : undefined
+                }
             }
 
-            if( user && user._id){
-                $set.account = user._id
+            if (user && user._id) {
+                data.$set.account = user._id
             }
-            const insertResult = await collection.updateOne(
-                {email},
-                {
-                    $addToSet: {
-                        list: {$each:(list ? list.reduce((o, id) => {
+
+            if (list) {
+                data.$addToSet = {
+                    list: {
+                        $each: (list ? list.reduce((o, id) => {
                             o.push(ObjectId(id));
                             return o
-                        }, []) : list)}
+                        }, []) : list)
+                    }
 
-                    },
-                    $set
-                }, {upsert: true}
+                }
+            }
+            const insertResult = await collection.updateOne(
+                {email}, data, {upsert: true}
             )
 
             if (insertResult.modifiedCount || insertResult.matchedCount || insertResult.upsertedCount) {

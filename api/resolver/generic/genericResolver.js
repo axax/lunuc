@@ -242,7 +242,7 @@ const GenericResolver = {
 
 
         const dataSet = Object.keys(data).reduce((o, k) => {
-            if (fields[k] && fields[k].type === 'Object' && data[k].constructor !== Object) {
+            if (fields[k] && fields[k].type === 'Object' && data[k] && data[k].constructor !== Object) {
                 // store as object
                 o[k] = JSON.parse(data[k])
             } else {
@@ -421,7 +421,7 @@ const GenericResolver = {
                         o[k + '.' + key] = data[k][key]
                     })
 
-                } else if (fields[k] && fields[k].type === 'Object') {
+                } else if (data[k] && fields[k] && fields[k].type === 'Object') {
                     // store as object
                     o[k] = JSON.parse(data[k])
 
