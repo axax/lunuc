@@ -53,24 +53,23 @@ function mainInit() {
         window.location = loc.origin + cleanPathname +loc.search + loc.hash
         return
     }
+
+    // context language
+    // we expect the first part of the path to be the language when its length is 2
+    contextLanguage = loc.pathname.split('/')[1].toLowerCase()
+
+    if (contextLanguage && config.LANGUAGES.indexOf(contextLanguage) >= 0) {
+        _app_.contextPath = '/' + contextLanguage
+        basePath = removeTrailingSlash(loc.pathname.substring(contextLanguage.length + 1))
+    } else {
+        _app_.contextPath = ''
+        contextLanguage = false
+        basePath = removeTrailingSlash(loc.pathname)
+    }
+    basePath += loc.search + loc.hash
+
     // if multi languages
     if (hasMultiLanguages) {
-
-        // context language
-        // we expect the first part of the path to be the language when its length is 2
-        contextLanguage = loc.pathname.split('/')[1]
-
-        if (contextLanguage && config.LANGUAGES.indexOf(contextLanguage) >= 0) {
-            contextLanguage = contextLanguage.toLowerCase()
-            _app_.contextPath = '/' + contextLanguage
-            basePath = removeTrailingSlash(loc.pathname.substring(contextLanguage.length + 1))
-        } else {
-            _app_.contextPath = ''
-            contextLanguage = false
-            basePath = removeTrailingSlash(loc.pathname)
-        }
-        basePath += loc.search + loc.hash
-
         // if lang is not set already
         if (!_app_.lang || config.LANGUAGES.indexOf(_app_.lang) < 0) {
             let lang
@@ -99,7 +98,6 @@ function mainInit() {
         sessionStorage.setItem('lang', _app_.lang)
 
     } else {
-        _app_.contextPath = ''
         _app_.lang = config.DEFAULT_LANGUAGE
     }
     const start = () => {
@@ -130,15 +128,15 @@ function mainInit() {
         })
     }
 
+    if (contextLanguage === config.DEFAULT_LANGUAGE) {
+        // set canonical link
+        DomUtil.createAndAddTag('link', 'head', {
+            id: 'canonicalTag',
+            rel: 'canonical',
+            href: loc.origin + (basePath==='/'?'':basePath)
+        })
+    }
     if (hasMultiLanguages) {
-        if (contextLanguage === config.DEFAULT_LANGUAGE) {
-            // set canonical link
-            DomUtil.createAndAddTag('link', 'head', {
-                id: 'canonicalTag',
-                rel: 'canonical',
-                href: loc.origin + (basePath==='/'?'':basePath)
-            })
-        }
 
         // set alternative language
         DomUtil.createAndAddTag('link', 'head', {
