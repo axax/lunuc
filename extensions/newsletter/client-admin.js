@@ -43,7 +43,10 @@ export default () => {
                     list: listIds
             }
             }).then(response => {
-                console.log(response)
+
+                if( meta && meta._this) {
+                    meta._this.setState({mailingResponse: response})
+                }
             }).catch(error => {
                 console.log(error.message)
             })
@@ -58,18 +61,18 @@ export default () => {
     })
 
 
-    /*Hook.on('TypesContainerRender', function ({type, content}) {
-        if (type === 'CronJob') {
-            if (this.state.cronjobResponse && this.state.cronjobResponse.data.runCronJob && this.state.cronjobResponse.data.runCronJob.status) {
-                content.push(<SimpleDialog key="cronjobDialog" open={true} onClose={() => {
-                    this.setState({cronjobResponse: null})
+    Hook.on('TypesContainerRender', function ({type, content}) {
+        if (type === 'NewsletterMailing') {
+            if (this.state.mailingResponse && this.state.mailingResponse.data.sendNewsletter && this.state.mailingResponse.data.sendNewsletter.status) {
+                content.push(<SimpleDialog key="mailingResponseDialog" open={true} onClose={() => {
+                    this.setState({mailingResponse: null})
                 }}
                                            actions={[{key: 'ok', label: 'Ok'}]}
-                                           title="CronJob response">
-                    <h3 key="status">{this.state.cronjobResponse.data.runCronJob.status}</h3>
-                    {this.state.cronjobResponse.data.runCronJob.result &&
+                                           title="Mailing response">
+                    <h3 key="status">{this.state.mailingResponse.data.sendNewsletter.status}</h3>
+                    {this.state.mailingResponse.data.sendNewsletter.result &&
                     <pre key="result">
-                        {JSON.stringify(JSON.parse(this.state.cronjobResponse.data.runCronJob.result),null,2)}
+                        {JSON.stringify(JSON.parse(this.state.mailingResponse.data.sendNewsletter.result),null,2)}
                     </pre>
                     }
 
@@ -77,5 +80,5 @@ export default () => {
 
             }
         }
-    })*/
+    })
 }

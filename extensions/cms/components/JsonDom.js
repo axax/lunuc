@@ -136,7 +136,7 @@ class JsonDom extends React.Component {
                 url = new URL(url, location.origin).href
             }
             if(tracking){
-                url = location.origin + '/lunucapi/tracking?url='+encodeURI(url)+tracking
+                url = location.origin + '/lunucapi/tracking?url='+encodeURIComponent(url)+tracking
             }
 
             if (url.startsWith('https://') || url.startsWith('http://') || url.indexOf('/-/')>-1) {

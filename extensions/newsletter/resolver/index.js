@@ -15,33 +15,54 @@ export default db => ({
                 {state: 'subscribed', list: {$in: list.map(l => ObjectId(l))}}
             ).toArray()
 
-            subscribers.forEach(async sub => {
-                sub.account = await db.collection('User').findOne(
-                    {_id: ObjectId(sub.account)}
-                )
-                if (!sub.token) {
-                    sub.token = crypto.randomBytes(32).toString("hex")
+            const emails = []
 
-                    await db.collection('NewsletterSubscriber').updateOne({_id: ObjectId(sub._id)}, {$set: {token: sub.token}})
-
+            for(let i =0; i<subscribers.length;i++){
+                if(emails>10){
+                    break
                 }
-                sub.mailing = mailing
+                const sub = subscribers[i]
 
-                const result = await sendMail(db, req.context, {slug: template, recipient: sub.email, subject, body: sub, req})
-
-                db.collection('NewsletterSent').insertOne(
+                const sent = await db.collection('NewsletterSent').findOne(
                     {
                         subscriber:sub._id,
-                        mailing:ObjectId(mailing),
-                        mailResponse: result
+                        mailing:ObjectId(mailing)
                     }
                 )
+                if(!sent) {
 
+                    sub.account = await db.collection('User').findOne(
+                        {_id: ObjectId(sub.account)}
+                    )
+                    if (!sub.token) {
+                        sub.token = crypto.randomBytes(32).toString("hex")
 
-            })
+                        await db.collection('NewsletterSubscriber').updateOne({_id: ObjectId(sub._id)}, {$set: {token: sub.token}})
 
+                    }
+                    sub.mailing = mailing
+
+                    const result = await sendMail(db, req.context, {
+                        slug: template,
+                        recipient: sub.email,
+                        subject,
+                        body: sub,
+                        req
+                    })
+                    emails.push(sub.email)
+
+                    db.collection('NewsletterSent').insertOne(
+                        {
+                            subscriber: sub._id,
+                            mailing: ObjectId(mailing),
+                            mailResponse: result
+                        }
+                    )
+                }
+
+            }
             return {
-                status: 'Newsletter sent'
+                status: 'Newsletter sent to: '+emails.join(',')
             }
         },
         subscribeNewsletter: async ({email, meta, list}, {context}) => {
