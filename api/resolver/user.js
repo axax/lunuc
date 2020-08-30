@@ -206,7 +206,7 @@ export const userResolver = (db) => ({
                             resetToken
                         }
                     })
-                    result.resetToken = resetToken
+                    result.user.resetToken = resetToken
                 }
 
                 Hook.call('login', {context, db, user: result.user})
