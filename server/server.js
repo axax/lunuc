@@ -576,7 +576,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
     const host = getHostFromHeaders(req.headers)
-    req.isHttps = this.constructor.name === 'Server'
+    req.isHttps = req.socket.encrypted || this.constructor.name === 'Server'
 
     if (hasHttpsWwwRedirect.call(this, host, req, res)) {
         return
@@ -601,7 +601,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             path: req.url,
             onReq: (req, {headers}) => {
                 headers['x-forwarded-for'] = req.socket.remoteAddress
-                headers['x-forwarded-proto'] = req.socket.encrypted ? 'https' : 'http'
+                headers['x-forwarded-proto'] = req.isHttps ? 'https' : 'http'
                 headers['x-forwarded-host'] = host
             }
         }, defaultWebHandler)

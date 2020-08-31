@@ -111,6 +111,8 @@ export const start = (done) => {
             // only allow post methode
             app.post('/graphql', (req, res, next) => {
 
+                req.isHttps = req.headers['x-forwarded-proto']==='https'
+
                 //var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 //console.log(ip)*
                 // TODO: replace with ApolloServer so with can use batch queries
