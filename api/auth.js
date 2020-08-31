@@ -32,6 +32,10 @@ export const auth = {
     initialize: (app, db) => {
 
         app.use((req, res, next) => {
+
+
+            req.isHttps = req.headers['x-forwarded-proto']==='https'
+
             const token = req.headers[AUTH_HEADER], lang = req.headers[CONTENT_LANGUAGE_HEADER], currentSession = req.headers[SESSION_HEADER]
 
             // now if auth is needed we can check if the context is available

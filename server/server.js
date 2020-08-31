@@ -333,7 +333,7 @@ function hasHttpsWwwRedirect(host, req, res) {
         // force www
         let newhost = host
         if (!newhost.startsWith('www.')) {
-            const hostrule = hostrules[host]
+            const hostrule = hostrules[host] || hostrules.general
             if (hostrule && hostrule.forceWWW) {
                 newhost = 'www.' + newhost
             }
