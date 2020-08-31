@@ -132,7 +132,7 @@ export default db => ({
                     const loc = {pathname: '', search:'', origin: ''}
                     if( req){
                         const host = getHostFromHeaders(req.headers)
-                        loc.origin = req.isHttps ? 'https://' : 'http://' + host
+                        loc.origin = (req.isHttps ? 'https://' : 'http://') + host
                     }
                     window.location = globalThis.location = loc
 

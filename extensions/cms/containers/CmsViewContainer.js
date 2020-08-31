@@ -397,7 +397,7 @@ CmsViewContainer.propTypes = {
     /* with Router */
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
-    match: PropTypes.object.isRequired,
+    match: PropTypes.object,
     /* Object is passed to JsonDom */
     _props: PropTypes.object,
     /* if dynamic is set to true that means it is a child of another CmsViewContainer */
