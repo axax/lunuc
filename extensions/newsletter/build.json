@@ -33,7 +33,8 @@
         {
           "name": "list",
           "multi": true,
-          "type": "NewsletterList"
+          "type": "NewsletterList",
+          "fields": ["name"]
         },
         {
           "name": "meta",
@@ -67,7 +68,8 @@
         {
           "name": "list",
           "multi": true,
-          "type": "NewsletterList"
+          "type": "NewsletterList",
+          "fields": ["name"]
         },
         {
           "name": "template",
@@ -110,11 +112,13 @@
         {
           "name": "subscriber",
           "type": "NewsletterSubscriber",
+          "fields": ["email"],
           "index": 1
         },
         {
           "name": "mailing",
           "type": "NewsletterMailing",
+          "fields": ["subject"],
           "index": 1
         },
         {

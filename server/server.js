@@ -643,7 +643,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             if(hostrule.redirects){
 
                 const redirect = hostrule.redirects[uri]
-                console.log(uri, redirect)
                 if(redirect){
                     res.writeHead(301, {'Location': redirect})
                     res.end()
@@ -707,7 +706,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                     if (!fs.existsSync(absFilename)) {
                                         let url = data.screenshot.url
                                         if (url.indexOf('/') === 0) {
-                                            url = 'http://' + req.headers.host + url
+                                            url = (req.isHttps?'https://':'http://') + hostRuleHost + url
                                         }
                                         await doScreenCapture(url, absFilename, data.screenshot.options)
                                     }
