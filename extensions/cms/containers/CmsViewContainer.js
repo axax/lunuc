@@ -22,10 +22,7 @@ class CmsViewContainer extends React.Component {
 
     shouldComponentUpdate(props) {
 
-        const {cmsPage,forceUpdateMode} = props
-        if(forceUpdateMode){
-            return true
-        }
+        const {cmsPage} = props
         const cmsPageOld = this.props.cmsPage
         if (cmsPage) {
             if (!cmsPageOld || (cmsPage.subscriptions !== cmsPageOld.subscriptions)) {
@@ -387,7 +384,6 @@ CmsViewContainer.propTypes = {
     loading: PropTypes.bool,
     renewing: PropTypes.bool,
     aboutToChange: PropTypes.bool,
-    forceUpdateMode: PropTypes.bool,
     fetchMore: PropTypes.func,
     children: PropTypes.any,
     cmsPageVariables: PropTypes.object,

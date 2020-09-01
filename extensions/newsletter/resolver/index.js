@@ -42,6 +42,13 @@ export default db => ({
                     }
                     sub.mailing = mailing
 
+                    await db.collection('NewsletterSent').insertOne(
+                        {
+                            subscriber: sub._id,
+                            mailing: ObjectId(mailing)
+                        }
+                    )
+
                     const result = await sendMail(db, req.context, {
                         slug: template,
                         recipient: sub.email,
@@ -49,15 +56,20 @@ export default db => ({
                         body: sub,
                         req
                     })
+
+                    db.collection('NewsletterSent').updateOne(
+                        {subscriber: sub._id,mailing: ObjectId(mailing)},
+                        {
+                            $set:{
+                                mailResponse: result
+                            }
+                        }, {upsert: false}
+                    )
+
+
                     emails.push(sub.email)
 
-                    db.collection('NewsletterSent').insertOne(
-                        {
-                            subscriber: sub._id,
-                            mailing: ObjectId(mailing),
-                            mailResponse: result
-                        }
-                    )
+
                 }
 
             }
