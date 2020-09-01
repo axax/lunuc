@@ -81,12 +81,14 @@
         {
           "name": "subscriber",
           "type": "NewsletterSubscriber",
-          "index": 1
+          "index": 1,
+          "fields": ["email"]
         },
         {
           "name": "mailing",
           "type": "NewsletterMailing",
-          "index": 1
+          "index": 1,
+          "fields": ["subject"]
         },
         {
           "name": "mailResponse",
