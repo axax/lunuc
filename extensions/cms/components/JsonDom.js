@@ -193,6 +193,7 @@ class JsonDom extends React.Component {
                 return <div>No Slug</div>
             }
             return <CmsViewContainer key={rest.id}
+                                     forceUpdateMode={_this.forceUpdateMode}
                                      _props={_props}
                                      _parentRef={_this}
                                      fetchPolicy="cache-first"
@@ -229,6 +230,7 @@ class JsonDom extends React.Component {
     componentRefs = {} // this is the object with references to elements with identifier
     jsOnStack = {}
     styles = {}
+    forceUpdateMode=false
 
     constructor(props) {
         super(props)
@@ -472,6 +474,7 @@ class JsonDom extends React.Component {
                     this.jsOnStack = {}
                 }
                 content = this.parseRec(this.getJson(this.props), _key ? _key + '-0' : 0, scope)
+                this.forceUpdateMode =false
                 if (content && this._inHtmlComponents.length > 0) {
                     content = [content, <div key={content.key + '_inHtmlComponents'}>{this._inHtmlComponents}</div>]
                 }
@@ -1311,7 +1314,7 @@ class JsonDom extends React.Component {
         data: {jsonDomId: this.instanceId}
     })
 
-    refresh = (id, runScript) => {
+    refresh = (id, runScript, updateChildren) => {
         if (id === true) {
             runScript = true
             id = null
@@ -1333,6 +1336,9 @@ class JsonDom extends React.Component {
             if (!nodeToRefresh._ismounted) {
                 console.warn(`Component ${id} is not mounted`, nodeToRefresh)
                 return false
+            }
+            if(updateChildren) {
+                nodeToRefresh.forceUpdateMode = true
             }
             nodeToRefresh.forceUpdate()
         } else {
