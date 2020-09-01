@@ -109,18 +109,21 @@ const sendError = (res, code) => {
 
 
 const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
+
     let stats
-    filePath = await resizeImage(parsedUrl, req, filePath)
 
     try {
         stats = fs.statSync(filePath)
     } catch (e) {
         return false
     }
+
+
     if (stats.isFile()) {
+        const modFilePath = await resizeImage(parsedUrl, req, filePath)
 
         // static file
-        const ext = path.extname(filePath).substring(1).trim().toLowerCase().split('@')[0]
+        const ext = path.extname(modFilePath).substring(1).trim().toLowerCase().split('@')[0]
         const mimeType = MimeType.detectByExtension(ext),
             headerExtra = {
                 'Cache-Control': 'public, max-age=31536000',
@@ -128,7 +131,7 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
                 'Last-Modified': stats.mtime.toUTCString(),
                 ...headers
             }
-        sendFile(req, res, headerExtra, filePath)
+        sendFile(req, res, headerExtra, modFilePath)
 
         return true
     }
