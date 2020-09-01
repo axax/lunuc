@@ -18,7 +18,7 @@ const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, junior, password, email, meta, picture, db, context}) => {
+const createUser = async ({username, role, junior, password, email, emailConfirmed, requestNewPassword, meta, picture, db, context}) => {
 
     const errors = []
 
@@ -78,8 +78,8 @@ const createUser = async ({username, role, junior, password, email, meta, pictur
     const insertResult = await userCollection.insertOne({
         role: roleId,
         junior: juniorIds,
-        emailConfirmed: false,
-        requestNewPassword: false,
+        emailConfirmed: !!emailConfirmed,
+        requestNewPassword: !!requestNewPassword,
         email: email,
         username: username,
         password: hashedPw,

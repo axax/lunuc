@@ -13,7 +13,8 @@
         {
           "name": "confirmed",
           "type": "Boolean",
-          "tab": "General"
+          "tab": "General",
+          "index": 1
         },
         {
           "name": "state",

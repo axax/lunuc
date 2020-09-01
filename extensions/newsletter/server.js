@@ -4,6 +4,7 @@ import resolverGen from './gensrc/resolver'
 import schema from './schema'
 import resolver from './resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
+import {ObjectId} from "mongodb";
 
 
 
@@ -25,10 +26,17 @@ Hook.on('schema', ({schemas}) => {
 Hook.on('NewUserCreated', async ({meta, email, insertResult, db}) => {
     if (insertResult.insertedCount) {
         if( meta && meta.newsletter){
+            const user = (await db.collection('User').findOne({email}))
+
+            // insert or update
+            const data = {email, list:(meta.newsletterList?meta.newsletterList.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):[]), confirmed:true, state:'subscribed'}
+
+            if (user && user._id) {
+                data.account = user._id
+            }
+
             const collection = db.collection('NewsletterSubscriber')
-            const insertResult = await collection.insertOne(
-                {email, list:[]}
-            )
+            const insertResult = await collection.insertOne(data)
         }
     }
 })
