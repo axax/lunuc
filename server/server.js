@@ -374,7 +374,7 @@ function hasHttpsWwwRedirect(host, req, res) {
         }
 
         if (newhost != host) {
-            console.log(`${req.connection.remoteAddress}: Redirect to ${newhost}`)
+            console.log(`${req.connection.remoteAddress}: Redirect to ${newhost} / request url=${req.url}`)
             res.writeHead(301, {"Location": (this.constructor.name === 'Server' ? 'http' : 'https') + "://" + newhost + req.url})
             res.end()
             return true
