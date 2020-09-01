@@ -641,7 +641,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
 
             if(hostrule.redirects){
+
                 const redirect = hostrule.redirects[uri]
+                console.log(uri, redirect)
                 if(redirect){
                     res.writeHead(301, {'Location': redirect})
                     res.end()
