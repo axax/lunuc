@@ -110,7 +110,7 @@ export const keyvalueResolver = (db) => ({
                 key,
                 value,
                 ispublic,
-                createdBy
+                createdBy: (createdBy ? ObjectId(createdBy) : createdBy)
             })
         },
         deleteKeyValueGlobal: async ({_id}, {context}) => {

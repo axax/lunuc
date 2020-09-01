@@ -41,7 +41,8 @@ const styles = {
     },
     root: {
         backgroundColor: '#525659',
-        padding: '3.5em'
+        padding: '3.5em',
+        minWidth: 'calc(1024px + 7rem)'
     },
     wrapper: {
         margin: 'auto',
