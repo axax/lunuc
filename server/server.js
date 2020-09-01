@@ -640,6 +640,16 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
             const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
 
+            if(hostrule.redirects){
+                const redirect = hostrule.redirects[uri]
+                if(redirect){
+                    res.writeHead(301, {'Location': redirect})
+                    res.end()
+                    return true
+                }
+
+            }
+
             hostrule.headers = {...hostrules.general.headers, ...hostrule.headers}
 
             let staticFile
