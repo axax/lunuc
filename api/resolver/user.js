@@ -300,6 +300,10 @@ export const userResolver = (db) => ({
     },
     Mutation: {
         createUser: async ({username, password, email, meta, picture, emailConfirmed, requestNewPassword, role, junior}, {context}) => {
+
+            if( email){
+                email = email.trim()
+            }
             const insertResult = await createUser({db, context, username, picture, meta, email, emailConfirmed, requestNewPassword, password, role, junior})
 
             if (insertResult.insertedCount) {
@@ -309,6 +313,10 @@ export const userResolver = (db) => ({
         },
         signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, role, meta}, {context}) => {
 
+
+            if( email){
+                email = email.trim()
+            }
             const insertResult = await createUser({db, context, username, email, password, meta})
 
             if (insertResult.insertedCount) {
@@ -328,6 +336,10 @@ export const userResolver = (db) => ({
         },
         updateUser: async ({_id, username, email, password, picture, emailConfirmed, requestNewPassword, role, junior, meta}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
+
+            if( email){
+                email = email.trim()
+            }
 
             const user = {}
             const errors = []

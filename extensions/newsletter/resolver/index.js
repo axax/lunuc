@@ -18,7 +18,7 @@ export default db => ({
             const emails = []
 
             for (let i = 0; i < subscribers.length; i++) {
-                if (emails > 10) {
+                if (emails.length > 10) {
                     break
                 }
                 const sub = subscribers[i]
