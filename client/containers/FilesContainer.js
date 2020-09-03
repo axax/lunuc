@@ -7,6 +7,7 @@ import {
     Typography,
     TextField,
     SimpleList,
+    SimpleSelect,
     Row,
     Col,
     FolderIcon,
@@ -20,16 +21,22 @@ import {COMMAND_QUERY} from '../constants'
 import PropTypes from 'prop-types'
 import {ApolloClient} from '@apollo/client'
 import * as NotificationAction from 'client/actions/NotificationAction'
+import config from 'gen/config'
 
 class FilesContainer extends React.Component {
 
+    static spaces = [{value:'./',name:'Application'},
+        {value:config.HOSTRULES_ABSPATH,name:'Hostrules'},
+        {value:config.WEBROOT_ABSPATH,name:'Webroot'}
+        ]
     constructor(props) {
         super(props)
 
         this.state = {
             file: props.file,
-            dir: props.dir || './',
-            searchText: ''
+            dir: '',
+            searchText: '',
+            space: props.space || './'
         }
     }
 
@@ -45,19 +52,19 @@ class FilesContainer extends React.Component {
 
     render() {
         const {embedded, editOnly} = this.props
-        const {file, dir, searchText} = this.state
+        const {file, dir, searchText, space} = this.state
 
-        let command = 'ls -l ' + dir
+        let command = 'ls -l ' + space + dir
 
         if (searchText) {
-            command = `find ${dir} -size -1M -type f -name '*.*' ! -path "./node_modules/*" ! -path "./bower_components/*" -exec grep -ril "${searchText}" {} \\;`
+            command = `find ${space+dir} -size -1M -type f -name '*.*' ! -path "./node_modules/*" ! -path "./bower_components/*" -exec grep -ril "${searchText}" {} \\;`
 
         }
 
         let fileEditor = file &&
             <Query query={gql(COMMAND_QUERY)}
                    fetchPolicy="cache-and-network"
-                   variables={{sync: true, command: 'less -f -L ' + dir + '/' + file}}>
+                   variables={{sync: true, command: 'less -f -L ' + space+dir + '/' + file}}>
                 {({loading, error, data}) => {
                     if (loading) return 'Loading...'
                     if (error) return `Error! ${error.message}`
@@ -65,7 +72,7 @@ class FilesContainer extends React.Component {
                     const ext = file.slice((file.lastIndexOf('.') - 1 >>> 0) + 2)
 
                     return <CodeEditor lineNumbers onChange={c => {
-                        this.fileChange(dir + '/' + file, c)
+                        this.fileChange(space+dir + '/' + file, c)
                     }} type={ext || 'text' }>{data.run.response}</CodeEditor>
                 }}
             </Query>
@@ -78,6 +85,15 @@ class FilesContainer extends React.Component {
         } else {
             content = <Row spacing={3}>
                 <Col sm={4}>
+                    <SimpleSelect
+                        label="Select aspace"
+                        fullWidth={true}
+                        value={space}
+                        onChange={(e, v) => {
+                            this.setState({space:e.target.value})
+                        }}
+                        items={FilesContainer.spaces}
+                    />
                     <TextField
                         type="search"
                         helperText={'Search for file content'}
@@ -135,7 +151,7 @@ class FilesContainer extends React.Component {
                                             onClick: () => {
                                                 if (b[0].indexOf('d') === 0) {
                                                     //change dir
-                                                    this.setState({dir: dir + '/' + b[8]})
+                                                    this.setState({file:null, dir: dir + '/' + b[8]})
                                                 } else {
                                                     this.setState({file: b[8]})
                                                 }
@@ -148,13 +164,13 @@ class FilesContainer extends React.Component {
                                     return a
                                 }, [])
 
-                                if (dir.indexOf('/') > 0) {
+                                if (dir.indexOf('/') >= 0) {
                                     listItems.unshift({
                                         icon: <FolderIcon />,
                                         selected: false,
                                         primary: '..',
                                         onClick: () => {
-                                            this.setState({dir: dir.substring(0, dir.lastIndexOf('/'))})
+                                            this.setState({file:null, dir: dir.substring(0, dir.lastIndexOf('/'))})
                                         }
                                     })
                                 }
@@ -220,7 +236,7 @@ FilesContainer.propTypes = {
     client: PropTypes.instanceOf(ApolloClient).isRequired,
     notificationAction: PropTypes.object.isRequired,
     file: PropTypes.string,
-    dir: PropTypes.string,
+    space: PropTypes.string,
     embedded: PropTypes.bool,
     editOnly: PropTypes.bool
 }

@@ -92,7 +92,7 @@ class ResourceEditor extends React.Component {
                           }]}
                           title="Edit Resource">
 
-                <FilesContainer editOnly dir="./build/" file={this.state.editResource} embedded />
+                <FilesContainer editOnly space="./build/" file={this.state.editResource} embedded />
             </SimpleDialog>
         </div>
 

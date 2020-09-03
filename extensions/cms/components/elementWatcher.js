@@ -9,7 +9,7 @@ export default function elementWatcher({jsonDom, key, eleType, tagName, eleProps
         tagImg = Util.getImageObject(eleProps.src, eleProps.options)
         tagSrc = tagImg.src
     }else{
-        tagSrc = jsonDom.instanceId
+        tagSrc = eleProps.id
     }
 // ...and returns another component...
     return class extends React.Component {
