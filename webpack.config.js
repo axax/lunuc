@@ -48,6 +48,7 @@ const APP_VALUES = {
     APP_DESCRIPTION: PACKAGE_JSON.description,
     APP_DESCRIPTION: PACKAGE_JSON.description,
     APP_COLOR: '#2196f3',
+    HTML_HEAD: '',
     ...APP_CONFIG.options
 }
 
