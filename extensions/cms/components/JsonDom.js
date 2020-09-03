@@ -20,7 +20,7 @@ import JsonDomInput from './JsonDomInput'
 import {deepMergeOptional} from 'util/deepMerge'
 import {preprocessCss} from '../util/cssPreprocessor'
 import {parseStyles} from 'client/util/style'
-import elementWatcher from './elementWatcher'
+import ElementWatch from './ElementWatch'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
 
 const JsonDomHelper = (props) => <Async {...props}
@@ -957,8 +957,8 @@ class JsonDom extends React.Component {
                     if ((((eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) && (!!window.IntersectionObserver || eleProps.inlineSvg)) {
 
                         h.push(React.createElement(
-                            elementWatcher({jsonDom: this, key, scope, tagName, eleType, eleProps, c, $c}, $observe),
-                            {key: key}
+                            ElementWatch,
+                            {jsonDom: this, key: key,_key:key, scope, tagName, eleType, eleProps, c, $c, $observe: $observe || {}}
                         ))
                     } else {
                         h.push(React.createElement(
