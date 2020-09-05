@@ -6,6 +6,7 @@ const {UPLOAD_DIR} = config
 import fs from 'fs'
 import path from 'path'
 import GenericResolver from "../../../api/resolver/generic/genericResolver";
+import {ObjectId} from "mongodb";
 
 export default db => ({
     Query: {
@@ -51,24 +52,33 @@ export default db => ({
             //ids.length = 20
             let allcount = 0
             for (let i = 0; i < ids.length; i++) {
-                const _id = ids[i],_idStr = _id.toString()
+                const _id = ids[i], _idStr = _id.toString()
 
                 let count = 0
                 const locations = []
 
 
-                const data = await GenericResolver.entities(db, context, 'CmsPage', ['dataResolver', 'script', 'serverScript', 'template', 'style', 'slug'], {
-                    limit: 1,
-                    filter: _idStr
-                })
-                if (data.total > 0) {
-                    count++
+                const user = await db.collection('User').findOne({picture: ObjectId(_id)})
+                if( user ){
 
-                    data.results.forEach(item => {
-                        locations.push({location: 'CmsPage', _id: item._id, slug: item.slug})
-                    })
+                    count++
+                    locations.push({location: 'User', _id: user._id, name: user.username})
                 }
 
+
+                if (count === 0) {
+                    const data = await GenericResolver.entities(db, context, 'CmsPage', ['dataResolver', 'script', 'serverScript', 'template', 'style', 'slug'], {
+                        limit: 1,
+                        filter: _idStr
+                    })
+                    if (data.total > 0) {
+                        count++
+
+                        data.results.forEach(item => {
+                            locations.push({location: 'CmsPage', _id: item._id, slug: item.slug})
+                        })
+                    }
+                }
                 if (count === 0) {
                     for (let j = 0; j < allGenericData.length; j++) {
                         if (allGenericData[j].data.indexOf(_idStr) > -1) {

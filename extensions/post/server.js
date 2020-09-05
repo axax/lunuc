@@ -24,6 +24,7 @@ Hook.on('index', ({db}) => {
     const postCollection = db.collection('Post')
 
     // full text search
+    //postCollection.dropIndex('postFTS')
     postCollection.createIndex({'search.*': 'text', 'title': 'text'}, {
         name: 'postFTS',
         weights: {

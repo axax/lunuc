@@ -287,7 +287,7 @@ function gensrcExtension(name, options) {
 
     const gendir = EXTENSION_PATH + name + '/' + GENSRC_PATH
     try {
-        deleteFolderRecursive(path.resolve(__dirname, gendir))
+        deleteFolderRecursive(path.resolve(__dirname, gendir), ['frontendhook.js'])
     } catch (err) {
         if (err.code !== 'EEXIST') throw err
     }
@@ -492,18 +492,26 @@ function gensrcExtension(name, options) {
 
 }
 
-const deleteFolderRecursive = function (path) {
+const deleteFolderRecursive = function (path, skip) {
     if (fs.existsSync(path)) {
         fs.readdirSync(path).forEach(function (file, index) {
-            var curPath = path + "/" + file
-            if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                deleteFolderRecursive(curPath)
-            } else { // delete file
-                console.log('delete file ' + curPath)
-                fs.unlinkSync(curPath)
+            if( skip && skip.indexOf(file)>=0){
+                console.log(`skip file ${file}`)
+            }else {
+                const curPath = path + "/" + file
+                if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                    deleteFolderRecursive(curPath, skip)
+                } else { // delete file
+                    console.log('delete file ' + curPath)
+                    fs.unlinkSync(curPath)
+                }
             }
-        });
-        fs.rmdirSync(path)
+        })
+        try {
+            fs.rmdirSync(path)
+        }catch (e) {
+            
+        }
     }
 }
 

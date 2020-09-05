@@ -23,7 +23,8 @@
             "tracking",
             "cmsCustomResolver",
             "login",
-            "newPassword"
+            "newPassword",
+            "Frontend"
           ]
         },
         {

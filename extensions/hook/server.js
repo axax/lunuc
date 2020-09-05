@@ -3,18 +3,25 @@ import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
 import Util from '../../api/util'
-
+import fs from 'fs'
+import path from 'path'
 const registeredHook = []
+
+const GENSRC_PATH = path.join(__dirname, './gensrc')
 
 const register = async (db) => {
     unregister()
     const results = (await db.collection('Hook').find({active: true}).toArray())
+    let frontEndHooks = '/* this file is generated */\n\n'
     results.forEach(async entry => {
         if (!entry.execfilter || Util.execFilter(entry.execfilter)) {
             console.log(`register hook ${entry.name} (${entry.hook})`)
 
-            try {
-                const fun = new Function(`
+            if(entry.hook === 'Frontend'){
+                frontEndHooks+=entry.script+'\n\n'
+            }else {
+                try {
+                    const fun = new Function(`
             const require = this.require
             const data = (async () => {
                 try{
@@ -24,22 +31,28 @@ const register = async (db) => {
                 }
             })()
             this.resolve({data})`),
-                    name = entry.hook,
-                    key = entry._id.toString()
+                        name = entry.hook,
+                        key = entry._id.toString()
 
 
-                Hook.on(`${name}.${key}`, async (args) => {
-                    await new Promise(resolve => {
-                        fun.call({require, resolve, Util, ...args})
+                    Hook.on(`${name}.${key}`, async (args) => {
+                        await new Promise(resolve => {
+                            fun.call({require, resolve, Util, ...args})
+                        })
                     })
-                })
 
 
-                registeredHook.push({name, key, fun})
-            } catch (e) {
-                console.log(e)
+                    registeredHook.push({name, key, fun})
+                } catch (e) {
+                    console.log(e)
+                }
             }
 
+        }
+    })
+    fs.writeFile(GENSRC_PATH + "/frontendhook.js", frontEndHooks, function (err) {
+        if (err) {
+            return console.log(err)
         }
     })
 }
