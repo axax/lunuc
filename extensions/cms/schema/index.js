@@ -7,7 +7,8 @@ type CmsCustomData{
     data: String
 }
 type CmsPageStatus{
-    user: UserPublic    
+    user: UserPublic  
+    data: String  
 }
 type Query {
     cmsPage(slug: String!, props: String, query: String, nosession: String, editmode: Boolean, dynamic: Boolean, _version: String): CmsPage

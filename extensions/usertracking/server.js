@@ -4,6 +4,8 @@ import Hook from 'util/hook'
 import {deepMergeToFirst} from 'util/deepMerge'
 import {clientAddress, getHostFromHeaders} from '../../util/host'
 import {trackUser} from './track'
+import React from 'react'
+import Util from '../../api/util'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
@@ -42,4 +44,20 @@ Hook.on('typeBeforeCreate', ({type, data, req}) => {
             data.host=getHostFromHeaders(req.headers)
         }
     }
+})
+
+
+// add some extra data to the table
+Hook.on('cmsPageStatus',  async ({db, slug, req, data}) => {
+
+    const keys = ['CmsViewContainerSettings']
+    const keyvalueMap = (await Util.keyvalueMap(db, req.context, keys, {cache:true, parse:true}))
+
+    if(keyvalueMap.CmsViewContainerSettings && keyvalueMap.CmsViewContainerSettings.tracking) {
+
+        const countTotal = await db.collection('UserTracking').count({slug})
+        const lastEntry = await db.collection('UserTracking').findOne({slug}, {sort: { _id: -1 }})
+        data.usertracking = {countTotal, lastEntry}
+    }
+
 })

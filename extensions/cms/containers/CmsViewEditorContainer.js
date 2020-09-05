@@ -152,29 +152,34 @@ class CmsViewEditorContainer extends React.Component {
             if (!this.state.ignoreStatus && this.props.slug !== undefined) {
                 this.props.client.query({
                     fetchPolicy: 'network-only',
-                    query: gql`query cmsPageStatus($slug: String!){cmsPageStatus(slug: $slug){user{username _id}}}`,
+                    query: gql`query cmsPageStatus($slug: String!){cmsPageStatus(slug: $slug){data user{username _id}}}`,
                     variables: {
                         slug: this.props.slug
                     },
                 }).then((res) => {
                     this.watchCmsPageStatus()
-                    if (res.data.cmsPageStatus && res.data.cmsPageStatus.user && this.props.user.userData && res.data.cmsPageStatus.user._id !== this.props.user.userData._id) {
-                        this.setState({
-                            simpleDialog: {
-                                title: "Seite in Bearbeitung von einem anderen Benutzer",
-                                text: "Die Seite wird gerade von " + res.data.cmsPageStatus.user.username + " bearbeitet. Möchten Sie die Seite trotzdem bearbeiten?",
-                                actions: [
-                                    {
-                                        key: 'ok',
-                                        label: 'Ja trotzdem bearbeiten',
-                                        type: 'primary'
+                    if (res.data.cmsPageStatus && res.data.cmsPageStatus.user && this.props.user.userData ) {
+
+                        if(res.data.cmsPageStatus.user._id !== this.props.user.userData._id) {
+                            this.setState({
+                                simpleDialog: {
+                                    title: "Seite in Bearbeitung von einem anderen Benutzer",
+                                    text: "Die Seite wird gerade von " + res.data.cmsPageStatus.user.username + " bearbeitet. Möchten Sie die Seite trotzdem bearbeiten?",
+                                    actions: [
+                                        {
+                                            key: 'ok',
+                                            label: 'Ja trotzdem bearbeiten',
+                                            type: 'primary'
+                                        }
+                                    ],
+                                    onClose: action => {
+                                        this.setState({ignoreStatus: true})
                                     }
-                                ],
-                                onClose: action => {
-                                    this.setState({ignoreStatus: true})
                                 }
-                            }
-                        })
+                            })
+                        }else if(res.data.cmsPageStatus.data !== JSON.stringify(this.state.cmsStatusData)){
+                            this.setState({cmsStatusData: JSON.parse(res.data.cmsPageStatus.data)})
+                        }
                     }
                 })
             }
@@ -231,7 +236,8 @@ class CmsViewEditorContainer extends React.Component {
             state.settings.inlineEditor !== this.state.settings.inlineEditor ||
             state.settings.templateTab !== this.state.settings.templateTab ||
             state.settings.drawerWidth !== this.state.settings.drawerWidth ||
-            state.settings.tracking !== this.state.settings.tracking
+            state.settings.tracking !== this.state.settings.tracking ||
+            state.cmsStatusData !== this.state.cmsStatusData
 
     }
 
@@ -828,7 +834,7 @@ class CmsViewEditorContainer extends React.Component {
                 <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>)
 
 
-            Hook.call('CmsViewEditorContainerRender', {isSmallScreen, toolbarRight, settings}, this)
+            Hook.call('CmsViewEditorContainerRender', {isSmallScreen, toolbarRight, settings, inner}, this)
 
             return <UIProvider>
                 <DrawerLayout sidebar={!loadingState && sidebar}

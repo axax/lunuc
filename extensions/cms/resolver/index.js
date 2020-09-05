@@ -220,7 +220,15 @@ export default db => ({
                 cmsPageStatus[slug].time = new Date()
             }
 
-            return {user: cmsPageStatus[slug].user}
+            const data =  {}
+            if (Hook.hooks['cmsPageStatus'] && Hook.hooks['cmsPageStatus'].length) {
+                let c = Hook.hooks['cmsPageStatus'].length
+                for (let i = 0; i < Hook.hooks['cmsPageStatus'].length; ++i) {
+                    await Hook.hooks['cmsPageStatus'][i].callback({db, slug, req, data})
+                }
+            }
+
+            return {user: cmsPageStatus[slug].user, data: JSON.stringify(data)}
         },
         cmsServerMethod: async ({slug, methodName, args, query, props, dynamic, _version}, req) => {
 

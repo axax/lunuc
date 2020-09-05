@@ -360,9 +360,9 @@ class JsonDom extends React.Component {
                 let content = ''
                 const tags = document.body.querySelectorAll('h1,h2,h3,h4')
                 for(let i = 0;i<tags.length;i++){
-                    content += tags[i].innerText.trim()
+                    content += ' '+tags[i].innerText.trim()
                     if(  content.indexOf('.', content.length - 1) === -1 ){
-                        content += '. '
+                        content += '.'
                     }
                     if(content.length>150){
                         break
