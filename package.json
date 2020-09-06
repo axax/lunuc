@@ -97,7 +97,7 @@
     "mongodb": "^3.6.1",
     "natural": "^2.1.5",
     "node-cron": "^2.0.3",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "nodemailer": "^6.4.11",
     "preact": "^10.4.8",
     "react": "^16.13.1",

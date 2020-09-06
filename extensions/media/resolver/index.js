@@ -5,8 +5,9 @@ import config from 'gen/config'
 const {UPLOAD_DIR} = config
 import fs from 'fs'
 import path from 'path'
-import GenericResolver from "../../../api/resolver/generic/genericResolver";
-import {ObjectId} from "mongodb";
+import GenericResolver from '../../../api/resolver/generic/genericResolver'
+import {ObjectId} from 'mongodb'
+import {getTypes} from '../../../util/types'
 
 export default db => ({
     Query: {
@@ -48,6 +49,8 @@ export default db => ({
             })
 
 
+            const types = getTypes()
+
             const ids = await db.collection('Media').distinct("_id", {})
             //ids.length = 20
             let allcount = 0
@@ -66,7 +69,7 @@ export default db => ({
                 }
 
 
-                if (count === 0) {
+                if (count === 0 && types['CmsPage']) {
                     const data = await GenericResolver.entities(db, context, 'CmsPage', ['dataResolver', 'script', 'serverScript', 'template', 'style', 'slug'], {
                         limit: 1,
                         filter: _idStr
@@ -79,7 +82,7 @@ export default db => ({
                         })
                     }
                 }
-                if (count === 0) {
+                if (count === 0  && types['GenericData']) {
                     for (let j = 0; j < allGenericData.length; j++) {
                         if (allGenericData[j].data.indexOf(_idStr) > -1) {
                             locations.push({location: 'GenericData', _id: allGenericData[j]._id})
@@ -89,8 +92,7 @@ export default db => ({
                     }
                 }
 
-
-                if (count === 0) {
+                if (count === 0 && types['BotCommand']) {
                     const data = await GenericResolver.entities(db, context, 'BotCommand', ['script', 'name'], {
                         limit: 1,
                         filter: _idStr
@@ -100,6 +102,21 @@ export default db => ({
 
                         data.results.forEach(item => {
                             locations.push({location: 'BotCommand', _id: item._id, name: item.name})
+                        })
+                    }
+                }
+
+
+                if (count === 0  && types['CronJob']) {
+                    const data = await GenericResolver.entities(db, context, 'CronJob', ['script', 'name'], {
+                        limit: 1,
+                        filter: _idStr
+                    })
+                    if (data.total > 0) {
+                        count++
+
+                        data.results.forEach(item => {
+                            locations.push({location: 'CronJob', _id: item._id, name: item.name})
                         })
                     }
                 }

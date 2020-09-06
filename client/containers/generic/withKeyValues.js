@@ -7,31 +7,31 @@ import {connect} from 'react-redux'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import {getKeyValuesFromLS, setKeyValueToLS} from 'client/util/keyvalue'
 
-
-
-// This function takes a component...
-export function withKeyValues(WrappedComponent, keys, keysGlobal) {
-
-    const gqlKeyValueQuery = gql`query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}`,
-        gqlKeyValueGlobalsQuery = gql`query keyValuesGlobals($keys:[String]){keyValuesGlobals(keys:$keys){limit offset total results{key value status} }}`,
-        gqlKeyValueUpdate = gql`
+const gqlKeyValueQuery = gql`query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}`,
+    gqlKeyValueGlobalsQuery = gql`query keyValueGlobals($keys:[String]){keyValueGlobals(keys:$keys){limit offset total results{key value status} }}`,
+    gqlKeyValueUpdate = gql`
           mutation setKeyValue($key: String!, $value: String!) {
             setKeyValue(key: $key, value: $value){
                 key value status createdBy{_id username}
             }
           }`,
-        gqlKeyValueGlobalUpdate = gql`
+    gqlKeyValueGlobalUpdate = gql`
           mutation setKeyValueGlobal($key: String!, $value: String!) {
             setKeyValueGlobal(key: $key, value: $value){
                 key value status
             }
           }`,
-        gqlKeyValueDelete = gql`
+    gqlKeyValueDelete = gql`
           mutation deleteKeyValueByKey($key: String!) {
             deleteKeyValueByKey(key: $key){
                 key status
             }
           }`
+
+// This function takes a component...
+export function withKeyValues(WrappedComponent, keys, keysGlobal) {
+
+
 
     // ...and returns another component...
     class WithKeyValues extends React.Component {
@@ -125,14 +125,16 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         deleteKeyValueByKey: PropTypes.func.isRequired,
     }
 
-    const variables = {keys: keys}
     const WithKeyValuesWithGql = compose(
         graphql(gqlKeyValueQuery, {
-            skip: props => !props.kvUser.isAuthenticated || keys === false, // skip request if user is not logged in
+            skip: props => !props.kvUser.isAuthenticated || !keys, // skip request if user is not logged in
             options() {
+
+                const variables = {keys: keys}
                 return {
                     variables,
                     fetchPolicy: 'cache-and-network',
+                    nextFetchPolicy: 'cache-first'
                 }
             },
             props: ({data: {loading, keyValues}}) => ({
@@ -143,9 +145,12 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         graphql(gqlKeyValueGlobalsQuery, {
             skip: props => !props.kvUser.isAuthenticated || !keysGlobal, // skip request if user is not logged in
             options() {
+
+                const variables = {keys: keysGlobal}
                 return {
                     variables,
                     fetchPolicy: 'cache-and-network',
+                    nextFetchPolicy: 'cache-first'
                 }
             },
             props: ({data: {loading, keyValueGlobals}}) => ({
@@ -182,6 +187,8 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                             }
                         },
                         update: (proxy, {data: {setKeyValue}}) => {
+                            const variables = {keys: keys}
+
                             // Read the data from our cache for this query.
                             const storeData = proxy.readQuery({query: gqlKeyValueQuery, variables}),
                                 storeKeyValue = Object.assign({}, storeData.keyValues)
@@ -227,6 +234,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                             }
                         },
                         update: (proxy, {data: {setKeyValueGlobal}}) => {
+                            const variables = {keys: keysGlobal}
                             // Read the data from our cache for this query.
                             const storeData = proxy.readQuery({query: gqlKeyValueGlobalsQuery, variables}),
                                 storekeyValueGlobals = Object.assign({}, storeData.keyValueGlobals)
@@ -271,6 +279,9 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                             }
                         },
                         update: (proxy, {data: {deleteKeyValueByKey}}) => {
+
+                            const variables = {keys: keys}
+
                             // Read the data from our cache for this query.
                             const storeData = proxy.readQuery({query: gqlKeyValueQuery, variables}),
                             storeKeyValue = Object.assign({}, storeData.keyValues)

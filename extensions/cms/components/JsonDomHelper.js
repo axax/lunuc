@@ -597,7 +597,9 @@ const m = Math.max((offX+offY) / 2,100)
             this.tooltipTimeout = setTimeout(()=>{
                 tooltip.classList.remove(classes.tooltipShow)
                 this.tooltipTimeout = setTimeout(()=> {
-                    tooltip.parentNode.removeChild(tooltip)
+                    if(tooltip && tooltip.parentNode) {
+                        tooltip.parentNode.removeChild(tooltip)
+                    }
                 },300)
             }, opt.closeIn)
         }

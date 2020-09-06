@@ -95,14 +95,16 @@ const findActiveItem = (props) => {
     let maybeItem = null
     for (let i = 0; i < props.menuItems.length; i++) {
         const item = props.menuItems[i]
-        const to = removeTrailingSlash(item.to)
-        if (to === currentLink) {
-            // exact match
-            return item
-        } else if (currentLink.startsWith(to)) {
-            // take the longest one
-            if (!maybeItem || item.to.length > maybeItem.to.length) {
-                maybeItem = item
+        if ( item.to) {
+            const to = removeTrailingSlash(item.to)
+            if (to === currentLink) {
+                // exact match
+                return item
+            } else if (currentLink.startsWith(to)) {
+                // take the longest one
+                if (!maybeItem || item.to.length > maybeItem.to.length) {
+                    maybeItem = item
+                }
             }
         }
     }
@@ -132,6 +134,9 @@ const ResponsiveDrawer = (props) => {
 
                 {menuItems.map((item, i) => {
                     if (item.auth && isAuthenticated || !item.auth) {
+                        if( item.divider){
+                            return <Divider key={i}/>
+                        }
                         return <ListItem onClick={() => {
                             history.push(item.to)
                         }}
@@ -151,6 +156,7 @@ const ResponsiveDrawer = (props) => {
 
                     }
                 })}
+
             </List>
             <Divider/>
         </div>

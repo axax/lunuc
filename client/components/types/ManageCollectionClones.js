@@ -50,7 +50,6 @@ class ManageCollectionClones extends React.PureComponent {
     }
 
     render() {
-
         const {type, keyValueGlobalMap, loading} = this.props
         if (loading) return null
 
