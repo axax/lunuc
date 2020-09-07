@@ -35,10 +35,11 @@ export default () => {
             }
             client.query({
                 fetchPolicy: 'network-only',
-                query: gql`query sendNewsletter($mailing: ID!, $subject: String!,$template: String!, $list:[ID]){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list){status}}`,
+                query: gql`query sendNewsletter($mailing: ID!, $subject: String!,$template: String!, $list:[ID], $batchSize: Float){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,batchSize:$batchSize){status}}`,
                 variables: {
                     mailing: dataToEdit._id,
                     subject: createEditForm.state.fields.subject,
+                    batchSize: createEditForm.state.fields.batchSize,
                     template: template.slug,
                     list: listIds
             }

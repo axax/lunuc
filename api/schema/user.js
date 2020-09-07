@@ -27,6 +27,7 @@ export const userSchemaRaw = `
         picture: Media
         note: [Note]
         meta: String
+        signupToken: String
         role: UserRole
         junior: [User]
     }

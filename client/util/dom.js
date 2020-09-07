@@ -13,18 +13,18 @@ const DomUtil = {
             }
         }
     },
-    addStyle(href, attrs) {
-        const style = DomUtil.createAndAddTag('link', 'head', {type: 'text/css', rel: 'stylesheet', href, ...attrs})
+    addStyle(href, attrs, opts) {
+        const style = DomUtil.createAndAddTag('link', 'head', {type: 'text/css', rel: 'stylesheet', href, ...attrs}, opts)
     },
-    addScript(src, attrs) {
+    addScript(src, attrs, opts) {
         const script = DomUtil.createAndAddTag('script', 'head', {
             src, asyn: true, defer: true,
             onload: function () {
                 script.setAttribute('loaded', true)
             }, ...attrs
-        })
+        }, opts)
     },
-    createAndAddTag(name, target, attrs) {
+    createAndAddTag(name, target, attrs, opts) {
         if (_app_.ssr) {
             //TODO: implmentation for server side rendering
             return
@@ -33,8 +33,14 @@ const DomUtil = {
         if (attrs.id) {
             tag = document.getElementById(attrs.id)
         }
-        if (!tag)
+        if (!tag) {
             tag = document.createElement(name)
+        }else if(opts && opts.ignoreIfExist){
+            if( attrs.onload){
+                attrs.onload()
+            }
+            return
+        }
         for (const key of Object.keys(attrs)) {
             if (key === 'data') {
                 for (const dataKey of Object.keys(attrs[key])) {

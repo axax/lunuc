@@ -4,6 +4,11 @@ export const CAPABILITY_MANAGE_CMS_TEMPLATE = 'manage_cms_template'
 
 export const DEFAULT_DATA_RESOLVER = `[
   {
+    "track": {
+      "event": "visit"
+    }
+  },
+  {
     "data":{
       "type":"Word",
       "fields": [{"name":"it", "label": "Italian"}, {"name":"de", "label": "German"}]

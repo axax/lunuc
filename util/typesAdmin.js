@@ -241,6 +241,11 @@ Hook.on('Types', ({types}) => {
                 tab: 'General'
             },
             {
+                name: 'signupToken',
+                fullWidth: true,
+                tab: 'General'
+            },
+            {
                 name: 'email',
                 fullWidth: true,
                 required: true,
@@ -266,7 +271,8 @@ Hook.on('Types', ({types}) => {
             {
                 name: 'picture',
                 type: 'Media',
-                reference: true
+                reference: true,
+                fields: ['name']
             },
             {
                 name: 'meta',

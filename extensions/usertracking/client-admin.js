@@ -33,7 +33,7 @@ export default () => {
         if(this.state.cmsStatusData ){
             const ut = this.state.cmsStatusData.usertracking
             if( ut && ut.lastEntry ) {
-                inner.push(<div style={{
+                inner.push(<div key="usertrackingBox" style={{
                     position: 'fixed',
                     zIndex: 9999, right: '2rem', top: '5rem',
                     background: 'rgba(243, 245, 154,0.9)', padding: '1rem',
@@ -49,7 +49,6 @@ export default () => {
             if (CmsViewEditorContainer.generalSettingsKeys.indexOf('tracking') < 0) {
                 CmsViewEditorContainer.generalSettingsKeys.push('tracking')
             }
-
             toolbarRight.splice(2, 0, <SimpleSwitch key="usertrackingSwitch" color="default"
                                                     checked={!!settings.tracking}
                                                     onChange={(e) => {

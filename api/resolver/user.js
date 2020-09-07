@@ -99,7 +99,7 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'picture', 'email', 'meta', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'lastLogin'], {
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'picture', 'email', 'meta', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'lastLogin'], {
                 limit,
                 page,
                 offset,

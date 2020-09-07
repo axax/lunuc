@@ -74,6 +74,10 @@
         {
           "name": "template",
           "type": "CmsPage"
+        },
+        {
+          "name": "batchSize",
+          "type": "Float"
         }
       ]
     },

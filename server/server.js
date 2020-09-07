@@ -173,51 +173,51 @@ const sendFile = function (req, res, headerExtra, filename, ext) {
     let statsMainFile
     try {
         statsMainFile = fs.statSync(filename)
+
+        if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {
+            res.writeHead(200, {...headerExtra, 'content-encoding': 'br'})
+
+            if (isFileNotNewer(filename + '.br', statsMainFile)) {
+                // if br version is available send this instead
+                const fileStream = fs.createReadStream(filename + '.br')
+                fileStream.pipe(res)
+            } else {
+                const fileStream = fs.createReadStream(filename)
+                const fileStreamCom = fileStream.pipe(zlib.createBrotliCompress())
+
+                fileStreamCom.pipe(res)
+                fileStreamCom.pipe(writeStreamFile(filename + '.br'))
+            }
+
+        } else if (!neverCompress && acceptEncoding.match(/\bgzip\b/)) {
+            res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
+
+            if (isFileNotNewer(filename + '.gz', statsMainFile)) {
+                // if gz version is available send this instead
+                const fileStream = fs.createReadStream(filename + '.gz')
+                fileStream.pipe(res)
+            } else {
+                const fileStream = fs.createReadStream(filename)
+                const fileStreamCom = fileStream.pipe(zlib.createGzip())
+                fileStreamCom.pipe(res)
+                fileStreamCom.pipe(writeStreamFile(filename + '.gz'))
+            }
+
+        } else if (!neverCompress && acceptEncoding.match(/\bdeflate\b/)) {
+            res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate'})
+
+            const fileStream = fs.createReadStream(filename)
+            fileStream.pipe(zlib.createDeflate()).pipe(res)
+        } else {
+            res.writeHead(200, {...headerExtra})
+
+            const fileStream = fs.createReadStream(filename)
+            fileStream.pipe(res)
+        }
     } catch(err) {
         console.error(err)
         console.log(filename + ' does not exist')
         sendError(res, 404)
-    }
-
-    if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {
-        res.writeHead(200, {...headerExtra, 'content-encoding': 'br'})
-
-        if (isFileNotNewer(filename + '.br', statsMainFile)) {
-            // if br version is available send this instead
-            const fileStream = fs.createReadStream(filename + '.br')
-            fileStream.pipe(res)
-        } else {
-            const fileStream = fs.createReadStream(filename)
-            const fileStreamCom = fileStream.pipe(zlib.createBrotliCompress())
-
-            fileStreamCom.pipe(res)
-            fileStreamCom.pipe(writeStreamFile(filename + '.br'))
-        }
-
-    } else if (!neverCompress && acceptEncoding.match(/\bgzip\b/)) {
-        res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
-
-        if (isFileNotNewer(filename + '.gz', statsMainFile)) {
-            // if gz version is available send this instead
-            const fileStream = fs.createReadStream(filename + '.gz')
-            fileStream.pipe(res)
-        } else {
-            const fileStream = fs.createReadStream(filename)
-            const fileStreamCom = fileStream.pipe(zlib.createGzip())
-            fileStreamCom.pipe(res)
-            fileStreamCom.pipe(writeStreamFile(filename + '.gz'))
-        }
-
-    } else if (!neverCompress && acceptEncoding.match(/\bdeflate\b/)) {
-        res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate'})
-
-        const fileStream = fs.createReadStream(filename)
-        fileStream.pipe(zlib.createDeflate()).pipe(res)
-    } else {
-        res.writeHead(200, {...headerExtra})
-
-        const fileStream = fs.createReadStream(filename)
-        fileStream.pipe(res)
     }
 }
 
@@ -578,165 +578,170 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
-    const host = getHostFromHeaders(req.headers)
-    req.isHttps = req.socket.encrypted || this.constructor.name === 'Server'
+    try {
+        const host = getHostFromHeaders(req.headers)
+        req.isHttps = req.socket.encrypted || this.constructor.name === 'Server'
 
-    if (hasHttpsWwwRedirect.call(this, host, req, res)) {
-        return
-    }
+        if (hasHttpsWwwRedirect.call(this, host, req, res)) {
+            return
+        }
 
-    const parsedUrl = url.parse(req.url, true), uri = decodeURI(parsedUrl.pathname)
+        const parsedUrl = url.parse(req.url, true), uri = decodeURI(parsedUrl.pathname)
 
-    //small security check
-    if (uri.indexOf('../') >= 0) {
-        sendError(res, 403)
-        return
-    }
+        //small security check
+        if (uri.indexOf('../') >= 0) {
+            sendError(res, 403)
+            return
+        }
 
-    console.log(`${req.connection.remoteAddress}: ${uri}`)
+        console.log(`${req.connection.remoteAddress}: ${uri}`)
 
-    if (uri.startsWith('/graphql') || uri.startsWith('/' + API_PREFIX)) {
-        // there is also /graphql/upload
-        return proxy.web(req, res, {
-            hostname: 'localhost',
-            proxyTimeout: 1000 * 60 * 10,
-            port: API_PORT,
-            path: req.url,
-            onReq: (req, {headers}) => {
-                headers['x-forwarded-for'] = req.socket.remoteAddress
-                headers['x-forwarded-proto'] = req.isHttps ? 'https' : 'http'
-                headers['x-forwarded-host'] = host
-            }
-        }, defaultWebHandler)
+        if (uri.startsWith('/graphql') || uri.startsWith('/' + API_PREFIX)) {
+            // there is also /graphql/upload
+            return proxy.web(req, res, {
+                hostname: 'localhost',
+                proxyTimeout: 1000 * 60 * 10,
+                port: API_PORT,
+                path: req.url,
+                onReq: (req, {headers}) => {
+                    headers['x-forwarded-for'] = req.socket.remoteAddress
+                    headers['x-forwarded-proto'] = req.isHttps ? 'https' : 'http'
+                    headers['x-forwarded-host'] = host
+                }
+            }, defaultWebHandler)
 
-    } else {
-
-        if (uri.startsWith(BACKUP_URL + '/')) {
-
-            const context = decodeToken(req.headers[AUTH_HEADER])
-
-            if (context.id) {
-                // only allow download if valid jwt token is set
-                const backup_dir = path.join(__dirname, '../' + BACKUP_DIR)
-                const filename = path.join(backup_dir, uri.substring(BACKUP_URL.length))
-                fs.exists(filename, (exists) => {
-                    if (exists) {
-                        const fileStream = fs.createReadStream(filename)
-                        const headerExtra = {}
-                        res.writeHead(200, {...headerExtra})
-                        fileStream.pipe(res)
-                    } else {
-                        console.log('not exists: ' + filename)
-                        sendError(res, 404)
-                    }
-                })
-            } else {
-                sendError(res, 403)
-            }
-
-
-        } else if (uri.startsWith(UPLOAD_URL + '/')) {
-            await resolveUploadedFile(uri, parsedUrl, req, res)
         } else {
 
-            // check with and without www
-            const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
-            const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
+            if (uri.startsWith(BACKUP_URL + '/')) {
 
-            if(hostrule.redirects){
+                const context = decodeToken(req.headers[AUTH_HEADER])
 
-                const redirect = hostrule.redirects[uri]
-                if(redirect){
-                    res.writeHead(301, {'Location': redirect})
-                    res.end()
-                    return true
+                if (context.id) {
+                    // only allow download if valid jwt token is set
+                    const backup_dir = path.join(__dirname, '../' + BACKUP_DIR)
+                    const filename = path.join(backup_dir, uri.substring(BACKUP_URL.length))
+                    fs.exists(filename, (exists) => {
+                        if (exists) {
+                            const fileStream = fs.createReadStream(filename)
+                            const headerExtra = {}
+                            res.writeHead(200, {...headerExtra})
+                            fileStream.pipe(res)
+                        } else {
+                            console.log('not exists: ' + filename)
+                            sendError(res, 404)
+                        }
+                    })
+                } else {
+                    sendError(res, 403)
                 }
 
-            }
 
-            hostrule.headers = {...hostrules.general.headers, ...hostrule.headers}
-
-            let staticFile
-
-            if (hostrule.fileMapping && hostrule.fileMapping[uri]) {
-                staticFile = path.join(hostrule.basedir, hostrule.fileMapping[uri])
-                console.log('mapped file: '+staticFile)
-            } else if (uri.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + uri)) {
-
-                fs.readFile(STATIC_TEMPLATE_DIR + uri, 'utf8', function (err, data) {
-                    const ext = path.extname(uri).split('.')[1]
-                    const mimeType = MimeType.detectByExtension(ext)
-
-                    const headerExtra = {
-                        'Cache-Control': 'public, max-age=31536000',
-                        'Content-Type': mimeType,
-                        'Last-Modified': new Date().toUTCString(),
-                        ...hostrule.headers[uri]
-                    }
-                    res.writeHead(200, {'Content-Type': 'text/plain'})
-                    res.write(Util.replacePlaceholders(data, {parsedUrl, host, config}))
-                    res.end()
-                })
-
-
-                return
+            } else if (uri.startsWith(UPLOAD_URL + '/')) {
+                await resolveUploadedFile(uri, parsedUrl, req, res)
             } else {
-                staticFile = path.join(STATIC_DIR, uri)
-            }
-            const headers = hostrule.headers[uri]
 
-            if (!await sendFileFromDir(req, res, staticFile, headers, parsedUrl)) {
+                // check with and without www
+                const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
+                const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
 
-                if (!await sendFileFromDir(req, res, WEBROOT_ABSPATH + uri, headers, parsedUrl)) {
-                    if (!await sendFileFromDir(req, res, BUILD_DIR + uri, headers, parsedUrl)) {
+                if (hostrule.redirects) {
+
+                    const redirect = hostrule.redirects[uri]
+                    if (redirect) {
+                        res.writeHead(301, {'Location': redirect})
+                        res.end()
+                        return true
+                    }
+
+                }
+
+                hostrule.headers = {...hostrules.general.headers, ...hostrule.headers}
+
+                let staticFile
+
+                if (hostrule.fileMapping && hostrule.fileMapping[uri]) {
+                    staticFile = path.join(hostrule.basedir, hostrule.fileMapping[uri])
+                    console.log('mapped file: ' + staticFile)
+                } else if (uri.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + uri)) {
+
+                    fs.readFile(STATIC_TEMPLATE_DIR + uri, 'utf8', function (err, data) {
+                        const ext = path.extname(uri).split('.')[1]
+                        const mimeType = MimeType.detectByExtension(ext)
+
+                        const headerExtra = {
+                            'Cache-Control': 'public, max-age=31536000',
+                            'Content-Type': mimeType,
+                            'Last-Modified': new Date().toUTCString(),
+                            ...hostrule.headers[uri]
+                        }
+                        res.writeHead(200, {'Content-Type': 'text/plain'})
+                        res.write(Util.replacePlaceholders(data, {parsedUrl, host, config}))
+                        res.end()
+                    })
 
 
-                        // special url
-                        const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
-                        if (pos >= 0) {
-                            const decodedStr = decodeURIComponent(uri.substring(pos + 5))
+                    return
+                } else {
+                    staticFile = path.join(STATIC_DIR, uri)
+                }
+                const headers = hostrule.headers[uri]
 
-                            try {
-                                const data = JSON.parse(decodedStr)
-                                if (data.screenshot) {
-                                    //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
-                                    //console.log(decodeURI(uri.substring(pos+5)))
+                if (!await sendFileFromDir(req, res, staticFile, headers, parsedUrl)) {
 
-                                    const filename = decodedStr.replace(/[^\w\s]/gi, '') + '.png'
+                    if (!await sendFileFromDir(req, res, WEBROOT_ABSPATH + uri, headers, parsedUrl)) {
+                        if (!await sendFileFromDir(req, res, BUILD_DIR + uri, headers, parsedUrl)) {
 
-                                    const absFilename = path.join(ABS_UPLOAD_DIR, 'screenshots', filename)
 
-                                    if (!fs.existsSync(absFilename)) {
-                                        let url = data.screenshot.url
-                                        if (url.indexOf('/') === 0) {
-                                            url = (req.isHttps?'https://':'http://') + hostRuleHost + url
+                            // special url
+                            const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
+                            if (pos >= 0) {
+                                const decodedStr = decodeURIComponent(uri.substring(pos + 5))
+
+                                try {
+                                    const data = JSON.parse(decodedStr)
+                                    if (data.screenshot) {
+                                        //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
+                                        //console.log(decodeURI(uri.substring(pos+5)))
+
+                                        const filename = decodedStr.replace(/[^\w\s]/gi, '') + '.png'
+
+                                        const absFilename = path.join(ABS_UPLOAD_DIR, 'screenshots', filename)
+
+                                        if (!fs.existsSync(absFilename)) {
+                                            let url = data.screenshot.url
+                                            if (url.indexOf('/') === 0) {
+                                                url = (req.isHttps ? 'https://' : 'http://') + hostRuleHost + url
+                                            }
+                                            await doScreenCapture(url, absFilename, data.screenshot.options)
                                         }
-                                        await doScreenCapture(url, absFilename, data.screenshot.options)
+
+                                        await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
+
+
+                                    } else {
+                                        sendError(res, 404)
                                     }
 
-                                    await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
+                                    // sendIndexFile(req, res, uri, hostrule, host)
+                                } catch (e) {
+                                    console.log(decodedStr)
 
 
-                                } else {
-                                    sendError(res, 404)
+                                    console.error(e)
+                                    sendError(res, 500)
                                 }
 
-                                // sendIndexFile(req, res, uri, hostrule, host)
-                            } catch (e) {
-                                console.log(decodedStr)
-
-
-                                console.error(e)
-                                sendError(res, 500)
+                            } else {
+                                sendIndexFile(req, res, uri, hostrule, host)
                             }
-
-                        } else {
-                            sendIndexFile(req, res, uri, hostrule, host)
                         }
                     }
                 }
             }
         }
+    }catch (e) {
+        console.log(e)
+        sendError(res, 500)
     }
 })
 

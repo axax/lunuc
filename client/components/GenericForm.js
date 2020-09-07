@@ -29,6 +29,7 @@ import classNames from 'classnames'
 import Expandable from 'client/components/Expandable'
 import _t from '../../util/i18n'
 import Util from '../util'
+import DomUtil from "../util/dom";
 
 const styles = theme => {
     return {
@@ -47,7 +48,7 @@ const styles = theme => {
         tabContainer: {
             backgroundColor: theme.palette.background.paper
         },
-        translation:{
+        translation: {
             right: '3.55rem',
             marginTop: '3.55rem',
             position: 'absolute',
@@ -117,7 +118,7 @@ function TabPanel(props) {
 class GenericForm extends React.Component {
     constructor(props) {
         super(props)
-        this.state = GenericForm.getInitalState(props,{})
+        this.state = GenericForm.getInitalState(props, {})
     }
 
     static getInitalState = (props, prevState) => {
@@ -169,14 +170,14 @@ class GenericForm extends React.Component {
         return null
     }
 
-    static staticValidate(state, props, options = {changeTab:false}) {
+    static staticValidate(state, props, options = {changeTab: false}) {
         const {fields, onValidate} = props
         const fieldErrors = {}, tabs = []
         Object.keys(fields).forEach(fieldKey => {
             const field = fields[fieldKey]
 
             if (field.tab && options.changeTab) {
-                if (tabs.indexOf(field.tab)<0) {
+                if (tabs.indexOf(field.tab) < 0) {
                     tabs.push(field.tab)
                 }
             }
@@ -218,12 +219,12 @@ class GenericForm extends React.Component {
         } else {
             validationState = {isValid: true, fieldErrors}
         }
-        if(!validationState.isValid && tabs.length>0 && options.changeTab){
+        if (!validationState.isValid && tabs.length > 0 && options.changeTab) {
             // check tabs
-            let foundTab=false, relevantTabs = []
+            let foundTab = false, relevantTabs = []
             for (const key in validationState.fieldErrors) {
                 // = validationState.fieldErrors[key]
-                if(fields[key].tab) {
+                if (fields[key].tab) {
                     if (fields[key].tab === tabs[state.tabValue]) {
                         foundTab = true
                         break
@@ -232,10 +233,10 @@ class GenericForm extends React.Component {
                     }
                 }
             }
-            if(!foundTab){
-                if(relevantTabs.length>0){
+            if (!foundTab) {
+                if (relevantTabs.length > 0) {
                     validationState.tabValue = relevantTabs[0]
-                }else{
+                } else {
                     validationState.tabValue = tabs.length
                 }
             }
@@ -262,7 +263,64 @@ class GenericForm extends React.Component {
         this.setState(GenericForm.getInitalState(this.props))
     }
 
-    newStateForField(prevState, name,value){
+
+    loadFlatpickr() {
+
+        DomUtil.addScript('https://npmcdn.com/flatpickr@4.6.6/dist/flatpickr.min.js', {
+            id: 'flatpickr',
+            onload: () => {
+                DomUtil.addScript('https://npmcdn.com/flatpickr@4.6.6/dist/l10n/de.js', {
+                    id: 'flatpickrDe',
+                    onload: ()=>{
+                        this.initFlatpickr()
+                    }
+                }, {ignoreIfExist: true})
+            }
+        }, {ignoreIfExist: true})
+
+
+        DomUtil.addStyle('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', {id: 'html2canvas'}, {ignoreIfExist: true})
+
+    }
+
+    initFlatpickr() {
+
+        if (window.flatpickr) {
+            setTimeout(() => {
+                console.log(document.querySelectorAll('input[type="datetime-local"]'))
+                flatpickr('input[type="datetime-local"]', {
+                    enableTime: true,
+                    allowInput: true,
+                    altInput: true,
+                    locale: 'de',
+                    time_24hr: true,
+                    timeFormat: "H:i",
+                    defaultDate: null,
+                    altFormat: "d.m.Y H:i",
+                    dateFormat: "Y-m-dTH:i",
+                    onChange: (date, dateStr, obj) => {
+                        console.log(obj, dateStr)
+                        this.handleInputChange({
+                            target: {
+                                name: obj.element.name,
+                                value: dateStr,
+                                type: 'datetime-local'
+                            }
+                        })
+                        /*const d = date[0]
+                        const day = d.getDate(), month = d.getMonth() + 1, hour = d.getHours(), minutes = d.getMinutes()
+                        scope.bindings[obj.element.name] = `${d.getFullYear()}-${(month < 10 ? '0' : '') + month}-${(day < 10 ? '0' : '') + day}T${(hour < 10 ? '0' : '') + hour}:${(minutes < 10 ? '0' : '') + minutes}`
+    */
+                    }
+                })
+            }, 100)
+
+        }
+
+
+    }
+
+    newStateForField(prevState, name, value) {
         const newState = Object.assign({}, {fields: {}}, prevState)
 
         // for localization --> name.de / name.en
@@ -282,7 +340,7 @@ class GenericForm extends React.Component {
         const {fields} = this.props
         const target = e.target, name = target.name
         let value = target.type === 'checkbox' ? target.checked : target.value
-        if(target.type!=='datetime-local' && fields[name]) {
+        if (target.type !== 'datetime-local' && fields[name]) {
             value = checkFieldType(value, fields[name])
         }
         this.setState((prevState) => {
@@ -298,9 +356,9 @@ class GenericForm extends React.Component {
 
     handleBlur = (e) => {
         const {onBlur, fields} = this.props
-        if(e.target.type==='datetime-local'){
+        if (e.target.type === 'datetime-local') {
             const field = fields[e.target.name]
-            if( field.type === 'Float') {
+            if (field.type === 'Float') {
                 // a float value is expected so convert the iso date to an unix timestamp
                 const newState = this.newStateForField(this.state, e.target.name, Date.parse(e.target.value))
                 this.setState(newState)
@@ -321,7 +379,7 @@ class GenericForm extends React.Component {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes, subForm} = this.props
         const fieldKeys = Object.keys(fields), formFields = [], tabs = {}
 
-        let expandableField, expandableData
+        let expandableField, expandableData, datePolyfill = false
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
             const fieldKey = fieldKeys[fieldIndex],
                 field = fields[fieldKey]
@@ -332,9 +390,12 @@ class GenericForm extends React.Component {
             if (field.replaceBreaks && value) {
                 value = value.replace(/<br>/g, '\n')
             }
-            if( !isNaN(value) && field.uitype==='datetime'){
-                // it is a unix timestamp so convert it to an iso date
-                value = Util.toLocalISODate(value)
+            if (field.uitype === 'datetime') {
+                if (!isNaN(value)) {
+                    // it is a unix timestamp so convert it to an iso date
+                    value = Util.toLocalISODate(value)
+                }
+                datePolyfill = true
             }
 
             let currentFormFields = formFields
@@ -366,13 +427,13 @@ class GenericForm extends React.Component {
                   })
   */
                 let values
-                try{
+                try {
                     values = JSON.parse(value)
-                }catch (e) {
+                } catch (e) {
                     values = {}
                 }
 
-                currentFormFields.push(<GenericForm onChange={(e)=>{
+                currentFormFields.push(<GenericForm onChange={(e) => {
 
                     values[e.name] = e.value
                     this.handleInputChange({
@@ -382,11 +443,11 @@ class GenericForm extends React.Component {
                         }
                     })
 
-                }} primaryButton={false} values={values} key={fieldKey} subForm={true} classes={classes} fields={field.subFields}/>)
+                }} primaryButton={false} values={values} key={fieldKey} subForm={true} classes={classes}
+                                                    fields={field.subFields}/>)
 
                 currentFormFields.push(<br key={'brMeta' + fieldKey}/>)
             }
-
 
 
             if (['json', 'editor', 'jseditor'].indexOf(uitype) >= 0) {
@@ -419,10 +480,11 @@ class GenericForm extends React.Component {
             } else if (uitype === 'html') {
                 const hasError = !!this.state.fieldErrors[fieldKey]
 
-                const createHtmlField =(fieldName, value, languageCode)=>{
+                const createHtmlField = (fieldName, value, languageCode) => {
                     return <FormControl style={{zIndex: 1}} key={'control' + fieldName}
                                         className={classNames(classes.formFieldFull)}>
-                        <InputLabel key={'label' + fieldName} shrink>{field.label + (languageCode?' [' + languageCode + ']':'')}</InputLabel>
+                        <InputLabel key={'label' + fieldName}
+                                    shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
                         <TinyEditor key={fieldName} id={fieldName} error={hasError} style={{marginTop: '1.5rem'}}
 
                                     onChange={(newValue) => this.handleInputChange({
@@ -439,21 +501,22 @@ class GenericForm extends React.Component {
                 if (field.localized) {
                     const showTranslations = this.state.showTranslations[fieldKey]
 
-                    currentFormFields.push( <TranslateIconButton className={classes.translation} key={fieldKey+"translation"}
-                            onClick={() => {
+                    currentFormFields.push(<TranslateIconButton className={classes.translation}
+                                                                key={fieldKey + "translation"}
+                                                                onClick={() => {
 
-                                this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
-                            }}
-                        >
-                        </TranslateIconButton>)
+                                                                    this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
+                                                                }}
+                    >
+                    </TranslateIconButton>)
                     currentFormFields.push(config.LANGUAGES.reduce((arr, languageCode) => {
                         const fieldName = fieldKey + '.' + languageCode
                         if (languageCode === _app_.lang || showTranslations) {
-                            arr.push(createHtmlField(fieldName,value ? value.constructor===Object? value[languageCode] : value : '',languageCode))
+                            arr.push(createHtmlField(fieldName, value ? value.constructor === Object ? value[languageCode] : value : '', languageCode))
                         }
                         return arr
                     }, []))
-                }else {
+                } else {
                     currentFormFields.push(createHtmlField(fieldKey, value))
                 }
             } else if (uitype === 'hr') {
@@ -605,39 +668,42 @@ class GenericForm extends React.Component {
                     }
                     holder = tabs[expandableField.tab]
                 }
-                holder.push(<div key={"expandableWrap" + fieldKey} style={{position:'relative'}}>
+                holder.push(<div key={"expandableWrap" + fieldKey} style={{position: 'relative'}}>
                     <ExpandLessIconButton
-                        onClick={(e)=>{
-                            if(this.props.onPosChange){
-                                this.props.onPosChange({field, newIndex:field.index - 1})
+                        onClick={(e) => {
+                            if (this.props.onPosChange) {
+                                this.props.onPosChange({field, newIndex: field.index - 1})
                             }
                         }}
-                        style={{position:'absolute', left:'-40px', top:'-10px'}} />
-                    <ExpandMoreIconButton style={{position:'absolute', left:'-40px', top:'10px'}}
-                                          onClick={()=>{
-                                              if(this.props.onPosChange){
-                                                  this.props.onPosChange({field, newIndex:field.index + 1})
+                        style={{position: 'absolute', left: '-40px', top: '-10px'}}/>
+                    <ExpandMoreIconButton style={{position: 'absolute', left: '-40px', top: '10px'}}
+                                          onClick={() => {
+                                              if (this.props.onPosChange) {
+                                                  this.props.onPosChange({field, newIndex: field.index + 1})
                                               }
                                           }}/>
 
-                <Expandable title={expandableField.expandable}
-                                        key={"expandable" + fieldKey}
-                                        onChange={(e) => {
-                                            this.setState({expanded: fieldKey})
-                                        }}
-                                        expanded={this.state.expanded === fieldKey}>
-                    {currentFormFields}
-                </Expandable></div>)
+                    <Expandable title={expandableField.expandable}
+                                key={"expandable" + fieldKey}
+                                onChange={(e) => {
+                                    this.setState({expanded: fieldKey})
+                                }}
+                                expanded={this.state.expanded === fieldKey}>
+                        {currentFormFields}
+                    </Expandable></div>)
 
                 expandableField = null
             }
 
         }
 
+        if (datePolyfill) {
+            this.loadFlatpickr()
+        }
         const {tabValue} = this.state
         const tabKeys = Object.keys(tabs)
         console.log('render GenericForm')
-        const Wrapper = subForm?'div':'form'
+        const Wrapper = subForm ? 'div' : 'form'
 
         return (
             <Wrapper className={classes.form}>

@@ -118,8 +118,8 @@ class Print extends React.PureComponent {
     constructor(props) {
         super(props)
 
-        DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js')
-        DomUtil.addScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js')
+        DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js',{id: 'pdfmake'})
+        DomUtil.addScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js', {id: 'html2canvas'})
     }
 
     componentDidMount() {
