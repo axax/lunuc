@@ -60,6 +60,7 @@
     },
     {
       "name": "NewsletterMailing",
+      "entryClonable": true,
       "fields": [
         {
           "name": "subject",
