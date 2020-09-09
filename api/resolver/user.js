@@ -213,7 +213,7 @@ export const userResolver = (db) => ({
             }
             return result
         },
-        forgotPassword: async ({username, url}, {context, headers}) => {
+        forgotPassword: async ({username, url, subject}, {context, headers}) => {
 
             const userCollection = db.collection('User')
 
@@ -231,7 +231,7 @@ export const userResolver = (db) => ({
                 await sendMail(db, context, {
                     slug: 'core/forgot-password/mail',
                     recipient: user.email,
-                    subject: 'Password reset',
+                    subject: subject || 'Password reset',
                     body: `{"url":"${url}?token=${resetToken}","name":"${user.username}"}`
                 })
 
@@ -388,6 +388,7 @@ export const userResolver = (db) => ({
                     errors.push({key: 'passwordError', message: 'Invalid Password: \n' + err.join('\n')})
                 } else {
                     user.password = Util.hashPassword(password)
+                    user.requestNewPassword = false
                 }
             }
 

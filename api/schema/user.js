@@ -77,7 +77,7 @@ export const userSchemaRaw = `
         
         me: User
         login(username: String!, password: String!): Token
-        forgotPassword(username: String!, url: String!): ForgotPasswordResult
+        forgotPassword(username: String!, url: String!, subject: String): ForgotPasswordResult
         newPassword(token:String!, password:String!, passwordConfirm:String): NewPasswordResult
         confirmEmail(token:String!): ConfirmEmailResult
         sendConformationEmail(mailTemplate: String!, mailSubject: String!, mailUrl: String!): ConfirmEmailResult

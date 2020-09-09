@@ -241,46 +241,30 @@ Hook.on('Types', ({types}) => {
                 tab: 'General'
             },
             {
-                name: 'signupToken',
-                fullWidth: true,
-                tab: 'General'
-            },
-            {
                 name: 'email',
                 fullWidth: true,
                 required: true,
                 tab: 'General'
             },
             {
-                name: 'emailConfirmed',
-                type: 'Boolean',
-                tab: 'General'
-            },
-            {
-                name: 'requestNewPassword',
-                type: 'Boolean',
-                tab: 'General'
-            },
-            {
-                name: 'role',
-                type: 'UserRole',
+                name: 'picture',
+                type: 'Media',
                 reference: true,
                 fields: ['name'],
                 tab: 'General'
             },
             {
-                name: 'picture',
-                type: 'Media',
-                reference: true,
-                fields: ['name']
+                name: 'emailConfirmed',
+                type: 'Boolean'
+            },
+            {
+                name: 'requestNewPassword',
+                type: 'Boolean'
             },
             {
                 name: 'meta',
                 type: 'Object',
                 uitype: 'json',
-                subFields: {
-                    erp: {value: '', label:'ERP Nummer'}
-                },
                 tab: 'Meta'
             },
             {
@@ -290,12 +274,20 @@ Hook.on('Types', ({types}) => {
                 readOnly: true
             },
             {
+                name: 'role',
+                type: 'UserRole',
+                reference: true,
+                fields: ['name'],
+                tab:'Access Control'
+            },
+            {
                 name: 'junior',
                 type: 'User',
                 label: 'Junior User',
                 reference: true,
                 multi: true,
-                fields: ['username']
+                fields: ['username'],
+                tab:'Access Control'
             }
         ]
     }

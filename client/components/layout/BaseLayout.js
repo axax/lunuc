@@ -23,22 +23,38 @@ import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
 import {withKeyValues} from '../../containers/generic/withKeyValues'
 import {useHistory} from 'react-router-dom'
+import {CAPABILITY_MANAGE_TYPES} from "../../../util/capabilities";
 
 const {ADMIN_BASE_URL, APP_NAME} = config
 
-const menuItems = [
-    {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>},
-    {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>},
-    {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
-    {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon/>},
-    {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon/>},
-    {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}
-]
-Hook.call('MenuMenu', {menuItems})
+let menuItems
 
 const BaseLayout = props => {
-    const {children, isAuthenticated, username, keyValueMap} = props
+    const {children, isAuthenticated, user, keyValueMap} = props
 
+    if(!menuItems){
+        menuItems = [
+            {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>},
+            {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
+            {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon/>},
+            {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon/>},
+            {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}
+        ]
+
+
+
+        const capabilities = (user.userData && user.userData.role && user.userData.role.capabilities) || []
+
+        if(capabilities.indexOf(CAPABILITY_MANAGE_TYPES) >= 0){
+            menuItems.splice(1,0,{name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>})
+        }
+
+
+        Hook.call('MenuMenu', {menuItems})
+
+    }
+
+    const username = user.userData ? user.userData.username : ''
     const settings = keyValueMap.BaseLayoutSettings
 
     if (settings && settings.menu && settings.menu.hide) {
@@ -89,7 +105,7 @@ const BaseLayout = props => {
 
 BaseLayout.propTypes = {
     isAuthenticated: PropTypes.bool,
-    username: PropTypes.string,
+    user: PropTypes.object,
     /* User Reducer */
     userActions: PropTypes.object.isRequired,
     keyValueMap: PropTypes.object
@@ -103,7 +119,7 @@ const mapStateToProps = (store) => {
     const {user} = store
     return {
         isAuthenticated: user.isAuthenticated,
-        username: user.userData ? user.userData.username : ''
+        user
     }
 }
 

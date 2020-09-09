@@ -307,10 +307,6 @@ class GenericForm extends React.Component {
                                 type: 'datetime-local'
                             }
                         })
-                        /*const d = date[0]
-                        const day = d.getDate(), month = d.getMonth() + 1, hour = d.getHours(), minutes = d.getMinutes()
-                        scope.bindings[obj.element.name] = `${d.getFullYear()}-${(month < 10 ? '0' : '') + month}-${(day < 10 ? '0' : '') + day}T${(hour < 10 ? '0' : '') + hour}:${(minutes < 10 ? '0' : '') + minutes}`
-    */
                     }
                 })
             }, 100)
@@ -429,12 +425,12 @@ class GenericForm extends React.Component {
                 let values
                 try {
                     values = JSON.parse(value)
-                } catch (e) {
+                } catch (e) {}
+
+                if( !values){
                     values = {}
                 }
-
                 currentFormFields.push(<GenericForm onChange={(e) => {
-
                     values[e.name] = e.value
                     this.handleInputChange({
                         target: {
@@ -448,7 +444,6 @@ class GenericForm extends React.Component {
 
                 currentFormFields.push(<br key={'brMeta' + fieldKey}/>)
             }
-
 
             if (['json', 'editor', 'jseditor'].indexOf(uitype) >= 0) {
 

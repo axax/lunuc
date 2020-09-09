@@ -10,7 +10,7 @@ const {ADMIN_BASE_URL} = config
 import LogoutContainer from 'client/containers/LogoutContainer'
 import Async from 'client/components/Async'
 import {
-    CAPABILITY_ACCESS_ADMIN_PAGE
+    CAPABILITY_ACCESS_ADMIN_PAGE, CAPABILITY_MANAGE_TYPES
 } from 'util/capabilities'
 
 const LoginContainer = (props) => <Async {...props}
@@ -47,7 +47,6 @@ class Routes extends React.Component {
         {path: ADMIN_BASE_URL + '/logout', component: LogoutContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
-        {exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer},
         {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer},
         {private: true, path: ADMIN_BASE_URL + '/backup', component: DbDumpContainer},
         {private: true, path: ADMIN_BASE_URL + '/files', component: FilesContainer}
@@ -55,6 +54,14 @@ class Routes extends React.Component {
 
     constructor(props) {
         super(props)
+
+        const {user: {userData}} = this.props
+        const capabilities = (userData && userData.role && userData.role.capabilities) || []
+
+        if(capabilities.indexOf(CAPABILITY_MANAGE_TYPES) >= 0){
+            this.routes.push({exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer})
+        }
+
         Hook.call('Routes', {routes: this.routes, container: this})
 
         // override push and replace methode to prepend language code if needed

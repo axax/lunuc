@@ -208,7 +208,7 @@ export function configureMiddleware(store) {
         ssrMode: false,
         /* if this is set to greater than 0 and fetch-policy is network-only, the policy gets changed to cache-first before the time im ms has passed */
         ssrForceFetchDelay: 0,
-        /*connectToDevTools: true,
+        connectToDevTools: false,/*
         queryDeduplication: true,*/
         defaultOptions: {
             watchQuery: {
