@@ -46,7 +46,7 @@ class Routes extends React.Component {
         {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
         {path: ADMIN_BASE_URL + '/logout', component: LogoutContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},
-        {exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer}
+        {exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer},
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer},
         {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer},
         {private: true, path: ADMIN_BASE_URL + '/backup', component: DbDumpContainer},
