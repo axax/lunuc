@@ -63,13 +63,20 @@
       "fields": [
         {
           "name": "subject",
-          "required": true
+          "required": true,
+          "tab": "General"
+        },
+        {
+          "name": "text",
+          "uitype": "editor",
+          "label": "Plain text version"
         },
         {
           "name": "list",
           "multi": true,
           "type": "NewsletterList",
-          "fields": ["name"]
+          "fields": ["name"],
+          "tab": "General"
         },
         {
           "name": "template",

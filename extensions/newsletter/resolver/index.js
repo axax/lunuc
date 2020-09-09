@@ -6,7 +6,7 @@ import crypto from "crypto";
 
 export default db => ({
     Query: {
-        sendNewsletter: async ({mailing, subject, template, batchSize, list}, req) => {
+        sendNewsletter: async ({mailing, subject, template, text, batchSize, list}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_RUN_SCRIPT)
             let result
 
@@ -47,6 +47,7 @@ export default db => ({
                         recipient: sub.email,
                         subject,
                         body: sub,
+                        text,
                         req
                     })
                     emails.push(sub.email)

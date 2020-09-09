@@ -63,8 +63,7 @@ ${finalHtml}
         attachments
     }
 
-
-    var transporter = nodemailer.createTransport({
+    const transporter = nodemailer.createTransport({
         service: mailSettings.service,
         host: mailSettings.host,
         port: mailSettings.port,
@@ -72,7 +71,8 @@ ${finalHtml}
         auth: {
             user: mailSettings.user,
             pass: mailSettings.password
-        }
+        },
+        dkim: mailSettings.dkim
     })
 
     const response = await transporter.sendMail(message)
