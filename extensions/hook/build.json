@@ -24,6 +24,7 @@
             "cmsCustomResolver",
             "login",
             "newPassword",
+            "beforeSignUp",
             "Frontend"
           ]
         },

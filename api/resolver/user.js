@@ -18,7 +18,7 @@ const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, junior, password, email, emailConfirmed, requestNewPassword, meta, picture, db, context}) => {
+const createUser = async ({username, role, junior, password, email, emailConfirmed, requestNewPassword, meta, picture, db, context}, {override}) => {
 
     const errors = []
 
@@ -44,14 +44,16 @@ const createUser = async ({username, role, junior, password, email, emailConfirm
 
     const userCollection = db.collection('User')
 
+    const existingUser = (await userCollection.findOne({$or: [{'email': email}, {'username': username}]}))
+    const userExists =  existingUser != null
 
-    const userExists = (await userCollection.findOne({$or: [{'email': email}, {'username': username}]})) != null
+    if(!override) {
 
-    if (userExists) {
-        errors.push({key: 'usernameError', message: _t('core.signup.usertaken',context.lang)})
-        throw new ValidationError(errors)
+        if (userExists) {
+            errors.push({key: 'usernameError', message: _t('core.signup.usertaken', context.lang)})
+            throw new ValidationError(errors)
+        }
     }
-
 
     if( meta!==undefined){
         meta = JSON.parse(meta)
@@ -75,7 +77,7 @@ const createUser = async ({username, role, junior, password, email, emailConfirm
         })
     }
 
-    const insertResult = await userCollection.insertOne({
+    const dataToInsert = {
         role: roleId,
         junior: juniorIds,
         emailConfirmed: !!emailConfirmed,
@@ -86,8 +88,20 @@ const createUser = async ({username, role, junior, password, email, emailConfirm
         picture,
         meta,
         signupToken: signupToken
-    })
+    }
 
+    let insertResult
+    if(!override || !userExists) {
+         insertResult = await userCollection.insertOne(dataToInsert)
+    }else{
+        insertResult = await userCollection.updateOne(
+            {_id: existingUser._id},
+            {
+                $set: dataToInsert
+            }
+        )
+        insertResult.ops = [dataToInsert]
+    }
     Hook.call('NewUserCreated', {insertResult, meta, email, db})
 
     return insertResult
@@ -317,9 +331,14 @@ export const userResolver = (db) => ({
             if( email){
                 email = email.trim()
             }
-            const insertResult = await createUser({db, context, username, email, password, meta})
 
-            if (insertResult.insertedCount) {
+            const options = {override:false}
+
+            Hook.call('beforeSignUp', {context, options, password, username, email, mailTemplate, mailSubject, mailUrl, role, meta, db})
+
+            const insertResult = await createUser({db, context, username, email, password, meta}, options)
+
+            if (insertResult.insertedCount || insertResult.modifiedCount) {
                 if (mailTemplate) {
                     const signupToken = insertResult.ops[0].signupToken
 

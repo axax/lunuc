@@ -121,6 +121,7 @@ export const createUsers = async (db) => {
 
 
     const userCollection = db.collection('User')
+
     if (await userCollection.countDocuments() === 0) {
 
         console.log('Create users...')

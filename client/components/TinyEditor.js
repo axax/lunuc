@@ -107,10 +107,10 @@ class TinyEditor extends React.Component {
                                     // Provide image and alt text for the image dialog
                                     if (meta.filetype == 'image') {
                                         callback(mediaObj.src, {alt: mediaObj.alt})
-                                    }
-
-                                    if (meta.filetype == 'media') {
+                                    }else if (meta.filetype == 'media') {
                                         callback(mediaObj.src, {source2: '', poster: ''})
+                                    }else {
+                                        callback(mediaObj.src, {text: mediaObj.alt})
                                     }
 
                                     //_cmsActions.editCmsComponent(rest._key, _json, _scope)
@@ -152,7 +152,7 @@ class TinyEditor extends React.Component {
 
             }
             if (!window.tinymce) {
-                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.3.1/tinymce.min.js', {
+                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.4.2/tinymce.min.js', {
                     onload: assestLoaded
                 })
             } else {
