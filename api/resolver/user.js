@@ -334,7 +334,12 @@ export const userResolver = (db) => ({
 
             const options = {override:false}
 
-            Hook.call('beforeSignUp', {context, options, password, username, email, mailTemplate, mailSubject, mailUrl, role, meta, db})
+            if (Hook.hooks['beforeSignUp'] && Hook.hooks['beforeSignUp'].length) {
+                let c = Hook.hooks['beforeSignUp'].length
+                for (let i = 0; i < Hook.hooks['beforeSignUp'].length; ++i) {
+                    await Hook.hooks['beforeSignUp'][i].callback({context, options, password, username, email, mailTemplate, mailSubject, mailUrl, role, meta, db})
+                }
+            }
 
             const insertResult = await createUser({db, context, username, email, password, meta}, options)
 
