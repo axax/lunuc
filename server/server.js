@@ -131,7 +131,7 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
                 'Last-Modified': stats.mtime.toUTCString(),
                 ...headers
             }
-        sendFile(req, res, headerExtra, modFilePath)
+        sendFile(req, res, {headers: headerExtra, filename: modFilePath})
 
         return true
     }
@@ -158,11 +158,11 @@ function isFileNotNewer(filename, statsMainFile) {
     return isFile
 }
 
-const sendFile = function (req, res, headerExtra, filename, ext) {
+const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
     let acceptEncoding = req.headers['accept-encoding'], neverCompress = false
 
     // TODO make it configurable
-    if (headerExtra['Content-Type'] && (headerExtra['Content-Type'].indexOf('image/') === 0 || headerExtra['Content-Type'].indexOf('video/') === 0)) {
+    if (headers['Content-Type'] && (headers['Content-Type'].indexOf('image/') === 0 || headers['Content-Type'].indexOf('video/') === 0)) {
         neverCompress = true
     }
 
@@ -175,7 +175,7 @@ const sendFile = function (req, res, headerExtra, filename, ext) {
         statsMainFile = fs.statSync(filename)
 
         if (!neverCompress && acceptEncoding.match(/\bbr\b/)) {
-            res.writeHead(200, {...headerExtra, 'content-encoding': 'br'})
+            res.writeHead(statusCode, {...headers, 'content-encoding': 'br'})
 
             if (isFileNotNewer(filename + '.br', statsMainFile)) {
                 // if br version is available send this instead
@@ -190,7 +190,7 @@ const sendFile = function (req, res, headerExtra, filename, ext) {
             }
 
         } else if (!neverCompress && acceptEncoding.match(/\bgzip\b/)) {
-            res.writeHead(200, {...headerExtra, 'content-encoding': 'gzip'})
+            res.writeHead(statusCode, {...headers, 'content-encoding': 'gzip'})
 
             if (isFileNotNewer(filename + '.gz', statsMainFile)) {
                 // if gz version is available send this instead
@@ -204,17 +204,17 @@ const sendFile = function (req, res, headerExtra, filename, ext) {
             }
 
         } else if (!neverCompress && acceptEncoding.match(/\bdeflate\b/)) {
-            res.writeHead(200, {...headerExtra, 'content-encoding': 'deflate'})
+            res.writeHead(statusCode, {...headers, 'content-encoding': 'deflate'})
 
             const fileStream = fs.createReadStream(filename)
             fileStream.pipe(zlib.createDeflate()).pipe(res)
         } else {
-            res.writeHead(200, {...headerExtra})
+            res.writeHead(statusCode, {...headers})
 
             const fileStream = fs.createReadStream(filename)
             fileStream.pipe(res)
         }
-    } catch(err) {
+    } catch (err) {
         console.error(err)
         console.log(filename + ' does not exist')
         sendError(res, 404)
@@ -301,6 +301,8 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
         ...hostrule.headers[uri]
     }
 
+    const statusCode = hostrule.statusCode[uri] || 200
+
     const agent = req.headers['user-agent']
     if (agent && (agent.indexOf('bingbot') > -1 || agent.indexOf('msnbot') > -1)) {
 
@@ -312,7 +314,7 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
         html = html.replace(re, `https://${host}`)
 
 
-        res.writeHead(200, headers)
+        res.writeHead(statusCode, headers)
         res.write(html)
         res.end()
 
@@ -325,7 +327,7 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
             // default index
             indexfile = path.join(BUILD_DIR, '/index.min.html')
         }
-        sendFile(req, res, headers, indexfile);
+        sendFile(req, res, {headers, filename: indexfile, statusCode})
     }
 }
 
@@ -739,7 +741,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 }
             }
         }
-    }catch (e) {
+    } catch (e) {
         console.log(e)
         sendError(res, 500)
     }

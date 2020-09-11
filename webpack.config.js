@@ -89,10 +89,45 @@ const excludeFunction = (path) => {
 }
 
 
-const replacePlaceholders = (content, path) => {
+const replacePlaceholders = (content) => {
 
     const result = new Function('const {' + Object.keys(APP_VALUES).join(',') + '} = this.APP_VALUES;return `' + content + '`').call({APP_VALUES})
     return result
+}
+if( fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)){
+    console.log('Replace hostrules templates')
+
+    fs.readdir(APP_VALUES.HOSTRULES_ABSPATH, function (err, files) {
+        if (err) {
+            console.error("Could not list the directory.", err)
+        }
+
+        files.forEach(function (file, index) {
+            // Make one pass and make the file complete
+            const hostpath = path.join(APP_VALUES.HOSTRULES_ABSPATH, file)
+
+            fs.stat(hostpath, function (error, stat) {
+                if (stat.isDirectory()) {
+                    fs.readdir(hostpath, function (err, subFiles) {
+                        if (err) {
+                            console.error("Could not list the directory.", err)
+                        }
+                        subFiles.forEach(function (file, index) {
+                            if( file.endsWith('.template')){
+                                fs.readFile(path.join(hostpath, file), 'utf8', function(err, contents) {
+                                    fs.writeFile(path.join(hostpath, file.substring(0,file.length-9)), replacePlaceholders(contents), function(err) {
+                                        if (err) {
+                                            console.error("Error writing to file "+file, err)
+                                        }
+                                    })
+                                })
+                            }
+                        })
+                    })
+                }
+            })
+        })
+    })
 }
 
 const config = {
