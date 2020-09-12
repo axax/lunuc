@@ -18,8 +18,11 @@ const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, junior, password, email, emailConfirmed, requestNewPassword, meta, picture, db, context}, {override}) => {
+const createUser = async ({username, role, junior, password, email, emailConfirmed, requestNewPassword, meta, picture, db, context}, opts) => {
 
+    if(!opts){
+        opts = {override:false}
+    }
     const errors = []
 
     // Validate Username
@@ -47,7 +50,7 @@ const createUser = async ({username, role, junior, password, email, emailConfirm
     const existingUser = (await userCollection.findOne({$or: [{'email': email}, {'username': username}]}))
     const userExists =  existingUser != null
 
-    if(!override) {
+    if(!opts.override) {
 
         if (userExists) {
             errors.push({key: 'usernameError', message: _t('core.signup.usertaken', context.lang)})
@@ -91,7 +94,7 @@ const createUser = async ({username, role, junior, password, email, emailConfirm
     }
 
     let insertResult
-    if(!override || !userExists) {
+    if(!opts.override || !userExists) {
          insertResult = await userCollection.insertOne(dataToInsert)
     }else{
         insertResult = await userCollection.updateOne(

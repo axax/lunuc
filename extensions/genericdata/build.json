@@ -27,7 +27,8 @@
         {
           "name": "definition",
           "type": "GenericDataDefinition",
-          "required": true
+          "required": true,
+          "index": 1
         }
       ]
     }
