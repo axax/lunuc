@@ -23,6 +23,8 @@ import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
 import {withKeyValues} from '../../containers/generic/withKeyValues'
 import {useHistory} from 'react-router-dom'
+import {Link} from 'react-router-dom'
+
 import {CAPABILITY_MANAGE_TYPES} from "../../../util/capabilities";
 
 const {ADMIN_BASE_URL, APP_NAME} = config
@@ -32,7 +34,7 @@ let menuItems
 const BaseLayout = props => {
     const {children, isAuthenticated, user, keyValueMap} = props
 
-    if(!menuItems){
+    if (!menuItems) {
         menuItems = [
             {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>},
             {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
@@ -42,11 +44,10 @@ const BaseLayout = props => {
         ]
 
 
-
         const capabilities = (user.userData && user.userData.role && user.userData.role.capabilities) || []
 
-        if(capabilities.indexOf(CAPABILITY_MANAGE_TYPES) >= 0){
-            menuItems.splice(1,0,{name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>})
+        if (capabilities.indexOf(CAPABILITY_MANAGE_TYPES) >= 0) {
+            menuItems.splice(1, 0, {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>})
         }
 
 
@@ -66,10 +67,20 @@ const BaseLayout = props => {
     }
 
     const history = useHistory()
+    console.log(history)
 
     return <UIProvider>
         <ResponsiveDrawerLayout title={APP_NAME}
                                 menuItems={menuItems}
+                                extra={ history._urlStack && history._urlStack.length>0 && <div style={{
+                                    padding: '1rem',
+                                    border: '1px solid #f1f1f1',
+                                    margin: '1rem',
+                                    fontSize: '0.8rem'
+                                }}>{history._urlStack.map(u => {
+                                    return <Link style={{display: 'block', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                        overflow: 'hidden' }} to={u}>{u}</Link>
+                                })}</div>}
                                 headerRight={
                                     [
                                         (isAuthenticated ?

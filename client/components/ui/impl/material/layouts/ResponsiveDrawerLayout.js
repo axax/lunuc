@@ -119,7 +119,7 @@ const ResponsiveDrawer = (props) => {
         setMobileOpen(!mobileOpen)
     }
 
-    const {menuItems, isAuthenticated, children, headerRight, title, toolbarStyle, headerStyle} = props
+    const {menuItems, isAuthenticated, children, headerRight, title, toolbarStyle, headerStyle, extra} = props
 
     const classes = useStyles()
 
@@ -159,6 +159,7 @@ const ResponsiveDrawer = (props) => {
 
             </List>
             <Divider/>
+            {extra}
         </div>
     )
 

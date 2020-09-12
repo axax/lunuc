@@ -57,7 +57,7 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@apollo/client": "^3.2.0-beta.12",
+    "@apollo/client": "^3.2.0-rc.0",
     "@apollo/react-components": "^4.0.0",
     "@apollo/react-hoc": "^4.0.0",
     "@babel/core": "^7.11.6",
@@ -118,11 +118,11 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.3.0",
     "@google-cloud/translate": "^6.0.2",
-    "aws-sdk": "^2.750.0",
+    "aws-sdk": "^2.751.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
-    "puppeteer": "^5.2.1",
+    "puppeteer": "^5.3.0",
     "nodemon": "^2.0.4",
     "mssql": "^6.2.1",
     "native-dns": "^0.7.0",
@@ -146,7 +146,7 @@
     "prop-types": "^15.7.2",
     "react-test-renderer": "^16.13.1",
     "style-loader": "^1.2.1",
-    "terser-webpack-plugin": "^4.1.0",
+    "terser-webpack-plugin": "^4.2.0",
     "webpack": "^4.44.1",
     "webpack-bundle-analyzer": "^3.8.0",
     "webpack-cli": "^3.3.12",

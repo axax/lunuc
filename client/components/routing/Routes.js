@@ -70,6 +70,18 @@ class Routes extends React.Component {
             } else {
                 newPath = path
             }
+            if(!this.history._urlStack){
+                this.history._urlStack = []
+            }
+            const index = this.history._urlStack.indexOf(path)
+            if(index>=0) {
+                this.history._urlStack.splice(index, 1);
+            }
+
+            this.history._urlStack.unshift(path)
+            if(this.history._urlStack.length>10){
+                this.history._urlStack = this.history._urlStack.slice(0,9)
+            }
             this.history._last = this.history.location.pathname
             this.history._push(newPath, state)
         }
