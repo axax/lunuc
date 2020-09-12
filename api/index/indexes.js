@@ -46,6 +46,20 @@ export const createAllIndexes = async (db) => {
                 }
             }
         }
+
+
+        if(!type.noUserRelation) {
+            // create index for createdBy
+            console.log(`Creating index for ${typeName}.createdBy`)
+
+            db.collection(typeName).createIndex({createdBy:1}, {
+                background: true,
+                unique: false
+            })
+        }
+
+
+
         if( Object.keys(textIndex).length > 0){
             db.collection(typeName).createIndex(textIndex).catch(async e=>{
                 console.error(e)

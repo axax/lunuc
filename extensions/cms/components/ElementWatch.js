@@ -2,22 +2,20 @@ import React from 'react'
 import Util from 'client/util'
 
 
-
-
 class ElementWatch extends React.Component {
     static hasLoaded = {}
 
     constructor(props) {
         super(props)
 
-        const {tagName,eleProps,$observe} = props
+        const {tagName, eleProps, $observe} = props
 
 
         let tagSrc, tagImg
-        if(tagName === 'SmartImage'){
+        if (tagName === 'SmartImage') {
             tagImg = Util.getImageObject(eleProps.src, eleProps.options)
             tagSrc = tagImg.src
-        }else{
+        } else {
             tagSrc = eleProps.id
         }
 
@@ -33,7 +31,7 @@ class ElementWatch extends React.Component {
         const {tagSrc} = this.state
         const {eleProps} = this.props
 
-        if( !ElementWatch.hasLoaded[tagSrc] ) {
+        if (!ElementWatch.hasLoaded[tagSrc]) {
             if (!!window.IntersectionObserver) {
                 setTimeout(() => {
                     this.addIntersectionObserver()
@@ -45,37 +43,45 @@ class ElementWatch extends React.Component {
     }
 
 
-
     render() {
         const {initialVisible, madeVisible, tagImg, tagSrc} = this.state
         const {$observe, eleProps, eleType, jsonDom, _key, c, $c, scope} = this.props
         if (!initialVisible && !madeVisible && !ElementWatch.hasLoaded[tagSrc]) {
 
-            const {_tagName,_options,_WrappedComponent,_scope,_onChange,_onDataResolverPropertyChange, wrapper, inlineSvg, options, id,_inlineEditor, ...rest} = eleProps
+            const {_tagName, _options, _WrappedComponent, _scope, _onChange, _onDataResolverPropertyChange, wrapper, inlineSvg, options, id, _inlineEditor, ...rest} = eleProps
 
             const lazyImage = $observe.lazyImage
-            if(lazyImage ){
+            if (lazyImage) {
                 const tmpSrc = Util.getImageObject(eleProps.src, {
-                    quality:lazyImage.quality || 25,
-                    resize:{
-                        width:lazyImage.width,
-                        height:lazyImage.height
+                    quality: lazyImage.quality || 25,
+                    resize: {
+                        width: lazyImage.width,
+                        height: lazyImage.height
                     },
-                    webp:true})
+                    webp: true
+                })
                 return React.createElement(
                     eleType,
-                    {...eleProps,options: null, src:tmpSrc,alt:(tagImg.alt || eleProps.alt),key:_key+'watch',_key},
+                    {
+                        ...eleProps,
+                        options: null,
+                        src: tmpSrc,
+                        alt: (tagImg.alt || eleProps.alt),
+                        key: _key + 'watch',
+                        _key
+                    },
                     ($c ? null : jsonDom.parseRec(c, _key, scope))
                 )
             }
-            return <div _key={_key} data-wait-visible={jsonDom.instanceId} {...rest} style={{minHeight:'1rem', minWidth:'1rem'}}></div>
+            return <div _key={_key} data-wait-visible={jsonDom.instanceId} {...rest}
+                        style={{minHeight: '1rem', minWidth: '1rem'}}></div>
         } else {
 
-            if( ElementWatch.hasLoaded[tagSrc] && ElementWatch.hasLoaded[tagSrc].svgData){
-                eleProps.svgData =ElementWatch.hasLoaded[tagSrc].svgData
+            if (ElementWatch.hasLoaded[tagSrc] && ElementWatch.hasLoaded[tagSrc].svgData) {
+                eleProps.svgData = ElementWatch.hasLoaded[tagSrc].svgData
             }
 
-            if($observe.initialClass || $observe.visibleClass) {
+            if ($observe.initialClass || $observe.visibleClass) {
                 // we change props here so components get updated
                 if (!eleProps.className) {
                     eleProps.className = ''
@@ -96,7 +102,6 @@ class ElementWatch extends React.Component {
     }
 
 
-
     fetchSvg() {
 
         const {tagImg, tagSrc} = this.state
@@ -105,7 +110,7 @@ class ElementWatch extends React.Component {
             const reader = new FileReader()
 
             reader.addEventListener("load", () => {
-                ElementWatch.hasLoaded[tagSrc] = {svgData:reader.result}
+                ElementWatch.hasLoaded[tagSrc] = {svgData: reader.result}
                 this.setState({madeVisible: true})
             }, false)
 
@@ -114,14 +119,14 @@ class ElementWatch extends React.Component {
     }
 
     addIntersectionObserver() {
-        const { tagSrc} = this.state
+        const {tagSrc} = this.state
         const {$observe, eleProps, _key, tagName} = this.props
 
         const ele = document.querySelector(`[_key='${_key}']`)
         if (ele) {
             let observer = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {
-                    if (entry.isIntersecting ) {
+                    if (entry.isIntersecting) {
 
                         observer.unobserve(entry.target)
                         if (this.state.initialVisible) {
@@ -129,9 +134,9 @@ class ElementWatch extends React.Component {
                         } else {
                             ele.setAttribute('data-loading', true)
                             if (tagName === 'SmartImage') {
-                                if(eleProps.inlineSvg){
+                                if (eleProps.inlineSvg) {
                                     this.fetchSvg()
-                                }else {
+                                } else {
                                     const img = new Image()
 
                                     const timeout = setTimeout(() => {
@@ -158,7 +163,7 @@ class ElementWatch extends React.Component {
 
                     }
                 })
-            }, {rootMargin: $observe.rootMargin||'0px 0px 0px 0px'})
+            }, {rootMargin: $observe.rootMargin || '0px 0px 0px 0px'})
             observer.observe(ele)
         }
     }
@@ -166,3 +171,4 @@ class ElementWatch extends React.Component {
 
 
 export default ElementWatch
+

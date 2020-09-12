@@ -68,7 +68,8 @@
       "fields": [
         {
           "name": "name",
-          "required": true
+          "required": true,
+          "index": 1
         }
       ]
     },
