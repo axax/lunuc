@@ -255,10 +255,11 @@ hr:after {
                 <div className="_2">{message.toUpperCase()}</div>
                 <a className='btn' onClick={(e) => {
                     e.preventDefault()
-                    if(document.referrer) {
+                    if(document.referrer && document.referrer.indexOf(location.origin)===0) {
                         window.open(document.referrer,'_self')
                     } else {
-                        history.go(-1)
+                        location.href = location.origin
+                        //history.go(-1)
                     }
                 }} href="#">GO BACK</a>
             </div>
