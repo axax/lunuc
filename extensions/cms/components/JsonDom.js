@@ -147,10 +147,10 @@ class JsonDom extends React.Component {
                 }
                 } {...rest}/>
             } else {
-                const slugContext = _this.scope.page.slugContext
+               /* const slugContext = _this.scope.page.slugContext
                 if(slugContext && url.indexOf(slugContext)===0){
                     url = url.substring(slugContext.length)
-                }
+                }*/
                 return <Link target={newTarget} rel={rel} onClick={(e) => {
 
                     if (!url) {
@@ -993,7 +993,7 @@ class JsonDom extends React.Component {
             this.updateScope = false
 
             // set page property
-            this.scope.page = {slug: props.slug, realSlug: props.realSlug, slugContext: props.realSlug.substring(0,props.realSlug.indexOf(props.slug))}
+            this.scope.page = {slug: props.slug, realSlug: props.realSlug}
             this.scope.user = props.user
             this.scope.editMode = props.editMode
             this.scope.inEditor = props.inEditor
