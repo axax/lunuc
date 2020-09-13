@@ -27,7 +27,7 @@ const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
 
 const PrettyErrorMessage = (props) => <Async {...props}
-                                        load={import(/* webpackChunkName: "admin" */ './PrettyErrorMessage')}/>
+                                             load={import(/* webpackChunkName: "admin" */ './PrettyErrorMessage')}/>
 
 const ContentEditable = (props) => <Async {...props}
                                           load={import(/* webpackChunkName: "admin" */ '../../../client/components/ContentEditable')}/>
@@ -118,26 +118,27 @@ class JsonDom extends React.Component {
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'QuillEditor': (props) => <QuillEditor {...props}/>,
         'select': (props) => <JsonDomInput select={true} {...props}/>,
-        'Redirect': ({to, push,_this}) => {
-            if( _this && Util.hasCapability(_this.props.user, CAPABILITY_MANAGE_CMS_TEMPLATE) ){
+        'Redirect': ({to, push, _this}) => {
+            if (_this && Util.hasCapability(_this.props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
 
-                _this.emitJsonError({message:'Redirect prevented for this user'}, {loc: 'Redirect'})
+                _this.emitJsonError({message: 'Redirect prevented for this user'}, {loc: 'Redirect'})
                 return null
-            }else {
+            } else {
                 return <Redirect to={{pathname: to}} push={push}/>
             }
         },
-        'Link': ({to, href, target, gotop, native, onClick, tracking,_this, ...rest}) => {
+        'Link': ({to, href, target, gotop, native, onClick, tracking, ...rest}) => {
             let url = to || href || ''
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
 
-            if( _app_.ssr){
+            if (_app_.ssr) {
                 url = new URL(url, location.origin).href
             }
-            if(tracking){
-                url = location.origin + '/lunucapi/tracking?url='+encodeURIComponent(url)+tracking
+            if (tracking) {
+                url = location.origin + '/lunucapi/tracking?url=' + encodeURIComponent(url) + tracking
             }
+
             if (url.startsWith('https://') || url.startsWith('http://') || native) {
                 return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
 
@@ -147,13 +148,12 @@ class JsonDom extends React.Component {
                 }
                 } {...rest}/>
             } else {
-               /* const slugContext = _this.scope.page.slugContext
-                if(slugContext && url.indexOf('/'+slugContext)===0){
-                    url = url.substring(slugContext.length+1)
-                    if(!url){
+                if (_app_.slugContext && url.indexOf('/' + _app_.slugContext) === 0) {
+                    url = url.substring(_app_.slugContext.length + 1)
+                    if (!url) {
                         url = '/'
                     }
-                }*/
+                }
 
                 return <Link target={newTarget} rel={rel} onClick={(e) => {
 
@@ -166,7 +166,7 @@ class JsonDom extends React.Component {
                         setTimeout(() => {
                             window.scrollTo({top: 0})
                         }, 0)
-                    }else if(url.indexOf('#')>=0){
+                    } else if (url.indexOf('#') >= 0) {
 
                         setTimeout(() => {
                             const hash = url.split('#')[1]
@@ -366,16 +366,16 @@ class JsonDom extends React.Component {
             if (!meta) {
                 let content = ''
                 const tags = document.body.querySelectorAll('h1,h2,h3,h4')
-                for(let i = 0;i<tags.length;i++){
-                    content += ' '+tags[i].innerText.trim()
-                    if(  content.indexOf('.', content.length - 1) === -1 ){
+                for (let i = 0; i < tags.length; i++) {
+                    content += ' ' + tags[i].innerText.trim()
+                    if (content.indexOf('.', content.length - 1) === -1) {
                         content += '.'
                     }
-                    if(content.length>150){
+                    if (content.length > 150) {
                         break
                     }
                 }
-        //console.log(content)
+                //console.log(content)
                 //content = document.body.innerText.substring(0, 160).replace(/(\r\n|\n|\r)/gm, ' ').trim()
                 if (content) {
                     this.addMetaTag('description', content.trim())
@@ -442,7 +442,7 @@ class JsonDom extends React.Component {
                     }
                 } catch (e) {
                     console.log(e, resolvedData)
-                    this.error = {type: 'dataResolver', e, code:resolvedData}
+                    this.error = {type: 'dataResolver', e, code: resolvedData}
                 }
             }
             if (!this.error) {
@@ -499,7 +499,8 @@ class JsonDom extends React.Component {
         console.log(`render ${this.constructor.name} for ${scope.page.slug} in ${((new Date()).getTime() - startTime)}ms`)
 
         if (this.error) {
-            return <div>Error in <strong>{this.error.type}</strong>. See details in console log: <PrettyErrorMessage {...this.error}/></div>
+            return <div>Error in <strong>{this.error.type}</strong>. See details in console
+                log: <PrettyErrorMessage {...this.error}/></div>
         } else {
             return content
         }
@@ -567,13 +568,14 @@ class JsonDom extends React.Component {
     addParentRef(props) {
         const {id, _parentRef} = props
         if (_parentRef && id) {
-            _parentRef.componentRefs[id] = {comp:this, id: this.instanceId}
+            _parentRef.componentRefs[id] = {comp: this, id: this.instanceId}
         }
     }
+
     removeParentRef(props) {
         const {id, _parentRef} = props
         if (_parentRef && _parentRef.componentRefs && id && _parentRef.componentRefs[id]) {
-            if(_parentRef.componentRefs[id].id === this.instanceId) {
+            if (_parentRef.componentRefs[id].id === this.instanceId) {
                 delete _parentRef.componentRefs[id]
             }
         }
@@ -645,7 +647,7 @@ class JsonDom extends React.Component {
                  */
                 if (t === '#') {
                     // hidden element
-                    if(c) {
+                    if (c) {
                         h.push(this.parseRec(c, rootKey + '.' + aIdx, scope))
                     }
                     return
@@ -927,14 +929,12 @@ class JsonDom extends React.Component {
 
                     eleProps.key = key
 
-                    if (t === 'Cms' || t === 'Link') {
+                    if (t === 'Cms') {
                         // if we have a cms component in another cms component the location props gets not refreshed
                         // that's way we pass it directly to the reactElement as a prop
-                        if( t==='Cms') {
-                            eleProps.location = location
-                            eleProps.history = history
-                            eleProps.match = match
-                        }
+                        eleProps.location = location
+                        eleProps.history = history
+                        eleProps.match = match
                         eleProps._this = this
                     }
                     if (key.startsWith('inHtmlComponent')) {
@@ -979,7 +979,18 @@ class JsonDom extends React.Component {
 
                         h.push(React.createElement(
                             ElementWatch,
-                            {jsonDom: this, key: key,_key:key, scope, tagName, eleType, eleProps, c, $c, $observe: $observe || {}}
+                            {
+                                jsonDom: this,
+                                key: key,
+                                _key: key,
+                                scope,
+                                tagName,
+                                eleType,
+                                eleProps,
+                                c,
+                                $c,
+                                $observe: $observe || {}
+                            }
                         ))
                     } else {
                         h.push(React.createElement(
@@ -997,17 +1008,7 @@ class JsonDom extends React.Component {
     getScope(props) {
         if (this.updateScope) {
             this.updateScope = false
-
-            // set page property
-            const {slug, realSlug} = props
-
-            let slugContext = realSlug
-            if(slug){
-                slugContext = realSlug.substring(0,realSlug.indexOf(slug))
-            }
-
-
-            this.scope.page = {slug, realSlug, slugContext}
+            this.scope.page = {slug: props.slug}
             this.scope.user = props.user
             this.scope.editMode = props.editMode
             this.scope.inEditor = props.inEditor
@@ -1050,12 +1051,12 @@ class JsonDom extends React.Component {
         } catch (e) {
             this.error = {type: 'template', e, code: renderedTemplate}
         }
-        if(_app_.ssr && props.style){
+        if (_app_.ssr && props.style) {
             // add style
-            if( this.json.constructor !== Array){
+            if (this.json.constructor !== Array) {
                 this.json = [this.json]
             }
-            this.json.unshift({t:'style',c:preprocessCss(props.style)})
+            this.json.unshift({t: 'style', c: preprocessCss(props.style)})
         }
         return this.json
     }

@@ -89,9 +89,9 @@ const excludeFunction = (path) => {
 }
 
 
-const replacePlaceholders = (content) => {
+const replacePlaceholders = (content, hostrule) => {
 
-    const result = new Function('const {' + Object.keys(APP_VALUES).join(',') + '} = this.APP_VALUES;return `' + content + '`').call({APP_VALUES})
+    const result = new Function('const {' + Object.keys(APP_VALUES).join(',') + '} = this.APP_VALUES;return `' + content + '`').call({APP_VALUES, hostrule})
     return result
 }
 if( fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)){
@@ -106,6 +106,11 @@ if( fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)){
             // Make one pass and make the file complete
             const hostpath = path.join(APP_VALUES.HOSTRULES_ABSPATH, file)
 
+            let HOSTRULE_JSON = {}
+            try {
+                HOSTRULE_JSON= require(path.join(APP_VALUES.HOSTRULES_ABSPATH, file + '.json'))
+            }catch(e){}
+
             fs.stat(hostpath, function (error, stat) {
                 if (stat.isDirectory()) {
                     fs.readdir(hostpath, function (err, subFiles) {
@@ -115,7 +120,7 @@ if( fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)){
                         subFiles.forEach(function (file, index) {
                             if( file.endsWith('.template')){
                                 fs.readFile(path.join(hostpath, file), 'utf8', function(err, contents) {
-                                    fs.writeFile(path.join(hostpath, file.substring(0,file.length-9)), replacePlaceholders(contents), function(err) {
+                                    fs.writeFile(path.join(hostpath, file.substring(0,file.length-9)), replacePlaceholders(contents, HOSTRULE_JSON), function(err) {
                                         if (err) {
                                             console.error("Error writing to file "+file, err)
                                         }
