@@ -5,7 +5,7 @@ import {getFormFields} from 'util/typesAdmin'
 import config from 'gen/config'
 import {
     CAPABILITY_MANAGE_TYPES,
-    CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_KEYVALUES
+    CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_COLLECTION
 } from 'util/capabilities'
 import Hook from 'util/hook'
 import AggregationBuilder from './AggregationBuilder'
@@ -97,24 +97,28 @@ const GenericResolver = {
                 match = {}
 
             } else {
-                const typeDefinition = getType(typeName)
-                let userFilter = true
-                if (typeDefinition) {
-                    if (typeDefinition.noUserRelation) {
-                        userFilter = false
-                    }
-                    if (typeDefinition.access && typeDefinition.access.read) {
-                        if (await Util.userHasCapability(db, context, typeDefinition.access.read)) {
-                            match = {}
+                if( typeName === 'User'){
+                    match = {_id: {$in: await Util.userAndJuniorIds(db, context.id)}}
+                }else {
+                    const typeDefinition = getType(typeName)
+                    let userFilter = true
+                    if (typeDefinition) {
+                        if (typeDefinition.noUserRelation) {
                             userFilter = false
-                        } else if (typeDefinition.noUserRelation) {
-                            throw new Error(`no permission to access data ${typeName}`)
+                        }
+                        if (typeDefinition.access && typeDefinition.access.read) {
+                            if (await Util.userHasCapability(db, context, typeDefinition.access.read)) {
+                                match = {}
+                                userFilter = false
+                            } else if (typeDefinition.noUserRelation) {
+                                throw new Error(`no permission to access data ${typeName}`)
+                            }
                         }
                     }
-                }
 
-                if (userFilter) {
-                    match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+                    if (userFilter) {
+                        match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+                    }
                 }
             }
         }
@@ -309,7 +313,11 @@ const GenericResolver = {
             _id: ObjectId(data._id)
         }
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
+            if(typeName==='User'){
+                options._id = {$in: await Util.userAndJuniorIds(db, context.id)}
+            }else {
+                options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
+            }
         }
 
         const collection = db.collection(collectionName)
@@ -354,7 +362,11 @@ const GenericResolver = {
         }
 
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
+            if(typeName==='User'){
+                options._id = {$in: await Util.userAndJuniorIds(db, context.id)}
+            }else {
+                options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
+            }
         }
 
         const collection = db.collection(collectionName)
@@ -390,18 +402,23 @@ const GenericResolver = {
                 throw new Error('user is not allow to change field createdBy')
             }
 
-            const typeDefinition = getType(typeName)
-            let userFilter = true
-            if (typeDefinition) {
-                if (typeDefinition.access && typeDefinition.access.update) {
-                    if (await Util.userHasCapability(db, context, typeDefinition.access.update)) {
-                        userFilter = false
+            if(typeName==='User'){
+                options._id = {$in: await Util.userAndJuniorIds(db, context.id)}
+            }else {
+
+                const typeDefinition = getType(typeName)
+                let userFilter = true
+                if (typeDefinition) {
+                    if (typeDefinition.access && typeDefinition.access.update) {
+                        if (await Util.userHasCapability(db, context, typeDefinition.access.update)) {
+                            userFilter = false
+                        }
                     }
                 }
-            }
 
-            if (userFilter) {
-                params.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
+                if (userFilter) {
+                    params.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
+                }
             }
         }
 
@@ -458,8 +475,8 @@ const GenericResolver = {
         return returnValue
     },
     cloneEntity: async (db, context, typeName, {_id, _version, ...rest}) => {
+        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
-        Util.checkIfUserIsLoggedIn(context)
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
         const collection = db.collection(collectionName)

@@ -6,7 +6,7 @@ import GenericResolver from './generic/genericResolver'
 import Cache from 'util/cache'
 import {
     CAPABILITY_MANAGE_USER_ROLE,
-    CAPABILITY_MANAGE_OTHER_USERS
+    CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_MANAGE_COLLECTION
 } from 'util/capabilities'
 import {sendMail} from 'api/util/mail'
 import crypto from 'crypto'
