@@ -67,7 +67,6 @@ const BaseLayout = props => {
     }
 
     const history = useHistory()
-    console.log(history)
 
     return <UIProvider>
         <ResponsiveDrawerLayout title={APP_NAME}

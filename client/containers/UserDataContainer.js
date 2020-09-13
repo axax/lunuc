@@ -7,7 +7,7 @@ import {withApollo} from '@apollo/react-hoc'
 import {gql} from '@apollo/client'
 import {ApolloClient} from '@apollo/client'
 import {USER_DATA_QUERY} from '../constants'
-//import {client} from '../middleware/graphql'
+import {client as gClient} from '../middleware/graphql'
 
 class UserDataContainer extends React.PureComponent {
     state = {

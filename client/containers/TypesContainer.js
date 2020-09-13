@@ -591,7 +591,8 @@ class TypesContainer extends React.Component {
 
 
             columns.map(c => {
-                if (formFields[c.id] && this.isColumnActive(type, c.id)) {
+                console.log(formFields[c.id])
+                if (formFields[c.id] && formFields[c.id].type !== 'Object' && formFields[c.id].uitype  !== 'password' && this.isColumnActive(type, c.id)) {
                     activeFormFields[c.id] = Object.assign({}, formFields[c.id])
                     activeFormFields[c.id].fullWidth = true
                     delete activeFormFields[c.id].tab
