@@ -147,13 +147,13 @@ class JsonDom extends React.Component {
                 }
                 } {...rest}/>
             } else {
-                const slugContext = _this.scope.page.slugContext
+               /* const slugContext = _this.scope.page.slugContext
                 if(slugContext && url.indexOf('/'+slugContext)===0){
                     url = url.substring(slugContext.length+1)
                     if(!url){
                         url = '/'
                     }
-                }
+                }*/
 
                 return <Link target={newTarget} rel={rel} onClick={(e) => {
 
