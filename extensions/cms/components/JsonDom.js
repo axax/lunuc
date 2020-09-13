@@ -147,10 +147,14 @@ class JsonDom extends React.Component {
                 }
                 } {...rest}/>
             } else {
-               /* const slugContext = _this.scope.page.slugContext
-                if(slugContext && url.indexOf(slugContext)===0){
-                    url = url.substring(slugContext.length)
-                }*/
+                const slugContext = _this.scope.page.slugContext
+                if(slugContext && url.indexOf('/'+slugContext)===0){
+                    url = url.substring(slugContext.length+1)
+                    if(!url){
+                        url = '/'
+                    }
+                }
+
                 return <Link target={newTarget} rel={rel} onClick={(e) => {
 
                     if (!url) {
@@ -923,12 +927,14 @@ class JsonDom extends React.Component {
 
                     eleProps.key = key
 
-                    if (t === 'Cms') {
+                    if (t === 'Cms' || t === 'Link') {
                         // if we have a cms component in another cms component the location props gets not refreshed
                         // that's way we pass it directly to the reactElement as a prop
-                        eleProps.location = location
-                        eleProps.history = history
-                        eleProps.match = match
+                        if( t==='Cms') {
+                            eleProps.location = location
+                            eleProps.history = history
+                            eleProps.match = match
+                        }
                         eleProps._this = this
                     }
                     if (key.startsWith('inHtmlComponent')) {
