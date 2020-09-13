@@ -993,7 +993,15 @@ class JsonDom extends React.Component {
             this.updateScope = false
 
             // set page property
-            this.scope.page = {slug: props.slug, realSlug: props.realSlug}
+            const {slug, realSlug} = props
+
+            let slugContext = realSlug
+            if(slug){
+                slugContext = realSlug.substring(0,realSlug.indexOf(slug))
+            }
+
+
+            this.scope.page = {slug, realSlug, slugContext}
             this.scope.user = props.user
             this.scope.editMode = props.editMode
             this.scope.inEditor = props.inEditor
