@@ -246,6 +246,11 @@ class GenericForm extends React.Component {
         return validationState
     }
 
+    reset = () => {
+        this.setState(GenericForm.getInitalState(this.props))
+    }
+
+
     shouldComponentUpdate(props, state) {
         return state !== this.state || state.fieldErrors !== this.state.fieldErrors || state.showTranslations !== this.state.showTranslations
     }
@@ -258,11 +263,6 @@ class GenericForm extends React.Component {
         }
         return validationState
     }
-
-    reset = () => {
-        this.setState(GenericForm.getInitalState(this.props))
-    }
-
 
     loadFlatpickr() {
 
@@ -422,6 +422,7 @@ class GenericForm extends React.Component {
                       subFields[k] = {value: value}
                   })
   */
+
                 let values
                 try {
                     values = JSON.parse(value)
@@ -430,6 +431,8 @@ class GenericForm extends React.Component {
                 if( !values){
                     values = {}
                 }
+
+
                 currentFormFields.push(<GenericForm onChange={(e) => {
                     values[e.name] = e.value
                     this.handleInputChange({

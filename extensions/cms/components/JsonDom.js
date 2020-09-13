@@ -127,7 +127,7 @@ class JsonDom extends React.Component {
                 return <Redirect to={{pathname: to}} push={push}/>
             }
         },
-        'Link': ({to, href, target, gotop, native, onClick, tracking, ...rest}) => {
+        'Link': ({to, href, target, gotop, native, onClick, tracking,_this, ...rest}) => {
             let url = to || href || ''
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
@@ -138,7 +138,6 @@ class JsonDom extends React.Component {
             if(tracking){
                 url = location.origin + '/lunucapi/tracking?url='+encodeURIComponent(url)+tracking
             }
-
             if (url.startsWith('https://') || url.startsWith('http://') || native) {
                 return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
 
@@ -148,6 +147,10 @@ class JsonDom extends React.Component {
                 }
                 } {...rest}/>
             } else {
+                const slugContext = _this.scope.page.slugContext
+                if(slugContext && url.indexOf(slugContext)===0){
+                    url = url.substring(slugContext.length)
+                }
                 return <Link target={newTarget} rel={rel} onClick={(e) => {
 
                     if (!url) {
@@ -990,7 +993,7 @@ class JsonDom extends React.Component {
             this.updateScope = false
 
             // set page property
-            this.scope.page = {slug: props.slug}
+            this.scope.page = {slug: props.slug, realSlug: props.realSlug, slugContext: props.realSlug.substring(0,props.realSlug.indexOf(props.slug))}
             this.scope.user = props.user
             this.scope.editMode = props.editMode
             this.scope.inEditor = props.inEditor
