@@ -57,7 +57,7 @@ export default function (WrappedComponent) {
                                                            cmsPage={{name: {}}}/>
                         } else {
 
-                            if(_app_.redirect404){
+                            if(_app_.redirect404 && _app_.redirect404!==location.pathname){
                                 location.href = _app_.redirect404
                                 return null
                             }
