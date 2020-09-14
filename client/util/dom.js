@@ -54,8 +54,11 @@ const DomUtil = {
             if (key === 'style' && attrs[key].constructor === Object) {
                 tag[key] = DomUtil.styleObjectToString(attrs[key])
             } else if (attrs[key])
-                //tag.setAttribute(key,attrs[key])
-                tag[key] = attrs[key]
+                if(key==='innerHTML' || key==='innerText'){
+                    tag[key] = attrs[key]
+                }else {
+                    tag.setAttribute(key, attrs[key])
+                }
         }
         document[target].appendChild(tag)
         return tag
