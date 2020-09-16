@@ -18,6 +18,7 @@
     ]
   },
   "scripts": {
+    "install": "npm i #--unsafe-perms",
     "lint": "eslint client/**/*.js extensions/**/*.js server/**/*.js api/**/*.js test/**/*.js",
     "mongodb:clear": "pkill -2 mongod & rm -rf mongodb_tmp",
     "mongodb:start": "mkdir -p mongodb_tmp && mongod --port 27018 --dbpath mongodb_tmp --fork --logpath /dev/null",
@@ -109,19 +110,7 @@
     "socket.io": "^2.3.0",
     "subscriptions-transport-ws": "^0.9.18",
     "telegraf": "^3.38.0",
-    "zip-local": "^0.3.4"
-  },
-  "optionalDependencies": {
-    "@google-cloud/storage": "^5.3.0",
-    "@google-cloud/translate": "^6.0.2",
-    "aws-sdk": "^2.751.0",
-    "nodemon": "^2.0.4",
-    "mssql": "^6.2.1",
-    "native-dns": "^0.7.0",
-    "xml2js": "^0.4.23",
-    "ytdl-core": "^3.2.2"
-  },
-  "devDependencies": {
+    "zip-local": "^0.3.4",
     "babel-eslint": "^10.1.0",
     "babel-jest": "^26.3.0",
     "babel-loader": "^8.1.0",
@@ -143,5 +132,15 @@
     "webpack-bundle-analyzer": "^3.8.0",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"
+  },
+  "optionalDependencies": {
+    "@google-cloud/storage": "^5.3.0",
+    "@google-cloud/translate": "^6.0.2",
+    "aws-sdk": "^2.751.0",
+    "nodemon": "^2.0.4",
+    "mssql": "^6.2.1",
+    "native-dns": "^0.7.0",
+    "xml2js": "^0.4.23",
+    "ytdl-core": "^3.2.2"
   }
 }
