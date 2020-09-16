@@ -233,6 +233,7 @@ export default function (WrappedComponent) {
         }
     }
 
+
     /**
      * Connect the component to
      * the Redux store.
