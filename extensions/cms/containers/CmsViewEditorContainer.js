@@ -10,6 +10,9 @@ import {
     defaultSettings,
     generalSettingsKeys
 } from '../util/cmsViewEditor'
+import {
+    QUERY_KEY_VALUES
+} from 'client/util/keyvalue'
 import PropTypes from 'prop-types'
 import compose from 'util/compose'
 import Expandable from 'client/components/Expandable'
@@ -67,7 +70,7 @@ class CmsViewEditorContainer extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         if (nextProps.cmsPage && nextProps.keyValues && !CmsViewEditorContainer.isLoadingState(nextProps)) {
 
-            if (prevState.slug == undefined || nextProps.cmsPage.slug !== prevState.slug) {
+            if (prevState.slug == undefined || nextProps.cmsPage.slug !== prevState.slug || nextProps.keyValues !== prevState.keyValues) {
                 console.log('update state')
                 return CmsViewEditorContainer.propsToState(nextProps, prevState)
             }
@@ -243,7 +246,6 @@ class CmsViewEditorContainer extends React.Component {
 
         const {template, resources, script, style, settings, dataResolver, serverScript, simpleDialog} = this.state
 
-        console.log(cmsPage)
         if (!cmsPage) {
             // show a loader here
             if (!props.dynamic) {
@@ -253,11 +255,12 @@ class CmsViewEditorContainer extends React.Component {
 
         const loadingState = CmsViewEditorContainer.isLoadingState(this.props)
 
+
         const isSmallScreen = window.innerWidth < 1000
         // extend with value from state because they are more update to date
         const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template})
 
-        console.log('render CmsViewEditorContainer '+loadingState)
+        console.log('render CmsViewEditorContainer (loading='+loadingState+')')
 
         const canManageCmsPages = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_CONTENT),
             canMangeCmsTemplate = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
@@ -1316,7 +1319,6 @@ class CmsViewEditorContainer extends React.Component {
 
             const settings = this.state.settings
             const {pageSettings, generalSettings} = CmsViewEditorContainer.getSettingsByKeyValue(this.props)
-
             let pageSettingsChanged, generalSettingsChanged
 
             Object.keys(settings).forEach(key => {
@@ -1393,7 +1395,7 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql('query keyValues($keys:[String]){keyValues(keys:$keys){results{key value createdBy{_id}}}}', {
+    graphql(QUERY_KEY_VALUES, {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {
             return {
@@ -1433,22 +1435,6 @@ const CmsViewEditorContainerWithGql = compose(
                 }
                 return mutate({
                     variables: variablesWithNewValue,
-                    optimisticResponse: {
-                        __typename: 'Mutation',
-                        // Optimistic message
-                        updateCmsPage: {
-                            _id,
-                            ...rest,
-                            status: 'updating',
-                            modifiedAt: new Date().getTime(),
-                            createdBy: {
-                                _id: ownProps.user.userData._id,
-                                username: ownProps.user.userData.username,
-                                __typename: 'UserPublic'
-                            },
-                            __typename: 'CmsPage'
-                        }
-                    },
                     update: (store, {data: {updateCmsPage}}) => {
 
                         const data = client.readQuery({

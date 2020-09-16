@@ -10,6 +10,7 @@ import DomUtil from '../../../client/util/dom'
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
 import {setPropertyByPath} from "../../../client/util/json";
 import {client, graphql} from '../../../client/middleware/graphql'
+import {QUERY_KEY_VALUES} from '../../../client/util/keyvalue'
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}
@@ -114,9 +115,9 @@ export default function (WrappedComponent) {
                             this.updateResolvedData({json:resolvedDataJson})
                         }else{
 
-                            /*try {
+                          /*  try {
                                 const storedData = store.readQuery({
-                                    query: gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`,
+                                    query: QUERY_KEY_VALUES,
                                     variables: {key: settingKeyPrefix + slug}
                                 })
                                 console.log(storedData)

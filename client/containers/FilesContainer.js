@@ -215,7 +215,7 @@ class FilesContainer extends React.Component {
         this._fileChange = setTimeout(() => {
             client.query({
                 fetchPolicy: 'no-cache',
-                query: gql(COMMAND_QUERY),
+                query: COMMAND_QUERY,
                 variables: {
                     sync: true,
                     command: `printf %s "${Util.escapeDoubleQuotes(content.replace(/\$/g, '\\$').replace(/`/g, '\\`'))}" > "${file}"`

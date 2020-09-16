@@ -10,10 +10,9 @@ import {
 } from 'ui/admin'
 import GenericForm from 'client/components/GenericForm'
 import extensions from 'gen/extensions'
-import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import {gql} from '@apollo/client'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
+import {graphql} from '../../../client/middleware/graphql'
 
 const TYPE = 'Word'
 
@@ -181,7 +180,7 @@ WordContainer.propTypes = {
 
 
 const WordContainerWithGql = compose(
-    graphql(gql`query{wordCategorys{results{_id name}}}`, {
+    graphql(`query{wordCategorys{results{_id name}}}`, {
         props: ({data: {wordCategorys}}) => ({
             wordCategorys
         })

@@ -1,8 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import {gql} from '@apollo/client'
 import {Link} from 'react-router-dom'
 import ChatMessage from '../components/chat/ChatMessage'
 import CreateChat from '../components/chat/CreateChat'
@@ -12,6 +10,7 @@ import {connect} from 'react-redux'
 import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import config from 'gen/config'
+import {graphql} from '../../../client/middleware/graphql'
 
 const {ADMIN_BASE_URL} = config
 
@@ -192,25 +191,25 @@ ChatContainer.propTypes = {
 const MESSAGES_PER_PAGE = 10
 const CHATS_PER_PAGE = 99
 
-const gqlQuery = gql`query{publicUsers{_id username} chatsWithMessages(limit: ${CHATS_PER_PAGE}, messageLimit: ${MESSAGES_PER_PAGE}){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
-const gqlQueryMoreMessages = gql`query chatMessages($chatId: String!, $messageOffset: Int, $messageLimit: Int){
+const gqlQuery = `query{publicUsers{_id username} chatsWithMessages(limit: ${CHATS_PER_PAGE}, messageLimit: ${MESSAGES_PER_PAGE}){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
+const gqlQueryMoreMessages = `query chatMessages($chatId: String!, $messageOffset: Int, $messageLimit: Int){
 	chatMessages(chatId:$chatId, messageOffset:$messageOffset, messageLimit:$messageLimit){
 		_id text status from{username _id}
 	}
 }`
 
 
-const gqlCreateChat = gql`mutation createChat($name: String!){createChat(name:$name){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
-const gqlAddUserToChat = gql`mutation addUserToChat($userId: ID!, $chatId: ID!){addUserToChat(userId:$userId,chatId:$chatId){_id status}}`
-const gqlRemoveUserFromChat = gql`mutation removeUserFromChat($userId: ID!, $chatId: ID!){removeUserFromChat(userId:$userId,chatId:$chatId){_id status}}`
-const gqlDeleteChat = gql`mutation deleteChat($chatId: ID!){deleteChat(chatId:$chatId){_id status}}`
+const gqlCreateChat = `mutation createChat($name: String!){createChat(name:$name){_id status name messages{_id text status from{username _id}}users{username _id}createdBy{username _id}}}`
+const gqlAddUserToChat = `mutation addUserToChat($userId: ID!, $chatId: ID!){addUserToChat(userId:$userId,chatId:$chatId){_id status}}`
+const gqlRemoveUserFromChat = `mutation removeUserFromChat($userId: ID!, $chatId: ID!){removeUserFromChat(userId:$userId,chatId:$chatId){_id status}}`
+const gqlDeleteChat = `mutation deleteChat($chatId: ID!){deleteChat(chatId:$chatId){_id status}}`
 
-const gqlInsertMessage = gql`mutation createMessage($chatId: ID!, $text: String!) {createMessage(chatId:$chatId,text:$text){_id text status to{_id} from{_id,username}}}`
-const gqlDeleteMessage = gql`mutation deleteMessage($messageId: ID!,$chatId: ID) {deleteMessage(messageId:$messageId,chatId:$chatId){_id status to{_id}}}`
+const gqlInsertMessage = `mutation createMessage($chatId: ID!, $text: String!) {createMessage(chatId:$chatId,text:$text){_id text status to{_id} from{_id,username}}}`
+const gqlDeleteMessage = `mutation deleteMessage($messageId: ID!,$chatId: ID) {deleteMessage(messageId:$messageId,chatId:$chatId){_id status to{_id}}}`
 
 /*Subscriptions*/
-const gqlOnCreateMessage = gql`subscription{messageCreated{_id text status from{_id username}to{_id}}}`
-const gqlOnDeleteMessage = gql`subscription{messageDeleted{_id status to{_id}}}`
+const gqlOnCreateMessage = `subscription{messageCreated{_id text status from{_id username}to{_id}}}`
+const gqlOnDeleteMessage = `subscription{messageDeleted{_id status to{_id}}}`
 
 
 const fnCreateMessage = (prev, message) => {

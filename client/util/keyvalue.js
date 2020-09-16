@@ -1,10 +1,8 @@
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
 import {client, NetworkStatus, RequestType, useQuery} from '../middleware/graphql'
-import {useEffect, useState} from "react";
 
 
 export const QUERY_KEY_VALUES = 'query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}'
-
 
 export const useUserKeys = (keys) => {
 

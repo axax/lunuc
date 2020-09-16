@@ -127,7 +127,7 @@ class GenericForm extends React.Component {
             fieldsOri: props.fields,
             fields: {},
             showTranslations: {},
-            tabValue: prevState.tabValue || 0
+            tabValue: prevState && prevState.tabValue ? prevState.tabValue: 0
         }
         Object.keys(props.fields).map(k => {
             const field = props.fields[k]

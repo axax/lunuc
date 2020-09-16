@@ -48,7 +48,7 @@
     "Database-as-a-Service by mlap.com",
     "GraphQL API",
     "Express Server",
-    "Apollo GraphQL Client",
+    "GraphQL Client",
     "Optimistic UI"
   ],
   "author": "simonschaerer <axax@gmx.net>",

@@ -119,7 +119,6 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
                 const fromCache = client.readQuery({cacheKey})
                 if (fromCache) {
                     const resolveData = {
-                        cacheKey,
                         data: fromCache,
                         loading: false,
                         networkStatus: NetworkStatus.ready,
@@ -153,7 +152,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
                     }
                     reject(rejectData)
                 } else {
-                    const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready, cacheKey}
+                    const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready}
 
                     if (type === RequestType.query) {
 
@@ -224,7 +223,8 @@ export const client = {
         if (update) {
 
             if (optimisticResponse) {
-                update(client, {data: optimisticResponse})
+                //TODO
+                //update(client, {data: optimisticResponse})
             }
             /*const proxy = {
                 readQuery:client.readQuery,
@@ -234,6 +234,9 @@ export const client = {
                 }
             }*/
             res.then((r) => {
+                if(optimisticResponse){
+
+                }
                 update(client, r)
             }).catch((e) => {
                 update(client, e)
@@ -419,7 +422,6 @@ export const useQuery = (query, {variables, fetchPolicy = 'cache-first', skip}) 
             if (newResponse.loading) {
 
                 finalFetch({cacheKey, query, variables, fetchPolicy, signal: controller.signal}).then(response => {
-                    console.log(cacheKey===response.cacheKey)
                     setResponse(response)
                 }).catch(error => {
                     if(!controller.signal.aborted) {
