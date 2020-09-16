@@ -210,7 +210,7 @@ if (!Object.assign || !window.fetch || !window.Intl || !Promise.prototype.finall
         async: true,
         onload
     })
-    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CIntl.~locale.en%2CIntl.~locale.de%2CObject.values%2CPromise.prototype.finally', {
+    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CIntl.~locale.en%2CIntl.~locale.de%2CObject.values%2CPromise.prototype.finally%2CAbortController', {
         async: true,
         onload
     })

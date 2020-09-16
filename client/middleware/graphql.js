@@ -58,20 +58,33 @@ let wsConnection, subscribeCount = 0
 
 const setUpWs = () => {
     if (!_app_.ssr) {
-        wsConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])
-        wsConnection.onopen = () => {
-            wsConnection.send('{"type":"connection_init","payload":{}}')
-            return false
-        }
-        wsConnection.onerror = error => {
-            console.log(`WebSocket error: ${error}`)
-        }
 
 
-        wsConnection.onclose = function () {
-            // setUpWs()
-            //  setTimeout(setUpWs, 1000);
+        try {
+            if (navigator.userAgent.indexOf('Chrome-Lighthouse') > -1) {
+                throw Error('Chrome-Lighthouse does not support ws')
+            }
+
+            wsConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])
+            wsConnection.onopen = () => {
+                wsConnection.send('{"type":"connection_init","payload":{}}')
+                return false
+            }
+            wsConnection.onerror = error => {
+                console.log(`WebSocket error: ${error}`)
+            }
+
+
+            wsConnection.onclose = function () {
+                // setUpWs()
+                //  setTimeout(setUpWs, 1000);
+            }
+
+        } catch (e) {
+            // without ws
+            console.warn('WS might not work', e)
         }
+
     }
 }
 setUpWs()
@@ -234,7 +247,7 @@ export const client = {
                 }
             }*/
             res.then((r) => {
-                if(optimisticResponse){
+                if (optimisticResponse) {
 
                 }
                 update(client, r)
@@ -382,15 +395,14 @@ export const useQuery = (query, {variables, fetchPolicy = 'cache-first', skip}) 
         })
     })
 
-    if( _app_.ssr ){
+    if (_app_.ssr) {
 
-        if(!response.data){
+        if (!response.data) {
             SSR_FETCH_CHAIN[cacheKey] = {query, variables}
         }
 
         return response
     }
-
 
 
     useEffect(() => {
@@ -424,7 +436,7 @@ export const useQuery = (query, {variables, fetchPolicy = 'cache-first', skip}) 
                 finalFetch({cacheKey, query, variables, fetchPolicy, signal: controller.signal}).then(response => {
                     setResponse(response)
                 }).catch(error => {
-                    if(!controller.signal.aborted) {
+                    if (!controller.signal.aborted) {
                         setResponse(error)
                     }
                 })
