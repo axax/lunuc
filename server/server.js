@@ -120,18 +120,21 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
 
 
     if (stats.isFile()) {
-        const modFilePath = await resizeImage(parsedUrl, req, filePath)
+        const modImage = await resizeImage(parsedUrl, req, filePath)
 
         // static file
-        const ext = path.extname(modFilePath).substring(1).trim().toLowerCase().split('@')[0]
-        const mimeType = MimeType.detectByExtension(ext),
-            headerExtra = {
-                'Cache-Control': 'public, max-age=31536000',
-                'Content-Type': mimeType,
-                'Last-Modified': stats.mtime.toUTCString(),
-                ...headers
-            }
-        sendFile(req, res, {headers: headerExtra, filename: modFilePath})
+        let mimeType = modImage.mimeType
+        if (!mimeType) {
+            const ext = path.extname(modImage.filename).substring(1).trim().toLowerCase().split('@')[0]
+            mimeType = MimeType.detectByExtension(ext)
+        }
+        const headerExtra = {
+            'Cache-Control': 'public, max-age=31536000',
+            'Content-Type': mimeType,
+            'Last-Modified': stats.mtime.toUTCString(),
+            ...headers
+        }
+        sendFile(req, res, {headers: headerExtra, filename: modImage.filename})
 
         return true
     }
@@ -301,7 +304,7 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
         ...hostrule.headers[uri]
     }
 
-    const statusCode = (hostrule.statusCode && hostrule.statusCode[uri] ?hostrule.statusCode[uri] : 200)
+    const statusCode = (hostrule.statusCode && hostrule.statusCode[uri] ? hostrule.statusCode[uri] : 200)
 
     const agent = req.headers['user-agent']
     if (agent && (agent.indexOf('bingbot') > -1 || agent.indexOf('msnbot') > -1)) {
@@ -424,10 +427,13 @@ function transcodeVideo(parsedUrl, headerExtra, res, code, fileStream) {
 }
 
 async function resizeImage(parsedUrl, req, filename) {
+    let mimeType, exists = false
+
     // resize image file
     if (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format) {
         const width = parseInt(parsedUrl.query.width),
-            height = parseInt(parsedUrl.query.height)
+            height = parseInt(parsedUrl.query.height),
+            fit = parsedUrl.query.fit
 
         let format = parsedUrl.query.format
         if (format === 'webp' && req.headers['accept'] && req.headers['accept'].indexOf('image/webp') < 0) {
@@ -437,8 +443,7 @@ async function resizeImage(parsedUrl, req, filename) {
 
         if (!isNaN(width) || !isNaN(height) || format) {
 
-            const resizeOptions = {fit: sharp.fit.cover}
-
+            const resizeOptions = {fit: fit || sharp.fit.cover}
             if (!isNaN(width)) {
                 resizeOptions.width = width
             }
@@ -452,7 +457,13 @@ async function resizeImage(parsedUrl, req, filename) {
                 quality = 80
             }
 
-            let modfilename = `${filename}@${width}x${height}-${quality}${format ? '-' + format : ''}`
+            let modfilename = `${filename}@${width}x${height}-${quality}${fit ? '-' + fit : ''}${format ? '-' + format : ''}`
+
+            if (format) {
+                mimeType = MimeType.detectByExtension(format)
+            }
+
+            exists = true
 
             if (!fs.existsSync(modfilename)) {
                 console.log(`modify file ${filename} to ${modfilename}`)
@@ -465,6 +476,11 @@ async function resizeImage(parsedUrl, req, filename) {
                             quality,
                             alphaQuality: quality,
                             lossless: false,
+                            force: true
+                        }).toFile(modfilename)
+                    } else if( format==='png'){
+                        await resizedFile.png({
+                            quality,
                             force: true
                         }).toFile(modfilename)
                     } else {
@@ -483,7 +499,7 @@ async function resizeImage(parsedUrl, req, filename) {
             }
         }
     }
-    return filename
+    return {filename, exists, mimeType}
 }
 
 async function resolveUploadedFile(uri, parsedUrl, req, res) {
@@ -504,8 +520,11 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
     if (fs.existsSync(filename)) {
 
 
-        filename = await resizeImage(parsedUrl, req, filename)
+        const modImage = await resizeImage(parsedUrl, req, filename)
 
+        if (modImage.exists) {
+            filename = modImage.filename
+        }
 
         const stat = fs.statSync(filename)
 
@@ -525,39 +544,44 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
         let code = 200, streamOption
 
-        let ext = parsedUrl.query.ext
+        if (modImage.mimeType) {
+            headerExtra['Content-Type'] = modImage.mimeType
+        } else {
 
-        if (!ext) {
-            const pos = uri.lastIndexOf('.')
-            if (pos >= 0) {
-                ext = uri.substring(pos + 1).toLocaleLowerCase()
+            let ext = parsedUrl.query.ext
+
+            if (!ext) {
+                const pos = uri.lastIndexOf('.')
+                if (pos >= 0) {
+                    ext = uri.substring(pos + 1).toLocaleLowerCase()
+                }
             }
-        }
-        if (ext) {
-            const mimeType = MimeType.detectByExtension(ext)
+            if (ext) {
+                const mimeType = MimeType.detectByExtension(ext)
 
-            headerExtra['Content-Type'] = mimeType
+                headerExtra['Content-Type'] = mimeType
 
-            if ((ext === 'mp3' || ext === 'mp4' || ext === 'm4a') && !parsedUrl.query.transcode) {
+                if ((ext === 'mp3' || ext === 'mp4' || ext === 'm4a') && !parsedUrl.query.transcode) {
 
-                delete headerExtra['Cache-Control']
-                headerExtra['Accept-Ranges'] = 'bytes'
+                    delete headerExtra['Cache-Control']
+                    headerExtra['Accept-Ranges'] = 'bytes'
 
-                const range = req.headers.range
+                    const range = req.headers.range
 
-                if (req.headers.range) {
-                    const parts = range.replace(/bytes=/, "").split("-"),
-                        partialstart = parts[0],
-                        partialend = parts[1],
-                        start = parseInt(partialstart, 10),
-                        end = partialend ? parseInt(partialend, 10) : stat.size - 1,
-                        chunksize = (end - start) + 1
+                    if (req.headers.range) {
+                        const parts = range.replace(/bytes=/, "").split("-"),
+                            partialstart = parts[0],
+                            partialend = parts[1],
+                            start = parseInt(partialstart, 10),
+                            end = partialend ? parseInt(partialend, 10) : stat.size - 1,
+                            chunksize = (end - start) + 1
 
-                    code = 206
-                    streamOption = {start, end}
-                    headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
-                    headerExtra['Content-Length'] = chunksize
+                        code = 206
+                        streamOption = {start, end}
+                        headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
+                        headerExtra['Content-Length'] = chunksize
 
+                    }
                 }
             }
         }
@@ -649,7 +673,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 if (hostrule.redirects) {
 
                     let redirect = hostrule.redirects[uri]
-                    if( !redirect ){
+                    if (!redirect) {
                         redirect = hostrule.redirects['*']
                     }
                     if (redirect) {
