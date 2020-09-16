@@ -74,3 +74,4 @@ export const getGqlVariables = props => {
 
     return variables
 }
+
