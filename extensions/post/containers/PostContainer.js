@@ -1,14 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import {gql} from '@apollo/client'
 import {connect} from 'react-redux'
 import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import GenericForm from 'client/components/GenericForm'
 import {Row, Col, Typography, SimpleList, DeleteIconButton, SimpleDialog} from 'ui/admin'
 import config from 'gen/config'
+import {graphql} from '../../../client/middleware/graphql'
 
 const {ADMIN_BASE_URL, DEFAULT_RESULT_LIMIT} = config
 import Async from 'client/components/Async'
@@ -171,7 +170,6 @@ PostContainer.propTypes = {
     /* routing params */
     match: PropTypes.object,
     history: PropTypes.object.isRequired,
-    /* apollo client props */
     loading: PropTypes.bool,
     posts: PropTypes.object,
     createPost: PropTypes.func.isRequired,
@@ -189,7 +187,7 @@ const getVariables = () => {
     }
 }
 
-const gqlQuery = gql`query posts($limit: Int, $page: Int, $query: String){posts(limit: $limit, page: $page, query: $query){limit page total results{_id title body status createdBy{_id username}}}}`
+const gqlQuery = `query posts($limit: Int, $page: Int, $query: String){posts(limit: $limit, page: $page, query: $query){limit page total results{_id title body status createdBy{_id username}}}}`
 const PostContainerWithGql = compose(
     graphql(gqlQuery, {
         options() {
@@ -203,7 +201,7 @@ const PostContainerWithGql = compose(
             loading
         })
     }),
-    graphql(gql`mutation createPost($title: String!, $body: String){createPost(title:$title,body:$body){_id title body createdBy{_id username} status}}`, {
+    graphql(`mutation createPost($title: String!, $body: String){createPost(title:$title,body:$body){_id title body createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             createPost: ({title, body}) => {
                 return mutate({
@@ -244,7 +242,7 @@ const PostContainerWithGql = compose(
             }
         }),
     }),
-    graphql(gql`mutation updatePost($_id: ID!,$body: String, $title: String){updatePost(_id:$_id,body:$body,title:$title){_id body title createdBy{_id username} status}}`, {
+    graphql(`mutation updatePost($_id: ID!,$body: String, $title: String){updatePost(_id:$_id,body:$body,title:$title){_id body title createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updatePost: ({_id, body, title}) => {
                 return mutate({
@@ -288,7 +286,7 @@ const PostContainerWithGql = compose(
             }
         }),
     }),
-    graphql(gql`mutation deletePost($_id: ID!){deletePost(_id: $_id){_id status}}`, {
+    graphql(`mutation deletePost($_id: ID!){deletePost(_id: $_id){_id status}}`, {
         props: ({ownProps, mutate}) => ({
             deletePost: ({_id}) => {
                 return mutate({

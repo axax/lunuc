@@ -319,7 +319,6 @@ Here is an example of a scope object:
     },
     "lang": "en",
     "config": {
-      "APOLLO_CACHE": true,
       "DEBUG": true,
       "ADMIN_BASE_URL": "/admin",
       "BACKUP_DIR": "/backups",

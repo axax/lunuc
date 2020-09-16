@@ -32,10 +32,6 @@ import {
     ViewModuleIcon,
     ViewListIcon
 } from 'ui/admin'
-import {Query} from '@apollo/react-components'
-import {withApollo} from '@apollo/react-hoc'
-import {ApolloClient} from '@apollo/client'
-import {gql} from '@apollo/client'
 import Util from 'client/util'
 import TypeEdit from 'client/components/types/TypeEdit'
 import config from 'gen/config'
@@ -60,8 +56,7 @@ const {ADMIN_BASE_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
 import {COLLECTIONS_QUERY} from '../constants'
 import CodeEditor from "../components/CodeEditor";
 import GenericForm from "../components/GenericForm";
-
-const gqlCollectionsQuery = gql(COLLECTIONS_QUERY)
+import {client, graphql, Query} from '../middleware/graphql'
 
 const styles = theme => ({
     textLight: {
@@ -245,7 +240,7 @@ class TypesContainer extends React.Component {
         if (this._renderedTable) {
             return this._renderedTable
         }
-        const {classes, client} = this.props
+        const {classes} = this.props
         const {data, selectedrows} = this.state
         if (data) {
 
@@ -449,7 +444,7 @@ class TypesContainer extends React.Component {
                                     if (e.key === 'import') {
                                         client.query({
                                             fetchPolicy: 'network-only',
-                                            query: gql`query importCollection($collection: String!, $json: String!){importCollection(collection:$collection,json:$json){result}}`,
+                                            query: `query importCollection($collection: String!, $json: String!){importCollection(collection:$collection,json:$json){result}}`,
                                             variables: {
                                                 collection: type,
                                                 json: document.getElementById('importData').value
@@ -504,7 +499,7 @@ class TypesContainer extends React.Component {
                              rowsPerPage={limit} page={page}
                              orderBy={asort[0]}
                              header={this.types[type].collectionClonable &&
-                             <Query query={gqlCollectionsQuery}
+                             <Query query={COLLECTIONS_QUERY}
                                     fetchPolicy="cache-and-network"
                                     variables={{filter: '^' + type + '_.*'}}>
                                  {({loading, error, data}) => {
@@ -568,7 +563,7 @@ class TypesContainer extends React.Component {
     render() {
         const startTime = new Date()
         const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, viewFilterDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
-        const {title, client, classes} = this.props
+        const {title, classes} = this.props
         const {type, layout} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
@@ -784,7 +779,7 @@ class TypesContainer extends React.Component {
 
                                   client.query({
                                       fetchPolicy: 'network-only',
-                                      query: gql`query bulkEdit($collection:String!,$_id:[ID]!,$script:String!){bulkEdit(collection:$collection,_id:$_id,script:$script){result}}`,
+                                      query: `query bulkEdit($collection:String!,$_id:[ID]!,$script:String!){bulkEdit(collection:$collection,_id:$_id,script:$script){result}}`,
                                       variables: {
                                           collection: type,
                                           _id: dataToBulkEdit,
@@ -1087,17 +1082,15 @@ class TypesContainer extends React.Component {
     }
 
     getData({type, page, limit, sort, filter, _version}, cacheFirst, typeChanged) {
-        const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
             if (queries) {
                 const storeKey = this.getStoreKey(type),
-                    variables = {limit, page, sort, _version, filter: this.extendFilter(filter)},
-                    gqlQuery = gql(queries.query)
+                    variables = {limit, page, sort, _version, filter: this.extendFilter(filter)}
                 if (cacheFirst) {
                     try {
                         const storeData = client.readQuery({
-                            query: gqlQuery,
+                            query: queries.query,
                             variables
                         })
                         if (storeData && storeData[storeKey]) {
@@ -1119,7 +1112,7 @@ class TypesContainer extends React.Component {
                 client.query({
                     fetchPolicy: 'network-only',
                     forceFetch: true,
-                    query: gqlQuery,
+                    query: queries.query,
                     variables
                 }).then(response => {
                     const o = response.data[storeKey]
@@ -1142,11 +1135,11 @@ class TypesContainer extends React.Component {
     }
 
     createData(input, optimisticInput, {type, page, limit, sort, filter, _version}) {
-        const {client, user} = this.props
+        const {user} = this.props
         if (type) {
             const queries = getTypeQueries(type)
             return client.mutate({
-                mutation: gql(queries.create),
+                mutation: queries.create,
                 variables: {
                     _version,
                     ...input
@@ -1163,15 +1156,14 @@ class TypesContainer extends React.Component {
                     }
                     this.enhanceOptimisticData(freshData)
 
-                    const gqlQuery = gql(queries.query),
-                        storeKey = this.getStoreKey(type)
+                    const storeKey = this.getStoreKey(type)
                     const extendedFilter = this.extendFilter(filter)
 
-                    const variables = {page, limit, sort, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort, _version, filter: extendedFilter}
 
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
-                        query: gqlQuery,
+                        query: queries.query,
                         variables
                     })
                     if (storeData[storeKey]) {
@@ -1182,7 +1174,7 @@ class TypesContainer extends React.Component {
                             newData.total += 1
                         }
                         store.writeQuery({
-                            query: gqlQuery,
+                            query: queries.query,
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
@@ -1196,32 +1188,28 @@ class TypesContainer extends React.Component {
     }
 
     updateData(changedData, optimisticData, {type, page, limit, sort, filter, _version}) {
-        const {client} = this.props
         if (type) {
             const queries = getTypeQueries(type)
             return client.mutate({
-                mutation: gql(queries.update),
+                mutation: queries.update,
                 /* only send what has changed*/
                 variables: {_version, ...changedData},
                 update: (store, {data}) => {
-                    const gqlQuery = gql(queries.query),
-                        storeKey = this.getStoreKey(type),
+                    const storeKey = this.getStoreKey(type),
                         responseItem = data['update' + type]
 
                     const extendedFilter = this.extendFilter(filter)
 
-                    const variables = {page, limit, sort, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort, _version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
-                        query: gqlQuery,
+                        query: queries.query,
                         variables
                     })
 
-
-                    if (storeData[storeKey]) {
+                    if (storeData && storeData[storeKey]) {
                         // find entry in result list
                         const newData = {...storeData[storeKey], results: [...storeData[storeKey].results]}
-
                         const refResults = newData.results
                         const idx = refResults.findIndex(x => x._id === responseItem._id)
                         if (idx > -1) {
@@ -1230,7 +1218,7 @@ class TypesContainer extends React.Component {
                             this.enhanceOptimisticData(refResults[idx])
                             // wirte it back to the cache
                             store.writeQuery({
-                                query: gqlQuery,
+                                query: queries.query,
                                 variables,
                                 data: {...storeData, [storeKey]: newData}
                             })
@@ -1246,26 +1234,23 @@ class TypesContainer extends React.Component {
 
 
     deleteData({type, page, limit, sort, filter, _version}, ids) {
-        const {client} = this.props
-
         if (type && ids.length > 0) {
 
             const queries = getTypeQueries(type),
                 storeKey = this.getStoreKey(type)
             client.mutate({
-                mutation: gql(ids.length > 1 ? queries.deleteMany : queries.delete),
+                mutation: (ids.length > 1 ? queries.deleteMany : queries.delete),
                 variables: {
                     _version,
                     _id: ids.length > 1 ? ids : ids[0]
                 },
                 update: (store, {data}) => {
-                    const gqlQuery = gql(queries.query)
                     const extendedFilter = this.extendFilter(filter)
 
-                    const variables = {page, limit, sort, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort, _version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
-                        query: gqlQuery,
+                        query: queries.query,
                         variables
                     })
                     if (storeData[storeKey]) {
@@ -1289,7 +1274,7 @@ class TypesContainer extends React.Component {
                         }
 
                         store.writeQuery({
-                            query: gqlQuery,
+                            query: queries.query,
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
@@ -1305,7 +1290,7 @@ class TypesContainer extends React.Component {
 
 
     cloneData({type, page, limit, sort, filter, _version}, clonable) {
-        const {client, user} = this.props
+        const {user} = this.props
 
         if (type) {
 
@@ -1313,7 +1298,7 @@ class TypesContainer extends React.Component {
                 storeKey = this.getStoreKey(type)
 
             client.mutate({
-                mutation: gql(queries.clone),
+                mutation: queries.clone,
                 variables: {_version, ...clonable},
                 update: (store, {data}) => {
                     const freshData = {
@@ -1325,14 +1310,13 @@ class TypesContainer extends React.Component {
                         }
                     }
 
-                    const gqlQuery = gql(queries.query),
-                        storeKey = this.getStoreKey(type)
+                    const storeKey = this.getStoreKey(type)
 
                     const extendedFilter = this.extendFilter(filter)
                     const variables = {limit, page, sort, _version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
-                        query: gqlQuery,
+                        query: queries.query,
                         variables
                     })
                     if (storeData[storeKey]) {
@@ -1343,7 +1327,7 @@ class TypesContainer extends React.Component {
                             newData.total += 1
                         }
                         store.writeQuery({
-                            query: gqlQuery,
+                            query: queries.query,
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
@@ -1358,9 +1342,8 @@ class TypesContainer extends React.Component {
 
     cloneCollection({type, name}) {
         if (type) {
-            const {client} = this.props
             client.mutate({
-                mutation: gql`mutation cloneCollection($type:String!,$name:String){cloneCollection(type:$type,name:$name){collection{name}}}`,
+                mutation: `mutation cloneCollection($type:String!,$name:String){cloneCollection(type:$type,name:$name){collection{name}}}`,
                 variables: {name, type},
                 update: (store, {data}) => {
 
@@ -1370,7 +1353,7 @@ class TypesContainer extends React.Component {
 
                         // Read the data from the cache for this query.
                         const storeData = store.readQuery({
-                            query: gqlCollectionsQuery,
+                            query: COLLECTIONS_QUERY,
                             variables
                         })
                         if (storeData.collections) {
@@ -1378,7 +1361,7 @@ class TypesContainer extends React.Component {
 
                             newData.results.push(data.cloneCollection.collection)
                             store.writeQuery({
-                                query: gqlCollectionsQuery,
+                                query: COLLECTIONS_QUERY,
                                 variables,
                                 data: {...storeData, collections: newData}
                             })
@@ -1542,7 +1525,6 @@ class TypesContainer extends React.Component {
 }
 
 TypesContainer.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     history: PropTypes.object.isRequired,
     location: PropTypes.object.isRequired,
     match: PropTypes.object.isRequired,
@@ -1566,4 +1548,4 @@ const mapStateToProps = (store) => ({user: store.user})
 
 export default connect(
     mapStateToProps
-)(withApollo(withStyles(styles)(withKeyValues(TypesContainer, ['TypesContainerSettings', 'TypesContainerBulkEdit']))))
+)(withStyles(styles)(withKeyValues(TypesContainer, ['TypesContainerSettings', 'TypesContainerBulkEdit'])))

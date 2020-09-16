@@ -18,7 +18,7 @@ https://www.lunuc.com/
 * Database-as-a-Service by mlap.com
 * GraphQL API
 * Express Server
-* Apollo GraphQL Client
+* GraphQL Client
 * Optimistic UI
 * Persist and Rehydrate / Cache Data
 * Authentication 

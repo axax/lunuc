@@ -1,27 +1,26 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {gql} from '@apollo/client'
-import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
 import {connect} from 'react-redux'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import {getKeyValuesFromLS, setKeyValueToLS} from 'client/util/keyvalue'
+import {graphql} from '../../middleware/graphql'
 
-const gqlKeyValueQuery = gql`query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}`,
-    gqlKeyValueGlobalsQuery = gql`query keyValueGlobals($keys:[String]){keyValueGlobals(keys:$keys){limit offset total results{key value status} }}`,
-    gqlKeyValueUpdate = gql`
+const gqlKeyValueQuery = `query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}`,
+    gqlKeyValueGlobalsQuery = `query keyValueGlobals($keys:[String]){keyValueGlobals(keys:$keys){limit offset total results{key value status} }}`,
+    gqlKeyValueUpdate = `
           mutation setKeyValue($key: String!, $value: String!) {
             setKeyValue(key: $key, value: $value){
                 key value status createdBy{_id username}
             }
           }`,
-    gqlKeyValueGlobalUpdate = gql`
+    gqlKeyValueGlobalUpdate = `
           mutation setKeyValueGlobal($key: String!, $value: String!) {
             setKeyValueGlobal(key: $key, value: $value){
                 key value status
             }
           }`,
-    gqlKeyValueDelete = gql`
+    gqlKeyValueDelete = `
           mutation deleteKeyValueByKey($key: String!) {
             deleteKeyValueByKey(key: $key){
                 key status
@@ -129,7 +128,6 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
         graphql(gqlKeyValueQuery, {
             skip: props => !props.kvUser.isAuthenticated || !keys, // skip request if user is not logged in
             options() {
-
                 const variables = {keys: keys}
                 return {
                     variables,

@@ -298,9 +298,9 @@ const Util = {
     userCanSubscribe: async (db, context, type, payload)=>{
         const typeDefinition = getType(type)
         if( typeDefinition.access && typeDefinition.access.subscribe ){
-            return Util.userHasCapability(db, context, typeDefinition.access.subscribe)
+            return await Util.userHasCapability(db, context, typeDefinition.access.subscribe)
         }else{
-            return Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+            return await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
         }
         return false
 

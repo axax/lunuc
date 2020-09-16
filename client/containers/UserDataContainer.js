@@ -3,11 +3,8 @@ import PropTypes from 'prop-types'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import * as UserActions from 'client/actions/UserAction'
-import {withApollo} from '@apollo/react-hoc'
-import {gql} from '@apollo/client'
-import {ApolloClient} from '@apollo/client'
 import {USER_DATA_QUERY} from '../constants'
-import {client as gClient} from '../middleware/graphql'
+import {client} from '../middleware/graphql'
 
 class UserDataContainer extends React.PureComponent {
     state = {
@@ -18,14 +15,14 @@ class UserDataContainer extends React.PureComponent {
     }
 
     getUserData = () => {
-        const {client, userActions} = this.props
+        const {userActions} = this.props
         localStorage.setItem('refreshUserData', null)
+
         client.query({
             fetchPolicy: (_app_.lang !== _app_.langBefore || this.state.force ? 'network-only' : 'cache-first'),
-            query: gql(USER_DATA_QUERY)
+            query: USER_DATA_QUERY
         }).then(response => {
             _app_.user = response.data.me
-
             userActions.setUser(response.data.me, !!response.data.me)
             this.setState({loading: false, loaded: true})
         }).catch(error => {
@@ -41,8 +38,12 @@ class UserDataContainer extends React.PureComponent {
         return null
     }
 
-    render() {
+    componentDidCatch(error, errorInfo) {
+        // You can also log the error to an error reporting service
+        console.log(error, errorInfo)
+    }
 
+    render() {
         if (this.state.loading && this.state.token != '') {
             this.getUserData()
             return null
@@ -53,7 +54,6 @@ class UserDataContainer extends React.PureComponent {
 
 
 UserDataContainer.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     children: PropTypes.object.isRequired,
     /* UserReducer */
     userActions: PropTypes.object.isRequired
@@ -76,16 +76,10 @@ const mapDispatchToProps = (dispatch) => ({
 
 
 /**
- * Make ApolloClient accessable
- */
-const UserDataContainerWithApollo = withApollo(UserDataContainer)
-
-
-/**
  * Connect the component to
  * the Redux store.
  */
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(UserDataContainerWithApollo)
+)(UserDataContainer)

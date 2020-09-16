@@ -24,7 +24,7 @@ export const typeDataToLabel = (item, pickerField) => {
 
     pickers.forEach(key => {
         if (item[key]) {
-            if (item[key] && item[key].__typename === 'LocalizedString') {
+            if (item[key] && item[key].constructor === Object) {
                 if (item[key][_app_.lang]) {
                     label.push(item[key][_app_.lang])
                 }

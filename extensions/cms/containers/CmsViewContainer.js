@@ -1,14 +1,13 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {gql} from '@apollo/client'
 import JsonDom from '../components/JsonDom'
 import config from 'gen/config'
-import {ApolloClient} from '@apollo/client'
 import Util from 'client/util'
 import DomUtil from 'client/util/dom'
 import {getType} from 'util/types'
-import {isEditMode, getSlugVersion, gqlQuery} from '../util/cmsView'
+import {isEditMode, getSlugVersion, CMS_PAGE_QUERY} from '../util/cmsView'
 import withCms from './withCms'
+import {client} from '../../../client/middleware/graphql'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -44,10 +43,10 @@ class CmsViewContainer extends React.Component {
         // only update if it is needed
         return !cmsPage ||
             !cmsPageOld ||
+            props.loading !== this.props.loading ||
             cmsPage.slug !== cmsPageOld.slug ||
             cmsPage.modifiedAt !== cmsPageOld.modifiedAt ||
             cmsPage.resolvedData !== cmsPageOld.resolvedData ||
-            (!props.renewing && this.props.renewing) ||
             (
                 cmsPage.urlSensitiv && (
                     props.location.search !== this.props.location.search ||
@@ -121,6 +120,7 @@ class CmsViewContainer extends React.Component {
                         query
                     },
                     updateQuery: (prev, {fetchMoreResult}) => {
+
                         cb(fetchMoreResult)
                     }
                 })
@@ -200,7 +200,7 @@ class CmsViewContainer extends React.Component {
     setUpSubsciptions(props) {
         if (!props.cmsPage) return
 
-        const {cmsPage: {subscriptions}, client, slug} = props
+        const {cmsPage: {subscriptions}, slug} = props
         if (!subscriptions) return
 
         // remove unsed subscriptions
@@ -236,7 +236,7 @@ class CmsViewContainer extends React.Component {
                                 //query += ' ' + name + '{_id name}'
                             } else {
                                 if (localized) {
-                                    query += ' ' + name + '{' + _app_.lang + '}'
+                                    query += ' ' + name + '{__typename ' + _app_.lang + '}'
                                 } else {
                                     query += ' ' + name
                                 }
@@ -247,7 +247,7 @@ class CmsViewContainer extends React.Component {
                 }
 
                 if (!query) return
-                const qqlSubscribe = gql`subscription{${subscriptionName}{${query}}}`
+                const qqlSubscribe = `subscription{${subscriptionName}{${query}}}`
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,
                     variables: {}
@@ -266,7 +266,7 @@ class CmsViewContainer extends React.Component {
                         const {action, data} = supscriptionData.data['subscribe' + subs]
                         if (data) {
                             const storedData = client.readQuery({
-                                query: gqlQuery(),
+                                query: CMS_PAGE_QUERY,
                                 variables: _this.props.cmsPageVariables
                             })
 
@@ -321,7 +321,7 @@ class CmsViewContainer extends React.Component {
 
                                     // save new data
                                     client.writeQuery({
-                                        query: gqlQuery(),
+                                        query: CMS_PAGE_QUERY,
                                         variables: _this.props.cmsPageVariables,
                                         data: newStoreData
                                     })
@@ -339,21 +339,19 @@ class CmsViewContainer extends React.Component {
 
 
     clientQuery(query, options) {
-        const {client} = this.props
         if (!query || query.constructor !== String) return
 
         const {success, error, ...rest} = options
 
         if (query.startsWith('mutation')) {
             client.mutate({
-                mutation: gql(query),
+                mutation: query,
                 ...rest
             }).then(success).catch(error)
         } else {
             client.query({
                 fetchPolicy: 'network-only',
-                forceFetch: true,
-                query: gql(query),
+                query: query,
                 ...rest
             }).then(success).catch(error)
         }
@@ -362,10 +360,9 @@ class CmsViewContainer extends React.Component {
 
     serverMethod(methodName, args, cb) {
         const {slug, _version} = getSlugVersion(this.props.slug)
-        this.props.client.query({
+        client.query({
             fetchPolicy: 'network-only',
-            forceFetch: true,
-            query: gql('query cmsServerMethod($slug:String!,$methodName:String!,$args:String,$_version:String,$dynamic:Boolean){cmsServerMethod(slug:$slug,methodName:$methodName,args:$args,_version:$_version,dynamic:$dynamic){result}}'),
+            query: 'query cmsServerMethod($slug:String!,$methodName:String!,$args:String,$_version:String,$dynamic:Boolean){cmsServerMethod(slug:$slug,methodName:$methodName,args:$args,_version:$_version,dynamic:$dynamic){result}}',
             variables: {
                 _version,
                 slug,
@@ -380,10 +377,7 @@ class CmsViewContainer extends React.Component {
 
 
 CmsViewContainer.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
-    renewing: PropTypes.bool,
-    aboutToChange: PropTypes.bool,
     fetchMore: PropTypes.func,
     children: PropTypes.any,
     cmsPageVariables: PropTypes.object,

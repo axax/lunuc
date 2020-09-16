@@ -1,7 +1,6 @@
 import Util from '../../../client/util'
 import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants'
 import {NO_SESSION_KEY_VALUES_SERVER} from '../../../client/constants'
-import {gql} from '@apollo/client'
 import config from 'gen/config'
 
 //map with slugs that are url sensitive
@@ -12,12 +11,7 @@ export const settingKeyPrefix = 'CmsViewContainerSettings'
 
 // the graphql query is also need to access and update the cache when data arrive from a subscription
 let _gqlQuery
-export const gqlQuery = ()=>{
-    if(!_gqlQuery) {
-        _gqlQuery = gql`query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$dynamic:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,dynamic:$dynamic,_version:$_version){cacheKey slug realSlug name{${config.LANGUAGES.join(' ')}} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData style parseResolvedData alwaysLoadAssets ssrStyle compress html subscriptions _id modifiedAt createdBy{_id username} status}}`
-    }
-    return _gqlQuery
-}
+export const CMS_PAGE_QUERY = `query cmsPage($slug:String!,$query:String,$props:String,$nosession:String,$editmode:Boolean,$dynamic:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,props:$props,nosession:$nosession,editmode:$editmode,dynamic:$dynamic,_version:$_version){slug realSlug name{__typename ${config.LANGUAGES.join(' ')}} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData style parseResolvedData alwaysLoadAssets ssrStyle compress html subscriptions _id modifiedAt createdBy{_id username} status}}`
 
 export const isPreview = () => {
     const params = new URLSearchParams(window.location.search)
@@ -66,7 +60,7 @@ export const getGqlVariables = props => {
         }
     }
     // add query if page is url sensitiv
-    if (urlSensitiv === true || (!dynamic && urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
+    if (urlSensitiv === true  || (!dynamic && urlSensitiv === undefined && (urlSensitivMap[slug] || urlSensitivMap[slug] === undefined))) {
         const q = window.location.search.substring(1)
         if (q)
             variables.query = q

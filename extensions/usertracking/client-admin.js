@@ -4,8 +4,10 @@ import _t from '../../util/i18n'
 import {
     SimpleSwitch
 } from 'ui/admin'
-import CmsViewEditorContainer from '../../extensions/cms/containers/CmsViewEditorContainer'
 import Util from '../../client/util'
+import {
+    generalSettingsKeys
+} from '../../extensions/cms/util/cmsViewEditor'
 
 export default () => {
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
@@ -46,8 +48,8 @@ export default () => {
 
         }
         if (!isSmallScreen) {
-            if (CmsViewEditorContainer.generalSettingsKeys.indexOf('tracking') < 0) {
-                CmsViewEditorContainer.generalSettingsKeys.push('tracking')
+            if (generalSettingsKeys.indexOf('tracking') < 0) {
+                generalSettingsKeys.push('tracking')
             }
             toolbarRight.splice(2, 0, <SimpleSwitch key="usertrackingSwitch" color="default"
                                                     checked={!!settings.tracking}

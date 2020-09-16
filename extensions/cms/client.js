@@ -24,7 +24,6 @@ const ErrorPage = (props) => <Async {...props}
     return 'yy'
 }*/
 
-
 // add redux reducer
 Hook.on('reducer', ({reducers}) => {
     reducers.cms = CmsReducer

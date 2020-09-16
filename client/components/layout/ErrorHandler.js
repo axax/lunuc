@@ -12,6 +12,10 @@ class ErrorHandler extends React.Component {
         this.props.actions.clearError(key)
     }
 
+    componentWillUnmount() {
+        this.props.actions.clearErrors()
+    }
+
     render() {
         const {messages, snackbar} = this.props
         if (!messages || !Object.keys(messages).length)

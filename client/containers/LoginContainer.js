@@ -3,9 +3,6 @@ import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
 import {Redirect} from 'react-router-dom'
-import {withApollo} from '@apollo/react-hoc'
-import {gql} from '@apollo/client'
-import { ApolloClient } from '@apollo/client'
 import {Link} from 'react-router-dom'
 import * as UserActions from 'client/actions/UserAction'
 import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
@@ -14,6 +11,7 @@ import config from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
 import Util from 'client/util'
 import DomUtil from '../util/dom'
+import {client} from 'client/middleware/graphql'
 
 class LoginContainer extends React.Component {
     state = {
@@ -53,33 +51,29 @@ class LoginContainer extends React.Component {
         e.preventDefault()
 
         this.setState({loading: true, error: null})
-        const {client, userActions, errorHandlerAction} = this.props
+        const {userActions, errorHandlerAction} = this.props
 
         client.query({
             fetchPolicy: 'no-cache',
-            query: gql`query login($username:String!,$password:String!){login(username:$username,password:$password){token error user{username email _id role{_id capabilities}}}}`,
+            query: 'query login($username:String!,$password:String!){login(username:$username,password:$password){token error user{username email _id role{_id capabilities}}}}',
             variables: {
                 username: this.state.username,
                 password: this.state.password
-            },
-            operationName: 'login'
+            }
         }).then( response => {
             this.setState({loading: false})
             if (response.data && response.data.login) {
 
                 if (!response.data.login.error) {
                     // clear cache completely
-                    client.resetStore().then(()=>{
-                        localStorage.setItem('token', response.data.login.token)
-                        userActions.setUser(response.data.login.user, true)
-                        errorHandlerAction.clearErrors()
+                    client.resetStore()
+                    localStorage.setItem('token', response.data.login.token)
+                    userActions.setUser(response.data.login.user, true)
+                    errorHandlerAction.clearErrors()
 
-
-                        //this.setState({redirectToReferrer: true})
-                        // make sure translations are loaded
-                        window.location = this.getFromUrl().pathname
-
-                    })
+                    //this.setState({redirectToReferrer: true})
+                    // make sure translations are loaded
+                    window.location = this.getFromUrl().pathname
 
                 } else {
                     this.setState({error: response.data.login.error})
@@ -182,7 +176,6 @@ class LoginContainer extends React.Component {
 
 
 LoginContainer.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     location: PropTypes.object,
     signupLink: PropTypes.string,
     /* UserReducer */
@@ -206,9 +199,6 @@ const mapDispatchToProps = (dispatch) => ({
     errorHandlerAction: bindActionCreators(ErrorHandlerAction, dispatch)
 })
 
-
-const LoginContainerWithApollo = withApollo(LoginContainer)
-
 /**
  * Connect the component to
  * the Redux store.
@@ -216,4 +206,4 @@ const LoginContainerWithApollo = withApollo(LoginContainer)
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(LoginContainerWithApollo)
+)(LoginContainer)

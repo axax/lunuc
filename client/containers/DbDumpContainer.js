@@ -1,8 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import {gql} from '@apollo/client'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {
     SimpleButton,
@@ -19,6 +17,7 @@ import {
 import FileDrop from 'client/components/FileDrop'
 import Util from 'client/util'
 import config from 'gen/config'
+import {graphql, client} from '../middleware/graphql'
 
 const {BACKUP_URL} = config
 
@@ -42,7 +41,6 @@ class DbDumpContainer extends React.Component {
     createDump() {
         this.setState({creatingDump: true})
         this.props.createDbDump().then(e => {
-            console.log(e)
             this.setState({creatingDump: false})
         })
 
@@ -51,7 +49,6 @@ class DbDumpContainer extends React.Component {
     createMediaDump() {
         this.setState({creatingMediaDump: true})
         this.props.createMediaDump().then(e => {
-            console.log(e)
             this.setState({creatingMediaDump: false})
         })
 
@@ -203,7 +200,6 @@ class DbDumpContainer extends React.Component {
 
 
 DbDumpContainer.propTypes = {
-    /* apollo client props */
     dbDumps: PropTypes.object,
     createDbDump: PropTypes.func.isRequired,
     createMediaDump: PropTypes.func.isRequired,
@@ -211,12 +207,12 @@ DbDumpContainer.propTypes = {
     mediaDumps: PropTypes.object
 }
 
-const gqlQuery = gql`query{dbDumps{results{name createdAt size}}}`
-const gqlUpdate = gql`mutation createDbDump($type:String){createDbDump(type:$type){name createdAt size}}`
-const gqlRemove = gql`mutation removeDbDump($name:String!){removeDbDump(name:$name){status}}`
-const gqlQueryMedia = gql`query{mediaDumps{results{name createdAt size}}}`
-const gqlUpdateMedia = gql`mutation createMediaDump($type:String){createMediaDump(type:$type){name createdAt size}}`
-const gqlRemoveMedia = gql`mutation removeMediaDump($name:String!){removeMediaDump(name:$name){status}}`
+const gqlQuery = `query{dbDumps{results{name createdAt size}}}`
+const gqlUpdate = `mutation createDbDump($type:String){createDbDump(type:$type){name createdAt size}}`
+const gqlRemove = `mutation removeDbDump($name:String!){removeDbDump(name:$name){status}}`
+const gqlQueryMedia = `query{mediaDumps{results{name createdAt size}}}`
+const gqlUpdateMedia = `mutation createMediaDump($type:String){createMediaDump(type:$type){name createdAt size}}`
+const gqlRemoveMedia = `mutation removeMediaDump($name:String!){removeMediaDump(name:$name){status}}`
 
 const DbDumpContainerWithGql = compose(
     graphql(gqlQuery, {
@@ -265,12 +261,10 @@ const DbDumpContainerWithGql = compose(
 
                         const newData = {...storeData.dbDumps, results: [...storeData.dbDumps.results]}
 
-
                         const idx = newData.results.findIndex(x => x.name === name)
                         if (idx > -1) {
                             newData.results.splice(idx, 1)
                             proxy.writeQuery({query: gqlQuery, data: {...storeData, dbDumps: newData}})
-
                         }
                     }
 

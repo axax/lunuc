@@ -54,7 +54,7 @@ const DomUtil = {
             if (key === 'style' && attrs[key].constructor === Object) {
                 tag[key] = DomUtil.styleObjectToString(attrs[key])
             } else if (attrs[key])
-                if(key==='innerHTML' || key==='innerText'){
+                if(key==='innerHTML' || key==='innerText' || key==='onload'){
                     tag[key] = attrs[key]
                 }else {
                     tag.setAttribute(key, attrs[key])

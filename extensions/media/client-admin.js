@@ -2,7 +2,6 @@ import React, {useState} from 'react'
 import Hook from 'util/hook'
 import Async from 'client/components/Async'
 import config from 'gen/config'
-import {gql} from '@apollo/client'
 import Util from '../../client/util'
 import DomUtil from '../../client/util/dom'
 import {
@@ -13,7 +12,8 @@ import {
 
 const {UPLOAD_URL, ADMIN_BASE_URL} = config
 import _t from 'util/i18n'
-import UploadUtil from "../../client/util/upload";
+import UploadUtil from '../../client/util/upload'
+import {client} from 'client/middleware/graphql'
 
 const FileDrop = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>
@@ -74,8 +74,8 @@ export default () => {
                         this.state.data.results.forEach(item => {
                           ids.push(item._id)
                         })
-                        this.props.client.mutate({
-                            mutation: gql`mutation createMediaDump($type:String,$ids:[ID]){createMediaDump(type:$type,ids:$ids){name createdAt size}}`,
+                        client.mutate({
+                            mutation: `mutation createMediaDump($type:String,$ids:[ID]){createMediaDump(type:$type,ids:$ids){name createdAt size}}`,
                             variables: {ids},
                             update: (store, {data: {createMediaDump}}) => {
                                 if (createMediaDump) {
@@ -87,10 +87,10 @@ export default () => {
                 },
                 {
                     name: 'Find references for all medias', onClick: () => {
-                        this.props.client.query({
+                        client.query({
                             fetchPolicy: 'network-only',
                             forceFetch: true,
-                            query: gql('{findReferencesForMedia{status}}')
+                            query: '{findReferencesForMedia{status}}'
                         }).then(response => {
                             if (response.data && response.data.findReferencesForMedia) {
                                 this.setState({simpleDialog: {children: response.data.findReferencesForMedia.status}})
@@ -100,10 +100,10 @@ export default () => {
                 },
                 {
                     name: 'CleanUp Medias', onClick: () => {
-                        this.props.client.query({
+                        client.query({
                             fetchPolicy: 'network-only',
                             forceFetch: true,
-                            query: gql('{cleanUpMedia{status}}')
+                            query: '{cleanUpMedia{status}}'
                         }).then(response => {
                             if (response.data && response.data.cleanUpMedia) {
                                 this.setState({simpleDialog: {children: response.data.cleanUpMedia.status}})

@@ -1,7 +1,6 @@
 import React from 'react'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
-import {gql} from '@apollo/client'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {
     Typography,
@@ -15,13 +14,11 @@ import {
 } from 'ui/admin'
 import Util from 'client/util'
 import CodeEditor from 'client/components/CodeEditor'
-import {withApollo} from '@apollo/react-hoc'
-import {Query} from '@apollo/react-components'
 import {COMMAND_QUERY} from '../constants'
 import PropTypes from 'prop-types'
-import {ApolloClient} from '@apollo/client'
 import * as NotificationAction from 'client/actions/NotificationAction'
 import config from 'gen/config'
+import {Query, client} from '../middleware/graphql'
 
 class FilesContainer extends React.Component {
 
@@ -62,7 +59,7 @@ class FilesContainer extends React.Component {
         }
 
         let fileEditor = file &&
-            <Query query={gql(COMMAND_QUERY)}
+            <Query query={COMMAND_QUERY}
                    fetchPolicy="cache-and-network"
                    variables={{sync: true, command: 'less -f -L ' + space+dir + '/' + file}}>
                 {({loading, error, data}) => {
@@ -107,7 +104,7 @@ class FilesContainer extends React.Component {
                             }
                         }}/>
 
-                    <Query query={gql(COMMAND_QUERY)}
+                    <Query query={COMMAND_QUERY}
                            fetchPolicy="cache-and-network"
                            variables={{sync: true, command}}>
                         {({loading, error, data}) => {
@@ -216,7 +213,7 @@ class FilesContainer extends React.Component {
     fileChange(file, content) {
         clearTimeout(this._fileChange)
         this._fileChange = setTimeout(() => {
-            this.props.client.query({
+            client.query({
                 fetchPolicy: 'no-cache',
                 query: gql(COMMAND_QUERY),
                 variables: {
@@ -233,7 +230,6 @@ class FilesContainer extends React.Component {
 
 
 FilesContainer.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     notificationAction: PropTypes.object.isRequired,
     file: PropTypes.string,
     space: PropTypes.string,
@@ -263,4 +259,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withApollo(FilesContainer))
+)(FilesContainer)

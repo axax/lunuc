@@ -21,27 +21,29 @@ import config from 'gen/config'
 import * as UserActions from 'client/actions/UserAction'
 import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
-import {withKeyValues} from '../../containers/generic/withKeyValues'
 import {useHistory} from 'react-router-dom'
 import {Link} from 'react-router-dom'
+import {useUserKeys} from '../../util/keyvalue'
 
 import {CAPABILITY_MANAGE_TYPES} from "../../../util/capabilities";
 
 const {ADMIN_BASE_URL, APP_NAME} = config
 
-let menuItems
+let menuItems = []
 
 const BaseLayout = props => {
-    const {children, isAuthenticated, user, keyValueMap} = props
+    const {children, isAuthenticated, user} = props
 
-    if (!menuItems) {
-        menuItems = [
+    const userKeys = useUserKeys(['BaseLayoutSettings'])
+
+    if (!userKeys.loading && menuItems.length===0) {
+        menuItems.push(
             {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>},
             {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
             {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon/>},
             {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon/>},
             {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}
-        ]
+        )
 
 
         const capabilities = (user.userData && user.userData.role && user.userData.role.capabilities) || []
@@ -53,18 +55,18 @@ const BaseLayout = props => {
 
         Hook.call('MenuMenu', {menuItems})
 
-    }
+        const settings = userKeys.data.BaseLayoutSettings
 
-    const username = user.userData ? user.userData.username : ''
-    const settings = keyValueMap.BaseLayoutSettings
-
-    if (settings && settings.menu && settings.menu.hide) {
-        for (let i = menuItems.length - 1; i >= 0; i--) {
-            if (settings.menu.hide.indexOf(menuItems[i].name) >= 0) {
-                menuItems.splice(i, 1)
+        if (settings && settings.menu && settings.menu.hide) {
+            for (let i = menuItems.length - 1; i >= 0; i--) {
+                if (settings.menu.hide.indexOf(menuItems[i].name) >= 0) {
+                    menuItems.splice(i, 1)
+                }
             }
         }
     }
+
+    const username = user.userData ? user.userData.username : ''
 
     const history = useHistory()
 
@@ -76,8 +78,8 @@ const BaseLayout = props => {
                                     border: '1px solid #f1f1f1',
                                     margin: '1rem',
                                     fontSize: '0.8rem'
-                                }}>{history._urlStack.map(u => {
-                                    return <Link style={{display: 'block', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                }}>{history._urlStack.map((u,i) => {
+                                    return <Link key={'urlstack'+i} style={{display: 'block', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                         overflow: 'hidden' }} to={u}>{u}</Link>
                                 })}</div>}
                                 headerRight={
@@ -118,7 +120,6 @@ BaseLayout.propTypes = {
     user: PropTypes.object,
     /* User Reducer */
     userActions: PropTypes.object.isRequired,
-    keyValueMap: PropTypes.object
 }
 
 
@@ -149,4 +150,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withKeyValues(BaseLayout, ['BaseLayoutSettings']))
+)(BaseLayout)

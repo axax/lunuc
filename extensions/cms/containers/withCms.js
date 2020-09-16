@@ -1,9 +1,7 @@
 import React from 'react'
-import {graphql, withApollo} from '@apollo/react-hoc'
 import {connect} from 'react-redux'
-import {gql} from '@apollo/client'
 import {
-    getGqlVariables, gqlQuery, isEditMode, urlSensitivMap,
+    getGqlVariables, CMS_PAGE_QUERY, isEditMode, urlSensitivMap,
     settingKeyPrefix
 } from '../util/cmsView'
 import Async from 'client/components/Async'
@@ -11,6 +9,7 @@ import compose from '../../../util/compose'
 import DomUtil from '../../../client/util/dom'
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
 import {setPropertyByPath} from "../../../client/util/json";
+import {client, graphql} from '../../../client/middleware/graphql'
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}
@@ -29,9 +28,9 @@ export default function (WrappedComponent) {
         }
 
         render() {
-            const {slug, dynamic, cmsPage, loading, aboutToChange} = this.props
+            const {slug, dynamic, cmsPage, loading} = this.props
             if (!cmsPage) {
-                if (!loading && !aboutToChange) {
+                if (!loading) {
                     console.warn(`cmsPage ${slug} missing`)
                     if (!dynamic) {
 
@@ -56,11 +55,6 @@ export default function (WrappedComponent) {
                                                            WrappedComponent={WrappedComponent} {...this.props}
                                                            cmsPage={{name: {}}}/>
                         } else {
-
-                            if(_app_.redirect404 && _app_.redirect404!==location.pathname){
-                                location.href = _app_.redirect404
-                                return null
-                            }
                             return <ErrorPage/>
                         }
                     } else {
@@ -84,7 +78,7 @@ export default function (WrappedComponent) {
 
         setKeyValue({key, value, server, internal, callback}) {
 
-            const {client, user, cmsPage, slug} = this.props
+            const {user, cmsPage, slug} = this.props
             if (!key || !value || !cmsPage) {
                 return
             }
@@ -110,7 +104,7 @@ export default function (WrappedComponent) {
 
             if (user.isAuthenticated) {
                 client.mutate({
-                    mutation: gql`mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}`,
+                    mutation: 'mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}',
                     variables,
                     update: (store, {data: {setKeyValue}}) => {
                         if(callback){
@@ -176,10 +170,10 @@ export default function (WrappedComponent) {
 
         updateResolvedData({json, path, value}) {
 
-            const {client, cmsPageVariables, cmsPage} = this.props
+            const {cmsPageVariables, cmsPage} = this.props
 
             const storeData = client.readQuery({
-                query: gqlQuery(),
+                query: CMS_PAGE_QUERY,
                 variables: cmsPageVariables
             })
 
@@ -194,7 +188,7 @@ export default function (WrappedComponent) {
                     newData.resolvedData = JSON.stringify(json)
                 }
                 client.writeQuery({
-                    query: gqlQuery(),
+                    query: CMS_PAGE_QUERY,
                     variables: cmsPageVariables,
                     data: {...storeData, cmsPage: newData}
                 })
@@ -203,8 +197,7 @@ export default function (WrappedComponent) {
         }
     }
     const withGql = compose(
-        graphql(gqlQuery(), {
-            skip: props => props.aboutToChange,
+        graphql(CMS_PAGE_QUERY, {
             options(ownProps) {
                 return {
                     /*context: {fetchOptions: {method: ownProps.dynamic?'POST':'GET'}},*/
@@ -219,38 +212,10 @@ export default function (WrappedComponent) {
                     loading,
                     fetchMore,
                     cmsPage,
-                    renewing: false,
-                    aboutToChange: false,
                     networkStatus
                 }
-
                 if (cmsPage) {
-                    if (variables.slug !== cmsPage.slug) {
-                        // we define a new state here when component is reused with a new slug
-                        result.aboutToChange = true
-                    } else {
-                        // check if query changed
-                        let query = cmsPage.cacheKey.split('#')[0]
-                        if (!query) query = undefined
-                        if (query !== variables.query) {
-                            // renewing is another state
-                            // the difference to loading is that it is set to true if the page has already been loading before
-                            result.renewing = true
-                        }
-                    }
                     urlSensitivMap[cmsPage.slug] = !!cmsPage.urlSensitiv
-
-                    if (!loading && !cmsPage.urlSensitiv && variables.query) {
-                        console.log('update cache')
-                        // update cache to avoid second unneeded request
-                        const data = ownProps.client.readQuery({
-                            query: gqlQuery(),
-                            variables
-                        })
-                        delete variables.query
-                        ownProps.client.writeQuery({query: gqlQuery(), variables, data})
-                    }
-
                 }
                 return result
             }
@@ -273,6 +238,6 @@ export default function (WrappedComponent) {
      */
     return connect(
         mapStateToProps
-    )(withApollo(withGql))
+    )(withGql)
 
 }

@@ -1,8 +1,7 @@
 import React from 'react'
 import {connect} from 'react-redux'
-import {withApollo} from '@apollo/react-hoc'
-import {gql} from '@apollo/client'
 import {getTypeQueries} from 'util/types'
+import {client} from '../../middleware/graphql'
 
 
 // enhance cmsview with editor functionalities if in edit mode
@@ -23,11 +22,11 @@ export default function(WrappedComponent) {
 
 
         createData(input, optimisticInput, options) {
-            const {client, type} = this.props
+            const {type} = this.props
             if (type) {
                 const queries = getTypeQueries(type)
                 return client.mutate({
-                    mutation: gql(queries.create),
+                    mutation: queries.create,
                     variables: {
                         _version: options && options._version,
                         ...input
@@ -40,11 +39,11 @@ export default function(WrappedComponent) {
 
 
         updateData(input, optimisticInput, options) {
-            const {client, type} = this.props
+            const {type} = this.props
             if (type) {
                 const queries = getTypeQueries(type)
                 return client.mutate({
-                    mutation: gql(queries.update),
+                    mutation: queries.update,
                     /* only send what has changed*/
                     variables: {
                         _version: options && options._version,
@@ -72,6 +71,6 @@ export default function(WrappedComponent) {
      */
     return connect(
         mapStateToProps
-    )(withApollo(Wrapper))
+    )(Wrapper)
 
 }

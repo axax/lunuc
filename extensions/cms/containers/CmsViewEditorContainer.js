@@ -4,14 +4,14 @@ import {
     getSlugVersion,
     getGqlVariables,
     settingKeyPrefix,
-    gqlQuery
+    CMS_PAGE_QUERY
 } from '../util/cmsView'
+import {
+    defaultSettings,
+    generalSettingsKeys
+} from '../util/cmsViewEditor'
 import PropTypes from 'prop-types'
-import {graphql, withApollo} from '@apollo/react-hoc'
-import {Query} from '@apollo/react-components'
-import {ApolloClient} from '@apollo/client'
 import compose from 'util/compose'
-import {gql} from '@apollo/client'
 import Expandable from 'client/components/Expandable'
 import ErrorHandler from 'client/components/layout/ErrorHandler'
 import DataResolverEditor from '../components/DataResolverEditor'
@@ -48,14 +48,12 @@ import _t from 'util/i18n'
 import config from 'gen/config'
 import {getFormFields} from '../../../util/typesAdmin'
 import Hook from '../../../util/hook'
+import {client, Query, graphql} from '../../../client/middleware/graphql'
 
 
 class CmsViewEditorContainer extends React.Component {
 
     templateChangeHistory = []
-
-    static defaultSettings = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
-    static generalSettingsKeys = ['inlineEditor', 'fixedLayout', 'drawerOpen', 'drawerWidth']
 
     constructor(props) {
         super(props)
@@ -63,7 +61,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     static isLoadingState(props) {
-        return props.loadingKeyValues || props.loading || props.aboutToChange
+        return props.loadingKeyValues || props.loading
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
@@ -96,7 +94,7 @@ class CmsViewEditorContainer extends React.Component {
                 }
             })
         }
-        settings = {...CmsViewEditorContainer.defaultSettings, ...generalSettings, ...pageSettings}
+        settings = {...defaultSettings, ...generalSettings, ...pageSettings}
 
         return {settings, pageSettings, generalSettings}
     }
@@ -150,9 +148,9 @@ class CmsViewEditorContainer extends React.Component {
         clearTimeout(this._watchCmsPageStatus)
         this._watchCmsPageStatus = setTimeout(() => {
             if (!this.state.ignoreStatus && this.props.slug !== undefined) {
-                this.props.client.query({
+                client.query({
                     fetchPolicy: 'network-only',
-                    query: gql`query cmsPageStatus($slug: String!){cmsPageStatus(slug: $slug){data user{username _id}}}`,
+                    query: `query cmsPageStatus($slug: String!){cmsPageStatus(slug: $slug){data user{username _id}}}`,
                     variables: {
                         slug: this.props.slug
                     },
@@ -209,7 +207,6 @@ class CmsViewEditorContainer extends React.Component {
             props.cmsComponentEdit !== this.props.cmsComponentEdit ||
             props.cmsEditData !== this.props.cmsEditData ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
-            (!props.renewing && this.props.renewing) ||
             (
                 state.urlSensitiv && (
                     props.location.search !== this.props.location.search ||
@@ -245,6 +242,8 @@ class CmsViewEditorContainer extends React.Component {
         const {WrappedComponent, cmsPage, cmsEditData, cmsComponentEdit, ...props} = this.props
 
         const {template, resources, script, style, settings, dataResolver, serverScript, simpleDialog} = this.state
+
+        console.log(cmsPage)
         if (!cmsPage) {
             // show a loader here
             if (!props.dynamic) {
@@ -258,7 +257,7 @@ class CmsViewEditorContainer extends React.Component {
         // extend with value from state because they are more update to date
         const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template})
 
-        console.log('render CmsViewEditorContainer')
+        console.log('render CmsViewEditorContainer '+loadingState)
 
         const canManageCmsPages = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_CONTENT),
             canMangeCmsTemplate = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)
@@ -304,7 +303,7 @@ class CmsViewEditorContainer extends React.Component {
                     if (cmsEditData._id) {
 
                         return <Query key="dataEditor"
-                                      query={gql(getTypeQueries(cmsEditData.type).query)}
+                                      query={getTypeQueries(cmsEditData.type).query}
                                       variables={{filter: `_id=${cmsEditData._id}`}}
                                       fetchPolicy="network-only">
 
@@ -573,7 +572,7 @@ class CmsViewEditorContainer extends React.Component {
                                 expanded={settings.revisionsExpanded}>
                         <MenuList>
                             <Query
-                                query={gql`query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action, meta}}}`}
+                                query={'query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action, meta}}}'}
                                 fetchPolicy="cache-and-network"
                                 variables={{
                                     limit: 99,
@@ -619,7 +618,7 @@ class CmsViewEditorContainer extends React.Component {
                                   title="Revision">
 
                         <Query
-                            query={gql`query historys($filter:String){historys(filter:$filter){results{_id action data}}}`}
+                            query={'query historys($filter:String){historys(filter:$filter){results{_id action data}}}'}
                             fetchPolicy="cache-and-network"
                             variables={{
                                 filter: `_id=${this.state.showRevision._id}`
@@ -682,7 +681,7 @@ class CmsViewEditorContainer extends React.Component {
                                 expanded={settings.relatedPagesExpanded}>
                         <MenuList>
                             <Query
-                                query={gql`query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug}}}`}
+                                query={'query cmsPages($filter:String,$limit:Int,$_version:String){cmsPages(filter:$filter,limit:$limit,_version:$_version){results{slug}}}'}
                                 fetchPolicy="cache-and-network"
                                 variables={{
                                     _version,
@@ -749,9 +748,9 @@ class CmsViewEditorContainer extends React.Component {
                                         config.LANGUAGES.forEach(lang => {
                                             if (lang !== config.DEFAULT_LANGUAGE) {
                                                 const text = o[key].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
-                                                this.props.client.query({
-                                                    fetchPolicy: 'cache-first',
-                                                    query: gql`query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}`,
+                                                client.query({
+                                                    fetchPolicy: 'no-cache',
+                                                    query: 'query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}',
                                                     variables: {
                                                         text,
                                                         toIso: lang,
@@ -857,7 +856,7 @@ class CmsViewEditorContainer extends React.Component {
                                                   const slug = this.addNewSiteForm.state.fields.slug
                                                   const name = this.addNewSiteForm.state.fields.name
                                                   delete name.__typename
-                                                  this.props.client.mutate({
+                                                  client.mutate({
                                                       mutation: gql(queries.clone),
                                                       variables: {
                                                           _id: this.addNewSiteForm.props.values._id[0]._id,
@@ -1321,7 +1320,7 @@ class CmsViewEditorContainer extends React.Component {
             let pageSettingsChanged, generalSettingsChanged
 
             Object.keys(settings).forEach(key => {
-                if (CmsViewEditorContainer.generalSettingsKeys.indexOf(key) > -1) {
+                if (generalSettingsKeys.indexOf(key) > -1) {
                     if (Util.shallowCompare(generalSettings[key], settings[key])) {
                         generalSettingsChanged = true
                         generalSettings[key] = settings[key]
@@ -1364,11 +1363,7 @@ class CmsViewEditorContainer extends React.Component {
 
 
 CmsViewEditorContainer.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     loading: PropTypes.bool,
-    renewing: PropTypes.bool,
-    aboutToChange: PropTypes.bool,
-    fetchMore: PropTypes.func,
     children: PropTypes.any,
     cmsPageVariables: PropTypes.object,
     cmsPage: PropTypes.object,
@@ -1398,7 +1393,7 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(gql`query keyValues($keys:[String]){keyValues(keys:$keys){results{key value createdBy{_id}}}}`, {
+    graphql('query keyValues($keys:[String]){keyValues(keys:$keys){results{key value createdBy{_id}}}}', {
         skip: props => props.dynamic || !isEditMode(props),
         options(ownProps) {
             return {
@@ -1415,7 +1410,7 @@ const CmsViewEditorContainerWithGql = compose(
             }
         }
     }),
-    graphql(gql`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$ssrStyle:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,compress:$compress,ssrStyle:$ssrStyle,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status cacheKey}}`, {
+    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$ssrStyle:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,compress:$compress,ssrStyle:$ssrStyle,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, realSlug, ...rest}, key, cb) => {
 
@@ -1456,8 +1451,8 @@ const CmsViewEditorContainerWithGql = compose(
                     },
                     update: (store, {data: {updateCmsPage}}) => {
 
-                        const data = store.readQuery({
-                            query: gqlQuery(),
+                        const data = client.readQuery({
+                            query: CMS_PAGE_QUERY,
                             variables
                         })
                         if (data.cmsPage) {
@@ -1475,7 +1470,7 @@ const CmsViewEditorContainerWithGql = compose(
                                 newData.resolvedData = updateCmsPage.resolvedData
                                 newData.subscriptions = updateCmsPage.subscriptions
                             }
-                            store.writeQuery({query: gqlQuery(), variables, data: {...data, cmsPage: newData}})
+                            client.writeQuery({query: CMS_PAGE_QUERY, variables, data: {...data, cmsPage: newData}})
                         }
                         if (cb) {
                             cb()
@@ -1513,5 +1508,5 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withApollo(CmsViewEditorContainerWithGql))
+)(CmsViewEditorContainerWithGql)
 

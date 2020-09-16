@@ -1,14 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from '@apollo/react-hoc'
 import compose from 'util/compose'
-import {gql} from '@apollo/client'
-import KeyValueContainer from './KeyValueContainer'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {Button, Typography, TextField, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
-import {
-    CAPABILITY_MANAGE_KEYVALUES
-} from 'util/capabilities'
+import {graphql} from '../middleware/graphql'
 
 class UserProfileContainer extends React.Component {
 
@@ -145,8 +140,6 @@ class UserProfileContainer extends React.Component {
 
         let noteElements = []
 
-        let hasManageKeyvalue = me && me.role.capabilities.includes(CAPABILITY_MANAGE_KEYVALUES)
-
         if (note) {
             note.forEach(
                 (o) => noteElements.push(<div key={o._id}>
@@ -190,12 +183,6 @@ class UserProfileContainer extends React.Component {
                     <Button variant="contained" color="primary" onClick={this.createNote}>Add new note</Button>
                 </ContentBlock>
 
-                {hasManageKeyvalue ?
-                    <ContentBlock>
-                        <Typography variant="h4" component="h2" gutterBottom>KeyValue Store</Typography>
-
-                        <KeyValueContainer/>
-                    </ContentBlock> : ''}
 
             </BaseLayout>
         )
@@ -204,7 +191,6 @@ class UserProfileContainer extends React.Component {
 
 
 UserProfileContainer.propTypes = {
-    /* apollo client props */
     me: PropTypes.object,
     updateMe: PropTypes.func.isRequired,
     createNote: PropTypes.func.isRequired,
@@ -213,23 +199,23 @@ UserProfileContainer.propTypes = {
     loading: PropTypes.bool
 }
 
-const gqlQuery = gql`query{me{username email _id note{_id value}role{_id name capabilities}}}`
+const gqlQuery = `query{me{username email _id note{_id value}role{_id name capabilities}}}`
 
 
-const gqlUpdate = gql`
+const gqlUpdate = `
   mutation updateMe($username: String){updateMe(username:$username){_id username}}
 `
 
-const gqlUpdateNote = gql`
+const gqlUpdateNote = `
 	mutation updateNote($id: ID!, $value: String){updateNote(value:$value,_id:$id){_id value}}
 `
 
 
-const gqlCreateNote = gql`
+const gqlCreateNote = `
 	mutation createNote{createNote{_id value}}
 `
 
-const gqlDeleteNote = gql`
+const gqlDeleteNote = `
 	mutation deleteNote($id: ID!){deleteNote(_id:$id){_id value}}
 `
 
@@ -277,6 +263,7 @@ const UserProfileContainerWithGql = compose(
                     const storeData = proxy.readQuery({query: gqlQuery})
                     const newData = {...storeData.me}
 
+                    console.log(createNote)
                     // Add our note from the mutation to the end.
                     if (!newData.note) {
                         newData.note = []

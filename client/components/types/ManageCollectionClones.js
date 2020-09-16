@@ -9,16 +9,12 @@ import {
     Tooltip
 } from 'ui/admin'
 import Util from 'client/util'
-import {withApollo} from '@apollo/react-hoc'
-import {Query} from '@apollo/react-components'
-import {gql} from '@apollo/client'
-import { ApolloClient } from '@apollo/client'
 import {COLLECTIONS_QUERY} from '../../constants'
 import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {theme} from 'ui/admin'
+import {client, Query} from '../../middleware/graphql'
 
 const gqlKeyValueGlobalsQuery = `query{keyValueGlobals(keys:['TypesSelectedVersions']){results{key value status createdBy{_id username}}}}`
-const gqlCollectionsQuery = gql(COLLECTIONS_QUERY)
 
 
 class ManageCollectionClones extends React.PureComponent {
@@ -54,7 +50,7 @@ class ManageCollectionClones extends React.PureComponent {
         if (loading) return null
 
         const {showConfirmDeletion, dataToDelete} = this.state
-        return [<Query key="query" query={gqlCollectionsQuery}
+        return [<Query key="query" query={COLLECTIONS_QUERY}
                        fetchPolicy="cache-first"
                        variables={{filter: '^' + type + '_.*'}}>
             {({loading, error, data}) => {
@@ -114,19 +110,19 @@ class ManageCollectionClones extends React.PureComponent {
 
 
     deleteData({name}) {
-        const {client, type} = this.props
+        const {type} = this.props
 
         if (name) {
 
             client.mutate({
-                mutation: gql`mutation deleteCollection($name:String!){deleteCollection(name:$name){status}}`,
+                mutation: `mutation deleteCollection($name:String!){deleteCollection(name:$name){status}}`,
                 variables: {
                     name
                 },
                 update: (store, {data}) => {
                     const variables = {filter: '^' + type + '_.*'}
                     const storeData = store.readQuery({
-                        query: gqlCollectionsQuery,
+                        query: COLLECTIONS_QUERY,
                         variables
                     })
 
@@ -135,7 +131,7 @@ class ManageCollectionClones extends React.PureComponent {
                     newData.results = storeData.collections.results.filter(f => f.name != name)
 
                     store.writeQuery({
-                        query: gqlCollectionsQuery,
+                        query: COLLECTIONS_QUERY,
                         variables,
                         data: {...storeData, collections: newData}
                     })
@@ -148,14 +144,9 @@ class ManageCollectionClones extends React.PureComponent {
 
 
 ManageCollectionClones.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     type: PropTypes.string.isRequired,
     keyValueGlobalMap: PropTypes.object,
     setKeyValueGlobal: PropTypes.func
 }
 
-
-/**
- * Make ApolloClient accessable
- */
-export default withKeyValues(withApollo(ManageCollectionClones), false, ['TypesSelectedVersions'])
+export default withKeyValues(ManageCollectionClones, false, ['TypesSelectedVersions'])

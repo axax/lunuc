@@ -27,12 +27,9 @@ import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import {getComponentByKey, addComponent, removeComponent, getParentKey, isTargetAbove} from '../util/jsonDomUtil'
 import config from 'gen/config'
 import {getJsonDomElements} from '../util/elements'
-import {ApolloClient} from '@apollo/client'
-import {withApollo} from '@apollo/react-hoc'
-import {gql} from '@apollo/client'
 import {deepMergeOptional, deepMerge} from 'util/deepMerge'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
-import DomUtil from "../../../client/util/dom";
+import {client} from '../../../client/middleware/graphql'
 
 const {UPLOAD_URL, DEFAULT_LANGUAGE} = config
 
@@ -1211,8 +1208,8 @@ const m = Math.max((offX+offY) / 2,100)
                                       onClose={(e) => {
                                           if (e.key === 'delete') {
                                               const {type, _id} = deleteSourceConfirmDialog
-                                              this.props.client.mutate({
-                                                      mutation: gql`mutation delete${type}($_id: ID!) {delete${type}(_id: $_id) {_id status}}`,
+                                              client.mutate({
+                                                      mutation: `mutation delete${type}($_id: ID!) {delete${type}(_id: $_id) {_id status}}`,
                                                       variables: {_id},
                                                       update: (store, {data: {setKeyValue}}) => {
                                                           window.location.href = window.location.href
@@ -1611,7 +1608,6 @@ const m = Math.max((offX+offY) / 2,100)
 
 
 JsonDomHelper.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     classes: PropTypes.object.isRequired,
     _WrappedComponent: PropTypes.any.isRequired,
     _cmsActions: PropTypes.object.isRequired,
@@ -1644,7 +1640,7 @@ const mapDispatchToProps = (dispatch) => ({
  * Connect the component to
  * the Redux store.
  */
-export default withApollo(connect(
+export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withStyles(styles)(JsonDomHelper)))
+)(withStyles(styles)(JsonDomHelper))

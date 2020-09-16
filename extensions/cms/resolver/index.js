@@ -1,5 +1,5 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
-import { renderToStringWithData } from '@apollo/client/react/ssr'
+import ReactDOMServer from 'react-dom/server';
 import JsonDom from '../components/JsonDom'
 import React from 'react'
 import Util from 'api/util'
@@ -13,13 +13,9 @@ import {withFilter} from 'graphql-subscriptions'
 import {getHostFromHeaders} from 'util/host'
 import Hook from '../../../util/hook'
 import {ObjectId} from "mongodb";
-import {
-    InMemoryCache,
-    createHttpLink,
-    ApolloProvider,
-    ApolloClient
-} from '@apollo/client'
-import configureStore from '../../../client/store/index'
+import {getStore} from '../../../client/store/index'
+import {setGraphQlOptions} from '../../../client/middleware/graphql'
+import {renderToString} from '../../../api/resolver/graphqlSsr'
 import {Provider} from 'react-redux'
 
 const PORT = (process.env.PORT || 3000)
@@ -29,14 +25,6 @@ const createScopeForDataResolver = (query, _props) => {
     const props = (_props ? JSON.parse(_props) : {})
     const scope = {params: queryParams, props}
     return scope
-}
-
-const createClientCacheKey = (query, props) => {
-    const cacheKey = (query ? query.replace(/#/g, '-') : '') + '#' + (props ? props.replace(/#/g, '-') : '')
-    if (cacheKey !== '#') {
-        return cacheKey
-    }
-    return ''
 }
 
 const cmsPageStatus = {}, globalScope = {}
@@ -64,14 +52,6 @@ export default db => ({
                 _version
             })
 
-            // add client cache key
-            const clientCacheKey = createClientCacheKey(null, null)
-
-            if (data.results) {
-                data.results.forEach(page => {
-                    page.cacheKey = clientCacheKey
-                })
-            }
             return data
         },
         cmsPage: async ({slug, query, props, nosession, editmode, dynamic, _version}, req) => {
@@ -113,43 +93,29 @@ export default db => ({
 
                 // Server side rendering
                 try {
-                    const client = new ApolloClient({
-                        ssrMode: true,
-                        // Remember that this is the interface the SSR server will use to connect to the
-                        // API server, so we need to ensure it isn't firewalled, etc
-                        link: createHttpLink({
-                            uri: 'http://localhost:' + PORT + '/graphql',
-                            credentials: 'same-origin',
-                            headers: {
-                                cookie: req.header('Cookie'),
-                            }
-                        }),
-                        cache: new InMemoryCache()
-                    })
 
-                    const {store} = configureStore()
+                    const store = getStore()
 
-                    const loc = {pathname: '', search:'', origin: ''}
-                    if( req){
+                    const loc = {pathname: '', search: '', origin: ''}
+                    if (req) {
                         const host = getHostFromHeaders(req.headers)
                         loc.origin = (req.isHttps ? 'https://' : 'http://') + host
                     }
                     window.location = globalThis.location = loc
 
-                    html = await renderToStringWithData(
-                        <Provider store={store}>
-                            <ApolloProvider client={client}>
-                                <JsonDom template={template}
-                                         script={script}
-                                         style={style}
-                                         location={loc}
-                                         history={{location:loc}}
-                                         slug="_ssr"
-                                         resolvedData={JSON.stringify(resolvedData)}
-                                         editMode={false}
-                                         scope={JSON.stringify(scope)}/>
-                            </ApolloProvider>
-                        </Provider>)
+                    setGraphQlOptions({url: 'http://localhost:' + PORT + '/graphql'})
+
+                    html = await renderToString(<Provider store={store}>
+                        <JsonDom template={template}
+                                 script={script}
+                                 style={style}
+                                 location={loc}
+                                 history={{location: loc}}
+                                 slug="_ssr"
+                                 resolvedData={JSON.stringify(resolvedData)}
+                                 editMode={false}
+                                 scope={JSON.stringify(scope)}/>
+                    </Provider>)
 
                 } catch (e) {
                     console.log(e)
@@ -158,8 +124,6 @@ export default db => ({
             }
             console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
-            // this is used to locate the proper client cache value
-            const clientCacheKey = createClientCacheKey(urlSensitiv && query ? query : null, props)
 
             const result = {
                 _id,
@@ -181,11 +145,7 @@ export default db => ({
                 ssrStyle,
                 compress,
                 subscriptions,
-                urlSensitiv,
-                /* we return a cacheKey here because the resolvedData may be dependent on the query that gets passed.
-                 that leads to ambiguous results for the same id.
-                 */
-                cacheKey: clientCacheKey
+                urlSensitiv
 
             }
 
@@ -220,7 +180,7 @@ export default db => ({
                 cmsPageStatus[slug].time = new Date()
             }
 
-            const data =  {}
+            const data = {}
             if (Hook.hooks['cmsPageStatus'] && Hook.hooks['cmsPageStatus'].length) {
                 let c = Hook.hooks['cmsPageStatus'].length
                 for (let i = 0; i < Hook.hooks['cmsPageStatus'].length; ++i) {
@@ -288,10 +248,10 @@ export default db => ({
                     })
 
                 })
-                if(script.error) {
+                if (script.error) {
                     result = {error: script.error}
                     console.log(script)
-                }else {
+                } else {
                     result = await script.result
                 }
             } catch (error) {
@@ -372,8 +332,6 @@ export default db => ({
                 }
             })
 
-            // this is used to locate the proper client cache value
-            result.cacheKey = createClientCacheKey(query, props)
 
             return result
         },

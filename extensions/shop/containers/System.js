@@ -1,15 +1,13 @@
 import React from 'react'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
-import {gql} from '@apollo/client'
 import {
     Typography,
     Button
 } from 'ui/admin'
-import {withApollo} from '@apollo/react-hoc'
 import PropTypes from 'prop-types'
-import { ApolloClient } from '@apollo/client'
 import * as NotificationAction from 'client/actions/NotificationAction'
+import {client} from '../../../client/middleware/graphql'
 
 class System extends React.Component {
 
@@ -29,9 +27,9 @@ class System extends React.Component {
 
 
     startImport() {
-        this.props.client.query({
+        client.query({
             fetchPolicy: 'no-cache',
-            query: gql(`{shopImportSampleData{status message}}`)
+            query: '{shopImportSampleData{status message}}'
 
         }).then(response => {
             this.props.notificationAction.addNotification({
@@ -44,7 +42,6 @@ class System extends React.Component {
 
 
 System.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     notificationAction: PropTypes.object.isRequired
 }
 
@@ -71,4 +68,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withApollo(System))
+)(System)

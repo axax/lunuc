@@ -5,6 +5,7 @@ import notification from './NotificationReducer'
 import networkStatusHandler from './NetworkStatusReducer'
 import user from './UserReducer'
 
+
 const reducers = {
     errorHandler,
     notification,
@@ -12,6 +13,8 @@ const reducers = {
     user
 }
 
-Hook.call('reducer', {reducers})
+export const getReducers = ()=>{
+    Hook.call('reducer', {reducers})
 
-export default combineReducers(reducers)
+    return combineReducers(reducers)
+}

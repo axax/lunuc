@@ -3,9 +3,8 @@ import PropTypes from 'prop-types'
 import extensions from 'gen/extensions'
 import BaseLayout from '../components/layout/BaseLayout'
 import {withStyles, Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock} from 'ui/admin'
-import {withApollo} from '@apollo/react-hoc'
-import { ApolloClient } from '@apollo/client'
 import Hook from 'util/hook'
+import {client} from '../middleware/graphql'
 
 
 const styles = theme => ({
@@ -98,9 +97,7 @@ class SystemContainer extends React.Component {
             <Typography variant="h4" component="h2" gutterBottom>Cache</Typography>
 
             <Button color="secondary" onClick={e => {
-                this.props.client.resetStore().then(() => {
-                    console.log('cache cleared')
-                })
+                client.resetStore()
             } } variant="contained">Clear API cache</Button>
 
         </BaseLayout>
@@ -109,9 +106,8 @@ class SystemContainer extends React.Component {
 
 
 SystemContainer.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     classes: PropTypes.object.isRequired
 }
 
 
-export default withApollo(withStyles(styles)(SystemContainer))
+export default withStyles(styles)(SystemContainer)

@@ -1,10 +1,8 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from '@apollo/react-hoc'
-import compose from 'util/compose'
-import {gql} from '@apollo/client'
 import styles from './style.css'
 import Async from '../../../client/components/Async'
+import {client} from '../../../client/middleware/graphql'
 
 const Card = (props) => <Async {...props} expose="Card"
                                load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
@@ -12,30 +10,52 @@ const Card = (props) => <Async {...props} expose="Card"
 
 class CurrencyTicker extends React.Component {
 
-    interval = null
+    timeout = null
+    stop = false
     constructor(props) {
         super(props)
+        this.state = {currencyData:null}
+
     }
 
+    getData(){
+        client.query({
+            fetchPolicy: 'network-only',
+            query: `query currencyData($from: String!, $to: String!){ currencyData(from: $from, to: $to){to from toName fromName rate timestamp}}`,
+            variables: {
+                from: this.props.from,
+                to: this.props.to
+            }
+        }).then(response => {
+            if(!this.stop) {
+                this.setState(response.data)
+                setTimeout(() => {
+                    this.getData()
+                }, 1000 * 60)
+            }
+        }).catch((err)=>{
+            console.log(err)
+        })
+    }
     componentDidMount() {
-        this.interval = setInterval(() => {
-            this.props.refetch()
-        }, 1000*60)
+        this.stop = false
+        this.getData()
     }
 
     componentWillUnmount() {
-        clearInterval(this.interval)
+        this.stop = true
+        clearTimeout(this.timeout)
     }
 
-    shouldComponentUpdate(nextProps) {
-        if( !nextProps.currencyData || !this.props.currencyData ) return true
+    shouldComponentUpdate(nextProps, state) {
+        if( !state.currencyData || !this.state.currencyData ) return true
 
-        return this.props.currencyData.rate!=nextProps.currencyData.rate
+        return this.state.currencyData.rate!=state.currencyData.rate
     }
 
 
     render() {
-        const {currencyData} = this.props
+        const {currencyData} = this.state
         return <Card>{currencyData ?
             <div key={Math.random()} className="CurrencyTicker-highlight"><h2>{currencyData.from} / {currencyData.to}</h2>{currencyData.rate}</div> : 'no rate'}</Card>
     }
@@ -43,32 +63,11 @@ class CurrencyTicker extends React.Component {
 
 CurrencyTicker.propTypes = {
     from: PropTypes.string.isRequired,
-    to: PropTypes.string.isRequired,
-    currencyData: PropTypes.object,
-    refetch: PropTypes.func,
-    loading: PropTypes.bool
+    to: PropTypes.string.isRequired
 }
 
 
-const gqlQuery = gql`query currencyData($from: String!, $to: String!){ currencyData(from: $from, to: $to){to from toName fromName rate timestamp}}`
-export default compose(
-    graphql(gqlQuery, {
-        options(ownProps) {
-            return {
-                variables: {
-                    from: ownProps.from,
-                    to: ownProps.to
-                },
-                fetchPolicy: 'cache-and-network'
-            }
-        },
-        props: ({data: {loading, currencyData, refetch}}) => ({
-            currencyData,
-            loading,
-            refetch
-        })
-    })
-)(CurrencyTicker)
+export default CurrencyTicker
 
 
 

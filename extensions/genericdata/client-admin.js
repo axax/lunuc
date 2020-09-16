@@ -4,9 +4,9 @@ import Async from 'client/components/Async'
 import {
     SimpleButton
 } from 'ui/admin'
-import {gql} from '@apollo/client'
 import Util from '../../client/util'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
+import {client} from 'client/middleware/graphql'
 
 const GenericForm = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
@@ -47,8 +47,8 @@ export default () => {
 
                 if( !dataToEdit.definition.structure){
 
-                    parentRef.props.client.query({
-                        query: gql`query genericDataDefinitions($filter:String){genericDataDefinitions(filter:$filter){results{_id name structure}}}`,
+                    client.query({
+                        query: `query genericDataDefinitions($filter:String){genericDataDefinitions(filter:$filter){results{_id name structure}}}`,
                         variables: {
                             filter: `_id=${dataToEdit.definition} || name==${dataToEdit.definition}`
                         }

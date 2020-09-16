@@ -1,8 +1,36 @@
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
+import {client, NetworkStatus, RequestType, useQuery} from '../middleware/graphql'
+import {useEffect, useState} from "react";
 
-/*
- this is a warpper component for accessing user key values
- */
+
+export const QUERY_KEY_VALUES = 'query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}'
+
+
+export const useUserKeys = (keys) => {
+
+   // const [response, setResponse] = useState({data: null, networkStatus: 0, loading: true})
+
+    const {results,loading} = useQuery(QUERY_KEY_VALUES, {variables:{keys}})
+
+    const data={}
+    if (results) {
+        for (const i in results) {
+            const o = results[i]
+            try {
+                data[o.key] = JSON.parse(o.value)
+            } catch (e) {
+                data[o.key] = o.value
+            }
+        }
+    }
+
+    return {loading,data}
+
+}
+
+    /*
+     this is a warpper component for accessing user key values
+     */
 
 const keyValuesFromLS = {}
 

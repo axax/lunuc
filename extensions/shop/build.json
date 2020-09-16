@@ -3,6 +3,7 @@
     {
       "name": "Product",
       "collectionClonable": true,
+      "access": {"subscribe":  "anonymous"},
       "fields": [
         {
           "name": "name",
@@ -30,6 +31,7 @@
           "type": "Media",
           "fields": [
             "name",
+            "mimeType",
             "src"
           ],
           "index": 1
@@ -48,6 +50,7 @@
     },
     {
       "name": "ProductCategory",
+      "access": {"subscribe":  "anonymous"},
       "collectionClonable": true,
       "fields": [
         {

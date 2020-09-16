@@ -14,13 +14,12 @@ export default db => ({
             }
 
             const uri = `https://www.alphavantage.co/query?function=BATCH_STOCK_QUOTES&symbols=${symbols.join(',')}&apikey=${ALPHA_VANTAGE_API_KEY}`
-            //console.log(uri)
+            console.log(uri)
             const response = (await request({
                 method: 'GET',
                 uri,
                 json: true
             }))
-
             const stockdata = response["Stock Quotes"].map(d => {
                 return {
                     symbol: d["1. symbol"],

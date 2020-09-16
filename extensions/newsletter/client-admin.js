@@ -1,7 +1,7 @@
 import React from 'react'
 import Hook from 'util/hook'
-import {gql} from '@apollo/client'
 import Async from 'client/components/Async'
+import {client} from 'client/middleware/graphql'
 
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
@@ -21,7 +21,7 @@ export default () => {
         }
     })*/
 
-    Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, createEditForm, client, meta}) {
+    Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, createEditForm, meta}) {
         if (type === 'NewsletterMailing' && action && action.key === 'send') {
 
             const listIds = []
@@ -35,7 +35,7 @@ export default () => {
             }
             client.query({
                 fetchPolicy: 'network-only',
-                query: gql`query sendNewsletter($mailing: ID!, $subject: String!,$template: String!, $list:[ID], $batchSize: Float, $text: String){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,batchSize:$batchSize, text: $text){status}}`,
+                query: 'query sendNewsletter($mailing: ID!, $subject: String!,$template: String!, $list:[ID], $batchSize: Float, $text: String){sendNewsletter(mailing:$mailing,subject:$subject,template:$template,list:$list,batchSize:$batchSize, text: $text){status}}',
                 variables: {
                     mailing: dataToEdit._id,
                     subject: createEditForm.state.fields.subject,

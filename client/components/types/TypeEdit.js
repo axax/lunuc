@@ -4,7 +4,6 @@ import GenericForm from '../GenericForm'
 import Hook from '../../../util/hook'
 import {getFormFields, addAlwaysUpdateData, referencesToIds} from '../../../util/typesAdmin'
 import {SimpleDialog} from 'ui/admin'
-import { ApolloClient } from '@apollo/client'
 
 class TypeEdit extends React.Component {
 
@@ -35,7 +34,7 @@ class TypeEdit extends React.Component {
     }
 
     render() {
-        const {title, type, meta, client} = this.props
+        const {title, type, meta} = this.props
         let {dataToEdit, open} = this.state
         if(!dataToEdit){
             dataToEdit = this.props.initialData
@@ -70,7 +69,7 @@ class TypeEdit extends React.Component {
             }} onBlur={event => {
                 Hook.call('TypeCreateEditBlur', {type, event})
             }} onChange={field => {
-                Hook.call('TypeCreateEditChange', {field, type, props, dataToEdit, client})
+                Hook.call('TypeCreateEditChange', {field, type, props, dataToEdit})
             }} primaryButton={false} fields={formFields} values={dataToEdit}/>
         }
         Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, parentRef: this})
@@ -79,7 +78,7 @@ class TypeEdit extends React.Component {
 
 
     handleSaveData = (action) => {
-        const {onClose, type, updateData, createData, meta, client} = this.props
+        const {onClose, type, updateData, createData, meta} = this.props
         const {dataToEdit} = this.state
         let editedData
 
@@ -89,6 +88,7 @@ class TypeEdit extends React.Component {
 
         if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
             const formValidation = this.createEditForm.validate( this.createEditForm.state,true,{changeTab:true})
+            console.log(formValidation)
             if (!formValidation.isValid) {
                 return
             }
@@ -173,7 +173,6 @@ class TypeEdit extends React.Component {
                 closeModal,
                 action,
                 dataToEdit,
-                client,
                 meta,
                 createEditForm: this.createEditForm
             })
@@ -184,7 +183,6 @@ class TypeEdit extends React.Component {
 
 
 TypeEdit.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     type: PropTypes.string.isRequired,
     onClose: PropTypes.func.isRequired,
     createData: PropTypes.func.isRequired,

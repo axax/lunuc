@@ -1,11 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {graphql} from '@apollo/react-hoc'
-import {gql} from '@apollo/client'
 import config from 'gen/config'
 import BlankLayout from 'client/components/layout/BlankLayout'
 import {Link} from 'react-router-dom'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'
+import {client} from '../middleware/graphql'
 
 class SignUpContainer extends React.Component {
     state = {
@@ -55,24 +54,31 @@ class SignUpContainer extends React.Component {
         }
 
         this.setState({loading: true})
-        const {mutate} = this.props
 
-
-        mutate({
+        client.mutate({
+            mutation: `
+  mutation createUser($email: String!, $username: String!, $password: String!) {
+    createUser(email: $email, username: $username, password: $password) {
+      email password username _id
+    }
+  }
+`,
             variables: {
                 email,
                 username,
                 password
             }
-        }).then(({errors}) => {
-            if( errors && errors.length){
-                errors.forEach(e=>{
-                    if( e.state ){
+        }).then((res) => {
+            console.log(res)
+            if (res.errors && res.errors.length) {
+                res.errors.forEach(e => {
+                    console.log(e)
+                    if (e.state) {
                         this.setState(e.state)
                     }
                 })
                 this.setState({loading: false})
-            }else{
+            } else {
                 this.setState({loading: false, signupFinished: true})
             }
         })
@@ -92,7 +98,8 @@ class SignUpContainer extends React.Component {
                             <Typography variant="h3" gutterBottom>Sign up</Typography>
 
                             {signupFinished ?
-                                <Typography gutterBottom>Thanks for your registration! <Link to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography> :
+                                <Typography gutterBottom>Thanks for your registration! <Link
+                                    to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography> :
                                 <form>
 
                                     <TextField label="Username"
@@ -138,7 +145,8 @@ class SignUpContainer extends React.Component {
                                                       showProgress={loading} onClick={this.signup.bind(this)}>Sign
                                             up</SimpleButton>
                                     </div>
-                                    <Typography gutterBottom> Already have an account? <Link to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography>
+                                    <Typography gutterBottom> Already have an account? <Link
+                                        to={config.ADMIN_BASE_URL + '/login'}>Login</Link></Typography>
 
                                 </form>
                             }
@@ -155,21 +163,4 @@ SignUpContainer.propTypes = {
     mutate: PropTypes.func,
 }
 
-const gqlCreateUser = gql`
-  mutation createUser($email: String!, $username: String!, $password: String!) {
-    createUser(email: $email, username: $username, password: $password) {
-      email password username _id
-    }
-  }
-`
-
-const SignUpContainerWithGql = graphql(gqlCreateUser, {
-    options(ownProps) {
-        return {
-            fetchPolicy:'no-cache',
-            errorPolicy: 'all'
-        }
-    }
-})(SignUpContainer)
-
-export default SignUpContainerWithGql
+export default SignUpContainer

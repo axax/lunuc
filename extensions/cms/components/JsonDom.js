@@ -203,7 +203,6 @@ class JsonDom extends React.Component {
                                      _props={_props}
                                      _parentRef={_this}
                                      fetchPolicy="cache-first"
-                                     aboutToChange={_this.props.aboutToChange}
                                      dynamic={true} {...rest}/>
         },
         'ContentEditable': ({_this, onChange, ...props}) => {
@@ -277,7 +276,7 @@ class JsonDom extends React.Component {
             slugChanged ||
             props.children !== this.props.children ||
             this.props.user !== props.user ||
-            this.props.renewing !== props.renewing
+            this.props.loading !== props.loading
 
         if (updateIsNeeded) {
 
@@ -302,7 +301,7 @@ class JsonDom extends React.Component {
                 this.updateScope = true
             }
 
-            if (this.props.renewing !== props.renewing) {
+            if (this.props.loading !== props.loading) {
                 this.json = null
             }
             if (slugChanged || scriptChanged || this.runScript) {
@@ -416,7 +415,7 @@ class JsonDom extends React.Component {
     }
 
     render() {
-        const {dynamic, template, script, resolvedData, parseResolvedData, _props, _key, renewing} = this.props
+        const {dynamic, template, script, resolvedData, parseResolvedData, _props, _key, loading} = this.props
         if (!template) {
             console.warn('Template is missing.', this.props)
             return null
@@ -448,7 +447,7 @@ class JsonDom extends React.Component {
             if (!this.error) {
                 scope.data = this.resolvedDataJson
                 scope.props = _props
-                scope.renewing = renewing
+                scope.dataState = {loading}
 
                 // find root parent
                 let root = this, parent = this.props._parentRef
@@ -1385,8 +1384,7 @@ JsonDom.propTypes = {
     user: PropTypes.object,
 
     /* states */
-    renewing: PropTypes.bool,
-    aboutToChange: PropTypes.bool,
+    loading: PropTypes.bool,
 
     /* Methods */
     setKeyValue: PropTypes.func,

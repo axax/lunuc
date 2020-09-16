@@ -1,7 +1,7 @@
 import React from 'react'
 import Hook from 'util/hook'
-import {gql} from '@apollo/client'
 import Async from 'client/components/Async'
+import {client} from 'client/middleware/graphql'
 
 
 const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
@@ -21,12 +21,12 @@ export default () => {
         }
     })*/
 
-    Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, createEditForm, client, meta}) {
+    Hook.on('TypeCreateEditAction', function ({type, action, dataToEdit, createEditForm, meta}) {
         if (type === 'CronJob' && action && action.key.startsWith('run')) {
             const runOnlyScript = action.key==='run_script'
             client.query({
                 fetchPolicy: 'network-only',
-                query: gql`query runCronJob($cronjobId:String,$script:String,$scriptLanguage:String,$sync:Boolean,$noEntry:Boolean){runCronJob(cronjobId:$cronjobId,script:$script,scriptLanguage:$scriptLanguage,sync:$sync,noEntry:$noEntry){status result}}`,
+                query: `query runCronJob($cronjobId:String,$script:String,$scriptLanguage:String,$sync:Boolean,$noEntry:Boolean){runCronJob(cronjobId:$cronjobId,script:$script,scriptLanguage:$scriptLanguage,sync:$sync,noEntry:$noEntry){status result}}`,
                 variables: {
                     script: createEditForm.state.fields.script,
                     scriptLanguage: createEditForm.state.fields.scriptLanguage,
@@ -53,12 +53,12 @@ export default () => {
     })
 
 
-    Hook.on('TypeCreateEditChange', function ({field, type, client}) {
+    Hook.on('TypeCreateEditChange', function ({field, type}) {
         if (type === 'CronJob' && field.name === 'execfilter') {
 
             client.query({
                 fetchPolicy: 'network-only',
-                query: gql`query testExecFilter($filter:String!){testExecFilter(filter:$filter){match}}`,
+                query: 'query testExecFilter($filter:String!){testExecFilter(filter:$filter){match}}',
                 variables: {
                     filter: field.value
                 }

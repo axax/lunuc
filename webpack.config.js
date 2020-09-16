@@ -326,7 +326,7 @@ if (DEV_MODE) {
             '/graphql': {target: `http://0.0.0.0:${API_PORT}`},
             ['/' + APP_VALUES.API_PREFIX]: {target: `http://0.0.0.0:${API_PORT}`},
             '/ws': {
-                target: `ws://localhost:${API_PORT}`,
+                target: `ws://0.0.0.0:${API_PORT}`,
                 ws: true
             }
         }

@@ -3,23 +3,18 @@ import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
 import * as Actions from 'client/actions/NotificationAction'
-import {graphql} from '@apollo/react-hoc'
-import compose from 'util/compose'
-import {gql} from '@apollo/client'
 import {Snackbar, CloseIconButton, theme} from 'ui/admin'
 import {Link} from 'react-router-dom'
+import {client} from '../../middleware/graphql'
 
 class NotificationHandler extends React.Component {
 
-    notificationStack = []
-    currentStackPosition = 0
-    lastStackLength = 0
-    lastStackPosition = 0
 
     constructor(props) {
         super(props)
         this.state = {
-            notificationOpen: true
+            notificationOpen: true,
+            notificationStack: []
         }
     }
 
@@ -30,35 +25,64 @@ class NotificationHandler extends React.Component {
     }
 
     handleNotificationClosed() {
-        this.currentStackPosition++
-        this.setState({notificationOpen: true})
+        const notificationStack = [...this.state.notificationStack]
+        notificationStack.shift()
+
+        this.setState({notificationStack, notificationOpen: true})
     }
 
     UNSAFE_componentWillReceiveProps(props) {
-        this.addToNotificationStack(props)
+        this.addToNotificationStack(props.notification)
     }
 
     shouldComponentUpdate(props, state) {
-        const update = this.lastStackLength !== this.notificationStack.length || this.lastStackPosition !== this.currentStackPosition
-        this.lastStackLength = this.notificationStack.length
-        this.lastStackPosition = this.currentStackPosition
-        return update || this.state.notificationOpen !== state.notificationOpen
+        return this.state.notificationOpen !== state.notificationOpen ||
+            this.state.notificationStack !== state.notificationStack ||
+            this.state.notificationStack.length !== state.notificationStack.length
     }
 
-    addToNotificationStack(props) {
-        const {newNotification, notification} = props
-        if (notification && this.notificationStack.indexOf(notification) < 0) {
-            this.notificationStack.push(notification)
+    componentDidMount() {
+
+        this.subscription = client.subscribe({
+            query: `
+  subscription{
+  	newNotification{
+			key
+			message
+			link
+			linkText
+		}
+  }`
+        }).subscribe({
+            next:(supscriptionData) =>{
+                this.addToNotificationStack(supscriptionData.data.newNotification)
+            },
+            error(err) {
+                console.error('err', err)
+            },
+        })
+    }
+
+    componentWillUnmount() {
+        if(this.subscription ){
+            this.subscription.unsubscribe()
         }
-        if (newNotification && this.notificationStack.indexOf(newNotification) < 0) {
-            this.notificationStack.push(newNotification)
+    }
+
+    addToNotificationStack(notification) {
+        if(notification){
+            const notificationStack = [...this.state.notificationStack]
+            notificationStack.push(notification)
+            this.setState({notificationStack})
         }
     }
 
     render() {
-        console.log('render NotificationHandler ' + this.notificationStack.length + '/' + this.currentStackPosition)
-        if (this.notificationStack.length > this.currentStackPosition) {
-            const notification = this.notificationStack[this.currentStackPosition]
+        const {notificationStack, notificationOpen} = this.state
+
+        console.log('render NotificationHandler ' + notificationStack.length)
+        if (notificationStack.length > 0) {
+            const notification = notificationStack[0]
             const actions = [
                 <CloseIconButton
                     key="close"
@@ -79,7 +103,7 @@ class NotificationHandler extends React.Component {
                     horizontal: 'left',
                 }}
                 onExited={this.handleNotificationClosed.bind(this)}
-                open={this.state.notificationOpen}
+                open={notificationOpen}
                 autoHideDuration={5000}
                 onClose={this.handleNotificationClose.bind(this)}
                 ContentProps={{
@@ -99,29 +123,6 @@ NotificationHandler.propTypes = {
     newNotification: PropTypes.object,
     notification: PropTypes.object
 }
-
-const gqlSubscriptionNotification = gql`
-  subscription{
-  	newNotification{
-			key
-			message
-			link
-			linkText
-		}
-  }`
-
-const NotificationHandlerWithGql = compose(graphql(gqlSubscriptionNotification, {
-    options(props) {
-        return {
-            fetchPolicy: 'network-only'
-        }
-    },
-    props: ({data: {newNotification}}) => ({
-        newNotification
-    })
-}))
-(NotificationHandler)
-
 
 /**
  * Map the state to props.
@@ -150,4 +151,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(NotificationHandlerWithGql)
+)(NotificationHandler)

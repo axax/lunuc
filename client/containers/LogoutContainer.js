@@ -3,9 +3,8 @@ import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import PropTypes from 'prop-types'
 import * as UserActions from 'client/actions/UserAction'
-import {withApollo} from '@apollo/react-hoc'
-import { ApolloClient } from '@apollo/client'
 import Util from 'client/util'
+import {client} from '../middleware/graphql'
 
 
 class LogoutContainer extends React.Component {
@@ -16,7 +15,7 @@ class LogoutContainer extends React.Component {
     }
 
     logout = () => {
-        const {userActions, client} = this.props
+        const {userActions} = this.props
         userActions.setUser(null, false)
 
         // remove token and clear cache with a little delay in case there are componentWillUnmount events
@@ -47,7 +46,6 @@ class LogoutContainer extends React.Component {
 
 
 LogoutContainer.propTypes = {
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     /* UserReducer */
     userActions: PropTypes.object.isRequired,
 }
@@ -75,4 +73,4 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(withApollo(LogoutContainer))
+)(LogoutContainer)

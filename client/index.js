@@ -4,7 +4,7 @@ import 'gen/extensions-client'
 import React from 'react'
 import {render} from 'react-dom'
 import App from './components/App'
-import configureStore from './store/index'
+import {getStore} from './store/index'
 import config from 'gen/config'
 import DomUtil from 'client/util/dom'
 
@@ -29,7 +29,7 @@ function removeTrailingSlash(url){
 }
 
 function mainInit() {
-    const {store} = configureStore()
+    const store = getStore()
 
     // override config
     if (_app_.languages) {

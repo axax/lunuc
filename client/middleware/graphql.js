@@ -1,13 +1,81 @@
-import {useState, useEffect} from 'react'
+import React, {useState, useEffect} from 'react'
 import Util from '../util'
+import {getStore} from '../store/index'
+import {setNetworkStatus} from '../actions/NetworkStatusAction'
+import {addError} from '../actions/ErrorHandlerAction'
+
+
+const NetworkStatus = {
+    /*loading: 1,
+    setVariables: 2,
+    fetchMore: 3,
+    refetch: 4,
+    poll: 6,*/
+    ready: 7,
+    error: 8
+}
+const RequestType = {
+    query: 1,
+    mutate: 2
+}
 
 const location = window.location
-const httpUri = `${location.protocol}//${location.hostname}:${location.port}/graphql`
+let GRAPHQL_URL = `${location.protocol}//${location.hostname}:${location.port}/graphql`
+let GRAPHQL_WS_URL = (location.protocol === 'https:' ? 'wss' : 'ws') + `://${location.hostname}:${location.port}/ws`
 
-const cache = {}
+export let SSR_FETCH_CHAIN = {}
 
 
-const getHeaders  = ()=>{
+export const setGraphQlOptions = ({url}) => {
+    GRAPHQL_URL = url
+}
+
+// create a middleware for state handling and to attach the hook
+let loadingCounter = 0
+
+function addLoader() {
+    loadingCounter++
+    if (loadingCounter === 1) {
+        getStore().dispatch(setNetworkStatus({
+            networkStatus: {loading: true}
+        }))
+    }
+}
+
+function removeLoader() {
+    loadingCounter--
+    if (loadingCounter === 0) {
+        // send loading false when all request are done
+        getStore().dispatch(setNetworkStatus({
+            networkStatus: {loading: false}
+        }))
+    }
+}
+
+
+/* Websocket */
+let wsConnection, subscribeCount = 0
+
+const setUpWs = () => {
+    if (!_app_.ssr) {
+        wsConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])
+        wsConnection.onopen = () => {
+            wsConnection.send('{"type":"connection_init","payload":{}}')
+            return false
+        }
+        wsConnection.onerror = error => {
+            console.log(`WebSocket error: ${error}`)
+        }
+
+
+        wsConnection.onclose = function () {
+            // setUpWs()
+            //  setTimeout(setUpWs, 1000);
+        }
+    }
+}
+setUpWs()
+const getHeaders = () => {
     const headers = {
         'Content-Language': _app_.lang,
         'Content-Type': 'application/json',
@@ -25,42 +93,347 @@ const getHeaders  = ()=>{
     return headers
 }
 
-export const client = {}
+const getCacheKey = ({query, variables}) => {
+    return query + (variables ? JSON.stringify(variables) : '')
+}
 
-export const useQuery = ({query, variables, fetchPolicy}) => {
-    const [response, setResponse] = useState({loading: true, data: null})
+const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
+    return (opt) => {
+        finalFetch({type, query, variables: {...variables, ...opt.variables}, fetchPolicy}).then((fetchMoreResult) => {
 
-
-    const cacheKey = query
-
-    if( fetchPolicy !== 'network-only'){
-        response.data = cache[cacheKey]
+            opt.updateQuery(prevData, {fetchMoreResult: fetchMoreResult.data})
+        }).catch(opt.updateQuery)
     }
+}
+
+export const finalFetch = ({type = RequestType.query, cacheKey, query, variables, fetchPolicy = 'cache-first', signal}) => {
+
+    return new Promise((resolve, reject) => {
+
+        if (type === RequestType.query) {
+            if (!cacheKey) {
+                cacheKey = getCacheKey({query, variables})
+            }
+
+            if (fetchPolicy === 'cache-first') {
+                const fromCache = client.readQuery({cacheKey})
+                if (fromCache) {
+                    const resolveData = {
+                        cacheKey,
+                        data: fromCache,
+                        loading: false,
+                        networkStatus: NetworkStatus.ready,
+                        fetchMore: getFetchMore({prevData: fromCache, fetchPolicy, variables, type, query})
+                    }
+
+                    resolve(resolveData)
+
+                    return
+                }
+            }
+        }
+
+        addLoader()
+        fetch(GRAPHQL_URL, {
+            method: 'POST',
+            signal,
+            headers: getHeaders(),
+            body: JSON.stringify({query, variables})
+        }).then(r => {
+            removeLoader()
+            _app_.session = r.headers.get('x-session')
+
+            r.json().then(response => {
+
+
+                if (!r.ok) {
+                    const rejectData = {...response, loading: false, networkStatus: NetworkStatus.error}
+                    if (response.errors) {
+                        rejectData.error = response.errors[0]
+                    }
+                    reject(rejectData)
+                } else {
+                    const resolveData = {...response, loading: false, networkStatus: NetworkStatus.ready, cacheKey}
+
+                    if (type === RequestType.query) {
+
+                        resolveData.fetchMore = getFetchMore({
+                            prevData: response.data,
+                            fetchPolicy,
+                            variables,
+                            type,
+                            query
+                        })
+
+                        if (fetchPolicy !== 'no-cache') {
+                            client.writeQuery({cacheKey, data: response.data})
+                        }
+                    }
+
+                    resolve(resolveData)
+                }
+
+            }).catch(error => {
+                reject({error, loading: false, networkStatus: NetworkStatus.error})
+                getStore().dispatch(addError({
+                    key: 'graphql_error',
+                    msg: error.message + (error.path ? ' (in operation ' + error.path.join('/') + ')' : '')
+                }))
+            })
+
+        }).catch(error => {
+            removeLoader()
+            reject({error, loading: false, networkStatus: NetworkStatus.error})
+            getStore().dispatch(addError({key: 'api_error', msg: error.message}))
+
+        })
+    })
+}
+
+let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}
+export const client = {
+    query: ({query, variables, fetchPolicy}) => {
+        return finalFetch({query, variables, fetchPolicy})
+    },
+    writeQuery: ({query, variables, data, cacheKey}) => {
+        if (!cacheKey) {
+            cacheKey = getCacheKey({query, variables})
+        }
+        CACHE_QUERIES[cacheKey] = data
+        const update = QUERY_WATCHER[cacheKey]
+        if (update) {
+            update(data)
+        }
+    },
+    readQuery: ({query, variables, cacheKey}) => {
+        if (!cacheKey) {
+            cacheKey = getCacheKey({query, variables})
+        }
+        return CACHE_QUERIES[cacheKey]
+    },
+    addQueryWatcher: ({cacheKey, update}) => {
+        QUERY_WATCHER[cacheKey] = update
+    },
+    resetStore: () => {
+        CACHE_QUERIES = {}
+        CACHE_ITEMS = {}
+    },
+    mutate: ({mutation, variables, update, optimisticResponse}, _ref) => {
+        const res = finalFetch({type: RequestType.mutate, query: mutation, variables})
+
+        if (update) {
+
+            if (optimisticResponse) {
+                update(client, {data: optimisticResponse})
+            }
+            /*const proxy = {
+                readQuery:client.readQuery,
+                writeQuery:(props)=>{
+                    client.writeQuery(props)
+                    _ref.forceUpdate()
+                }
+            }*/
+            res.then((r) => {
+                update(client, r)
+            }).catch((e) => {
+                update(client, e)
+            })
+        }
+        return res
+    },
+    subscribe: ({query, variables, extensions}) => {
+        subscribeCount++
+
+        const id = subscribeCount
+
+
+        return {
+            subscribe: ({next}) => {
+                const subscribeData = {
+                    id,
+                    type: 'start',
+                    payload: {
+                        variables,
+                        query,
+                        extensions,
+                        auth: Util.getAuthToken(),
+                        session: _app_.session
+                    }
+                }
+
+                const onMessage = (e) => {
+                    const msg = JSON.parse(e.data)
+                    if (msg.payload) {
+                        next(msg.payload)
+                    }
+                }
+
+                if (wsConnection && wsConnection.readyState === 1) {
+                    wsConnection.send(JSON.stringify(subscribeData))
+
+
+                    wsConnection.addEventListener('message', onMessage, false)
+
+                }
+
+                return {
+                    unsubscribe: () => {
+                        if (wsConnection) {
+                            if (wsConnection.readyState === 1) {
+                                wsConnection.send(`{"type":"stop","id":${id}}`)
+                            }
+                            wsConnection.removeEventListener('message', onMessage, false)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export const graphql = (query, operationOptions = {}) => {
+    query = query.trim()
+
+    return (WrappedComponent) => {
+
+        class Wrapper extends React.Component {
+
+            //renderCount=0
+
+            render() {
+
+                //this.renderCount++
+                //console.log(this.renderCount,query)
+                if (query.startsWith('mutation')) {
+
+
+                    const props = operationOptions.props({
+                        mutate: (props) => {
+
+                            return client.mutate({mutation: query, ...props}, this)
+                        },
+                        ownProps: this.props
+                    })
+
+                    return <WrappedComponent {...props} {...this.props} />
+                }
+
+
+                const options = operationOptions.options ? (typeof operationOptions.options === 'function' ? operationOptions.options(this.props) : operationOptions.options) : {},
+                    variables = options.variables,
+                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(this.props) : operationOptions.skip) : false
+
+                return <Query skip={skip} query={query} variables={variables}
+                              fetchPolicy={options.fetchPolicy}>{(res) => {
+
+                    let data = res.data
+                    if (!data && res.loading) {
+                        data = this.prevData
+                    }
+                    this.prevData = data
+                    const props = operationOptions.props({
+                        data: {
+                            variables, ...data,
+                            loading: res.loading,
+                            networkStatus: res.networkStatus,
+                            fetchMore: res.fetchMore
+                        },
+                        ownProps: this.props
+                    })
+
+                    return <WrappedComponent {...props} {...this.props} />
+                }}</Query>
+            }
+        }
+
+        return Wrapper
+    }
+}
+
+
+export const Query = props => {
+    const {children, query, ...options} = props,
+        result = useQuery(query, options)
+    return children && result ? children(result) : null
+}
+/*
+export const Subscription = props => {
+    const result = useSubscription(props.subscription, props)
+    return props.children && result ? props.children(result) : null
+}*/
+
+export const useQuery = (query, {variables, fetchPolicy = 'cache-first', skip}) => {
+
+
+    const cacheKey = getCacheKey({query, variables})
+
+    const [response, setResponse] = useState({
+        data: _app_.ssr ? client.readQuery({cacheKey}) : null,
+        networkStatus: 0,
+        loading: !_app_.ssr,
+        fetchMore: getFetchMore({
+            fetchPolicy,
+            variables,
+            type: RequestType.query,
+            query
+        })
+    })
+
+    if( _app_.ssr ){
+
+        if(!response.data){
+            SSR_FETCH_CHAIN[cacheKey] = {query, variables}
+        }
+
+        return response
+    }
+
 
 
     useEffect(() => {
 
+        const controller = new AbortController()
+        if (!skip) {
+            const newResponse = {}
+            newResponse.loading = response.networkStatus !== NetworkStatus.error
 
+            if (fetchPolicy !== 'network-only' || fetchPolicy !== 'no-cache') {
+                newResponse.data = client.readQuery({cacheKey})
 
-        fetch(httpUri, {
-            method: 'POST',
-            headers: getHeaders(),
-            body: JSON.stringify({query, variables})
-        }).then(r => {
-            r.json().then((data)=>{
+                if (newResponse.data && fetchPolicy === 'cache-first') {
+                    newResponse.loading = false
+                }
+            }
 
-                setResponse({loading: false, data})
-                cache[cacheKey] = data
-
+            client.addQueryWatcher({
+                cacheKey, update: data => {
+                    // console.log(data, response.data)
+                    if (data !== response.data) {
+                        setResponse({...response, loading: false, data})
+                    }
+                }
             })
-            //r.json()
-        })
 
+            setResponse(newResponse)
 
-        /*function handleStatusChange(status) {
-            setIsOnline(status.isOnline);
-        }*/
-    }, [])
+            if (newResponse.loading) {
+
+                finalFetch({cacheKey, query, variables, fetchPolicy, signal: controller.signal}).then(response => {
+                    console.log(cacheKey===response.cacheKey)
+                    setResponse(response)
+                }).catch(error => {
+                    if(!controller.signal.aborted) {
+                        setResponse(error)
+                    }
+                })
+            }
+        }
+
+        return () => {
+            controller.abort()
+        }
+    }, [cacheKey])
+
 
     return response
 }

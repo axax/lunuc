@@ -57,9 +57,6 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@apollo/client": "^3.2.0-rc.0",
-    "@apollo/react-components": "^4.0.0",
-    "@apollo/react-hoc": "^4.0.0",
     "@babel/core": "^7.11.6",
     "@babel/plugin-proposal-class-properties": "^7.10.4",
     "@babel/plugin-proposal-export-default-from": "^7.10.4",

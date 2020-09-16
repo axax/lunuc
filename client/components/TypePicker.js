@@ -14,15 +14,13 @@ import {
     DeleteIcon,
     SearchIcon
 } from 'ui/admin'
-import {withApollo} from '@apollo/react-hoc'
-import { ApolloClient } from '@apollo/client'
-import {gql} from '@apollo/client'
 import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
 import classNames from 'classnames'
 import config from 'gen/config'
 const {DEFAULT_LANGUAGE} = config
+import {client} from '../middleware/graphql'
 
 const styles = theme => {
     return {
@@ -337,7 +335,7 @@ class TypePicker extends React.Component {
     }
 
     getData(filter) {
-        const {client, type, fields, pickerField} = this.props
+        const {type, fields, pickerField} = this.props
         if (type) {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
@@ -352,8 +350,8 @@ class TypePicker extends React.Component {
                 queryFields = queryStatemantForType(type)
             }
             const variables = {filter, limit:20},
-                gqlQuery = gql`query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){
-                ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id ${queryFields}}}}`
+                gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){
+                ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryFields}}}}`
 
             try {
                 const storeData = client.readQuery({
@@ -396,8 +394,7 @@ TypePicker.propTypes = {
     pickerField: PropTypes.string,
     type: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,
-    client: PropTypes.instanceOf(ApolloClient).isRequired,
     classes: PropTypes.object.isRequired
 }
 
-export default withStyles(styles)(withApollo(TypePicker))
+export default withStyles(styles)(TypePicker)

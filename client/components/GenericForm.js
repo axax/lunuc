@@ -590,11 +590,14 @@ class GenericForm extends React.Component {
                     const showTranslations = this.state.showTranslations[fieldKey]
 
                     currentFormFields.push(config.LANGUAGES.reduce((arr, languageCode) => {
-                        const fieldName = fieldKey + '.' + languageCode
-                        if (languageCode === _app_.lang || showTranslations) {
+                        const fieldName = fieldKey + '.' + languageCode,
+                            error = !!this.state.fieldErrors[fieldName]
+
+
+                        if (languageCode === _app_.lang || showTranslations || error) {
 
                             arr.push(<TextField key={fieldName}
-                                                error={!!this.state.fieldErrors[fieldName]}
+                                                error={error}
                                                 helperText={this.state.fieldErrors[fieldName]}
                                                 label={field.label + ' [' + languageCode + ']'}
                                                 className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
