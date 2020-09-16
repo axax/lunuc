@@ -145,8 +145,8 @@ export default db => ({
                 ssrStyle,
                 compress,
                 subscriptions,
-                urlSensitiv
-
+                urlSensitiv,
+                cacheKey: '' // todo: remove
             }
 
             if (slug !== cmsPages.results[0].slug) {
