@@ -110,7 +110,23 @@
     "socket.io": "^2.3.0",
     "subscriptions-transport-ws": "^0.9.18",
     "telegraf": "^3.38.0",
-    "zip-local": "^0.3.4",
+    "zip-local": "^0.3.4"
+  },
+  "optionalDependencies": {
+    "@google-cloud/storage": "^5.3.0",
+    "@google-cloud/translate": "^6.0.2",
+    "aws-sdk": "^2.751.0",
+    "@ffmpeg-installer/ffmpeg": "^1.0.20",
+    "@ffprobe-installer/ffprobe": "^1.1.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "puppeteer": "^5.3.0",
+    "nodemon": "^2.0.4",
+    "mssql": "^6.2.1",
+    "native-dns": "^0.7.0",
+    "xml2js": "^0.4.23",
+    "ytdl-core": "^3.2.2"
+  },
+  "devDependencies": {
     "babel-eslint": "^10.1.0",
     "babel-jest": "^26.3.0",
     "babel-loader": "^8.1.0",
@@ -132,15 +148,5 @@
     "webpack-bundle-analyzer": "^3.8.0",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"
-  },
-  "optionalDependencies": {
-    "@google-cloud/storage": "^5.3.0",
-    "@google-cloud/translate": "^6.0.2",
-    "aws-sdk": "^2.751.0",
-    "nodemon": "^2.0.4",
-    "mssql": "^6.2.1",
-    "native-dns": "^0.7.0",
-    "xml2js": "^0.4.23",
-    "ytdl-core": "^3.2.2"
   }
 }
