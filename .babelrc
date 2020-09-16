@@ -33,7 +33,7 @@
         [
           "css-modules-transform",
           {
-            "preprocessCss": "api/render/preprocessor.js",
+            "preprocessCss": "./api/render/preprocessor.js",
             "extensions": [
               ".css",
               ".less"
