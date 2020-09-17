@@ -23,7 +23,7 @@ import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
 import {useHistory} from 'react-router-dom'
 import {Link} from 'react-router-dom'
-import {useUserKeys} from '../../util/keyvalue'
+import {useKeyValues} from '../../util/keyvalue'
 
 import {CAPABILITY_MANAGE_TYPES} from "../../../util/capabilities";
 
@@ -34,7 +34,7 @@ let menuItems = []
 const BaseLayout = props => {
     const {children, isAuthenticated, user} = props
 
-    const userKeys = useUserKeys(['BaseLayoutSettings'])
+    const userKeys = useKeyValues(['BaseLayoutSettings'])
 
     if (!userKeys.loading && menuItems.length===0) {
         menuItems.push(

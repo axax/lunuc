@@ -17,6 +17,10 @@ import {getStore} from '../../../client/store/index'
 import {setGraphQlOptions} from '../../../client/middleware/graphql'
 import {renderToString} from '../../../api/resolver/graphqlSsr'
 import {Provider} from 'react-redux'
+import {
+    settingKeyPrefix
+} from '../util/cmsView'
+
 
 const PORT = (process.env.PORT || 3000)
 
@@ -154,11 +158,29 @@ export default db => ({
             }
 
 
-            if (userIsLoggedIn && editmode && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
+            if (userIsLoggedIn && editmode) {
                 // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
                 result.name = name
-                result.dataResolver = dataResolver
-                result.serverScript = serverScript
+
+                if (!dynamic) {
+                    const pageName = result.realSlug.split('/')[0]
+                    const pageOptions = await Util.keyValueGlobalMap(db, context, ['PageOptionsDefinition-' + pageName, 'PageOptions-' + pageName], {parse: true})
+                    const editorOptions = await Util.keyvalueMap(db, context, [settingKeyPrefix, settingKeyPrefix + '-' + result.realSlug], {parse: true})
+
+                    const meta = {
+                        PageOptionsDefinition: pageOptions['PageOptionsDefinition-' + pageName],
+                        PageOptions: pageOptions['PageOptions-' + pageName],
+                        EditorPageOptions: editorOptions[settingKeyPrefix + '-' + result.realSlug],
+                        EditorOptions: editorOptions[settingKeyPrefix]
+                    }
+
+                    result.meta = JSON.stringify(meta)
+                }
+
+                if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
+                    result.dataResolver = dataResolver
+                    result.serverScript = serverScript
+                }
             } else {
 
                 // if user is not looged in return only slug and rendered html

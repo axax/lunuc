@@ -306,7 +306,11 @@ class JsonDomHelper extends React.Component {
     }
 
     onHelperMouseOut(e) {
-        if (e) {
+
+        const {hovered, dragging} = this.state
+
+
+        if (hovered || dragging) {
             e.stopPropagation()
         }
         if (JsonDomHelper.altKeyDown) {
@@ -315,7 +319,6 @@ class JsonDomHelper extends React.Component {
             }, 100)
             return
         }
-        const {hovered, dragging} = this.state
 
         if (dragging) {
             return
@@ -602,12 +605,12 @@ const m = Math.max((offX+offY) / 2,100)
         }
     }
 
-    handleEditClick(e) {
+    handleTemplateEditClick(e) {
         e.stopPropagation()
         e.preventDefault()
         const {_cmsActions, _key, _json, _scope} = this.props
 
-        _cmsActions.editCmsComponent(_key, _json, _scope)
+        _cmsActions.editTemplate(_key, _json, _scope)
         this.setState({toolbarHovered: false, hovered: false, dragging: false})
 
     }
@@ -636,25 +639,24 @@ const m = Math.max((offX+offY) / 2,100)
     }
 
 
-    handleDatasource(e, options) {
+    handleDataSource(e, options) {
         e.stopPropagation()
         e.preventDefault()
 
         const {_cmsActions, _options} = this.props
 
-        const dataSource = this.parseInlineEditorSource(_options.source)
+        const dataSource = this.parseDataSource(_options.source)
         dataSource.options = options
         _cmsActions.editCmsData(dataSource)
 
     }
 
-    parseInlineEditorSource(source) {
+    parseDataSource(source) {
         let parsedSource
         if (source && source.constructor === String) {
 
             // source expression: Type:_id
             // or = :tr.de.key
-
             const pos = source.indexOf(':'), pos2 = source.indexOf(':', pos + 1)
 
             if (pos > -1) {
@@ -787,8 +789,9 @@ const m = Math.max((offX+offY) / 2,100)
         const {classes, _WrappedComponent, _json, _cmsActions, _onChange, _onDataResolverPropertyChange, children, _tagName, _options, _user, _inlineEditor, onChange, onClick, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
-        const menuItems = []
-        const isCms = _tagName === 'Cms', isInLoop = rest._key.indexOf('$loop') >= 0,
+        const menuItems = [],
+            isCms = _tagName === 'Cms',
+            isInLoop = rest._key.indexOf('$loop') >= 0,
             isElementActive = !JsonDomHelper.disableEvents && (hovered || toolbarHovered || toolbarMenuOpen)
 
         let hasJsonToEdit = !!_json, subJson, toolbar, highlighter, dropAreaAbove, dropAreaBelow, editElementEvent,
@@ -797,8 +800,8 @@ const m = Math.max((offX+offY) / 2,100)
         const events = {
             onContextMenu: (e) => {
                 e.preventDefault()
-                e.stopPropagation()
                 if (menuItems.length > 0 || isCms) {
+                    e.stopPropagation()
                     this.setState({
                         toolbarMenuOpen: true,
                         toolbarHovered: true,
@@ -832,7 +835,7 @@ const m = Math.max((offX+offY) / 2,100)
 
             if (isElementActive || _options.mode === 'source') {
                 // in source mode source is even editable when element is not active
-                parsedSource = this.parseInlineEditorSource(_options.source)
+                parsedSource = this.parseDataSource(_options.source)
             }
 
         }
@@ -872,7 +875,7 @@ const m = Math.max((offX+offY) / 2,100)
 
         if (parsedSource && parsedSource.newOnClick) {
             overrideOnClick = (e) => {
-                this.handleDatasource(e, {create: true})
+                this.handleDataSource(e, {create: true})
             }
         }
 
@@ -905,7 +908,7 @@ const m = Math.max((offX+offY) / 2,100)
                         menuItems.push({
                             name: _options.menuTitle.source || 'Eintrag bearbeiten',
                             icon: <EditIcon/>,
-                            onClick: this.handleDatasource.bind(this)
+                            onClick: this.handleDataSource.bind(this)
                         })
                     }
 
@@ -914,7 +917,7 @@ const m = Math.max((offX+offY) / 2,100)
                             name: _options.menuTitle.sourceClone || 'Eintrag kopieren',
                             icon: <FileCopyIcon/>,
                             onClick: (e) => {
-                                this.handleDatasource(e, {clone: true})
+                                this.handleDataSource(e, {clone: true})
                             }
                         })
                     }
@@ -924,7 +927,7 @@ const m = Math.max((offX+offY) / 2,100)
                             name: _options.menuTitle.sourceNew || 'Eintrag erstellen',
                             icon: <AddIcon/>,
                             onClick: (e) => {
-                                this.handleDatasource(e, {create: true})
+                                this.handleDataSource(e, {create: true})
                             }
                         })
                     }
@@ -960,7 +963,7 @@ const m = Math.max((offX+offY) / 2,100)
                     menuItems.push({
                         name: 'Template bearbeiten',
                         icon: <BuildIcon/>,
-                        onClick: this.handleEditClick.bind(this)
+                        onClick: this.handleTemplateEditClick.bind(this)
                     })
                 }
 

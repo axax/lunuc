@@ -5,9 +5,6 @@ import {
     SimpleSwitch
 } from 'ui/admin'
 import Util from '../../client/util'
-import {
-    generalSettingsKeys
-} from '../../extensions/cms/util/cmsViewEditor'
 
 export default () => {
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
@@ -30,7 +27,7 @@ export default () => {
         }
     })
 
-    Hook.on('CmsViewEditorContainerRender', function ({isSmallScreen, toolbarRight, settings, inner}) {
+    Hook.on('CmsViewEditorContainerRender', function ({isSmallScreen, toolbarRight, EditorOptions, inner}) {
 
         if(this.state.cmsStatusData ){
             const ut = this.state.cmsStatusData.usertracking
@@ -48,13 +45,10 @@ export default () => {
 
         }
         if (!isSmallScreen) {
-            if (generalSettingsKeys.indexOf('tracking') < 0) {
-                generalSettingsKeys.push('tracking')
-            }
             toolbarRight.splice(2, 0, <SimpleSwitch key="usertrackingSwitch" color="default"
-                                                    checked={!!settings.tracking}
+                                                    checked={!!EditorOptions.tracking}
                                                     onChange={(e) => {
-                                                        this.handleSettingChange('tracking', e, () => {
+                                                        this.handleSettingChange('tracking', false, e,() => {
                                                             if (this._saveSettings) {
                                                                 this._saveSettings(({key}) => {
                                                                     if (key === 'CmsViewContainerSettings') {

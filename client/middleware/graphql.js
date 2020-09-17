@@ -203,6 +203,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
 }
 
 let CACHE_QUERIES = {}, CACHE_ITEMS = {}, QUERY_WATCHER = {}
+
 export const client = {
     query: ({query, variables, fetchPolicy}) => {
         return finalFetch({query, variables, fetchPolicy})
@@ -212,16 +213,27 @@ export const client = {
             cacheKey = getCacheKey({query, variables})
         }
         CACHE_QUERIES[cacheKey] = data
+        window.CACHE_QUERIES = CACHE_QUERIES
         const update = QUERY_WATCHER[cacheKey]
         if (update) {
-            update(data)
+            if( data.__optimistic){
+                // return optimistic response
+                update(data.__optimistic)
+            }else {
+                update(data)
+            }
         }
     },
     readQuery: ({query, variables, cacheKey}) => {
         if (!cacheKey) {
             cacheKey = getCacheKey({query, variables})
         }
-        return CACHE_QUERIES[cacheKey]
+        const res = CACHE_QUERIES[cacheKey]
+        if( res && res.__optimistic){
+            // return optimistic response
+            return res.__optimistic
+        }
+        return res
     },
     addQueryWatcher: ({cacheKey, update}) => {
         QUERY_WATCHER[cacheKey] = update
@@ -234,25 +246,43 @@ export const client = {
         const res = finalFetch({type: RequestType.mutate, query: mutation, variables})
 
         if (update) {
+            let proxy = client
 
             if (optimisticResponse) {
-                //TODO
-                //update(client, {data: optimisticResponse})
-            }
-            /*const proxy = {
-                readQuery:client.readQuery,
-                writeQuery:(props)=>{
-                    client.writeQuery(props)
-                    _ref.forceUpdate()
-                }
-            }*/
-            res.then((r) => {
-                if (optimisticResponse) {
+                proxy = {...client,
+                    readQuery:({query, variables, cacheKey}) => {
+                        if (!cacheKey) {
+                            cacheKey = getCacheKey({query, variables})
+                        }
+                        const res = CACHE_QUERIES[cacheKey]
+                        if(res){
+                            delete res.__optimistic
+                        }
+                        return res
+                    },
+                    writeQuery:({query, variables, data, cacheKey})=>{
+                        const existingData = proxy.readQuery({query,variables, cacheKey})
+                        delete existingData.__optimistic
 
+                        data = {...existingData, __optimistic: data}
+                        client.writeQuery({cacheKey,query,variables,data})
+                    }
                 }
-                update(client, r)
+                update(proxy, {data: optimisticResponse})
+            }
+
+
+            res.then((r) => {
+                if(optimisticResponse) {
+                    Object.keys(r.data).forEach(key => {
+                        r.data[key] = {...optimisticResponse[key], ...r.data[key]}
+                    })
+                }
+                proxy.writeQuery = client.writeQuery
+                update(proxy, r)
             }).catch((e) => {
-                update(client, e)
+                proxy.writeQuery = client.writeQuery
+                update(proxy, e)
             })
         }
         return res

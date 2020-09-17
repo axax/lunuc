@@ -3,8 +3,9 @@ import {client, NetworkStatus, RequestType, useQuery} from '../middleware/graphq
 
 
 export const QUERY_KEY_VALUES = 'query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}'
+export const QUERY_SET_KEY_VALUE_GLOBAL = 'mutation setKeyValueGlobal($key:String!,$value:String!){setKeyValueGlobal(key:$key,value:$value){key value status}}'
 
-export const useUserKeys = (keys) => {
+export const useKeyValues = (keys) => {
 
    // const [response, setResponse] = useState({data: null, networkStatus: 0, loading: true})
 
@@ -26,9 +27,14 @@ export const useUserKeys = (keys) => {
 
 }
 
-    /*
-     this is a warpper component for accessing user key values
-     */
+export const setKeyValueGlobal = (key, value) =>{
+    client.mutate({
+        mutation: QUERY_SET_KEY_VALUE_GLOBAL,
+        variables: {key, value: value.constructor === Object ? JSON.stringify(value) : value},
+        update: (store, {data: {setKeyValue}}) => {
+        }
+    })
+}
 
 const keyValuesFromLS = {}
 

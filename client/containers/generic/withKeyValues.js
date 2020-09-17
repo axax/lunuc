@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import compose from 'util/compose'
 import {connect} from 'react-redux'
 import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
-import {getKeyValuesFromLS, setKeyValueToLS} from 'client/util/keyvalue'
+import {getKeyValuesFromLS, setKeyValueToLS, QUERY_SET_KEY_VALUE_GLOBAL} from 'client/util/keyvalue'
 import {graphql} from '../../middleware/graphql'
 
 const gqlKeyValueQuery = `query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}`,
@@ -12,12 +12,6 @@ const gqlKeyValueQuery = `query keyValues($keys:[String]){keyValues(keys:$keys){
           mutation setKeyValue($key: String!, $value: String!) {
             setKeyValue(key: $key, value: $value){
                 key value status createdBy{_id username}
-            }
-          }`,
-    gqlKeyValueGlobalUpdate = `
-          mutation setKeyValueGlobal($key: String!, $value: String!) {
-            setKeyValueGlobal(key: $key, value: $value){
-                key value status
             }
           }`,
     gqlKeyValueDelete = `
@@ -213,7 +207,7 @@ export function withKeyValues(WrappedComponent, keys, keysGlobal) {
                 }
             })
         }),
-        graphql(gqlKeyValueGlobalUpdate, {
+        graphql(QUERY_SET_KEY_VALUE_GLOBAL, {
             props: ({ownProps, mutate}) => ({
                 setKeyValueGlobal: ({key, value, server}) => {
                     if (!key) throw Error('Key is missing in setKeyValue')

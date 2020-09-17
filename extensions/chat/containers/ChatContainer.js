@@ -255,6 +255,7 @@ const ChatContainerWithGql = compose(
                     return props.data.subscribeToMore({
                         document: gqlOnDeleteMessage,
                         updateQuery: (prev, {subscriptionData}) => {
+                            console.log(prev)
                             return prev
                         }
                     })

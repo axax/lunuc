@@ -1,7 +1,7 @@
 import * as types from '../constants/ActionTypes'
 
-export const editCmsComponent = (key, json, scope) => ({
-	type: types.CMS_EDIT_COMPONENT,
+export const editTemplate = (key, json, scope) => ({
+	type: types.CMS_EDIT_TEMPLATE,
     key,
     json,
     scope

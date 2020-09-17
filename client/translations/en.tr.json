@@ -37,6 +37,7 @@
   "CmsViewEditorContainer.fixed": "Fix menu",
   "CmsViewEditorContainer.preview": "Preview",
   "CmsViewEditorContainer.addnewpage": "Add new page",
+  "CmsViewEditorContainer.pagesettings": "General page settings",
   "CmsViewEditorContainer.autotranslate": "Auto translate",
   "CmsViewEditorContainer.languages": "Language variants",
   "CmsViewEditorContainer.undochange": "Undo change",

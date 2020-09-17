@@ -115,7 +115,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.3.0",
     "@google-cloud/translate": "^6.0.2",
-    "aws-sdk": "^2.751.0",
+    "aws-sdk": "^2.755.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
@@ -131,7 +131,7 @@
     "babel-jest": "^26.3.0",
     "babel-loader": "^8.1.0",
     "babel-plugin-graphql-tag": "^3.1.0",
-    "compression-webpack-plugin": "^5.0.2",
+    "compression-webpack-plugin": "^6.0.1",
     "copy-webpack-plugin": "^6.1.0",
     "css-loader": "^4.3.0",
     "eslint": "^7.9.0",
@@ -143,9 +143,9 @@
     "prop-types": "^15.7.2",
     "react-test-renderer": "^16.13.1",
     "style-loader": "^1.2.1",
-    "terser-webpack-plugin": "^4.2.0",
+    "terser-webpack-plugin": "^4.2.1",
     "webpack": "^4.44.1",
-    "webpack-bundle-analyzer": "^3.8.0",
+    "webpack-bundle-analyzer": "^3.9.0",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"
   }

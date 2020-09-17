@@ -85,6 +85,7 @@ class SimpleMenu extends React.Component {
                     anchorEl={anchorEl}
                     open={open !== undefined ? !!open : Boolean(anchorEl)}
                     onClose={this.handleClose}
+                    style={{zIndex:9999}}
                     {...rest}
                 >
                     {this.renderMenu(items)}

@@ -201,9 +201,7 @@ export default function (WrappedComponent) {
         graphql(CMS_PAGE_QUERY, {
             options(ownProps) {
                 return {
-                    /*context: {fetchOptions: {method: ownProps.dynamic?'POST':'GET'}},*/
                     variables: getGqlVariables(ownProps),
-                    nextFetchPolicy: 'cache-first',
                     fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network') // cache-first
                 }
             },

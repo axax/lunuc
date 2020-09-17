@@ -263,7 +263,6 @@ const UserProfileContainerWithGql = compose(
                     const storeData = proxy.readQuery({query: gqlQuery})
                     const newData = {...storeData.me}
 
-                    console.log(createNote)
                     // Add our note from the mutation to the end.
                     if (!newData.note) {
                         newData.note = []
