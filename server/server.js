@@ -52,7 +52,7 @@ const options = {
         if (domain.startsWith('www.')) {
             domain = domain.substring(4)
         }
-        console.log(domain)
+        console.log(domain,hostrules[domain])
         if (hostrules[domain] && hostrules[domain].certContext) {
             cb(null, hostrules[domain].certContext)
         } else {
