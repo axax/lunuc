@@ -131,7 +131,9 @@ const Util = {
         Object.keys(obj).forEach((prop) => {
 
             if (obj[prop] === undefined) {
-                // do nothing
+                if(options.removeUndefined){
+                    delete obj[prop]
+                }
             } else if (obj[prop] !== null) {
                 if (obj[prop].constructor === Array) {
                     if (options.emptyArray && obj[prop].length === 0) {

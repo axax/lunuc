@@ -37,7 +37,7 @@ export default db => ({
     Query: {
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'ssrStyle', 'compress']
+            const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'compress']
             if (filter) {
                 // search in fields
                 fields.push('dataResolver')
@@ -72,7 +72,7 @@ export default db => ({
             }
 
             const {
-                _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, ssrStyle, compress,
+                _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, compress,
                 ssr, modifiedAt, urlSensitiv, name, serverScript
             } = cmsPages.results[0]
 
@@ -126,7 +126,6 @@ export default db => ({
                     html = e.message
                 }
             }
-            console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
 
             const result = {
@@ -146,6 +145,7 @@ export default db => ({
                 resolvedData: JSON.stringify(resolvedData),
                 parseResolvedData,
                 alwaysLoadAssets,
+                loadPageOptions,
                 ssrStyle,
                 compress,
                 subscriptions,
@@ -153,10 +153,16 @@ export default db => ({
                 cacheKey: '' // todo: remove
             }
 
-            if (slug !== cmsPages.results[0].slug) {
-                result.realSlug = cmsPages.results[0].slug
-            }
 
+            const setPageOptions = async ()=>{
+                const pageName = result.realSlug.split('/')[0]
+                const pageOptions = await Util.keyValueGlobalMap(db, context, ['PageOptions-' + pageName], {parse: true})
+
+                const meta = {
+                    PageOptions: pageOptions['PageOptions-' + pageName]
+                }
+                result.meta = JSON.stringify(meta)
+            }
 
             if (userIsLoggedIn && editmode) {
                 // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
@@ -175,6 +181,8 @@ export default db => ({
                     }
 
                     result.meta = JSON.stringify(meta)
+                }else if( loadPageOptions ){
+                    await setPageOptions()
                 }
 
                 if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_CMS_PAGES)) {
@@ -186,7 +194,12 @@ export default db => ({
                 // if user is not looged in return only slug and rendered html
                 // never return sensitiv data here
                 result.name = {[context.lang]: name[context.lang]}
+
+                if( loadPageOptions ){
+                    await setPageOptions()
+                }
             }
+            console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
             return result
         },
@@ -308,28 +321,33 @@ export default db => ({
             Util.checkIfUserIsLoggedIn(context)
 
             const {_version} = rest
-            // clear server cache
-            const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + slug
 
-            Cache.clearStartWith(cacheKey)
 
-            if (!realSlug) {
-                // update slug
+            if (realSlug) {
+                rest.slug = realSlug
+            }else{
                 rest.slug = slug
             }
-            console.log(slug, realSlug)
+
+
+            // clear server cache
+            const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + rest.slug
+
+            Cache.clearStartWith(cacheKey)
 
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {
                 _id,
                 createdBy: (createdBy ? ObjectId(createdBy) : createdBy), ...rest
             })
 
+            result.slug = slug
+            result.realSlug = rest.slug
 
             // if dataResolver has changed resolveData and return it
             if (rest.dataResolver) {
                 const scope = {
                     ...createScopeForDataResolver(query, props),
-                    page: {slug, host: getHostFromHeaders(headers)}
+                    page: {slug, realSlug: rest.slug, host: getHostFromHeaders(headers)}
                 }
                 const {resolvedData, subscriptions} = await resolveData({
                     db,

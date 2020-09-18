@@ -59,8 +59,7 @@ const trOptions = key => ({
 
 const classOptions = key => ({
     [`${key}className`]: {
-        label: 'Klassname',
-        tab: DEFAULT_TAB
+        label: 'Klassname'
     }
 })
 

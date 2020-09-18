@@ -51,7 +51,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
         } else {
             match = slugMatch
         }
-        cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'ssrStyle', 'compress'], {
+        cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'compress'], {
             match,
             limit: 1,
             _version
@@ -74,7 +74,8 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
                             .replace(/\t/g, ' ') // remove tabs
                             .replace(/ +(?= )/g, '') // remove double whitespace
                             .replace(/(^[ \t]*\n)/gm, "") // remove empty lines
-                            .replace(/;$\n/gm, ';') // remove line break after ;
+                            .replace(/^\s+|\s+$/gm, '') // remove whitespace at beginning of line
+                            .replace(/,$\n/gm, ',') // remove line break after ,
                     }
                 }
                 try {

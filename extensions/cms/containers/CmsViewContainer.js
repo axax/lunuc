@@ -101,6 +101,7 @@ class CmsViewContainer extends React.Component {
             setKeyValue={setKeyValue}
             updateResolvedData={updateResolvedData}
             template={cmsPage.template}
+            meta={cmsPage.meta}
             script={cmsPage.script}
             style={cmsPage.style}
             ssrStyle={cmsPage.ssrStyle}

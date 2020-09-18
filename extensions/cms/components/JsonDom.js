@@ -1015,6 +1015,17 @@ class JsonDom extends React.Component {
             this.scope.inlineEditor = props.inlineEditor
             this.scope.dynamic = props.dynamic
 
+            if( props.meta){
+                if(props.meta.constructor === String) {
+                    const metaJson = JSON.parse(props.meta)
+                    this.scope.PageOptions = metaJson.PageOptions
+                }else{
+                    this.scope.PageOptions = props.meta.PageOptions
+                }
+            }
+            if(!this.scope.PageOptions){
+                this.scope.PageOptions = {}
+            }    
             // set default scope values
             this.scope.fetchingMore = false
 
@@ -1376,6 +1387,7 @@ class JsonDom extends React.Component {
 
 JsonDom.propTypes = {
     template: PropTypes.string,
+    meta: PropTypes.any,
     resolvedData: PropTypes.string,
     resources: PropTypes.string,
     script: PropTypes.string,

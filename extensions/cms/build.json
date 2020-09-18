@@ -59,6 +59,12 @@
           "type": "Boolean"
         },
         {
+          "name": "loadPageOptions",
+          "label": "Load page options",
+          "hidden": true,
+          "type": "Boolean"
+        },
+        {
           "name": "template",
           "hidden": true,
           "searchable": true

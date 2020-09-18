@@ -72,7 +72,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     static propsToState(props, state) {
-        const {template, script, style, serverScript, resources, dataResolver, ssr, slug, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, ssrStyle, compress, meta} = props.cmsPage || {}
+        const {template, script, style, serverScript, resources, dataResolver, ssr, slug, urlSensitiv, status, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, compress, meta} = props.cmsPage || {}
 
         const result = {
             public: props.cmsPage && props.cmsPage.public,
@@ -87,6 +87,7 @@ class CmsViewEditorContainer extends React.Component {
             urlSensitiv,
             parseResolvedData,
             alwaysLoadAssets,
+            loadPageOptions,
             ssrStyle,
             compress,
             addNewSite: null,
@@ -209,6 +210,7 @@ class CmsViewEditorContainer extends React.Component {
             state.style !== this.state.style ||
             state.parseResolvedData !== this.state.parseResolvedData ||
             state.alwaysLoadAssets !== this.state.alwaysLoadAssets ||
+            state.loadPageOptions !== this.state.loadPageOptions ||
             state.ssrStyle !== this.state.ssrStyle ||
             state.public !== this.state.public ||
             state.ssr !== this.state.ssr ||
@@ -241,7 +243,7 @@ class CmsViewEditorContainer extends React.Component {
 
         const isSmallScreen = window.innerWidth < 1000
         // extend with value from state because they are more update to date
-        const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template})
+        const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template, meta: {PageOptions}})
 
         console.log('render CmsViewEditorContainer (loading=' + loadingState + ')')
 
@@ -535,6 +537,11 @@ class CmsViewEditorContainer extends React.Component {
                                 label="Always load assets (even when component is loaded dynamically)"
                                 checked={!!this.state.alwaysLoadAssets}
                                 onChange={this.handleFlagChange.bind(this, 'alwaysLoadAssets')}
+                            /><br/>
+                            <SimpleSwitch
+                                label="Load page options"
+                                checked={!!this.state.loadPageOptions}
+                                onChange={this.handleFlagChange.bind(this, 'loadPageOptions')}
                             /><br/>
                             <SimpleSwitch
                                 label="Compress response"
@@ -841,6 +848,7 @@ class CmsViewEditorContainer extends React.Component {
                    {PageOptionsDefinition ? [
                    <Typography key="pageOptionTitle" variant="subtitle1">{_t('CmsViewEditorContainer.pagesettings')}</Typography>,
                    <GenericForm key="pageOptionForm" primaryButton={true} caption="Speichern" onClick={(formData) => {
+                       console.log(cmsPage)
                        const pageName = cmsPage.realSlug.split('/')[0]
                        setKeyValueGlobal('PageOptions-'+pageName,formData)
                        this.setState({showPageSettings:false })
@@ -1415,7 +1423,7 @@ CmsViewEditorContainer.propTypes = {
 
 
 const CmsViewEditorContainerWithGql = compose(
-    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$ssrStyle:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,compress:$compress,ssrStyle:$ssrStyle,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
+    graphql(`mutation updateCmsPage($_id:ID!,$_version:String,$template:String,$slug:String,$realSlug:String,$name:LocalizedStringInput,$script:String,$serverScript:String,$resources:String,$style:String,$dataResolver:String,$ssr:Boolean,$public:Boolean,$urlSensitiv:Boolean,$parseResolvedData:Boolean,$alwaysLoadAssets:Boolean,$loadPageOptions:Boolean,$ssrStyle:Boolean,$compress:Boolean,$query:String,$props:String){updateCmsPage(_id:$_id,_version:$_version,template:$template,slug:$slug,realSlug:$realSlug,name:$name,script:$script,style:$style,serverScript:$serverScript,resources:$resources,dataResolver:$dataResolver,ssr:$ssr,public:$public,urlSensitiv:$urlSensitiv,alwaysLoadAssets:$alwaysLoadAssets,loadPageOptions:$loadPageOptions,compress:$compress,ssrStyle:$ssrStyle,parseResolvedData:$parseResolvedData,query:$query,props:$props){slug realSlug name {${config.LANGUAGES.join(' ')}} template script serverScript resources dataResolver ssr public urlSensitiv online resolvedData html subscriptions _id modifiedAt createdBy{_id username} status}}`, {
         props: ({ownProps, mutate}) => ({
             updateCmsPage: ({_id, realSlug, ...rest}, key, cb) => {
 
@@ -1459,6 +1467,7 @@ const CmsViewEditorContainerWithGql = compose(
                                 newData.resolvedData = updateCmsPage.resolvedData
                                 newData.subscriptions = updateCmsPage.subscriptions
                             }
+                            console.log({...data, cmsPage: newData})
                             client.writeQuery({query: CMS_PAGE_QUERY, variables, data: {...data, cmsPage: newData}})
                         }
                         if (cb) {

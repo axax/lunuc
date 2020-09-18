@@ -49,10 +49,10 @@ const options = {
     cert,
     allowHTTP1: true,
     SNICallback: (domain, cb) => {
-
         if (domain.startsWith('www.')) {
             domain = domain.substring(4)
         }
+        console.log(domain)
         if (hostrules[domain] && hostrules[domain].certContext) {
             cb(null, hostrules[domain].certContext)
         } else {
