@@ -221,7 +221,7 @@ class Print extends React.PureComponent {
                     width: PAGE_WIDTH,
                     height: PAGE_HEIGHT,
                     scale:1,
-                    scrollX: 0,
+                    scrollX: -window.scrollX,
                     scrollY: page>0?-(marginTopLast-paddingTop+window.scrollY):-window.scrollY,
                     /*logging: true,*/
                     /*proxy: ( (ENV=="development" )?"linkedin/src/php/html2canvasproxy.php":"php/html2canvasproxy.php"),*/
