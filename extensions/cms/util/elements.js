@@ -835,12 +835,12 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -875,17 +875,17 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
@@ -926,22 +926,22 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -984,27 +984,27 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -1037,6 +1037,18 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
+            ...classOptions('p_')
+        }
+    },
+    {
+        tagName: 'Col',
+        name: 'Spalte',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'column'
+            }
+        },
+        options: {
             ...classOptions('p_')
         }
     },

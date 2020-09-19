@@ -331,7 +331,7 @@ export const client = {
                             if (wsConnection.readyState === 1) {
                                 wsConnection.send(`{"type":"stop","id":${id}}`)
                             }
-                            wsConnection.removeEventListener('message', onOpen, false)
+                            wsConnection.removeEventListener('message', onInit, false)
                             wsConnection.removeEventListener('message', onMessage, false)
                         }
                     }
