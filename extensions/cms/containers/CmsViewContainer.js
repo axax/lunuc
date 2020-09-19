@@ -189,11 +189,13 @@ class CmsViewContainer extends React.Component {
     }
 
 
-    removeSubscriptions() {
+    removeSubscriptions(subscriptions) {
         // remove all subscriptions
         Object.keys(this.registeredSubscriptions).forEach(key => {
-            this.registeredSubscriptions[key].unsubscribe()
-            delete this.registeredSubscriptions[key]
+            if (!subscriptions || subscriptions.indexOf(key) < 0) {
+                this.registeredSubscriptions[key].unsubscribe()
+                delete this.registeredSubscriptions[key]
+            }
         })
     }
 
@@ -205,12 +207,7 @@ class CmsViewContainer extends React.Component {
         if (!subscriptions) return
 
         // remove unsed subscriptions
-        Object.keys(this.registeredSubscriptions).forEach(key => {
-            if (subscriptions.indexOf(key) < 0) {
-                this.registeredSubscriptions[key].unsubscribe()
-                delete this.registeredSubscriptions[key]
-            }
-        })
+        this.removeSubscriptions(subscriptions)
 
         const _this = this
 

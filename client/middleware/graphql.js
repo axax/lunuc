@@ -58,26 +58,24 @@ let wsConnection, subscribeCount = 0
 
 const setUpWs = () => {
     if (!_app_.ssr) {
-
+        wsConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])
 
         try {
             if (navigator.userAgent.indexOf('Chrome-Lighthouse') > -1) {
                 throw Error('Chrome-Lighthouse does not support ws')
             }
 
-            wsConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])
             wsConnection.onopen = () => {
                 wsConnection.send('{"type":"connection_init","payload":{}}')
+
+                const event = new Event('init')
+
+                wsConnection.dispatchEvent(event)
+
                 return false
             }
             wsConnection.onerror = error => {
                 console.log(`WebSocket error: ${error}`)
-            }
-
-
-            wsConnection.onclose = function () {
-                // setUpWs()
-                //  setTimeout(setUpWs, 1000);
             }
 
         } catch (e) {
@@ -216,10 +214,10 @@ export const client = {
         window.CACHE_QUERIES = CACHE_QUERIES
         const update = QUERY_WATCHER[cacheKey]
         if (update) {
-            if( data.__optimistic){
+            if (data.__optimistic) {
                 // return optimistic response
                 update(data.__optimistic)
-            }else {
+            } else {
                 update(data)
             }
         }
@@ -229,7 +227,7 @@ export const client = {
             cacheKey = getCacheKey({query, variables})
         }
         const res = CACHE_QUERIES[cacheKey]
-        if( res && res.__optimistic){
+        if (res && res.__optimistic) {
             // return optimistic response
             return res.__optimistic
         }
@@ -249,23 +247,24 @@ export const client = {
             let proxy = client
 
             if (optimisticResponse) {
-                proxy = {...client,
-                    readQuery:({query, variables, cacheKey}) => {
+                proxy = {
+                    ...client,
+                    readQuery: ({query, variables, cacheKey}) => {
                         if (!cacheKey) {
                             cacheKey = getCacheKey({query, variables})
                         }
                         const res = CACHE_QUERIES[cacheKey]
-                        if(res){
+                        if (res) {
                             delete res.__optimistic
                         }
                         return res
                     },
-                    writeQuery:({query, variables, data, cacheKey})=>{
-                        const existingData = proxy.readQuery({query,variables, cacheKey})
+                    writeQuery: ({query, variables, data, cacheKey}) => {
+                        const existingData = proxy.readQuery({query, variables, cacheKey})
                         delete existingData.__optimistic
 
                         data = {...existingData, __optimistic: data}
-                        client.writeQuery({cacheKey,query,variables,data})
+                        client.writeQuery({cacheKey, query, variables, data})
                     }
                 }
                 update(proxy, {data: optimisticResponse})
@@ -273,7 +272,7 @@ export const client = {
 
 
             res.then((r) => {
-                if(optimisticResponse) {
+                if (optimisticResponse) {
                     Object.keys(r.data).forEach(key => {
                         r.data[key] = {...optimisticResponse[key], ...r.data[key]}
                     })
@@ -313,13 +312,17 @@ export const client = {
                         next(msg.payload)
                     }
                 }
-
-                if (wsConnection && wsConnection.readyState === 1) {
+                const onInit = () => {
                     wsConnection.send(JSON.stringify(subscribeData))
-
-
                     wsConnection.addEventListener('message', onMessage, false)
+                }
 
+                if (wsConnection) {
+                    if (wsConnection.readyState === 1) {
+                        onInit()
+                    } else {
+                        wsConnection.addEventListener('init', onInit, false)
+                    }
                 }
 
                 return {
@@ -328,6 +331,7 @@ export const client = {
                             if (wsConnection.readyState === 1) {
                                 wsConnection.send(`{"type":"stop","id":${id}}`)
                             }
+                            wsConnection.removeEventListener('message', onOpen, false)
                             wsConnection.removeEventListener('message', onMessage, false)
                         }
                     }

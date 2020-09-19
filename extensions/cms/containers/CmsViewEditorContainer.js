@@ -847,11 +847,11 @@ class CmsViewEditorContainer extends React.Component {
                }}> {showPageSettings && <div style={{padding:'1rem'}}>
                    {PageOptionsDefinition ? [
                    <Typography key="pageOptionTitle" variant="subtitle1">{_t('CmsViewEditorContainer.pagesettings')}</Typography>,
-                   <GenericForm key="pageOptionForm" primaryButton={true} caption="Speichern" onClick={(formData) => {
+                   <GenericForm key="pageOptionForm" primaryButton={true} caption={_t('core.save')} onClick={(formData) => {
                        console.log(cmsPage)
                        const pageName = cmsPage.realSlug.split('/')[0]
                        setKeyValueGlobal('PageOptions-'+pageName,formData)
-                       this.setState({showPageSettings:false })
+                       location.href = location.href
                }} fields={PageOptionsDefinition.reduce((obj, item) => {return {...obj,[item.name]: item}}, {})} values={PageOptions || {}}/>]:'Es sind keine Optionen definiert'}</div>}
                 </Drawer>
                 <DrawerLayout sidebar={!loadingState && sidebar}
