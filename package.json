@@ -110,6 +110,7 @@
     "socket.io": "^2.3.0",
     "subscriptions-transport-ws": "^0.9.18",
     "telegraf": "^3.38.0",
+    "web-push": "^3.4.4",
     "zip-local": "^0.3.4"
   },
   "optionalDependencies": {

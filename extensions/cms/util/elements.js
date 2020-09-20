@@ -145,6 +145,55 @@ const baseElements = [
         }
     },
     {
+        tagName: 'div',
+        name: 'Video',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'video',
+                picker: {type: 'Media', baseFilter: 'mimeType=video'}
+            },
+            p: {
+                ['data-element-key']: 'video'
+            }
+        },
+        options: {
+            $set_poster: {
+                fullWidth: true,
+                value: '',
+                label: 'Standbild',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=image',
+                tab: DEFAULT_TAB,
+                template: '${this.context._id?_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name:\'\'}',
+            },
+            $set_url: {
+                fullWidth: true,
+                value: '',
+                label: 'Video',
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=video',
+                tab: DEFAULT_TAB,
+                template: '${this.context._id?\'<video controls poster="\'+_comp.$set.poster+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
+            },
+            $set_yt: {
+                fullWidth: true,
+                value: '',
+                label: 'Youtube',
+                tab: DEFAULT_TAB,
+                template: '${this.context.data?\'<iframe src="https://www.youtube-nocookie.com/embed/\'+data.match(/^(https?:\\/\\/)?((www\\.)?(youtube(-nocookie)?|youtube.googleapis)\\.com.*(v\\/|v=|vi=|vi\\/|e\\/|embed\\/|user\\/.*\\/u\\/\\d+\\/)|youtu\\.be\\/)([_0-9a-z-]+)/i)[7]+\'" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreencontrols></iframe>\':\'\'}'
+            },
+            $c: {
+                template: '${_comp.$set.url?_comp.$set.url:_comp.$set.yt}',
+                readOnly: true,
+                value: ''
+            },
+            ...marginOptions('p_'),
+            ...classOptions('p_')
+        }
+    },
+    {
         tagName: 'Link',
         name: 'Screenshot',
         xhint: 'Erzeugt ein screenshot einer Webseite',
