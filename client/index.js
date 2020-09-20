@@ -154,6 +154,22 @@ function mainInit() {
             })
         }
     }
+
+
+
+   /* Notification.requestPermission(result => {
+        console.log(result)
+        if (result === 'granted') {
+            navigator.serviceWorker.ready.then(registration => {
+                console.log(registration)
+                registration.showNotification('Vibration Sample', {
+                    body: 'Buzz! Buzz!',
+                    tag: 'vibration-sample'
+                });
+            });
+        }
+    });*/
+
     /* Register serviceworker only on production. only works with https */
     if ('serviceWorker' in navigator) {
         console.log('Service Worker is supported')
@@ -170,10 +186,6 @@ function mainInit() {
                     }
                 })
             } else {
-
-                //window.Notification.requestPermission()
-
-
                 navigator.serviceWorker.register('/serviceworker.js?v=' + config.BUILD_NUMBER)
                     .then(function (swReg) {
                         console.log('Service Worker is registered')

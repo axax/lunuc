@@ -326,6 +326,7 @@ const Util = {
             template = template.replace(re, '${')
         }
         try {
+            console.log(template,context)
             return new Function(DomUtil.toES5('const {' + Object.keys(context).join(',') + '} = this.context;return `' + template + '`')).call({context})
         } catch (e) {
             console.warn(e)

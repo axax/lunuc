@@ -848,7 +848,6 @@ class CmsViewEditorContainer extends React.Component {
                    {PageOptionsDefinition ? [
                    <Typography key="pageOptionTitle" variant="subtitle1">{_t('CmsViewEditorContainer.pagesettings')}</Typography>,
                    <GenericForm key="pageOptionForm" primaryButton={true} caption={_t('core.save')} onClick={(formData) => {
-                       console.log(cmsPage)
                        const pageName = cmsPage.realSlug.split('/')[0]
                        setKeyValueGlobal('PageOptions-'+pageName,formData)
                        location.href = location.href
@@ -1467,7 +1466,6 @@ const CmsViewEditorContainerWithGql = compose(
                                 newData.resolvedData = updateCmsPage.resolvedData
                                 newData.subscriptions = updateCmsPage.subscriptions
                             }
-                            console.log({...data, cmsPage: newData})
                             client.writeQuery({query: CMS_PAGE_QUERY, variables, data: {...data, cmsPage: newData}})
                         }
                         if (cb) {

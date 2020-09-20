@@ -16,7 +16,8 @@ import {
     BuildIcon,
     ImageIcon,
     FileCopyIcon,
-    PlaylistAddIcon
+    PlaylistAddIcon,
+    FlipToBackIcon
 } from 'ui/admin'
 import GenericForm from 'client/components/GenericForm'
 import classNames from 'classnames'
@@ -153,7 +154,6 @@ const styles = theme => ({
 const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section', 'Cms']
 const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul']}
 const ALLOW_DROP_FROM = {'Row': ['Col']}
-const ALLOW_CHILDREN = ['div', 'main', 'ul', 'Col']
 
 let aftershockTimeout
 const highlighterHandler = (e, observer, after) => {
@@ -1008,6 +1008,15 @@ const m = Math.max((offX+offY) / 2,100)
                                 this.setState({addChildDialog: {selected: false, addbelow: true}})
                             }
                         })
+
+                        menuItems.push({
+                            name: 'Element ausserhalb einfügen',
+                            icon: <FlipToBackIcon/>,
+                            onClick: () => {
+                                JsonDomHelper.disableEvents = true
+                                this.setState({addChildDialog: {selected: false, wrap: true}})
+                            }
+                        })
                     }
                 }
 
@@ -1175,7 +1184,7 @@ const m = Math.max((offX+offY) / 2,100)
         if (toolbar) {
             return [comp, <AddToBody key="hover">{highlighter}{toolbar}</AddToBody>]
         } else {
-            const jsonElements = getJsonDomElements(null, {advanced: Util.hasCapability(_user, CAPABILITY_MANAGE_CMS_TEMPLATE)})
+            const availableJsonElements = getJsonDomElements(null, {advanced: Util.hasCapability(_user, CAPABILITY_MANAGE_CMS_TEMPLATE)})
             return <React.Fragment>{comp}
                 {(deleteConfirmDialog &&
                     <AddToBody>
@@ -1368,15 +1377,32 @@ const m = Math.max((offX+offY) / 2,100)
                                                       nullArrayItems: true
                                                   })
 
-                                                  // add new
-                                                  let pos
-                                                  // determine position to insert in parent node
-                                                  if (addChildDialog.addbelow) {
-                                                      pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
-                                                  } else if (addChildDialog.addabove) {
-                                                      pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
+                                                  if( addChildDialog.wrap){
+                                                      const wrapped = Object.assign({},subJson)
+
+                                                      Object.keys(subJson).forEach((key) => {
+                                                          delete subJson[key]
+                                                      })
+
+
+                                                      Object.keys(comp).forEach((key) => {
+                                                          subJson[key] = comp[key]
+                                                      })
+                                                      subJson.c = [wrapped]
+
+                                                      _onChange(_json, true)
+                                                  }else {
+
+                                                      // add new
+                                                      let pos
+                                                      // determine position to insert in parent node
+                                                      if (addChildDialog.addbelow) {
+                                                          pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1)) + 1
+                                                      } else if (addChildDialog.addabove) {
+                                                          pos = parseInt(rest._key.substring(rest._key.lastIndexOf('.') + 1))
+                                                      }
+                                                      this.handleAddChildClick(comp, pos)
                                                   }
-                                                  this.handleAddChildClick(comp, pos)
                                               }
                                           }
                                           JsonDomHelper.disableEvents = false
@@ -1402,8 +1428,8 @@ const m = Math.max((offX+offY) / 2,100)
                                 onChange={(e) => {
                                     const value = e.target.value
                                     let item
-                                    for (let i = 0; i < jsonElements.length; i++) {
-                                        const comp = jsonElements[i]
+                                    for (let i = 0; i < availableJsonElements.length; i++) {
+                                        const comp = availableJsonElements[i]
                                         if (value === comp.defaults.$inlineEditor.elementKey) {
                                             // replace __uid__ placeholder
                                             const uid = 'genid_' + Math.random().toString(36).substr(2, 9)
@@ -1421,6 +1447,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                 newLine: true,
                                                 label: 'Hinzufügen',
                                                 tab: 'Slides',
+                                                tabPosition: 0,
                                                 action: 'add',
                                                 style: {marginBottom: '2rem'}
                                             }
@@ -1444,7 +1471,7 @@ const m = Math.max((offX+offY) / 2,100)
                                     })
 
                                 }}
-                                items={jsonElements}
+                                items={availableJsonElements}
                             />}
 
                             {addChildDialog.selected && addChildDialog.selected.options &&
@@ -1550,6 +1577,7 @@ const m = Math.max((offX+offY) / 2,100)
                     action: 'add',
                     newLine: true,
                     tab: 'Slides',
+                    tabPosition:0,
                     style: {marginBottom: '2rem'}
                 }
                 val.forEach((groupValue, idx) => {

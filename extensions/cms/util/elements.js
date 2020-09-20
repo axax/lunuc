@@ -2,7 +2,8 @@ import {
     CAPABILITY_MANAGE_CMS_PAGES
 } from '../constants'
 
-const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände'
+const DEFAULT_TAB = 'Allgemein', IMAGE_OPTIMIZATION_TAB = 'Bild Optimierung', MARGIN_TAB = 'Abstände',
+    TRANSLATION_TAB = 'Übersetzung'
 const imageOptions = key => ({
     [`${key}options_quality`]: {
         type: 'number',
@@ -19,7 +20,7 @@ const imageOptions = key => ({
     },
     [`${key}options_webp`]: {
         type: 'Boolean',
-        newLine:true,
+        newLine: true,
         label: 'WebP',
         tab: IMAGE_OPTIMIZATION_TAB
     },
@@ -43,16 +44,17 @@ const lazyImageOptions = key => ({
 })
 
 
-
 const trOptions = key => ({
-    [`${key}trKey`]: {
-        label: 'Übersetzungsschlüssel',
-        value: '__uid__'
-    },
     [`${key}tr`]: {
         label: 'Sprachabhängig',
         type: 'Boolean',
-        tab: DEFAULT_TAB,
+        tab: TRANSLATION_TAB,
+        role: CAPABILITY_MANAGE_CMS_PAGES
+    },
+    [`${key}trKey`]: {
+        label: 'Übersetzungsschlüssel',
+        value: '__uid__',
+        tab: TRANSLATION_TAB,
         role: CAPABILITY_MANAGE_CMS_PAGES
     }
 })
@@ -152,8 +154,8 @@ const baseElements = [
             },
             p: {
                 ['data-element-key']: 'screenshot',
-                'rel':'noopener',
-                'target':'_blank'
+                'rel': 'noopener',
+                'target': '_blank'
             },
             c: [
                 {
@@ -203,13 +205,13 @@ const baseElements = [
             },
             $set_islink: {
                 type: 'Boolean',
-                newLine:true,
+                newLine: true,
                 label: 'Verlinken',
-                value:true,
+                value: true,
                 tab: DEFAULT_TAB
             },
             c_0_p_src: {
-                readOnly:true,
+                readOnly: true,
                 fullWidth: true,
                 value: '',
                 label: 'Final url',
@@ -222,19 +224,19 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             c_0_p_alt: {
-                value:'',
+                value: '',
                 template: 'Screenshot ${_comp.$set.pdf?_comp.$set.pdf[0].name:\'Website\'}',
-                readOnly:true,
+                readOnly: true,
                 fullWidth: true
             },
             p_href: {
-                readOnly:true,
-                value:'',
+                readOnly: true,
+                value: '',
                 template: '${_comp.$set.url?_comp.$set.url:_app_.config.UPLOAD_URL+\'/\'+_comp.$set.pdf[0]._id+\'/-/\'+_comp.$set.pdf[0].name}',
             },
             t: {
-                readOnly:true,
-                value:'',
+                readOnly: true,
+                value: '',
                 template: "${_comp.$set.islink?'Link':'div'}"
             },
             ...marginOptions('p_'),
@@ -362,12 +364,12 @@ const baseElements = [
                     }
                 ]
             },
-            ...trOptions('$inlineEditor_options_c_'),
             c: {
                 label: 'Text',
                 fullWidth: true,
                 tab: DEFAULT_TAB
             },
+            ...trOptions('$inlineEditor_options_c_'),
             ...marginOptions('p_'),
             ...classOptions('p_')
         }
@@ -390,12 +392,12 @@ const baseElements = [
             }
         },
         options: {
-            ...trOptions('$inlineEditor_options_$c_'),
             $c: {
                 label: 'Text',
                 uitype: 'html',
                 tab: DEFAULT_TAB
             },
+            ...trOptions('$inlineEditor_options_$c_'),
             ...classOptions('p_'),
             ...marginOptions('p_')
         }
@@ -404,7 +406,6 @@ const baseElements = [
         tagName: 'Link',
         name: 'Link',
         options: {
-            ...trOptions('$inlineEditor_options_c_'),
             c: {
                 fullWidth: true,
                 value: '',
@@ -446,6 +447,7 @@ const baseElements = [
                 ],
                 tab: DEFAULT_TAB
             },
+            ...trOptions('$inlineEditor_options_c_'),
             ...marginOptions('p_')
         },
         defaults: {
@@ -513,7 +515,7 @@ const baseElements = [
             },
             p: {
                 ['data-element-key']: 'imageLink',
-                'rel':'noopener'
+                'rel': 'noopener'
             },
             c: [
                 {
@@ -733,13 +735,13 @@ const baseElements = [
                     tab: 'Slides',
                     expandable: false,
                     label: 'Text',
-                    uitype: 'html'
+                    uitype: 'html',
                 }
             }
         },
         options: {
-            ...trOptions('$inlineEditor_groupOptions_$set\\_0\\_value_text_'),
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
+            ...trOptions('$inlineEditor_groupOptions_$set\\_0\\_value_text_'),
             ...classOptions('p_'),
             ...imageOptions('c_1_c_$for_c_c_1_$for_c_c_p_'),
             ...lazyImageOptions('c_1_c_$for_c_c_1_$for_c_c_$observe_')
@@ -760,7 +762,6 @@ const baseElements = [
             }
         },
         options: {
-            ...trOptions('$inlineEditor_options_$c_'),
             $c: {
                 label: 'Text',
                 fullWidth: true,
@@ -768,6 +769,7 @@ const baseElements = [
                 replaceBreaks: true,
                 tab: DEFAULT_TAB
             },
+            ...trOptions('$inlineEditor_options_$c_'),
             ...marginOptions('p_'),
             ...classOptions('p_')
         }
@@ -817,8 +819,8 @@ const baseElements = [
             },
             p: {
                 ['data-element-key']: 'iframe',
-                'frameBorder':'0',
-                'style':'border:0;'
+                'frameBorder': '0',
+                'style': 'border:0;'
             }
         }
     },
@@ -835,12 +837,12 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -848,13 +850,13 @@ const baseElements = [
         },
         options: {
             c_0_p_className: {
-                fullWidth:true,
+                fullWidth: true,
                 label: 'Spalte 1',
                 value: 'col-md-6 col-sm-6 col-xs-12',
                 tab: DEFAULT_TAB
             },
             c_1_p_className: {
-                fullWidth:true,
+                fullWidth: true,
                 label: 'Spalte 2',
                 value: 'col-md-6 col-sm-6 col-xs-12',
                 tab: DEFAULT_TAB
@@ -875,17 +877,17 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
@@ -894,19 +896,19 @@ const baseElements = [
         options: {
             c_0_p_className: {
                 label: 'Spalte 1',
-                fullWidth:true,
+                fullWidth: true,
                 value: 'col-md-4 col-sm-4 col-xs-12',
                 tab: DEFAULT_TAB
             },
             c_1_p_className: {
                 label: 'Spalte 2',
-                fullWidth:true,
+                fullWidth: true,
                 value: 'col-md-4 col-sm-4 col-xs-12',
                 tab: DEFAULT_TAB
             },
             c_2_p_className: {
                 label: 'Spalte 3',
-                fullWidth:true,
+                fullWidth: true,
                 value: 'col-md-4 col-sm-4 col-xs-12',
                 tab: DEFAULT_TAB
             },
@@ -926,22 +928,22 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -984,27 +986,27 @@ const baseElements = [
             },
             c: [
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 },
                 {
-                    $inlineEditor: {elementKey: 'column',menu: {addBelow: false}},
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
                     t: 'Col',
                     c: []
                 }
@@ -1043,6 +1045,9 @@ const baseElements = [
     {
         tagName: 'Col',
         name: 'Spalte',
+        conditions: {
+            parent: ['layout-1-5']
+        },
         defaults: {
             $inlineEditor: {
                 elementKey: 'column'
@@ -1063,13 +1068,17 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
-                template: 'url(${_app_.config.UPLOAD_URL}/${_id}/-/${name}?format=webp&quality=85&width=1400)',
+                template: '${this.context._id?\'url(\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+\'?format=webp&quality=85&width=1400)\':\'\'}',
                 tab: DEFAULT_TAB
             },
             p_style_backgroundSize: {
                 value: '',
                 label: 'Grösse',
                 tab: DEFAULT_TAB
+            },
+            t: {
+                value: '',
+                label: 'Tag Name'
             },
             ...classOptions('p_'),
             ...marginOptions('p_')

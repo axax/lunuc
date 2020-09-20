@@ -5,7 +5,6 @@ import Hook from 'util/hook'
 import _t from 'util/i18n'
 import Util from 'client/util'
 import {propertyByPath, matchExpr} from '../../../client/util/json'
-import QuillEditor from 'client/components/QuillEditor'
 import {getComponentByKey} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
 import Async from 'client/components/Async'
@@ -37,6 +36,9 @@ const FileDrop = (props) => <Async {...props}
 
 const Print = (props) => <Async {...props}
                                 load={import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
+
+const QuillEditor = (props) => <Async {...props}
+                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor')}/>
 
 
 const MarkDown = (props) => <Async {...props}
@@ -1025,7 +1027,7 @@ class JsonDom extends React.Component {
             }
             if(!this.scope.PageOptions){
                 this.scope.PageOptions = {}
-            }    
+            }
             // set default scope values
             this.scope.fetchingMore = false
 
@@ -1041,11 +1043,9 @@ class JsonDom extends React.Component {
     }
 
     addLocationToScope() {
-        if (typeof window !== 'undefined') {
-            this.scope.pathname = this.props.history.location.pathname
-            this.scope.params = Util.extractQueryParams()
-            this.scope.hashParams = (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})
-        }
+        this.scope.pathname = this.props.history.location.pathname
+        this.scope.params = Util.extractQueryParams()
+        this.scope.hashParams = (window.location.hash ? Util.extractQueryParams(window.location.hash.substring(1)) : {})
     }
 
     getJson(props) {

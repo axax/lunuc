@@ -373,7 +373,7 @@ class GenericForm extends React.Component {
 
     render() {
         const {fields, onKeyDown, primaryButton, caption, autoFocus, classes, subForm} = this.props
-        const fieldKeys = Object.keys(fields), formFields = [], tabs = {}
+        const fieldKeys = Object.keys(fields), formFields = [], tabs = []
 
         let expandableField, expandableData, datePolyfill = false
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
@@ -402,10 +402,8 @@ class GenericForm extends React.Component {
                 expandableField = field
                 expandableData = currentFormFields = []
             } else if (field.tab) {
-                if (!tabs[field.tab]) {
-                    tabs[field.tab] = []
-                }
-                currentFormFields = tabs[field.tab]
+                let tab = this.getOrCreateTab(tabs, field)
+                currentFormFields = tab.fields
             }
 
 
@@ -664,10 +662,9 @@ class GenericForm extends React.Component {
                 let holder = formFields
 
                 if (expandableField.tab) {
-                    if (!tabs[expandableField.tab]) {
-                        tabs[expandableField.tab] = []
-                    }
-                    holder = tabs[expandableField.tab]
+
+                    let tab = this.getOrCreateTab(tabs, expandableField)
+                    holder = tab.fields
                 }
                 holder.push(<div key={"expandableWrap" + fieldKey} style={{position: 'relative'}}>
                     <ExpandLessIconButton
@@ -702,35 +699,34 @@ class GenericForm extends React.Component {
             this.loadFlatpickr()
         }
         const {tabValue} = this.state
-        const tabKeys = Object.keys(tabs)
         console.log('render GenericForm')
         const Wrapper = subForm ? 'div' : 'form'
 
         return (
             <Wrapper className={classes.form}>
-                {tabKeys.length === 0 && formFields}
-                {tabKeys.length > 0 && <div className={classes.tabContainer}>
+                {tabs.length === 0 && formFields}
+                {tabs.length > 0 && <div className={classes.tabContainer}>
                     <AntTabs
                         value={tabValue}
                         onChange={(e, newValue) => {
                             this.setState({tabValue: newValue})
                         }}
                     >
-                        {tabKeys.map((value, i) =>
-                            <AntTab key={'tab-' + i} label={value}/>
+                        {tabs.map((tab, i) =>
+                            <AntTab key={'tab-' + i} label={tab.name}/>
                         )}
 
-                        {formFields.length > 0 && <AntTab key={'tab-' + tabKeys.length} label="Weitere Einstellungen"/>}
+                        {formFields.length > 0 && <AntTab key={'tab-' + tabs.length} label="Weitere Einstellungen"/>}
 
                     </AntTabs>
 
-                    {tabKeys.map((value, i) =>
+                    {tabs.map((tab, i) =>
                         <TabPanel key={'tabPanel-' + i} value={tabValue} index={i}>
-                            {tabs[value]}
+                            {tab.fields}
                         </TabPanel>
                     )}
                     {formFields.length > 0 &&
-                    <TabPanel key={'tabPanel-' + tabKeys.length} value={tabValue} index={tabKeys.length}>
+                    <TabPanel key={'tabPanel-' + tabs.length} value={tabValue} index={tabs.length}>
                         {formFields}
                     </TabPanel>}
 
@@ -741,6 +737,23 @@ class GenericForm extends React.Component {
                     : ''}
             </Wrapper>
         )
+    }
+
+    getOrCreateTab(tabs, field) {
+        const filteredTabs = tabs.filter(i => i.name === field.tab)
+        let tab
+        if (filteredTabs.length === 0) {
+            tab = {name: field.tab, fields: []}
+
+            if (field.tabPosition>=0) {
+                tabs.splice(field.tabPosition, 0, tab)
+            } else {
+                tabs.push(tab)
+            }
+        } else {
+            tab = filteredTabs[0]
+        }
+        return tab
     }
 }
 

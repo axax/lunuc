@@ -112,7 +112,9 @@
         "Launch",
         "PlaylistAdd",
         "ViewModule",
-        "ViewList"
+        "ViewList",
+        "FlipToBack",
+        "FlipToFront"
       ],
       "theme":{
         "colors":{
