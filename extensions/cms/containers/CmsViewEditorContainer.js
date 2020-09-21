@@ -1455,6 +1455,7 @@ const CmsViewEditorContainerWithGql = compose(
                             // update cmsPage
                             const newData = {
                                 _id,
+                                realSlug,
                                 [key]: updateCmsPage[key], ...rest,
                                 modifiedAt: updateCmsPage.modifiedAt,
                                 status: updateCmsPage.status

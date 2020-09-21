@@ -71,7 +71,7 @@ const Util = {
             hour: 'numeric',
             minute: 'numeric',
             second: 'numeric',
-            timeZone: 'Europe/Zurich'
+            timeZone: 'UTC'
         }, options))
     },
     formattedDateFromObjectId: (objectId, options) => {

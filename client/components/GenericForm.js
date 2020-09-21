@@ -127,7 +127,7 @@ class GenericForm extends React.Component {
             fieldsOri: props.fields,
             fields: {},
             showTranslations: {},
-            tabValue: prevState && prevState.tabValue ? prevState.tabValue: 0
+            tabValue: prevState && prevState.tabValue ? prevState.tabValue : 0
         }
         Object.keys(props.fields).map(k => {
             const field = props.fields[k]
@@ -271,7 +271,7 @@ class GenericForm extends React.Component {
             onload: () => {
                 DomUtil.addScript('https://npmcdn.com/flatpickr@4.6.6/dist/l10n/de.js', {
                     id: 'flatpickrDe',
-                    onload: ()=>{
+                    onload: () => {
                         this.initFlatpickr()
                     }
                 }, {ignoreIfExist: true})
@@ -388,7 +388,12 @@ class GenericForm extends React.Component {
             }
             if (field.uitype === 'datetime') {
                 //iso date without ms
-                value = new Date(value).toISOString()
+                try {
+                    value = new Date(value).toISOString()
+                } catch
+                    (e) {
+                    console.log(e)
+                }
                 datePolyfill = true
             }
 
@@ -422,9 +427,10 @@ class GenericForm extends React.Component {
                 let values
                 try {
                     values = JSON.parse(value)
-                } catch (e) {}
+                } catch (e) {
+                }
 
-                if( !values){
+                if (!values) {
                     values = {}
                 }
 
@@ -568,7 +574,8 @@ class GenericForm extends React.Component {
                                                      label={field.label || field.placeholder}
                                                      name={fieldKey}
                                                      className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                                     onChange={this.handleInputChange} checked={value ? true : false}/>)
+                                                     onChange={this.handleInputChange}
+                                                     checked={value ? true : false}/>)
 
 
             } else {
@@ -714,7 +721,8 @@ class GenericForm extends React.Component {
                             <AntTab key={'tab-' + i} label={tab.name}/>
                         )}
 
-                        {formFields.length > 0 && <AntTab key={'tab-' + tabs.length} label="Weitere Einstellungen"/>}
+                        {formFields.length > 0 &&
+                        <AntTab key={'tab-' + tabs.length} label="Weitere Einstellungen"/>}
 
                     </AntTabs>
 
@@ -743,7 +751,7 @@ class GenericForm extends React.Component {
         if (filteredTabs.length === 0) {
             tab = {name: field.tab, fields: []}
 
-            if (field.tabPosition>=0) {
+            if (field.tabPosition >= 0) {
                 tabs.splice(field.tabPosition, 0, tab)
             } else {
                 tabs.push(tab)
@@ -755,7 +763,8 @@ class GenericForm extends React.Component {
     }
 }
 
-GenericForm.propTypes = {
+GenericForm
+    .propTypes = {
     updatekey: PropTypes.string,
     fields: PropTypes.object.isRequired,
     values: PropTypes.object,
@@ -772,4 +781,8 @@ GenericForm.propTypes = {
     autoFocus: PropTypes.bool
 }
 
-export default withStyles(styles)(GenericForm)
+export default withStyles(styles)
+
+(
+    GenericForm
+)
