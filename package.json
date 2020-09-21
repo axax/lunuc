@@ -74,7 +74,7 @@
     "body-parser": "^1.19.0",
     "cheerio": "^1.0.0-rc.3",
     "classnames": "^2.2.6",
-    "codemirror": "^5.57.0",
+    "codemirror": "^5.58.0",
     "compression": "^1.7.4",
     "draft-js": "^0.11.7",
     "draft-js-drag-n-drop-plugin": "^2.0.4",

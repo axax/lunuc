@@ -1327,7 +1327,7 @@ class JsonDom extends React.Component {
     setStyle = (style, preprocess, id, inworker) => {
         const addTag = (css) => {
             DomUtil.createAndAddTag('style', 'head', {
-                innerHTML: css,
+                textContent: css,
                 data: {jsonDomId: this.instanceId},
                 id
             })

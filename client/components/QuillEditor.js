@@ -172,7 +172,7 @@ class QuillEditor extends React.Component {
     componentDidMount() {
         this.initEditor()
         this.css = document.createElement('style')
-        this.css.innerHTML = `
+        this.css.textContent = `
         .ql-showhtml:before {
             display: inline-block;
             content: "html";

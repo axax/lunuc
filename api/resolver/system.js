@@ -245,14 +245,20 @@ export const systemResolver = (db) => ({
             }
 
 
-            const tpl = new Function(`            
+            const tpl = new Function(`  
+                      
             this.entries.forEach(entry=>{
                 ${script}            
             })`)
 
-            tpl.call({entries, save, ObjectId, Util, require, __dirname, db, context})
+            try {
+                tpl.call({entries, save, ObjectId, Util, require, __dirname, db, context})
+                return {result: `Successful executed`}
+            }catch (e) {
 
-            return {result: `Successful executed`}
+                return {result: `Failed executed: ${e.message}`}
+            }
+
         },
         dbDumps: async (data, {context}) => {
             Util.checkIfUserIsLoggedIn(context)

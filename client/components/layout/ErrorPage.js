@@ -33,7 +33,7 @@ class ErrorPage extends React.Component {
 
         this.css = document.createElement("style")
         this.css.type = "text/css"
-        this.css.innerHTML = `
+        this.css.textContent = `
 body{
     background: ${background};
     color:#fff;
