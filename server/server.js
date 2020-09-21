@@ -305,8 +305,6 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
 
     const statusCode = (hostrule.statusCode && hostrule.statusCode[uri] ? hostrule.statusCode[uri] : 200)
 
-    console.log(hostrule, statusCode)
-    console.log(uri)
     const agent = req.headers['user-agent']
     if (agent && (agent.indexOf('bingbot') > -1 || agent.indexOf('msnbot') > -1)) {
 

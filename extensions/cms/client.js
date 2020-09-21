@@ -64,8 +64,9 @@ export default () => {
                 if (slug === undefined || (slug && slug.split('/')[0] !== container.adminBaseUrlPlain)) {
                     return <CmsViewContainer match={match} location={location} history={history} slug={slug || ''}/>
                 }
+
                 if(_app_.redirect404 && _app_.redirect404!==location.pathname){
-                    location.href = _app_.redirect404
+                    location.replace(_app_.redirect404)
                     return null
                 }
                 return <ErrorPage/>

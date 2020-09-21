@@ -56,6 +56,12 @@ export default function (WrappedComponent) {
                                                            WrappedComponent={WrappedComponent} {...this.props}
                                                            cmsPage={{name: {}}}/>
                         } else {
+
+                            if(_app_.redirect404 && _app_.redirect404!==location.pathname){
+                                location.replace(_app_.redirect404)
+                                return null
+                            }
+
                             return <ErrorPage/>
                         }
                     } else {
