@@ -71,7 +71,7 @@ const Util = {
             hour: 'numeric',
             minute: 'numeric',
             second: 'numeric',
-            timeZone: 'UTC'
+            timeZone: 'Europe/Zurich'
         }, options))
     },
     formattedDateFromObjectId: (objectId, options) => {
@@ -99,14 +99,6 @@ const Util = {
             return Util.getDateTimeFormat(options).format(new Date(d))
         } catch (e) {
             return ''
-        }
-    },
-    toLocalISODate(d) {
-        try {
-            const tzoffset = (new Date()).getTimezoneOffset() * 60000 //offset in milliseconds
-            return (new Date(new Date(d) - tzoffset)).toISOString().slice(0, -1)
-        }catch (e) {
-            return d
         }
     },
     textFromHtml: str => {

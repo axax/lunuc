@@ -289,7 +289,6 @@ class CmsViewEditorContainer extends React.Component {
                     }
 
                     if (cmsEditData._id) {
-
                         return <Query key="dataEditor"
                                       query={getTypeQueries(cmsEditData.type).query}
                                       variables={{filter: `_id=${cmsEditData._id}`}}
@@ -1269,6 +1268,8 @@ class CmsViewEditorContainer extends React.Component {
 
     handleEditDataClose(action, {editedData, dataToEdit, type}) {
         const {_cmsActions, cmsPage, updateResolvedData, cmsEditData} = this.props
+        _cmsActions.editCmsData(null)
+
         if (editedData) {
             if (!dataToEdit) {
 
@@ -1304,8 +1305,6 @@ class CmsViewEditorContainer extends React.Component {
                 }
             }
         }
-
-        _cmsActions.editCmsData(null)
     }
 
     handleSettingChange(key, pageSetting = false, any, callback) {

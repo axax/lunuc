@@ -287,8 +287,7 @@ class GenericForm extends React.Component {
 
         if (window.flatpickr) {
             setTimeout(() => {
-                console.log(document.querySelectorAll('input[type="datetime-local"]'))
-                flatpickr('input[type="datetime-local"]', {
+                flatpickr('input[type="datetime"]', {
                     enableTime: true,
                     allowInput: true,
                     altInput: true,
@@ -297,14 +296,15 @@ class GenericForm extends React.Component {
                     timeFormat: "H:i",
                     defaultDate: null,
                     altFormat: "d.m.Y H:i",
-                    dateFormat: "Y-m-dTH:i",
+                    dateFormat: "Z",
                     onChange: (date, dateStr, obj) => {
-                        console.log(obj, dateStr)
+                        /*const offset = date[0].getTimezoneOffset()/60
+                        const offsetStr = '+'+(offset<10 && offset>-10?'0':'')+(-(offset))+':00'*/
                         this.handleInputChange({
                             target: {
                                 name: obj.element.name,
                                 value: dateStr,
-                                type: 'datetime-local'
+                                type: 'datetime'
                             }
                         })
                     }
@@ -336,7 +336,7 @@ class GenericForm extends React.Component {
         const {fields} = this.props
         const target = e.target, name = target.name
         let value = target.type === 'checkbox' ? target.checked : target.value
-        if (target.type !== 'datetime-local' && fields[name]) {
+        if (target.type !== 'datetime' && fields[name]) {
             value = checkFieldType(value, fields[name])
         }
         this.setState((prevState) => {
@@ -352,7 +352,7 @@ class GenericForm extends React.Component {
 
     handleBlur = (e) => {
         const {onBlur, fields} = this.props
-        if (e.target.type === 'datetime-local') {
+        if (e.target.type === 'datetime') {
             const field = fields[e.target.name]
             if (field.type === 'Float') {
                 // a float value is expected so convert the iso date to an unix timestamp
@@ -387,10 +387,8 @@ class GenericForm extends React.Component {
                 value = value.replace(/<br>/g, '\n')
             }
             if (field.uitype === 'datetime') {
-                if (!isNaN(value)) {
-                    // it is a unix timestamp so convert it to an iso date
-                    value = Util.toLocalISODate(value)
-                }
+                //iso date without ms
+                value = new Date(value).toISOString()
                 datePolyfill = true
             }
 
@@ -410,7 +408,7 @@ class GenericForm extends React.Component {
             if (field.newLine) {
                 currentFormFields.push(<br key={'br' + fieldKey}/>)
             }
-            const uitype = (field.uitype === 'datetime' ? 'datetime-local' : 0) || field.uitype || (field.enum ? 'select' : 'text')
+            const uitype = field.uitype || (field.enum ? 'select' : 'text')
 
 
             if (field.subFields) {

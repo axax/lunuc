@@ -88,7 +88,6 @@ class TypeEdit extends React.Component {
 
         if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
             const formValidation = this.createEditForm.validate( this.createEditForm.state,true,{changeTab:true})
-            console.log(formValidation)
             if (!formValidation.isValid) {
                 return
             }

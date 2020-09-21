@@ -188,6 +188,7 @@ export default function (WrappedComponent) {
                 }else{
                     newData.resolvedData = JSON.stringify(json)
                 }
+
                 client.writeQuery({
                     query: CMS_PAGE_QUERY,
                     variables: cmsPageVariables,

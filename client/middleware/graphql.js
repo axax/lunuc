@@ -281,6 +281,7 @@ export const client = {
                 update(proxy, r)
             }).catch((e) => {
                 proxy.writeQuery = client.writeQuery
+                console.log(e)
                 update(proxy, e)
             })
         }

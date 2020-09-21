@@ -48,7 +48,7 @@ class ElementWatch extends React.Component {
         const {$observe, eleProps, eleType, jsonDom, _key, c, $c, scope} = this.props
         if (!initialVisible && !madeVisible && !ElementWatch.hasLoaded[tagSrc]) {
 
-            const {_tagName, _options, _WrappedComponent, _scope, _onChange, _onDataResolverPropertyChange, wrapper, inlineSvg, options, id, _inlineEditor, ...rest} = eleProps
+            const {_tagName, _options, _WrappedComponent, _scope, _onChange, _onDataResolverPropertyChange, wrapper, inlineSvg, options, id, _inlineEditor,gotop, ...rest} = eleProps
 
             const lazyImage = $observe.lazyImage
             if (lazyImage) {
