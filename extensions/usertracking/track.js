@@ -15,13 +15,13 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
 
             try {
                 const metaJson = JSON.parse(meta)
-                referer = metaJson.referrer
+                referer = metaJson.referer
             } catch (e) {
                 console.log(e)
             }
         }
 
-        if (referer) {
+        if (!referer) {
             referer = req.headers['referer']
         }
 

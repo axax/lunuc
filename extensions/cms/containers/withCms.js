@@ -212,7 +212,7 @@ export default function (WrappedComponent) {
                 let hiddenVariables
                 if (!ownProps.dynamic) {
                     hiddenVariables = {
-                        meta: JSON.stringify({referrer: document.referrer})
+                        meta: JSON.stringify({referer: document.referrer})
                     }
                 }
 
