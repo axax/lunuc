@@ -75,7 +75,6 @@ export default db => ({
                 _id, createdBy, template, script, style, resources, dataResolver, parseResolvedData, alwaysLoadAssets, loadPageOptions, ssrStyle, compress,
                 ssr, modifiedAt, urlSensitiv, name, serverScript
             } = cmsPages.results[0]
-
             const scope = {
                 ...createScopeForDataResolver(query, props),
                 page: {slug, host: getHostFromHeaders(headers), meta},

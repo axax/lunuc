@@ -208,11 +208,11 @@ export default function (WrappedComponent) {
     const withGql = compose(
         graphql(CMS_PAGE_QUERY, {
             options(ownProps) {
-
                 let hiddenVariables
                 if (!ownProps.dynamic) {
+                    const urlStacK = ownProps.history._urlStack
                     hiddenVariables = {
-                        meta: JSON.stringify({referer: document.referrer})
+                        meta: JSON.stringify({referer: urlStacK && urlStacK.length>1?urlStacK[1]:document.referrer})
                     }
                 }
 
