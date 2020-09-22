@@ -209,6 +209,9 @@ export default function (WrappedComponent) {
             options(ownProps) {
                 return {
                     variables: getGqlVariables(ownProps),
+                    hiddenVariables:{
+                        meta: JSON.stringify({referrer: document.referrer})
+                    },
                     fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network') // cache-first
                 }
             },

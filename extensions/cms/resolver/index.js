@@ -58,7 +58,7 @@ export default db => ({
 
             return data
         },
-        cmsPage: async ({slug, query, props, nosession, editmode, dynamic, _version}, req) => {
+        cmsPage: async ({slug, query, props, nosession, editmode, dynamic, meta, _version}, req) => {
             const {context, headers} = req
 
             const userIsLoggedIn = Util.isUserLoggedIn(context)
@@ -66,7 +66,7 @@ export default db => ({
             let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, headers, editmode})
             if (!cmsPages.results || cmsPages.results.length === 0) {
 
-                Hook.call('trackUser', {req, event: '404', slug, db, context, data: query})
+                Hook.call('trackUser', {req, event: '404', slug, db, context, data: query, meta})
 
                 throw new Error('Cms page doesn\'t exist')
             }

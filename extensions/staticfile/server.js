@@ -21,7 +21,6 @@ const createStaticFiles = async (db) => {
 
         const staticFiles = (await db.collection('StaticFile').find({active: true}).toArray())
         staticFiles.forEach(staticFile => {
-
             const pathParts = staticFile.name.split('/')
             pathParts.pop()
 
@@ -32,25 +31,36 @@ const createStaticFiles = async (db) => {
 
             if (Util.ensureDirectoryExistence(currentDir + pathParts.join('/'))) {
 
-                console.log(`create file ${staticFile.name}`)
                 const filePath = currentDir + '/' + staticFile.name
 
-                let content = staticFile.content
-                const regex = /^data:.+\/(.+);base64,(.*)$/
 
-                const matches = content.match(regex)
-                if( matches && matches.length===3){
-                    content = Buffer.from(matches[2], 'base64')
-                }
+                let statDest
+                try{
+                    statDest = fs.lstatSync(filePath)
+                }catch(e){}
+                if(!statDest || statDest.mtime < staticFile.modifiedAt) {
 
-                fs.writeFile(filePath, content, function (err) {
-                    if (err) {
-                        return console.log(err)
+                    console.log(`create file ${staticFile.name} after ${new Date() - _app_.start}ms`)
+
+                    let content = staticFile.content
+                    const regex = /^data:.+\/(.+);base64,(.*)$/
+
+                    const matches = content.match(regex)
+                    if (matches && matches.length === 3) {
+                        content = Buffer.from(matches[2], 'base64')
                     }
-                })
 
-                fs.unlink(filePath+'.br',()=>{})
-                fs.unlink(filePath+'.gz',()=>{})
+                    fs.writeFile(filePath, content, function (err) {
+                        if (err) {
+                            return console.log(err)
+                        }
+                    })
+
+                    fs.unlink(filePath + '.br', () => {
+                    })
+                    fs.unlink(filePath + '.gz', () => {
+                    })
+                }
 
             }
         })

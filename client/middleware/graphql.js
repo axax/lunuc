@@ -118,7 +118,7 @@ const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
     }
 }
 
-export const finalFetch = ({type = RequestType.query, cacheKey, query, variables, fetchPolicy = 'cache-first', signal}) => {
+export const finalFetch = ({type = RequestType.query, cacheKey, query, variables, hiddenVariables, fetchPolicy = 'cache-first', signal}) => {
 
     return new Promise((resolve, reject) => {
 
@@ -144,12 +144,19 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
             }
         }
 
+        let body
+        if (hiddenVariables) {
+            body = JSON.stringify({query, variables: {...variables, ...hiddenVariables}})
+        } else {
+            body = JSON.stringify({query, variables})
+        }
+
         addLoader()
         fetch(GRAPHQL_URL, {
             method: 'POST',
             signal,
             headers: getHeaders(),
-            body: JSON.stringify({query, variables})
+            body
         }).then(r => {
             removeLoader()
             _app_.session = r.headers.get('x-session')
@@ -375,7 +382,7 @@ export const graphql = (query, operationOptions = {}) => {
                     variables = options.variables,
                     skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(this.props) : operationOptions.skip) : false
 
-                return <Query skip={skip} query={query} variables={variables}
+                return <Query skip={skip} query={query} variables={variables} hiddenVariables={options.hiddenVariables}
                               fetchPolicy={options.fetchPolicy}>{(res) => {
 
                     let data = res.data
@@ -414,7 +421,7 @@ export const Subscription = props => {
     return props.children && result ? props.children(result) : null
 }*/
 
-export const useQuery = (query, {variables, fetchPolicy = 'cache-first', skip}) => {
+export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cache-first', skip}) => {
 
 
     const cacheKey = getCacheKey({query, variables})
@@ -469,7 +476,14 @@ export const useQuery = (query, {variables, fetchPolicy = 'cache-first', skip}) 
 
             if (newResponse.loading) {
 
-                finalFetch({cacheKey, query, variables, fetchPolicy, signal: controller.signal}).then(response => {
+                finalFetch({
+                    cacheKey,
+                    query,
+                    variables,
+                    hiddenVariables,
+                    fetchPolicy,
+                    signal: controller.signal
+                }).then(response => {
                     setResponse(response)
                 }).catch(error => {
                     if (!controller.signal.aborted) {

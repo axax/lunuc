@@ -26,7 +26,6 @@ Hook.on('schema', ({schemas}) => {
 Hook.on('appready', async ({db, context}) => {
 
     const dnsSettings = (await Util.getKeyValueGlobal(db, context, "DnsSettings", true)) || {}
-
     console.log("DnsSettings", dnsSettings)
     if (!dnsSettings.execfilter || Util.execFilter(dnsSettings.execfilter)) {
 

@@ -29,7 +29,7 @@ export default () => {
                         const json = JSON.parse(item.data)
                         if (json.title.constructor === String) {
                             d.data = json.title
-                        }else{
+                        } else {
                             d.data = json.title[_app_.lang]
                         }
                     } catch (e) {
@@ -45,7 +45,7 @@ export default () => {
         if (type === 'GenericData') {
             if (dataToEdit && dataToEdit.definition) {
 
-                if( !dataToEdit.definition.structure){
+                if (!dataToEdit.definition.structure) {
 
                     client.query({
                         query: `query genericDataDefinitions($filter:String){genericDataDefinitions(filter:$filter){results{_id name structure}}}`,
@@ -53,7 +53,7 @@ export default () => {
                             filter: `_id=${dataToEdit.definition} || name==${dataToEdit.definition}`
                         }
                     }).then(response => {
-                        if( response.data.genericDataDefinitions.results){
+                        if (response.data.genericDataDefinitions.results) {
                             let newDataToEdit = Object.assign({}, dataToEdit, {definition: response.data.genericDataDefinitions.results[0]})
 
                             parentRef.setState({dataToEdit: newDataToEdit})
@@ -65,7 +65,7 @@ export default () => {
                         loading structure...
                     </React.Fragment>
 
-                }else {
+                } else {
 
                     let struct
                     try {
@@ -74,7 +74,7 @@ export default () => {
                         console.error(e, dataToEdit.definition.structure)
                         return
                     }
-                    const data = dataToEdit.data?(dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data): {}
+                    const data = dataToEdit.data ? (dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data) : {}
 
                     const newFields = Object.assign({}, formFields)
 
@@ -83,21 +83,30 @@ export default () => {
                     delete newDataToEdit.data
 
                     newFields.definition.readOnly = true
-                    const userHasCapa = Util.hasCapability({userData:_app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)
-                    props.title = <React.Fragment>{struct.title || newDataToEdit.definition.name}{newDataToEdit._id && userHasCapa?' ('+newDataToEdit._id+')':''} <div
-                        style={{float: 'right', textAlign: 'right'}}>{userHasCapa && <SimpleButton size="small" variant="contained"
-                                                                                   color="primary"
-                                                                                   onClick={() => {
+                    const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)
+                    props.title =
+                        <React.Fragment>{struct.title || newDataToEdit.definition.name}{newDataToEdit._id && userHasCapa ? ' (' + newDataToEdit._id + ')' : ''}
+                            <div
+                                style={{float: 'right', textAlign: 'right'}}>{userHasCapa && [<SimpleButton
+                                key="showJson" size="small" variant="contained"
+                                color="primary"
+                                onClick={() => {
 
-                                                                                       const a = document.createElement('a'),
-                                                                                           blob = new Blob([JSON.stringify(JSON.parse(dataToEdit.data), null, 2)], {'type': 'text/plain'})
-                                                                                       a.href = window.URL.createObjectURL(blob)
-                                                                                       // a.download = 'json.txt'
-                                                                                       a.target = '_blank'
-                                                                                       a.click()
+                                    const a = document.createElement('a'),
+                                        blob = new Blob([JSON.stringify(JSON.parse(dataToEdit.data), null, 2)], {'type': 'text/plain'})
+                                    a.href = window.URL.createObjectURL(blob)
+                                    // a.download = 'json.txt'
+                                    a.target = '_blank'
+                                    a.click()
 
-                                                                                   }}>Show JSON</SimpleButton>}</div>
-                    </React.Fragment>
+                                }}>Show JSON</SimpleButton>,
+                                <SimpleButton key="autoTranslate" size="small" variant="contained"
+                                              color="primary"
+                                              onClick={() => {
+console.log(dataToEdit.data)
+
+                                              }}>Autotranslate</SimpleButton>]}</div>
+                        </React.Fragment>
 
                     struct.fields.forEach(field => {
                         const oriName = field.name, newName = 'data_' + oriName
@@ -135,7 +144,7 @@ export default () => {
 
 
                 const newFields = Object.assign({}, formFields)
-                newFields.definition.readOnly=false
+                newFields.definition.readOnly = false
 
                 delete newFields.data
 
@@ -173,32 +182,31 @@ export default () => {
     })
 
 
-
     // add some extra data to the table
     Hook.on('TypeTableAction', function ({type, actions}) {
         if (type === 'GenericData') {
 
             actions.push({
-                    name: 'Export GenericData to csv', onClick: () => {
-                        const items = []
-                        this.state.data.results.forEach(res=>{
-                            items.push({date: Util.formattedDatetimeFromObjectId(res._id),...JSON.parse(res.data)})
-                        })
-                        const replacer = (key, value) => value === null ? '' : value // specify how you want to handle null values here
-                        const header = Object.keys(items[0])
-                        let csv = items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
-                        csv.unshift(header.join(','))
-                        csv = csv.join('\r\n')
+                name: 'Export GenericData to csv', onClick: () => {
+                    const items = []
+                    this.state.data.results.forEach(res => {
+                        items.push({date: Util.formattedDatetimeFromObjectId(res._id), ...JSON.parse(res.data)})
+                    })
+                    const replacer = (key, value) => value === null ? '' : value // specify how you want to handle null values here
+                    const header = Object.keys(items[0])
+                    let csv = items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
+                    csv.unshift(header.join(','))
+                    csv = csv.join('\r\n')
 
 
-                        const a = document.createElement('a'),
-                            blob = new Blob([csv], {'type': 'text/comma-separated-values'})
-                        a.href = window.URL.createObjectURL(blob)
-                        a.download = 'genericdata.csv'
-                        a.target = '_blank'
-                        a.click()
-                    }
-                })
+                    const a = document.createElement('a'),
+                        blob = new Blob([csv], {'type': 'text/comma-separated-values'})
+                    a.href = window.URL.createObjectURL(blob)
+                    a.download = 'genericdata.csv'
+                    a.target = '_blank'
+                    a.click()
+                }
+            })
         }
     })
 

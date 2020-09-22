@@ -24,7 +24,8 @@ class FilesContainer extends React.Component {
 
     static spaces = [{value:'./',name:'Application'},
         {value:config.HOSTRULES_ABSPATH,name:'Hostrules'},
-        {value:config.WEBROOT_ABSPATH,name:'Webroot'}
+        {value:config.WEBROOT_ABSPATH,name:'Webroot'},
+        {value:'/etc/lunuc/',name:'Config (etc)'},
         ]
     constructor(props) {
         super(props)
