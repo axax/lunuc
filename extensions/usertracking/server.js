@@ -17,8 +17,8 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
-Hook.on('trackUser', ({req, event, slug, db, context, data}) => {
-    trackUser({req, event, context, db, slug, data})
+Hook.on('trackUser', ({req, event, slug, db, context, data, meta}) => {
+    trackUser({req, event, context, db, slug, data, meta})
 })
 
 Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode}) => {
