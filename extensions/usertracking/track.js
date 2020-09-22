@@ -23,7 +23,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
         }
 
         if (!referer) {
-            referer = req.headers['referer']
+            referer = ''//req.headers['referer']
         }
 
         const insertData = {
