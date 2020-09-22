@@ -23,7 +23,7 @@ Hook.on('trackUser', ({req, event, slug, db, context, data}) => {
 
 Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode}) => {
     if (segment.track && req && !editmode) {
-        trackUser({req, event: segment.track.event, context, db, slug: scope.page.slug, data:scope.params})
+        trackUser({req, event: segment.track.event, context, db, slug: scope.page.slug, data:scope.params, meta: scope.page.meta})
     }
 })
 

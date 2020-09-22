@@ -57,7 +57,7 @@ export default function (WrappedComponent) {
                                                            cmsPage={{name: {}}}/>
                         } else {
 
-                            if(_app_.redirect404 && _app_.redirect404!==location.pathname){
+                            if (_app_.redirect404 && _app_.redirect404 !== location.pathname) {
                                 location.replace(_app_.redirect404)
                                 return null
                             }
@@ -91,7 +91,7 @@ export default function (WrappedComponent) {
             }
 
             let resolvedDataJson
-            if(!internal) {
+            if (!internal) {
                 resolvedDataJson = JSON.parse(cmsPage.resolvedData)
 
                 // Update data in resolved data
@@ -114,37 +114,37 @@ export default function (WrappedComponent) {
                     mutation: 'mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}',
                     variables,
                     update: (store, {data: {setKeyValue}}) => {
-                        if(callback){
-                            callback({key,value,setKeyValue})
+                        if (callback) {
+                            callback({key, value, setKeyValue})
                         }
-                        if(resolvedDataJson){
-                            this.updateResolvedData({json:resolvedDataJson})
-                        }else{
+                        if (resolvedDataJson) {
+                            this.updateResolvedData({json: resolvedDataJson})
+                        } else {
 
-                          /*  try {
-                                const storedData = store.readQuery({
-                                    query: QUERY_KEY_VALUES,
-                                    variables: {key: settingKeyPrefix + slug}
-                                })
-                                console.log(storedData)
+                            /*  try {
+                                  const storedData = store.readQuery({
+                                      query: QUERY_KEY_VALUES,
+                                      variables: {key: settingKeyPrefix + slug}
+                                  })
+                                  console.log(storedData)
 
-                                let newData = {keyValue: null}
-                                if (storedData.keyValue) {
-                                    newData.keyValue = Object.assign({}, storedData.keyValue, {value: setKeyValue.value})
-                                } else {
-                                    newData.keyValue = setKeyValue
-                                }
+                                  let newData = {keyValue: null}
+                                  if (storedData.keyValue) {
+                                      newData.keyValue = Object.assign({}, storedData.keyValue, {value: setKeyValue.value})
+                                  } else {
+                                      newData.keyValue = setKeyValue
+                                  }
 
-                                // Write our data back to the cache.
-                                store.writeQuery({
-                                    query: gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`,
-                                    variables: {key: settingKeyPrefix + slug},
-                                    data: newData
-                                })
-                            }catch (e) {
-                                console.log(e)
+                                  // Write our data back to the cache.
+                                  store.writeQuery({
+                                      query: gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`,
+                                      variables: {key: settingKeyPrefix + slug},
+                                      data: newData
+                                  })
+                              }catch (e) {
+                                  console.log(e)
 
-                            }*/
+                              }*/
                         }
                     },
                 })
@@ -168,7 +168,7 @@ export default function (WrappedComponent) {
                 json[key] = value
                 localStorage.setItem(localStorageKey, JSON.stringify(json))
                 if (resolvedDataJson) {
-                    this.updateResolvedData({json:resolvedDataJson})
+                    this.updateResolvedData({json: resolvedDataJson})
                 }
             }
 
@@ -187,11 +187,11 @@ export default function (WrappedComponent) {
             // upadate data in resolvedData string
             if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
                 const newData = Object.assign({}, storeData.cmsPage)
-                if(path && value){
+                if (path && value) {
                     const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
                     setPropertyByPath(value, path, resolvedDataJson)
                     newData.resolvedData = JSON.stringify(resolvedDataJson)
-                }else{
+                } else {
                     newData.resolvedData = JSON.stringify(json)
                 }
 
@@ -204,14 +204,21 @@ export default function (WrappedComponent) {
             }
         }
     }
+
     const withGql = compose(
         graphql(CMS_PAGE_QUERY, {
             options(ownProps) {
+
+                let hiddenVariables
+                if (!ownProps.dynamic) {
+                    hiddenVariables = {
+                        meta: JSON.stringify({referrer: document.referrer})
+                    }
+                }
+
                 return {
                     variables: getGqlVariables(ownProps),
-                    hiddenVariables:{
-                        meta: JSON.stringify({referrer: document.referrer})
-                    },
+                    hiddenVariables,
                     fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network') // cache-first
                 }
             },
