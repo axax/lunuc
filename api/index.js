@@ -8,10 +8,10 @@ const fetch = require('node-fetch')
 const config = require('../gensrc/config').default
 
 globalThis.fetch = fetch
-globalThis.window = {location:{}}
+globalThis.window = {location:{href:'',origin: ''}}
 
 // define some global vars for server side rendering
-global.document = {documentElement: {}}
+global.document = {documentElement: {}, referrer:''}
 global._app_ = {lang: 'en', ssr: true, tr: {}, start: new Date(), config}
 
 // Entry point for our server

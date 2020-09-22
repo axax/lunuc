@@ -57,7 +57,7 @@ class Routes extends React.Component {
         super(props)
 
         Hook.call('Routes', {routes: this.routes, container: this})
-
+        this.history._urlStack = [location.href.substring(location.origin.length)]
         // override push and replace methode to prepend language code if needed
         this.history._replace = this.history.replace
         this.history._push = this.history.push
