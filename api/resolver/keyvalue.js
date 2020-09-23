@@ -7,6 +7,35 @@ import {
 } from 'util/capabilities'
 import Cache from 'util/cache'
 
+const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {context}, db) => {
+
+    let res
+    try {
+        res = await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {
+            _id,
+            key,
+            value,
+            ispublic,
+            createdBy: (createdBy ? ObjectId(createdBy) : createdBy)
+        }, {capability: CAPABILITY_MANAGE_TYPES, primaryKey: _id ? '_id' : 'key'})
+
+
+        // TODO: we don't have the key here (sometimes we only have the id)
+        // so let clear all KeyValueGlobal
+        Cache.clearStartWith('KeyValueGlobal_')
+
+        // clear caches from dataResolver --> see method createCacheKey
+        Cache.clearStartWith('dataresolver_keyValueGlobals')
+
+
+    } catch (e) {
+        console.log(e)
+        throw e
+    }
+    return res
+}
+
+
 export const keyvalueResolver = (db) => ({
     Query: {
         keyValues: async ({keys, limit, sort, offset, page, filter, all}, {context}) => {
@@ -95,32 +124,8 @@ export const keyvalueResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_TYPES)
             return await GenericResolver.createEntity(db, req, 'KeyValueGlobal', {key, value, ispublic})
         },
-        updateKeyValueGlobal: async ({_id, key, value, ispublic, createdBy}, {context}) => {
-
-            let res
-            try {
-                res = await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {
-                    _id,
-                    key,
-                    value,
-                    ispublic,
-                    createdBy: (createdBy ? ObjectId(createdBy) : createdBy)
-                }, {capability: CAPABILITY_MANAGE_TYPES})
-
-
-                // TODO: we don't have the key here (sometimes we only have the id)
-                // so let clear all KeyValueGlobal
-                Cache.clearStartWith('KeyValueGlobal_')
-
-                // clear caches from dataResolver --> see method createCacheKey
-                Cache.clearStartWith('dataresolver_keyValueGlobals')
-
-
-            }catch (e) {
-                throw e
-            }
-
-            return res
+        updateKeyValueGlobal: (data, req) => {
+            updateKeyValueGlobal(data, req, db)
         },
         deleteKeyValueGlobal: async ({_id}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
@@ -148,6 +153,11 @@ export const keyvalueResolver = (db) => ({
             })
         },
         setKeyValueGlobal: async ({key, value}, {context}) => {
+
+            return updateKeyValueGlobal({key, value}, {context}, db)
+
+
+            /*
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
             // update or insert if not exists
@@ -161,7 +171,7 @@ export const keyvalueResolver = (db) => ({
                         username: context.username
                     }
                 }
-            })
+            })*/
         },
         deleteKeyValueByKey: async ({key}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)

@@ -97,9 +97,9 @@ const GenericResolver = {
                 match = {}
 
             } else {
-                if( typeName === 'User'){
+                if (typeName === 'User') {
                     match = {_id: {$in: await Util.userAndJuniorIds(db, context.id)}}
-                }else {
+                } else {
                     const typeDefinition = getType(typeName)
                     let userFilter = true
                     if (typeDefinition) {
@@ -156,7 +156,7 @@ const GenericResolver = {
         /* if (typeName.indexOf("GenericData") >= 0) {
              console.log(JSON.stringify(dataQuery, null, 4))
          }*/
-       // console.log(options,JSON.stringify(dataQuery, null, 4))
+        // console.log(options,JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
@@ -313,9 +313,9 @@ const GenericResolver = {
             _id: ObjectId(data._id)
         }
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            if(typeName==='User'){
+            if (typeName === 'User') {
                 options._id = {$in: await Util.userAndJuniorIds(db, context.id)}
-            }else {
+            } else {
                 options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
             }
         }
@@ -362,9 +362,9 @@ const GenericResolver = {
         }
 
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-            if(typeName==='User'){
+            if (typeName === 'User') {
                 options._id = {$in: await Util.userAndJuniorIds(db, context.id)}
-            }else {
+            } else {
                 options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
             }
         }
@@ -385,26 +385,36 @@ const GenericResolver = {
 
         Util.checkIfUserIsLoggedIn(context)
 
-        if (!data._id) {
-            throw new Error('Id is missing')
+        if (!options) {
+            options = {}
+        }
+
+        const primaryKey = options.primaryKey || '_id'
+
+        if (!data[primaryKey]) {
+            throw new Error('primary key is missing')
         }
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
-        const params = {
-            _id: ObjectId(data._id)
+        const params = {}
+
+        if (primaryKey === '_id') {
+            params._id = ObjectId(data._id)
+        } else {
+            params[primaryKey] = data[primaryKey]
         }
 
 
-        if (!await Util.userHasCapability(db, context, options && options.capability?options.capability:CAPABILITY_MANAGE_OTHER_USERS)) {
+        if (!await Util.userHasCapability(db, context, options.capability ? options.capability : CAPABILITY_MANAGE_OTHER_USERS)) {
 
             if (data.createdBy && data.createdBy !== context.id) {
                 throw new Error('user is not allow to change field createdBy')
             }
 
-            if(typeName==='User'){
+            if (typeName === 'User') {
                 options._id = {$in: await Util.userAndJuniorIds(db, context.id)}
-            }else {
+            } else {
 
                 const typeDefinition = getType(typeName)
                 let userFilter = true
@@ -452,13 +462,14 @@ const GenericResolver = {
         dataSet.modifiedAt = new Date().getTime()
         // try with dot notation for partial update
 
-        let result = (await collection.findOneAndUpdate(params, {
+        let result = (await collection.updateOne(params, {
             $set: dataSet
-        }, {returnOriginal: false}))
+        }))
 
-        if (result.ok !== 1 || !result.lastErrorObject.updatedExisting) {
-            throw new Error( _t('core.update.permission.error', context.lang, {name: collectionName}))
+        if (result.modifiedCount !== 1 ) {
+            throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
         }
+
         const returnValue = {
             ...data,
             modifiedAt: dataSet.modifiedAt,
