@@ -10,10 +10,6 @@ import DomUtil from 'client/util/dom'
 import Async from 'client/components/Async'
 import CmsViewContainer from '../containers/CmsViewContainer'
 import {getKeyValueFromLS} from 'client/util/keyvalue'
-import {
-    Col,
-    Row,
-} from 'ui'
 import {Link, Redirect} from 'react-router-dom'
 import JsonDomInput from './JsonDomInput'
 import {deepMergeOptional} from 'util/deepMerge'
@@ -79,8 +75,12 @@ class JsonDom extends React.Component {
                                                      baseUrl={location.pathname} {...props}/>,
 
         /* Default UI Implementation Components */
-        Col,
-        Row,
+        Col: ({className, ...rest}) => {
+            return <div className={'col' + (className ? ' ' + className : '')} {...rest} />
+        },
+        Row: ({className, ...rest}) => {
+            return <div className={'row' + (className ? ' ' + className : '')} {...rest} />
+        },
 
         /* Other components */
         FileDrop,
