@@ -31,7 +31,7 @@ class ElementWatch extends React.Component {
         const {tagSrc} = this.state
         const {eleProps} = this.props
 
-        if (!ElementWatch.hasLoaded[tagSrc]) {
+        if (!tagSrc || !ElementWatch.hasLoaded[tagSrc]) {
             if (!!window.IntersectionObserver) {
                 setTimeout(() => {
                     this.addIntersectionObserver()
@@ -46,9 +46,7 @@ class ElementWatch extends React.Component {
     render() {
         const {initialVisible, madeVisible, tagImg, tagSrc} = this.state
         const {$observe, eleProps, eleType, jsonDom, _key, c, $c, scope} = this.props
-        if (!initialVisible && !madeVisible && !ElementWatch.hasLoaded[tagSrc]) {
-
-            const {_tagName, _options, _WrappedComponent, _scope, _onChange, _onDataResolverPropertyChange, wrapper, inlineSvg, options, id, _inlineEditor,gotop, ...rest} = eleProps
+        if (!initialVisible && !madeVisible && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
 
             const lazyImage = $observe.lazyImage
             if (lazyImage) {
@@ -73,7 +71,8 @@ class ElementWatch extends React.Component {
                     ($c ? null : jsonDom.parseRec(c, _key, scope))
                 )
             }
-            return <div _key={_key} data-wait-visible={jsonDom.instanceId} {...rest}
+
+            return <div _key={_key} data-wait-visible={jsonDom.instanceId}
                         style={{minHeight: '1rem', minWidth: '1rem'}}></div>
         } else {
 
@@ -156,7 +155,9 @@ class ElementWatch extends React.Component {
 
                             } else {
 
-                                ElementWatch.hasLoaded[tagSrc] = true
+                                if (tagSrc) {
+                                    ElementWatch.hasLoaded[tagSrc] = true
+                                }
                                 this.setState({madeVisible: true})
                             }
                         }

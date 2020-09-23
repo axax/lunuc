@@ -85,19 +85,21 @@ class JsonDom extends React.Component {
         /* Other components */
         FileDrop,
         MarkDown,
-        'SmartImage': ({src, options, caption, wrapper, alt, width, height, inlineSvg, svgData, ...props}) => {
-            let imageData = Util.getImageObject(src, options)
-            imageData['data-smartimage'] = true
-            const imgTag = props => {
+        'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, ...props}) => {
+            const imgTag = () => {
+                let imageData = Util.getImageObject(src, options)
+                imageData['data-smartimage'] = true
+
                 if (svgData) {
                     return <span data-inline-svg={true} {...props} dangerouslySetInnerHTML={{__html: svgData}}/>
                 } else {
-                    return <img alt={alt} {...imageData} {...props} height={height} width={width} />
+                    const Tag = tagName || 'img'
+                    return <Tag {...imageData} {...props} />
                 }
             }
 
             if (caption || wrapper) {
-                return <figure {...props}>
+                return <figure style={figureStyle} className={figureClassName}>
                     {imgTag()}
                     {caption && <figcaption dangerouslySetInnerHTML={{__html: caption}}/>}
                 </figure>
@@ -108,7 +110,7 @@ class JsonDom extends React.Component {
              <img src="mdn-logo-narrow.png" alt="MDN">
              </picture>
              */
-            return imgTag(props)
+            return imgTag()
         },
         Print,
         'input': props => {

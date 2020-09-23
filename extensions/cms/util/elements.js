@@ -148,12 +148,14 @@ const baseElements = [
         tagName: 'div',
         name: 'Video',
         defaults: {
+            $observe:{},
             $inlineEditor: {
                 elementKey: 'video',
                 picker: {type: 'Media', baseFilter: 'mimeType=video'}
             },
             p: {
-                ['data-element-key']: 'video'
+                ['data-element-key']: 'video',
+                id:'__uid__'
             }
         },
         options: {
