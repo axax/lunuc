@@ -693,7 +693,6 @@ class TypesContainer extends React.Component {
                 children: <ManageCollectionClones type={type}/>
             }
         }
-
         const selectedLength = Object.keys(this.state.selectedrows).length
         const {description} = this.types[type]
         const content = [
@@ -1109,6 +1108,7 @@ class TypesContainer extends React.Component {
                     } catch (e) {
                     }
                 }
+
                 client.query({
                     fetchPolicy: 'network-only',
                     forceFetch: true,

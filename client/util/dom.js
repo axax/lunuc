@@ -14,7 +14,11 @@ const DomUtil = {
         }
     },
     addStyle(href, attrs, opts) {
-        const style = DomUtil.createAndAddTag('link', 'head', {type: 'text/css', rel: 'stylesheet', href, ...attrs}, opts)
+        const style = DomUtil.createAndAddTag('link', 'head', {
+            type: 'text/css',
+            rel: 'stylesheet',
+            href, ...attrs
+        }, opts)
     },
     addScript(src, attrs, opts) {
         const script = DomUtil.createAndAddTag('script', 'head', {
@@ -35,8 +39,8 @@ const DomUtil = {
         }
         if (!tag) {
             tag = document.createElement(name)
-        }else if(opts && opts.ignoreIfExist){
-            if( attrs.onload){
+        } else if (opts && opts.ignoreIfExist) {
+            if (attrs.onload) {
                 attrs.onload()
             }
             return
@@ -50,13 +54,12 @@ const DomUtil = {
                         tag.setAttribute('data-' + dataKey.replace(/([A-Z])/g, "-$1").toLowerCase(), attrs[key][dataKey])
                     }
                 }
-            }
-            if (key === 'style' && attrs[key].constructor === Object) {
+            } else if (key === 'style' && attrs[key].constructor === Object) {
                 tag[key] = DomUtil.styleObjectToString(attrs[key])
             } else if (attrs[key])
-                if(key==='innerHTML' || key==='innerText' || key==='onload' || key==='textContent'){
+                if (key === 'innerHTML' || key === 'innerText' || key === 'onload' || key === 'textContent') {
                     tag[key] = attrs[key]
-                }else {
+                } else {
                     tag.setAttribute(key, attrs[key])
                 }
         }
