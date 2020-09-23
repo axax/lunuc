@@ -396,7 +396,7 @@ const GenericResolver = {
         }
 
 
-        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+        if (!await Util.userHasCapability(db, context, options && options.capability?options.capability:CAPABILITY_MANAGE_OTHER_USERS)) {
 
             if (data.createdBy && data.createdBy !== context.id) {
                 throw new Error('user is not allow to change field createdBy')

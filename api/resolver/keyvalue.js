@@ -96,22 +96,31 @@ export const keyvalueResolver = (db) => ({
             return await GenericResolver.createEntity(db, req, 'KeyValueGlobal', {key, value, ispublic})
         },
         updateKeyValueGlobal: async ({_id, key, value, ispublic, createdBy}, {context}) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
-            // TODO: we don't have the key here (sometimes we only have the id)
-            // so let clear all KeyValueGlobal
-            Cache.clearStartWith('KeyValueGlobal_')
+            let res
+            try {
+                res = await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {
+                    _id,
+                    key,
+                    value,
+                    ispublic,
+                    createdBy: (createdBy ? ObjectId(createdBy) : createdBy)
+                }, {capability: CAPABILITY_MANAGE_TYPES})
 
-            // clear caches from dataResolver --> see method createCacheKey
-            Cache.clearStartWith('dataresolver_keyValueGlobals')
 
-            return await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {
-                _id,
-                key,
-                value,
-                ispublic,
-                createdBy: (createdBy ? ObjectId(createdBy) : createdBy)
-            })
+                // TODO: we don't have the key here (sometimes we only have the id)
+                // so let clear all KeyValueGlobal
+                Cache.clearStartWith('KeyValueGlobal_')
+
+                // clear caches from dataResolver --> see method createCacheKey
+                Cache.clearStartWith('dataresolver_keyValueGlobals')
+
+
+            }catch (e) {
+                throw e
+            }
+
+            return res
         },
         deleteKeyValueGlobal: async ({_id}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
