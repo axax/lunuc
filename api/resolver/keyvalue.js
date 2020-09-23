@@ -29,7 +29,6 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
 
 
     } catch (e) {
-        console.log(e)
         throw e
     }
     return res
@@ -61,11 +60,10 @@ export const keyvalueResolver = (db) => ({
             if (keys && keys.length > 0) {
                 match.key = {$in: keys}
             }
-            // if user don't have capability to manage keys he can only see the public ones
+            // if user don't have capability to manage keys he can only see the public ones or the one that are assign to them
             if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
-                match.ispublic = true
+                match.$or =[{createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}},{ispublic:true}]
             }
-
             const data = await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value', 'ispublic'], {
                 limit,
                 offset,
@@ -124,8 +122,8 @@ export const keyvalueResolver = (db) => ({
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_MANAGE_TYPES)
             return await GenericResolver.createEntity(db, req, 'KeyValueGlobal', {key, value, ispublic})
         },
-        updateKeyValueGlobal: (data, req) => {
-            updateKeyValueGlobal(data, req, db)
+        updateKeyValueGlobal: async (data, req) => {
+            return await updateKeyValueGlobal(data, req, db)
         },
         deleteKeyValueGlobal: async ({_id}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
@@ -154,7 +152,7 @@ export const keyvalueResolver = (db) => ({
         },
         setKeyValueGlobal: async ({key, value}, {context}) => {
 
-            return updateKeyValueGlobal({key, value}, {context}, db)
+            return await updateKeyValueGlobal({key, value}, {context}, db)
 
 
             /*

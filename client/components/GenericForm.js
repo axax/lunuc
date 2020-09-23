@@ -328,9 +328,9 @@ class GenericForm extends React.Component {
     }
 
     initColorpicker() {
-        if (window.Pickr) {
-            const pickr = new Pickr({
-                el: '[data-colorpicker]',
+        if (window.Pickr && !this.pickr) {
+            this.pickr = new Pickr({
+                el: '[data-colorpicker] > input',
                 useAsButton: true,
                 defaultRepresentation: 'HEX',
                 components: {
@@ -339,20 +339,26 @@ class GenericForm extends React.Component {
                     opacity: true,
                     hue: true,
                     interaction: {
-                        hex: true,
-                        rgba: true,
+                        hex: false,
+                        rgba: false,
                         hsla: false,
                         hsva: false,
-                        cmyk: true,
-                        input: true
+                        cmyk: false,
+                        input: false,
+                        save:false
                     },
                 }
             })
             let timeout
-            pickr.on('change', (color, instance) => {
-                timeout = setTimeout(()=>{
-                    this.handleInputChange({target:{name:instance._root.button.querySelector('input').name,value:color.toHEXA().toString()}})
-                },300)
+            this.pickr.on('change', (color, instance) => {
+                const inp = instance._root.button
+                clearTimeout(timeout)
+                timeout = setTimeout(() => {
+                    this.handleInputChange({target: {name: inp.name, value: color.toHEXA().toString()}})
+                }, 300)
+            }).on('show', (color, instance) => {
+                const inp = instance._root.button
+                this.pickr.setColor(inp.value)
             })
 
         }
@@ -579,6 +585,7 @@ class GenericForm extends React.Component {
                 currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                     className={classNames(classes.formFieldFull)}>
                     <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><Input data-colorpicker=""
+                                                                                                 onChange={this.handleInputChange}
                                                                                                  name={fieldKey}
                                                                                                  key={fieldKey}
                                                                                                  value={value}/></FormControl>)

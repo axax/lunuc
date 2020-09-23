@@ -162,12 +162,14 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
             _app_.session = r.headers.get('x-session')
 
             r.json().then(response => {
-
-
-                if (!r.ok) {
+                if (!r.ok || response.errors) {
                     const rejectData = {...response, loading: false, networkStatus: NetworkStatus.error}
                     if (response.errors) {
                         rejectData.error = response.errors[0]
+                        getStore().dispatch(addError({
+                            key: 'graphql_error',
+                            msg: rejectData.error.message + (rejectData.error.path ? ' (in operation ' + rejectData.error.path.join('/') + ')' : '')
+                        }))
                     }
                     reject(rejectData)
                 } else {
