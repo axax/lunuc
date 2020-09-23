@@ -1127,6 +1127,11 @@ const baseElements = [
                 label: 'Grösse',
                 tab: DEFAULT_TAB
             },
+            p_style_backgroundPosition: {
+                value: '',
+                label: 'Position',
+                tab: DEFAULT_TAB
+            },
             t: {
                 value: '',
                 label: 'Tag Name'

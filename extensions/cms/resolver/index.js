@@ -89,7 +89,8 @@ export default db => ({
                 scope,
                 nosession,
                 req,
-                editmode
+                editmode,
+                dynamic
             })
             let html
             if (ssr) {

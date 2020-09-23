@@ -13,6 +13,7 @@ import {
     Typography,
     Box,
     InputAdornment,
+    Input,
     ExpandLessIconButton,
     ExpandMoreIconButton,
     TranslateIconButton
@@ -313,7 +314,48 @@ class GenericForm extends React.Component {
 
         }
 
+    }
 
+    loadColorpicker() {
+        DomUtil.addScript('https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js', {
+            id: 'colorpicker',
+            onload: () => {
+                this.initColorpicker()
+            }
+        }, {ignoreIfExist: true})
+
+        DomUtil.addStyle('https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css', {id: 'colorpickerstyle'}, {ignoreIfExist: true})
+    }
+
+    initColorpicker() {
+        if (window.Pickr) {
+            const pickr = new Pickr({
+                el: '[data-colorpicker]',
+                useAsButton: true,
+                defaultRepresentation: 'HEX',
+                components: {
+                    palette: true,
+                    preview: true,
+                    opacity: true,
+                    hue: true,
+                    interaction: {
+                        hex: true,
+                        rgba: true,
+                        hsla: false,
+                        hsva: false,
+                        cmyk: true,
+                        input: true
+                    },
+                }
+            })
+            let timeout
+            pickr.on('change', (color, instance) => {
+                timeout = setTimeout(()=>{
+                    this.handleInputChange({target:{name:instance._root.button.querySelector('input').name,value:color.toHEXA().toString()}})
+                },300)
+            })
+
+        }
     }
 
     newStateForField(prevState, name, value) {
@@ -368,7 +410,7 @@ class GenericForm extends React.Component {
     onAddClick = () => {
         if (this.props.onClick)
             this.props.onClick(this.state.fields)
-        this.setState(GenericForm.getInitalState(this.props))
+        //this.setState(GenericForm.getInitalState(this.props))
     }
 
     render() {
@@ -417,12 +459,6 @@ class GenericForm extends React.Component {
 
 
             if (field.subFields) {
-
-                /*  const subFields = {}
-                  Object.keys().forEach(k=>{
-                      subFields[k] = {value: value}
-                  })
-  */
 
                 let values
                 try {
@@ -536,6 +572,18 @@ class GenericForm extends React.Component {
             } else if (uitype === 'image') {
 
                 currentFormFields.push(<FileDrop key={fieldKey} value={value}/>)
+
+
+            } else if (uitype === 'color_picker') {
+
+                currentFormFields.push(<FormControl key={'control' + fieldKey}
+                                                    className={classNames(classes.formFieldFull)}>
+                    <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><Input data-colorpicker=""
+                                                                                                 name={fieldKey}
+                                                                                                 key={fieldKey}
+                                                                                                 value={value}/></FormControl>)
+
+                this.loadColorpicker()
 
 
             } else if (uitype === 'type_picker') {

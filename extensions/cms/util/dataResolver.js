@@ -18,10 +18,9 @@ const DEFAULT_PARAM_MAX_LENGTH = 100,
     DEFAULT_PARAM_NOT_ALLOWED_CHARS = ['\\(','\\)','\\{','\\}',';','<','>'],
     DEFAULT_PARAM_NOT_ALLOWED_REGEX = new RegExp(DEFAULT_PARAM_NOT_ALLOWED_CHARS.join('|'), 'gi')
 
-export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode}) => {
+export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode, dynamic}) => {
     const startTime = new Date().getTime()
     const resolvedData = {_meta: {}}, subscriptions = []
-
 
     if (dataResolver && dataResolver.trim() !== '') {
         let debugInfo = null
@@ -93,7 +92,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                             scope,
                             nosession,
                             req,
-                            editmode
+                            editmode,
+                            dynamic
                         })
                         Object.keys(resolvedFromKey.resolvedData).forEach(k => {
                             resolvedData[k] = resolvedFromKey.resolvedData[k]
@@ -348,7 +348,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     if (Hook.hooks['cmsCustomResolver'] && Hook.hooks['cmsCustomResolver'].length) {
                         let c = Hook.hooks['cmsCustomResolver'].length
                         for (let i = 0; i < Hook.hooks['cmsCustomResolver'].length; ++i) {
-                            await Hook.hooks['cmsCustomResolver'][i].callback({db, resolvedData, segment, context, scope, req, editmode})
+                            await Hook.hooks['cmsCustomResolver'][i].callback({db, resolvedData, segment, context, scope, req, editmode, dynamic})
                         }
                     }
                  //   await Hook.call('cmsCustomResolver', {db, resolvedData, segment, context, scope, req, editmode})

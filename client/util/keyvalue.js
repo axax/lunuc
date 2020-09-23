@@ -28,7 +28,7 @@ export const useKeyValues = (keys) => {
 }
 
 export const setKeyValueGlobal = (key, value) =>{
-    client.mutate({
+    return client.mutate({
         mutation: QUERY_SET_KEY_VALUE_GLOBAL,
         variables: {key, value: value.constructor === Object ? JSON.stringify(value) : value},
         update: (store, {data: {setKeyValue}}) => {

@@ -1451,7 +1451,6 @@ const m = Math.max((offX+offY) / 2,100)
                                                 action: 'add',
                                                 style: {marginBottom: '2rem'}
                                             }
-
                                             Object.keys(item.groupOptions[key]).forEach(fieldKey => {
                                                 item.options['!' + key + '!' + fieldKey + '!0'] = item.groupOptions[key][fieldKey]
                                             })
@@ -1568,7 +1567,8 @@ const m = Math.max((offX+offY) / 2,100)
 
         Object.keys(newJsonElement.groupOptions).forEach(key => {
             let val = propertyByPath(key, subJson, '_')
-            if (val) {
+
+            if (val && val.constructor === Array) {
                 newJsonElement.options['!' + key + '!add'] = {
                     uitype: 'button',
                     key,
@@ -1580,6 +1580,7 @@ const m = Math.max((offX+offY) / 2,100)
                     tabPosition:0,
                     style: {marginBottom: '2rem'}
                 }
+
                 val.forEach((groupValue, idx) => {
                     Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
                         const groupFieldOption = newJsonElement.groupOptions[key][fieldKey]

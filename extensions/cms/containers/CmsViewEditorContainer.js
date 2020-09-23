@@ -105,7 +105,6 @@ class CmsViewEditorContainer extends React.Component {
         if (!result.EditorOptions) {
             result.EditorOptions = DEFAULT_EDITOR_SETTINGS
         }
-
         if (!result.EditorPageOptions) {
             result.EditorPageOptions = {}
         }
@@ -848,8 +847,11 @@ class CmsViewEditorContainer extends React.Component {
                    <Typography key="pageOptionTitle" variant="subtitle1">{_t('CmsViewEditorContainer.pagesettings')}</Typography>,
                    <GenericForm key="pageOptionForm" primaryButton={true} caption={_t('core.save')} onClick={(formData) => {
                        const pageName = cmsPage.realSlug.split('/')[0]
-                       setKeyValueGlobal('PageOptions-'+pageName,formData)
-                       location.href = location.href
+                       this.setState({PageOptions:formData})
+                       setKeyValueGlobal('PageOptions-'+pageName,formData).then(()=>{
+                           // refresh whole page
+                           location.href = location.href
+                       })
                }} fields={PageOptionsDefinition.reduce((obj, item) => {return {...obj,[item.name]: item}}, {})} values={PageOptions || {}}/>]:'Es sind keine Optionen definiert'}</div>}
                 </Drawer>
                 <DrawerLayout sidebar={!loadingState && sidebar}
@@ -873,7 +875,7 @@ class CmsViewEditorContainer extends React.Component {
                                                   const name = this.addNewSiteForm.state.fields.name
                                                   delete name.__typename
                                                   client.mutate({
-                                                      mutation: gql(queries.clone),
+                                                      mutation: queries.clone,
                                                       variables: {
                                                           _id: this.addNewSiteForm.props.values._id[0]._id,
                                                           slug,
