@@ -515,9 +515,10 @@ class JsonDom extends React.Component {
             let parsedStyle
             if (style.indexOf('${') > -1) {
                 try {
-                    parsedStyle = new Function(DomUtil.toES5(`const {scope} = this
+                    parsedStyle = new Function(DomUtil.toES5(`const {scope,Util} = this
                              return \`${style}\``)).call({
                         scope: this.scope,
+                        Util: Util,
                         set: (key, value) => {
                             this.styles[key] = value
                             return ''

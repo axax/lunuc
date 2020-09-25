@@ -125,7 +125,8 @@
     "mssql": "^6.2.2",
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
-    "ytdl-core": "^3.2.2"
+    "ytdl-core": "^3.2.2",
+    "lighthouse": "^6.3.0"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
