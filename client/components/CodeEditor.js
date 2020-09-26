@@ -19,6 +19,7 @@ import './codemirror/dialog.css'
 import './codemirror/hint.css'
 
 /* linter */
+//import 'codemirror/addon/lint/json-lint'
 /*import 'codemirror/addon/lint/lint'
 import 'codemirror/addon/lint/json-lint'
 import 'codemirror/addon/lint/lint.css'

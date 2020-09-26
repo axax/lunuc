@@ -163,7 +163,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
 
             r.json().then(response => {
                 if (!r.ok || response.errors) {
-                    const rejectData = {...response, loading: false, networkStatus: NetworkStatus.error}
+                    const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
                     if (response.errors) {
                         rejectData.error = response.errors[0]
                         getStore().dispatch(addError({

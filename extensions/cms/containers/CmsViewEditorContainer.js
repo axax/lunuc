@@ -109,6 +109,7 @@ class CmsViewEditorContainer extends React.Component {
             result.EditorPageOptions = {}
         }
 
+
         if (state && state.addNewSite && props.cmsPage && props.cmsPage.slug === state.slug) {
             result.addNewSite = state.addNewSite
         } else if (props.cmsPage && !props.cmsPage._id) {
@@ -1368,7 +1369,7 @@ class CmsViewEditorContainer extends React.Component {
                 query: CMS_PAGE_QUERY,
                 variables:  getGqlVariables(this.props)
             })
-            if (data.cmsPage) {
+            if (data && data.cmsPage) {
                 const metaJson = JSON.parse(data.cmsPage.meta)
                 metaJson.EditorOptions = EditorOptions
                 metaJson.EditorPageOptions = EditorPageOptions
