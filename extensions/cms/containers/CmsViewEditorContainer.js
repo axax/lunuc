@@ -1131,9 +1131,10 @@ class CmsViewEditorContainer extends React.Component {
         if (this._saveSettings)
             this._saveSettings()
         const newState = {script}
+        clearTimeout(this._scriptTimeout)
+
         if (script.length > 50) {
             // delay change
-            clearTimeout(this._scriptTimeout)
             this._scriptTimeout = setTimeout(() => {
                 this._scriptTimeout = null
                 this.setState(newState)

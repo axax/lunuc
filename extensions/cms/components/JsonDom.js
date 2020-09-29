@@ -723,7 +723,7 @@ class JsonDom extends React.Component {
                 }
 
                 if (loopOrFor) {
-                    const {$d, d, c} = loopOrFor
+                    const {$d, $sort, d, c} = loopOrFor
                     let data
                     if ($d) {
                         try {
@@ -735,6 +735,9 @@ class JsonDom extends React.Component {
                                 } catch (e) {
 
                                 }
+                            }
+                            if($sort){
+                                data.sort()
                             }
                         } catch (e) {
                             //this.parseError = e
