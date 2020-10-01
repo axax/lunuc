@@ -4,6 +4,10 @@
 
 const Cache = {
     cache: {},
+    aliases:{},
+    setAlias: (aliasKey, key)=>{
+        Cache.aliases[aliasKey] = key
+    },
     set: function (key, data, expiresIn) {
         Cache.cache[key] = {data, validUntil: (expiresIn ? (new Date()).getTime() + expiresIn : 0)}
     },
@@ -28,6 +32,15 @@ const Cache = {
         Object.keys(Cache.cache).forEach(key => {
             if (key.indexOf(startkey) === 0) {
                 delete Cache.cache[key]
+            }
+        })
+
+        Object.keys(Cache.aliases).forEach(key => {
+            if (key.indexOf(startkey) === 0) {
+
+                console.log('clear cache by alias key '+key)
+                delete Cache.cache[Cache.aliases[key]]
+                delete Cache.aliases[key]
             }
         })
     }

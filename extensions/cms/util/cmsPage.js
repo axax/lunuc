@@ -100,6 +100,10 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
 
             //only cache if public
             if (!editmode && cmsPages.results[0].public) {
+                if(slug !== cmsPages.results[0].slug){
+                    const cacheKeyAlias = 'cmsPage-' + (_version ? _version + '-' : '') + cmsPages.results[0].slug + (host ? '-' + host : '')
+                    Cache.setAlias(cacheKeyAlias, cacheKey)
+                }
                 Cache.set(cacheKey, cmsPages, 6000000) // cache expires in 1h40min
             }
         }
