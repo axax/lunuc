@@ -103,7 +103,11 @@ export default () => {
                                 <SimpleButton key="autoTranslate" size="small" variant="contained"
                                               color="primary"
                                               onClick={() => {
-console.log(dataToEdit.data)
+                                                struct.fields.forEach(field=>{
+                                                    if(field.localized){
+                                                        console.log(field, dataToEdit.data)
+                                                    }
+                                                })
 
                                               }}>Autotranslate</SimpleButton>]}</div>
                         </React.Fragment>
