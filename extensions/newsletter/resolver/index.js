@@ -10,6 +10,9 @@ export default db => ({
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_RUN_SCRIPT)
             let result
 
+            if(!batchSize){
+                batchSize = 10
+            }
 
             const subscribers = await db.collection('NewsletterSubscriber').find(
                 {state: 'subscribed', list: {$in: list.map(l => ObjectId(l))}}
@@ -18,7 +21,7 @@ export default db => ({
             const emails = []
 
             for (let i = 0; i < subscribers.length; i++) {
-                if (emails.length > 10) {
+                if (emails.length > batchSize) {
                     break
                 }
                 const sub = subscribers[i]
