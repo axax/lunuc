@@ -10,10 +10,9 @@ export const renderToString = (component) => {
         if (keys.length > 0) {
             for(let i = keys.length-1;i>=0;i--){
                 const cacheKey = keys[i]
-                const res = await finalFetch({cacheKey, ...SSR_FETCH_CHAIN[cacheKey]})
+                const res = await finalFetch({cacheKey, ...SSR_FETCH_CHAIN[cacheKey], fetchPolicy: 'network-only'})
 
             }
-        }else{
         }
 
 
