@@ -333,6 +333,8 @@ export default db => ({
             // clear server cache
             const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + rest.slug
 
+            console.log('update: ' + cacheKey)
+
             Cache.clearStartWith(cacheKey)
 
             const result = await GenericResolver.updateEnity(db, context, 'CmsPage', {

@@ -567,7 +567,7 @@ class CmsViewEditorContainer extends React.Component {
                                 query={'query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action, meta}}}'}
                                 fetchPolicy="cache-and-network"
                                 variables={{
-                                    limit: 99,
+                                    limit: 300,
                                     filter: `data._id=${cmsPage._id}`
                                 }}>
                                 {({loading, error, data}) => {
