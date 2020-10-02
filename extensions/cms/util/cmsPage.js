@@ -34,7 +34,6 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
     if (!editmode) {
         cmsPages = Cache.get(cacheKey)
     }
-    console.log('get '+cacheKey)
     if (!cmsPages) {
 
 
