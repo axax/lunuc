@@ -351,7 +351,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                             await Hook.hooks['cmsCustomResolver'][i].callback({db, resolvedData, segment, context, scope, req, editmode, dynamic})
                         }
                     }
-                 //   await Hook.call('cmsCustomResolver', {db, resolvedData, segment, context, scope, req, editmode})
                 }
 
             }

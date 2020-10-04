@@ -1,6 +1,10 @@
 import Bot from './classes/Bot'
 import Util from 'api/util'
 
+
+// TODO: clean up unsed connectors
+let botConnectors = {}
+
 let registeredBots = {}
 
 const registerBots = async (db) => {
@@ -34,4 +38,4 @@ const unregisterBots = (db) => {
     registeredBots = {}
 }
 
-export {unregisterBots, registerBots, registeredBots}
+export {unregisterBots, registerBots, registeredBots, botConnectors}

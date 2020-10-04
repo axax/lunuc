@@ -5,6 +5,7 @@ export default `
         id: String
         message_id: String
         event: String
+        username: String
     }
     
     type Query {
@@ -12,6 +13,6 @@ export default `
     }
     
     type Subscription{
-        subscribeBotMessage: BotMessageResult
+        subscribeBotMessage(id: String): BotMessageResult
     }
 `

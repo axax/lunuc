@@ -54,10 +54,12 @@ class Bot {
             const settings = JSON.parse(data.settings)
 
             // remove blocked chats
-            for (let i = settings.telegramChats.length - 1; i >= 0; i--) {
-                const chat = settings.telegramChats[i]
-                if (chat.blocked) {
-                    settings.telegramChats.splice(i, 1);
+            if(settings.telegramChats) {
+                for (let i = settings.telegramChats.length - 1; i >= 0; i--) {
+                    const chat = settings.telegramChats[i]
+                    if (chat.blocked) {
+                        settings.telegramChats.splice(i, 1);
+                    }
                 }
             }
 
@@ -474,7 +476,7 @@ class Bot {
 
     async loadCommands(db) {
         const botCommands = (await
-                db.collection('BotCommand').find({bot: this.data._id, active: true}).sort({order: 1}).toArray()
+                db.collection('BotCommand').find({bot: { $in: [this.data._id]}, active: true}).sort({order: 1}).toArray()
         )
 
         botCommands.forEach(async botCommand => {

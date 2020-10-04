@@ -215,11 +215,38 @@ class CmsViewContainer extends React.Component {
         subscriptions.forEach(subs => {
 
             if (!this.registeredSubscriptions[subs]) {
-                let query = '', subscriptionName = '', isTypeSubscription = false
+                let query = '',
+                    subscriptionName = '',
+                    argsDefinition = '',
+                    args = '',
+                    variables = {},
+                    isTypeSubscription = false
+
                 if (subs.indexOf('{') === 0) {
                     const obj = JSON.parse(subs)
                     subscriptionName = Object.keys(obj)[0]
-                    query = `${obj[subscriptionName]}`
+                    const subscriptionData = obj[subscriptionName]
+
+                    if(subscriptionData.constructor===Object){
+
+
+                        if(subscriptionData.variables){
+                            variables = subscriptionData.variables
+
+                            Object.keys(subscriptionData.variables).forEach((key)=>{
+                                argsDefinition+='$'+key+': String'
+                                args+=key+':$'+key
+                            })
+                        }
+                    }
+
+/*($sort: String,$limit: Int,$page: Int,$filter: String)
+                    gqlQuery = `query ${nameStartLower}{
+                ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryFields}}}}`
+*/
+
+
+                    query = `${subscriptionData.constructor===String?subscriptionData:subscriptionData.query}`
 
                 } else {
                     isTypeSubscription = true
@@ -245,10 +272,11 @@ class CmsViewContainer extends React.Component {
                 }
 
                 if (!query) return
-                const qqlSubscribe = `subscription{${subscriptionName}{${query}}}`
+
+                const qqlSubscribe = `subscription ${subscriptionName}${argsDefinition?'('+argsDefinition+')':''}{${subscriptionName}${args?'('+args+')':''}{${query}}}`
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,
-                    variables: {}
+                    variables
                 }).subscribe({
                     next(supscriptionData) {
 

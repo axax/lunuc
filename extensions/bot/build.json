@@ -26,6 +26,12 @@
         {
           "name": "active",
           "type": "Boolean"
+        },
+        {
+          "name": "manager",
+          "type": "User",
+          "fields": ["username","_id"],
+          "multi": true
         }
       ]
     },
@@ -53,6 +59,7 @@
         {
           "name": "bot",
           "type": "Bot",
+          "multi": true,
           "pickerField": "name"
         }
       ]

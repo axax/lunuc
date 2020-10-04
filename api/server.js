@@ -165,12 +165,14 @@ export const start = (done) => {
                     subscribe,
                     rootValue,
                     onConnect: (connectionParams, webSocket, context) => {
+
                        // const host = webSocket.upgradeReq.headers.host
                     },
                     onOperation: ({payload}) => {
                         // now if auth is needed we can check if the context is available
                         const context = decodeToken(payload.auth)
                         context.session = payload.session
+                        context.variables = payload.variables
                         return {context, schema}
                     }
                 },

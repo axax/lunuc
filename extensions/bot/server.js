@@ -4,8 +4,8 @@ import resolverGen from './gensrc/resolver'
 import schema from './schema'
 import resolver from './resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
-import {unregisterBots, registerBots} from './bot'
-
+import {unregisterBots, registerBots, botConnectors, registeredBots} from './bot'
+import {ObjectId} from 'mongodb'
 
 
 // Hook to add mongodb resolver
@@ -17,6 +17,30 @@ Hook.on('resolver', ({db, resolvers}) => {
 Hook.on('schema', ({schemas}) => {
     schemas.push(schemaGen)
     schemas.push(schema)
+})
+
+
+Hook.on('cmsCustomResolver', async ({db, segment, resolvedData, context, req, scope, editmode, dynamic}) => {
+    if (segment.chatbots && context.id) {
+
+        const chats = []
+
+        for(const key in botConnectors){
+            const botConnector = botConnectors[key]
+            const bot = registeredBots[botConnector.botId]
+            if(bot && bot.data.manager ){
+
+                for(let i=0;i<bot.data.manager.length;i++){
+                    const manager = bot.data.manager[i].toString()
+                    if( manager===context.id){
+                        chats.push({botId: botConnector.botId, id: key})
+                    }
+
+                }
+            }
+        }
+        resolvedData.chatbots = chats
+    }
 })
 
 
