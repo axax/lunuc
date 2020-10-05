@@ -26,7 +26,7 @@ const buildCollectionName = async (db, context, typeName, _version) => {
     return typeName + (_version && _version !== 'default' ? '_' + _version : '')
 }
 
-const postConvertData = (data, typeName) => {
+const postConvertData = (data, {typeName, db}) => {
 
     // here is a good place to handle: Cannot return null for non-nullable
     const repairMode = true
@@ -46,16 +46,42 @@ const postConvertData = (data, typeName) => {
                 for (let y = 0; y < typeDefinition.fields.length; y++) {
                     const field = typeDefinition.fields[y]
                     // convert type Object to String
-                    if (field && field.type === 'Object') {
+                    if (field) {
 
-                        hasField = true
+                        if (field.type === 'Object') {
 
-                        // TODO: with mongodb 4 this can be removed as convert and toString is supported
-                        if (item[field.name] && (item[field.name].constructor === Object || item[field.name].constructor === Array)) {
-                            console.log(`convert ${typeName}.${field.name} to string`)
-                            item[field.name] = JSON.stringify(item[field.name])
+                            hasField = true
+
+                            // TODO: with mongodb 4 this can be removed as convert and toString is supported
+                            if (item[field.name] && (item[field.name].constructor === Object || item[field.name].constructor === Array)) {
+                                console.log(`convert ${typeName}.${field.name} to string`)
+                                item[field.name] = JSON.stringify(item[field.name])
+                            }
+                        }
+
+                        const dyn = field.dynamic
+
+                        if (dyn) {
+                            hasField = true
+
+                            if(dyn.action === 'count'){
+                                const query = dyn.query
+                                if(query){
+                                    Object.keys(query).forEach(k=>{
+                                        if(query[k]==='_id'){
+                                            query[k] = item._id
+                                        }else if(query[k].$in && query[k].$in[0]==='_id'){
+                                            query[k].$in[0] = item._id
+                                        }
+                                    })
+                                }
+
+                                item[field.name] = db.collection(dyn.type).count( query )
+                            }
+
                         }
                     }
+
 
                     // in case a field changed to localized
                     /*if( field.localized ){
@@ -176,7 +202,7 @@ const GenericResolver = {
             if (postConvert === false) {
                 result = results[0]
             } else {
-                result = postConvertData(results[0], typeName)
+                result = postConvertData(results[0], {typeName, db, context})
             }
         }
         Hook.call('typeLoaded', {type: typeName, data, db, context, result})
@@ -466,7 +492,7 @@ const GenericResolver = {
             $set: dataSet
         }))
 
-        if (result.modifiedCount !== 1 ) {
+        if (result.modifiedCount !== 1) {
             throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
         }
 

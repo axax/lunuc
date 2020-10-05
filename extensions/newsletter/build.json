@@ -23,7 +23,8 @@
             "unsubscribed",
             "invalid"
           ],
-          "tab": "General"
+          "tab": "General",
+          "index": 1
         },
         {
           "name": "token",
@@ -33,6 +34,7 @@
         {
           "name": "list",
           "multi": true,
+          "index": 1,
           "type": "NewsletterList",
           "fields": ["name"]
         },
@@ -45,7 +47,8 @@
         {
           "name": "account",
           "type": "User",
-          "fields": ["username"]
+          "fields": ["username"],
+          "index": 1
         }
       ]
     },
@@ -54,7 +57,17 @@
       "fields": [
         {
           "name": "name",
-          "required": true
+          "required": true,
+          "index": 1
+        },
+        {
+          "name": "count",
+          "readOnly": true,
+          "dynamic": {
+            "type": "NewsletterSubscriber",
+            "action": "count",
+            "query": {"list": {"$in": ["_id"]}}
+          }
         }
       ]
     },

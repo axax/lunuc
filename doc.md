@@ -48,6 +48,7 @@ A Type can be define in the build.json of an extension. Types can also have refe
 * readOnly = The value is read only. It is not defined whether the field exist in the database or is only dynamic
 * pickerField = When the type is a reference you can define which field you want to show in the frontend for type picking
 * alwaysUpdate = always sends the data even if there was no change
+* dynamic = the value of the field is calculated dynamically
 
 **An example of a type definition**
 ```json
