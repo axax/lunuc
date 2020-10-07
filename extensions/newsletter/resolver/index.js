@@ -15,7 +15,7 @@ export default db => ({
             }
 
             const subscribers = await db.collection('NewsletterSubscriber').find(
-                {state: 'subscribed', list: {$in: list.map(l => ObjectId(l))}}
+                {state: 'subscribed', list: {$in: list.map(l => l.constructor===String?ObjectId(l):l)}}
             ).toArray()
 
             const emails = []

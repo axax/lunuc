@@ -26,7 +26,7 @@ const buildCollectionName = async (db, context, typeName, _version) => {
     return typeName + (_version && _version !== 'default' ? '_' + _version : '')
 }
 
-const postConvertData = (data, {typeName, db}) => {
+const postConvertData = async (data, {typeName, db}) => {
 
     // here is a good place to handle: Cannot return null for non-nullable
     const repairMode = true
@@ -65,18 +65,19 @@ const postConvertData = (data, {typeName, db}) => {
                             hasField = true
 
                             if(dyn.action === 'count'){
-                                const query = dyn.query
+                                const query = Object.assign({},dyn.query)
                                 if(query){
                                     Object.keys(query).forEach(k=>{
                                         if(query[k]==='_id'){
                                             query[k] = item._id
                                         }else if(query[k].$in && query[k].$in[0]==='_id'){
+                                            query[k] = Object.assign({}, query[k])
+                                            query[k].$in = [...query[k].$in]
                                             query[k].$in[0] = item._id
                                         }
                                     })
                                 }
-
-                                item[field.name] = db.collection(dyn.type).count( query )
+                                item[field.name] = await db.collection(dyn.type).count( query )
                             }
 
                         }
@@ -202,7 +203,7 @@ const GenericResolver = {
             if (postConvert === false) {
                 result = results[0]
             } else {
-                result = postConvertData(results[0], {typeName, db, context})
+                result = await postConvertData(results[0], {typeName, db, context})
             }
         }
         Hook.call('typeLoaded', {type: typeName, data, db, context, result})
