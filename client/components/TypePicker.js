@@ -19,8 +19,10 @@ import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
 import classNames from 'classnames'
 import config from 'gen/config'
+
 const {DEFAULT_LANGUAGE} = config
 import {client} from '../middleware/graphql'
+import Util from '../util'
 
 const styles = theme => {
     return {
@@ -43,15 +45,15 @@ const styles = theme => {
         },
         clip: {
             margin: theme.spacing(2) + 'px auto 0px ' + theme.spacing(1) + 'px;',
-            '&:first-child':{
+            '&:first-child': {
                 marginLeft: 0
             },
-            position:'relative'
+            position: 'relative'
         },
         clipMulti: {
             margin: theme.spacing(1) + 'px 0',
             width: '15%',
-            position:'relative'
+            position: 'relative'
         },
         clipDrop: {
             width: '1.6%',
@@ -71,22 +73,22 @@ const styles = theme => {
             width: '100%',
             maxHeight: '6rem'
         },
-        dummyTxt:{
+        dummyTxt: {
             pointerEvents: 'none',
-            fontSize:'0.85rem',
+            fontSize: '0.85rem',
             whiteSpace: 'nowrap',
             width: '100%',
             overflow: 'hidden',
             textOverflow: 'ellipsis'
         },
-        dummyRemove:{
+        dummyRemove: {
             position: 'absolute',
             left: '5px',
             top: '5px',
-            zIndex:2,
-            margin:0,
-            padding:'0.2rem',
-            background:'rgba(0,0,0,0.5)',
+            zIndex: 2,
+            margin: 0,
+            padding: '0.2rem',
+            background: 'rgba(0,0,0,0.5)',
             color: '#fff'
         },
         textField: {
@@ -130,7 +132,6 @@ class TypePicker extends React.Component {
     render() {
         const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, type, filter, label} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
-
         console.log(`render TypePicker | hasFocus=${hasFocus}`, data)
         return <FormControl
             fullWidth={fullWidth} className={classNames(classes.root, className)}>
@@ -161,12 +162,33 @@ class TypePicker extends React.Component {
                                                    top = (screen.height / 2) - (h / 2)
 
                                                const newwindow = window.open(
-                                                   `${_app_.lang!==DEFAULT_LANGUAGE?'/'+_app_.lang:''}/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
+                                                   `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
                                                    'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
 
                                                setTimeout(() => {
                                                    newwindow.addEventListener('beforeunload', (e) => {
-                                                       this.selectValue(newwindow.resultValue)
+                                                       const value = newwindow.resultValue
+                                                       if (type === 'GenericData') {
+                                                           try {
+                                                               const structure = JSON.parse(value.definition.structure)
+                                                               if (structure.pickerField) {
+                                                                   const data = JSON.parse(value.data)
+                                                                   const newData = {[structure.pickerField]: data[structure.pickerField]}
+                                                                   const newStructure = {pickerField: structure.pickerField}
+                                                                   newwindow.resultValue.data = JSON.stringify(newData)
+                                                                   newwindow.resultValue.definition.structure = JSON.stringify(newStructure)
+                                                               }
+                                                           } catch (e) {
+                                                               console.log(e)
+                                                           }
+                                                       }
+                                                       Util.removeNullValues(value, {
+                                                           recursiv: true,
+                                                           emptyObject: true,
+                                                           emptyArray: true,
+                                                           nullArrayItems: true
+                                                       })
+                                                       this.selectValue(value)
                                                        delete e['returnValue']
                                                    })
                                                }, 500)
@@ -182,7 +204,7 @@ class TypePicker extends React.Component {
             <div className={classes.clips}>
                 {value.map((value, i) =>
                     [
-                        (value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image')===0 ?
+                        (value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
                             <div draggable={true}
                                  data-index={i}
                                  onDragStart={(e) => {
@@ -190,12 +212,13 @@ class TypePicker extends React.Component {
                                  }}
                                  key={i}
                                  className={classNames(classes.clip, multi && classes.clipMulti)}>
-                                <img className={classNames(classes.dummyImg, multi && classes.dummyImgMulti)} src={getImageSrc(value)}/>
+                                <img className={classNames(classes.dummyImg, multi && classes.dummyImgMulti)}
+                                     src={getImageSrc(value)}/>
                                 <div className={classes.dummyTxt}>{typeDataToLabel(value, pickerField)}</div>
 
                                 <IconButton className={classes.dummyRemove}
-                                    edge="end"
-                                    onClick={this.handleRemovePick.bind(this, i)}
+                                            edge="end"
+                                            onClick={this.handleRemovePick.bind(this, i)}
                                 >
                                     <DeleteIcon/>
                                 </IconButton>
@@ -340,18 +363,34 @@ class TypePicker extends React.Component {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
 
-
             let queryFields
             if (pickerField) {
                 queryFields = pickerField
             } else if (fields) {
-                queryFields = fields.join(' ')
+                queryFields = ''
+
+                fields.forEach(field=>{
+                    if(queryFields!=''){
+                        queryFields+=' '
+                    }
+                    if(field.constructor===String){
+                        queryFields+=field
+                    }else{
+                        Object.keys(field).forEach(key=>{
+                            queryFields+=key+'{'
+                            field[key].forEach(name=>{
+                                queryFields+=name+' '
+                            })
+                            queryFields+='}'
+                        })
+                    }
+                })
             } else {
                 queryFields = queryStatemantForType(type)
             }
-            const variables = {filter, limit:20},
+            const variables = {filter, limit: 20},
                 gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){
-                ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryFields}}}}`
+                                               ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryFields}}}}`
 
             try {
                 const storeData = client.readQuery({
@@ -370,7 +409,7 @@ class TypePicker extends React.Component {
                 query: gqlQuery,
                 variables
             }).then(response => {
-                if( this.pickTimeout === 0) {
+                if (this.pickTimeout === 0) {
                     this.setState({hasFocus: true, selIdx: 0, data: response.data[nameStartLower]})
                 }
             }).catch(error => {

@@ -10,6 +10,16 @@ const {LANGUAGES} = config, typeFormFields = {}
 export const typeDataToLabel = (item, pickerField) => {
     let label = []
 
+    if(!pickerField && item.__typename=== 'GenericData'){
+        try {
+            const structur = JSON.parse(item.definition.structure)
+            pickerField = structur.pickerField
+            item = JSON.parse(item.data)
+        }catch (e) {
+            console.log(e)
+        }
+    }
+
     let pickers = []
     if (pickerField) {
         pickers.push(pickerField)

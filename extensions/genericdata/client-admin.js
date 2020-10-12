@@ -21,18 +21,28 @@ export default () => {
 
     // add some extra data to the table
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
-        if (type === 'GenericData') {
+        if (type === 'GenericData' && data.results.length>0) {
+            const structur = JSON.parse(data.results[0].definition.structure)
             dataSource.forEach((d, i) => {
-
 
                 if (d.data) {
                     const item = data.results[i]
                     try {
                         const json = JSON.parse(item.data)
-                        if (json.title.constructor === String) {
-                            d.data = json.title
-                        } else {
-                            d.data = json.title[_app_.lang]
+
+                        if(structur.pickerField){
+                            if (json[structur.pickerField].constructor === String) {
+                                d.data = json[structur.pickerField]
+                            } else {
+                                d.data = json[structur.pickerField][_app_.lang]
+                            }
+                        }else {
+
+                            if (json.title.constructor === String) {
+                                d.data = json.title
+                            } else {
+                                d.data = json.title[_app_.lang]
+                            }
                         }
                     } catch (e) {
                     }
