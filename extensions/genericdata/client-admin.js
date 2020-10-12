@@ -7,6 +7,8 @@ import {
 import Util from '../../client/util'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
 import {client} from 'client/middleware/graphql'
+import {setPropertyByPath} from "../../client/util/json";
+import config from 'gen/config'
 
 const GenericForm = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
@@ -105,7 +107,37 @@ export default () => {
                                               onClick={() => {
                                                 struct.fields.forEach(field=>{
                                                     if(field.localized){
-                                                        console.log(field, dataToEdit.data)
+
+                                                        const name = field.name.split('_')[1],
+                                                            json = JSON.parse(dataToEdit.data),
+                                                            obj =  json[name]
+
+
+                                                        if (obj) {
+                                                            config.LANGUAGES.forEach(lang => {
+                                                                console.log(lang, obj[lang])
+                                                                if (!obj[lang] && lang !== config.DEFAULT_LANGUAGE) {
+                                                                    const text = obj[config.DEFAULT_LANGUAGE].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
+                                                                    client.query({
+                                                                        fetchPolicy: 'no-cache',
+                                                                        query: 'query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}',
+                                                                        variables: {
+                                                                            text,
+                                                                            toIso: lang,
+                                                                            fromIso: config.DEFAULT_LANGUAGE
+                                                                        },
+                                                                    }).then((res) => {
+                                                                        const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%')
+
+                                                                        json[name][lang] = newText
+                                                                        /*dataToEdit.data = JSON.stringify(json)*/
+                                                                        parentRef.setState({dataToEdit:{...dataToEdit, data: JSON.stringify(json)}})
+                                                                        console.log(newText)
+                                                                    })
+
+                                                                }
+                                                            })
+                                                        }
                                                     }
                                                 })
 

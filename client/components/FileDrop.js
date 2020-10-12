@@ -12,10 +12,10 @@ const {UPLOAD_URL} = config
 _app_.UploadUtil = UploadUtil
 
 /* TODO: make it configurable */
-const DEFAULT_MAX_FILE_SIZE_MB = 10,
-    IMAGE_QUALITY = 0.85,
-    IMAGE_MAX_WIDTH = 1400,
-    IMAGE_MAX_HEIGHT = 1400,
+const DEFAULT_MAX_FILE_SIZE_MB = 20,
+    IMAGE_QUALITY = 0.9,
+    IMAGE_MAX_WIDTH = 2400,
+    IMAGE_MAX_HEIGHT = 2400,
     DEFAULT_ACCEPT = 'image/*'
 
 const styles = theme => ({

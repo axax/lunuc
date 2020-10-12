@@ -1139,7 +1139,7 @@ class CmsViewEditorContainer extends React.Component {
             this._scriptTimeout = setTimeout(() => {
                 this._scriptTimeout = null
                 this.setState(newState)
-            }, 200)
+            }, 1000)
 
         } else {
             this.setState(newState)

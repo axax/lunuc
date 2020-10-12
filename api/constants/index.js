@@ -6,4 +6,4 @@ export const SECRET_KEY = process.env.LUNUC_SECRET_KEY || 'fa-+3452sdfas!ä$$34d
 export const AUTH_EXPIRES_IN = process.env.LUNUC_AUTH_EXPIRES_IN || '7d'
 
 
-export const HEADER_TIMEOUT = 15 * 1000 * 60 // 15min --> is important for file upload that take longer
+export const HEADER_TIMEOUT = 60 * 1000 * 60 // 60min --> is important for file upload that take longer
