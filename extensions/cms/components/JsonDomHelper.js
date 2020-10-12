@@ -1174,7 +1174,7 @@ const m = Math.max((offX+offY) / 2,100)
                 onDoubleClick={editElementEvent}
                 onChange={overrideOnChange || onChange}
                 onClick={overrideOnClick || onClick}
-                _inlineeditor={_inlineEditor.toString()}
+                _inlineeditor={_inlineEditor?_inlineEditor.toString():''}
                 data-isempty={isEmpty}
                 key={rest._key}
                 {...events}
