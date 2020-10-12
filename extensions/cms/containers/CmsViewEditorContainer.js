@@ -754,7 +754,7 @@ class CmsViewEditorContainer extends React.Component {
                                                         fromIso: config.DEFAULT_LANGUAGE
                                                     },
                                                 }).then((res) => {
-                                                    const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%')
+                                                    const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g,'').replace(/"/g,'\\"')
                                                     setPropertyByPath(newText, lang + path + '.' + key, base)
                                                     saveResolver()
                                                 })

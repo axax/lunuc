@@ -137,7 +137,7 @@ export default () => {
                                                                             fromIso: config.DEFAULT_LANGUAGE
                                                                         },
                                                                     }).then((res) => {
-                                                                        const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%')
+                                                                        const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g,'').replace(/"/g,'\\"')
 
                                                                         json[name][lang] = newText
                                                                         /*dataToEdit.data = JSON.stringify(json)*/
