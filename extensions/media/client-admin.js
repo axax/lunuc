@@ -147,7 +147,6 @@ export default () => {
                     group.forEach(value => {
                         groupIds.push(value._id)
                     })
-
                     return (
                         [
                             <div style={{position: 'relative', zIndex: 3}} key="typePicker">
@@ -287,8 +286,11 @@ export default () => {
 
                 }
 
-                if (this.settings.Media && this.settings.Media.conversion && this.settings.Media.conversion.length > 0) {
-                    info += ' Conversion=' + this.settings.Media.conversion[0].name
+                const media = this.settings.Media
+                let conversion = null
+                if (media && media.conversion && media.conversion.length > 0) {
+                    conversion = JSON.parse(media.conversion[0].conversion)
+                    info += ' Conversion=' + media.conversion[0].name
                 }
 
 
@@ -300,7 +302,7 @@ export default () => {
                                   imagePreview={false}
                                   maxSize={10000}
                                   data={{group: groupIds}}
-                                  conversion={this.settings.Media && this.settings.Media.conversion ? this.settings.Media.conversion : null}
+                                  conversion={conversion}
                                   onSuccess={r => {
                                       setTimeout(() => {
                                           this.getData(this.pageParams, false)
