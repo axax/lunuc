@@ -4,7 +4,6 @@ import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
 import Util from '../../api/util'
-import cron from "node-cron";
 
 let server = null
 let database = null

@@ -374,7 +374,7 @@ const Util = {
         }
         return false
     },
-    chunkArray(arr, chunk) {
+    chunkArray(arr, chunk, opts) {
 
         let chunkInt = parseInt(chunk)
 
@@ -382,11 +382,18 @@ const Util = {
             chunkInt = parseInt(new Function('return `' + chunk + '`').call({}))
         }
         if (!isNaN(chunkInt)) {
-            return arr.reduce((all, one, i) => {
+            const res = arr.reduce((all, one, i) => {
                 const ch = Math.floor(i / chunkInt)
                 all[ch] = [].concat((all[ch] || []), one)
                 return all
             }, [])
+
+            if(opts && opts.fill && res.length>0){
+                while(res[res.length-1].length<chunkInt){
+                    res[res.length-1].push(opts.fill)
+                }
+            }
+            return res
         }
         return arr
     }

@@ -691,7 +691,7 @@ class JsonDom extends React.Component {
                 if ($set && $set.forEach) {
                     $set.forEach(keyvalue => {
                         if (keyvalue.chunk) {
-                            scope[keyvalue.key] = Util.chunkArray(keyvalue.value, keyvalue.chunk)
+                            scope[keyvalue.key] = Util.chunkArray(keyvalue.value, keyvalue.chunk,keyvalue.chunkOptions)
                         } else {
                             scope[keyvalue.key] = keyvalue.value
                         }

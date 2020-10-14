@@ -1112,6 +1112,7 @@ const baseElements = [
         tagName: 'div',
         name: 'Hintergrund',
         options: {
+            ...imageOptions('$set_image_'),
             p_style_backgroundImage: {
                 fullWidth: true,
                 value: '',
@@ -1119,8 +1120,9 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
-                template: '${this.context._id?\'url(\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+\'?format=webp&quality=85&width=1400)\':\'\'}',
-                tab: DEFAULT_TAB
+                template: '${this.context._id?\'url(\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\')\':\'\'}',
+                tab: DEFAULT_TAB,
+                tabPosition:0
             },
             p_style_backgroundSize: {
                 value: '',
