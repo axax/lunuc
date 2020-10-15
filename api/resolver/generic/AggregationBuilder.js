@@ -522,6 +522,12 @@ export default class AggregationBuilder {
                                 projectPipeline[refFieldName] = 1
                             }
 
+                           /* if (refFieldDefinition.type === 'Object') {
+                                console.log(refFieldDefinition)
+                                projectPipeline[refFieldName] = {$convert: {input: '$' + refFieldName, to: "string", onError: "error" }}
+                            }*/
+
+
                             if (!refFieldDefinition.reference) {
                                 // these filters are slow
                                 // probably it is better to do multiple queries instead

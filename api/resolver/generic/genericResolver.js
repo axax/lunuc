@@ -49,13 +49,27 @@ const postConvertData = async (data, {typeName, db}) => {
                     if (field) {
 
                         if (field.type === 'Object') {
-
                             hasField = true
 
                             // TODO: with mongodb 4 this can be removed as convert and toString is supported
                             if (item[field.name] && (item[field.name].constructor === Object || item[field.name].constructor === Array)) {
                                 console.log(`convert ${typeName}.${field.name} to string`)
                                 item[field.name] = JSON.stringify(item[field.name])
+                            }
+                        }else if(field.reference){
+                            const refTypeDefinition = getType(field.type) || {}
+                            for (let z = 0; z < refTypeDefinition.fields.length; z++) {
+                                const refField = refTypeDefinition.fields[z]
+                                if (refField) {
+                                    if (refField.type === 'Object') {
+
+                                        if (item[field.name][refField.name] && (item[field.name][refField.name].constructor === Object || item[field.name][refField.name].constructor === Array)) {
+                                            console.log(`convert ${typeName}.${field.name}.${refField.name} to string`)
+                                            item[field.name][refField.name] = JSON.stringify(item[field.name][refField.name])
+                                        }
+
+                                    }
+                                }
                             }
                         }
 
@@ -203,6 +217,7 @@ const GenericResolver = {
             if (postConvert === false) {
                 result = results[0]
             } else {
+                //console.log(results[0].results[0].data)
                 result = await postConvertData(results[0], {typeName, db, context})
             }
         }
