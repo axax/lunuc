@@ -50,7 +50,6 @@ const postConvertData = async (data, {typeName, db}) => {
 
                         if (field.type === 'Object') {
                             hasField = true
-
                             // TODO: with mongodb 4 this can be removed as convert and toString is supported
                             if (item[field.name] && (item[field.name].constructor === Object || item[field.name].constructor === Array)) {
                                 console.log(`convert ${typeName}.${field.name} to string`)
@@ -63,7 +62,7 @@ const postConvertData = async (data, {typeName, db}) => {
                                 if (refField) {
                                     if (refField.type === 'Object') {
 
-                                        if (item[field.name][refField.name] && (item[field.name][refField.name].constructor === Object || item[field.name][refField.name].constructor === Array)) {
+                                        if (item[field.name] && item[field.name][refField.name] && (item[field.name][refField.name].constructor === Object || item[field.name][refField.name].constructor === Array)) {
                                             console.log(`convert ${typeName}.${field.name}.${refField.name} to string`)
                                             item[field.name][refField.name] = JSON.stringify(item[field.name][refField.name])
                                         }
@@ -224,7 +223,7 @@ const GenericResolver = {
         Hook.call('typeLoaded', {type: typeName, data, db, context, result})
 
 
-        if (result.meta && result.meta.length) {
+        if (result.meta && result.meta.length>0) {
             result.total = result.meta[0].count
         } else {
             /*const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()

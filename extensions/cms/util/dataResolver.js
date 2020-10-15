@@ -538,7 +538,29 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
     }
     reducePipe.forEach(re => {
         if (re.path) {
-            if (re.lookup) {
+
+            if(re.sort) {
+                const value = propertyByPath(re.path, currentData, '.', re.assign)
+
+                const sort = re.sort[0]
+                if(sort.desc){
+                    value.sort((a, b) => {
+                        if (a[sort.key] > b[sort.key])
+                            return -1
+                        if (a[sort.key] < b[sort.key])
+                            return 1
+                        return 0
+                    })
+                }else {
+                    value.sort((a, b) => {
+                        if (a[sort.key] < b[sort.key])
+                            return -1
+                        if (a[sort.key] > b[sort.key])
+                            return 1
+                        return 0
+                    })
+                }
+            }else if (re.lookup) {
                 const lookupData = propertyByPath(re.lookup.path, rootData,'.', !!re.lookup.assign)
                 const value = propertyByPath(re.path, currentData)
                 let lookedupData, groups
