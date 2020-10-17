@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {SimpleMenu} from 'ui/admin'
+import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon} from 'ui/admin'
 import {withStyles} from '@material-ui/core/styles'
 import classNames from 'classnames'
 
@@ -35,6 +35,7 @@ import 'codemirror/addon/fold/indent-fold'
 import 'codemirror/addon/fold/markdown-fold'
 import 'codemirror/addon/fold/comment-fold'
 import 'codemirror/addon/fold/foldgutter.css'
+import GenericForm from './GenericForm'
 
 const styles = theme => ({
     root: {
@@ -111,7 +112,13 @@ class CodeEditor extends React.Component {
             this._data = nextState.data
             this._refresh = true
         }
-        return this._refresh || nextState.stateError !== this.state.stateError || nextState.error !== this.state.error || nextState.fileIndex !== this.state.fileIndex || nextState.showFileSplit !== this.state.showFileSplit
+        return this._refresh ||
+            nextState.stateError !== this.state.stateError ||
+            nextState.error !== this.state.error ||
+            nextState.fileIndex !== this.state.fileIndex ||
+            nextState.showContextMenu !== this.state.showContextMenu ||
+            nextState.editData !== this.state.editData ||
+            nextState.showFileSplit !== this.state.showFileSplit
     }
 
     autoFormatSelection() {
@@ -169,7 +176,7 @@ class CodeEditor extends React.Component {
 
     render() {
         const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
-        const {stateError, showFileSplit, fileIndex} = this.state
+        const {stateError, showFileSplit, fileIndex, showContextMenu, editData} = this.state
 
         const options = {
             mode: {},
@@ -223,7 +230,18 @@ class CodeEditor extends React.Component {
         }
 
 
-        const allActions = [{name: 'Format selection (Ctrl-L)', onClick: this.autoFormatSelection.bind(this)}]
+        const allActions = [
+            {
+            icon: <ViewListIcon />,
+            name: 'Format selection (Ctrl-L)',
+            onClick: this.autoFormatSelection.bind(this)
+        },
+            {
+                icon: <LaunchIcon />,
+                name: 'Open in new window',
+                onClick: ()=>{alert('todo')}
+            },
+        ]
 
         if (actions) {
             allActions.push(...actions)
@@ -275,14 +293,105 @@ class CodeEditor extends React.Component {
             })
         }
 
+        let contextMenuItems
+
+        if(showContextMenu) {
+
+            const loc = this._editor.coordsChar(showContextMenu)
+            this._lineNr = loc.line
+
+            let line = this._editor.doc.getLine(loc.line)
+
+
+            this._endsWithComma=line.endsWith(',')
+            if(this._endsWithComma){
+                line = line.substring(0,line.length-1)
+            }
+            try {
+
+                const tempJson = JSON.parse('{'+line+'}')
+                contextMenuItems = [
+                    {
+                        icon: <EditIcon/>,
+                        name: 'Edit as Text',
+                        onClick: () => {
+                            const keys = Object.keys(tempJson)
+                            if(keys.length>0) {
+                                this.setState({editData: {key:keys[0],value:tempJson[keys[0]]}})
+                            }
+                        }
+                    },
+                    {
+                        icon: <CodeIcon/>,
+                        name: 'Edit as HTML'
+                    }
+                ]
+            }catch (e) {
+            }
+        }
         return <div className={classNames(classes.root, (error || stateError) && classes.rootError, className)}
                     style={{style}}>
+
+
+            {editData && <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
+                                       onClose={(e) => {
+
+                                           if (e.key === 'ok') {
+                                               const formValidation = this.editDataForm.validate()
+                                               if (formValidation.isValid) {
+                                                   this._editor.doc.replaceRange(`"${editData.key}":"${this.editDataForm.state.fields.data}"${this._endsWithComma?',':''}`,{line: this._lineNr, ch: 0}, {line: this._lineNr})
+                                               }
+                                           }
+                                           this.setState({editData: false})
+                                       }}
+                                       actions={[{
+                                           key: 'cancel',
+                                           label: 'Abbrechen',
+                                           type: 'secondary'
+                                       }, {
+                                           key: 'ok',
+                                           label: 'Speichern',
+                                           type: 'primary'
+                                       }]}
+                                       title={'Edit'}>
+
+
+                <GenericForm ref={(e) => {
+                    this.editDataForm = e
+                }} primaryButton={false}
+                             values={{data: editData.value}}
+                             onChange={(e) => {
+                             }}
+                             fields={{
+                                 data: {
+                                     fullWidth: true,
+                                     label: editData.key,
+                                     multi: true
+                                 }
+                             }}/>
+
+
+            </SimpleDialog>
+            }
             {showFab && <SimpleMenu key="menu" mini fab color="secondary" style={{
                 zIndex: 999,
                 position: 'absolute',
                 bottom: '8px',
                 right: '8px', ...fabButtonStyle
             }} items={allActions}/>}
+            {showContextMenu && contextMenuItems &&
+
+            <SimpleMenu
+                anchorReference={"anchorPosition"}
+                anchorPosition={showContextMenu}
+                noButton={true}
+                open={showContextMenu}
+                onClose={() => {
+                    this.setState({
+                        showContextMenu: false
+                    })
+                }}
+                mini items={contextMenuItems}/>}
             {filenames ?
                 <div className={classes.files}>{filenames.map((entry, i) => {
                     return (
@@ -314,6 +423,15 @@ class CodeEditor extends React.Component {
                 }}
                 value={value}
                 options={options}
+                onContextMenu={((editor,e) => {
+                    if (type === 'json') {
+                        e.preventDefault()
+
+                        this.setState({showContextMenu: {left: e.clientX, top: e.clientY}})
+
+                    }
+
+                })}
                 onScroll={(editor, e) => {
                     if (onScroll) {
                         onScroll(e)

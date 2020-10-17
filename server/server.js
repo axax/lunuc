@@ -15,6 +15,8 @@ import {decodeToken} from 'api/util/jwt'
 import sharp from 'sharp'
 import Util from '../client/util'
 import {loadAllHostrules} from '../util/hostrules'
+import {PassThrough} from 'stream'
+
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
@@ -387,18 +389,56 @@ function hasHttpsWwwRedirect(host, req, res) {
     return false
 }
 
-function transcodeVideo(parsedUrl, headerExtra, res, code, fileStream) {
-    // make sure ffmpeg is install on your device
-    // brew install ffmpeg
-    //sudo apt install ffmpeg
+function transcodeVideoOptions(parsedUrl, filename) {
 
-    let options = {"audioQuality": 1, "videoBitrate": 300, "fps": 15, "size": "640x?", "crf": 0}
+    if (!parsedUrl.query.transcode) {
+        return false
+    }
+
+    //https://www.lunuc.com/uploads/5f676c358ebac32c662cdb02/-/La%20maison%20du%20bonheur-2006.mp4?ext=mp4&transcode={%22audioQuality%22:3,%22videoBitrate%22:800,%22fps%22:25,%22size%22:%22720x?%22,%22crf%22:28}
+    // default options
+    let options = {
+        "noAudio": false,
+        /*"audioVolume": 1,*/
+        /*"audioQuality": 0,*/
+        /*"fps": 24,*/
+        /*"size": "720x?",*/
+        "crf": 10,
+        /*"speed": 1,*/
+        /*"preset": "slow",*/
+        "keep": false,
+        "format": "mp4"
+    }
 
     try {
         Object.assign(options, JSON.parse(parsedUrl.query.transcode))
     } catch (e) {
         console.log(e)
+        return false
     }
+
+
+    let modfilename = filename
+    Object.keys(options).forEach(k => {
+        if (k !== 'keep') {
+            const value = String(options[k].constructor === Array ? options[k].join('') : options[k])
+            modfilename += `-${value.replace(/[^a-zA-Z0-9-_\.]/g, '')}`
+        }
+    })
+
+    options.filename = modfilename
+
+    options.exists = fs.existsSync(modfilename)
+
+    return options
+
+}
+
+function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) {
+    // make sure ffmpeg is install on your device
+    // brew install ffmpeg
+    //sudo apt install ffmpeg
+
     const ffprobePath = require('@ffprobe-installer/ffprobe').path,
         ffmpeg = require('fluent-ffmpeg')
 
@@ -411,18 +451,95 @@ function transcodeVideo(parsedUrl, headerExtra, res, code, fileStream) {
     if (options.crf) {
         outputOptions.push('-crf ' + options.crf)
     }
-    ffmpeg(fileStream)
-        .audioCodec('libmp3lame')
-        .audioQuality(options.audioQuality)
-        .videoCodec('libx264')
-        .videoBitrate(options.videoBitrate)
-        .fps(options.fps)
+    if (options.preset) {
+        outputOptions.push('-preset ' + options.preset)
+    }
+
+    if (options.duration) {
+        outputOptions.push('-t ' + options.duration)
+    }
+
+    let video = ffmpeg(fileStream)
+
+    if (options.noAudio) {
+        video.noAudio()
+    } else {
+        const aFilter = []
+
+        if( options.audioVolume ){
+            aFilter.push('volume=' + options.audioVolume)
+        }
+        if (options.speed) {
+            aFilter.push('atempo=' + options.speed)
+        }
+
+        video.audioCodec('libmp3lame').audioFilters(aFilter)
+
+        if (options.audioQuality) {
+            video.audioQuality(options.audioQuality)
+        }
+
+    }
+
+    const vFilter = []
+
+    if (options.speed) {
+        vFilter.push(`setpts=${1 / options.speed}*PTS`)
+    }
+
+    video.videoCodec('libx264')
+        .videoFilter(vFilter)
         .outputOptions(outputOptions)
-        .format('mp4')
-        .size(options.size)
-        .on('start', console.log)
-        .on('error', console.error)
-        .pipe(res, {end: true})
+        .format(options.format)
+
+    if (options.videoBitrate) {
+        video.videoBitrate(options.videoBitrate)
+    }
+    if (options.fps) {
+        video.fps(options.fps)
+    }
+    if (options.size) {
+        video.size(options.size)
+    }
+    video.on('progress', (progress) => {
+        //console.log('Processing: ' + progress.timemark + '% done')
+    }).on('start', console.log).on('end', () => {
+        if (options.keep) {
+            // rename
+            fs.rename(options.filename + '.temp', options.filename, () => {
+                console.log('transcode ended and file saved as ' + options.filename)
+            })
+
+        }
+
+    }).on('error', console.error)
+
+
+    if (options.keep) {
+
+        if (fs.existsSync(options.filename + '.temp')) {
+            video.pipe(res, {end: true})
+            // it is transcoding right now
+        } else {
+            console.log(`save video as ${options.filename}`)
+
+            const writeStream = writeStreamFile(options.filename + '.temp')
+
+            const passStream = new PassThrough()
+
+            passStream.pipe(res)
+            passStream.pipe(writeStream)
+
+            video.output(passStream, {end: true})
+
+            video.run()
+        }
+
+    } else {
+        video.pipe(res, {end: true})
+    }
+
+    return true
 }
 
 async function resizeImage(parsedUrl, req, filename) {
@@ -477,7 +594,7 @@ async function resizeImage(parsedUrl, req, filename) {
                             lossless: false,
                             force: true
                         }).toFile(modfilename)
-                    } else if( format==='png'){
+                    } else if (format === 'png') {
                         await resizedFile.png({
                             quality,
                             force: true
@@ -519,14 +636,22 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
     if (fs.existsSync(filename)) {
 
 
+        // Check if there is a modified image
         const modImage = await resizeImage(parsedUrl, req, filename)
-
         if (modImage.exists) {
             filename = modImage.filename
         }
 
-        const stat = fs.statSync(filename)
+        // Check if there is a modified video
+        const transcodeOptions = transcodeVideoOptions(parsedUrl, filename)
+        if (transcodeOptions && transcodeOptions.exists) {
+            console.log(`stream from modified file ${transcodeOptions.filename}`)
 
+            filename = transcodeOptions.filename
+        }
+
+
+        const stat = fs.statSync(filename)
         if (!stat.isFile()) {
             sendError(res, 404)
             return
@@ -560,26 +685,30 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
                 headerExtra['Content-Type'] = mimeType
 
-                if ((ext === 'mp3' || ext === 'mp4' || ext === 'm4a') && !parsedUrl.query.transcode) {
+                if ((ext === 'mp3' || ext === 'mp4' || ext === 'm4a')) {
 
-                    delete headerExtra['Cache-Control']
-                    headerExtra['Accept-Ranges'] = 'bytes'
 
-                    const range = req.headers.range
+                    if (!transcodeOptions || transcodeOptions.exists) {
 
-                    if (req.headers.range) {
-                        const parts = range.replace(/bytes=/, "").split("-"),
-                            partialstart = parts[0],
-                            partialend = parts[1],
-                            start = parseInt(partialstart, 10),
-                            end = partialend ? parseInt(partialend, 10) : stat.size - 1,
-                            chunksize = (end - start) + 1
+                        delete headerExtra['Cache-Control']
+                        headerExtra['Accept-Ranges'] = 'bytes'
 
-                        code = 206
-                        streamOption = {start, end}
-                        headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
-                        headerExtra['Content-Length'] = chunksize
+                        const range = req.headers.range
 
+                        if (req.headers.range) {
+                            const parts = range.replace(/bytes=/, "").split("-"),
+                                partialstart = parts[0],
+                                partialend = parts[1],
+                                start = parseInt(partialstart, 10),
+                                end = partialend ? parseInt(partialend, 10) : stat.size - 1,
+                                chunksize = (end - start) + 1
+
+                            code = 206
+                            streamOption = {start, end}
+                            headerExtra['Content-Range'] = 'bytes ' + start + '-' + end + '/' + stat.size
+                            headerExtra['Content-Length'] = chunksize
+
+                        }
                     }
                 }
             }
@@ -587,8 +716,8 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
         const fileStream = fs.createReadStream(filename, streamOption)
 
-        if (parsedUrl.query.transcode) {
-            transcodeVideo(parsedUrl, headerExtra, res, code, fileStream)
+        if (transcodeOptions && !transcodeOptions.exists) {
+            transcodeAndStreamVideo({options: transcodeOptions, headerExtra, res, code, fileStream})
         } else {
             res.writeHead(code, headerExtra)
             fileStream.pipe(res)

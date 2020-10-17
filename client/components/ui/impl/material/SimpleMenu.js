@@ -41,10 +41,11 @@ class SimpleMenu extends React.Component {
 
     render() {
         const {anchorEl} = this.state
-        const {style, items, label, mini, color, fab, onClick, className, open, onOpen, ...rest} = this.props
+        const {style, items, label, mini, color, fab, onClick, className, open, onOpen, noButton, ...rest} = this.props
         return (
             <div className={className} style={style}>
                 {
+                    noButton ? null :
                     label !== undefined || fab !== undefined ?
                         fab ?
                             <Fab aria-label="Simple menu"

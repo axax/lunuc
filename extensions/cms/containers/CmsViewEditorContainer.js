@@ -580,11 +580,30 @@ class CmsViewEditorContainer extends React.Component {
                                     data.historys.results.forEach(i => {
                                             if (i.slug !== props.slug) {
 
+
                                                 const meta = i.meta ? JSON.parse(i.meta) : {keys: []}
+
+
+                                                let secondary
+
+                                                if(meta.keys.indexOf('template') >=0){
+                                                    secondary = 'Tempalte wurde geändert'
+                                                }else if(meta.keys.indexOf('style') >=0){
+                                                    secondary = 'Style hat geändert'
+                                                }else if(meta.keys.indexOf('dataResolver') >=0){
+                                                    secondary = 'Data resolver hat geändert'
+                                                }else if(meta.keys.indexOf('serverScript') >=0){
+                                                    secondary = 'Server script hat geändert'
+                                                }else if(meta.keys.indexOf('script') >=0){
+                                                    secondary = 'Script hat geändert'
+                                                }else{
+                                                    secondary = 'Änderung'
+                                                }
+
                                                 menuItems.push(<MenuListItem key={'history' + i._id} onClick={e => {
                                                     this.setState({showRevision: i})
                                                 }} button primary={Util.formattedDateFromObjectId(i._id) + ' - ' + i.action}
-                                                                             secondary={meta.keys.indexOf('template') > -1 ? 'Inhalt wurde geändert' : meta.keys.indexOf('style') > -1 ? 'Style hat geändert' : 'Änderung'}
+                                                                             secondary={secondary}
                                                 />)
                                             }
                                         }
@@ -655,7 +674,10 @@ class CmsViewEditorContainer extends React.Component {
 
                                     return <div>
                                         <p>Script changed</p>
-                                        <textarea>{parsedData.script}</textarea>
+
+                                        <CodeEditor lineNumbers
+                                                    type="js"
+                                                    readOnly={true}>{parsedData.script}</CodeEditor>
                                     </div>
 
                                 }
