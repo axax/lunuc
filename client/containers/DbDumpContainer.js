@@ -126,18 +126,20 @@ class DbDumpContainer extends React.Component {
 
                         {dbDumps && dbDumps.results && dbDumps.results.length > 0 &&
                         <SimpleList items={dbDumps.results.reduce((a, i) => {
-                            a.push({
-                                primary: i.name,
-                                onClick: () => {
+                            if(i) {
+                                a.push({
+                                    primary: i.name,
+                                    onClick: () => {
 
-                                    this.authorizedRequest(BACKUP_URL + '/dbdumps/' + i.name, 'db.backup.gz')
+                                        this.authorizedRequest(BACKUP_URL + '/dbdumps/' + i.name, 'db.backup.gz')
 
-                                },
-                                secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size,
-                                actions: <DeleteIconButton onClick={()=>{
-                                    this.props.removeDbDump(i)
-                                }}/>
-                            })
+                                    },
+                                    secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size,
+                                    actions: <DeleteIconButton onClick={() => {
+                                        this.props.removeDbDump(i)
+                                    }}/>
+                                })
+                            }
                             return a
                         }, [])}/>
                         }

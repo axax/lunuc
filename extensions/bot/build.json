@@ -71,6 +71,7 @@
       "fields": [
         {
           "name": "context",
+          "type": "Object",
           "uitype": "json"
         },
         {
@@ -82,7 +83,8 @@
         {
           "name": "bot",
           "type": "Bot",
-          "pickerField": "name"
+          "pickerField": "name",
+          "index": 1
         }
       ]
     }

@@ -18,9 +18,8 @@ import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
 import classNames from 'classnames'
-import config from 'gen/config'
+import {DEFAULT_LANGUAGE} from 'gen/config'
 
-const {DEFAULT_LANGUAGE} = config
 import {client} from '../middleware/graphql'
 import Util from '../util'
 
@@ -313,11 +312,11 @@ class TypePicker extends React.Component {
     }
 
     handleChange(e) {
-        const v = e.target.value.trim()
-        if (v === '') {
-            this.setState({data: null, textValue: v})
+        const value = e.target.value.trim()
+        if (value === '') {
+            this.setState({data: null, textValue: value})
         } else {
-            this.setState({textValue: v})
+            this.setState({textValue: value})
             const {searchFields} = this.props
             let filter = ''
             if (searchFields) {
@@ -405,7 +404,6 @@ class TypePicker extends React.Component {
             }
             client.query({
                 fetchPolicy: 'network-only',
-                forceFetch: true,
                 query: gqlQuery,
                 variables
             }).then(response => {

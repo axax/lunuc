@@ -36,6 +36,7 @@ import 'codemirror/addon/fold/markdown-fold'
 import 'codemirror/addon/fold/comment-fold'
 import 'codemirror/addon/fold/foldgutter.css'
 import GenericForm from './GenericForm'
+import Util from '../util'
 
 const styles = theme => ({
     root: {
@@ -317,13 +318,19 @@ class CodeEditor extends React.Component {
                         onClick: () => {
                             const keys = Object.keys(tempJson)
                             if(keys.length>0) {
-                                this.setState({editData: {key:keys[0],value:tempJson[keys[0]]}})
+                                this.setState({editData: {uitype:'textarea',key:keys[0],value:tempJson[keys[0]]}})
                             }
                         }
                     },
                     {
                         icon: <CodeIcon/>,
-                        name: 'Edit as HTML'
+                        name: 'Edit as HTML',
+                        onClick: () => {
+                            const keys = Object.keys(tempJson)
+                            if(keys.length>0) {
+                                this.setState({editData: {uitype:'html', key:keys[0],value:tempJson[keys[0]]}})
+                            }
+                        }
                     }
                 ]
             }catch (e) {
@@ -339,7 +346,9 @@ class CodeEditor extends React.Component {
                                            if (e.key === 'ok') {
                                                const formValidation = this.editDataForm.validate()
                                                if (formValidation.isValid) {
-                                                   this._editor.doc.replaceRange(`"${editData.key}":"${this.editDataForm.state.fields.data}"${this._endsWithComma?',':''}`,{line: this._lineNr, ch: 0}, {line: this._lineNr})
+                                                   console.log(this.editDataForm.state.fields.data)
+                                                   this._editor.doc.replaceRange(`"${editData.key}":"${Util.escapeForJson(this.editDataForm.state.fields.data).replace(/\\/g,'\\\\\\')}"${this._endsWithComma?',':''}`,{line: this._lineNr, ch: 0}, {line: this._lineNr})
+                                                   this.autoFormatSelection()
                                                }
                                            }
                                            this.setState({editData: false})
@@ -366,7 +375,7 @@ class CodeEditor extends React.Component {
                                  data: {
                                      fullWidth: true,
                                      label: editData.key,
-                                     multi: true
+                                     uitype: editData.uitype
                                  }
                              }}/>
 

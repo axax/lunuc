@@ -1,5 +1,4 @@
 /* Remove this this line if you don't want to support older browser such as IE 11 */
-//import './polyfill'
 import 'gen/extensions-client'
 import React from 'react'
 import {render} from 'react-dom'
@@ -217,7 +216,7 @@ if (!Object.assign || !window.fetch || !window.Intl || !Promise.prototype.finall
             mainInit()
         }
     }
-    // Load polyfill and bable in order to support old browsers
+    // Load polyfill and bable to support old browsers
     DomUtil.addScript('https://unpkg.com/babel-standalone@6.26.0/babel.min.js', {
         async: true,
         onload

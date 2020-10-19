@@ -9,21 +9,19 @@ export const useKeyValues = (keys) => {
 
    // const [response, setResponse] = useState({data: null, networkStatus: 0, loading: true})
 
-    const {results,loading} = useQuery(QUERY_KEY_VALUES, {variables:{keys}})
-
-    const data={}
-    if (results) {
-        for (const i in results) {
-            const o = results[i]
+    const {data,loading} = useQuery(QUERY_KEY_VALUES, {variables:{keys}})
+    const enhancedData={}
+    if (data && data.keyValues.results) {
+        for (const i in data.keyValues.results) {
+            const o = data.keyValues.results[i]
             try {
-                data[o.key] = JSON.parse(o.value)
+                enhancedData[o.key] = JSON.parse(o.value)
             } catch (e) {
-                data[o.key] = o.value
+                enhancedData[o.key] = o.value
             }
         }
     }
-
-    return {loading,data}
+    return {loading,data: enhancedData}
 
 }
 

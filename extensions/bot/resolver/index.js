@@ -10,7 +10,7 @@ export default db => ({
         sendBotMessage: async ({message, botId, id}, {context}) => {
             // Util.checkIfUserIsLoggedIn(context)
             if (registeredBots[botId]) {
-                const currentId = id || (context.id + String((new Date()).getTime()))
+                const currentId = id || ((context.id ? context.id : '0') + '-' + String((new Date()).getTime()))
                 if (!botConnectors[currentId]) {
                     const ctx = new BotConnector()
                     botConnectors[currentId] = ctx
@@ -27,6 +27,9 @@ export default db => ({
                     })
 
                     ctx.on('text', (text, message_id) => {
+
+                        // this.archiveMessage(ctx)
+
                         pubsub.publish('subscribeBotMessage', {
                             botId,
                             subscribeBotMessage: {
@@ -49,7 +52,11 @@ export default db => ({
                     botConnectors[currentId].sessions.push(context.session)
                 }
 
-                botConnectors[currentId].setMessage({text: message, from: {first_name: context.username}})
+                botConnectors[currentId].setMessage({
+                    chat: {id: currentId},
+                    text: message,
+                    from: {first_name: context.username}
+                })
 
                 pubsub.publish('subscribeBotMessage', {
                     userId: context.id,
