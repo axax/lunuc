@@ -148,9 +148,10 @@ class CmsViewContainer extends React.Component {
                 console.log('refresh resources', props.slug)
 
                 try {
-                    const a = JSON.parse(resources)
+                    const a = JSON.parse(Util.replacePlaceholders(resources,{_app_}))
                     for (let i = 0; i < a.length; i++) {
-                        let r = a[i].replace('${build}', ''), ext, params
+                        let r = a[i], ext, params
+
 
                         if (r.startsWith('[')) {
                             params = r.substring(1, r.indexOf(']'))

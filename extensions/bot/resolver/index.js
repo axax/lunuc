@@ -21,19 +21,25 @@ export default db => ({
                         pubsub.publish('subscribeBotMessage', {
                             botId,
                             subscribeBotMessage: {
-                                id: currentId, response: text, message_id, event: 'newMessage'
+                                id: currentId, response: text, message_id, event: 'newMessage', username:registeredBots[botId].data.name, botId, botName: registeredBots[botId].data.name
                             }
                         })
                     })
 
                     ctx.on('text', (text, message_id) => {
 
-                        // this.archiveMessage(ctx)
+                        registeredBots[botId].archiveMessage({
+                            message: {
+                                text,
+                                from: {isBot:true, first_name: registeredBots[botId].data.name, id: registeredBots[botId]._id},
+                                chat: {id: currentId}
+                            }
+                        })
 
                         pubsub.publish('subscribeBotMessage', {
                             botId,
                             subscribeBotMessage: {
-                                id: currentId, response: text, message_id, event: 'newMessage'
+                                id: currentId, response: text, message_id, username:registeredBots[botId].data.name, event: 'newMessage', botId, botName: registeredBots[botId].data.name
                             }
                         })
                     })
@@ -41,7 +47,7 @@ export default db => ({
                         pubsub.publish('subscribeBotMessage', {
                             botId,
                             subscribeBotMessage: {
-                                id: currentId, message_id, event: 'deleteMessage'
+                                id: currentId, message_id, event: 'deleteMessage', botId, botName: registeredBots[botId].data.name
                             }
                         })
                     })
@@ -55,7 +61,7 @@ export default db => ({
                 botConnectors[currentId].setMessage({
                     chat: {id: currentId},
                     text: message,
-                    from: {first_name: context.username}
+                    from: {first_name: context.username, id: context.id || ''}
                 })
 
                 pubsub.publish('subscribeBotMessage', {
@@ -63,6 +69,8 @@ export default db => ({
                     botId,
                     sessionId: context.session,
                     subscribeBotMessage: {
+                        botId,
+                        botName: registeredBots[botId].data.name,
                         id: currentId,
                         username: context.username,
                         response: message,
@@ -106,6 +114,15 @@ export default db => ({
                         }
 
                         return true
+                    }else{
+                        const bot = registeredBots[payload.botId]
+                        if(bot && bot.data.manager){
+                            if(bot.data.manager.indexOf(context.id)) {
+                                // return
+                                return true
+                            }
+                        }
+
                     }
 
 //registeredBots[botId].data.manager

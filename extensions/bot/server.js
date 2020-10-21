@@ -5,7 +5,6 @@ import schema from './schema'
 import resolver from './resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
 import {unregisterBots, registerBots, botConnectors, registeredBots} from './bot'
-import {ObjectId} from 'mongodb'
 
 
 // Hook to add mongodb resolver

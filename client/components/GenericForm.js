@@ -256,6 +256,13 @@ class GenericForm extends React.Component {
         return state !== this.state || state.fieldErrors !== this.state.fieldErrors || state.showTranslations !== this.state.showTranslations
     }
 
+
+    componentWillUnmount() {
+        if (this.pickr) {
+            this.pickr.destroy()
+        }
+    }
+
     validate(state = this.state, updateState = true, options) {
 
         const validationState = GenericForm.staticValidate(state, this.props, options)
@@ -329,37 +336,44 @@ class GenericForm extends React.Component {
 
     initColorpicker() {
         if (window.Pickr && !this.pickr) {
-            this.pickr = new Pickr({
-                el: '[data-colorpicker] > input',
-                useAsButton: true,
-                defaultRepresentation: 'HEX',
-                components: {
-                    palette: true,
-                    preview: true,
-                    opacity: true,
-                    hue: true,
-                    interaction: {
-                        hex: false,
-                        rgba: false,
-                        hsla: false,
-                        hsva: false,
-                        cmyk: false,
-                        input: false,
-                        save:false
-                    },
+            setTimeout(() => {
+                try {
+                    this.pickr = new Pickr({
+                        el: '[data-colorpicker] > input',
+                        useAsButton: true,
+                        defaultRepresentation: 'HEX',
+                        components: {
+                            palette: true,
+                            preview: true,
+                            opacity: true,
+                            hue: true,
+                            interaction: {
+                                hex: false,
+                                rgba: false,
+                                hsla: false,
+                                hsva: false,
+                                cmyk: false,
+                                input: false,
+                                save: false
+                            },
+                        }
+                    })
+
+                    let timeout
+                    this.pickr.on('change', (color, instance) => {
+                        const inp = instance._root.button
+                        clearTimeout(timeout)
+                        timeout = setTimeout(() => {
+                            this.handleInputChange({target: {name: inp.name, value: color.toHEXA().toString()}})
+                        }, 300)
+                    }).on('show', (color, instance) => {
+                        const inp = instance._root.button
+                        this.pickr.setColor(inp.value)
+                    })
+                } catch (e) {
+                    console.log(e)
                 }
-            })
-            let timeout
-            this.pickr.on('change', (color, instance) => {
-                const inp = instance._root.button
-                clearTimeout(timeout)
-                timeout = setTimeout(() => {
-                    this.handleInputChange({target: {name: inp.name, value: color.toHEXA().toString()}})
-                }, 300)
-            }).on('show', (color, instance) => {
-                const inp = instance._root.button
-                this.pickr.setColor(inp.value)
-            })
+            }, 500)
 
         }
     }

@@ -6,6 +6,8 @@ export default `
         message_id: String
         event: String
         username: String
+        botId: String
+        botName: String
     }
     
     type Query {
