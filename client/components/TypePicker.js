@@ -121,8 +121,8 @@ class TypePicker extends React.Component {
     pickTimeout = 0
 
     shouldComponentUpdate(props, state) {
-        return state.value !== this.state.value ||
-            state.textValue !== this.state.textValue ||
+        return state.textValue !== this.state.textValue ||
+            /*state.value !== this.state.value ||*/
             state.data !== this.state.data ||
             props.error !== this.props.error ||
             state.selIdx !== this.state.selIdx

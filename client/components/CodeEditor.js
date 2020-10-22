@@ -82,12 +82,23 @@ function getFirstLine(text) {
 //https://codemirror.net/doc/manual.html#addon_rulers
 class CodeEditor extends React.Component {
 
-
     constructor(props) {
         super(props)
-        this._data = props.children
-        this.state = {
-            data: props.children,
+        this.state = CodeEditor.getStateFromProps(props)
+    }
+
+    static getStateFromProps(props) {
+        const isDataJson = props.children && (props.children.constructor === Object || props.children.constructor === Array)
+
+        let data = props.children
+
+        if (isDataJson) {
+            data = JSON.stringify(data, null, 2)
+        }
+
+        return {
+            data,
+            isDataJson,
             stateError: false,
             error: props.error,
             fileIndex: props.fileIndex || 0,
@@ -96,25 +107,15 @@ class CodeEditor extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.children !== prevState.data || nextProps.error !== prevState.error) {
+        if (nextProps.error !== prevState.error) {
             console.log('CodeEditor update state')
-            return {
-                data: nextProps.children,
-                stateError: false,
-                error: nextProps.error,
-                fileIndex: nextProps.fileIndex || 0
-            }
+            return CodeEditor.getStateFromProps(nextProps, prevState)
         }
         return null
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        if (nextState.data !== this._data) {
-            this._data = nextState.data
-            this._refresh = true
-        }
-        return this._refresh ||
-            nextState.stateError !== this.state.stateError ||
+        return nextState.stateError !== this.state.stateError ||
             nextState.error !== this.state.error ||
             nextState.fileIndex !== this.state.fileIndex ||
             nextState.showContextMenu !== this.state.showContextMenu ||
@@ -127,13 +128,13 @@ class CodeEditor extends React.Component {
 
         if (type === 'json') {
             try {
-                this._data = JSON.stringify(JSON.parse(this._data), null, 2)
+                const formatedData = JSON.stringify(JSON.parse(this.state.data), null, 2)
 
                 if (onChange) {
-                    onChange(this._data)
+                    onChange(formatedData)
                 }
                 const scrollInfo = this._editor.getScrollInfo()
-                this._editor.setValue(this._data)
+                this._editor.setValue(formatedData)
                 this._editor.scrollTo(scrollInfo.left, scrollInfo.top)
 
 
@@ -177,7 +178,7 @@ class CodeEditor extends React.Component {
 
     render() {
         const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
-        const {stateError, showFileSplit, fileIndex, showContextMenu, editData} = this.state
+        const {stateError, showFileSplit, fileIndex, showContextMenu, editData, data} = this.state
 
         const options = {
             mode: {},
@@ -233,14 +234,16 @@ class CodeEditor extends React.Component {
 
         const allActions = [
             {
-            icon: <ViewListIcon />,
-            name: 'Format selection (Ctrl-L)',
-            onClick: this.autoFormatSelection.bind(this)
-        },
+                icon: <ViewListIcon/>,
+                name: 'Format selection (Ctrl-L)',
+                onClick: this.autoFormatSelection.bind(this)
+            },
             {
-                icon: <LaunchIcon />,
+                icon: <LaunchIcon/>,
                 name: 'Open in new window',
-                onClick: ()=>{alert('todo')}
+                onClick: () => {
+                    alert('todo')
+                }
             },
         ]
 
@@ -250,7 +253,7 @@ class CodeEditor extends React.Component {
 
         console.log('render CodeEditor', fabButtonStyle)
 
-        let value = this._data && (this._data.constructor === Object || this._data.constructor === Array) ? JSON.stringify(this._data, null, 2) : this._data
+        let value = data
         if (!value) {
             value = ''
         }
@@ -288,7 +291,6 @@ class CodeEditor extends React.Component {
 
             allActions.push({
                 name: (showFileSplit ? 'Hide' : 'Show') + ' File split', onClick: () => {
-                    this._refresh = true
                     this.setState({showFileSplit: !showFileSplit})
                 }
             })
@@ -296,7 +298,7 @@ class CodeEditor extends React.Component {
 
         let contextMenuItems
 
-        if(showContextMenu) {
+        if (showContextMenu) {
 
             const loc = this._editor.coordsChar(showContextMenu)
             this._lineNr = loc.line
@@ -304,21 +306,21 @@ class CodeEditor extends React.Component {
             let line = this._editor.doc.getLine(loc.line)
 
 
-            this._endsWithComma=line.endsWith(',')
-            if(this._endsWithComma){
-                line = line.substring(0,line.length-1)
+            this._endsWithComma = line.endsWith(',')
+            if (this._endsWithComma) {
+                line = line.substring(0, line.length - 1)
             }
             try {
 
-                const tempJson = JSON.parse('{'+line+'}')
+                const tempJson = JSON.parse('{' + line + '}')
                 contextMenuItems = [
                     {
                         icon: <EditIcon/>,
                         name: 'Edit as Text',
                         onClick: () => {
                             const keys = Object.keys(tempJson)
-                            if(keys.length>0) {
-                                this.setState({editData: {uitype:'textarea',key:keys[0],value:tempJson[keys[0]]}})
+                            if (keys.length > 0) {
+                                this.setState({editData: {uitype: 'textarea', key: keys[0], value: tempJson[keys[0]]}})
                             }
                         }
                     },
@@ -327,13 +329,13 @@ class CodeEditor extends React.Component {
                         name: 'Edit as HTML',
                         onClick: () => {
                             const keys = Object.keys(tempJson)
-                            if(keys.length>0) {
-                                this.setState({editData: {uitype:'html', key:keys[0],value:tempJson[keys[0]]}})
+                            if (keys.length > 0) {
+                                this.setState({editData: {uitype: 'html', key: keys[0], value: tempJson[keys[0]]}})
                             }
                         }
                     }
                 ]
-            }catch (e) {
+            } catch (e) {
             }
         }
         return <div className={classNames(classes.root, (error || stateError) && classes.rootError, className)}
@@ -347,7 +349,10 @@ class CodeEditor extends React.Component {
                                                const formValidation = this.editDataForm.validate()
                                                if (formValidation.isValid) {
                                                    console.log(this.editDataForm.state.fields.data)
-                                                   this._editor.doc.replaceRange(`"${editData.key}":"${Util.escapeForJson(this.editDataForm.state.fields.data).replace(/\\/g,'\\\\\\')}"${this._endsWithComma?',':''}`,{line: this._lineNr, ch: 0}, {line: this._lineNr})
+                                                   this._editor.doc.replaceRange(`"${editData.key}":"${Util.escapeForJson(this.editDataForm.state.fields.data).replace(/\\/g, '\\\\\\')}"${this._endsWithComma ? ',' : ''}`, {
+                                                       line: this._lineNr,
+                                                       ch: 0
+                                                   }, {line: this._lineNr})
                                                    this.autoFormatSelection()
                                                }
                                            }
@@ -406,7 +411,6 @@ class CodeEditor extends React.Component {
                     return (
                         <a key={'file' + i}
                            onClick={() => {
-                               this._refresh = true
                                this.setState({fileIndex: i})
 
                                if (onFileChange) {
@@ -432,7 +436,7 @@ class CodeEditor extends React.Component {
                 }}
                 value={value}
                 options={options}
-                onContextMenu={((editor,e) => {
+                onContextMenu={((editor, e) => {
                     if (type === 'json') {
                         e.preventDefault()
 
@@ -447,23 +451,18 @@ class CodeEditor extends React.Component {
                     }
                 }}
                 onKeyUp={(cm, e) => {
-                     if (!cm.state.completionActive && /*Enables keyboard navigation in autocomplete list*/
-                         !e.ctrlKey &&
-                         e.keyCode > 64 && e.keyCode < 91){
+                    if (!cm.state.completionActive && /*Enables keyboard navigation in autocomplete list*/
+                        !e.ctrlKey &&
+                        e.keyCode > 64 && e.keyCode < 91) {
                         cm.execCommand("autocomplete")
                     }
                 }}
                 onBlur={(editor, e) => {
                     if (onBlur) {
-                        onBlur(e, this._data)
+                        onBlur(e, data)
                     }
                 }}
-                onChange={(editor, dataObject, data) => {
-                    if (this._refresh) {
-                        // initial onchange
-                        this._refresh = false
-                        return
-                    }
+                onChange={(editor, dataObject, changedData) => {
                     let newData
 
                     if (filenames) {
@@ -473,35 +472,44 @@ class CodeEditor extends React.Component {
                             if (i !== finalFileIndex) {
                                 newData += files[i].trim() + '\n'
                             } else {
-                                newData += data + '\n'
+                                newData += changedData + '\n'
                                 // filenames.push(getFirstLine(file))
                             }
                         })
                     } else {
-                        newData = data
-                    }
-                    if (this._data && (this._data.constructor === Object || this._data.constructor === Array)) {
-                        // if input was Object output is an Object to
-                        try {
-                            this.setState({stateError: false})
-                            this._data = JSON.parse(newData)
-                        } catch (e) {
-                            console.error(e)
-                            if (onError) {
-                                onError(e)
-                            }
-                            this.setState({stateError: `Fehler in der JSON Struktur: ${e.message}`})
-                            return
-                        }
-                    } else {
-                        this._data = newData
-                    }
-                    if (onChange) {
-                        onChange(this._data)
+                        newData = changedData
                     }
 
-                }}
-            />
+                    let newDataAsJson
+                    if (this.state.isDataJson || type === 'json') {
+
+                        try {
+                            newDataAsJson = JSON.parse(newData)
+
+                        } catch (e) {
+                            console.error(e)
+                            this.setState({stateError: `Fehler in der JSON Struktur: ${e.message}`}, () => {
+
+                                if (onError) {
+                                    onError(e)
+                                }
+                            })
+                            return
+                        }
+                    }
+
+                    this.setState({stateError: false, data: newData}, () => {
+                        if (onChange) {
+                            if (this.state.isDataJson) {
+                                // if input was Object output is an Object to
+                                onChange(newDataAsJson)
+                            } else {
+                                onChange(newData)
+                            }
+                        }
+                    })
+
+                }}/>
             {(error || stateError) &&
             <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError : ''}</div>}</div>
     }

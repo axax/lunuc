@@ -1152,19 +1152,21 @@ class CmsViewEditorContainer extends React.Component {
     handleClientScriptChange = (script) => {
         if (this._saveSettings)
             this._saveSettings()
-        const newState = {script}
+
+
         clearTimeout(this._scriptTimeout)
         this._scriptTimeout = null
+
 
         if (script.length > 50) {
             // delay change
             this._scriptTimeout = setTimeout(() => {
                 this._scriptTimeout = null
-                this.setState(newState)
-            }, 1000)
+                this.setState({script})
+            }, 500)
 
         } else {
-            this.setState(newState)
+            this.setState({script})
         }
 
         this._autoSaveScript = () => {
@@ -1173,7 +1175,8 @@ class CmsViewEditorContainer extends React.Component {
             } else {
                 clearTimeout(this._autoSaveScriptTimeout)
                 this._autoSaveScriptTimeout = 0
-                this.saveCmsPage(newState.script, this.props.cmsPage, 'script')
+                this.saveCmsPage(this.state.script, this.props.cmsPage, 'script')
+                delete this._autoSaveScript
             }
         }
 
@@ -1263,6 +1266,7 @@ class CmsViewEditorContainer extends React.Component {
                 this._autoSaveTemplateTimeout = 0
                 this._autoSaveTemplate = null
                 this.saveCmsPage(str, this.props.cmsPage, 'template')
+
             }
 
             clearTimeout(this._autoSaveTemplateTimeout)
