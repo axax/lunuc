@@ -122,7 +122,7 @@ class TypePicker extends React.Component {
 
     shouldComponentUpdate(props, state) {
         return state.textValue !== this.state.textValue ||
-            /*state.value !== this.state.value ||*/
+            state.value !== this.state.value ||
             state.data !== this.state.data ||
             props.error !== this.props.error ||
             state.selIdx !== this.state.selIdx
