@@ -183,7 +183,7 @@ export default () => {
                                                   })
 
                                                   meta._this.getData(meta, false)
-                                              }, 1000)
+                                              }, 2000)
 
                                           }
                                           // TODO: but it directly into the store instead of reload

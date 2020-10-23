@@ -447,7 +447,11 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
     delete headerExtra['Content-Length']
     res.writeHead(code, {...headerExtra})
 
-    const outputOptions = ['-movflags isml+frag_keyframe+empty_moov+faststart']
+    const outputOptions = []
+
+    if(!options.nostream){
+        outputOptions.push('-movflags isml+frag_keyframe+empty_moov+faststart')
+    }
     if (options.crf) {
         outputOptions.push('-crf ' + options.crf)
     }
@@ -502,7 +506,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
         video.size(options.size)
     }
     video.on('progress', (progress) => {
-        //console.log('Processing: ' + progress.timemark + '% done')
+        console.log('Processing: ' + progress.timemark + '% done')
     }).on('start', console.log).on('end', () => {
         if (options.keep) {
             // rename
@@ -523,16 +527,20 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
         } else {
             console.log(`save video as ${options.filename}`)
 
-            const writeStream = writeStreamFile(options.filename + '.temp')
+            if(options.nostream){
+                video.output(options.filename + '.temp').run()
+            }else {
+                const writeStream = writeStreamFile(options.filename + '.temp')
 
-            const passStream = new PassThrough()
+                const passStream = new PassThrough()
 
-            passStream.pipe(res)
-            passStream.pipe(writeStream)
+                passStream.pipe(res)
+                passStream.pipe(writeStream)
 
-            video.output(passStream, {end: true})
+                video.output(passStream, {end: true})
 
-            video.run()
+                video.run()
+            }
         }
 
     } else {

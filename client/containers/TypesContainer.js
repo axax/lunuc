@@ -170,7 +170,8 @@ class TypesContainer extends React.Component {
 
     setSettingsForType(type, settings) {
         this.settings[type] = Object.assign({}, this.settings[type], settings)
-        //TODO: make sure settings are saved
+
+        this.saveSettings()
     }
 
     saveSettings() {
