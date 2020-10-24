@@ -9,7 +9,7 @@ class DataResolverEditor extends React.Component {
                 name: 'Create example',
                 icon: <BuildIcon />,
                 onClick: this.createExample.bind(this)
-            }]} lineNumbers type="json" {...this.props}/>
+            }]} lineNumbers controlled type="json" {...this.props}/>
     }
 
     createExample() {

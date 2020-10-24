@@ -206,11 +206,17 @@ create lunuc-api.service file under /etc/systemd/system
 #### Restart service
 `sudo systemctl restart lunuc-api`
 
+#### Enable service to run at boot
+`sudo systemctl enable lunuc-api`
+`sudo systemctl enable lunuc-client`
 
 ### Port forwarding
 
 `sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8080`
 `sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 8080`
+
+#### Persist ruels after reboot
+`apt-get install iptables-persistent`
 
 ### if interface is not eth0 check for other interfaces
 `netstat -i`
@@ -219,8 +225,8 @@ create lunuc-api.service file under /etc/systemd/system
 `sudo iptables -t nat -vnL`
 
 #### Forward port 443 and 80 to 8080
-`iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 8080`
-`iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8080`
+`sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 8080`
+`sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 443 -j REDIRECT --to-port 8080`
 
 ##### Remove iptables entry
 `sudo iptables -t nat -D PREROUTING 1`
@@ -257,6 +263,12 @@ Add this to the file:
 
 4. run
 `sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf`
+
+
+### Disable Apache 2
+`sudo systemctl disable apache2 && sudo systemctl stop apache2`
+`/etc/init.d/apache2 stop`
+sudo systemctl disable apache2
 
 ###Security
 

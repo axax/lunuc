@@ -438,6 +438,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
     // make sure ffmpeg is install on your device
     // brew install ffmpeg
     //sudo apt install ffmpeg
+    // http://localhost:8080/uploads/5f935f98f5ca78b7cbeaa853/-/test.mpg?ext=mp4&transcode={"audioQuality":2,"fps":24,"size":"720x?","crf":24,"keep":true,"nostream":true}
 
     const ffprobePath = require('@ffprobe-installer/ffprobe').path,
         ffmpeg = require('fluent-ffmpeg')
@@ -466,6 +467,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
     let video = ffmpeg(fileStream)
 
     if (options.noAudio) {
+        console.log('no audio was set')
         video.noAudio()
     } else {
         const aFilter = []
@@ -477,7 +479,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
             aFilter.push('atempo=' + options.speed)
         }
 
-        video.audioCodec('libmp3lame').audioFilters(aFilter)
+        video.audioCodec('aac').audioFilters(aFilter) /*.audioBitrate('128k')*/
 
         if (options.audioQuality) {
             video.audioQuality(options.audioQuality)

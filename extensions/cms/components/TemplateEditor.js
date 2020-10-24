@@ -109,7 +109,6 @@ class TemplateEditor extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-
         if (nextProps.children !== prevState.children ||
             nextProps.component !== prevState.component) {
             return TemplateEditor.getStateFromProps(nextProps)
@@ -154,6 +153,7 @@ class TemplateEditor extends React.Component {
                             onChange={this.handleChange.bind(this)}
                             error={error}
                             showFab
+                            controlled
                             lineNumbers
                             type={type}>{data}</CodeEditor>
 

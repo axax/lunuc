@@ -107,15 +107,22 @@ class CodeEditor extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.error !== prevState.error) {
+        if (nextProps.error !== prevState.error || (nextProps.controlled && nextProps.children !== prevState.data)) {
             console.log('CodeEditor update state')
             return CodeEditor.getStateFromProps(nextProps, prevState)
         }
         return null
     }
 
+    setState(state, callback) {
+        state._stateUpdate=true
+        super.setState(state,callback)
+
+    }
+
     shouldComponentUpdate(nextProps, nextState) {
         return nextState.stateError !== this.state.stateError ||
+            nextState.data !== this.state.data ||
             nextState.error !== this.state.error ||
             nextState.fileIndex !== this.state.fileIndex ||
             nextState.showContextMenu !== this.state.showContextMenu ||

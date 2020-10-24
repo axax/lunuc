@@ -373,7 +373,9 @@ const baseElements = [
             c: 'Headline'
         },
         options: {
+            ...trOptions('$inlineEditor_options_c_'),
             t: {
+                tabPosition:0,
                 tab: DEFAULT_TAB,
                 label: 'Type',
                 enum: [
@@ -420,7 +422,6 @@ const baseElements = [
                 fullWidth: true,
                 tab: DEFAULT_TAB
             },
-            ...trOptions('$inlineEditor_options_c_'),
             ...marginOptions('p_'),
             ...classOptions('p_')
         }
@@ -443,12 +444,13 @@ const baseElements = [
             }
         },
         options: {
+            ...trOptions('$inlineEditor_options_$c_'),
             $c: {
                 label: 'Text',
                 uitype: 'html',
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                tabPosition:0
             },
-            ...trOptions('$inlineEditor_options_$c_'),
             ...classOptions('p_'),
             ...marginOptions('p_')
         }
@@ -457,12 +459,14 @@ const baseElements = [
         tagName: 'Link',
         name: 'Link',
         options: {
+            ...trOptions('$inlineEditor_options_c_'),
             c: {
                 fullWidth: true,
                 value: '',
                 placeholder: 'Name eingeben',
                 label: 'Name',
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                tabPosition:0
             },
             p_href: {
                 fullWidth: true,
@@ -498,7 +502,6 @@ const baseElements = [
                 ],
                 tab: DEFAULT_TAB
             },
-            ...trOptions('$inlineEditor_options_c_'),
             ...marginOptions('p_')
         },
         defaults: {
@@ -813,14 +816,15 @@ const baseElements = [
             }
         },
         options: {
+            ...trOptions('$inlineEditor_options_$c_'),
             $c: {
                 label: 'Text',
                 fullWidth: true,
                 uitype: 'textarea',
                 replaceBreaks: true,
-                tab: DEFAULT_TAB
+                tab: DEFAULT_TAB,
+                tabPosition:0
             },
-            ...trOptions('$inlineEditor_options_$c_'),
             ...marginOptions('p_'),
             ...classOptions('p_')
         }
