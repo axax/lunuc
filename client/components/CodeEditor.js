@@ -4,7 +4,7 @@ import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon} 
 import {withStyles} from '@material-ui/core/styles'
 import classNames from 'classnames'
 
-import {UnControlled as UnControlledCodeMirror} from 'react-codemirror2'
+import {Controlled as ControlledCodeMirror} from 'react-codemirror2'
 import CodeMirror from 'codemirror'
 import './codemirror/javascript'
 import './codemirror/search'
@@ -68,7 +68,10 @@ const styles = theme => ({
 
 const snippets = {
     'customJs': [
-        {text: "on(['resourcesready'],()=>{})", displayText: 'on resourcesready event'}
+        {text: "on(['resourcesready'],()=>{})", displayText: 'on resourcesready event'},
+        {text: `on(['mount'],()=>{
+            DomUtil.waitForElement('.selector',()=>{})
+        })`, displayText: 'on mount event'},
     ]
 }
 
@@ -107,11 +110,11 @@ class CodeEditor extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.error !== prevState.error || (nextProps.controlled && nextProps.children !== prevState.data)) {
+        if (nextProps.error !== prevState.error || (!prevState._stateUpdate && !prevState.stateError && nextProps.controlled && nextProps.children !== prevState.data)) {
             console.log('CodeEditor update state')
             return CodeEditor.getStateFromProps(nextProps, prevState)
         }
-        return null
+        return {...prevState, _stateUpdate:false}
     }
 
     setState(state, callback) {
@@ -189,6 +192,7 @@ class CodeEditor extends React.Component {
 
         const options = {
             mode: {},
+            historyEventDelay:1250,
             readOnly,
             lineNumbers,
             tabSize: 2,
@@ -258,8 +262,7 @@ class CodeEditor extends React.Component {
             allActions.push(...actions)
         }
 
-        console.log('render CodeEditor', fabButtonStyle)
-
+        console.log('render CodeEditor')
         let value = data
         if (!value) {
             value = ''
@@ -428,9 +431,9 @@ class CodeEditor extends React.Component {
                     )
                 })}</div>
                 : null}
-            <UnControlledCodeMirror
+            <ControlledCodeMirror
                 className={!height && classes.codemirror}
-                autoCursor={false}
+                autoCursor={true}
                 key="editor"
                 editorDidMount={editor => {
                     this._editor = editor
@@ -469,9 +472,8 @@ class CodeEditor extends React.Component {
                         onBlur(e, data)
                     }
                 }}
-                onChange={(editor, dataObject, changedData) => {
+                onBeforeChange={(editor, dataObject, changedData) => {
                     let newData
-
                     if (filenames) {
                         newData = ''
                         filenames.forEach((file, i) => {
@@ -486,7 +488,6 @@ class CodeEditor extends React.Component {
                     } else {
                         newData = changedData
                     }
-
                     let newDataAsJson
                     if (this.state.isDataJson || type === 'json') {
 
@@ -495,7 +496,7 @@ class CodeEditor extends React.Component {
 
                         } catch (e) {
                             console.error(e)
-                            this.setState({stateError: `Fehler in der JSON Struktur: ${e.message}`}, () => {
+                            this.setState({stateError: `Fehler in der JSON Struktur: ${e.message}`, data: newData}, () => {
 
                                 if (onError) {
                                     onError(e)
