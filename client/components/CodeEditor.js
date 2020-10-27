@@ -309,12 +309,10 @@ class CodeEditor extends React.Component {
         let contextMenuItems
 
         if (showContextMenu) {
-
-            const loc = this._editor.coordsChar(showContextMenu)
+            const loc = this._editor.coordsChar(showContextMenu,'window')
             this._lineNr = loc.line
 
             let line = this._editor.doc.getLine(loc.line)
-
 
             this._endsWithComma = line.endsWith(',')
             if (this._endsWithComma) {
@@ -355,18 +353,30 @@ class CodeEditor extends React.Component {
             {editData && <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
                                        onClose={(e) => {
 
+                                           let newData = value
                                            if (e.key === 'ok') {
                                                const formValidation = this.editDataForm.validate()
                                                if (formValidation.isValid) {
-                                                   console.log(this.editDataForm.state.fields.data)
-                                                   this._editor.doc.replaceRange(`"${editData.key}":"${Util.escapeForJson(this.editDataForm.state.fields.data).replace(/\\/g, '\\\\\\')}"${this._endsWithComma ? ',' : ''}`, {
+                                                   const lines = value.split('\n')
+                                                   lines[this._lineNr] = `"${editData.key}":"${Util.escapeForJson(this.editDataForm.state.fields.data).replace(/\\/g, '\\\\\\')}"${this._endsWithComma ? ',' : ''}`
+                                                   const newJson = JSON.parse(lines.join('\n'))
+                                                   newData = JSON.stringify(newJson,null,2)
+                                                   if (onChange) {
+                                                       if (this.state.isDataJson) {
+                                                           // if input was Object output is an Object to
+                                                           onChange(newJson)
+                                                       } else {
+                                                           onChange(newData)
+                                                       }
+                                                   }
+                                                   /*this._editor.doc.replaceRange(`"${editData.key}":"${Util.escapeForJson(this.editDataForm.state.fields.data).replace(/\\/g, '\\\\\\')}"${this._endsWithComma ? ',' : ''}`, {
                                                        line: this._lineNr,
                                                        ch: 0
-                                                   }, {line: this._lineNr})
-                                                   this.autoFormatSelection()
+                                                   }, {line: this._lineNr})*/
+                                                   //this.autoFormatSelection()
                                                }
                                            }
-                                           this.setState({editData: false})
+                                           this.setState({data: newData, editData: false})
                                        }}
                                        actions={[{
                                            key: 'cancel',
