@@ -136,12 +136,12 @@ class CmsViewEditorContainer extends React.Component {
     watchCmsPageStatus(instant) {
         clearTimeout(this._watchCmsPageStatus)
         this._watchCmsPageStatus = setTimeout(() => {
-            if (!this.state.ignoreStatus && this.props.slug !== undefined) {
+            if (!this.state.ignoreStatus && this.props.cmsPage && this.props.cmsPage.realSlug !== undefined) {
                 client.query({
                     fetchPolicy: 'no-cache',
                     query: `query cmsPageStatus($slug: String!){cmsPageStatus(slug: $slug){data user{username _id}}}`,
                     variables: {
-                        slug: this.props.slug
+                        slug: this.props.cmsPage.realSlug
                     },
                 }).then((res) => {
                     this.watchCmsPageStatus()
@@ -1238,7 +1238,7 @@ class CmsViewEditorContainer extends React.Component {
         if (instantSave === true) {
             this._autoSaveDataResolver()
         } else {
-            this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, instantSave || 5000)
+            this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, instantSave || 2000)
         }
     }
 

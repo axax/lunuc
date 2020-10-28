@@ -5,6 +5,8 @@ import schema from './schema'
 import resolver from './resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
 import {unregisterBots, registerBots, botConnectors, registeredBots} from './bot'
+import {pubsub} from '../../api/subscription'
+import {ObjectId} from 'mongodb'
 
 
 // Hook to add mongodb resolver
@@ -26,15 +28,35 @@ Hook.on('cmsCustomResolver', async ({db, segment, resolvedData, context, req, sc
 
         for(const key in botConnectors){
             const botConnector = botConnectors[key]
-            const bot = registeredBots[botConnector.botId]
-            if(bot && bot.data.manager ){
+            if(new Date().getTime() - botConnector.lastActive.getTime() > 10000){
+                console.log(`remove bot connector ${key}`)
 
-                for(let i=0;i<bot.data.manager.length;i++){
-                    const manager = bot.data.manager[i].toString()
-                    if( manager===context.id){
-                        chats.push({botId: botConnector.botId, id: key})
+
+                pubsub.publish('subscribeBotMessage', {
+                    userId: context.id,
+                    botId: botConnector.botId,
+                    sessionId: context.session,
+                    subscribeBotMessage: {
+                        botId: botConnector.botId,
+                        id: key,
+                        username: context.username,
+                        message_id: ObjectId().toString(),
+                        event: 'removeConnection'
                     }
+                })
 
+                delete botConnectors[key]
+            }else {
+                const bot = registeredBots[botConnector.botId]
+                if (bot && bot.data.manager) {
+
+                    for (let i = 0; i < bot.data.manager.length; i++) {
+                        const manager = bot.data.manager[i].toString()
+                        if (manager === context.id) {
+                            chats.push({botId: botConnector.botId, id: key})
+                        }
+
+                    }
                 }
             }
         }

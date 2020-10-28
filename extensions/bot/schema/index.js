@@ -11,7 +11,7 @@ export default `
     }
     
     type Query {
-    	sendBotMessage(message: String!, botId: String!, id: String): BotMessageResult
+    	sendBotMessage(command: String, message: String, botId: String!, id: String): BotMessageResult
     }
     
     type Subscription{

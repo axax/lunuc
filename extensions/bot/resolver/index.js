@@ -7,7 +7,7 @@ import {ObjectId} from 'mongodb'
 
 export default db => ({
     Query: {
-        sendBotMessage: async ({message, botId, id}, {context}) => {
+        sendBotMessage: async ({message, command, botId, id}, {context}) => {
             // Util.checkIfUserIsLoggedIn(context)
             if (registeredBots[botId]) {
                 const currentId = id || ((context.id ? context.id : '0') + '-' + String((new Date()).getTime()))
@@ -52,35 +52,57 @@ export default db => ({
                         })
                     })
 
+                    pubsub.publish('subscribeBotMessage', {
+                        userId: context.id,
+                        botId,
+                        sessionId: context.session,
+                        subscribeBotMessage: {
+                            botId,
+                            botName: registeredBots[botId].data.name,
+                            id: currentId,
+                            username: context.username,
+                            message_id: ObjectId().toString(),
+                            event: 'newConnection'
+                        }
+                    })
+
                 }
 
                 if (botConnectors[currentId].sessions.indexOf(context.session) < 0) {
                     botConnectors[currentId].sessions.push(context.session)
                 }
 
-                botConnectors[currentId].setMessage({
-                    chat: {id: currentId},
-                    text: message,
-                    from: {first_name: context.username, id: context.id || ''}
-                })
+                if(command){
 
-                pubsub.publish('subscribeBotMessage', {
-                    userId: context.id,
-                    botId,
-                    sessionId: context.session,
-                    subscribeBotMessage: {
-                        botId,
-                        botName: registeredBots[botId].data.name,
-                        id: currentId,
-                        username: context.username,
-                        response: message,
-                        message_id: ObjectId().toString(),
-                        event: 'newMessage'
+                    if(command==='alive'){
+                        botConnectors[currentId].lastActive = new Date()
                     }
-                })
 
-                registeredBots[botId].communicate('text', botConnectors[currentId])
+                }else {
 
+                    botConnectors[currentId].setMessage({
+                        chat: {id: currentId},
+                        text: message,
+                        from: {first_name: context.username, id: context.id || ''}
+                    })
+
+                    pubsub.publish('subscribeBotMessage', {
+                        userId: context.id,
+                        botId,
+                        sessionId: context.session,
+                        subscribeBotMessage: {
+                            botId,
+                            botName: registeredBots[botId].data.name,
+                            id: currentId,
+                            username: context.username,
+                            response: message,
+                            message_id: ObjectId().toString(),
+                            event: 'newMessage'
+                        }
+                    })
+
+                    registeredBots[botId].communicate('text', botConnectors[currentId])
+                }
 
                 return {id: currentId}
             } else {

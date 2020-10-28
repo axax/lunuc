@@ -4,7 +4,7 @@ import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon} 
 import {withStyles} from '@material-ui/core/styles'
 import classNames from 'classnames'
 
-import {Controlled as ControlledCodeMirror} from 'react-codemirror2'
+import {UnControlled as UnControlledCodeMirror} from 'react-codemirror2'
 import CodeMirror from 'codemirror'
 import './codemirror/javascript'
 import './codemirror/search'
@@ -17,6 +17,7 @@ import 'codemirror/lib/codemirror.css'
 import './codemirror/style.css'
 import './codemirror/dialog.css'
 import './codemirror/hint.css'
+//import 'codemirror/theme/material-ocean.css'
 
 /* linter */
 //import 'codemirror/addon/lint/json-lint'
@@ -70,7 +71,7 @@ const snippets = {
     'customJs': [
         {text: "on(['resourcesready'],()=>{})", displayText: 'on resourcesready event'},
         {text: `on(['mount'],()=>{
-            DomUtil.waitForElement('.selector',()=>{})
+            DomUtil.waitForElement('.selector').then(()=>{})
         })`, displayText: 'on mount event'},
     ]
 }
@@ -105,12 +106,15 @@ class CodeEditor extends React.Component {
             stateError: false,
             error: props.error,
             fileIndex: props.fileIndex || 0,
-            showFileSplit: true
+            showFileSplit: true,
+            stateDate: new Date()
         }
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.error !== prevState.error || (!prevState._stateUpdate && !prevState.stateError && nextProps.controlled && nextProps.children !== prevState.data)) {
+        if (!!nextProps.error !== !!prevState.error || (!prevState._stateUpdate && !prevState.stateError && nextProps.controlled && nextProps.children !== prevState.data)) {
+            console.log(nextProps.error,prevState.error)
+
             console.log('CodeEditor update state')
             return CodeEditor.getStateFromProps(nextProps, prevState)
         }
@@ -125,7 +129,7 @@ class CodeEditor extends React.Component {
 
     shouldComponentUpdate(nextProps, nextState) {
         return nextState.stateError !== this.state.stateError ||
-            nextState.data !== this.state.data ||
+            nextState.stateDate !== this.state.stateDate ||
             nextState.error !== this.state.error ||
             nextState.fileIndex !== this.state.fileIndex ||
             nextState.showContextMenu !== this.state.showContextMenu ||
@@ -165,7 +169,6 @@ class CodeEditor extends React.Component {
         const mode = this._editor.options.mode.name
         if (snippets[mode]) {
             CodeMirror.showHint(this._editor, () => {
-                console.log(this._editor)
                 const cursor = this._editor.getCursor()
                 const token = this._editor.getTokenAt(cursor)
                 const start = token.start
@@ -192,15 +195,18 @@ class CodeEditor extends React.Component {
 
         const options = {
             mode: {},
+           /* theme: 'material-ocean',*/
             historyEventDelay:1250,
             readOnly,
             lineNumbers,
             tabSize: 2,
             foldGutter: true,
-            lint: true,
+            lint: false,
             gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-            indentWithTabs: true,
+            indentWithTabs: false,
+            smartIndent:true,
             autoClearEmptyLines: false,
+            lineWrapping: false,
             /*  lineWrapping: false,
              matchBrackets: true,*/
             extraKeys: {
@@ -441,7 +447,7 @@ class CodeEditor extends React.Component {
                     )
                 })}</div>
                 : null}
-            <ControlledCodeMirror
+            <UnControlledCodeMirror
                 className={!height && classes.codemirror}
                 autoCursor={true}
                 key="editor"
@@ -482,7 +488,7 @@ class CodeEditor extends React.Component {
                         onBlur(e, data)
                     }
                 }}
-                onBeforeChange={(editor, dataObject, changedData) => {
+                onChange={(editor, dataObject, changedData) => {
                     let newData
                     if (filenames) {
                         newData = ''

@@ -271,6 +271,7 @@ class JsonDom extends React.Component {
 
         const propsChanged = this.props._props !== props._props || this.props.inlineEditor !== props.inlineEditor
         const slugChanged = this.props.slug !== props.slug
+
         const updateIsNeeded = resolvedDataChanged ||
             locationChanged ||
             scriptChanged ||
@@ -284,6 +285,19 @@ class JsonDom extends React.Component {
 
         if (updateIsNeeded) {
 
+         /*   console.log(`
+        for ${props.slug}
+            resolvedDataChanged=${resolvedDataChanged}
+            locationChanged=${locationChanged}
+            scriptChanged=${scriptChanged}
+            resourcesChanged=${resourcesChanged}
+            templateChanged=${templateChanged}
+            propsChanged=${propsChanged}
+            slugChanged=${slugChanged}
+            childrenChange=${props.children !== this.props.children}
+            userChanged=${this.props.user !== props.user }
+            loadingChanged=${ this.props.loading !== props.loading}
+        `)*/
             // reset parsing error
             this.error = null
 
