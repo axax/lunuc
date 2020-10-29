@@ -449,7 +449,7 @@ class CodeEditor extends React.Component {
                 : null}
             <UnControlledCodeMirror
                 className={!height && classes.codemirror}
-                autoCursor={true}
+                autoCursor={false}
                 key="editor"
                 editorDidMount={editor => {
                     this._editor = editor
