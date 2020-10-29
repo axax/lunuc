@@ -18,7 +18,7 @@
     ]
   },
   "scripts": {
-    "install": "npm i #--unsafe-perms",
+    "install": "npm i",
     "lint": "eslint client/**/*.js extensions/**/*.js server/**/*.js api/**/*.js test/**/*.js",
     "mongodb:clear": "pkill -2 mongod & rm -rf mongodb_tmp",
     "mongodb:start": "mkdir -p mongodb_tmp && mongod --port 27018 --dbpath mongodb_tmp --fork --logpath /dev/null",
