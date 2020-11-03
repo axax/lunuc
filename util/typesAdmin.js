@@ -197,10 +197,12 @@ Hook.on('Types', ({types}) => {
 
     types.KeyValueGlobal = {
         name: 'KeyValueGlobal',
+        entryClonable: true,
         description: 'If public is true on a KeyValue the value of it can be seen from everyone.',
         usedBy: ['core'],
         fields: [
             {
+                clone: "${key}_copy",
                 name: 'key',
                 required: true
             },

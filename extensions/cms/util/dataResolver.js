@@ -15,7 +15,7 @@ import path from 'path'
 import {propertyByPath, setPropertyByPath, assignIfObjectOrArray, matchExpr} from '../../../client/util/json'
 
 const DEFAULT_PARAM_MAX_LENGTH = 100,
-    DEFAULT_PARAM_NOT_ALLOWED_CHARS = ['\\(','\\)','\\{','\\}',';','<','>'],
+    DEFAULT_PARAM_NOT_ALLOWED_CHARS = ['\\(', '\\)', '\\{', '\\}', ';', '<', '>'],
     DEFAULT_PARAM_NOT_ALLOWED_REGEX = new RegExp(DEFAULT_PARAM_NOT_ALLOWED_CHARS.join('|'), 'gi')
 
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode, dynamic}) => {
@@ -30,9 +30,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             if (segments.constructor === Object) segments = [segments]
 
 
-
             // check params
-            if(scope.param) {
+            if (scope.param) {
                 const keys = Object.keys(scope.params)
                 if (keys.length > 0) {
                     keys.forEach(key => {
@@ -84,20 +83,32 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     resolvedData._data = segment._data
                 } else if (segment.resolveFrom) {
                     if (segment.resolveFrom.KeyValueGlobal) {
-                        const dataFromKey = await Util.getKeyValueGlobal(db, context, segment.resolveFrom.KeyValueGlobal, false)
-                        const resolvedFromKey = await resolveData({
-                            db,
-                            context,
-                            dataResolver: dataFromKey,
-                            scope,
-                            nosession,
-                            req,
-                            editmode,
-                            dynamic
-                        })
-                        Object.keys(resolvedFromKey.resolvedData).forEach(k => {
-                            resolvedData[k] = resolvedFromKey.resolvedData[k]
-                        })
+                        let dataFromKey = await Util.getKeyValueGlobal(db, context, segment.resolveFrom.KeyValueGlobal, !!segment.resolveFrom.path)
+
+                        if (segment.resolveFrom.parse === false) {
+                            if (segment.resolveFrom.path) {
+                                dataFromKey = propertyByPath(segment.resolveFrom.path, dataFromKey)
+                            }
+                            resolvedData[segment.resolveFrom.path] = dataFromKey
+                        } else {
+                            if (segment.resolveFrom.path) {
+                                dataFromKey = JSON.stringify(propertyByPath(segment.resolveFrom.path, dataFromKey))
+                            }
+                            const resolvedFromKey = await resolveData({
+                                db,
+                                context,
+                                dataResolver: dataFromKey,
+                                scope,
+                                nosession,
+                                req,
+                                editmode,
+                                dynamic
+                            })
+
+                            Object.keys(resolvedFromKey.resolvedData).forEach(k => {
+                                resolvedData[k] = resolvedFromKey.resolvedData[k]
+                            })
+                        }
                     }
                 } else if (segment.data) {
                     Object.keys(segment.data).forEach(k => {
@@ -272,20 +283,20 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     if (context.id) {
                         const user = await Util.userById(db, context.id)
 
-                        if( segment.user.meta){
-                            if(segment.user.meta.constructor === Array){
+                        if (segment.user.meta) {
+                            if (segment.user.meta.constructor === Array) {
                                 resolvedData.user.meta = {}
-                                if(user.meta) {
+                                if (user.meta) {
                                     segment.user.meta.forEach(m => {
                                         resolvedData.user.meta[m] = user.meta[m]
                                     })
                                 }
-                            }else{
+                            } else {
                                 resolvedData.user.meta = user.meta
                             }
                         }
 
-                        if(segment.user.roles) {
+                        if (segment.user.roles) {
                             resolvedData.user.roles = await Util.getUserRoles(db, user.role)
                         }
                     }
@@ -348,7 +359,16 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     if (Hook.hooks['cmsCustomResolver'] && Hook.hooks['cmsCustomResolver'].length) {
                         let c = Hook.hooks['cmsCustomResolver'].length
                         for (let i = 0; i < Hook.hooks['cmsCustomResolver'].length; ++i) {
-                            await Hook.hooks['cmsCustomResolver'][i].callback({db, resolvedData, segment, context, scope, req, editmode, dynamic})
+                            await Hook.hooks['cmsCustomResolver'][i].callback({
+                                db,
+                                resolvedData,
+                                segment,
+                                context,
+                                scope,
+                                req,
+                                editmode,
+                                dynamic
+                            })
                         }
                     }
                 }
@@ -430,7 +450,6 @@ function resolveSystemData(segment, req, resolvedData) {
 }
 
 
-
 async function resolveRequest(segment, resolvedData, context, addDataResolverSubsription) {
     console.log(`resolve request ${segment.request.url}`)
     const dataKey = segment.key || 'request'
@@ -497,7 +516,6 @@ async function resolveRequest(segment, resolvedData, context, addDataResolverSub
 }
 
 
-
 const checkFilter = (filters, value, key) => {
     if (filters) {
         for (let i = 0; i < filters.length; i++) {
@@ -539,11 +557,11 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
     reducePipe.forEach(re => {
         if (re.path) {
 
-            if(re.sort) {
+            if (re.sort) {
                 const value = propertyByPath(re.path, currentData, '.', re.assign)
 
                 const sort = re.sort[0]
-                if(sort.desc){
+                if (sort.desc) {
                     value.sort((a, b) => {
                         if (a[sort.key] > b[sort.key])
                             return -1
@@ -551,7 +569,7 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                             return 1
                         return 0
                     })
-                }else {
+                } else {
                     value.sort((a, b) => {
                         if (a[sort.key] < b[sort.key])
                             return -1
@@ -560,8 +578,8 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                         return 0
                     })
                 }
-            }else if (re.lookup) {
-                const lookupData = propertyByPath(re.lookup.path, rootData,'.', !!re.lookup.assign)
+            } else if (re.lookup) {
+                const lookupData = propertyByPath(re.lookup.path, rootData, '.', !!re.lookup.assign)
                 const value = propertyByPath(re.path, currentData)
                 let lookedupData, groups
                 if (value !== undefined) {
@@ -615,7 +633,7 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                             }
 
                             if (re.lookup.group && re.lookup.group.keepOnlyOne) {
-                                if(groups[lookupData[key][re.lookup.group.key]]){
+                                if (groups[lookupData[key][re.lookup.group.key]]) {
                                     return
                                 }
                             }
@@ -629,9 +647,12 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                             count++
                             if (re.lookup.group) {
                                 groups[lookupData[key][re.lookup.group.key]] = lookupData[key]
-                                if(re.lookup.group.lookup){
+                                if (re.lookup.group.lookup) {
                                     const data = propertyByPath(re.lookup.group.lookup, rootData)
-                                    lookupData[key] = {...lookupData[key],[re.lookup.group.key]: data[lookupData[key][re.lookup.group.key]]}
+                                    lookupData[key] = {
+                                        ...lookupData[key],
+                                        [re.lookup.group.key]: data[lookupData[key][re.lookup.group.key]]
+                                    }
                                 }
                             }
                             lookedupData.push(lookupData[key])
@@ -664,7 +685,7 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                     })
                 }
                 if (re.get) {
-                    if (re.separator ) {
+                    if (re.separator) {
                         const aGet = re.get.split(re.separator)
                         const aValue = []
                         aGet.forEach(sget => {
@@ -680,14 +701,14 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                         if (getKey === null || getKey === undefined) {
                             getKey = re.get
                         }
-                        if(getKey && getKey.constructor === Array){
+                        if (getKey && getKey.constructor === Array) {
                             const aValue = []
                             getKey.forEach(key => {
                                 aValue.push(value[key])
                             })
                             rootData[re.key] = aValue
 
-                        }else {
+                        } else {
                             rootData[re.key] = value[getKey]
                         }
                     }

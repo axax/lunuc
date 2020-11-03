@@ -92,7 +92,7 @@ class CodeEditor extends React.Component {
     }
 
     static getStateFromProps(props) {
-        const isDataJson = props.children && (props.children.constructor === Object || props.children.constructor === Array)
+        const isDataJson = props.forceJson || props.children && (props.children.constructor === Object || props.children.constructor === Array)
 
         let data = props.children
 

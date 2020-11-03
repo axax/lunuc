@@ -52,7 +52,7 @@ const postConvertData = async (data, {typeName, db}) => {
                             hasField = true
                             // TODO: with mongodb 4 this can be removed as convert and toString is supported
                             if (item[field.name] && (item[field.name].constructor === Object || item[field.name].constructor === Array)) {
-                                console.log(`convert ${typeName}.${field.name} to string`)
+                                //console.log(`convert ${typeName}.${field.name} to string`)
                                 item[field.name] = JSON.stringify(item[field.name])
                             }
                         }else if(field.reference){
@@ -63,7 +63,7 @@ const postConvertData = async (data, {typeName, db}) => {
                                     if (refField.type === 'Object') {
 
                                         if (item[field.name] && item[field.name][refField.name] && (item[field.name][refField.name].constructor === Object || item[field.name][refField.name].constructor === Array)) {
-                                            console.log(`convert ${typeName}.${field.name}.${refField.name} to string`)
+                                            //console.log(`convert ${typeName}.${field.name}.${refField.name} to string`)
                                             item[field.name][refField.name] = JSON.stringify(item[field.name][refField.name])
                                         }
 
@@ -503,11 +503,15 @@ const GenericResolver = {
         dataSet.modifiedAt = new Date().getTime()
         // try with dot notation for partial update
 
+        const updateOptions = {}
+        if( options.upsert){
+            updateOptions.upsert=true
+        }
         let result = (await collection.updateOne(params, {
             $set: dataSet
-        }))
+        },updateOptions))
 
-        if (result.modifiedCount !== 1) {
+        if (result.modifiedCount !== 1 && result.upsertedCount !== 1) {
             throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
         }
 

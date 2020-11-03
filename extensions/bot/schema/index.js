@@ -8,6 +8,7 @@ export default `
         username: String
         botId: String
         botName: String
+        isBot: Boolean
     }
     
     type Query {

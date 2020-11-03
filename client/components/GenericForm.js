@@ -8,10 +8,9 @@ import {
     InputLabel,
     FormHelperText,
     FormControl,
-    Tabs,
-    Tab,
-    Typography,
-    Box,
+    SimpleTab,
+    SimpleTabPanel,
+    SimpleTabs,
     InputAdornment,
     Input,
     ExpandLessIconButton,
@@ -30,7 +29,7 @@ import classNames from 'classnames'
 import Expandable from 'client/components/Expandable'
 import _t from '../../util/i18n'
 import Util from '../util'
-import DomUtil from "../util/dom";
+import DomUtil from '../util/dom'
 
 const styles = theme => {
     return {
@@ -49,71 +48,13 @@ const styles = theme => {
         tabContainer: {
             backgroundColor: theme.palette.background.paper
         },
-        translation: {
+        translationAbsolute: {
             right: '3.55rem',
-            marginTop: '3.55rem',
+            marginTop: '-0.5rem',
             position: 'absolute',
             zIndex: 2
         }
     }
-}
-
-
-const AntTabs = withStyles({
-    root: {
-        borderBottom: '1px solid #e8e8e8',
-    },
-    indicator: {
-        backgroundColor: '#1890ff',
-    },
-})(Tabs)
-
-const AntTab = withStyles((theme) => ({
-    root: {
-        textTransform: 'none',
-        minWidth: 72,
-        fontWeight: theme.typography.fontWeightRegular,
-        marginRight: theme.spacing(4),
-        fontFamily: [
-            '-apple-system',
-            'BlinkMacSystemFont',
-            '"Segoe UI"',
-            'Roboto',
-            '"Helvetica Neue"',
-            'Arial',
-            'sans-serif',
-            '"Apple Color Emoji"',
-            '"Segoe UI Emoji"',
-            '"Segoe UI Symbol"',
-        ].join(','),
-        '&:hover': {
-            color: '#40a9ff',
-            opacity: 1,
-        },
-        '&$selected': {
-            color: '#1890ff',
-            fontWeight: theme.typography.fontWeightMedium,
-        },
-        '&:focus': {
-            color: '#40a9ff',
-        },
-    },
-    selected: {},
-}))((props) => <Tab disableRipple {...props} />)
-
-
-function TabPanel(props) {
-    const {children, value, index, ...other} = props
-
-    return (
-        <Typography
-            component="div"
-            hidden={value !== index}
-            {...other}
-        >
-            {value === index && <Box p={3}>{children}</Box>}
-        </Typography>
-    )
 }
 
 class GenericForm extends React.Component {
@@ -136,7 +77,6 @@ class GenericForm extends React.Component {
             if (field.localized) {
                 if (props.values && props.values[k]) {
                     if (props.values[k].constructor === String) {
-                        fieldValue = {}
                         config.LANGUAGES.forEach(lang => {
                             fieldValue[lang] = props.values[k]
                         })
@@ -247,7 +187,7 @@ class GenericForm extends React.Component {
         return validationState
     }
 
-    reset = () => {
+    reset() {
         this.setState(GenericForm.getInitalState(this.props))
     }
 
@@ -380,7 +320,6 @@ class GenericForm extends React.Component {
 
     newStateForField(prevState, name, value) {
         const newState = Object.assign({}, {fields: {}}, prevState)
-
         // for localization --> name.de / name.en
         const path = name.split('.')
         if (path.length == 2) {
@@ -434,13 +373,15 @@ class GenericForm extends React.Component {
     }
 
     render() {
-        const {fields, onKeyDown, primaryButton, caption, autoFocus, classes, subForm} = this.props
+        const {fields, primaryButton, caption, classes, subForm} = this.props
         const fieldKeys = Object.keys(fields), formFields = [], tabs = []
+
 
         let expandableField, expandableData, datePolyfill = false
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
             const fieldKey = fieldKeys[fieldIndex],
                 field = fields[fieldKey]
+
             if (field.readOnly || (field.role && !Util.hasCapability({userData: _app_.user}, field.role))) {
                 continue
             }
@@ -506,229 +447,41 @@ class GenericForm extends React.Component {
                 currentFormFields.push(<br key={'brMeta' + fieldKey}/>)
             }
 
-            if (['json', 'editor', 'jseditor'].indexOf(uitype) >= 0) {
 
-                let highlight, json
-                if (uitype === 'jseditor') {
-                    highlight = 'js'
-                } else if (uitype === 'json') {
-                    highlight = 'json'
-                } else if (value) {
-                    // detect type
-                    try {
-                        json = JSON.stringify(JSON.parse(value), null, 2)
-                        highlight = 'json'
-                    } catch (e) {
+            if (field.localized) {
+                const showTranslations = this.state.showTranslations[fieldKey]
 
+                const translateButton = <TranslateIconButton key={fieldKey + "translation"}
+                                                             onClick={() => {
+
+                                                                 this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
+                                                             }}></TranslateIconButton>
+
+
+                config.LANGUAGES.forEach(languageCode => {
+                    const fieldKeyTr = fieldKey + '.' + languageCode
+                    if (languageCode === _app_.lang || showTranslations || !!this.state.fieldErrors[fieldKeyTr]) {
+
+                        this.createInputField({
+                            uitype,
+                            field,
+                            value: value && value[languageCode] ? value[languageCode] : '',
+                            currentFormFields,
+                            fieldKey: fieldKeyTr,
+                            fieldIndex,
+                            languageCode,
+                            translateButton
+                        })
                     }
-                }
-                currentFormFields.push(<FormControl key={'control' + fieldKey}
-                                                    className={classNames(classes.formFieldFull)}>
-                    <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><CodeEditor
-                    className={classes.editor} key={fieldKey}
-                    onChange={(newValue) => this.handleInputChange({
-                        target: {
-                            name: fieldKey,
-                            value: newValue
-                        }
-                    })} lineNumbers type={highlight}>{json ? json : value}</CodeEditor></FormControl>)
-
-            } else if (uitype === 'html') {
-                const hasError = !!this.state.fieldErrors[fieldKey]
-
-                const createHtmlField = (fieldName, value, languageCode) => {
-                    return <FormControl style={{zIndex: 1}} key={'control' + fieldName}
-                                        className={classNames(classes.formFieldFull)}>
-                        <InputLabel key={'label' + fieldName}
-                                    shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
-                        <TinyEditor key={fieldName} id={fieldName} error={hasError} style={{marginTop: '1.5rem'}}
-
-                                    onChange={(newValue) => this.handleInputChange({
-                                        target: {
-                                            name: fieldName,
-                                            value: newValue
-                                        }
-                                    })}>{value}</TinyEditor>
-                        {(hasError ?
-                            <FormHelperText error>Bitte
-                                ausfüllen</FormHelperText> : '')}
-                    </FormControl>
-                }
-                if (field.localized) {
-                    const showTranslations = this.state.showTranslations[fieldKey]
-
-                    currentFormFields.push(<TranslateIconButton className={classes.translation}
-                                                                key={fieldKey + "translation"}
-                                                                onClick={() => {
-
-                                                                    this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
-                                                                }}
-                    >
-                    </TranslateIconButton>)
-                    currentFormFields.push(config.LANGUAGES.reduce((arr, languageCode) => {
-                        const fieldName = fieldKey + '.' + languageCode
-                        if (languageCode === _app_.lang || showTranslations) {
-                            arr.push(createHtmlField(fieldName, value ? value.constructor === Object ? value[languageCode] : value : '', languageCode))
-                        }
-                        return arr
-                    }, []))
-                } else {
-                    currentFormFields.push(createHtmlField(fieldKey, value))
-                }
-            } else if (uitype === 'hr') {
-
-                currentFormFields.push(<hr/>)
-
-            } else if (uitype === 'button') {
-
-                currentFormFields.push(<Button key={fieldKey}
-                                               color="primary" variant="contained"
-                                               onClick={() => {
-                                                   if (this.props.onButtonClick)
-                                                       this.props.onButtonClick(field)
-                                               }}>{field.label}</Button>)
-
-
-            } else if (uitype === 'image') {
-
-                currentFormFields.push(<FileDrop key={fieldKey} value={value}/>)
-
-
-            } else if (uitype === 'color_picker') {
-
-                currentFormFields.push(<FormControl key={'control' + fieldKey}
-                                                    className={classNames(classes.formFieldFull)}>
-                    <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><Input data-colorpicker=""
-                                                                                                 onChange={this.handleInputChange}
-                                                                                                 name={fieldKey}
-                                                                                                 key={fieldKey}
-                                                                                                 value={value}/></FormControl>)
-
-                this.loadColorpicker()
-
-
-            } else if (uitype === 'type_picker') {
-                currentFormFields.push(<TypePicker
-                    value={(value ? (value.constructor === Array ? value : [value]) : null)}
-                    error={!!this.state.fieldErrors[fieldKey]}
-                    helperText={this.state.fieldErrors[fieldKey]}
-                    onChange={this.handleInputChange}
-                    className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                    fullWidth={field.fullWidth}
-                    key={fieldKey}
-                    name={fieldKey}
-                    label={field.label}
-                    filter={field.filter}
-                    multi={field.multi}
-                    pickerField={field.pickerField}
-                    searchFields={field.searchFields}
-                    fields={field.fields}
-                    type={field.type} placeholder={field.placeholder}/>)
-            } else if (uitype === 'select') {
-                currentFormFields.push(<SimpleSelect
-                    key={fieldKey} name={fieldKey}
-                    onChange={this.handleInputChange}
-                    items={field.enum}
-                    error={!!this.state.fieldErrors[fieldKey]}
-                    hint={this.state.fieldErrors[fieldKey]}
-                    multi={field.multi}
-                    label={field.label}
-                    className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                    InputLabelProps={{
-                        shrink: true,
-                    }}
-                    value={value || []}/>)
-            } else if (field.type === 'Boolean') {
-                currentFormFields.push(<SimpleSwitch key={fieldKey}
-                                                     label={field.label || field.placeholder}
-                                                     name={fieldKey}
-                                                     className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                                     onChange={this.handleInputChange}
-                                                     checked={value ? true : false}/>)
-
+                })
 
             } else {
 
-                const result = {}
-
-                Hook.call('GenericFormField', {field, result, value}, this)
-
-                if (result.component) {
-                    currentFormFields.push(result.component)
+                if (this.createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex})) {
                     continue
                 }
-
-                if (field.localized) {
-                    const showTranslations = this.state.showTranslations[fieldKey]
-
-                    currentFormFields.push(config.LANGUAGES.reduce((arr, languageCode) => {
-                        const fieldName = fieldKey + '.' + languageCode,
-                            error = !!this.state.fieldErrors[fieldName]
-
-
-                        if (languageCode === _app_.lang || showTranslations || error) {
-
-                            arr.push(<TextField key={fieldName}
-                                                error={error}
-                                                helperText={this.state.fieldErrors[fieldName]}
-                                                label={field.label + ' [' + languageCode + ']'}
-                                                className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                                InputLabelProps={{
-                                                    shrink: true,
-                                                }}
-
-                                                InputProps={{
-                                                    endAdornment: languageCode === _app_.lang &&
-                                                        <InputAdornment position="end">
-                                                            <TranslateIconButton
-                                                                onClick={() => {
-
-                                                                    this.setState({showTranslations: Object.assign({}, this.state.showTranslations, {[fieldKey]: !showTranslations})})
-                                                                }}
-                                                            >
-                                                            </TranslateIconButton>
-                                                        </InputAdornment>
-                                                }}
-
-                                                multiline={uitype === 'textarea'}
-                                                fullWidth={field.fullWidth}
-                                                type={uitype}
-                                                placeholder={(field.placeholder ? field.placeholder + ' ' : '') + '[' + languageCode + ']'}
-                                                value={(value && value[languageCode] ? value[languageCode] : '')}
-                                                name={fieldName}
-                                                onKeyDown={(e) => {
-                                                    onKeyDown && onKeyDown(e, value[languageCode])
-                                                }}
-                                                onBlur={this.handleBlur}
-                                                onChange={this.handleInputChange}/>)
-                        }
-                        return arr
-                    }, []))
-                } else {
-                    currentFormFields.push(<TextField autoFocus={autoFocus && fieldIndex === 0}
-                                                      error={!!this.state.fieldErrors[fieldKey]}
-                                                      key={fieldKey}
-                                                      id={fieldKey}
-                                                      label={field.label || field.name}
-                                                      className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
-                                                      InputLabelProps={{
-                                                          shrink: true,
-                                                      }}
-                                                      helperText={this.state.fieldErrors[fieldKey]}
-                                                      fullWidth={field.fullWidth}
-                                                      type={uitype}
-                                                      multiline={uitype === 'textarea'}
-                                                      placeholder={field.placeholder}
-                                                      value={value || field.defaultValue || ''}
-                                                      name={fieldKey}
-                                                      onKeyDown={(e) => {
-                                                          onKeyDown && onKeyDown(e, value)
-                                                      }}
-                                                      onBlur={this.handleBlur}
-                                                      onChange={this.handleInputChange}/>)
-                }
-
             }
+
 
             if (field.expandable === false) {
 
@@ -780,30 +533,30 @@ class GenericForm extends React.Component {
             <Wrapper className={classes.form}>
                 {tabs.length === 0 && formFields}
                 {tabs.length > 0 && <div className={classes.tabContainer}>
-                    <AntTabs
+                    <SimpleTabs
                         value={tabValue}
                         onChange={(e, newValue) => {
                             this.setState({tabValue: newValue})
                         }}
                     >
                         {tabs.map((tab, i) =>
-                            <AntTab key={'tab-' + i} label={tab.name}/>
+                            <SimpleTab key={'tab-' + i} label={tab.name}/>
                         )}
 
                         {formFields.length > 0 &&
-                        <AntTab key={'tab-' + tabs.length} label="Weitere Einstellungen"/>}
+                        <SimpleTab key={'tab-' + tabs.length} label="Weitere Einstellungen"/>}
 
-                    </AntTabs>
+                    </SimpleTabs>
 
                     {tabs.map((tab, i) =>
-                        <TabPanel key={'tabPanel-' + i} value={tabValue} index={i}>
+                        <SimpleTabPanel key={'tabPanel-' + i} value={tabValue} index={i}>
                             {tab.fields}
-                        </TabPanel>
+                        </SimpleTabPanel>
                     )}
                     {formFields.length > 0 &&
-                    <TabPanel key={'tabPanel-' + tabs.length} value={tabValue} index={tabs.length}>
+                    <SimpleTabPanel key={'tabPanel-' + tabs.length} value={tabValue} index={tabs.length}>
                         {formFields}
-                    </TabPanel>}
+                    </SimpleTabPanel>}
 
                 </div>}
                 {primaryButton != false ?
@@ -812,6 +565,191 @@ class GenericForm extends React.Component {
                     : ''}
             </Wrapper>
         )
+    }
+
+    createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
+        const {onKeyDown, classes, autoFocus} = this.props
+        let langButtonWasInserted = false
+        if (['json', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
+
+            let highlight, jsonStr
+            if (uitype === 'css') {
+                highlight = 'css'
+            } else if (uitype === 'jseditor') {
+                highlight = 'js'
+            } else if (uitype === 'json') {
+                highlight = 'json'
+                if (field.type === 'Object' && value && value.constructor === String) {
+                    // it should be an object but it is a string
+                    try {
+                        value = JSON.parse(value)
+                    } catch (e) {
+
+                    }
+                }
+            } else if (value && value.constructor === Object) {
+                highlight = 'json'
+            } else if (value) {
+                // detect type
+                try {
+                    jsonStr = JSON.stringify(JSON.parse(value), null, 2)
+                    highlight = 'json'
+                } catch (e) {
+
+                }
+            }
+            currentFormFields.push(<FormControl key={'control' + fieldKey}
+                                                className={classNames(classes.formFieldFull)}>
+                <InputLabel key={'label' + fieldKey} shrink>{field.label+ (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel><CodeEditor
+                className={classes.editor} key={fieldKey}
+                forceJson={field.type === 'Object'}
+                onChange={(newValue) => this.handleInputChange({
+                    target: {
+                        name: fieldKey,
+                        value: newValue
+                    }
+                })} lineNumbers type={highlight}>{jsonStr ? jsonStr : value}</CodeEditor></FormControl>)
+
+        } else if (uitype === 'html') {
+            const hasError = !!this.state.fieldErrors[fieldKey]
+
+
+            currentFormFields.push(<FormControl style={{zIndex: 1}} key={'control' + fieldKey}
+                                                className={classNames(classes.formFieldFull)}>
+                <InputLabel key={'label' + fieldKey}
+                            shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel>
+                <TinyEditor key={fieldKey} id={fieldKey} error={hasError} style={{marginTop: '1.5rem'}}
+
+                            onChange={(newValue) => this.handleInputChange({
+                                target: {
+                                    name: fieldKey,
+                                    value: newValue
+                                }
+                            })}>{value}</TinyEditor>
+                {(hasError ?
+                    <FormHelperText error>Bitte
+                        ausfüllen</FormHelperText> : '')}
+            </FormControl>)
+        } else if (uitype === 'hr') {
+
+            currentFormFields.push(<hr/>)
+
+        } else if (uitype === 'button') {
+
+            currentFormFields.push(<Button key={fieldKey}
+                                           color="primary" variant="contained"
+                                           onClick={() => {
+                                               if (this.props.onButtonClick)
+                                                   this.props.onButtonClick(field)
+                                           }}>{field.label}</Button>)
+
+
+        } else if (uitype === 'image') {
+
+            currentFormFields.push(<FileDrop key={fieldKey} value={value}/>)
+
+
+        } else if (uitype === 'color_picker') {
+
+            currentFormFields.push(<FormControl key={'control' + fieldKey}
+                                                className={classNames(classes.formFieldFull)}>
+                <InputLabel key={'label' + fieldKey} shrink>{field.label}</InputLabel><Input data-colorpicker=""
+                                                                                             onChange={this.handleInputChange}
+                                                                                             name={fieldKey}
+                                                                                             key={fieldKey}
+                                                                                             value={value}/></FormControl>)
+
+            this.loadColorpicker()
+
+
+        } else if (uitype === 'type_picker') {
+            currentFormFields.push(<TypePicker
+                value={(value ? (value.constructor === Array ? value : [value]) : null)}
+                error={!!this.state.fieldErrors[fieldKey]}
+                helperText={this.state.fieldErrors[fieldKey]}
+                onChange={this.handleInputChange}
+                className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                fullWidth={field.fullWidth}
+                key={fieldKey}
+                name={fieldKey}
+                label={field.label}
+                filter={field.filter}
+                multi={field.multi}
+                pickerField={field.pickerField}
+                searchFields={field.searchFields}
+                fields={field.fields}
+                type={field.type} placeholder={field.placeholder}/>)
+        } else if (uitype === 'select') {
+            currentFormFields.push(<SimpleSelect
+                key={fieldKey} name={fieldKey}
+                onChange={this.handleInputChange}
+                items={field.enum}
+                error={!!this.state.fieldErrors[fieldKey]}
+                hint={this.state.fieldErrors[fieldKey]}
+                multi={field.multi}
+                label={field.label}
+                className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                InputLabelProps={{
+                    shrink: true,
+                }}
+                value={value || []}/>)
+        } else if (field.type === 'Boolean') {
+            currentFormFields.push(<SimpleSwitch key={fieldKey}
+                                                 label={field.label || field.placeholder}
+                                                 name={fieldKey}
+                                                 className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                                                 onChange={this.handleInputChange}
+                                                 checked={value ? true : false}/>)
+
+
+        } else {
+
+            const result = {}
+
+            Hook.call('GenericFormField', {field, result, value}, this)
+
+            if (result.component) {
+                currentFormFields.push(result.component)
+                return true
+            }
+
+            langButtonWasInserted = true
+            currentFormFields.push(<TextField autoFocus={autoFocus && fieldIndex === 0}
+                                              error={!!this.state.fieldErrors[fieldKey]}
+                                              key={fieldKey}
+                                              id={fieldKey}
+                                              label={(field.label || field.name) + (languageCode ? ' [' + languageCode + ']' : '')}
+                                              className={classNames(classes.formField, field.fullWidth && classes.formFieldFull)}
+                                              InputLabelProps={{
+                                                  shrink: true,
+                                              }}
+
+                                              InputProps={{
+                                                  endAdornment: languageCode === _app_.lang &&
+                                                      <InputAdornment position="end">
+                                                          {translateButton}
+                                                      </InputAdornment>
+                                              }}
+                                              helperText={this.state.fieldErrors[fieldKey]}
+                                              fullWidth={field.fullWidth}
+                                              type={uitype}
+                                              multiline={uitype === 'textarea'}
+                                              placeholder={field.placeholder}
+                                              value={value || field.defaultValue || ''}
+                                              name={fieldKey}
+                                              onKeyDown={(e) => {
+                                                  onKeyDown && onKeyDown(e, value)
+                                              }}
+                                              onBlur={this.handleBlur}
+                                              onChange={this.handleInputChange}/>)
+
+
+        }
+
+        if( !langButtonWasInserted && translateButton && languageCode === _app_.lang) {
+            currentFormFields.splice(currentFormFields.length-1, 0, <div key={'tr'+fieldKey} className={classes.translationAbsolute}>{translateButton}</div>)
+        }
+
     }
 
     getOrCreateTab(tabs, field) {
@@ -850,8 +788,4 @@ GenericForm
     autoFocus: PropTypes.bool
 }
 
-export default withStyles(styles)
-
-(
-    GenericForm
-)
+export default withStyles(styles)(GenericForm)

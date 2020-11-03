@@ -16,8 +16,8 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
             key,
             value,
             ispublic,
-            createdBy: (createdBy ? ObjectId(createdBy) : createdBy)
-        }, {capability: CAPABILITY_MANAGE_TYPES, primaryKey: _id ? '_id' : 'key'})
+            createdBy: (createdBy ? ObjectId(createdBy) : ObjectId(context.id))
+        }, {capability: CAPABILITY_MANAGE_TYPES, primaryKey: _id ? '_id' : 'key', upsert: await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)})
 
 
         // TODO: we don't have the key here (sometimes we only have the id)
@@ -198,5 +198,8 @@ export const keyvalueResolver = (db) => ({
                 }
             }
         },
+        cloneKeyValueGlobal: async (data, {context}) => {
+            return GenericResolver.cloneEntity(db, context, 'KeyValueGlobal', data)
+        }
     }
 })

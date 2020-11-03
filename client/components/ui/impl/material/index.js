@@ -129,6 +129,7 @@ export SimpleButton from './SimpleButton'
 export SimpleList from './SimpleList'
 export SimpleToolbar from './SimpleToolbar'
 export SimpleAutosuggest from './SimpleAutosuggest'
+export {SimpleTab, SimpleTabPanel, SimpleTabs} from './SimpleTab'
 
 export ContentBlock from './ContentBlock'
 
@@ -164,7 +165,7 @@ export const MenuList = ({children, ...rest}) => {
     </List>
 }
 
-export const MenuListItem = ({primary,secondary, ...rest}) => {
+export const MenuListItem = ({primary, secondary, ...rest}) => {
     return <ListItem {...rest}>
         <ListItemText
             primary={primary}

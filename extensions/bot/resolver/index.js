@@ -4,6 +4,7 @@ import {registeredBots, botConnectors} from '../bot'
 import BotConnector from '../classes/BotConnector'
 import {ObjectId} from 'mongodb'
 
+const botConnectorClearTimeout = {}
 
 export default db => ({
     Query: {
@@ -11,17 +12,27 @@ export default db => ({
             // Util.checkIfUserIsLoggedIn(context)
             if (registeredBots[botId]) {
                 const currentId = id || ((context.id ? context.id : '0') + '-' + String((new Date()).getTime()))
-                if (!botConnectors[currentId]) {
+                let botConnector = botConnectors[currentId]
+
+                if (!botConnector) {
                     const ctx = new BotConnector()
                     botConnectors[currentId] = ctx
-                    botConnectors[currentId].sessions = []
-                    botConnectors[currentId].botId = botId
+                    botConnector = botConnectors[currentId]
+                    botConnector.sessions = []
+                    botConnector.botId = botId
+                    botConnector.id = currentId
 
                     ctx.on('command', (command, message_id) => {
                         pubsub.publish('subscribeBotMessage', {
                             botId,
                             subscribeBotMessage: {
-                                id: currentId, response: text, message_id, event: 'newMessage', username:registeredBots[botId].data.name, botId, botName: registeredBots[botId].data.name
+                                id: currentId,
+                                response: text,
+                                message_id,
+                                event: 'newMessage',
+                                username: registeredBots[botId].data.name,
+                                botId,
+                                botName: registeredBots[botId].data.name
                             }
                         })
                     })
@@ -31,7 +42,11 @@ export default db => ({
                         registeredBots[botId].archiveMessage({
                             message: {
                                 text,
-                                from: {isBot:true, first_name: registeredBots[botId].data.name, id: registeredBots[botId]._id},
+                                from: {
+                                    isBot: true,
+                                    first_name: registeredBots[botId].data.name,
+                                    id: registeredBots[botId]._id
+                                },
                                 chat: {id: currentId}
                             }
                         })
@@ -39,7 +54,14 @@ export default db => ({
                         pubsub.publish('subscribeBotMessage', {
                             botId,
                             subscribeBotMessage: {
-                                id: currentId, response: text, message_id, username:registeredBots[botId].data.name, event: 'newMessage', botId, botName: registeredBots[botId].data.name
+                                id: currentId,
+                                response: text,
+                                message_id,
+                                isBot: true,
+                                username: registeredBots[botId].data.name,
+                                event: 'newMessage',
+                                botId,
+                                botName: registeredBots[botId].data.name
                             }
                         })
                     })
@@ -47,40 +69,62 @@ export default db => ({
                         pubsub.publish('subscribeBotMessage', {
                             botId,
                             subscribeBotMessage: {
-                                id: currentId, message_id, event: 'deleteMessage', botId, botName: registeredBots[botId].data.name
+                                id: currentId,
+                                message_id,
+                                event: 'deleteMessage',
+                                botId,
+                                botName: registeredBots[botId].data.name
                             }
                         })
                     })
-
-                    pubsub.publish('subscribeBotMessage', {
-                        userId: context.id,
-                        botId,
-                        sessionId: context.session,
-                        subscribeBotMessage: {
-                            botId,
-                            botName: registeredBots[botId].data.name,
-                            id: currentId,
-                            username: context.username,
-                            message_id: ObjectId().toString(),
-                            event: 'newConnection'
-                        }
-                    })
-
                 }
 
-                if (botConnectors[currentId].sessions.indexOf(context.session) < 0) {
-                    botConnectors[currentId].sessions.push(context.session)
+                if (botConnector.sessions.indexOf(context.session) < 0) {
+                    botConnector.sessions.push(context.session)
                 }
 
-                if(command){
+                if (command) {
 
-                    if(command==='alive'){
-                        botConnectors[currentId].lastActive = new Date()
+                    if (command === 'alive') {
+                        botConnector.lastActive = new Date()
+
+                        pubsub.publish('subscribeBotMessage', {
+                            userId: context.id,
+                            botId: botConnector.botId,
+                            sessionId: context.session,
+                            subscribeBotMessage: {
+                                botId: botConnector.botId,
+                                id: currentId,
+                                username: context.username,
+                                message_id: ObjectId().toString(),
+                                event: 'alive'
+                            }
+                        })
+
+                        clearTimeout(botConnectorClearTimeout[currentId])
+                        botConnectorClearTimeout[currentId] = setTimeout(() => {
+
+                            pubsub.publish('subscribeBotMessage', {
+                                userId: context.id,
+                                botId: botConnector.botId,
+                                sessionId: context.session,
+                                subscribeBotMessage: {
+                                    botId: botConnector.botId,
+                                    id: currentId,
+                                    username: context.username,
+                                    message_id: ObjectId().toString(),
+                                    event: 'removeConnection'
+                                }
+                            })
+                            delete botConnectorClearTimeout[currentId]
+                            delete botConnectors[botConnector.id]
+                        }, 8000)
+
                     }
 
-                }else {
+                } else {
 
-                    botConnectors[currentId].setMessage({
+                    botConnector.setMessage({
                         chat: {id: currentId},
                         text: message,
                         from: {first_name: context.username, id: context.id || ''}
@@ -101,7 +145,7 @@ export default db => ({
                         }
                     })
 
-                    registeredBots[botId].communicate('text', botConnectors[currentId])
+                    registeredBots[botId].communicate('text', botConnector)
                 }
 
                 return {id: currentId}
@@ -136,10 +180,10 @@ export default db => ({
                         }
 
                         return true
-                    }else{
+                    } else {
                         const bot = registeredBots[payload.botId]
-                        if(bot && bot.data.manager){
-                            if(bot.data.manager.indexOf(context.id)) {
+                        if (bot && bot.data.manager) {
+                            if (bot.data.manager.indexOf(context.id)) {
                                 // return
                                 return true
                             }

@@ -47,9 +47,15 @@ import {getFormFields} from '../../../util/typesAdmin'
 import Hook from '../../../util/hook'
 import {client, Query, graphql} from '../../../client/middleware/graphql'
 import {setKeyValueGlobal} from 'client/util/keyvalue'
+import {withStyles} from '@material-ui/core/styles'
 
 const DEFAULT_EDITOR_SETTINGS = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
 
+const styles = () => ({
+    pageOptionsDrawer: {
+        maxWidth: '50%'
+    }
+})
 
 class CmsViewEditorContainer extends React.Component {
 
@@ -440,6 +446,7 @@ class CmsViewEditorContainer extends React.Component {
                                                         onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded', true)}
                                                         expanded={EditorPageOptions.serverScriptExpanded}>
                         <ScriptEditor
+                            key={'script'+slug}
                             onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll', true)}
                             scrollPosition={EditorPageOptions.serverScriptScroll}
                             onBlur={() => {
@@ -860,7 +867,7 @@ class CmsViewEditorContainer extends React.Component {
                 inner
             }, this)
             return <UIProvider>
-               <Drawer anchor="right" open={showPageSettings} onClose={() =>  {
+               <Drawer anchor="right" classes={{paper:this.props.classes.pageOptionsDrawer}} open={showPageSettings} onClose={() =>  {
                     if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
                         return
                     }
@@ -873,7 +880,7 @@ class CmsViewEditorContainer extends React.Component {
                        this.setState({PageOptions:formData})
                        setKeyValueGlobal('PageOptions-'+pageName,formData).then(()=>{
                            // refresh whole page
-                           location.href = location.href
+                           location.href = location.href.split('#')[0]
                        })
                }} fields={PageOptionsDefinition.reduce((obj, item) => {return {...obj,[item.name]: item}}, {})} values={PageOptions || {}}/>]:'Es sind keine Optionen definiert'}</div>}
                 </Drawer>
@@ -1536,5 +1543,5 @@ const mapDispatchToProps = (dispatch) => ({
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(CmsViewEditorContainerWithGql)
+)(withStyles(styles)(CmsViewEditorContainerWithGql))
 
