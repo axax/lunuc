@@ -182,13 +182,9 @@ class Bot {
 
 
     archiveMessage(context){
-        const newContext = Object.assign({},context)
-        const message = context.message
-        delete newContext.message
-
         const insertResult = this.db.collection('BotConversation').insertOne({
-            context: newContext,
-            message: message,
+            context: {botInfo: context.botInfo},
+            message: context.message,
             bot: this.data._id
         })
     }
