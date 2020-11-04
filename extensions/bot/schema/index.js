@@ -6,13 +6,15 @@ export default `
         message_id: String
         event: String
         username: String
+        user_id: String
         botId: String
         botName: String
         isBot: Boolean
+        meta: String
     }
     
     type Query {
-    	sendBotMessage(command: String, message: String, botId: String!, id: String): BotMessageResult
+    	sendBotMessage(command: String, message: String, botId: String!, id: String, meta: String): BotMessageResult
     }
     
     type Subscription{

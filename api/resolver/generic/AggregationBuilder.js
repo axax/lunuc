@@ -738,6 +738,15 @@ export default class AggregationBuilder {
                     projectResultData[k] = 1
                 })
             }
+            if( this.options.project){
+                Object.keys(this.options.project).forEach((k) => {
+                    if(this.options.project[k]=== null){
+                        delete projectResultData[k]
+                    }else {
+                        projectResultData[k] = this.options.project[k]
+                    }
+                })
+            }
             dataFacetQuery.push({$project: projectResultData})
         }
 

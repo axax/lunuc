@@ -8,7 +8,7 @@ const botConnectorClearTimeout = {}
 
 export default db => ({
     Query: {
-        sendBotMessage: async ({message, command, botId, id}, {context}) => {
+        sendBotMessage: async ({message, command, botId, id, meta}, {context}) => {
             // Util.checkIfUserIsLoggedIn(context)
             if (registeredBots[botId]) {
                 const currentId = id || ((context.id ? context.id : '0') + '-' + String((new Date()).getTime()))
@@ -87,7 +87,11 @@ export default db => ({
 
                     if (command === 'alive') {
                         botConnector.lastActive = new Date()
-
+                       /* try {
+                            botConnector.meta = JSON.parse(decodeURIComponent(meta))
+                        }catch (e) {
+                            botConnector.meta = {}
+                        }*/
                         pubsub.publish('subscribeBotMessage', {
                             userId: context.id,
                             botId: botConnector.botId,
@@ -96,8 +100,10 @@ export default db => ({
                                 botId: botConnector.botId,
                                 id: currentId,
                                 username: context.username,
+                                user_id: context.id,
                                 message_id: ObjectId().toString(),
-                                event: 'alive'
+                                event: 'alive',
+                                meta
                             }
                         })
 
@@ -112,6 +118,7 @@ export default db => ({
                                     botId: botConnector.botId,
                                     id: currentId,
                                     username: context.username,
+                                    user_id: context.id,
                                     message_id: ObjectId().toString(),
                                     event: 'removeConnection'
                                 }
@@ -139,6 +146,7 @@ export default db => ({
                             botName: registeredBots[botId].data.name,
                             id: currentId,
                             username: context.username,
+                            user_id: context.id,
                             response: message,
                             message_id: ObjectId().toString(),
                             event: 'newMessage'
