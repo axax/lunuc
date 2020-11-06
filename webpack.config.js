@@ -32,9 +32,9 @@ const INCLUDE_IN_BUILD = []
 
 let APP_CONFIG
 
-if( fs.existsSync('/etc/lunuc/buildconfig.json')){
+if (fs.existsSync('/etc/lunuc/buildconfig.json')) {
     APP_CONFIG = require('/etc/lunuc/buildconfig.json')
-}else{
+} else {
     APP_CONFIG = require('./buildconfig.json')
 }
 const PACKAGE_JSON = require('./package.json')
@@ -52,7 +52,7 @@ const APP_VALUES = {
     ...APP_CONFIG.options
 }
 
-APP_VALUES.UPLOAD_DIR_ABSPATH = path.join(__dirname,APP_VALUES.UPLOAD_DIR)
+APP_VALUES.UPLOAD_DIR_ABSPATH = path.join(__dirname, APP_VALUES.UPLOAD_DIR)
 
 if (APP_CONFIG.extensions) {
     for (const extensionName in APP_CONFIG.extensions) {
@@ -91,10 +91,13 @@ const excludeFunction = (path) => {
 
 const replacePlaceholders = (content, hostrule) => {
 
-    const result = new Function('const {' + Object.keys(APP_VALUES).join(',') + '} = this.APP_VALUES;return `' + content + '`').call({APP_VALUES, hostrule})
+    const result = new Function('const {' + Object.keys(APP_VALUES).join(',') + '} = this.APP_VALUES;return `' + content + '`').call({
+        APP_VALUES,
+        hostrule
+    })
     return result
 }
-if( fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)){
+if (fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)) {
     console.log('Replace hostrules templates')
 
     fs.readdir(APP_VALUES.HOSTRULES_ABSPATH, function (err, files) {
@@ -108,8 +111,9 @@ if( fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)){
 
             let HOSTRULE_JSON = {}
             try {
-                HOSTRULE_JSON= require(path.join(APP_VALUES.HOSTRULES_ABSPATH, file + '.json'))
-            }catch(e){}
+                HOSTRULE_JSON = require(path.join(APP_VALUES.HOSTRULES_ABSPATH, file + '.json'))
+            } catch (e) {
+            }
 
             fs.stat(hostpath, function (error, stat) {
                 if (stat.isDirectory()) {
@@ -118,11 +122,11 @@ if( fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)){
                             console.error("Could not list the directory.", err)
                         }
                         subFiles.forEach(function (file, index) {
-                            if( file.endsWith('.template')){
-                                fs.readFile(path.join(hostpath, file), 'utf8', function(err, contents) {
-                                    fs.writeFile(path.join(hostpath, file.substring(0,file.length-9)), replacePlaceholders(contents, HOSTRULE_JSON), function(err) {
+                            if (file.endsWith('.template')) {
+                                fs.readFile(path.join(hostpath, file), 'utf8', function (err, contents) {
+                                    fs.writeFile(path.join(hostpath, file.substring(0, file.length - 9)), replacePlaceholders(contents, HOSTRULE_JSON), function (err) {
                                         if (err) {
-                                            console.error("Error writing to file "+file, err)
+                                            console.error("Error writing to file " + file, err)
                                         }
                                     })
                                 })
@@ -207,55 +211,17 @@ const config = {
         },
         new GenSourceCode(APP_VALUES), /* Generate some source code based on the buildconfig.json file */
         new MiniCssExtractPlugin({
-            filename: 'style.css',
-            allChunks: true
+            filename: 'style.css'
         }), /* Extract css from bundle */
         new WebpackI18nPlugin({
             src: './**/*.tr.json',
             dest: '[name].js'
-        }),
-        new webpack.IgnorePlugin({
-            checkResource(resource, context) {
-                /* if( resource.indexOf('useQuery.js')>-1 || resource.indexOf('useMutation.js')>-1 || resource.indexOf('useSubscription.js')>-1 ) {
-                     console.log(resource, context)
-                     return true
-
-                 }*/
-                if (resource.indexOf('optimism') > -1) {
-                    // console.log(resource, context)
-                    // return true
-
-                }
-
-                // do something with resource
-                return false
-            }
         })
     ],
     optimization: {
         usedExports: true,
-        /*splitChunks: {
-         cacheGroups: {
-         style: {
-         name: 'style',
-         test: (c) => {
-         if (c.type === 'css/mini-extract') {
-         const path = c._identifier
-         //console.log(path.substring(path.lastIndexOf('/')+1))
-         return true
-         }
-         return false
-         },
-         chunks: 'all',
-         enforce: true
-         }
-         }
-         },*/
         minimizer: []
-    },/*optimization: {
-     // We no not want to minimize our code.
-     minimize: false
-     }*/
+    }
 }
 
 const CopyWebpackPlugin = require('copy-webpack-plugin')
@@ -332,12 +298,12 @@ if (DEV_MODE) {
         }
     }
 
-   /* config.resolve = {
-        alias: {
-            'react': 'preact/compat',
-            'react-dom': 'preact/compat'
-        },
-    }*/
+    /* config.resolve = {
+         alias: {
+             'react': 'preact/compat',
+             'react-dom': 'preact/compat'
+         },
+     }*/
     /* For Debugging porpuses */
     //config.devtool = 'eval'
 
@@ -352,7 +318,7 @@ if (DEV_MODE) {
             minRatio: 0.95
         }),
         new CompressionPlugin({
-            filename: '[path].br[query]',
+            filename: '[path][base].br[query]',
             algorithm: 'brotliCompress',
             compressionOptions: {
                 level: 11,
@@ -373,8 +339,7 @@ if (DEV_MODE) {
             //unsafe_Function: true /* 10 Bytes */
             //unsafe_proto:true /* 10 Bytes */
         },
-        mangle: {
-        },
+        mangle: {},
         output: {
             comments: false,
             semicolons: true,
@@ -395,11 +360,11 @@ if (DEV_MODE) {
         },
     }
 
-   /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-    config.plugins.push(new BundleAnalyzerPlugin())*/
+    /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+     config.plugins.push(new BundleAnalyzerPlugin())*/
 
     //config.devtool = 'source-map'
-   // config.devtool = ''
+    // config.devtool = ''
 
 
     //config.devtool = "#eval-source-map"

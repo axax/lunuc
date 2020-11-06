@@ -99,6 +99,8 @@ class TypeEdit extends React.Component {
                 const field = formFields[key]
                 if (field.reference && !field.multi && editedData[key] && editedData[key].length) {
                     editedData[key] = editedData[key][0]
+                }else if( field.type==="Object" && editedData[key] && editedData[key].constructor===Object){
+                    editedData[key] = JSON.stringify(editedData[key])
                 }
             })
 

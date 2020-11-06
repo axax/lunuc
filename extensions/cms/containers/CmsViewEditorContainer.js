@@ -1240,12 +1240,11 @@ class CmsViewEditorContainer extends React.Component {
             this._autoSaveDataResolverTimeout = 0
             this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
         }
-
         clearTimeout(this._autoSaveDataResolverTimeout)
         if (instantSave === true) {
             this._autoSaveDataResolver()
         } else {
-            this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, instantSave || 2000)
+            this._autoSaveDataResolverTimeout = setTimeout(this._autoSaveDataResolver, instantSave || 1000)
         }
     }
 

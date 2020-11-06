@@ -3,6 +3,7 @@ import {withFilter} from 'graphql-subscriptions'
 import {registeredBots, botConnectors} from '../bot'
 import BotConnector from '../classes/BotConnector'
 import {ObjectId} from 'mongodb'
+import Util from "../../../api/util";
 
 const botConnectorClearTimeout = {}
 
@@ -10,6 +11,8 @@ export default db => ({
     Query: {
         sendBotMessage: async ({message, command, botId, id, meta}, {context}) => {
             // Util.checkIfUserIsLoggedIn(context)
+
+            const user = await Util.userById(db, context.id)
             if (registeredBots[botId]) {
                 const currentId = id || ((context.id ? context.id : '0') + '-' + String((new Date()).getTime()))
                 let botConnector = botConnectors[currentId]
@@ -18,7 +21,7 @@ export default db => ({
                     const ctx = new BotConnector()
                     botConnectors[currentId] = ctx
                     botConnector = botConnectors[currentId]
-                    botConnector.sessions = []
+                    botConnector.sessions = {}
                     botConnector.botId = botId
                     botConnector.id = currentId
 
@@ -79,19 +82,47 @@ export default db => ({
                     })
                 }
 
-                if (botConnector.sessions.indexOf(context.session) < 0) {
-                    botConnector.sessions.push(context.session)
+                if (!botConnector.sessions[context.session] ) {
+                    botConnector.sessions[context.session] = {}
                 }
 
                 if (command) {
 
-                    if (command === 'alive') {
+                    if (command === 'userData') {
+
+                        if(meta) {
+                            try {
+                                botConnector.sessions[context.session] = JSON.parse(meta)
+                            }catch (e) {
+                            }
+
+                            pubsub.publish('subscribeBotMessage', {
+                                userId: context.id,
+                                botId: botConnector.botId,
+                                sessionId: context.session,
+                                subscribeBotMessage: {
+                                    botId: botConnector.botId,
+                                    id: currentId,
+                                    username: context.username,
+                                    user_id: context.id,
+                                    message_id: ObjectId().toString(),
+                                    event: 'userData',
+                                    meta
+                                }
+                            })
+                        }
+
+                    }else if (command === 'alive') {
                         botConnector.lastActive = new Date()
-                       /* try {
-                            botConnector.meta = JSON.parse(decodeURIComponent(meta))
-                        }catch (e) {
-                            botConnector.meta = {}
-                        }*/
+                        if(meta) {
+                            try {
+                                botConnector.sessions[context.session] = JSON.parse(meta)
+                            }catch (e) {
+                            }
+                        }
+
+                        //const sessionData = botConnector.sessions[context.session]
+
                         pubsub.publish('subscribeBotMessage', {
                             userId: context.id,
                             botId: botConnector.botId,
@@ -131,10 +162,15 @@ export default db => ({
 
                 } else {
 
+
+                    const sessionData = botConnector.sessions[context.session]
+
+                    let username = context.username || sessionData.username
+
                     botConnector.setMessage({
                         chat: {id: currentId},
                         text: message,
-                        from: {first_name: context.username, id: context.id || ''}
+                        from: {first_name: username, user_image: user && user.picture,id: context.id || ''}
                     })
 
                     pubsub.publish('subscribeBotMessage', {
@@ -145,8 +181,9 @@ export default db => ({
                             botId,
                             botName: registeredBots[botId].data.name,
                             id: currentId,
-                            username: context.username,
+                            username: username,
                             user_id: context.id,
+                            user_image: user && user.picture,
                             response: message,
                             message_id: ObjectId().toString(),
                             event: 'newMessage'
@@ -167,8 +204,8 @@ export default db => ({
                 if (variables.id) {
                     const botConnector = botConnectors[variables.id]
 
-                    if (botConnector && botConnector.sessions.indexOf(session) < 0) {
-                        botConnector.sessions.push(session)
+                    if (botConnector && botConnector.sessions[session]) {
+                        botConnector.sessions[session] = {}
                     }
                 }
                 return pubsub.asyncIterator('subscribeBotMessage')
@@ -180,7 +217,7 @@ export default db => ({
 
                     const botConnector = botConnectors[payload.subscribeBotMessage.id]
 
-                    if (botConnector && botConnector.sessions.indexOf(context.session) >= 0) {
+                    if (botConnector && botConnector.sessions[context.session] ) {
 
 
                         if (payload.sessionId && payload.sessionId === context.session) {

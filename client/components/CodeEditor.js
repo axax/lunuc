@@ -97,7 +97,9 @@ class CodeEditor extends React.Component {
         let data = props.children
 
         if (isDataJson) {
-            data = JSON.stringify(data, null, 2)
+            if(data) {
+                data = JSON.stringify(data, null, 2)
+            }
         }
 
         return {
@@ -505,7 +507,7 @@ class CodeEditor extends React.Component {
                         newData = changedData
                     }
                     let newDataAsJson
-                    if (this.state.isDataJson || type === 'json') {
+                    if (newData && (this.state.isDataJson || type === 'json')) {
 
                         try {
                             newDataAsJson = JSON.parse(newData)

@@ -7,6 +7,7 @@ export default `
         event: String
         username: String
         user_id: String
+        user_image: String
         botId: String
         botName: String
         isBot: Boolean

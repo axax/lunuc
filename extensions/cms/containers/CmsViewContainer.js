@@ -365,7 +365,7 @@ class CmsViewContainer extends React.Component {
     }
 
 
-    clientQuery(query, options) {
+    clientQuery(query, options = {}) {
         if (!query || query.constructor !== String) return
 
         const {success, error, ...rest} = options

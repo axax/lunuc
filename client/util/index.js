@@ -49,7 +49,7 @@ const Util = {
         return token ? `JWT ${token}` : null
     },
     dateFromObjectId: (objectId) => {
-        if (!objectId) {
+        if (!objectId ) {
             return ''
         }
         if (objectId.indexOf('#') === 0) {

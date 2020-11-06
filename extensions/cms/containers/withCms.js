@@ -10,7 +10,6 @@ import DomUtil from '../../../client/util/dom'
 import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
 import {setPropertyByPath} from "../../../client/util/json";
 import {client, graphql} from '../../../client/middleware/graphql'
-import {QUERY_KEY_VALUES} from '../../../client/util/keyvalue'
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}
