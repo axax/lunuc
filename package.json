@@ -136,7 +136,7 @@
     "compression-webpack-plugin": "^6.0.5",
     "copy-webpack-plugin": "^6.3.0",
     "css-loader": "^5.0.1",
-    "eslint": "^7.12.1",
+    "eslint": "^7.13.0",
     "eslint-plugin-react": "^7.21.5",
     "jest-cli": "^26.6.3",
     "less": "^3.12.2",

@@ -25,6 +25,7 @@
             "login",
             "newPassword",
             "beforeSignUp",
+            "NewUserCreated",
             "Frontend"
           ]
         },

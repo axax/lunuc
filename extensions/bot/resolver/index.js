@@ -11,6 +11,7 @@ export default db => ({
     Query: {
         sendBotMessage: async ({message, command, botId, id, meta}, {context}) => {
             // Util.checkIfUserIsLoggedIn(context)
+            const sessionId = context.session
 
             const user = await Util.userById(db, context.id)
             if (registeredBots[botId]) {
@@ -82,8 +83,8 @@ export default db => ({
                     })
                 }
 
-                if (!botConnector.sessions[context.session] ) {
-                    botConnector.sessions[context.session] = {}
+                if (!botConnector.sessions[sessionId] ) {
+                    botConnector.sessions[sessionId] = {}
                 }
 
                 if (command) {
@@ -92,7 +93,7 @@ export default db => ({
 
                         if(meta) {
                             try {
-                                botConnector.sessions[context.session] = JSON.parse(meta)
+                                botConnector.sessions[sessionId] = JSON.parse(meta)
                             }catch (e) {
                             }
 
@@ -113,10 +114,14 @@ export default db => ({
                         }
 
                     }else if (command === 'alive') {
+
+                        if (!botConnector.sessions[sessionId] ) {
+                            botConnector.sessions[sessionId] = {username: context.username, user_id: context.id}
+                        }
                         botConnector.lastActive = new Date()
                         if(meta) {
                             try {
-                                botConnector.sessions[context.session] = JSON.parse(meta)
+                                botConnector.sessions[sessionId] = JSON.parse(meta)
                             }catch (e) {
                             }
                         }
@@ -138,24 +143,29 @@ export default db => ({
                             }
                         })
 
-                        clearTimeout(botConnectorClearTimeout[currentId])
-                        botConnectorClearTimeout[currentId] = setTimeout(() => {
+                        clearTimeout(botConnectorClearTimeout[sessionId])
+                        botConnectorClearTimeout[sessionId] = setTimeout(() => {
 
-                            pubsub.publish('subscribeBotMessage', {
-                                userId: context.id,
-                                botId: botConnector.botId,
-                                sessionId: context.session,
-                                subscribeBotMessage: {
+                            delete botConnector.sessions[sessionId]
+
+                            if(Object.keys(botConnector.sessions).length <= 1) {
+
+                                pubsub.publish('subscribeBotMessage', {
+                                    userId: context.id,
                                     botId: botConnector.botId,
-                                    id: currentId,
-                                    username: context.username,
-                                    user_id: context.id,
-                                    message_id: ObjectId().toString(),
-                                    event: 'removeConnection'
-                                }
-                            })
-                            delete botConnectorClearTimeout[currentId]
-                            delete botConnectors[botConnector.id]
+                                    sessionId: context.session,
+                                    subscribeBotMessage: {
+                                        botId: botConnector.botId,
+                                        id: currentId,
+                                        username: context.username,
+                                        user_id: context.id,
+                                        message_id: ObjectId().toString(),
+                                        event: 'removeConnection'
+                                    }
+                                })
+                                delete botConnectors[botConnector.id]
+                            }
+                            delete botConnectorClearTimeout[sessionId]
                         }, 8000)
 
                     }
@@ -163,7 +173,7 @@ export default db => ({
                 } else {
 
 
-                    const sessionData = botConnector.sessions[context.session]
+                    const sessionData = botConnector.sessions[sessionId]
 
                     let username = context.username || sessionData.username
 
@@ -212,15 +222,14 @@ export default db => ({
             },
             (payload, context) => {
 
-
-                if (payload) {
-
+                if (payload && (payload.subscribeBotMessage.event!=='alive' || payload.userId !== context.id)) {
+                    const sessionId = context.id
                     const botConnector = botConnectors[payload.subscribeBotMessage.id]
 
-                    if (botConnector && botConnector.sessions[context.session] ) {
+                    if (botConnector && botConnector.sessions[sessionId] ) {
 
 
-                        if (payload.sessionId && payload.sessionId === context.session) {
+                        if (payload.sessionId && payload.sessionId === sessionId) {
                             return false
                         }
 
