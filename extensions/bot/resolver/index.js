@@ -36,6 +36,7 @@ export default db => ({
                                 event: 'newMessage',
                                 username: registeredBots[botId].data.name,
                                 botId,
+                                isBot:true,
                                 botName: registeredBots[botId].data.name
                             }
                         })
@@ -77,6 +78,7 @@ export default db => ({
                                 message_id,
                                 event: 'deleteMessage',
                                 botId,
+                                username: registeredBots[botId].data.name,
                                 botName: registeredBots[botId].data.name
                             }
                         })
@@ -100,11 +102,13 @@ export default db => ({
                             pubsub.publish('subscribeBotMessage', {
                                 userId: context.id,
                                 botId: botConnector.botId,
-                                sessionId: context.session,
+                                sessionId: sessionId,
                                 subscribeBotMessage: {
+                                    sessionId,
+                                    isBot:true,
                                     botId: botConnector.botId,
                                     id: currentId,
-                                    username: context.username,
+                                    username: registeredBots[botId].data.name,
                                     user_id: context.id,
                                     message_id: ObjectId().toString(),
                                     event: 'userData',
@@ -131,10 +135,11 @@ export default db => ({
                         pubsub.publish('subscribeBotMessage', {
                             userId: context.id,
                             botId: botConnector.botId,
-                            sessionId: context.session,
+                            sessionId: sessionId,
                             subscribeBotMessage: {
                                 botId: botConnector.botId,
                                 id: currentId,
+                                sessionId,
                                 username: context.username,
                                 user_id: context.id,
                                 message_id: ObjectId().toString(),
@@ -153,7 +158,7 @@ export default db => ({
                                 pubsub.publish('subscribeBotMessage', {
                                     userId: context.id,
                                     botId: botConnector.botId,
-                                    sessionId: context.session,
+                                    sessionId: sessionId,
                                     subscribeBotMessage: {
                                         botId: botConnector.botId,
                                         id: currentId,
@@ -186,11 +191,12 @@ export default db => ({
                     pubsub.publish('subscribeBotMessage', {
                         userId: context.id,
                         botId,
-                        sessionId: context.session,
+                        sessionId: sessionId,
                         subscribeBotMessage: {
                             botId,
                             botName: registeredBots[botId].data.name,
                             id: currentId,
+                            sessionId,
                             username: username,
                             user_id: context.id,
                             user_image: user && user.picture,
@@ -223,22 +229,21 @@ export default db => ({
             (payload, context) => {
 
                 if (payload && (payload.subscribeBotMessage.event!=='alive' || payload.userId !== context.id)) {
-                    const sessionId = context.id
+                    const sessionId = context.session
                     const botConnector = botConnectors[payload.subscribeBotMessage.id]
 
                     if (botConnector && botConnector.sessions[sessionId] ) {
 
 
-                        if (payload.sessionId && payload.sessionId === sessionId) {
+                       /* if (payload.sessionId && payload.sessionId === sessionId) {
                             return false
-                        }
+                        }*/
 
                         return true
-                    } else {
+                    } else if(context.id){
                         const bot = registeredBots[payload.botId]
                         if (bot && bot.data.manager) {
-                            if (bot.data.manager.indexOf(context.id)) {
-                                // return
+                            if (bot.hasManager(context.id)) {
                                 return true
                             }
                         }

@@ -62,7 +62,7 @@ class CmsViewContainer extends React.Component {
                 cmsPage.style !== cmsPageOld.style ||
                 props.cmsEditData !== this.props.cmsEditData ||
                 /* because it is passed to the JsonDom */
-                this.props.settings.inlineEditor !== props.settings.inlineEditor))
+                (props.settings && this.props.settings.inlineEditor !== props.settings.inlineEditor)))
 
     }
 

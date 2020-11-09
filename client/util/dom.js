@@ -23,12 +23,14 @@ const DomUtil = {
         }, opts)
     },
     addScript(src, attrs, opts) {
-        const script = DomUtil.createAndAddTag('script', 'head', {
+        DomUtil.createAndAddTag('script', 'head', {
             src, async: true, defer: true, ...attrs,
-            onload: () => {
-                script.setAttribute('loaded', true)
+            onload: (e) => {
+                if(e && e.target) {
+                    e.target.setAttribute('loaded', true)
+                }
                 if(attrs && attrs.onload){
-                    attrs.onload()
+                    attrs.onload(e)
                 }
             }
         }, opts)

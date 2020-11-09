@@ -528,6 +528,18 @@ class Bot {
         })
     }
 
+    hasManager(id){
+        if(!this.managerIds) {
+            this.managerIds = []
+            if(this.data && this.data.manager){
+                this.data.manager.forEach(oId=>{
+                    this.managerIds.push(String(oId))
+                })
+            }
+        }
+        return this.managerIds.indexOf(id)>=0
+    }
+
 }
 
 export default Bot

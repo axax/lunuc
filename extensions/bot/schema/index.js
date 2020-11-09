@@ -3,6 +3,7 @@ export default `
     type BotMessageResult {
         response: String
         id: String
+        sessionId: String
         message_id: String
         event: String
         username: String

@@ -669,7 +669,7 @@ class CmsViewEditorContainer extends React.Component {
                                                     type="json"
                                                     readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>
 
-                                        <a href={'/system/diff?value='+encodeURIComponent(parsedData.template)+'&orig1='+encodeURIComponent(template)} target="_blank">Show diff</a>
+                                        <a href={'/system/diff?preview=true&value='+encodeURIComponent(parsedData.template)+'&orig1='+encodeURIComponent(template)} target="_blank">Show diff</a>
                                     </div>
                                 } else if (parsedData.style) {
 
