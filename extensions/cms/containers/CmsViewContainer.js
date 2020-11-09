@@ -148,40 +148,60 @@ class CmsViewContainer extends React.Component {
                 console.log('refresh resources', props.slug)
 
                 try {
-                    const a = JSON.parse(Util.replacePlaceholders(resources,{_app_}))
-                    for (let i = 0; i < a.length; i++) {
-                        let r = a[i], ext, params
+                    const resourceList = JSON.parse(Util.replacePlaceholders(resources,{_app_}))
 
+                    const loadNext = (index) =>{
+                        if( index>=resourceList.length){
+                            return
+                        }
+                        let resource = resourceList[index], ext, params, attrs
 
-                        if (r.startsWith('[')) {
-                            params = r.substring(1, r.indexOf(']'))
-                            r = r.substring(r.indexOf(']') + 1)
+                        if(resource.constructor === Object){
+                            attrs = resource
+                            resource = resource.src
+                            delete attrs.src
+                        }else if (resource.startsWith('[')) {
+                            params = resource.substring(1, resource.indexOf(']'))
+                            resource = resource.substring(resource.indexOf(']') + 1)
                             ext = params
                         }
 
                         if (!ext) {
-                            ext = r.substring(r.lastIndexOf('.') + 1)
+                            ext = resource.substring(resource.lastIndexOf('.') + 1)
                         }
 
                         if (!params) {
-                            if (r.indexOf('?') >= 0) {
-                                r += '&'
+                            if (resource.indexOf('?') >= 0) {
+                                resource += '&'
                             } else {
-                                r += '?'
+                                resource += '?'
                             }
-                            r += 'v=' + config.BUILD_NUMBER
+                            resource += 'v=' + config.BUILD_NUMBER
                         }
 
                         if (ext.indexOf('css') === 0) {
-                            DomUtil.addStyle(r, {
-                                data: {cmsView: true}
+                            DomUtil.addStyle(resource, {
+                                data: {cmsView: true},
+                                ...attrs
                             })
+                            loadNext(index+1)
                         } else if (ext.indexOf('js') === 0) {
-                            DomUtil.addScript(r, {
-                                data: {cmsView: true}
+                            if(attrs && attrs.async === false){
+                                attrs.onload = ()=>{
+                                    loadNext(index+1)
+                                }
+                            }else{
+                                loadNext(index+1)
+                            }
+                            DomUtil.addScript(resource, {
+                                data: {cmsView: true},
+                                ...attrs
                             })
                         }
+
                     }
+
+                    loadNext(0)
                 } catch (e) {
                     console.error('Error in resources', e)
                 }

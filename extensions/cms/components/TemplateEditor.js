@@ -152,6 +152,13 @@ class TemplateEditor extends React.Component {
                             fabButtonStyle={fabButtonStyle}
                             onChange={this.handleChange.bind(this)}
                             error={error}
+                            onError={(e, data)=>{
+                                if (data.trim().indexOf('<') === 0) {
+                                    // content changed to html
+                                    this.handleChange(data)
+                                }
+
+                            }}
                             showFab
                             controlled
                             lineNumbers

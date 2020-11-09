@@ -63,10 +63,18 @@ class ResourceEditor extends React.Component {
         return <div className={classes.resources}>
             <List dense={true}>
                 {resourcesArray.map((item, i) => {
-                    const isExternal = item.match(/[a-zA-Z0-9]*:\/\/[^\s]*/g) != null
+                    let src
+                    if(item.constructor === Object){
+                        src = item.src
+                        item = JSON.stringify(item)
+                    }else{
+                        src = item
+                    }
+                    const isExternal = src.match(/[a-zA-Z0-9]*:\/\/[^\s]*/g) != null
                     return <ListItem key={'resource-' + i}>
-                        <TextField value={item} onBlur={this.handleBlur.bind(this, i)}
-                                   onChange={this.handleChange.bind(this, i)} className={classes.textfield}
+                        <TextField value={item}
+                                   onChange={this.handleChange.bind(this, i)}
+                                   className={classes.textfield}
                                    placeholder="Enter a url"/>
                         <ListItemSecondaryAction>
                             {!isExternal && <EditIconButton onClick={this.handleEditClick.bind(this, item)}/>}
@@ -118,15 +126,18 @@ class ResourceEditor extends React.Component {
 
     handleChange(i, e) {
         const resourcesArray = this.state.resourcesArray
-        resourcesArray[i] = e.target.value
+        let val = e.target.value.trim()
+        if(val.startsWith('{')){
+            try {
+                val = JSON.parse(val)
+            }catch (e) {
+
+            }
+        }
+        resourcesArray[i] = val
         this.setState({resourcesArray}, this.emitChange.bind(this, true))
     }
 
-    handleBlur(i, e) {
-        const resourcesArray = this.state.resourcesArray
-        resourcesArray[i] = e.target.value
-        this.setState({resourcesArray}, this.emitChange)
-    }
 
     handleRemoveClick(i) {
         const resourcesArray = this.state.resourcesArray
@@ -138,6 +149,7 @@ class ResourceEditor extends React.Component {
         const {onChange, resources} = this.props
         if (onChange) {
             clearTimeout(this.emitChangeTimeout)
+            console.log(this.state.resourcesArray)
             const data = JSON.stringify(this.state.resourcesArray)
             if (data !== resources) {
                 if (delayed) {

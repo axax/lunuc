@@ -1,6 +1,8 @@
 /**
  * Html dom helper methods
  */
+import {propertyByPath} from './json'
+
 const DomUtil = {
     removeElements(selector, butIds, container = document) {
         const addedElements = container.querySelectorAll(selector)
@@ -22,10 +24,13 @@ const DomUtil = {
     },
     addScript(src, attrs, opts) {
         const script = DomUtil.createAndAddTag('script', 'head', {
-            src, asyn: true, defer: true,
-            onload: function () {
+            src, async: true, defer: true, ...attrs,
+            onload: () => {
                 script.setAttribute('loaded', true)
-            }, ...attrs
+                if(attrs && attrs.onload){
+                    attrs.onload()
+                }
+            }
         }, opts)
     },
     createAndAddTag(name, target, attrs, opts) {
@@ -56,12 +61,13 @@ const DomUtil = {
                 }
             } else if (key === 'style' && attrs[key].constructor === Object) {
                 tag[key] = DomUtil.styleObjectToString(attrs[key])
-            } else if (attrs[key])
+            } else if (attrs[key]) {
                 if (key === 'innerHTML' || key === 'innerText' || key === 'onload' || key === 'textContent') {
                     tag[key] = attrs[key]
                 } else {
                     tag.setAttribute(key, attrs[key])
                 }
+            }
         }
         document[target].appendChild(tag)
         return tag
@@ -120,6 +126,20 @@ const DomUtil = {
                 childList: true,
                 subtree: true
             })
+        })
+    },
+    waitForVariable: (name, obj = window) => {
+        return new Promise(resolve => {
+
+            const check = ()=>{
+                const value = propertyByPath(name, obj )
+                if(value){
+                    resolve(value)
+                }else {
+                    setTimeout(check, 100)
+                }
+            }
+            check()
         })
     }
 }
