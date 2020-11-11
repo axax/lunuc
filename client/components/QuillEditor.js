@@ -26,7 +26,7 @@ class QuillEditor extends React.Component {
      }*/
 
     static propsToState(props) {
-        return {value: props.children}
+        return {value: props.children || props.value}
     }
 
     shouldComponentUpdate(props, state) {
@@ -127,6 +127,7 @@ class QuillEditor extends React.Component {
 
                 this.quill.on('text-change', (e) => {
                     const {onChange, name} = this.props
+
                     if (onChange) {
                        /* this.editor.root.querySelectorAll('a').forEach(a => {
                             const href = a.getAttribute('href')

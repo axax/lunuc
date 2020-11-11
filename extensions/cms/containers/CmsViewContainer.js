@@ -34,7 +34,7 @@ class CmsViewContainer extends React.Component {
             }
         }
 
-        if (!cmsPage && props.loading ) {
+        if (!cmsPage && (props.loading || props.aboutToChange) ) {
             // if there is still no cmsPage and it is still loading
             // there is no need to update
             return false
@@ -78,7 +78,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, cmsPage, children, dynamic, fetchMore, settings, setKeyValue, updateResolvedData, ...props} = this.props
+        const {slug, aboutToChange, cmsPage, children, dynamic, fetchMore, settings, setKeyValue, updateResolvedData, ...props} = this.props
         const editMode = isEditMode(this.props)
 
         if (!cmsPage) {
@@ -129,7 +129,7 @@ class CmsViewContainer extends React.Component {
             {...props}>{children}</JsonDom>
 
 
-        console.info(`render ${this.constructor.name} for ${slug} (loading=${this.props.loading}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
+        console.info(`render ${this.constructor.name} for ${slug} (loading=${this.props.loading}, change=${!!aboutToChange}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
         return content
     }
 

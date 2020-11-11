@@ -7,7 +7,18 @@ class ElementWatch extends React.Component {
 
     constructor(props) {
         super(props)
+        this.state = ElementWatch.propsToState(props)
+    }
 
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (prevState.oriSrc !== nextProps.eleProps.src) {
+            return ElementWatch.propsToState(nextProps, prevState)
+        }
+        return null
+    }
+
+    static propsToState(props, state) {
         const {tagName, eleProps, $observe} = props
 
 
@@ -19,13 +30,15 @@ class ElementWatch extends React.Component {
             tagSrc = eleProps.id
         }
 
-        this.state = {
+        return {
+            oriSrc: eleProps.src,
             tagSrc,
             tagImg,
-            madeVisible: false,
+            madeVisible: state && state.madeVisible ? true : false,
             initialVisible: tagName === 'SmartImage' ? false : ($observe.initialClass && !$observe.waitVisible) || !!$observe.waitVisible
         }
     }
+
 
     componentDidMount() {
         const {tagSrc} = this.state

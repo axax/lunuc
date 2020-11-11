@@ -175,7 +175,6 @@ export default function (WrappedComponent) {
 
 
         updateResolvedData({json, path, value}) {
-
             const {cmsPageVariables, cmsPage} = this.props
 
             const storeData = client.readQuery({
@@ -186,10 +185,11 @@ export default function (WrappedComponent) {
             // upadate data in resolvedData string
             if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
                 const newData = Object.assign({}, storeData.cmsPage)
-                if (path && value) {
+                if (path && value!==undefined) {
                     const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
                     setPropertyByPath(value, path, resolvedDataJson)
                     newData.resolvedData = JSON.stringify(resolvedDataJson)
+
                 } else {
                     newData.resolvedData = JSON.stringify(json)
                 }
@@ -229,6 +229,13 @@ export default function (WrappedComponent) {
                     cmsPage,
                     networkStatus
                 }
+                if (cmsPage) {
+                    if (variables.slug !== cmsPage.slug) {
+                        // we define a new state here when component is reused with a new slug
+                        result.aboutToChange = true
+                    }
+                }
+
                 if (cmsPage) {
                     urlSensitivMap[cmsPage.slug] = !!cmsPage.urlSensitiv
                 }

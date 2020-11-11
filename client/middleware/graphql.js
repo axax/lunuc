@@ -79,6 +79,11 @@ const setUpWs = () => {
                 console.log(`WebSocket error: ${error}`)
             }
 
+            wsConnection.onclose = () => {
+                console.log(`WebSocket closed.  Try to reconnect in 5 seconds`)
+                setTimeout(setUpWs, 5000)
+            }
+
         } catch (e) {
             // without ws
             console.warn('WS might not work', e)
@@ -359,10 +364,7 @@ export const graphql = (query, operationOptions = {}) => {
 
         class Wrapper extends React.Component {
 
-            //renderCount=0
-
             render() {
-
                 //this.renderCount++
                 //console.log(this.renderCount,query)
                 if (query.startsWith('mutation')) {

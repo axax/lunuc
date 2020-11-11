@@ -194,6 +194,12 @@ class CmsViewEditorContainer extends React.Component {
         if (slugChanged) {
             this.watchCmsPageStatus(true)
         }
+
+        /*console.log('children changed', props.children != this.props.children)
+        console.log('_props changed', props._props !== this.props._props)
+        console.log('slug changed', slugChanged)
+        console.log('loading changed', props.loading !== this.props.loading)
+        console.log('cmsStatusData changed', state.cmsStatusData !== this.state.cmsStatusData)*/
         // only update if it is needed
         return noCmsPage ||
             props.loading !== this.props.loading ||
@@ -202,11 +208,6 @@ class CmsViewEditorContainer extends React.Component {
             props.cmsTemplateEditData !== this.props.cmsTemplateEditData ||
             props.cmsEditData !== this.props.cmsEditData ||
             props.cmsPage.resolvedData !== this.props.cmsPage.resolvedData ||
-            (
-                state.urlSensitiv && (
-                    props.location.search !== this.props.location.search ||
-                    props.location.hash !== this.props.location.hash)
-            ) ||
             props.user !== this.props.user ||
             props.children != this.props.children ||
             props._props !== this.props._props ||
