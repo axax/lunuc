@@ -12,6 +12,7 @@
         {
           "name": "preprocessor",
           "reference": true,
+          "multi": true,
           "type": "PreProcessor"
         },
         {
