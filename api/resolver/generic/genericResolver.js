@@ -355,7 +355,7 @@ const GenericResolver = {
         }
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
             if (typeName === 'User') {
-                options._id = {$in: await Util.userAndJuniorIds(db, context.id)}
+                throw new Error('Error deleting entry. You might not have premissions to manage other users')
             } else {
                 options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
             }
@@ -404,7 +404,7 @@ const GenericResolver = {
 
         if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
             if (typeName === 'User') {
-                options._id = {$in: await Util.userAndJuniorIds(db, context.id)}
+                throw new Error('Error deleting entries. You might not have premissions to manage other users')
             } else {
                 options.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
             }
@@ -454,7 +454,12 @@ const GenericResolver = {
             }
 
             if (typeName === 'User') {
-                options._id = {$in: await Util.userAndJuniorIds(db, context.id)}
+                const ids = await Util.userAndJuniorIds(db, context.id)
+
+                if(ids.indexOf(params._id)<0){
+                    throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
+                }
+
             } else {
 
                 const typeDefinition = getType(typeName)
@@ -531,7 +536,6 @@ const GenericResolver = {
         return returnValue
     },
     cloneEntity: async (db, context, typeName, {_id, _version, ...rest}) => {
-        await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
@@ -541,13 +545,24 @@ const GenericResolver = {
             throw new Error('Id is missing')
         }
 
-        const entry = await collection.findOne({_id: ObjectId(_id)})
+
+        let match = {_id: ObjectId(_id)}
+        if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
+            if (typeName === 'User') {
+                throw new Error('Error cloning entry. You might not have premissions to manage other users')
+
+            } else {
+                match.createdBy = {$in: await Util.userAndJuniorIds(db, context.id)}
+            }
+        }
+
+        const entry = await collection.findOne(match)
 
         if (!entry) {
             throw new Error('entry with id ' + _id + ' does not exist')
         }
 
-        const clone = Object.assign({}, entry, {createdBy: ObjectId(context.id)}, rest)
+        const clone = Object.assign({}, entry, {modifiedAt: null, createdBy: ObjectId(context.id)}, rest)
 
         delete clone._id
 

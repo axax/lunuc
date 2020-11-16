@@ -35,6 +35,12 @@
           "index": 1
         },
         {
+          "name": "isTemplate",
+          "label": "Template",
+          "type": "Boolean",
+          "index": 1
+        },
+        {
           "name": "urlSensitiv",
           "label": "Url sensitiv",
           "hidden": true,

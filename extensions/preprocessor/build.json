@@ -1,0 +1,20 @@
+{
+  "types": [
+    {
+      "name": "PreProcessor",
+      "entryClonable": true,
+      "fields": [
+        {
+          "name": "name",
+          "required": true,
+          "clone": "${name} (copy)",
+          "index": 1
+        },
+        {
+          "name": "script",
+          "uitype": "editor"
+        }
+      ]
+    }
+  ]
+}

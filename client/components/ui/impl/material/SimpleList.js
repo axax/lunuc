@@ -19,6 +19,7 @@ class SimpleList extends React.Component {
             {onFilterChange &&
             <div style={{padding: '10px 20px'}}>
                 <TextField label="Search"
+                           autoFocus
                            fullWidth={true}
                            type="text"
                            defaultValue={filter}

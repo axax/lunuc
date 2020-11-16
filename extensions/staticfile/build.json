@@ -10,6 +10,11 @@
           "clone": "${name} (copy)"
         },
         {
+          "name": "preprocessor",
+          "reference": true,
+          "type": "PreProcessor"
+        },
+        {
           "name": "mimeType"
         },
         {

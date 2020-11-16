@@ -798,8 +798,6 @@ class CmsViewEditorContainer extends React.Component {
 
                                             }
                                         })
-                                    } else {
-                                        //transRec(o[key], base, path + '.' + key)
                                     }
                                 })
                             }
@@ -909,7 +907,17 @@ class CmsViewEditorContainer extends React.Component {
                                           if (formValidation.isValid) {
                                               if (this.addNewSiteForm.props.values._id) {
                                                   const queries = getTypeQueries('CmsPage')
-                                                  const slug = this.addNewSiteForm.state.fields.slug
+                                                  let slug = this.addNewSiteForm.state.fields.slug.trim()
+                                                  if(slug.startsWith('/')){
+                                                      slug = slug.substring(1)
+                                                  }
+                                                  if(!canMangeCmsTemplate){
+                                                      //prefix needs to be same as current page
+                                                      const prefix = cmsPage.realSlug.split('/')[0]
+                                                      if(!slug.startsWith(prefix+'/')){
+                                                          slug = prefix + '/' + slug
+                                                      }
+                                                  }
                                                   const name = this.addNewSiteForm.state.fields.name
                                                   delete name.__typename
                                                   client.mutate({
@@ -919,17 +927,15 @@ class CmsViewEditorContainer extends React.Component {
                                                           slug,
                                                           name
                                                       },
-                                                      update: (store, {data}) => {
-                                                          if (!data.errors) {
+                                                      update: (store, {data, errors}) => {
+                                                          console.log(data)
+                                                          if (!errors) {
                                                               setTimeout(() => {
                                                                       window.location.href = `/${slug}`
                                                                   }, 500
                                                               )
-                                                              /*,()=>{
-                                                                  //this.props.history.push(`/${slug}`)
-
-                                                              })*/
-
+                                                          }else{
+                                                              this.addNewSiteForm.setState( {isValid: false, fieldErrors: {slug: errors[0].message}})
                                                           }
                                                       }
                                                   })
@@ -984,18 +990,18 @@ class CmsViewEditorContainer extends React.Component {
                                              fullWidth: true,
                                              label: 'Vorlage',
                                              searchFields: ['name'],
-                                             required: true
+                                             required: true,
+                                             filter: !canMangeCmsTemplate?'isTemplate=true':''
                                          },
                                          slug: {
                                              fullWidth: true,
-                                             label: 'Slug',
+                                             label: 'Url Pfad',
                                              required: true
                                          },
                                          name: {
                                              fullWidth: true,
                                              label: 'Titel',
-                                             localized: true,
-                                             required: true
+                                             localized: true
                                          }
                                      }}/>
 

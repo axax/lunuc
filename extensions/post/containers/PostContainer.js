@@ -29,7 +29,7 @@ class PostContainer extends React.Component {
 
     handleAddPostClick = (post) => {
         const {createPost} = this.props
-        createPost(post).then(() => {
+        createPost({body:'',...post}).then(() => {
             this.addPostForm.reset()
         })
     }
@@ -136,7 +136,7 @@ class PostContainer extends React.Component {
 
                         <GenericForm ref={(e) => {
                             this.addPostForm = e
-                        }} fields={{title: {value: '', placeholder: 'Titel'}, body: {value: '', uitype: 'hidden'}}}
+                        }} fields={{title: {value: '', placeholder: 'Enter a titel',label:'Title'}}}
                                      onValidate={this.handleAddPostValidate} onClick={this.handleAddPostClick}/>
 
                     </Col>
