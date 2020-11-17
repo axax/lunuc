@@ -8,7 +8,6 @@ const TerserPlugin = require('terser-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CompressionPlugin = require("compression-webpack-plugin")
 const GenSourceCode = require('./webpack.gensrc')
-const WebpackI18nPlugin = require('./webpack.i18n')
 
 const date = new Date()
 const DEV_MODE = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1,
@@ -212,11 +211,7 @@ const config = {
         new GenSourceCode(APP_VALUES), /* Generate some source code based on the buildconfig.json file */
         new MiniCssExtractPlugin({
             filename: 'style.css'
-        }), /* Extract css from bundle */
-        new WebpackI18nPlugin({
-            src: './**/*.tr.json',
-            dest: '[name].js'
-        })
+        }) /* Extract css from bundle */
     ],
     optimization: {
         usedExports: true,

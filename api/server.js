@@ -17,7 +17,8 @@ import Hook from 'util/hook'
 import compression from 'compression'
 import {pubsub} from './subscription'
 import {decodeToken} from './util/jwt'
-import {HEADER_TIMEOUT} from './constants'
+import {HEADER_TIMEOUT, SESSION_HEADER, USE_COOKIES} from './constants'
+import {parseCookies} from './util/parseCookies'
 
 const PORT = (process.env.PORT || 3000)
 
@@ -168,10 +169,19 @@ export const start = (done) => {
 
                        // const host = webSocket.upgradeReq.headers.host
                     },
-                    onOperation: ({payload}) => {
+                    onOperation: ({payload},params,ws) => {
+
+                        let context
+                        if(USE_COOKIES) {
+                            const cookies = parseCookies(ws.upgradeReq)
+                            context = decodeToken(cookies.auth)
+                            context.session = cookies.session
+                        }else{
+                            context = decodeToken(payload.auth)
+                            context.session = payload.session
+                        }
+
                         // now if auth is needed we can check if the context is available
-                        const context = decodeToken(payload.auth)
-                        context.session = payload.session
                         context.variables = payload.variables
                         return {context, schema}
                     }

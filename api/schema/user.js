@@ -28,6 +28,7 @@ export const userSchemaRaw = `
         note: [Note]
         meta: String
         signupToken: String
+        language: String
         role: UserRole
         junior: [User]
     }
@@ -68,15 +69,16 @@ export const userSchemaRaw = `
 		status: String
 	}
 	
+	type LogoutResult {
+		status: String
+	}
     type Query {
         users(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserResult
-        userRoles(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserRoleResult
-        
-        
+        userRoles(limit: Int=10, page: Int, offset: Int=0, sort: String, filter: String): UserRoleResult      
         publicUsers(limit: Int=10, offset: Int=0): [UserPublic]
-        
         me: User
         login(username: String!, password: String!): Token
+        logout: LogoutResult
         forgotPassword(username: String!, url: String!, subject: String): ForgotPasswordResult
         newPassword(token:String!, password:String!, passwordConfirm:String): NewPasswordResult
         confirmEmail(token:String!): ConfirmEmailResult
@@ -106,6 +108,7 @@ export const userSchemaRaw = `
 			requestNewPassword: Boolean
             role: ID
             meta: String
+            language: String
             junior: [ID]
 		): User
 		
@@ -115,6 +118,7 @@ export const userSchemaRaw = `
 			username: String
 			picture: ID
 			password: String
+            language: String
 			emailConfirmed: Boolean
 			requestNewPassword: Boolean
             role: ID
@@ -141,6 +145,7 @@ export const userSchemaRaw = `
 			password: String
 			picture: ID
             role: ID
+            language: String
             meta: String
 		): User
 		

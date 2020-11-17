@@ -3,6 +3,8 @@ import {createAllInitialData} from './data/initialData'
 import {createAllIndexes} from './index/indexes'
 import ClientUtil from 'client/util'
 import Hook from '../util/hook'
+import Util from './util'
+import {registerTrs} from '../util/i18nServer'
 
 const MONGO_URL = (process.env.MONGO_URL || process.env.LUNUC_MONGO_URL)
 
@@ -24,6 +26,11 @@ export const dbPreparation = async (db, cb) => {
         await createAllInitialData(db)
 
         await createAllIndexes(db)
+
+        console.log('load global translations from key/value store')
+        const globalTranslations = (await Util.getKeyValueGlobal(db, null, "GlobalTranslations", true)) || {}
+
+        registerTrs(globalTranslations)
 
     }
 

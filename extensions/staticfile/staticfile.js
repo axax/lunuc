@@ -87,6 +87,6 @@ export const createStaticFiles = async (db) => {
             await createOrDeleteStaticFile(staticFile, db)
         })
     }else{
-        console.log(`cannot create folder for static files`)
+        console.log('cannot create folder for static files')
     }
 }

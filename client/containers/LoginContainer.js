@@ -12,6 +12,7 @@ import BlankLayout from 'client/components/layout/BlankLayout'
 import Util from 'client/util'
 import DomUtil from '../util/dom'
 import {client} from 'client/middleware/graphql'
+import {_t} from 'util/i18n'
 
 class LoginContainer extends React.Component {
     state = {
@@ -67,7 +68,10 @@ class LoginContainer extends React.Component {
                 if (!response.data.login.error) {
                     // clear cache completely
                     client.resetStore()
-                    localStorage.setItem('token', response.data.login.token)
+                    if(response.data.login.token) {
+                        localStorage.setItem('token', response.data.login.token)
+                    }
+
                     userActions.setUser(response.data.login.user, true)
                     errorHandlerAction.clearErrors()
 
@@ -119,10 +123,9 @@ class LoginContainer extends React.Component {
                     <Col xs={10} sm={8} md={4}>
                         <Card>
                             <form noValidate autoComplete="off">
-                                <Typography variant="h3" gutterBottom>Login</Typography>
+                                <Typography variant="h3" gutterBottom>{_t('Login.title')}</Typography>
 
-                                <Typography gutterBottom>You must log in to view the page
-                                    at {from.pathname}</Typography>
+                                <Typography gutterBottom>{_t('Login.subtitle', from)}</Typography>
 
 
                                 <TextField label="Username"

@@ -19,7 +19,7 @@ if (typeof localStorage === 'object') {
     }
 }
 
-function removeTrailingSlash(url){
+function removeTrailingSlash(url) {
     // has trailing slash
     if (url !== '/' && url.lastIndexOf('/') === url.length - 1) {
         url = url.substring(0, url.length - 1)
@@ -29,6 +29,9 @@ function removeTrailingSlash(url){
 
 function mainInit() {
     const store = getStore()
+
+    // translation map
+    _app_.tr = {}
 
     // override config
     if (_app_.languages) {
@@ -43,13 +46,13 @@ function mainInit() {
 
     // ie fallback
     if (!loc.origin) {
-        loc.origin = loc.protocol + "//" + loc.hostname + (loc.port ? ':' + loc.port: '')
+        loc.origin = loc.protocol + "//" + loc.hostname + (loc.port ? ':' + loc.port : '')
     }
 
     // remove double slashes
     const cleanPathname = loc.pathname.replace(/\/\/+/g, '/')
     if (cleanPathname !== loc.pathname) {
-        window.location = loc.origin + cleanPathname +loc.search + loc.hash
+        window.location = loc.origin + cleanPathname + loc.search + loc.hash
         return
     }
 
@@ -89,7 +92,7 @@ function mainInit() {
 
         if (!contextLanguage && config.DEFAULT_LANGUAGE !== _app_.lang && basePath !== _app_.redirect404) {
             // add language to url and redirect
-            window.location = loc.origin + '/' + _app_.lang + (basePath==='/'?'':basePath)
+            window.location = loc.origin + '/' + _app_.lang + (basePath === '/' ? '' : basePath)
             return
         }
 
@@ -99,20 +102,12 @@ function mainInit() {
     } else {
         _app_.lang = config.DEFAULT_LANGUAGE
     }
-    const start = () => {
-        render(
-            <App store={store}/>,
-            document.getElementById('app')
-        )
-    }
 
-    // make sure translations are loaded before start rendering
-    if (_app_.trLoaded) {
-        start()
-    } else {
-        // trCallback gets called as soon as translations are loaded
-        _app_.trCallback = start
-    }
+    render(
+        <App store={store}/>,
+        document.getElementById('app')
+    )
+
 
     document.documentElement.setAttribute('lang', _app_.lang)
 
@@ -123,7 +118,7 @@ function mainInit() {
         DomUtil.createAndAddTag('link', 'head', {
             id: 'canonicalTag',
             rel: 'canonical',
-            href: loc.origin + cleanPathnameWithoutTrailingSlash +loc.search + loc.hash
+            href: loc.origin + cleanPathnameWithoutTrailingSlash + loc.search + loc.hash
         })
     }
 
@@ -132,7 +127,7 @@ function mainInit() {
         DomUtil.createAndAddTag('link', 'head', {
             id: 'canonicalTag',
             rel: 'canonical',
-            href: loc.origin + (basePath==='/'?'':basePath)
+            href: loc.origin + (basePath === '/' ? '' : basePath)
         })
     }
     if (hasMultiLanguages) {
@@ -141,7 +136,7 @@ function mainInit() {
         DomUtil.createAndAddTag('link', 'head', {
             rel: 'alternate',
             hreflang: 'x-default',
-            href: loc.origin + (basePath==='/'?'':basePath)
+            href: loc.origin + (basePath === '/' ? '' : basePath)
         })
         for (let i = 0; i < config.LANGUAGES.length; i++) {
             const curLang = config.LANGUAGES[i]
@@ -149,25 +144,24 @@ function mainInit() {
             DomUtil.createAndAddTag('link', 'head', {
                 rel: 'alternate',
                 hreflang: curLang,
-                href: loc.origin + (!isDefault ? '/' + curLang : '') + (basePath==='/'?'':basePath)
+                href: loc.origin + (!isDefault ? '/' + curLang : '') + (basePath === '/' ? '' : basePath)
             })
         }
     }
 
 
-
-   /* Notification.requestPermission(result => {
-        console.log(result)
-        if (result === 'granted') {
-            navigator.serviceWorker.ready.then(registration => {
-                console.log(registration)
-                registration.showNotification('Vibration Sample', {
-                    body: 'Buzz! Buzz!',
-                    tag: 'vibration-sample'
-                });
-            });
-        }
-    });*/
+    /* Notification.requestPermission(result => {
+         console.log(result)
+         if (result === 'granted') {
+             navigator.serviceWorker.ready.then(registration => {
+                 console.log(registration)
+                 registration.showNotification('Vibration Sample', {
+                     body: 'Buzz! Buzz!',
+                     tag: 'vibration-sample'
+                 });
+             });
+         }
+     });*/
 
     /* Register serviceworker only on production. only works with https */
     if ('serviceWorker' in navigator) {
@@ -188,9 +182,9 @@ function mainInit() {
                 navigator.serviceWorker.register('/serviceworker.js?v=' + config.BUILD_NUMBER)
                     .then(function (swReg) {
                         console.log('Service Worker is registered')
-                        setTimeout(()=>{
+                        setTimeout(() => {
                             swReg.update()
-                        },5000)
+                        }, 5000)
                     })
                     .catch(function (error) {
                         console.error('Service Worker Error', error)

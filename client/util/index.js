@@ -43,6 +43,7 @@ const Util = {
 
         return ''
     },
+    /* deprecated -> set USE_COOKIES=true */
     getAuthToken: () => {
         // get the authentication token from local storage if it exists
         const token = localStorage.getItem('token')

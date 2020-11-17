@@ -10,7 +10,7 @@ import {
 import Hook from 'util/hook'
 import AggregationBuilder from './AggregationBuilder'
 import Cache from 'util/cache'
-import _t from "../../../util/i18nServer";
+import {_t} from '../../../util/i18nServer'
 
 const {DEFAULT_LANGUAGE} = config
 

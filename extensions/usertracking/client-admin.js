@@ -1,10 +1,10 @@
 import Hook from '../../util/hook'
 import React from 'react'
-import _t from '../../util/i18n'
 import {
     SimpleSwitch
 } from 'ui/admin'
 import Util from '../../client/util'
+import {_t, registerTrs} from '../../util/i18n'
 
 export default () => {
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
@@ -14,6 +14,7 @@ export default () => {
                     const item = data.results[i]
                     d.ip = <a
                         target="_blank"
+                        rel="noreferrer"
                         href={`/system/iplocation?ip=${item.ip}`}>
                         <span
                             style={{
@@ -45,6 +46,17 @@ export default () => {
 
         }
         if (!isSmallScreen) {
+
+            registerTrs({
+                de:{
+                    'CmsViewEditorContainer.usertracking': 'Analytics'
+                },
+                en:{
+                    'CmsViewEditorContainer.usertracking': 'Analytics'
+                }
+            }, 'usertracking')
+
+
             toolbarRight.splice(2, 0, <SimpleSwitch key="usertrackingSwitch" color="default"
                                                     checked={!!EditorOptions.tracking}
                                                     onChange={(e) => {

@@ -100,8 +100,10 @@ class DbDumpContainer extends React.Component {
             }
         }, false)
 
-        xhr.setRequestHeader('Authorization', Util.getAuthToken())
-        // xhr.overrideMimeType( "application/octet-stream; charset=x-user-defined;" )
+        const token = Util.getAuthToken()
+        if(token) {
+            xhr.setRequestHeader('Authorization', token)
+        }
         xhr.send(null)
     }
 

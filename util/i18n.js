@@ -1,4 +1,4 @@
-const _t = function (key, replacements, defaultValue) {
+export const _t = function (key, replacements, defaultValue) {
     let str
     if (this && this.tr && this.tr[key]) {
         // local translations
@@ -15,4 +15,25 @@ const _t = function (key, replacements, defaultValue) {
     return str
 }
 
-export default _t
+const hasRegisteredMap = {}
+export const registerTrs = (trans, registerId) => {
+    if(registerId ){
+        if(hasRegisteredMap[registerId]) {
+            // only register once
+            return
+        }
+        hasRegisteredMap[registerId] = true
+    }
+    let lang
+    if(_app_.user && _app_.user.language){
+        lang = _app_.user.language
+    }else{
+        lang = _app_.lang
+    }
+
+    if(trans[lang]){
+        Object.keys(trans[lang]).forEach(t=>{
+            _app_.tr[t] = trans[lang][t]
+        })
+    }
+}

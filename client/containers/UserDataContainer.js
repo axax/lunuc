@@ -10,13 +10,13 @@ class UserDataContainer extends React.PureComponent {
     state = {
         loading: false,
         loaded: false,
-        token: localStorage.getItem('token') || '',
+        hasAuth: localStorage.getItem('token') || document.cookie.indexOf('authRole=')>=0,
         force:  localStorage.getItem('refreshUserData')
     }
 
     getUserData = () => {
         const {userActions} = this.props
-        localStorage.setItem('refreshUserData', null)
+        localStorage.removeItem('refreshUserData')
 
         client.query({
             fetchPolicy: (_app_.lang !== _app_.langBefore || this.state.force ? 'network-only' : 'cache-first'),
@@ -44,7 +44,7 @@ class UserDataContainer extends React.PureComponent {
     }
 
     render() {
-        if (this.state.loading && this.state.token != '') {
+        if (this.state.loading && this.state.hasAuth) {
             this.getUserData()
             return null
         }

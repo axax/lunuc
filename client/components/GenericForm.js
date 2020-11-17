@@ -27,7 +27,7 @@ import {checkFieldType} from 'util/typesAdmin'
 import Hook from '../../util/hook'
 import classNames from 'classnames'
 import Expandable from 'client/components/Expandable'
-import _t from '../../util/i18n'
+import {_t} from '../../util/i18n'
 import Util from '../util'
 import DomUtil from '../util/dom'
 

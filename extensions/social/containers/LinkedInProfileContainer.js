@@ -8,9 +8,8 @@ import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import { useHistory } from 'react-router-dom'
 import PrettyResume from '../components/PrettyResume'
 import FileDrop from 'client/components/FileDrop'
-import _t from 'util/i18n'
+import {_t, registerTrs} from 'util/i18n'
 import translations from '../translations/translations'
-_app_.tr = Object.assign(_app_.tr, translations[_app_.lang])
 
 const withLinkedInCallback = (Container) => {
 
@@ -36,6 +35,8 @@ class LinkedInProfileContainer extends React.Component {
 
     constructor(props) {
         super(props)
+        registerTrs(translations, 'LinkedInProfileContainer')
+
         this.state = {
             data: props.keyValueMap && props.keyValueMap.linkedInData,
             disconnected: false

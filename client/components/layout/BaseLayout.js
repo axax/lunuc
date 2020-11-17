@@ -24,10 +24,12 @@ import 'gen/extensions-client-admin'
 import {useHistory} from 'react-router-dom'
 import {Link} from 'react-router-dom'
 import {useKeyValues} from '../../util/keyvalue'
-
-import {CAPABILITY_MANAGE_TYPES} from "../../../util/capabilities";
-
+import {CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities'
 const {ADMIN_BASE_URL, APP_NAME} = config
+
+import {registerTrs} from 'util/i18n'
+import {translations} from '../../translations/admin'
+registerTrs(translations, 'AdminTranslations')
 
 let menuItems = []
 

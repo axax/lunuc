@@ -15,7 +15,7 @@ export default db => ({
             const sessionId = context.session
             let user = await Util.userById(db, context.id)
             if(!user){
-                user = {username:'mister x'}
+                user = {username:'anonymous'}
             }
             if (registeredBots[botId]) {
                 const currentId = id || ((context.id ? context.id : '0') + '-' + String((new Date()).getTime()))
@@ -249,11 +249,6 @@ export default db => ({
                     const sessionId = context.session
                     const botConnector = botConnectors[payload.subscribeBotMessage.id]
                     if (botConnector && botConnector.sessions[sessionId] ) {
-
-                       /* if (payload.sessionId && payload.sessionId === sessionId) {
-                            return false
-                        }*/
-
                         return true
                     } else if(context.id){
                         const bot = registeredBots[payload.botId]
@@ -264,10 +259,6 @@ export default db => ({
                         }
 
                     }
-
-//registeredBots[botId].data.manager
-                    // console.log(payload)
-                    //return payload && payload.session === context.session
                 }
                 return false
             }

@@ -10,6 +10,7 @@ import {
 } from 'util/capabilities'
 import {ApiError} from '../error'
 import {getType} from '../../util/types'
+import {_t} from '../../util/i18nServer'
 
 const PASSWORD_MIN_LENGTH = 8
 
@@ -60,8 +61,6 @@ const Util = {
             if (keyvalues.hasOwnProperty(key)) {
 
                 const res = (await Util.setKeyValue(db, context, key, keyvalues[key]))
-
-                //console.log(res)
             }
         }
 
@@ -219,11 +218,11 @@ const Util = {
     compareWithHashedPassword: (pw, hashedPw) => {
         return bcrypt.hashSync(pw, hashedPw) === hashedPw
     },
-    validatePassword: (pw) => {
-        var err = []
+    validatePassword: (pw, {lang}) => {
+        const err = []
 
         if (pw.length < PASSWORD_MIN_LENGTH) {
-            err.push(`Password is to short. Min length is ${PASSWORD_MIN_LENGTH}`)
+            err.push(_t('core.password.too.short', lang,{minlength:PASSWORD_MIN_LENGTH}))
         }
 
         return err
@@ -233,7 +232,6 @@ const Util = {
         return re.test(email)
     },
     checkIfUserIsLoggedIn: (context) => {
-
         if (!context || !context.username) {
             throw new ApiError('User is not logged in (or authenticated).', 'authentication_error')
         }

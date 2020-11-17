@@ -15,17 +15,22 @@ class LogoutContainer extends React.Component {
     }
 
     logout = () => {
-        const {userActions} = this.props
-        userActions.setUser(null, false)
 
-        // remove token and clear cache with a little delay in case there are componentWillUnmount events
-        setTimeout(()=>{
+        client.query({
+            fetchPolicy: 'network-only',
+            query: 'query{logout{status}}'
+        }).then(() => {
+
+            const {userActions} = this.props
+            userActions.setUser(null, false)
+
+            // remove token and clear cache with a little delay in case there are componentWillUnmount events
             // clear user data
             try {
                 // clear cache completely
                 client.resetStore()
                 //client.cache.saveToLocalStorage()
-            }catch (e){
+            } catch (e) {
                 console.log(e)
             }
             localStorage.removeItem('token')
@@ -36,7 +41,9 @@ class LogoutContainer extends React.Component {
             }
             location.href = to
 
-        },250)
+
+        })
+
     }
 
     render() {

@@ -10,12 +10,11 @@ import config from 'gen/config'
 import MimeType from '../util/mime'
 import {getHostFromHeaders} from 'util/host'
 import finalhandler from 'finalhandler'
-import {AUTH_HEADER} from 'api/constants'
-import {decodeToken} from 'api/util/jwt'
 import sharp from 'sharp'
 import Util from '../client/util'
 import {loadAllHostrules} from '../util/hostrules'
 import {PassThrough} from 'stream'
+import {contextByRequest} from '../api/util/sessionContext'
 
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
@@ -372,7 +371,7 @@ function hasHttpsWwwRedirect(host, req, res) {
                 if (browser === 'safari' && version < 6) {
                     // only a little test as safari version small 6 doesn't support tls 1.2
                 } else {
-                    res.writeHead(301, {"Location": "https://" + newhost + req.url})
+                    res.writeHead(301, {'Location': 'https://' + newhost + req.url})
                     res.end()
                     return true
                 }
@@ -381,7 +380,7 @@ function hasHttpsWwwRedirect(host, req, res) {
 
         if (newhost != host) {
             console.log(`${req.connection.remoteAddress}: Redirect to ${newhost} / request url=${req.url}`)
-            res.writeHead(301, {"Location": (this.constructor.name === 'Server' ? 'http' : 'https') + "://" + newhost + req.url})
+            res.writeHead(301, {'Location': (this.constructor.name === 'Server' ? 'http' : 'https') + '://' + newhost + req.url})
             res.end()
             return true
         }
@@ -398,16 +397,16 @@ function transcodeVideoOptions(parsedUrl, filename) {
     //https://www.lunuc.com/uploads/5f676c358ebac32c662cdb02/-/La%20maison%20du%20bonheur-2006.mp4?ext=mp4&transcode={%22audioQuality%22:3,%22videoBitrate%22:800,%22fps%22:25,%22size%22:%22720x?%22,%22crf%22:28}
     // default options
     let options = {
-        "noAudio": false,
+        noAudio: false,
         /*"audioVolume": 1,*/
         /*"audioQuality": 0,*/
         /*"fps": 24,*/
         /*"size": "720x?",*/
-        "crf": 10,
+        crf: 10,
         /*"speed": 1,*/
         /*"preset": "slow",*/
-        "keep": false,
-        "format": "mp4"
+        keep: false,
+        format: 'mp4'
     }
 
     try {
@@ -706,7 +705,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
                         const range = req.headers.range
 
                         if (req.headers.range) {
-                            const parts = range.replace(/bytes=/, "").split("-"),
+                            const parts = range.replace(/bytes=/, '').split('-'),
                                 partialstart = parts[0],
                                 partialend = parts[1],
                                 start = parseInt(partialstart, 10),
@@ -777,10 +776,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         } else {
 
             if (uri.startsWith(BACKUP_URL + '/')) {
-
-                const context = decodeToken(req.headers[AUTH_HEADER])
-
-                if (context.id) {
+                const context = contextByRequest(req)
+                if (context.id && context.role === 'administrator') {
                     // only allow download if valid jwt token is set
                     const backup_dir = path.join(__dirname, '../' + BACKUP_DIR)
                     const filename = path.join(backup_dir, uri.substring(BACKUP_URL.length))

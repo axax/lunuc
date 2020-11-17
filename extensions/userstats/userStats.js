@@ -14,7 +14,7 @@ export default function (db) {
 
                 //Remove in standard for loop
                 for (let i = 0; i < readyToCommit.length; i++) {
-                    var item = readyToCommit[i];
+                    var item = readyToCommit[i]
                     bulk.insert(item)
                     readyToCommit.splice(i, 1)
                     i--
@@ -70,7 +70,7 @@ export default function (db) {
                     cache[req.userStatsId][k] = data[k]
                 })
             } else {
-                console.warn("userStatsId missing", req.userStatsId)
+                console.warn('userStatsId missing', req.userStatsId)
             }
         }
     }

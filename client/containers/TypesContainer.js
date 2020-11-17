@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import {connect} from 'react-redux'
 import BaseLayout from '../components/layout/BaseLayout'
@@ -50,13 +50,12 @@ import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {getImageTag} from 'client/util/media'
 import {deepMerge} from 'util/deepMerge'
 import DomUtil from 'client/util/dom'
-import _t from 'util/i18n'
-
+import {_t} from 'util/i18n'
 const {ADMIN_BASE_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
 import {COLLECTIONS_QUERY} from '../constants'
-import CodeEditor from "../components/CodeEditor";
-import GenericForm from "../components/GenericForm";
-import {client, graphql, Query} from '../middleware/graphql'
+import CodeEditor from '../components/CodeEditor'
+import GenericForm from '../components/GenericForm'
+import {client, Query} from '../middleware/graphql'
 
 const styles = theme => ({
     textLight: {
@@ -527,8 +526,10 @@ class TypesContainer extends React.Component {
                                          return a
                                      }, [])
                                      items.unshift({value: 'default', name: 'Default'})
+
+
                                      return <SimpleSelect
-                                         label="Select version to edit"
+                                         label={_t('TypesContainer.selectVersion')}
                                          value={_version}
                                          onChange={(e) => {
                                              const {type} = this.pageParams

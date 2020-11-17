@@ -3,25 +3,7 @@ import PropTypes from 'prop-types'
 import DomUtil from 'client/util/dom'
 import Util from 'client/util'
 import injectSheet from 'react-jss'
-import _t from '../../util/i18n'
-
-
-const trans = {
-    de:{
-        "Print.almostDone": "Bitte warten... Das PDF ist gleich fertiggestellt!",
-        "Print.createPage": "Bitte warten... Es kann ein wenig dauern... Seite %page% von %numberOfPages% ist erstellt.",
-    },
-    en:{
-        "Print.almostDone": "Please be patient... We are almost there... Enjoy!",
-        "Print.createPage": "Please be patient... It might take some time... Page %page% of %numberOfPages% is being produced"
-    }
-}
-
-if(trans[_app_.lang]){
-    Object.keys(trans[_app_.lang]).forEach(t=>{
-        _app_.tr[t] = trans[_app_.lang][t]
-    })
-}
+import {_t, registerTrs} from '../../util/i18n'
 
 const PAGE_HEIGHT = 1430, PAGE_WIDTH= 1010
 
@@ -109,6 +91,17 @@ class Print extends React.PureComponent {
 
     constructor(props) {
         super(props)
+
+        registerTrs({
+            de:{
+                "Print.almostDone": "Bitte warten... Das PDF ist gleich fertiggestellt!",
+                "Print.createPage": "Bitte warten... Es kann ein wenig dauern... Seite %page% von %numberOfPages% ist erstellt.",
+            },
+            en:{
+                "Print.almostDone": "Please be patient... We are almost there... Enjoy!",
+                "Print.createPage": "Please be patient... It might take some time... Page %page% of %numberOfPages% is being produced"
+            }
+        }, 'Print')
 
         DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js',{id: 'pdfmake'})
         DomUtil.addScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js', {id: 'html2canvas'})

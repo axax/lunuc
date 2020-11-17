@@ -11,17 +11,19 @@ import {
 import {sendMail} from 'api/util/mail'
 import crypto from 'crypto'
 import {clientAddress} from '../../util/host'
-import _t from "../../util/i18nServer";
-import Hook from "../../util/hook";
+import {setAuthCookies, removeAuthCookies} from 'api/util/sessionContext'
+import {_t} from '../../util/i18nServer'
+import Hook from '../../util/hook'
+import {AUTH_EXPIRES_IN_COOKIE, USE_COOKIES, AUTH_SCHEME} from '../constants'
 
 const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 10,
     LOGIN_DELAY_IN_SEC = 180
 
-const createUser = async ({username, role, junior, password, email, emailConfirmed, requestNewPassword, meta, picture, db, context}, opts) => {
+const createUser = async ({username, role, junior, password, language, email, emailConfirmed, requestNewPassword, meta, picture, db, context}, opts) => {
 
-    if(!opts){
-        opts = {override:false}
+    if (!opts) {
+        opts = {override: false}
     }
     const errors = []
 
@@ -31,9 +33,9 @@ const createUser = async ({username, role, junior, password, email, emailConfirm
     }
 
     // Validate Password
-    const err = Util.validatePassword(password)
+    const err = Util.validatePassword(password, context)
     if (err.length > 0) {
-        errors.push({key: 'passwordError', message: 'Invalid Password: \n' + err.join('\n')})
+        errors.push({key: 'passwordError', message: err.join('\n')})
     }
 
     // Validate Email Address
@@ -48,9 +50,9 @@ const createUser = async ({username, role, junior, password, email, emailConfirm
     const userCollection = db.collection('User')
 
     const existingUser = (await userCollection.findOne({$or: [{'email': email}, {'username': username}]}))
-    const userExists =  existingUser != null
+    const userExists = existingUser != null
 
-    if(!opts.override) {
+    if (!opts.override) {
 
         if (userExists) {
             errors.push({key: 'usernameError', message: _t('core.signup.usertaken', context.lang)})
@@ -58,7 +60,7 @@ const createUser = async ({username, role, junior, password, email, emailConfirm
         }
     }
 
-    if( meta!==undefined){
+    if (meta !== undefined) {
         meta = JSON.parse(meta)
     }
 
@@ -74,8 +76,8 @@ const createUser = async ({username, role, junior, password, email, emailConfirm
         roleId = userRole._id
     }
     const juniorIds = []
-    if( junior && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)){
-        junior.forEach(sup=>{
+    if (junior && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)) {
+        junior.forEach(sup => {
             juniorIds.push(ObjectId(sup))
         })
     }
@@ -90,13 +92,14 @@ const createUser = async ({username, role, junior, password, email, emailConfirm
         password: hashedPw,
         picture,
         meta,
+        language: language || context.lang,
         signupToken: signupToken
     }
 
     let insertResult
-    if(!opts.override || !userExists) {
-         insertResult = await userCollection.insertOne(dataToInsert)
-    }else{
+    if (!opts.override || !userExists) {
+        insertResult = await userCollection.insertOne(dataToInsert)
+    } else {
         insertResult = await userCollection.updateOne(
             {_id: existingUser._id},
             {
@@ -116,7 +119,7 @@ export const userResolver = (db) => ({
     Query: {
         users: async ({limit, page, offset, filter, sort}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'picture', 'email', 'meta', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'lastLogin'], {
+            return await GenericResolver.entities(db, context, 'User', ['username', 'password', 'signupToken', 'language', 'picture', 'email', 'meta', 'emailConfirmed', 'requestNewPassword', 'role$UserRole', 'junior$[User]', 'lastLogin'], {
                 limit,
                 page,
                 offset,
@@ -136,17 +139,18 @@ export const userResolver = (db) => ({
         },
         me: async (data, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
-            var user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
+            const user = (await db.collection('User').findOne({_id: ObjectId(context.id)}))
+
             if (!user) {
                 throw new Error('User doesn\'t exist')
             } else {
                 user.role = Util.getUserRoles(db, user.role)
 
-                if( user.picture){
+                if (user.picture) {
                     user.picture = {_id: user.picture}
                 }
 
-                if( user.meta ){
+                if (user.meta) {
                     user.meta = JSON.stringify(user.meta)
                 }
                 /*if( user.picture){
@@ -186,35 +190,43 @@ export const userResolver = (db) => ({
 
             return users
         },
-        login: async ({username, password},req, res) => {
+        login: async ({username, password}, req) => {
             const {context} = req
             const ip = clientAddress(req)
 
-            if( LOGIN_ATTEMPTS_MAP[ip] && LOGIN_ATTEMPTS_MAP[ip].count >= MAX_LOGIN_ATTEMPTS){
+            if (LOGIN_ATTEMPTS_MAP[ip] && LOGIN_ATTEMPTS_MAP[ip].count >= MAX_LOGIN_ATTEMPTS) {
                 const time = new Date().getTime()
 
-                if( time - LOGIN_ATTEMPTS_MAP[ip].lasttry < LOGIN_DELAY_IN_SEC*1000 ) {
+                if (time - LOGIN_ATTEMPTS_MAP[ip].lasttry < LOGIN_DELAY_IN_SEC * 1000) {
                     return {error: _t('core.login.blocked', context.lang), token: null, user: null}
-                }else{
+                } else {
                     delete LOGIN_ATTEMPTS_MAP[ip]
                 }
             }
 
             const result = await auth.createToken(username, password, db, context)
-            if( !result.token ){
+            if (!result.token) {
 
-                if(!LOGIN_ATTEMPTS_MAP[ip]){
-                    LOGIN_ATTEMPTS_MAP[ip]={count:0, username}
+                if (!LOGIN_ATTEMPTS_MAP[ip]) {
+                    LOGIN_ATTEMPTS_MAP[ip] = {count: 0, username}
                 }
                 LOGIN_ATTEMPTS_MAP[ip].lasttry = new Date().getTime()
                 LOGIN_ATTEMPTS_MAP[ip].count++
                 console.log(`Invalid login attempt from ${username}`)
                 //invalid login
-            }else{
-                if(LOGIN_ATTEMPTS_MAP[ip]){
+            } else {
+                if (LOGIN_ATTEMPTS_MAP[ip]) {
                     delete LOGIN_ATTEMPTS_MAP[ip]
                 }
-                if(result.user.requestNewPassword){
+
+                if (USE_COOKIES) {
+                    setAuthCookies(result, req.res)
+
+                    // delete token because it is handled by cookies
+                    delete result.token
+                }
+
+                if (result.user.requestNewPassword) {
                     // generate reset token
                     const resetToken = crypto.randomBytes(16).toString("hex")
                     await db.collection('User').findOneAndUpdate({_id: ObjectId(result.user._id)}, {
@@ -229,6 +241,11 @@ export const userResolver = (db) => ({
                 Hook.call('login', {context, db, user: result.user})
             }
             return result
+        },
+        logout: async (props, req) => {
+            removeAuthCookies(req.res)
+
+            return {status: 'done'}
         },
         forgotPassword: async ({username, url, subject}, {context, headers}) => {
 
@@ -266,7 +283,7 @@ export const userResolver = (db) => ({
             }
 
             // Validate Password
-            const err = Util.validatePassword(password)
+            const err = Util.validatePassword(password, context)
             if (err.length > 0) {
                 throw new ApiError('Invalid Password: \n' + err.join('\n'), 'password.invalid')
             }
@@ -275,7 +292,13 @@ export const userResolver = (db) => ({
             const hashPassword = Util.hashPassword(password)
 
 
-            const result = await userCollection.findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {$set: {password: hashPassword, requestNewPassword: false, resetToken: null}})
+            const result = await userCollection.findOneAndUpdate({$and: [{'resetToken': token}, {passwordReset: {$gte: (new Date().getTime()) - 3600000}}]}, {
+                $set: {
+                    password: hashPassword,
+                    requestNewPassword: false,
+                    resetToken: null
+                }
+            })
 
             const user = result.value
 
@@ -300,7 +323,7 @@ export const userResolver = (db) => ({
                 throw new ApiError('Something went wrong. Please try again!', 'general.error')
             }
         },
-        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl},{context})=> {
+        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
             const user = await Util.userById(db, context.id)
@@ -316,31 +339,57 @@ export const userResolver = (db) => ({
         }
     },
     Mutation: {
-        createUser: async ({username, password, email, meta, picture, emailConfirmed, requestNewPassword, role, junior}, {context}) => {
+        createUser: async ({username, password, email, language, meta, picture, emailConfirmed, requestNewPassword, role, junior}, {context}) => {
 
-            if( email){
+            if (email) {
                 email = email.trim()
             }
-            const insertResult = await createUser({db, context, username, picture, meta, email, emailConfirmed, requestNewPassword, password, role, junior})
+            const insertResult = await createUser({
+                db,
+                context,
+                username,
+                picture,
+                language,
+                meta,
+                email,
+                emailConfirmed,
+                requestNewPassword,
+                password,
+                role,
+                junior
+            })
 
             if (insertResult.insertedCount) {
                 const doc = insertResult.ops[0]
                 return doc
             }
         },
-        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, role, meta}, {context}) => {
+        signUp: async ({password, username, email, mailTemplate, mailSubject, mailUrl, role, meta}, req) => {
 
+            const {context} = req
 
-            if( email){
+            if (email) {
                 email = email.trim()
             }
 
-            const options = {override:false}
+            const options = {override: false}
 
             if (Hook.hooks['beforeSignUp'] && Hook.hooks['beforeSignUp'].length) {
                 let c = Hook.hooks['beforeSignUp'].length
                 for (let i = 0; i < Hook.hooks['beforeSignUp'].length; ++i) {
-                    await Hook.hooks['beforeSignUp'][i].callback({context, options, password, username, email, mailTemplate, mailSubject, mailUrl, role, meta, db})
+                    await Hook.hooks['beforeSignUp'][i].callback({
+                        context,
+                        options,
+                        password,
+                        username,
+                        email,
+                        mailTemplate,
+                        mailSubject,
+                        mailUrl,
+                        role,
+                        meta,
+                        db
+                    })
                 }
             }
 
@@ -358,13 +407,23 @@ export const userResolver = (db) => ({
                     })
                 }
                 const result = await auth.createToken(email, password, db, context)
+
+
+                if (USE_COOKIES && result.token) {
+                    setAuthCookies(result, req.res)
+
+                    // delete token because it is handled by cookies
+                    delete result.token
+                }
+
+
                 return result
             }
         },
-        updateUser: async ({_id, username, email, password, picture, emailConfirmed, requestNewPassword, role, junior, meta}, {context}) => {
+        updateUser: async ({_id, username, email, password, picture, language, emailConfirmed, requestNewPassword, role, junior, meta}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            if( email){
+            if (email) {
                 email = email.trim()
             }
 
@@ -372,14 +431,18 @@ export const userResolver = (db) => ({
             const errors = []
             const userCollection = db.collection('User')
 
-            if( emailConfirmed !== undefined){
+            if (language !== undefined) {
+                user.language = language
+            }
+
+            if (emailConfirmed !== undefined) {
                 user.emailConfirmed = emailConfirmed
             }
-            if( requestNewPassword !== undefined){
+            if (requestNewPassword !== undefined) {
                 user.requestNewPassword = requestNewPassword
             }
-            if( picture !== undefined){
-                user.picture = picture?ObjectId(picture):null
+            if (picture !== undefined) {
+                user.picture = picture ? ObjectId(picture) : null
             }
 
             if (username) {
@@ -410,7 +473,7 @@ export const userResolver = (db) => ({
 
             if (password) {
                 // Validate Password
-                const err = Util.validatePassword(password)
+                const err = Util.validatePassword(password, context)
                 if (err.length > 0) {
                     errors.push({key: 'passwordError', message: 'Invalid Password: \n' + err.join('\n')})
                 } else {
@@ -428,17 +491,17 @@ export const userResolver = (db) => ({
                 user.role = ObjectId(role)
             }
 
-            if (junior!==undefined) {
+            if (junior !== undefined) {
                 await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_USER_ROLE)
                 user.junior = []
-                if(junior) {
+                if (junior) {
                     junior.forEach(sup => {
                         user.junior.push(ObjectId(sup))
                     })
                 }
             }
 
-            if( meta!==undefined){
+            if (meta !== undefined) {
                 user.meta = JSON.parse(meta)
             }
 
@@ -449,8 +512,8 @@ export const userResolver = (db) => ({
 
 
             // clear cache
-            Cache.remove( 'User'+username)
-            Cache.remove( 'User'+_id)
+            Cache.remove('User' + username)
+            Cache.remove('User' + _id)
 
             return result.value
 
@@ -479,12 +542,12 @@ export const userResolver = (db) => ({
             } else {
 
 
-                if( user.picture !== undefined){
-                    user.picture = user.picture ? ObjectId(user.picture) :null
+                if (user.picture !== undefined) {
+                    user.picture = user.picture ? ObjectId(user.picture) : null
                 }
 
 
-                if( user.meta!==undefined){
+                if (user.meta !== undefined) {
                     user.meta = JSON.parse(user.meta)
                 }
 

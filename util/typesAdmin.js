@@ -3,7 +3,7 @@ import config from 'gen/config'
 import {getAllCapabilites} from 'util/capabilities'
 import {getType, getTypes} from './types'
 import Util from '../client/util'
-import _t from 'util/i18n'
+import {_t} from 'util/i18n'
 
 const {LANGUAGES} = config, typeFormFields = {}
 
@@ -256,6 +256,9 @@ Hook.on('Types', ({types}) => {
                 fullWidth: true,
                 required: true,
                 tab: 'General'
+            },
+            {
+                name: 'language'
             },
             {
                 name: 'picture',

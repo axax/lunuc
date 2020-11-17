@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import {withStyles, CloudUploadIcon, Typography, LinearProgress} from 'ui/admin'
 import classNames from 'classnames'
 import UploadUtil from 'client/util/upload'
-import _t from 'util/i18n'
+import {_t, registerTrs} from 'util/i18n'
 
 import config from 'gen/config'
 const {UPLOAD_URL} = config
@@ -11,7 +11,6 @@ const {UPLOAD_URL} = config
 //expose
 _app_.UploadUtil = UploadUtil
 
-/* TODO: make it configurable */
 const DEFAULT_MAX_FILE_SIZE_MB = 20,
     IMAGE_QUALITY = 0.9,
     IMAGE_MAX_WIDTH = 2400,
@@ -100,6 +99,17 @@ const styles = theme => ({
 class FileDrop extends React.Component {
     constructor(props) {
         super(props)
+
+        registerTrs({
+            de:{
+                'FileDrop.dropArea': 'Ziehen Sie Dateien hierhin oder klicken Sie hier und wählen Sie Dateien zum Hochladen aus.',
+                'FileDrop.uploadSuccess': 'Dateiupload war erfolgreich',
+            },
+            en:{
+                'FileDrop.dropArea': 'Drop files here, or click to select files to upload.',
+                'FileDrop.uploadSuccess': 'upload was successfull',
+            }
+        }, 'FileDrop')
 
         this.state = FileDrop.initialState(props)
     }

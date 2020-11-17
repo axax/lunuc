@@ -11,9 +11,12 @@ import {
 } from 'ui/admin'
 
 const {UPLOAD_URL, ADMIN_BASE_URL} = config
-import _t from 'util/i18n'
+import {_t, registerTrs} from 'util/i18n'
 import UploadUtil from '../../client/util/upload'
 import {client} from 'client/middleware/graphql'
+import {translations} from './translations/translations'
+
+registerTrs(translations, 'MediaTranslations')
 
 const FileDrop = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "admin" */ '../../client/components/FileDrop')}/>

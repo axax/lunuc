@@ -41,13 +41,16 @@ import {CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../
 import CodeEditor from 'client/components/CodeEditor'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import GenericForm from '../../../client/components/GenericForm'
-import _t from 'util/i18n'
+import {_t, registerTrs} from 'util/i18n'
 import config from 'gen/config'
 import {getFormFields} from '../../../util/typesAdmin'
 import Hook from '../../../util/hook'
 import {client, Query, graphql} from '../../../client/middleware/graphql'
 import {setKeyValueGlobal} from 'client/util/keyvalue'
 import {withStyles} from '@material-ui/core/styles'
+
+import {translations} from '../translations/admin'
+registerTrs(translations, 'CmsViewEditorContainer')
 
 const DEFAULT_EDITOR_SETTINGS = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
 
@@ -881,14 +884,14 @@ class CmsViewEditorContainer extends React.Component {
                }}> {showPageSettings && <div style={{padding:'1rem'}}>
                    {PageOptionsDefinition ? [
                    <Typography key="pageOptionTitle" variant="subtitle1">{_t('CmsViewEditorContainer.pagesettings')}</Typography>,
-                   <GenericForm key="pageOptionForm" primaryButton={true} caption={_t('core.save')} onClick={(formData) => {
+                   <GenericForm key="pageOptionForm" primaryButton={true} caption={_t('CmsViewEditorContainer.save')} onClick={(formData) => {
                        const pageName = cmsPage.realSlug.split('/')[0]
                        this.setState({PageOptions:formData})
                        setKeyValueGlobal('PageOptions-'+pageName,formData).then(()=>{
                            // refresh whole page
                            location.href = location.href.split('#')[0]
                        })
-               }} fields={PageOptionsDefinition.reduce((obj, item) => {return {...obj,[item.name]: item}}, {})} values={PageOptions || {}}/>]:'Es sind keine Optionen definiert'}</div>}
+               }} fields={PageOptionsDefinition.reduce((obj, item) => {return {...obj,[item.name]: item}}, {})} values={PageOptions || {}}/>]:_t('CmsViewEditorContainer.noOptions')}</div>}
                 </Drawer>
                 <DrawerLayout sidebar={!loadingState && sidebar}
                               open={EditorOptions.drawerOpen}

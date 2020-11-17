@@ -104,6 +104,7 @@ const getHeaders = () => {
         headers['Authorization'] = token
     }
     if (_app_.session) {
+        // x-session is only set when USE_COOKIES is false
         headers['x-session'] = _app_.session
     }
 
@@ -164,6 +165,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
             body
         }).then(r => {
             removeLoader()
+            // x-session is only set when USE_COOKIES is false
             _app_.session = r.headers.get('x-session')
 
             r.json().then(response => {
@@ -317,8 +319,8 @@ export const client = {
                         variables,
                         query,
                         extensions,
-                        auth: Util.getAuthToken(),
-                        session: _app_.session
+                        auth: Util.getAuthToken(), // auth is only set when USE_COOKIES is false
+                        session: _app_.session // session is only set when USE_COOKIES is false
                     }
                 }
 

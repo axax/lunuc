@@ -281,7 +281,6 @@ Here is an example of a scope object:
     "slug": "mailer"
   },
   "user": {
-    "userToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaWQiOiI1OTBlZmZkYWI3NWIxMDA5NGY4NTQzYjgiLCJpYXQiOjE1MjkyNjExMTgsImV4cCI6MzMwNTUzMDM1MTh9.qJ5KmHO3S_DAgcRVG_HPJKS40xSECIKwXNQeUjdR_CE",
     "userData": {
       "username": "admin",
       "email": "axax@gmx.net",

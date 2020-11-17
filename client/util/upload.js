@@ -19,8 +19,10 @@ const UploadUtil = {
 
 
             xhr.open('POST', uploadTo, true)
-            xhr.setRequestHeader('Authorization', Util.getAuthToken())
-
+            const token = Util.getAuthToken()
+            if(token) {
+                xhr.setRequestHeader('Authorization', token)
+            }
             const fd = new FormData()
             if (data) {
                 Object.keys(data).forEach(key => {
