@@ -660,7 +660,7 @@ class CmsViewEditorContainer extends React.Component {
                                         <CodeEditor lineNumbers
                                                     type="json"
                                                     readOnly={true}>{JSON.stringify(JSON.parse(parsedData.dataResolver), null, 2)}</CodeEditor>
-                                        <a href={'/system/diff?value='+encodeURIComponent(parsedData.dataResolver)+'&orig1='+encodeURIComponent(dataResolver)} target="_blank">Show diff</a>
+                                        <a href={'/system/diff?preview=true#value='+encodeURIComponent(parsedData.dataResolver)+'&orig1='+encodeURIComponent(dataResolver)} target="_blank">Show diff</a>
 
                                     </div>
 
@@ -673,7 +673,7 @@ class CmsViewEditorContainer extends React.Component {
                                                     type="json"
                                                     readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>
 
-                                        <a href={'/system/diff?preview=true&value='+encodeURIComponent(parsedData.template)+'&orig1='+encodeURIComponent(template)} target="_blank">Show diff</a>
+                                        <a href={'/system/diff?preview=true#value='+encodeURIComponent(parsedData.template)+'&orig1='+encodeURIComponent(template)} target="_blank">Show diff</a>
                                     </div>
                                 } else if (parsedData.style) {
 
@@ -683,7 +683,7 @@ class CmsViewEditorContainer extends React.Component {
                                         <CodeEditor lineNumbers
                                                     type="css"
                                                     readOnly={true}>{parsedData.style}</CodeEditor>
-                                        <a href={'/system/diff?value='+encodeURIComponent(parsedData.style)+'&orig1='+encodeURIComponent(style)} target="_blank">Show diff</a>
+                                        <a href={'/system/diff?preview=true#value='+encodeURIComponent(parsedData.style)+'&orig1='+encodeURIComponent(style)} target="_blank">Show diff</a>
                                     </div>
 
                                 } else if (parsedData.script) {
@@ -694,7 +694,7 @@ class CmsViewEditorContainer extends React.Component {
                                         <CodeEditor lineNumbers
                                                     type="js"
                                                     readOnly={true}>{parsedData.script}</CodeEditor>
-                                        <a href={'/system/diff?value='+encodeURIComponent(parsedData.script)+'&orig1='+encodeURIComponent(script)} target="_blank">Show diff</a>
+                                        <a href={'/system/diff?preview=true#value='+encodeURIComponent(parsedData.script)+'&orig1='+encodeURIComponent(script)} target="_blank">Show diff</a>
 
                                     </div>
 
