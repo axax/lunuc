@@ -1,16 +1,19 @@
+
+/* this is only experimental */
+
 const stream = (socket)=>{
-    console.log(socket)
     socket.on('subscribe', (data)=>{
         //subscribe/join a room
         socket.join(data.room)
         socket.join(data.socketId)
 
+        const roomSessions = socket.adapter.rooms.get(data.room)
         //Inform other members in the room of new user's arrival
-        if(socket.adapter.rooms[data.room].length > 1){
+        if(roomSessions && roomSessions.size > 1){
+            console.log('new user')
             socket.to(data.room).emit('new user', {socketId:data.socketId})
         }
 
-        console.log(socket.rooms)
     })
 
 
