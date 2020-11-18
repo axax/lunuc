@@ -1,0 +1,33 @@
+{
+  "types": [
+    {
+      "name": "Log",
+      "subscription": false,
+      "access": {
+        "create": "anonymous"
+      },
+      "fields": [
+        {
+          "name": "message",
+          "uitype": "editor"
+        },
+        {
+          "name": "type",
+          "index": 1
+        },
+        {
+          "name": "agent",
+          "index": 1
+        },
+        {
+          "name": "location",
+          "index": 1
+        },
+        {
+          "name": "href",
+          "index": 1
+        }
+      ]
+    }
+  ]
+}

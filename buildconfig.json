@@ -80,6 +80,9 @@
     },
     "preprocessor": {
       "active": true
+    },
+    "log": {
+      "active": true
     }
   },
   "ui": [

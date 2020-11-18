@@ -327,8 +327,9 @@ const Util = {
         }
     },
     translateUrl(lang) {
-        if (lang === _app_.lang) return
-        const p = window.location.pathname.split('/')
+        const path = window.location.pathname
+        if (lang === _app_.lang) return path
+        const p = path.split('/')
         if (p[1].length === 2 && p[1] !== lang) {
             if (lang === '') {
                 //default language
@@ -337,7 +338,7 @@ const Util = {
                 p[1] = lang
             }
         } else {
-            p.splice(1, 0, lang);
+            p.splice(1, 0, lang)
         }
         return p.join('/') + window.location.search + window.location.hash
     },

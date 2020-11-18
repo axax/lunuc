@@ -429,19 +429,19 @@ function gensrcExtension(name, options) {
 
                 resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, req) => {
             const result = await GenericResolver.createEntity(db, req, '${type.name}', {...rest,${refResolversObjectId}})
-            pubsub.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:[result]}})
+            ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:[result]}})
             return result
         },
         update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation?'':'createdBy,'}...rest}, {context}) => {
-            pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: [{${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}]}})
+            ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: [{${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}]}})
             return GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${type.noUserRelation?'':'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}})
         },
         delete${type.name}: async ({_id}, {context}) => {
-             pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: [{_id}]}})
+             ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: [{_id}]}})
             return GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
         },
         delete${type.name}s: async ({_id}, {context}) => {
-             pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: _id.map(x => ({_id:x}))}})
+             ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: _id.map(x => ({_id:x}))}})
             return GenericResolver.deleteEnities(db, context, '${type.name}', {_id})
         },\n`
                 resolverSubscription += `       subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),
@@ -510,7 +510,7 @@ const deleteFolderRecursive = function (path, skip) {
         try {
             fs.rmdirSync(path)
         }catch (e) {
-            
+
         }
     }
 }

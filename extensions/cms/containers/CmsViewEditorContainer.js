@@ -813,12 +813,14 @@ class CmsViewEditorContainer extends React.Component {
                 }
             ]
             config.LANGUAGES.forEach(lang => {
-                moreMenu[2].items.push({
-                    name: lang, onClick: () => {
-                        window.location.href = Util.translateUrl(lang)
+                if( lang !== _app_.lang) {
+                    moreMenu[2].items.push({
+                        name: lang, onClick: () => {
+                            window.location.href = Util.translateUrl(lang)
 
-                    }
-                })
+                        }
+                    })
+                }
             })
 
             if (this.templateChangeHistory.length > 0) {
