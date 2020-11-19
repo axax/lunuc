@@ -8,8 +8,8 @@ import {execSync} from 'child_process'
 import {
     CAPABILITY_MANAGE_BACKUPS
 } from 'util/capabilities'
-import {decodeToken} from './util/jwt'
 const {UPLOAD_DIR, UPLOAD_URL, DEFAULT_LANGUAGE} = config
+import {contextByRequest} from '../api/util/sessionContext'
 
 
 const beforeUpload = (res, req, upload_dir) => {
@@ -33,7 +33,7 @@ const beforeUpload = (res, req, upload_dir) => {
 
 const authContextOrError = async (db, res, req, capability) => {
     // check auth token
-    const authContext = decodeToken(req.headers.authorization)
+    const authContext = contextByRequest(req)
 
     if (!authContext) {
         // no auth
@@ -59,7 +59,7 @@ export const handleUpload = db => async (req, res) => {
     const upload_dir = path.join(__dirname, '..' + UPLOAD_DIR)
     if (beforeUpload(res, req, upload_dir)) {
 
-        let context = decodeToken(req.headers.authorization)
+        let context = contextByRequest(req)
 
         if (!context.id) {
             // use anonymouse user

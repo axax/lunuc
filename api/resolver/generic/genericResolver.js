@@ -302,7 +302,6 @@ const GenericResolver = {
             ...dataSet,
             createdBy: ObjectId(createdBy)
         })
-
         if (insertResult.insertedCount) {
             const doc = insertResult.ops[0]
 

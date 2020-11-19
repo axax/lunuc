@@ -131,7 +131,6 @@ const createMediaEntry = async ({db, _id, file, data, context}) => {
     if (_id) {
         media._id = _id
     }
-
     // save to db
     mediaResolver(db).Mutation.createMedia(media, {context})
 }

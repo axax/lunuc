@@ -11,20 +11,45 @@ const hostrules = loadAllHostrules(false)
 export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _version, headers}) => {
     let host = headers && headers['x-host-rule'] ? headers['x-host-rule'].split(':')[0] : getHostFromHeaders(headers)
 
+    if(!host){
+        host = ''
+    }
+
     if (host && host.startsWith('www.')) {
         host = host.substring(4)
     }
 
-    let slugMatch={}
+    let slugMatch = {}
     let modSlug
-    if (checkHostrules && hostrules[host] && hostrules[host].slugContext && slug.indexOf(hostrules[host].slugContext)<0 ) {
-        modSlug = hostrules[host].slugContext + (slug.length > 0 ? '/' : '') + slug
-        if( hostrules[host].slugFallback ){
-            slugMatch = {$or:[{slug:modSlug},{slug}]}
-        }else{
-            slugMatch = {slug: modSlug}
+
+    if(checkHostrules) {
+        const hostArr = host.split('.')
+        const hostsChecks = [host]
+
+        if (hostArr.length > 2) {
+            // is subdomain
+
+            // add top level domain
+            hostsChecks.push( hostArr[hostArr.length-2]+'.'+hostArr[hostArr.length-1])
         }
-    }else{
+
+        for(let i = 0;i < hostsChecks.length; i++) {
+            const currentHost = hostsChecks[i]
+            if (hostrules[currentHost] && hostrules[currentHost].slugContext && slug.indexOf(hostrules[currentHost].slugContext) < 0) {
+                modSlug = hostrules[currentHost].slugContext + (slug.length > 0 ? '/' : '') + slug
+                if (hostrules[currentHost].slugFallback) {
+                    slugMatch = {$or: [{slug: modSlug}, {slug}]}
+                } else {
+                    slugMatch = {slug: modSlug}
+                }
+            }
+        }
+    }
+
+
+
+
+    if(!modSlug){
         modSlug = slug
         slugMatch = {slug}
     }
