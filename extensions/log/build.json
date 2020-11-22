@@ -26,6 +26,11 @@
         {
           "name": "href",
           "index": 1
+        },
+        {
+          "name": "meta",
+          "type": "Object",
+          "uitype": "json"
         }
       ]
     }

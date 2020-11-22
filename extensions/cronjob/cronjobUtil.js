@@ -1,11 +1,11 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
 import {ObjectId} from 'mongodb'
-import Util from 'api/util'
 import crypto from 'crypto'
 import fs from 'fs'
 import readline from 'readline'
 import { spawn } from 'child_process'
-import path from "path";
+import path from 'path'
+import Hook from '../../util/hook'
 
 
 const cronjobUtil = {
@@ -63,7 +63,7 @@ const cronjobUtil = {
         const tpl = new Function(`
         const require = this.require;
         const __dirname = this.__dirname;
-        const start = (async () => {
+        (async () => {
             try {
                 ${script}
             } catch(e) {

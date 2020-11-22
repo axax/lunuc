@@ -102,6 +102,18 @@ export default db => ({
                             }catch (e) {
                             }
 
+                           /* registeredBots[botId].archiveMessage({
+                                message: {
+                                    text: ,
+                                    from: {
+                                        isBot: true,
+                                        first_name: registeredBots[botId].data.name,
+                                        id: registeredBots[botId]._id
+                                    },
+                                    chat: {id: currentId}
+                                }
+                            })*/
+
                             pubsub.publish('subscribeBotMessage', {
                                 userId: context.id,
                                 botId: botConnector.botId,

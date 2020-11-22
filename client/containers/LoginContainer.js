@@ -83,6 +83,9 @@ class LoginContainer extends React.Component {
                     this.setState({error: response.data.login.error})
                 }
             }
+        }).catch((response)=>{
+            this.setState({loading: false, error: response.error.message})
+
         })
     }
 
