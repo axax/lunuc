@@ -14,7 +14,10 @@
         {
           "name": "data",
           "type": "Object",
-          "uitype": "json"
+          "uitype": "json",
+          "index": {
+            "_id": 1
+          }
         },
         {
           "name": "meta",

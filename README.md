@@ -100,7 +100,7 @@ http://localhost:49160/
 
 `sudo chmod +x /opt/lunuc/shell/start-client.sh`
 
-`sudo chmod +x /opt/lunuc/shell/api-client.sh`
+`sudo chmod +x /opt/lunuc/shell/start-api.sh`
 
 `sudo chmod 777 /opt/lunuc`
 

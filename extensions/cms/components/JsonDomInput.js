@@ -7,15 +7,22 @@ class JsonDomInput extends React.Component {
 
     constructor(props) {
         super(props)
-        this.state = {
+        this.state = JsonDomInput.getStateFromProps(props)
+    }
+
+    static getStateFromProps (props){
+        return {
             valueOri: props.value,
-            value: props.value || ''
+            value: props.value || '',
+            checkedOri: props.checked,
+            checked: props.checked || false,
+            time: props.time
         }
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (nextProps.value !== prevState.valueOri || nextProps.time !== prevState.time) {
-            return {value: nextProps.value, valueOri: nextProps.value, time: nextProps.time}
+        if (nextProps.value !== prevState.valueOri || nextProps.checked !== prevState.checkedOri || nextProps.time !== prevState.time) {
+            return JsonDomInput.getStateFromProps(nextProps)
         }
         // it is importent to return the prevState here
         // otherwise it won't refresh when property like style or placeholder change
@@ -23,36 +30,41 @@ class JsonDomInput extends React.Component {
     }
 
     shouldComponentUpdate(props, state) {
-        return state !== this.state
+        return state.value !== this.state
     }
 
     valueChange = (e) => {
         const {onChange} = this.props
         const target = e.target, value = (target.type === 'checkbox' ? target.checked : target.value)
-        this.setState({value})
+        this.setState({value, checked: target.checked})
         if (onChange) {
-           onChange(e, value)
+            onChange(e, value)
         }
     }
 
     render() {
-        const {onChange, textarea, select, type, value, binding, ...rest} = this.props
+        const {onChange, textarea, select, type, value, checked, defaultChecked, defaultValue, ...rest} = this.props
         const stateValue = this.state.value
-        if( select ){
-            return <select onChange={this.valueChange.bind(this)} {...rest} value={stateValue} />
-        }else if (textarea) {
-            return <textarea onChange={this.valueChange.bind(this)} {...rest} value={stateValue} />
+        if (select) {
+            return <select onChange={this.valueChange.bind(this)} {...rest} value={stateValue}/>
+        } else if (textarea) {
+            return <textarea onChange={this.valueChange.bind(this)} {...rest} value={stateValue}/>
         } else {
-            const props = {type:(type || 'text')}
+            const props = {type: (type || 'text')}
             if (type === 'checkbox') {
+                // checkbox is checked when there is a value
                 props.checked = !!stateValue
-            }else{
-                if( stateValue.constructor === Object){
+            } else if (type === 'radio') {
+                // checkbox is checked when there is a value
+                props.checked = this.state.checked
+                props.value = value
+            } else {
+                if (stateValue.constructor === Object) {
                     console.log(stateValue)
-                }else  if( stateValue.constructor === Array){
+                } else if (stateValue.constructor === Array) {
                     console.log(stateValue)
 
-                }else {
+                } else {
                     props.value = stateValue
                 }
             }

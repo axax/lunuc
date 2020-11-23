@@ -148,14 +148,14 @@ const baseElements = [
         tagName: 'div',
         name: 'Video',
         defaults: {
-            $observe:{},
+            $observe: {},
             $inlineEditor: {
                 elementKey: 'video',
                 picker: {type: 'Media', baseFilter: 'mimeType=video'}
             },
             p: {
                 ['data-element-key']: 'video',
-                id:'__uid__'
+                id: '__uid__'
             }
         },
         options: {
@@ -375,7 +375,7 @@ const baseElements = [
         options: {
             ...trOptions('$inlineEditor_options_c_'),
             t: {
-                tabPosition:0,
+                tabPosition: 0,
                 tab: DEFAULT_TAB,
                 label: 'Type',
                 enum: [
@@ -422,6 +422,24 @@ const baseElements = [
                 fullWidth: true,
                 tab: DEFAULT_TAB
             },
+            p_style_textAlign: {
+                label: 'Ausrichtung',
+                enum: [
+                    {
+                        name: 'Links',
+                        value: 'left'
+                    },
+                    {
+                        name: 'Rechts',
+                        value: 'right'
+                    },
+                    {
+                        name: 'Zentriert',
+                        value: 'center'
+                    },
+                ],
+                tab: DEFAULT_TAB
+            },
             ...marginOptions('p_'),
             ...classOptions('p_')
         }
@@ -449,7 +467,7 @@ const baseElements = [
                 label: 'Text',
                 uitype: 'html',
                 tab: DEFAULT_TAB,
-                tabPosition:0
+                tabPosition: 0
             },
             ...classOptions('p_'),
             ...marginOptions('p_')
@@ -466,7 +484,7 @@ const baseElements = [
                 placeholder: 'Name eingeben',
                 label: 'Name',
                 tab: DEFAULT_TAB,
-                tabPosition:0
+                tabPosition: 0
             },
             p_href: {
                 fullWidth: true,
@@ -672,6 +690,7 @@ const baseElements = [
                                 t: 'input',
                                 p: {
                                     type: 'radio',
+                                    binding: false,
                                     name: '__uid__',
                                     defaultValue: '$.slide{slide._index}',
                                     id: '__uid__$.slide{slide._index}',
@@ -823,7 +842,7 @@ const baseElements = [
                 uitype: 'textarea',
                 replaceBreaks: true,
                 tab: DEFAULT_TAB,
-                tabPosition:0
+                tabPosition: 0
             },
             ...marginOptions('p_'),
             ...classOptions('p_')
@@ -1126,7 +1145,7 @@ const baseElements = [
                 filter: 'mimeType=image',
                 template: '${this.context._id?\'url(\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\')\':\'\'}',
                 tab: DEFAULT_TAB,
-                tabPosition:0
+                tabPosition: 0
             },
             p_style_backgroundSize: {
                 value: '',

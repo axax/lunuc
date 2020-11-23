@@ -50,7 +50,7 @@ const Util = {
         return token ? `JWT ${token}` : null
     },
     dateFromObjectId: (objectId) => {
-        if (!objectId ) {
+        if (!objectId) {
             return ''
         }
         if (objectId.indexOf('#') === 0) {
@@ -125,7 +125,7 @@ const Util = {
         Object.keys(obj).forEach((prop) => {
 
             if (obj[prop] === undefined) {
-                if(options.removeUndefined){
+                if (options.removeUndefined) {
                     delete obj[prop]
                 }
             } else if (obj[prop] !== null) {
@@ -224,7 +224,7 @@ const Util = {
         } else if (raw.constructor === String) {
             try {
                 image = JSON.parse(raw)
-                if(!image){
+                if (!image) {
                     image = {
                         src: raw
                     }
@@ -244,7 +244,7 @@ const Util = {
             }
         }
         const data = {}
-        if(image.name){
+        if (image.name) {
             data.alt = image.name
         }
         if (!image.src) {
@@ -253,7 +253,7 @@ const Util = {
             data.src = image.src
         }
 
-        if( _app_.ssr){
+        if (_app_.ssr) {
             data.src = new URL(data.src, location.origin).href
         }
 
@@ -389,9 +389,9 @@ const Util = {
                 return all
             }, [])
 
-            if(opts && opts.fill && res.length>0){
-                while(res[res.length-1].length<chunkInt){
-                    res[res.length-1].push(opts.fill)
+            if (opts && opts.fill && res.length > 0) {
+                while (res[res.length - 1].length < chunkInt) {
+                    res[res.length - 1].push(opts.fill)
                 }
             }
             return res

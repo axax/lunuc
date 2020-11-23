@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon} from 'ui/admin'
+import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon, AddIcon} from 'ui/admin'
 import {withStyles} from '@material-ui/core/styles'
 import classNames from 'classnames'
 
@@ -69,12 +69,40 @@ const styles = theme => ({
 
 const snippets = {
     'customJs': [
-        {text: "on(['resourcesready'],()=>{})", displayText: 'on resourcesready event'},
-        {text: `on(['mount'],()=>{
-            DomUtil.waitForElement('.selector').then(()=>{})
-        })`, displayText: 'on mount event'},
+        {
+            text: "on('beforerender',()=>{\n\t\n})",
+            displayText: 'beforerender event'
+        },
+        {
+            text: "on(['resourcesready'],()=>{})",
+            displayText: 'resourcesready event'
+        },
+        {
+            text: `on('mount',()=>{\n\tDomUtil.waitForElement('.selector').then((el)=>{})\n})`,
+            displayText: 'mount event'
+        },
+        {
+            text: `DomUtil.waitForElement('.selector').then(()=>{\n\t\n})`,
+            displayText: 'waitForElement'
+        },
+        {
+            text: `on('click',(p,e)=>{\n\tif(p.action==='click'){\n\t\tconsole.log(e)\n\t}\n})`,
+            displayText: 'on click event'
+        },
     ]
 }
+
+
+const jsonPropertyTemplates = [
+    {title: 'Click Event',template:'"onClick":{"action":"click"}'},
+    {title: 'Change Event',template:'"onChange":{"action":"change"}'},
+    {title: 'Inline Editor false',template:'"$inlineEditor":false'}
+]
+
+const jsonTemplates = [
+    {title: 'For loop',template:'"{$for": {"d": "data","s":"loop","c": [{"c":"$.loop{loop.value}"}]}}'},
+    {title: 'Form Checkbox',template:'{"t":"label","c":[{"t":"input","$inlineEditor":false,"p":{"name":"check","type":"checkbox","checked":"","onClick":{"_forceUpdate":true}}},{"t":"span","$inlineEditor":false,"c":"Checkbox (${bindings.check})"}]}'}
+]
 
 function getFirstLine(text) {
     let index = text.indexOf('\n')
@@ -97,7 +125,7 @@ class CodeEditor extends React.Component {
         let data = props.children
 
         if (isDataJson) {
-            if(data) {
+            if (data) {
                 data = JSON.stringify(data, null, 2)
             }
         }
@@ -115,17 +143,17 @@ class CodeEditor extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         if (!!nextProps.error !== !!prevState.error || (!prevState._stateUpdate && !prevState.stateError && nextProps.controlled && nextProps.children !== prevState.data)) {
-            console.log(nextProps.error,prevState.error)
+            console.log(nextProps.error, prevState.error)
 
             console.log('CodeEditor update state')
             return CodeEditor.getStateFromProps(nextProps, prevState)
         }
-        return {...prevState, _stateUpdate:false}
+        return {...prevState, _stateUpdate: false}
     }
 
     setState(state, callback) {
-        state._stateUpdate=true
-        super.setState(state,callback)
+        state._stateUpdate = true
+        super.setState(state, callback)
 
     }
 
@@ -190,6 +218,25 @@ class CodeEditor extends React.Component {
         }
     }
 
+    changeLine({lineNr, line, value}) {
+        const {onChange} = this.props
+        let newData = value
+        const lines = value.split('\n')
+        lines[lineNr] = line
+        const newJson = JSON.parse(lines.join('\n'))
+        newData = JSON.stringify(newJson, null, 2)
+        if (onChange) {
+            if (this.state.isDataJson) {
+                // if input was Object output is an Object to
+                onChange(newJson)
+            } else {
+                onChange(newData)
+            }
+        }
+        this.setState({data: newData})
+
+    }
+
 
     render() {
         const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
@@ -197,8 +244,8 @@ class CodeEditor extends React.Component {
 
         const options = {
             mode: {},
-           /* theme: 'material-ocean',*/
-            historyEventDelay:1250,
+            /* theme: 'material-ocean',*/
+            historyEventDelay: 1250,
             readOnly,
             lineNumbers,
             tabSize: 2,
@@ -206,7 +253,7 @@ class CodeEditor extends React.Component {
             lint: false,
             gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
             indentWithTabs: false,
-            smartIndent:true,
+            smartIndent: true,
             autoClearEmptyLines: false,
             lineWrapping: false,
             /*  lineWrapping: false,
@@ -317,18 +364,16 @@ class CodeEditor extends React.Component {
         let contextMenuItems
 
         if (showContextMenu) {
-            const loc = this._editor.coordsChar(showContextMenu,'window')
-            this._lineNr = loc.line
-
-            let line = this._editor.doc.getLine(loc.line)
-
-            this._endsWithComma = line.endsWith(',')
-            if (this._endsWithComma) {
-                line = line.substring(0, line.length - 1)
-            }
+            const loc = this._editor.coordsChar(showContextMenu, 'window')
+            this._curLineNr = loc.line
+            this._curLine = this._editor.doc.getLine(loc.line).trim()
+            this._curLineEndsWithComma = this._curLine.endsWith(',')
+            let tempJson
             try {
-
-                const tempJson = JSON.parse('{' + line + '}')
+                tempJson = JSON.parse('{' + (this._curLineEndsWithComma?this._curLine.substring(0, this._curLine.length - 1):this._curLine) + '}')
+            } catch (e) {
+            }
+            if(tempJson) {
                 contextMenuItems = [
                     {
                         icon: <EditIcon/>,
@@ -349,9 +394,39 @@ class CodeEditor extends React.Component {
                                 this.setState({editData: {uitype: 'html', key: keys[0], value: tempJson[keys[0]]}})
                             }
                         }
+                    },
+                    {
+                        icon: <AddIcon/>,
+                        name: 'Add',
+                        items: jsonPropertyTemplates.map(f => ({
+                            name: f.title,
+                            onClick: () => {
+                                this.changeLine({
+                                    value,
+                                    lineNr: this._curLineNr,
+                                    line: `${this._curLine}${!this._curLine || this._curLineEndsWithComma ? '' : ','}${f.template}${this._curLineEndsWithComma ? ',' : ''}`
+                                })
+                            }
+                        }))
                     }
                 ]
-            } catch (e) {
+            }else{
+                contextMenuItems = [
+                    {
+                        icon: <AddIcon/>,
+                        name: 'Add',
+                        items: jsonTemplates.map(f => ({
+                            name: f.title,
+                            onClick: () => {
+                                this.changeLine({
+                                    value,
+                                    lineNr: this._curLineNr,
+                                    line: `${this._curLine}${this._curLineEndsWithComma ? '' : ','}${f.template}${this._curLineEndsWithComma ? ',' : ''}`
+                                })
+                            }
+                        }))
+                    }
+                ]
             }
         }
         return <div className={classNames(classes.root, (error || stateError) && classes.rootError, className)}
@@ -360,31 +435,17 @@ class CodeEditor extends React.Component {
 
             {editData && <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
                                        onClose={(e) => {
-
-                                           let newData = value
                                            if (e.key === 'ok') {
                                                const formValidation = this.editDataForm.validate()
                                                if (formValidation.isValid) {
-                                                   const lines = value.split('\n')
-                                                   lines[this._lineNr] = `"${editData.key}":"${Util.escapeForJson(this.editDataForm.state.fields.data).replace(/\\/g, '\\\\\\')}"${this._endsWithComma ? ',' : ''}`
-                                                   const newJson = JSON.parse(lines.join('\n'))
-                                                   newData = JSON.stringify(newJson,null,2)
-                                                   if (onChange) {
-                                                       if (this.state.isDataJson) {
-                                                           // if input was Object output is an Object to
-                                                           onChange(newJson)
-                                                       } else {
-                                                           onChange(newData)
-                                                       }
-                                                   }
-                                                   /*this._editor.doc.replaceRange(`"${editData.key}":"${Util.escapeForJson(this.editDataForm.state.fields.data).replace(/\\/g, '\\\\\\')}"${this._endsWithComma ? ',' : ''}`, {
-                                                       line: this._lineNr,
-                                                       ch: 0
-                                                   }, {line: this._lineNr})*/
-                                                   //this.autoFormatSelection()
+                                                   this.changeLine({
+                                                       value,
+                                                       lineNr: this._curLineNr,
+                                                       line: `"${editData.key}":"${Util.escapeForJson(this.editDataForm.state.fields.data).replace(/\\/g, '\\\\\\')}"${this._curLineEndsWithComma ? ',' : ''}`
+                                                   })
                                                }
                                            }
-                                           this.setState({data: newData, editData: false})
+                                           this.setState({editData: false})
                                        }}
                                        actions={[{
                                            key: 'cancel',
@@ -514,7 +575,10 @@ class CodeEditor extends React.Component {
 
                         } catch (e) {
                             console.error(e)
-                            this.setState({stateError: `Fehler in der JSON Struktur: ${e.message}`, data: newData}, () => {
+                            this.setState({
+                                stateError: `Fehler in der JSON Struktur: ${e.message}`,
+                                data: newData
+                            }, () => {
 
                                 if (onError) {
                                     onError(e, newData)

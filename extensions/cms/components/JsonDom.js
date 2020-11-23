@@ -34,7 +34,7 @@ const Print = (props) => <Async {...props}
                                 load={import(/* webpackChunkName: "admin" */ '../../../client/components/Print')}/>
 
 const QuillEditor = (props) => <Async {...props}
-                                load={import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor')}/>
+                                      load={import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor')}/>
 
 
 const MarkDown = (props) => <Async {...props}
@@ -114,10 +114,11 @@ class JsonDom extends React.Component {
         },
         Print,
         'input': props => {
-            if (props.type === 'radio' || !props.name) {
-                return <input {...props} />
+            const {binding,...rest} = props
+            if (!props.name || binding === false) {
+                return <input {...rest} />
             }
-            return <JsonDomInput {...props} />
+            return <JsonDomInput {...rest} />
         },
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'QuillEditor': (props) => <QuillEditor {...props}/>,
@@ -247,7 +248,6 @@ class JsonDom extends React.Component {
         if (props.subscriptionCallback) {
             props.subscriptionCallback(this.onSubscription.bind(this))
         }
-
         /* HOOK */
         if (JsonDom.callHock) {
             // Call only once on the first instantiation of JsonDom
@@ -285,19 +285,19 @@ class JsonDom extends React.Component {
 
         if (updateIsNeeded) {
 
-         /*   console.log(`
-        for ${props.slug}
-            resolvedDataChanged=${resolvedDataChanged}
-            locationChanged=${locationChanged}
-            scriptChanged=${scriptChanged}
-            resourcesChanged=${resourcesChanged}
-            templateChanged=${templateChanged}
-            propsChanged=${propsChanged}
-            slugChanged=${slugChanged}
-            childrenChange=${props.children !== this.props.children}
-            userChanged=${this.props.user !== props.user }
-            loadingChanged=${ this.props.loading !== props.loading}
-        `)*/
+            /*   console.log(`
+           for ${props.slug}
+               resolvedDataChanged=${resolvedDataChanged}
+               locationChanged=${locationChanged}
+               scriptChanged=${scriptChanged}
+               resourcesChanged=${resourcesChanged}
+               templateChanged=${templateChanged}
+               propsChanged=${propsChanged}
+               slugChanged=${slugChanged}
+               childrenChange=${props.children !== this.props.children}
+               userChanged=${this.props.user !== props.user }
+               loadingChanged=${ this.props.loading !== props.loading}
+           `)*/
             // reset parsing error
             this.error = null
 
@@ -612,8 +612,14 @@ class JsonDom extends React.Component {
     handleBindingChange(cb, event, value) {
         const target = event.target
         this.bindings[target.name] = (target.type === 'checkbox' ? target.checked : value || target.value)
-        if (cb)
+        if (cb) {
             cb.bind(this)(event)
+        }
+
+        if(target.type==='radio'){
+            // we need to refresh all radio elements
+            this.refresh()
+        }
     }
 
     onSubscription(data) {
@@ -707,7 +713,7 @@ class JsonDom extends React.Component {
                 if ($set && $set.forEach) {
                     $set.forEach(keyvalue => {
                         if (keyvalue.chunk) {
-                            scope[keyvalue.key] = Util.chunkArray(keyvalue.value, keyvalue.chunk,keyvalue.chunkOptions)
+                            scope[keyvalue.key] = Util.chunkArray(keyvalue.value, keyvalue.chunk, keyvalue.chunkOptions)
                         } else {
                             scope[keyvalue.key] = keyvalue.value
                         }
@@ -752,7 +758,7 @@ class JsonDom extends React.Component {
 
                                 }
                             }
-                            if($sort){
+                            if ($sort) {
                                 data.sort()
                             }
                         } catch (e) {
@@ -902,7 +908,7 @@ class JsonDom extends React.Component {
                         // remove properties with empty values unless they start with $
                         Object.keys(p).forEach(key => {
                             if (key === '#') {
-                            }else if (key.startsWith('$')) {
+                            } else if (key.startsWith('$')) {
                                 eleProps[key.substring(1)] = p[key]
                             } else if (p[key] !== '') {
                                 if (JsonDom.events.indexOf(key) > -1 && p[key].constructor === Object) {
@@ -924,22 +930,36 @@ class JsonDom extends React.Component {
                             eleProps.style = parseStyles(eleProps.style)
                         }
                         if (eleProps.name && eleProps.binding !== false) {
-                            // handle controlled input here
-                            if (eleProps.type === 'radio') {
-                                if (eleProps.defaultChecked && !this.bindings[eleProps.name]) {
-                                    this.bindings[eleProps.name] = eleProps.value
-                                }
-                            } else {
-                                if (eleProps.value === undefined) {
-                                    eleProps.value = (eleProps.type === 'checkbox' ? false : '')
-                                }
-                                if (!this.bindings[eleProps.name]) {
-                                    this.bindings[eleProps.name] = eleProps.value
+
+                            if (eleProps.value === undefined) {
+                                if (eleProps.type === 'checkbox') {
+                                    eleProps.value = !!eleProps.defaultChecked || !!eleProps.checked
                                 } else {
-                                    eleProps.value = this.bindings[eleProps.name]
+                                    eleProps.value = eleProps.defaultValue || ''
                                 }
-                                eleProps.time = new Date()
                             }
+
+                            if (eleProps.type === 'radio') {
+
+                                if(eleProps.value === undefined ){
+                                    eleProps.value = eleProps.defaultValue || ''
+                                }
+
+                                if (eleProps.defaultChecked || eleProps.checked) {
+                                    if (this.bindings[eleProps.name] === undefined) {
+                                        this.bindings[eleProps.name] = eleProps.value
+                                    }
+                                }
+                                eleProps.checked = this.bindings[eleProps.name] === eleProps.value
+                                console.log(eleProps)
+
+                            }else if (this.bindings[eleProps.name] === undefined) {
+                                this.bindings[eleProps.name] = eleProps.value
+                            } else {
+                                eleProps.value = this.bindings[eleProps.name]
+                            }
+                            eleProps.time = new Date()
+
                             eleProps.onChange = this.handleBindingChange.bind(this, eleProps.onChange)
                         }
 
@@ -1039,15 +1059,15 @@ class JsonDom extends React.Component {
             this.scope.inlineEditor = props.inlineEditor
             this.scope.dynamic = props.dynamic
 
-            if( props.meta){
-                if(props.meta.constructor === String) {
+            if (props.meta) {
+                if (props.meta.constructor === String) {
                     const metaJson = JSON.parse(props.meta)
                     this.scope.PageOptions = metaJson.PageOptions
-                }else{
+                } else {
                     this.scope.PageOptions = props.meta.PageOptions
                 }
             }
-            if(!this.scope.PageOptions){
+            if (!this.scope.PageOptions) {
                 this.scope.PageOptions = {}
             }
             // set default scope values
@@ -1190,13 +1210,17 @@ class JsonDom extends React.Component {
                 const cb = t[i]
                 if (cb) {
                     const callCb = () => {
-                        try {
-                            cb(...args)
-                        } catch (e) {
-                            console.log(e)
-                            this.error = {type: `script event ${name}`, e, code: this.props.script, offset: 9}
-                            if (async) {
-                                this.forceUpdate()
+                        if (args.length && args[0]._forceUpdate) {
+                            this.refresh()
+                        } else {
+                            try {
+                                cb(...args)
+                            } catch (e) {
+                                console.log(e)
+                                this.error = {type: `script event ${name}`, e, code: this.props.script, offset: 9}
+                                if (async) {
+                                    this.forceUpdate()
+                                }
                             }
                         }
                     }

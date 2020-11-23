@@ -38,10 +38,22 @@ export const createAllIndexes = async (db) => {
                     if( field.index === 'text') {
                         textIndex[field.name] = 'text'
                     }else{
-                        db.collection(typeName).createIndex({[field.name]: field.index}, {
-                            background: true,
-                            unique: !!field.unique
-                        })
+                        const index2create = []
+                        if( field.index.constructor === Object){
+                            Object.keys(field.index).forEach(k=>{
+                                const idx = field.index[k]
+                                console.log(`Creating subindex for ${typeName}.${field.name}.${k}`)
+                                db.collection(typeName).createIndex({[field.name+'.'+k]: idx}, {
+                                    background: true
+                                })
+                            })
+                        }else{
+                            db.collection(typeName).createIndex({[field.name]: field.index}, {
+                                background: true,
+                                unique: !!field.unique
+                            })
+                        }
+
                     }
                 }
             }
