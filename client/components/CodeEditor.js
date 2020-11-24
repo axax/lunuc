@@ -135,6 +135,8 @@ class CodeEditor extends React.Component {
             isDataJson,
             stateError: false,
             error: props.error,
+            lineNumbers: props.lineNumbers,
+            type: props.type,
             fileIndex: props.fileIndex || 0,
             showFileSplit: true,
             stateDate: new Date()
@@ -142,7 +144,11 @@ class CodeEditor extends React.Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevState) {
-        if (!!nextProps.error !== !!prevState.error || (!prevState._stateUpdate && !prevState.stateError && nextProps.controlled && nextProps.children !== prevState.data)) {
+        if (!!nextProps.error !== !!prevState.error ||
+            (!prevState._stateUpdate &&
+            !prevState.stateError && nextProps.controlled &&
+                (nextProps.children !== prevState.data || nextProps.lineNumbers !== prevState.lineNumbers || nextProps.type !== prevState.type)
+            )) {
             console.log(nextProps.error, prevState.error)
 
             console.log('CodeEditor update state')
@@ -241,7 +247,6 @@ class CodeEditor extends React.Component {
     render() {
         const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
         const {stateError, showFileSplit, fileIndex, showContextMenu, editData, data} = this.state
-
         const options = {
             mode: {},
             /* theme: 'material-ocean',*/
@@ -430,7 +435,7 @@ class CodeEditor extends React.Component {
             }
         }
         return <div className={classNames(classes.root, (error || stateError) && classes.rootError, className)}
-                    style={{style}}>
+                    style={style}>
 
 
             {editData && <SimpleDialog fullWidth={true} maxWidth="md" key="newSiteDialog" open={true}
@@ -520,7 +525,7 @@ class CodeEditor extends React.Component {
                         editor.scrollTo(scrollPosition.left, scrollPosition.top)
                     }
                     if (height) {
-                        editor.setSize(null, 800);
+                        editor.setSize(null, height)
                     }
                 }}
                 value={value}

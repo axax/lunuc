@@ -36,6 +36,9 @@ const Print = (props) => <Async {...props}
 const QuillEditor = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor')}/>
 
+const CodeEditor = (props) => <Async {...props}
+                                      load={import(/* webpackChunkName: "admin" */ '../../../client/components/CodeEditor')}/>
+
 
 const MarkDown = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown')}/>
@@ -122,6 +125,7 @@ class JsonDom extends React.Component {
         },
         'textarea': (props) => <JsonDomInput textarea={true} {...props}/>,
         'QuillEditor': (props) => <QuillEditor {...props}/>,
+        'CodeEditor': (props) => <CodeEditor {...props}/>,
         'select': (props) => <JsonDomInput select={true} {...props}/>,
         'Redirect': ({to, push, _this}) => {
             if (_this && Util.hasCapability(_this.props.user, CAPABILITY_MANAGE_CMS_TEMPLATE)) {
@@ -932,13 +936,13 @@ class JsonDom extends React.Component {
                         if (eleProps.name && eleProps.binding !== false) {
 
                             if (eleProps.value === undefined) {
+
                                 if (eleProps.type === 'checkbox') {
                                     eleProps.value = !!eleProps.defaultChecked || !!eleProps.checked
                                 } else {
                                     eleProps.value = eleProps.defaultValue || ''
                                 }
                             }
-
                             if (eleProps.type === 'radio') {
 
                                 if(eleProps.value === undefined ){
@@ -951,7 +955,6 @@ class JsonDom extends React.Component {
                                     }
                                 }
                                 eleProps.checked = this.bindings[eleProps.name] === eleProps.value
-                                console.log(eleProps)
 
                             }else if (this.bindings[eleProps.name] === undefined) {
                                 this.bindings[eleProps.name] = eleProps.value
@@ -1211,7 +1214,10 @@ class JsonDom extends React.Component {
                 if (cb) {
                     const callCb = () => {
                         if (args.length && args[0]._forceUpdate) {
-                            this.refresh()
+                            // call with little delay because onClick is triggered before onChange
+                            setTimeout(()=> {
+                                this.refresh()
+                            },0)
                         } else {
                             try {
                                 cb(...args)

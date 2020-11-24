@@ -106,6 +106,8 @@ http://localhost:49160/
 
 `sudo /opt/lunuc/shell/start.sh`
 
+### Mongodb on ubuntu
+https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 
 ## Implementation
 

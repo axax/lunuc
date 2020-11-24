@@ -40,13 +40,12 @@ process.on('uncaughtException', (error) => {
 })
 
 
-process.on('unhandledRejection', (reason) => {
-    console.log(reason)
+process.on('unhandledRejection', (error) => {
     unhandledRejectionCount++
     if(mydb) {
         GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
             type: 'unhandledRejection',
-            message: JSON.stringify(reason)
+            message: error.message + '\n\n' + error.stack
         })
     }
 

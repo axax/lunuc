@@ -899,6 +899,86 @@ const baseElements = [
         }
     },
     {
+        tagName: 'div',
+        name: 'Code block',
+        options: {
+            c_0_p_type: {
+                fullWidth: true,
+                value: '',
+                label: 'Formatierung',
+                uitype: 'select',
+                enum: [
+                    {
+                        name: 'Text',
+                        value: ''
+                    },
+                    {
+                        name: 'Javascript',
+                        value: 'js'
+                    },
+                    {
+                        name: 'CSS',
+                        value: 'css'
+                    },
+                    {
+                        name: 'HTML',
+                        value: 'htmlmixed'
+                    },
+                    {
+                        name: 'XML',
+                        value: 'htmlmixed'
+                    },
+                    {
+                        name: 'JSON',
+                        value: 'json'
+                    }
+                ],
+                tab: DEFAULT_TAB
+            },
+            c_0_c: {
+                fullWidth: true,
+                value: '',
+                uitype:'textarea',
+                label: 'Code',
+                tab: DEFAULT_TAB
+            },
+            c_0_p_lineNumbers: {
+                fullWidth: true,
+                value: true,
+                type: 'Boolean',
+                label: 'Zeilennummern',
+                tab: DEFAULT_TAB
+            },
+            ...classOptions('p_')
+        },
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'code',
+                options: {
+                    c: {
+                        trKey: '__uid__'
+                    }
+                }
+            },
+            p: {
+                ['data-element-key']: 'code'
+            },
+            c: [
+                {
+                    $inlineEditor: false,
+                    t: 'CodeEditor',
+                    c: '',
+                    p:{
+                        height:'auto',
+                        controlled: true,
+                        readOnly:'nocursor',
+                        lineNumbers:true
+                    }
+                }
+            ]
+        }
+    },
+    {
         subHeader: 'Layout Elemente',
         tagName: 'Row',
         name: 'Layout 1/2',

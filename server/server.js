@@ -292,7 +292,7 @@ const doScreenCapture = async (url, filename, options) => {
     await browser.close()
 }
 
-const sendIndexFile = async (req, res, uri, hostrule, host) => {
+const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl}) => {
     const headers = {
         'Cache-Control': 'public, max-age=60',
         'Content-Type': MimeType.detectByExtension('html'),
@@ -301,18 +301,19 @@ const sendIndexFile = async (req, res, uri, hostrule, host) => {
         'Strict-Transport-Security': 'max-age=31536000',
         /*'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval'",*/
         ...hostrule.headers.common,
-        ...hostrule.headers[uri]
+        ...hostrule.headers[urlPathname]
     }
 
-    const statusCode = (hostrule.statusCode && hostrule.statusCode[uri] ? hostrule.statusCode[uri] : 200)
+    const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
 
     const agent = req.headers['user-agent']
-    if (agent && (agent.indexOf('bingbot') > -1 || agent.indexOf('msnbot') > -1)) {
+
+    if (agent && (agent.indexOf('bingbot') > -1 || agent.indexOf('msnbot') > -1 || agent.indexOf('YandexBot') > -1)) {
 
         // return rentered html for bing as they are not able to render js properly
-        //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${uri}`)
+        //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${urlPathname}`)
         const baseUrl = `http://localhost:${PORT}`
-        let html = await parseWebsite(baseUrl + uri, host)
+        let html = await parseWebsite(baseUrl + urlPathname+(parsedUrl.search?parsedUrl.search:''), host)
         const re = new RegExp(baseUrl, 'g')
         html = html.replace(re, `https://${host}`)
 
@@ -749,17 +750,17 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             return
         }
 
-        const parsedUrl = url.parse(req.url, true), uri = decodeURI(parsedUrl.pathname)
+        const parsedUrl = url.parse(req.url, true), urlPathname = decodeURI(parsedUrl.pathname)
 
         //small security check
-        if (uri.indexOf('../') >= 0) {
+        if (urlPathname.indexOf('../') >= 0) {
             sendError(res, 403)
             return
         }
 
-        console.log(`${req.connection.remoteAddress}: ${uri}`)
+        console.log(`${req.connection.remoteAddress}: ${urlPathname}`)
 
-        if (uri.startsWith('/graphql') || uri.startsWith('/' + API_PREFIX)) {
+        if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/' + API_PREFIX)) {
             // there is also /graphql/upload
             return proxy.web(req, res, {
                 hostname: 'localhost',
@@ -775,12 +776,12 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
         } else {
 
-            if (uri.startsWith(BACKUP_URL + '/')) {
+            if (urlPathname.startsWith(BACKUP_URL + '/')) {
                 const context = contextByRequest(req)
                 if (context.id && context.role === 'administrator') {
                     // only allow download if valid jwt token is set
                     const backup_dir = path.join(__dirname, '../' + BACKUP_DIR)
-                    const filename = path.join(backup_dir, uri.substring(BACKUP_URL.length))
+                    const filename = path.join(backup_dir, urlPathname.substring(BACKUP_URL.length))
                     fs.exists(filename, (exists) => {
                         if (exists) {
                             const fileStream = fs.createReadStream(filename)
@@ -797,8 +798,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 }
 
 
-            } else if (uri.startsWith(UPLOAD_URL + '/')) {
-                await resolveUploadedFile(uri, parsedUrl, req, res)
+            } else if (urlPathname.startsWith(UPLOAD_URL + '/')) {
+                await resolveUploadedFile(urlPathname, parsedUrl, req, res)
             } else {
 
                 // check with and without www
@@ -807,7 +808,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                 if (hostrule.redirects) {
 
-                    let redirect = hostrule.redirects[uri]
+                    let redirect = hostrule.redirects[urlPathname]
                     if (!redirect) {
                         redirect = hostrule.redirects['*']
                     }
@@ -823,20 +824,20 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                 let staticFile
 
-                if (hostrule.fileMapping && hostrule.fileMapping[uri]) {
-                    staticFile = path.join(hostrule.basedir, hostrule.fileMapping[uri])
+                if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
+                    staticFile = path.join(hostrule.basedir, hostrule.fileMapping[urlPathname])
                     console.log('mapped file: ' + staticFile)
-                } else if (uri.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + uri)) {
+                } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
 
-                    fs.readFile(STATIC_TEMPLATE_DIR + uri, 'utf8', function (err, data) {
-                        const ext = path.extname(uri).split('.')[1]
+                    fs.readFile(STATIC_TEMPLATE_DIR + urlPathname, 'utf8', function (err, data) {
+                        const ext = path.extname(urlPathname).split('.')[1]
                         const mimeType = MimeType.detectByExtension(ext)
 
                         const headerExtra = {
                             'Cache-Control': 'public, max-age=31536000',
                             'Content-Type': mimeType,
                             'Last-Modified': new Date().toUTCString(),
-                            ...hostrule.headers[uri]
+                            ...hostrule.headers[urlPathname]
                         }
                         res.writeHead(200, {'Content-Type': 'text/plain'})
                         res.write(Util.replacePlaceholders(data, {parsedUrl, host, config}))
@@ -846,26 +847,26 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                     return
                 } else {
-                    staticFile = path.join(STATIC_DIR, uri)
+                    staticFile = path.join(STATIC_DIR, urlPathname)
                 }
-                const headers = hostrule.headers[uri]
+                const headers = hostrule.headers[urlPathname]
 
                 if (!await sendFileFromDir(req, res, staticFile, headers, parsedUrl)) {
 
-                    if (!await sendFileFromDir(req, res, WEBROOT_ABSPATH + uri, headers, parsedUrl)) {
-                        if (!await sendFileFromDir(req, res, BUILD_DIR + uri, headers, parsedUrl)) {
+                    if (!await sendFileFromDir(req, res, WEBROOT_ABSPATH + urlPathname, headers, parsedUrl)) {
+                        if (!await sendFileFromDir(req, res, BUILD_DIR + urlPathname, headers, parsedUrl)) {
 
 
                             // special url
-                            const pos = uri.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
+                            const pos = urlPathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
                             if (pos >= 0) {
-                                const decodedStr = decodeURIComponent(uri.substring(pos + 5))
+                                const decodedStr = decodeURIComponent(urlPathname.substring(pos + 5))
 
                                 try {
                                     const data = JSON.parse(decodedStr)
                                     if (data.screenshot) {
                                         //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
-                                        //console.log(decodeURI(uri.substring(pos+5)))
+                                        //console.log(decodeURI(urlPathname.substring(pos+5)))
 
                                         const filename = decodedStr.replace(/[^\w\s]/gi, '') + '.png'
 
@@ -886,7 +887,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                         sendError(res, 404)
                                     }
 
-                                    // sendIndexFile(req, res, uri, hostrule, host)
                                 } catch (e) {
                                     console.log(decodedStr)
 
@@ -896,7 +896,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                 }
 
                             } else {
-                                sendIndexFile(req, res, uri, hostrule, host)
+                                sendIndexFile({req, res, urlPathname, hostrule, host, parsedUrl})
                             }
                         }
                     }
