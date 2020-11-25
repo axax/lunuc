@@ -46,7 +46,7 @@ const postConvertData = async (data, {typeName, db}) => {
                 for (let y = 0; y < typeDefinition.fields.length; y++) {
                     const field = typeDefinition.fields[y]
                     // convert type Object to String
-                   // item[field.name] = JSON.stringify(item[field.name])
+                    // item[field.name] = JSON.stringify(item[field.name])
                     if (field) {
                         if (field.type === 'Object') {
                             hasField = true
@@ -55,7 +55,7 @@ const postConvertData = async (data, {typeName, db}) => {
                                 //console.log(`convert ${typeName}.${field.name} to string`)
                                 item[field.name] = JSON.stringify(item[field.name])
                             }
-                        }else if(field.reference){
+                        } else if (field.reference) {
                             const refTypeDefinition = getType(field.type) || {}
                             for (let z = 0; z < refTypeDefinition.fields.length; z++) {
                                 const refField = refTypeDefinition.fields[z]
@@ -77,20 +77,20 @@ const postConvertData = async (data, {typeName, db}) => {
                         if (dyn) {
                             hasField = true
 
-                            if(dyn.action === 'count'){
-                                const query = Object.assign({},dyn.query)
-                                if(query){
-                                    Object.keys(query).forEach(k=>{
-                                        if(query[k]==='_id'){
+                            if (dyn.action === 'count') {
+                                const query = Object.assign({}, dyn.query)
+                                if (query) {
+                                    Object.keys(query).forEach(k => {
+                                        if (query[k] === '_id') {
                                             query[k] = item._id
-                                        }else if(query[k].$in && query[k].$in[0]==='_id'){
+                                        } else if (query[k].$in && query[k].$in[0] === '_id') {
                                             query[k] = Object.assign({}, query[k])
                                             query[k].$in = [...query[k].$in]
                                             query[k].$in[0] = item._id
                                         }
                                     })
                                 }
-                                item[field.name] = await db.collection(dyn.type).count( query )
+                                item[field.name] = await db.collection(dyn.type).count(query)
                             }
 
                         }
@@ -163,27 +163,29 @@ const GenericResolver = {
             }
         }
 
-        let cacheKey, cacheTime
+        let cacheKey, cacheTime, cachePolicy
         if (cache !== undefined) {
             if (cache.constructor === Object) {
                 if (cache.if !== 'false') {
-                    cacheTime = cache.expires
+                    cacheTime = cache.expires === undefined ? 60000 : cache.expires
                     cacheKey = cache.key
+                    cachePolicy = cache.policy
                 }
             } else {
                 cacheTime = cache
             }
-
-            if (!isNaN(cacheTime) && cacheTime > 0) {
+            if (!isNaN(cacheTime) && cacheTime > 0 ) {
                 if (!cacheKey) {
                     //create cacheKey
                     cacheKey = collectionName + JSON.stringify(match) + context.lang + JSON.stringify(otherOptions)
                 }
-                const resultFromCache = Cache.get(cacheKey)
-                if (resultFromCache) {
-                    console.log(`GenericResolver from cache for ${collectionName} complete: total time ${new Date() - startTime}ms`)
+                if(cachePolicy !== 'cache-only') {
+                    const resultFromCache = Cache.get(cacheKey)
+                    if (resultFromCache) {
+                        console.log(`GenericResolver from cache for ${collectionName} complete: total time ${new Date() - startTime}ms`)
 
-                    return resultFromCache
+                        return resultFromCache
+                    }
                 }
             }
         }
@@ -220,10 +222,9 @@ const GenericResolver = {
                 result = await postConvertData(results[0], {typeName, db, context})
             }
         }
-        Hook.call('typeLoaded', {type: typeName, data, db, context, result})
 
 
-        if (result.meta && result.meta.length>0) {
+        if (result.meta && result.meta.length > 0) {
             result.total = result.meta[0].count
         } else {
             /*const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()
@@ -239,6 +240,7 @@ const GenericResolver = {
         const aggregateTime = new Date() - startTimeAggregate
         //result.meta.aggregateTime = new Date() - startTimeAggregate
 
+        Hook.call('typeLoaded', {type: typeName, data, db, context, result, dataQuery, collectionName, aggregateTime})
 
         if (cacheKey) {
             Cache.set(cacheKey, result, cacheTime)
@@ -455,7 +457,7 @@ const GenericResolver = {
             if (typeName === 'User') {
                 const ids = await Util.userAndJuniorIds(db, context.id)
 
-                if(ids.indexOf(params._id)<0){
+                if (ids.indexOf(params._id) < 0) {
                     throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
                 }
 
@@ -508,12 +510,12 @@ const GenericResolver = {
         // try with dot notation for partial update
 
         const updateOptions = {}
-        if( options.upsert){
-            updateOptions.upsert=true
+        if (options.upsert) {
+            updateOptions.upsert = true
         }
         let result = (await collection.updateOne(params, {
             $set: dataSet
-        },updateOptions))
+        }, updateOptions))
 
         if (result.modifiedCount !== 1 && result.upsertedCount !== 1) {
             throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))

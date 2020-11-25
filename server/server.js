@@ -308,7 +308,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
 
     const agent = req.headers['user-agent']
 
-    if (agent && (agent.indexOf('bingbot') > -1 || agent.indexOf('msnbot') > -1 || agent.indexOf('YandexBot') > -1)) {
+    if (agent && (agent.indexOf('bingbot') > -1 || agent.indexOf('msnbot') > -1 || agent.indexOf('YandexBot') > -1 || agent.indexOf('PetalBot') > -1)) {
 
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${urlPathname}`)

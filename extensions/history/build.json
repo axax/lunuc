@@ -16,6 +16,7 @@
           "type": "Object",
           "uitype": "json",
           "index": {
+            "slug": 1,
             "_id": 1
           }
         },

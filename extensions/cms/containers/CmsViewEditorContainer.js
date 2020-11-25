@@ -579,7 +579,7 @@ class CmsViewEditorContainer extends React.Component {
                                 fetchPolicy="cache-and-network"
                                 variables={{
                                     limit: 300,
-                                    filter: `data._id=${cmsPage._id}`
+                                    filter: `data._id==${cmsPage._id}`
                                 }}>
                                 {({loading, error, data}) => {
                                     if (loading) return 'Loading...'

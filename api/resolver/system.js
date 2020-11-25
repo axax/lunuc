@@ -18,6 +18,7 @@ import {sendMail} from '../util/mail'
 import {getType} from 'util/types'
 import os from 'os'
 import {rmDir} from '../util/dir'
+
 const {BACKUP_DIR, UPLOAD_DIR} = config
 
 
@@ -102,8 +103,7 @@ export const systemResolver = (db) => ({
                     })
 
 
-                    rmDir(path.join(ABS_UPLOAD_DIR,'/screenshots'),true)
-
+                    rmDir(path.join(ABS_UPLOAD_DIR, '/screenshots'), true)
 
 
                     Cache.cache = {}
@@ -254,7 +254,7 @@ export const systemResolver = (db) => ({
             try {
                 tpl.call({entries, save, ObjectId, Util, require, __dirname, db, context})
                 return {result: `Successful executed`}
-            }catch (e) {
+            } catch (e) {
 
                 return {result: `Failed executed: ${e.message}`}
             }
@@ -340,10 +340,11 @@ export const systemResolver = (db) => ({
             findAndReplaceObjectIds(jsonParsed)
             const startTimeAggregate = new Date()
 
-            let a = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
+            const explanation = await db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).explain()
+            let results = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
             console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)
 
-            return {result: JSON.stringify(a[0])}
+            return {result: JSON.stringify({explanation, data: results[0]})}
         },
         importCollection: async ({collection, json}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
@@ -396,16 +397,18 @@ export const systemResolver = (db) => ({
 
                 console.log(`Search in collection ${collectionName}`)
 
-                db[coll].find({$where: function() {
+                db[coll].find({
+                    $where: function () {
                         for (const key in this) {
                             if (this[key] === "bar") {
                                 return true
                             }
                         }
                         return false
-                    }}).forEach((rec) => {
-                        results.push({collection:collectionName, field: ''})
-                    })
+                    }
+                }).forEach((rec) => {
+                    results.push({collection: collectionName, field: ''})
+                })
             }
 
             return {result}
@@ -457,7 +460,7 @@ export const systemResolver = (db) => ({
 
             return {status: 'ok'}
         },
-        createMediaDump: async ({type,ids}, {context}) => {
+        createMediaDump: async ({type, ids}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
 
             // make sure upload dir exists
@@ -480,12 +483,12 @@ export const systemResolver = (db) => ({
 
             const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lunuc'))
             files.forEach((file) => {
-                if(file.indexOf('@')===-1) {
-                    if( ids ){
-                        if( ids.indexOf(file) >=0){
+                if (file.indexOf('@') === -1) {
+                    if (ids) {
+                        if (ids.indexOf(file) >= 0) {
                             fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
                         }
-                    }else {
+                    } else {
                         const stat = fs.lstatSync(media_dir + '/' + file)
 
 

@@ -8,7 +8,7 @@ export default () => {
     // add routes for this extension
     Hook.on('JsonDomError', ({error, editMode}) => {
 
-        if(!editMode) {
+        if (!editMode && error) {
             const queries = getTypeQueries('Log')
             return client.mutate({
                 mutation: queries.create,
@@ -17,7 +17,7 @@ export default () => {
                     href: location.href,
                     location: 'JsonDom',
                     type: 'error',
-                    message: error.e.message
+                    message: error.type +': '+(error.e ? error.e.message + '\n\n' + error.e.stack : error.msg)
                 }
             })
         }

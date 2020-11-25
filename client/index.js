@@ -51,7 +51,7 @@ function mainInit() {
 
     // remove double slashes
     const cleanPathname = loc.pathname.replace(/\/\/+/g, '/')
-    if (cleanPathname !== loc.pathname) {
+    if (cleanPathname !== loc.pathname && loc.protocol !== 'file:') {
         window.location = loc.origin + cleanPathname + loc.search + loc.hash
         return
     }
@@ -90,7 +90,7 @@ function mainInit() {
             _app_.lang = lang
         }
 
-        if (!contextLanguage && config.DEFAULT_LANGUAGE !== _app_.lang && basePath !== _app_.redirect404) {
+        if (!contextLanguage && config.DEFAULT_LANGUAGE !== _app_.lang && basePath !== _app_.redirect404 && loc.protocol !== 'file:') {
             // add language to url and redirect
             window.location = loc.origin + '/' + _app_.lang + (basePath === '/' ? '' : basePath)
             return

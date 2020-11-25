@@ -25,10 +25,10 @@ process.on('uncaughtException', (error) => {
 
     uncaughtExceptionCount++
 
-    if(mydb) {
+    if(mydb && error) {
         GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
             type: 'uncaughtException',
-            message: error.message + '\n\n' + error.stack
+            message: error.message?error.message + '\n\n' + error.stack:JSON.stringify(error)
         })
     }
 
@@ -41,17 +41,34 @@ process.on('uncaughtException', (error) => {
 
 
 process.on('unhandledRejection', (error) => {
+    console.error(error)
+
     unhandledRejectionCount++
-    if(mydb) {
+    if(mydb && error) {
         GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
             type: 'unhandledRejection',
-            message: error.message + '\n\n' + error.stack
+            message: error.message?error.message + '\n\n' + error.stack:JSON.stringify(error)
         })
     }
 
     if(unhandledRejectionCount>10){
         process.exit(1)
     }
+})
+
+
+
+Hook.on('typeLoaded', async ({db, context, result, dataQuery, collectionName, aggregateTime}) => {
+
+  if(aggregateTime > 500) {
+      const explanation = await  db.collection(collectionName).aggregate(dataQuery, {allowDiskUse: true}).explain()
+      GenericResolver.createEntity(mydb, {context}, 'Log', {
+          location: collectionName,
+          type: 'slowQuery',
+          message: JSON.stringify(explanation, null, 2),
+          meta: {aggregateTime, resultCount: result.results.length, resultTotal: result.total}
+      })
+  }
 })
 
 /*

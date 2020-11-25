@@ -109,6 +109,9 @@ http://localhost:49160/
 ### Mongodb on ubuntu
 https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 
+#### Mongodb external access
+`sudo ufw allow from 194.230.16.16 to any port 27017`
+
 ## Implementation
 
 ### Folder structure
@@ -219,6 +222,7 @@ create lunuc-api.service file under /etc/systemd/system
 
 #### Persist ruels after reboot
 `apt-get install iptables-persistent`
+`iptables-save`
 
 ### if interface is not eth0 check for other interfaces
 `netstat -i`
@@ -267,12 +271,15 @@ Add this to the file:
 `sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf`
 
 
+`sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 53 -j REDIRECT --to-port 53`
+
+
 ### Disable Apache 2
 `sudo systemctl disable apache2 && sudo systemctl stop apache2`
 `/etc/init.d/apache2 stop`
-sudo systemctl disable apache2
+`sudo systemctl disable apache2
 
-###Security
+### Security
 
 #### ssh brute force protection
 
@@ -280,7 +287,7 @@ sudo systemctl disable apache2
  iptables -A INPUT -p tcp --dport 22 -m recent --update --seconds 60 --hitcount 4 --rttl --name SSH -j LOG --log-prefix "SSH_brute_force "
  iptables -A INPUT -p tcp --dport 22 -m recent --update --seconds 60 --hitcount 4 --rttl --name SSH -j DROP`
 
-###Locations on server
+### Locations on server
 /opt/lunuc
 /srv/uploads
 
