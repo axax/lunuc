@@ -2,12 +2,13 @@ import Hook from 'util/hook'
 import schemaGen from './gensrc/schema'
 import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
-import {getTypeQueries} from '../../util/types'
-import {client} from '../../client/middleware/graphql'
 import GenericResolver from '../../api/resolver/generic/genericResolver'
 
 let mydb
-// Hook to add mongodb resolver
+Hook.on('dbready', ({db}) => {
+    mydb=db
+})
+
 Hook.on('resolver', ({db, resolvers}) => {
     mydb=db
     deepMergeToFirst(resolvers, resolverGen(db))
@@ -69,6 +70,17 @@ Hook.on('typeLoaded', async ({db, context, result, dataQuery, collectionName, ag
           meta: {aggregateTime, resultCount: result.results.length, resultTotal: result.total}
       })
   }
+})
+
+Hook.on('HookError', async ({entry, error}) => {
+    if(mydb) {
+        GenericResolver.createEntity(mydb, {context: {lang: 'en'}}, 'Log', {
+            location: entry.name,
+            type: 'hookError',
+            message: error.message ? error.message + '\n\n' + error.stack : JSON.stringify(error),
+            meta: {hook: entry.hook}
+        })
+    }
 })
 
 /*

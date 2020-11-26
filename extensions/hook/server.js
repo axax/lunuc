@@ -36,15 +36,20 @@ const register = async (db) => {
 
 
                     Hook.on(`${name}.${key}`, async (args) => {
-                        await new Promise(resolve => {
+                        const result = await new Promise(resolve => {
                             fun.call({require, resolve, Util, ...args})
                         })
+                        if(result.error){
+                            console.error(result.error)
+                            Hook.call('HookError', {entry, error: result.error})
+                        }
                     })
 
 
                     registeredHook.push({name, key, fun})
                 } catch (e) {
-                    console.log(e)
+                    console.error(e)
+                    Hook.call('HookError', {entry, error: e})
                 }
             }
 

@@ -56,6 +56,7 @@ import {COLLECTIONS_QUERY} from '../constants'
 import CodeEditor from '../components/CodeEditor'
 import GenericForm from '../components/GenericForm'
 import {client, Query} from '../middleware/graphql'
+import json2csv from 'util/json2csv'
 
 const styles = theme => ({
     textLight: {
@@ -422,20 +423,33 @@ class TypesContainer extends React.Component {
                     }
                 },
                 {
-                    name: 'Export', onClick: () => {
+                    name: 'Export CSV', onClick: () => {
+                        this.setState({
+                            simpleDialog: {
+                                title: 'Export CSV',
+                                children: <textarea style={{
+                                    width: '30rem',
+                                    height: '30rem'
+                                }}>{json2csv(this.state.data.results)}</textarea>
+                            }
+                        })
+                    }
+                },
+                {
+                    name: 'Export JSON', onClick: () => {
                         this.setState({
                             simpleDialog: {
                                 title: 'Export',
                                 children: <textarea style={{
-                                    width: '20rem',
-                                    height: '20rem'
+                                    width: '30rem',
+                                    height: '30rem'
                                 }}>{JSON.stringify(this.state.data.results, null, 2)}</textarea>
                             }
                         })
                     }
                 },
                 {
-                    name: 'Import', onClick: () => {
+                    name: 'Import JSON', onClick: () => {
                         this.setState({
                             simpleDialog: {
                                 title: 'Import',
@@ -457,7 +471,7 @@ class TypesContainer extends React.Component {
                                     }
                                 },
                                 children: <textarea id="importData"
-                                                    style={{width: '20rem', height: '20rem'}}></textarea>
+                                                    style={{width: '30rem', height: '30rem'}}></textarea>
                             }
                         })
                     }

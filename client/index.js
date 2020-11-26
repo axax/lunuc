@@ -206,7 +206,7 @@ if (!Object.assign || !window.fetch || !window.Intl || !Promise.prototype.finall
     let counter = 0
     const onload = () => {
         counter++
-        if (counter === 2) {
+        if (counter === 3) {
             mainInit()
         }
     }
@@ -215,10 +215,17 @@ if (!Object.assign || !window.fetch || !window.Intl || !Promise.prototype.finall
         async: true,
         onload
     })
-    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CIntl.~locale.en%2CIntl.~locale.de%2CObject.values%2CPromise.prototype.finally%2CAbortController', {
+    DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CObject.values%2CPromise.prototype.finally%2CAbortController%2CEvent', {
         async: true,
         onload
     })
+
+    // timezone support
+    DomUtil.addScript('https://unpkg.com/date-time-format-timezone@latest/build/browserified/date-time-format-timezone-complete-min.js', {
+        async: true,
+        onload
+    })
+
 } else {
     //console.info(`Time ${(new Date()).getTime() - _app_.start.getTime()}ms`)
 

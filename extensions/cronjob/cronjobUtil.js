@@ -5,7 +5,6 @@ import fs from 'fs'
 import readline from 'readline'
 import { spawn } from 'child_process'
 import path from 'path'
-import Hook from '../../util/hook'
 
 
 const cronjobUtil = {
