@@ -1223,7 +1223,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
-                template: '${this.context._id?\'url(\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\')\':\'\'}',
+                template: '${this.context._id?\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\'\\\')\':\'\'}',
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },
