@@ -67,7 +67,7 @@ Hook.on('typeLoaded', async ({db, context, result, dataQuery, collectionName, ag
           location: collectionName,
           type: 'slowQuery',
           message: JSON.stringify(explanation, null, 2),
-          meta: {aggregateTime, resultCount: result.results.length, resultTotal: result.total}
+          meta: {aggregateTime, resultCount: result.results.length, resultTotal: result.total, dataQuery}
       })
   }
 })

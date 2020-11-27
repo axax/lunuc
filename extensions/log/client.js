@@ -13,11 +13,13 @@ export default () => {
             return client.mutate({
                 mutation: queries.create,
                 variables: {
-                    agent: navigator.userAgent,
-                    href: location.href,
                     location: 'JsonDom',
                     type: 'error',
-                    message: error.type +': '+(error.e ? error.e.message + '\n\n' + error.e.stack : error.msg)
+                    message: error.type + ': ' + (error.e ? error.e.message + '\n\n' + error.e.stack : error.msg),
+                    meta: {
+                        agent: navigator.userAgent,
+                        href: location.href
+                    }
                 }
             })
         }
