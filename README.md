@@ -111,7 +111,9 @@ https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 
 #### Mongodb external access
 `sudo ufw allow from 194.230.16.16 to any port 27017`
-
+ sudo ufw status numbered
+ sudo ufw delete 8
+ 
 ## Implementation
 
 ### Folder structure

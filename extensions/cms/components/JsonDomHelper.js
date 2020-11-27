@@ -1322,7 +1322,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                               selected.options && selected.options[key],
                                                               comp.$inlineEditor && comp.$inlineEditor.options && comp.$inlineEditor.options[key])
 
-                                                          if (currentOpt.template && val) {
+                                                          if (currentOpt.template && val!==undefined && val!==null) {
                                                               setPropertyByPath(val, '$original_' + key, comp, '_')
                                                               val = Util.replacePlaceholders(currentOpt.template, {_comp: comp, ...(val.constructor === String ? {data: val} : val[0])})
 

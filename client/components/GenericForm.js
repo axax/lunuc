@@ -570,6 +570,9 @@ class GenericForm extends React.Component {
     createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
         const {onKeyDown, classes, autoFocus} = this.props
         let langButtonWasInserted = false
+        if(!field.label){
+            field.label=''
+        }
         if (['json', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
 
             let highlight, jsonStr
