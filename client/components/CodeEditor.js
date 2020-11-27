@@ -101,7 +101,32 @@ const jsonPropertyTemplates = [
 
 const jsonTemplates = [
     {title: 'For loop',template:'"{$for": {"d": "data","s":"loop","c": [{"c":"$.loop{loop.value}"}]}}'},
-    {title: 'Form Checkbox',template:'{"t":"label","c":[{"t":"input","$inlineEditor":false,"p":{"name":"check","type":"checkbox","checked":"","onClick":{"_forceUpdate":true}}},{"t":"span","$inlineEditor":false,"c":"Checkbox (${bindings.check})"}]}'}
+    {title: 'Form Checkbox',template:'{"t":"label","c":[{"t":"input","$inlineEditor":false,"p":{"name":"check","type":"checkbox","checked":"","onClick":{"_forceUpdate":true}}},{"t":"span","$inlineEditor":false,"c":"Checkbox (${bindings.check})"}]}'},
+    {title: 'Smart Image',template: `{
+                          "$inlineEditor": false,
+                          "$observe": {
+                            "lazyImage": {
+                              "width": "",
+                              "height": ""
+                            },
+                            "rootMargin": "0px 0px 0px 0px"
+                          },
+                          "t": "SmartImage",
+                          "p": {
+                            "inlineSvg": false,
+                            "caption": "",
+                            "src": "/icons/download.svg",
+                            "options": {
+                              "webp": true,
+                              "quality": "85",
+                              "resize": {
+                                "height": "",
+                                "width": "",
+                                "responsive": false
+                              }
+                            }
+                          }
+                        }`}
 ]
 
 function getFirstLine(text) {

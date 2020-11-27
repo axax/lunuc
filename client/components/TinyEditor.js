@@ -63,8 +63,12 @@ class TinyEditor extends React.Component {
                     plugins: [
                         'advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker',
                         'searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking',
-                        'table emoticons template paste help'
+                        'table emoticons template paste help',
+                        /*'quickbars'*/
                     ],
+                    quickbars_selection_toolbar: 'bold italic | formatselect | quicklink blockquote',
+                    quickbars_insert_toolbar: false,
+                    quickbars_image_toolbar: 'alignleft aligncenter alignright | rotateleft rotateright | imageoptions',
                     toolbar: this.props.toolbar || 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | ' +
                         'bullist numlist outdent indent | link image | print preview media fullpage | ' +
                         'forecolor backcolor emoticons | help',
@@ -152,9 +156,9 @@ class TinyEditor extends React.Component {
 
             }
             if (!window.tinymce) {
-                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.4.2/tinymce.min.js', {
+                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.6.1/tinymce.min.js', {
                     onload: assestLoaded
-                })
+                },{ignoreIfExist:true})
             } else {
                 assestLoaded()
             }

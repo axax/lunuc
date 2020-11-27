@@ -62,12 +62,14 @@ process.on('unhandledRejection', (error) => {
 Hook.on('typeLoaded', async ({db, context, result, dataQuery, collectionName, aggregateTime}) => {
 
   if(aggregateTime > 500) {
+
       const explanation = await  db.collection(collectionName).aggregate(dataQuery, {allowDiskUse: true}).explain()
+
       GenericResolver.createEntity(mydb, {context}, 'Log', {
           location: collectionName,
           type: 'slowQuery',
           message: JSON.stringify(explanation, null, 2),
-          meta: {aggregateTime, resultCount: result.results.length, resultTotal: result.total, dataQuery}
+          meta: {aggregateTime, resultCount: result.results.length, resultTotal: result.total, query: JSON.stringify(dataQuery)}
       })
   }
 })

@@ -84,7 +84,7 @@ export const createStaticFiles = async (db) => {
 
         const staticFiles = (await db.collection('StaticFile').find().toArray())
         staticFiles.forEach(async staticFile => {
-            await createOrDeleteStaticFile(staticFile, db)
+            await createOrDeleteStaticFile(staticFile, {db})
         })
     }else{
         console.log('cannot create folder for static files')
