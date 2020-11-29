@@ -32,6 +32,7 @@ function mainInit() {
 
     // translation map
     _app_.tr = {}
+    _app_.JsonDom = {}
 
     // override config
     if (_app_.languages) {

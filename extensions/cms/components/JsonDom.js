@@ -996,7 +996,8 @@ class JsonDom extends React.Component {
                     if (className) {
                         eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                     }
-                    if (editMode && $inlineEditor !== false) {
+
+                    if (editMode && ($inlineEditor !== false || _app_.JsonDom.inlineEditor===true) ) {
 
                         if (this.props.inlineEditor || ($inlineEditor && $inlineEditor.mode === 'source')) {
                             const rawJson = this.getJsonRaw(this.props, true)
@@ -1022,7 +1023,7 @@ class JsonDom extends React.Component {
                         eleProps.dangerouslySetInnerHTML = {__html: $c}
                     }
 
-                    if (_app_.elementWatch!=false &&
+                    if (_app_.JsonDom.elementWatch!=false &&
                         (((eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) &&
                         (!!window.IntersectionObserver || eleProps.inlineSvg)) {
 

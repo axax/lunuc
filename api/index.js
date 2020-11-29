@@ -12,7 +12,7 @@ globalThis.window = {location:{href:'',origin: ''}}
 
 // define some global vars for server side rendering
 global.document = {documentElement: {}, referrer:''}
-global._app_ = {lang: 'en', ssr: true, tr: {}, start: new Date(), config}
+global._app_ = {lang: 'en', ssr: true, tr: {}, JsonDom: {}, start: new Date(), config}
 
 // Entry point for our server
 const server = require('./server')
