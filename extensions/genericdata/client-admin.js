@@ -119,13 +119,17 @@ export default () => {
                                                     if(field.localized){
 
                                                         const name = field.name.split('_')[1],
-                                                            json = JSON.parse(dataToEdit.data),
-                                                            obj =  json[name]
+                                                            json = JSON.parse(dataToEdit.data)
+
+                                                        if(json[name].constructor===String){
+                                                            json[name] = {[config.DEFAULT_LANGUAGE]: json[name]}
+                                                        }
+
+                                                        const obj =  json[name]
 
 
                                                         if (obj) {
                                                             config.LANGUAGES.forEach(lang => {
-                                                                console.log(lang, obj[lang])
                                                                 if (!obj[lang] && lang !== config.DEFAULT_LANGUAGE) {
                                                                     const text = obj[config.DEFAULT_LANGUAGE].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
                                                                     client.query({
@@ -137,8 +141,7 @@ export default () => {
                                                                             fromIso: config.DEFAULT_LANGUAGE
                                                                         },
                                                                     }).then((res) => {
-                                                                        const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g,'').replace(/"/g,'\\"')
-
+                                                                        const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g,'') //.replace(/"/g,'\\"')
                                                                         json[name][lang] = newText
                                                                         /*dataToEdit.data = JSON.stringify(json)*/
                                                                         parentRef.setState({dataToEdit:{...dataToEdit, data: JSON.stringify(json)}})

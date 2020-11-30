@@ -77,6 +77,9 @@ class GenericForm extends React.Component {
             if (field.localized) {
                 if (props.values && props.values[k]) {
                     if (props.values[k].constructor === String) {
+                        if(!fieldValue){
+                            fieldValue = {}
+                        }
                         config.LANGUAGES.forEach(lang => {
                             fieldValue[lang] = props.values[k]
                         })

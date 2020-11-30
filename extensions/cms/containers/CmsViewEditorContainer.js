@@ -217,6 +217,7 @@ class CmsViewEditorContainer extends React.Component {
             state.template !== this.state.template ||
             state.showPageSettings !== this.state.showPageSettings ||
             state.script !== this.state.script ||
+            state.dataResolver !== this.state.dataResolver ||
             state.style !== this.state.style ||
             state.parseResolvedData !== this.state.parseResolvedData ||
             state.alwaysLoadAssets !== this.state.alwaysLoadAssets ||
@@ -794,9 +795,11 @@ class CmsViewEditorContainer extends React.Component {
                                                         fromIso: config.DEFAULT_LANGUAGE
                                                     },
                                                 }).then((res) => {
-                                                    const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g,'').replace(/"/g,'\\"')
+                                                    // double escape
+                                                    const newText = Util.escapeForJson(Util.escapeForJson(res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g,'')))
                                                     setPropertyByPath(newText, lang + path + '.' + key, base)
                                                     saveResolver()
+
                                                 })
 
                                             }

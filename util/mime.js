@@ -21,6 +21,7 @@ const MIME_TYPES = {
     'mp3': 'audio/mp3',
     'mp4': 'video/mp4',
     'm4a': 'audio/x-m4a',
+    'm4v': 'video/x-m4v',
     'gz': 'application/gzip',
     'zip': 'application/zip',
     'svg': 'image/svg+xml',

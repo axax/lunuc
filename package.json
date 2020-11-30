@@ -125,7 +125,7 @@
     "mssql": "^6.2.3",
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
-    "ytdl-core": "^4.1.0",
+    "ytdl-core": "^4.1.1",
     "lighthouse": "^6.4.1"
   },
   "devDependencies": {

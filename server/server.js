@@ -85,11 +85,14 @@ const defaultWSHandler = (err, req, socket, head) => {
 
 const webSocket = function (req, socket, head) {
     if (req.url === '/ws') {
-        proxy.ws(req, socket, head, {
-            hostname: 'localhost',
-            port: API_PORT,
-            path: '/ws'
-        }, defaultWSHandler)
+        //if(req.secure) {
+            proxy.ws(req, socket, head, {
+                hostname: 'localhost',
+                port: API_PORT,
+                protocol: 'http',
+                path: '/ws'
+            }, defaultWSHandler)
+       // }
     }
 }
 
@@ -465,7 +468,6 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
     }
 
     let video = ffmpeg(fileStream)
-
     if (options.noAudio) {
         console.log('no audio was set')
         video.noAudio()
@@ -487,7 +489,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
 
     }
 
-    const vFilter = []
+    const vFilter = ['-analyzeduration 2147483647 -probesize 2147483647']
 
     if (options.speed) {
         vFilter.push(`setpts=${1 / options.speed}*PTS`)

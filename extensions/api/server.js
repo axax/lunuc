@@ -29,8 +29,8 @@ const runApiScript = ({api, db, req, res}) => {
                 }
             })()
             this.resolve({data})`)
-            tpl.call({require, resolve, db, req, res})
-        }catch (error) {
+            tpl.call({require, resolve, db, req, res, __dirname})
+        } catch (error) {
             resolve({error})
         }
 
@@ -51,7 +51,7 @@ Hook.on('schema', ({schemas}) => {
 // Hook when db is ready
 Hook.on('appready', ({app, db}) => {
 
-    app.use('/'+config.API_PREFIX, async (req, res) => {
+    app.use('/' + config.API_PREFIX, async (req, res) => {
 
         const slug = url.parse(req.url).pathname.substring(1)
 
@@ -64,13 +64,15 @@ Hook.on('appready', ({app, db}) => {
             const result = await runApiScript({api, db, req, res})
 
             if (result.error) {
+                console.error(result.error)
                 res.writeHead(500, {'content-type': 'application/json'})
                 res.end(`{"status":"error","message":"${result.error.message}"}`)
             } else {
-
-                res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
                 const data = await result.data
-                res.end(data?data.toString():data)
+                if (!res.headersSent) {
+                    res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
+                    res.end(data ? data.toString() : data)
+                }
             }
 
         }

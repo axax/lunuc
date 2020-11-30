@@ -159,6 +159,11 @@ const baseElements = [
             }
         },
         options: {
+            $set_transcode: {
+                fullWidth: true,
+                value: '',
+                label: 'Transcode'
+            },
             $set_poster: {
                 fullWidth: true,
                 value: '',
@@ -177,7 +182,7 @@ const baseElements = [
                 type: 'Media',
                 filter: 'mimeType=video',
                 tab: DEFAULT_TAB,
-                template: '${this.context._id?\'<video controls poster="\'+_comp.$set.poster+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
+                template: '${this.context._id?\'<video controls poster="\'+_comp.$set.poster+\'"><source src="\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+name+(_comp.$set.transcode?\'?transcode=\'+encodeURIComponent(_comp.$set.transcode):\'\')+\'" type="\'+mimeType+\'"/></video>\':\'\'}',
             },
             $set_yt: {
                 fullWidth: true,
