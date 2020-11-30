@@ -86,13 +86,13 @@ const defaultWSHandler = (err, req, socket, head) => {
 const webSocket = function (req, socket, head) {
     if (req.url === '/ws') {
         //if(req.secure) {
-            proxy.ws(req, socket, head, {
-                hostname: 'localhost',
-                port: API_PORT,
-                protocol: 'http',
-                path: '/ws'
-            }, defaultWSHandler)
-       // }
+        proxy.ws(req, socket, head, {
+            hostname: 'localhost',
+            port: API_PORT,
+            protocol: 'http',
+            path: '/ws'
+        }, defaultWSHandler)
+        // }
     }
 }
 
@@ -316,7 +316,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${urlPathname}`)
         const baseUrl = `http://localhost:${PORT}`
-        let html = await parseWebsite(baseUrl + urlPathname+(parsedUrl.search?parsedUrl.search:''), host)
+        let html = await parseWebsite(baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : ''), host)
         const re = new RegExp(baseUrl, 'g')
         html = html.replace(re, `https://${host}`)
 
@@ -453,7 +453,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
 
     const outputOptions = []
 
-    if(!options.nostream){
+    if (!options.nostream) {
         outputOptions.push('-movflags isml+frag_keyframe+empty_moov+faststart')
     }
     if (options.crf) {
@@ -468,13 +468,18 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
     }
 
     let video = ffmpeg(fileStream)
+
+    video.inputOptions([
+        '-analyzeduration 2147483647',
+        '-probesize 2147483647'
+    ])
     if (options.noAudio) {
         console.log('no audio was set')
         video.noAudio()
     } else {
         const aFilter = []
 
-        if( options.audioVolume ){
+        if (options.audioVolume) {
             aFilter.push('volume=' + options.audioVolume)
         }
         if (options.speed) {
@@ -489,7 +494,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
 
     }
 
-    const vFilter = ['-analyzeduration 2147483647 -probesize 2147483647']
+    const vFilter = []
 
     if (options.speed) {
         vFilter.push(`setpts=${1 / options.speed}*PTS`)
@@ -531,9 +536,9 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
         } else {
             console.log(`save video as ${options.filename}`)
 
-            if(options.nostream){
+            if (options.nostream) {
                 video.output(options.filename + '.temp').run()
-            }else {
+            } else {
                 const writeStream = writeStreamFile(options.filename + '.temp')
 
                 const passStream = new PassThrough()
