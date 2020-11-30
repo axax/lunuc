@@ -469,10 +469,17 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
 
     let video = ffmpeg(fileStream)
 
-    video.inputOptions([
-        '-analyzeduration 2147483647',
-        '-probesize 2147483647'
-    ])
+    const inputOptions = [
+        '-probesize 100M',
+        '-analyzeduration 100M'
+    ]
+
+    if (options.inputOptions) {
+        inputOptions.push(options.inputOptions)
+    }
+
+    video.inputOptions(inputOptions)
+
     if (options.noAudio) {
         console.log('no audio was set')
         video.noAudio()
