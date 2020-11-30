@@ -437,7 +437,7 @@ function transcodeVideoOptions(parsedUrl, filename) {
 
 }
 
-function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) {
+function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     // make sure ffmpeg is install on your device
     // brew install ffmpeg
     //sudo apt install ffmpeg
@@ -467,7 +467,7 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, fileStream}) 
         outputOptions.push('-t ' + options.duration)
     }
 
-    let video = ffmpeg(fileStream)
+    let video = ffmpeg(filename)
 
     const inputOptions = [
         '-probesize 100M',
@@ -738,11 +738,12 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
             }
         }
 
-        const fileStream = fs.createReadStream(filename, streamOption)
 
         if (transcodeOptions && !transcodeOptions.exists) {
-            transcodeAndStreamVideo({options: transcodeOptions, headerExtra, res, code, fileStream})
+            transcodeAndStreamVideo({options: transcodeOptions, headerExtra, res, code, filename})
         } else {
+
+            const fileStream = fs.createReadStream(filename, streamOption)
             res.writeHead(code, headerExtra)
             fileStream.pipe(res)
         }
