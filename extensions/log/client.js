@@ -16,10 +16,10 @@ export default () => {
                     location: 'JsonDom',
                     type: 'error',
                     message: error.type + ': ' + (error.e ? error.e.message + '\n\n' + error.e.stack : error.msg),
-                    meta: {
+                    meta: JSON.stringify({
                         agent: navigator.userAgent,
                         href: location.href
-                    }
+                    })
                 }
             })
         }
