@@ -22,6 +22,7 @@ class TypeEdit extends React.Component {
 
     static propsToState(props) {
         return {
+            forceSave: false,
             dataToEditOri: props.dataToEdit,
             dataToEdit: props.dataToEdit,
             open: props.open,
@@ -140,16 +141,22 @@ class TypeEdit extends React.Component {
                 // if dataToEdit is set we are in edit mode
                 const editedDataToUpdate = {}
                 Object.keys(editedDataWithRefs).forEach(k => {
-                    const before = dataToEdit[k]
-                    if (before && before.constructor === Object) {
-                        if (before._id !== editedDataWithRefs[k]) {
+
+                    if( this.state.forceSave){
+                        editedDataToUpdate[k] = editedDataWithRefs[k]
+                    }else {
+                        const before = dataToEdit[k]
+
+                        if (before && before.constructor === Object) {
+                            if (before._id !== editedDataWithRefs[k]) {
+                                editedDataToUpdate[k] = editedDataWithRefs[k]
+                            }
+                        } else if (editedDataWithRefs[k] !== before) {
                             editedDataToUpdate[k] = editedDataWithRefs[k]
                         }
-                    } else if (editedDataWithRefs[k] !== before) {
-                        editedDataToUpdate[k] = editedDataWithRefs[k]
                     }
                 })
-                if (Object.keys(editedDataToUpdate).length) {
+                if (Object.keys(editedDataToUpdate).length >= 0) {
                     // only send data if they have really changed
                     addAlwaysUpdateData(editedData, editedDataToUpdate, type)
 
