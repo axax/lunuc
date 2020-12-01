@@ -123,7 +123,7 @@ export default () => {
 
                                                       const name = field.name.split('_')[1]
 
-                                                      if (json[name].constructor === String) {
+                                                      if (json[name] && json[name].constructor === String) {
                                                           json[name] = {[config.DEFAULT_LANGUAGE]: json[name]}
                                                       }
 
