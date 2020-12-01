@@ -131,6 +131,7 @@ export default () => {
                                                           if (obj) {
                                                               config.LANGUAGES.forEach(lang => {
                                                                   if ((overrideTranslations || !obj[lang]) && lang !== config.DEFAULT_LANGUAGE) {
+
                                                                       const text = obj[config.DEFAULT_LANGUAGE].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
                                                                       client.query({
                                                                           fetchPolicy: 'no-cache',
@@ -141,8 +142,9 @@ export default () => {
                                                                               fromIso: config.DEFAULT_LANGUAGE
                                                                           },
                                                                       }).then((res) => {
+                                                                          const resLang = res.data.translate.toIso
                                                                           const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g, '') //.replace(/"/g,'\\"')
-                                                                          json[name][lang] = newText
+                                                                          json[name][resLang] = newText
                                                                           /*dataToEdit.data = JSON.stringify(json)*/
                                                                           console.log(json[name])
                                                                           clearTimeout(translateTimeout)
