@@ -19,6 +19,7 @@ import PropTypes from 'prop-types'
 import * as NotificationAction from 'client/actions/NotificationAction'
 import config from 'gen/config'
 import {Query, client} from '../middleware/graphql'
+import FileDrop from '../components/FileDrop'
 
 class FilesContainer extends React.Component {
 
@@ -178,6 +179,12 @@ class FilesContainer extends React.Component {
                                                count={listItems.length}/>
                         }}
                     </Query>
+
+                    <FileDrop maxSize={10000000} style={{width: '15rem', height: '10rem'}}
+                              accept="*/*"
+                              uploadTo="/graphql/upload"
+                              resizeImages={false}
+                              label="Drop file here"/>
 
                 </Col>
                 <Col sm={8}>

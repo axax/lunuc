@@ -68,11 +68,9 @@ Hook.on('appready', ({app, db}) => {
                 res.writeHead(500, {'content-type': 'application/json'})
                 res.end(`{"status":"error","message":"${result.error.message}"}`)
             } else {
+                res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
                 const data = await result.data
-                if (!res.headersSent) {
-                    res.writeHead(res.responseCode || 200, {'content-type': api.mimeType || 'application/json'})
-                    res.end(data ? data.toString() : data)
-                }
+                res.end(data ? data.toString() : data)
             }
 
         }

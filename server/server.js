@@ -254,6 +254,7 @@ const parseWebsite = async (urlToFetch, host) => {
     const html = await page.content()
 
 
+    await page.close()
     await browser.close()
 
     return html
@@ -292,6 +293,7 @@ const doScreenCapture = async (url, filename, options) => {
         path: filename,
         ...options
     })
+    await page.close()
     await browser.close()
 }
 
