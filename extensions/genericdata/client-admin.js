@@ -2,12 +2,12 @@ import React from 'react'
 import Hook from 'util/hook'
 import Async from 'client/components/Async'
 import {
+    SimpleSwitch,
     SimpleButton
 } from 'ui/admin'
 import Util from '../../client/util'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
 import {client} from 'client/middleware/graphql'
-import {setPropertyByPath} from "../../client/util/json";
 import config from 'gen/config'
 
 const GenericForm = (props) => <Async {...props}
@@ -21,7 +21,7 @@ export default () => {
 
     // add some extra data to the table
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
-        if (type === 'GenericData' && data.results.length>0) {
+        if (type === 'GenericData' && data.results.length > 0) {
             dataSource.forEach((d, i) => {
 
                 if (d.data) {
@@ -30,13 +30,13 @@ export default () => {
                         const structur = JSON.parse(item.definition.structure)
 
                         const json = JSON.parse(item.data)
-                        if(structur.pickerField){
+                        if (structur.pickerField) {
                             if (json[structur.pickerField].constructor === String) {
                                 d.data = json[structur.pickerField]
                             } else {
                                 d.data = json[structur.pickerField][_app_.lang]
                             }
-                        }else {
+                        } else {
 
                             if (json.title.constructor === String) {
                                 d.data = json.title
@@ -94,6 +94,7 @@ export default () => {
                     delete newFields.data
                     delete newDataToEdit.data
 
+                    let overrideTranslations = false, translateTimeout = 0
                     newFields.definition.readOnly = true
                     const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)
                     props.title =
@@ -115,148 +116,161 @@ export default () => {
                                 <SimpleButton key="autoTranslate" size="small" variant="contained"
                                               color="primary"
                                               onClick={() => {
-                                                struct.fields.forEach(field=>{
-                                                    if(field.localized){
+                                                  const json = JSON.parse(dataToEdit.data)
+                                                  struct.fields.forEach(field => {
+                                                      if (field.localized) {
 
-                                                        const name = field.name.split('_')[1],
-                                                            json = JSON.parse(dataToEdit.data)
+                                                          const name = field.name.split('_')[1]
 
-                                                        if(json[name].constructor===String){
-                                                            json[name] = {[config.DEFAULT_LANGUAGE]: json[name]}
-                                                        }
+                                                          if (json[name].constructor === String) {
+                                                              json[name] = {[config.DEFAULT_LANGUAGE]: json[name]}
+                                                          }
 
-                                                        const obj =  json[name]
+                                                          const obj = json[name]
 
+                                                          if (obj) {
+                                                              config.LANGUAGES.forEach(lang => {
+                                                                  if ((overrideTranslations || !obj[lang]) && lang !== config.DEFAULT_LANGUAGE) {
+                                                                      const text = obj[config.DEFAULT_LANGUAGE].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
+                                                                      client.query({
+                                                                          fetchPolicy: 'no-cache',
+                                                                          query: 'query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}',
+                                                                          variables: {
+                                                                              text,
+                                                                              toIso: lang,
+                                                                              fromIso: config.DEFAULT_LANGUAGE
+                                                                          },
+                                                                      }).then((res) => {
+                                                                          const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g, '') //.replace(/"/g,'\\"')
+                                                                          json[name][lang] = newText
+                                                                          /*dataToEdit.data = JSON.stringify(json)*/
+                                                                          console.log(json[name])
+                                                                          clearTimeout(translateTimeout)
+                                                                          translateTimeout = setTimeout(() => {
+                                                                              parentRef.setState({
+                                                                                  dataToEdit: {
+                                                                                      ...dataToEdit,
+                                                                                      data: JSON.stringify(json)
+                                                                                  }
+                                                                              })
+                                                                          }, 1000)
+                                                                      })
 
-                                                        if (obj) {
-                                                            config.LANGUAGES.forEach(lang => {
-                                                                if (!obj[lang] && lang !== config.DEFAULT_LANGUAGE) {
-                                                                    const text = obj[config.DEFAULT_LANGUAGE].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
-                                                                    client.query({
-                                                                        fetchPolicy: 'no-cache',
-                                                                        query: 'query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}',
-                                                                        variables: {
-                                                                            text,
-                                                                            toIso: lang,
-                                                                            fromIso: config.DEFAULT_LANGUAGE
-                                                                        },
-                                                                    }).then((res) => {
-                                                                        const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g,'') //.replace(/"/g,'\\"')
-                                                                        json[name][lang] = newText
-                                                                        /*dataToEdit.data = JSON.stringify(json)*/
-                                                                        parentRef.setState({dataToEdit:{...dataToEdit, data: JSON.stringify(json)}})
-                                                                        console.log(newText)
-                                                                    })
+                                                                  }
+                                                              })
+                                                          }
+                                                      }
+                                                  })
 
-                                                                }
-                                                            })
-                                                        }
-                                                    }
-                                                })
+                                              }}>Autotranslate</SimpleButton>,
+                                                  <SimpleSwitch key="overrideTranslations" label="Override Translations"
+                                                  name="overrideTranslations"
+                                                  onChange={(e) => {
+                                                      overrideTranslations = e.target.checked
+                                                      console.log(overrideTranslations)
+                                                  }}/>]} < /div>
+                                </React.Fragment>
 
-                                              }}>Autotranslate</SimpleButton>]}</div>
-                        </React.Fragment>
-
-                    struct.fields.forEach(field => {
-                        const oriName = field.name, newName = 'data_' + oriName
-                        field.name = newName
-                        newFields[newName] = field
-                        if (field.localized) {
-                            newDataToEdit[newName] = data[oriName]
-                        } else {
-                            newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
-                        }
-                        if (field.defaultValue && !newDataToEdit[newName]) {
-                            try {
+                                struct.fields.forEach(field => {
+                                const oriName = field.name, newName = 'data_' + oriName
+                                field.name = newName
+                                newFields[newName] = field
+                                if (field.localized) {
+                                newDataToEdit[newName] = data[oriName]
+                                } else {
+                                newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
+                                }
+                                if (field.defaultValue && !newDataToEdit[newName]) {
+                                try {
                                 newDataToEdit[newName] = eval(field.defaultValue)
-                            } catch (e) {
+                                } catch (e) {
                                 newDataToEdit[newName] = field.defaultValue
-                            }
-                        }
-                    })
-                    // override default
-                    props.children = <React.Fragment>
-                        <GenericForm autoFocus
-                                     innerRef={ref => {
-                                         parentRef.createEditForm = ref
-                                     }}
-                                     onBlur={event => {
-                                     }}
-                                     onChange={field => {
-                                     }}
-                                     primaryButton={false}
-                                     fields={newFields}
-                                     values={newDataToEdit}/>
-                    </React.Fragment>
-                }
-            } else {
+                                }
+                                }
+                                })
+                                // override default
+                                props.children = <React.Fragment>
+                                <GenericForm autoFocus
+                                innerRef={ref => {
+                                parentRef.createEditForm = ref
+                                }}
+                                onBlur={event => {
+                                }}
+                                onChange={field => {
+                                }}
+                                primaryButton={false}
+                                fields={newFields}
+                                values={newDataToEdit}/>
+                                </React.Fragment>
+                                }
+                                } else {
 
 
-                const newFields = Object.assign({}, formFields)
-                newFields.definition.readOnly = false
+                                const newFields = Object.assign({}, formFields)
+                                newFields.definition.readOnly = false
 
-                delete newFields.data
+                                delete newFields.data
 
-                // override default
-                props.children = [<Typography key="GenericDataLabel" variant="subtitle1" gutterBottom>Please select a
-                    generic type you want to create and press save.</Typography>,
-                    <GenericForm key="genericForm" autoFocus innerRef={ref => {
-                        parentRef.createEditForm = ref
-                    }} onBlur={event => {
-                        Hook.call('TypeCreateEditBlur', {type, event})
-                    }} onChange={field => {
-                    }} primaryButton={false} fields={newFields} values={dataToEdit}/>]
-            }
+                                // override default
+                                props.children = [<Typography key="GenericDataLabel" variant="subtitle1" gutterBottom>Please select a
+                                generic type you want to create and press save.</Typography>,
+                                <GenericForm key="genericForm" autoFocus innerRef={ref => {
+                                parentRef.createEditForm = ref
+                                }} onBlur={event => {
+                                Hook.call('TypeCreateEditBlur', {type, event})
+                                }} onChange={field => {
+                                }} primaryButton={false} fields={newFields} values={dataToEdit}/>]
+                                }
 
-        }
-    })
+                                }
+                                })
 
-    Hook.on('TypeCreateEditBeforeSave', function ({type, editedData, formFields}) {
-        if (type === 'GenericData' && editedData && editedData.definition) {
+                                Hook.on('TypeCreateEditBeforeSave', function ({type, editedData, formFields}) {
+                                if (type === 'GenericData' && editedData && editedData.definition) {
 
-            const definition = editedData.definition.constructor === Array ? editedData.definition[0] : editedData.definition
+                                const definition = editedData.definition.constructor === Array ? editedData.definition[0] : editedData.definition
 
-            const struct = JSON.parse(definition.structure)
+                                const struct = JSON.parse(definition.structure)
 
-            const data = {}
-            struct.fields.forEach(field => {
-                data[field.name] = editedData['data_' + field.name]
-                delete editedData['data_' + field.name]
-            })
+                                const data = {}
+                                struct.fields.forEach(field => {
+                                data[field.name] = editedData['data_' + field.name]
+                                delete editedData['data_' + field.name]
+                                })
 
-            editedData.data = JSON.stringify(data)
-
-
-        }
-    })
+                                editedData.data = JSON.stringify(data)
 
 
-    // add some extra data to the table
-    Hook.on('TypeTableAction', function ({type, actions}) {
-        if (type === 'GenericData') {
-
-            actions.push({
-                name: 'Export GenericData to csv', onClick: () => {
-                    const items = []
-                    this.state.data.results.forEach(res => {
-                        items.push({date: Util.formattedDatetimeFromObjectId(res._id), ...JSON.parse(res.data)})
-                    })
-                    const replacer = (key, value) => value === null ? '' : value // specify how you want to handle null values here
-                    const header = Object.keys(items[0])
-                    let csv = items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
-                    csv.unshift(header.join(','))
-                    csv = csv.join('\r\n')
+                                }
+                                })
 
 
-                    const a = document.createElement('a'),
-                        blob = new Blob([csv], {'type': 'text/comma-separated-values'})
-                    a.href = window.URL.createObjectURL(blob)
-                    a.download = 'genericdata.csv'
-                    a.target = '_blank'
-                    a.click()
-                }
-            })
-        }
-    })
+                                // add some extra data to the table
+                                Hook.on('TypeTableAction', function ({type, actions}) {
+                                if (type === 'GenericData') {
 
-}
+                                actions.push({
+                                name: 'Export GenericData to csv', onClick: () => {
+                                const items = []
+                                this.state.data.results.forEach(res => {
+                                items.push({date: Util.formattedDatetimeFromObjectId(res._id), ...JSON.parse(res.data)})
+                                })
+                                const replacer = (key, value) => value === null ? '' : value // specify how you want to handle null values here
+                                const header = Object.keys(items[0])
+                                let csv = items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
+                                csv.unshift(header.join(','))
+                                csv = csv.join('\r\n')
+
+
+                                const a = document.createElement('a'),
+                                blob = new Blob([csv], {'type': 'text/comma-separated-values'})
+                                a.href = window.URL.createObjectURL(blob)
+                                a.download = 'genericdata.csv'
+                                a.target = '_blank'
+                                a.click()
+                                }
+                                })
+                                }
+                                })
+
+                                }
