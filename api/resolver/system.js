@@ -1,9 +1,7 @@
 import Util from '../util'
 import {execSync, spawn} from 'child_process'
 import path from 'path'
-import fs from 'fs'
 import config from '../../gensrc/config'
-import zipper from 'zip-local'
 import {
     CAPABILITY_MANAGE_BACKUPS,
     CAPABILITY_MANAGE_COLLECTION,
@@ -16,10 +14,9 @@ import {withFilter} from 'graphql-subscriptions'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail'
 import {getType} from 'util/types'
-import os from 'os'
 import {rmDir} from '../util/dir'
-
-const {BACKUP_DIR, UPLOAD_DIR} = config
+import {listBackups, createBackup, removeBackup} from './backups'
+const {UPLOAD_DIR} = config
 
 
 const ABS_UPLOAD_DIR = path.join(__dirname, '../../' + UPLOAD_DIR)
@@ -260,27 +257,10 @@ export const systemResolver = (db) => ({
             }
 
         },
-        dbDumps: async (data, {context}) => {
+        backups: async ({type}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            // make sure upload dir exists
-            const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/dbdumps/')
-            if (!Util.ensureDirectoryExistence(backup_dir)) {
-                throw new Error(`Backup folder could not be created -> ${backup_dir}`)
-            }
-
-            const files = []
-            fs.readdirSync(backup_dir).forEach(file => {
-                if (file !== '.DS_Store') {
-                    const stats = fs.statSync(backup_dir + '/' + file)
-                    files.push({
-                        name: file,
-                        createdAt: (new Date(stats.mtime)).getTime(),
-                        size: (stats.size / 1000) + 'kb'
-                    })
-                }
-            })
-            files.reverse()
+            const files = listBackups(type)
 
             const response = {
                 results: files,
@@ -288,36 +268,6 @@ export const systemResolver = (db) => ({
                 limit: 0,
                 total: files.length
             }
-            return response
-        },
-        mediaDumps: async (data, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
-
-            // make sure upload dir exists
-            const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/mediadumps/')
-            if (!Util.ensureDirectoryExistence(backup_dir)) {
-                throw new Error(`Backup folder coud not be created -> ${backup_dir}`)
-            }
-
-            const files = []
-            fs.readdirSync(backup_dir).forEach(file => {
-                if (file !== '.DS_Store') {
-                    const stats = fs.statSync(backup_dir + '/' + file)
-                    files.push({
-                        name: file,
-                        createdAt: (new Date(stats.mtime)).getTime(),
-                        size: (stats.size / 1000) + 'kb'
-                    })
-                }
-            })
-            files.reverse()
-            const response = {
-                results: files,
-                offset: 0,
-                limit: 0,
-                total: files.length
-            }
-
             return response
         },
         collections: async ({filter}, {context}) => {
@@ -415,106 +365,14 @@ export const systemResolver = (db) => ({
         }
     },
     Mutation: {
-        createDbDump: async ({type}, {context}) => {
+        createBackup: async ({type}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
-
-            // make sure upload dir exists
-            const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/dbdumps/')
-            if (!Util.ensureDirectoryExistence(backup_dir)) {
-                throw new Error(`Backup folder coud not be created -> ${backup_dir}`)
-            }
-
-            /*
-
-             Backup: mongodump --uri $LUNUC_MONGO_URL -v --archive=backup.25022018.gz --gzip
-
-             */
-            const date = Date.now(),
-                name = 'backup.db.' + date + '.gz',
-                fullName = path.join(backup_dir, name)
-
-            const response = execSync('mongodump --uri $LUNUC_MONGO_URL -v --archive="' + fullName + '" --gzip')
-            console.log('createDbDump', response)
-
-            const stats = fs.statSync(fullName)
-
-            return {name, createdAt: date, size: (stats.size / 1000) + 'kb'}
+            return createBackup(type)
         },
-        removeDbDump: async ({name}, {context}) => {
+        removeBackup: async ({type, name}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            // make sure upload dir exists
-            const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/dbdumps/')
-
-            fs.unlinkSync(backup_dir + '/' + name)
-
-            return {status: 'ok'}
-        },
-        removeMediaDump: async ({name}, {context}) => {
-            Util.checkIfUserIsLoggedIn(context)
-
-            // make sure upload dir exists
-            const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/mediadumps/')
-
-            fs.unlinkSync(backup_dir + '/' + name)
-
-            return {status: 'ok'}
-        },
-        createMediaDump: async ({type, ids}, {context}) => {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_BACKUPS)
-
-            // make sure upload dir exists
-            const backup_dir = path.join(__dirname, '../../' + BACKUP_DIR + '/mediadumps/')
-            if (!Util.ensureDirectoryExistence(backup_dir)) {
-                throw new Error(`Backup folder coud not be created -> ${backup_dir}`)
-            }
-
-            const date = Date.now(),
-                name = 'backup.media.' + date + '.gz',
-                fullName = path.join(backup_dir, name)
-
-
-            const media_dir = ABS_UPLOAD_DIR
-
-            const files = fs.readdirSync(media_dir)
-            if (files.length === 0) {
-                throw new Error(`No files in folder -> ${media_dir}`)
-            }
-
-            const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lunuc'))
-            files.forEach((file) => {
-                if (file.indexOf('@') === -1) {
-                    if (ids) {
-                        if (ids.indexOf(file) >= 0) {
-                            fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
-                        }
-                    } else {
-                        const stat = fs.lstatSync(media_dir + '/' + file)
-
-
-                        if (!stat.isDirectory() && stat.size < 2000000) {
-                            // only include files small then 2MBs
-                            fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
-                        }
-                    }
-                }
-            })
-
-
-            // zip media dir
-            zipper.sync.zip(tmpDir).compress().save(fullName)
-
-            //remove temp files
-            const tempFiles = fs.readdirSync(tmpDir)
-            tempFiles.forEach((file) => {
-                fs.unlinkSync(path.join(tmpDir, file))
-            })
-            fs.rmdirSync(tmpDir)
-
-
-            const stats = fs.statSync(fullName)
-
-            return {name, createdAt: date, size: (stats.size / 1000) + 'kb'}
+            return removeBackup(type, name)
         },
         cloneCollection: async ({type, name}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)

@@ -188,8 +188,10 @@ class TypesContainer extends React.Component {
         if (this.props.onRef)
             this.props.onRef(this)
 
-        this._handleWindowClose = this.saveSettings.bind(this)
+        this._handleWindowClose = this.handleWindowClose.bind(this)
+        this._urlChanged = this.urlChanged.bind(this)
         window.addEventListener('beforeunload', this._handleWindowClose)
+        window.addEventListener('popstate', this._urlChanged)
     }
 
     componentWillUnmount() {
@@ -197,6 +199,18 @@ class TypesContainer extends React.Component {
             this.saveSettings()
         }, 1)
         window.removeEventListener('beforeunload', this._handleWindowClose)
+        window.removeEventListener('popstate', this._urlChanged)
+    }
+
+    handleWindowClose(){
+        this.saveSettings()
+    }
+
+    urlChanged(){
+        const params = Util.extractQueryParams(window.location.search.substring(1))
+        if(params.f && params.f !==this.state.filter){
+            this.setState({filter:params.f})
+        }
     }
 
 

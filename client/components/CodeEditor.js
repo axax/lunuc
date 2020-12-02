@@ -93,41 +93,6 @@ const snippets = {
 }
 
 
-const jsonPropertyTemplates = [
-    {title: 'Click Event',template:'"onClick":{"action":"click"}'},
-    {title: 'Change Event',template:'"onChange":{"action":"change"}'},
-    {title: 'Inline Editor false',template:'"$inlineEditor":false'}
-]
-
-const jsonTemplates = [
-    {title: 'For loop',template:'"{$for": {"d": "data","s":"loop","c": [{"c":"$.loop{loop.value}"}]}}'},
-    {title: 'Form Checkbox',template:'{"t":"label","c":[{"t":"input","$inlineEditor":false,"p":{"name":"check","type":"checkbox","checked":"","onClick":{"_forceUpdate":true}}},{"t":"span","$inlineEditor":false,"c":"Checkbox (${bindings.check})"}]}'},
-    {title: 'Smart Image',template: `{
-                          "$inlineEditor": false,
-                          "$observe": {
-                            "lazyImage": {
-                              "width": "",
-                              "height": ""
-                            },
-                            "rootMargin": "0px 0px 0px 0px"
-                          },
-                          "t": "SmartImage",
-                          "p": {
-                            "inlineSvg": false,
-                            "caption": "",
-                            "src": "/icons/download.svg",
-                            "options": {
-                              "webp": true,
-                              "quality": "85",
-                              "resize": {
-                                "height": "",
-                                "width": "",
-                                "responsive": false
-                              }
-                            }
-                          }
-                        }`}
-]
 
 function getFirstLine(text) {
     let index = text.indexOf('\n')
@@ -171,7 +136,7 @@ class CodeEditor extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         if (!!nextProps.error !== !!prevState.error ||
             (!prevState._stateUpdate &&
-            !prevState.stateError && nextProps.controlled &&
+                !prevState.stateError && nextProps.controlled &&
                 (nextProps.children !== prevState.data || nextProps.lineNumbers !== prevState.lineNumbers || nextProps.type !== prevState.type)
             )) {
             console.log(nextProps.error, prevState.error)
@@ -400,10 +365,10 @@ class CodeEditor extends React.Component {
             this._curLineEndsWithComma = this._curLine.endsWith(',')
             let tempJson
             try {
-                tempJson = JSON.parse('{' + (this._curLineEndsWithComma?this._curLine.substring(0, this._curLine.length - 1):this._curLine) + '}')
+                tempJson = JSON.parse('{' + (this._curLineEndsWithComma ? this._curLine.substring(0, this._curLine.length - 1) : this._curLine) + '}')
             } catch (e) {
             }
-            if(tempJson) {
+            if (tempJson) {
                 contextMenuItems = [
                     {
                         icon: <EditIcon/>,
@@ -424,28 +389,30 @@ class CodeEditor extends React.Component {
                                 this.setState({editData: {uitype: 'html', key: keys[0], value: tempJson[keys[0]]}})
                             }
                         }
-                    },
-                    {
-                        icon: <AddIcon/>,
-                        name: 'Add',
-                        items: jsonPropertyTemplates.map(f => ({
-                            name: f.title,
-                            onClick: () => {
-                                this.changeLine({
-                                    value,
-                                    lineNr: this._curLineNr,
-                                    line: `${this._curLine}${!this._curLine || this._curLineEndsWithComma ? '' : ','}${f.template}${this._curLineEndsWithComma ? ',' : ''}`
-                                })
-                            }
-                        }))
                     }
                 ]
-            }else{
+                if(this.props.propertyTemplates){
+                    contextMenuItems.push({
+                            icon: <AddIcon/>,
+                            name: 'Add',
+                            items: this.props.propertyTemplates.map(f => ({
+                                name: f.title,
+                                onClick: () => {
+                                    this.changeLine({
+                                        value,
+                                        lineNr: this._curLineNr,
+                                        line: `${this._curLine}${!this._curLine || this._curLineEndsWithComma ? '' : ','}${f.template}${this._curLineEndsWithComma ? ',' : ''}`
+                                    })
+                                }
+                            }))
+                        })
+                }
+            } else if(this.props.templates){
                 contextMenuItems = [
                     {
                         icon: <AddIcon/>,
                         name: 'Add',
-                        items: jsonTemplates.map(f => ({
+                        items: templates.map(f => ({
                             name: f.title,
                             onClick: () => {
                                 this.changeLine({
@@ -652,6 +619,8 @@ CodeEditor.propTypes = {
     actions: PropTypes.array,
     showFab: PropTypes.bool,
     style: PropTypes.object,
+    propertyTemplates: PropTypes.object,
+    templates: PropTypes.object,
     fabButtonStyle: PropTypes.object,
     className: PropTypes.string,
     scrollPosition: PropTypes.object

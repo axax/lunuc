@@ -14,40 +14,23 @@ export const systemSchemaRaw = `
         response: String
     }
     
-    type DbDump {
+    type Backup {
         name: String
         createdAt: Float
         size: String
     }
     
-    type DbDumpResult {
-        results: [DbDump]
+    type BackupResult {
+        results: [Backup]
         offset: Int
         limit: Int
         total: Int
     }
     
-    type RemoveDbDumpResult {
+    type RemoveBackupResult {
         status: String
     }
-    
-    type RemoveMediaDumpResult {
-        status: String
-    }
-    
-    type MediaDump {
-        name: String
-        createdAt: Float
-        size: String
-    }
-    
-    type MediaDumpResult {
-        results: [MediaDump]
-        offset: Int
-        limit: Int
-        total: Int
-    }
-    
+        
     type Collection {
         name: String
     }
@@ -101,8 +84,7 @@ export const systemSchemaRaw = `
     	run(command: String!, scope: String, id: String, sync: Boolean): RunResult
     	killRun(id: String!): RunResult
     	sendMail(recipient: String!, subject: String, body: String, slug: String, from: String): MailResult
-    	dbDumps: DbDumpResult
-    	mediaDumps: MediaDumpResult  
+    	backups(type: String!): BackupResult
     	ping: PingResult
     	collections (filter: String): CollectionResult
     	collectionAggregate (collection: String!, json: String!): CollectionAggregateResult
@@ -112,10 +94,8 @@ export const systemSchemaRaw = `
     
       
     type Mutation {   	
-    	createDbDump(type: String): DbDump    	
-    	removeDbDump(name: String!): RemoveDbDumpResult   
-    	removeMediaDump(name: String!): RemoveMediaDumpResult   
-    	createMediaDump(type: String, ids: [ID]): MediaDump
+    	createBackup(type: String!): Backup    	
+    	removeBackup(type: String!, name: String!): RemoveBackupResult   
     	cloneCollection(type: String!, name: String): CloneCollectionResult
     	deleteCollection(name: String!): DeleteCollectionResult
     }

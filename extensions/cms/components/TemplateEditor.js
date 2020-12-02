@@ -4,7 +4,7 @@ import CodeEditor from 'client/components/CodeEditor'
 import JsonEditor from './JsonEditor'
 import {Tabs, Tab, CodeIcon, WebIcon, SubjectIcon, withStyles} from 'ui/admin'
 import {getComponentByKey} from '../util/jsonDomUtil'
-
+import {jsonPropertyTemplates, jsonTemplates} from './templates/template'
 
 const styles = theme => ({
     root: {
@@ -152,6 +152,8 @@ class TemplateEditor extends React.Component {
                             fabButtonStyle={fabButtonStyle}
                             onChange={this.handleChange.bind(this)}
                             error={error}
+                            templates={jsonTemplates}
+                            propertyTemplates={jsonPropertyTemplates}
                             onError={(e, data)=>{
                                 if (data.trim().indexOf('<') === 0) {
                                     // content changed to html

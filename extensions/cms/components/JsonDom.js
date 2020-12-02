@@ -164,6 +164,10 @@ class JsonDom extends React.Component {
                     }
                 }
 
+                /*if(url.indexOf(_app_.contextPath + '/') !== 0){
+                    url=_app_.contextPath+url
+                }*/
+
                 return <Link target={newTarget} rel={rel} onClick={(e) => {
 
                     if (!url) {

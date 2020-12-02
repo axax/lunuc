@@ -6,10 +6,7 @@ import {
     SimpleButton,
     SimpleDialog,
     Typography,
-    TextField,
-    Divider,
     DeleteIconButton,
-    Chip,
     SimpleList,
     Row,
     Col
@@ -22,7 +19,7 @@ import {graphql, client} from '../middleware/graphql'
 const {BACKUP_URL} = config
 
 
-class DbDumpContainer extends React.Component {
+class BackupContainer extends React.Component {
 
 
     constructor(props) {
@@ -31,16 +28,18 @@ class DbDumpContainer extends React.Component {
         this.state = {
             creatingDump: false,
             creatingMediaDump: false,
+            creatingHostruleDump: false,
             importingDbDump: false,
             importingMediaDump: false,
             importMediaDumpDialog: false,
-            importDbDumpDialog: false
+            importDbDumpDialog: false,
+            importHostruleDumpDialog: false
         }
     }
 
     createDump() {
         this.setState({creatingDump: true})
-        this.props.createDbDump().then(e => {
+        this.props.createBackup({type:'db'}).then(e => {
             this.setState({creatingDump: false})
         })
 
@@ -48,10 +47,16 @@ class DbDumpContainer extends React.Component {
 
     createMediaDump() {
         this.setState({creatingMediaDump: true})
-        this.props.createMediaDump().then(e => {
+        this.props.createBackup({type:'media'}).then(e => {
             this.setState({creatingMediaDump: false})
         })
+    }
 
+    createHostruleDump() {
+        this.setState({creatingHostruleDump: true})
+        this.props.createBackup({type:'hostrule'}).then(e => {
+            this.setState({creatingHostruleDump: false})
+        })
     }
 
     importMediaDump() {
@@ -108,18 +113,18 @@ class DbDumpContainer extends React.Component {
     }
 
     render() {
-        const {dbDumps, mediaDumps} = this.props
-        const {creatingDump, creatingMediaDump, importingMediaDump, importMediaDumpDialog, importDbDumpDialog, importingDbDump} = this.state
+        const {dbDumps, mediaDumps, hostruleDumps} = this.props
+        const {creatingDump, creatingMediaDump, creatingHostruleDump, importingMediaDump, importMediaDumpDialog, importDbDumpDialog, importHostruleDumpDialog, importingDbDump} = this.state
         return (
             <BaseLayout>
                 <Typography variant="h3" gutterBottom>Backups</Typography>
 
                 <Row spacing={4}>
-                    <Col md={6}>
+                    <Col md={4}>
 
                         <SimpleButton variant="contained" color="primary"
                                       showProgress={creatingDump}
-                                      onClick={this.createDump.bind(this)}>{creatingDump ? 'Dump is beeing created' : 'Create new db dump'}</SimpleButton>
+                                      onClick={this.createDump.bind(this)}>{creatingDump ? 'Dump is beeing created' : 'Create db dump'}</SimpleButton>
 
                         <SimpleButton color="secondary"
                                       disabled={importDbDumpDialog}
@@ -138,7 +143,7 @@ class DbDumpContainer extends React.Component {
                                     },
                                     secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size,
                                     actions: <DeleteIconButton onClick={() => {
-                                        this.props.removeDbDump(i)
+                                        this.props.removeBackup({name:i.name,type:'db'})
                                     }}/>
                                 })
                             }
@@ -147,12 +152,12 @@ class DbDumpContainer extends React.Component {
                         }
                     </Col>
 
-                    <Col md={6}>
+                    <Col md={4}>
 
                         <SimpleButton variant="contained" color="primary"
                                       disabled={importMediaDumpDialog}
                                       showProgress={creatingMediaDump}
-                                      onClick={this.createMediaDump.bind(this)}>{creatingMediaDump ? 'Dump is beeing created' : 'Create new media dump'}</SimpleButton>
+                                      onClick={this.createMediaDump.bind(this)}>{creatingMediaDump ? 'Dump is beeing created' : 'Create media dump'}</SimpleButton>
 
                         <SimpleButton color="secondary"
                                       showProgress={importingMediaDump}
@@ -168,7 +173,33 @@ class DbDumpContainer extends React.Component {
                                 },
                                 secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size,
                                 actions: <DeleteIconButton onClick={()=>{
-                                    this.props.removeMediaDump(i)
+                                    this.props.removeBackup({name:i.name,type:'media'})
+                                }}/>
+                            })
+                            return a
+                        }, [])}/>
+                        }
+                    </Col>
+
+
+                    <Col md={4}>
+
+                        <SimpleButton variant="contained" color="primary"
+                                      disabled={importHostruleDumpDialog}
+                                      showProgress={creatingHostruleDump}
+                                      onClick={this.createHostruleDump.bind(this)}>{creatingHostruleDump ? 'Dump is beeing created' : 'Create hostrule dump'}</SimpleButton>
+
+
+                        {hostruleDumps && hostruleDumps.results && hostruleDumps.results.length > 0 &&
+                        <SimpleList items={hostruleDumps.results.reduce((a, i) => {
+                            a.push({
+                                primary: i.name,
+                                onClick: () => {
+                                    this.authorizedRequest(BACKUP_URL + '/hostruledumps/' + i.name, 'hostrule.backup.gz')
+                                },
+                                secondary: Util.formattedDatetime(i.createdAt) + ' - ' + i.size,
+                                actions: <DeleteIconButton onClick={()=>{
+                                    this.props.removeBackup({name:i.name,type:'hostrule'})
                                 }}/>
                             })
                             return a
@@ -203,51 +234,76 @@ class DbDumpContainer extends React.Component {
 }
 
 
-DbDumpContainer.propTypes = {
+BackupContainer.propTypes = {
     dbDumps: PropTypes.object,
-    createDbDump: PropTypes.func.isRequired,
-    createMediaDump: PropTypes.func.isRequired,
+    createBackup: PropTypes.func.isRequired,
+    removeBackup: PropTypes.func.isRequired,
     loading: PropTypes.bool,
-    mediaDumps: PropTypes.object
+    mediaDumps: PropTypes.object,
+    hostruleDumps: PropTypes.object
 }
 
-const gqlQuery = `query{dbDumps{results{name createdAt size}}}`
-const gqlUpdate = `mutation createDbDump($type:String){createDbDump(type:$type){name createdAt size}}`
-const gqlRemove = `mutation removeDbDump($name:String!){removeDbDump(name:$name){status}}`
-const gqlQueryMedia = `query{mediaDumps{results{name createdAt size}}}`
-const gqlUpdateMedia = `mutation createMediaDump($type:String){createMediaDump(type:$type){name createdAt size}}`
-const gqlRemoveMedia = `mutation removeMediaDump($name:String!){removeMediaDump(name:$name){status}}`
+const gqlQuery = `query backups($type:String!){backups(type:$type){results{name createdAt size}}}`
+const gqlUpdate = `mutation createBackup($type:String!){createBackup(type:$type){name createdAt size}}`
+const gqlRemove = `mutation removeBackup($type:String!,$name:String!){removeBackup(type:$type,name:$name){status}}`
 
-const DbDumpContainerWithGql = compose(
+const BackupContainerWithGql = compose(
     graphql(gqlQuery, {
         options() {
             return {
+                variables: {type: 'db'},
                 fetchPolicy: 'cache-and-network'
             }
         },
-        props: ({data: {dbDumps}}) => ({
-            dbDumps
+        props: ({data: {backups}}) => ({
+            dbDumps: backups
+        })
+    }),
+    graphql(gqlQuery, {
+        options() {
+            return {
+                variables: {type: 'media'},
+                fetchPolicy: 'cache-and-network'
+            }
+        },
+        props: ({data: {backups}}) => ({
+            mediaDumps: backups
+        })
+    }),
+    graphql(gqlQuery, {
+        options() {
+            return {
+                variables: {type: 'hostrule'},
+                fetchPolicy: 'cache-and-network'
+            }
+        },
+        props: ({data: {backups}}) => ({
+            hostruleDumps: backups
         })
     }),
     graphql(gqlUpdate, {
         props: ({mutate}) => ({
-            createDbDump: () => {
+            createBackup: ({type}) => {
                 return mutate({
-                    variables: {type: 'full'},
-                    update: (proxy, {data: {createDbDump}}) => {
-                        // Read the data from our cache for this query.
-                        const storeData = proxy.readQuery({query: gqlQuery}) || {}
+                    variables: {type},
+                    update: (proxy, {data: {createBackup}}) => {
+                        if(!createBackup.errors) {
+                            // Read the data from our cache for this query.
+                            const storeData = proxy.readQuery({query: gqlQuery, variables: {type}}) || {}
+                            if (!storeData.backups) {
+                                storeData.backups = {}
+                            }
+                            const newData = {...storeData.backups, results: [...storeData.backups.results]}
 
-                        if( !storeData.dbDumps ){
-                            storeData.dbDumps={}
+                            newData.results.unshift(createBackup)
+
+                            // Write our data back to the cache.
+                            proxy.writeQuery({
+                                query: gqlQuery,
+                                variables: {type},
+                                data: {...storeData, backups: newData}
+                            })
                         }
-                        const newData = {...storeData.dbDumps, results: [...storeData.dbDumps.results]}
-
-                        // Add our note from the mutation to the end.
-                        newData.results.unshift(createDbDump)
-
-                        // Write our data back to the cache.
-                        proxy.writeQuery({query: gqlQuery, data: {...storeData, dbDumps: newData}})
                     }
 
                 })
@@ -256,92 +312,32 @@ const DbDumpContainerWithGql = compose(
     }),
     graphql(gqlRemove, {
         props: ({mutate}) => ({
-            removeDbDump: ({name}) => {
+            removeBackup: ({name, type}) => {
                 return mutate({
-                    variables: {name: name},
-                    update: (proxy, {data: {removeDbDump}}) => {
+                    variables: {name, type},
+                    update: (proxy, {data: {removeBackup}}) => {
                         // Read the data from our cache for this query.
-                        const storeData = proxy.readQuery({query: gqlQuery})
+                        const storeData = proxy.readQuery({query: gqlQuery, variables:{type}})
 
-                        const newData = {...storeData.dbDumps, results: [...storeData.dbDumps.results]}
+                        const newData = {...storeData.backups, results: [...storeData.backups.results]}
 
                         const idx = newData.results.findIndex(x => x.name === name)
                         if (idx > -1) {
                             newData.results.splice(idx, 1)
-                            proxy.writeQuery({query: gqlQuery, data: {...storeData, dbDumps: newData}})
+                            proxy.writeQuery({query: gqlQuery, variables:{type}, data: {...storeData, backups: newData}})
                         }
                     }
 
                 })
             }
         })
-    }),
-    graphql(gqlQueryMedia, {
-        options() {
-            return {
-                fetchPolicy: 'cache-and-network'
-            }
-        },
-        props: ({data: {mediaDumps}}) => ({
-            mediaDumps
-        })
-    }),
-    graphql(gqlUpdateMedia, {
-        props: ({mutate}) => ({
-            createMediaDump: () => {
-                return mutate({
-                    variables: {type: 'full'},
-                    update: (proxy, {data: {createMediaDump}}) => {
-                        // Read the data from our cache for this query.
-                        const storeData = proxy.readQuery({query: gqlQueryMedia}) || {}
-
-                        if( !storeData.mediaDumps ){
-                            storeData.mediaDumps={}
-                        }
-
-                        const newData = {...storeData.mediaDumps, results: [...storeData.mediaDumps.results]}
-
-                        // Add our note from the mutation to the end.
-                        newData.results.unshift(createMediaDump)
-
-                        // Write our data back to the cache.
-                        proxy.writeQuery({query: gqlQueryMedia, data: {...storeData, mediaDumps: newData}})
-                    }
-
-                })
-            }
-        })
-    }),
-    graphql(gqlRemoveMedia, {
-        props: ({mutate}) => ({
-            removeMediaDump: ({name}) => {
-                return mutate({
-                    variables: {name: name},
-                    update: (proxy, {data: {removeMediaDump}}) => {
-                        // Read the data from our cache for this query.
-                        const storeData = proxy.readQuery({query: gqlQueryMedia})
-
-                        const newData = {...storeData.mediaDumps, results: [...storeData.mediaDumps.results]}
-
-
-                        const idx = newData.results.findIndex(x => x.name === name)
-                        if (idx > -1) {
-                            newData.results.splice(idx, 1)
-                            proxy.writeQuery({query: gqlQueryMedia, data: {...storeData, mediaDumps: newData}})
-
-                        }
-                    }
-
-                })
-            }
-        })
-    }),
+    })
 )
-(DbDumpContainer)
+(BackupContainer)
 
 
 /**
  * Connect the component to
  * the Redux store.
  */
-export default DbDumpContainerWithGql
+export default BackupContainerWithGql
