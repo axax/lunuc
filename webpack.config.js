@@ -2,6 +2,7 @@ const path = require('path')
 const fs = require('fs')
 const glob = require('glob')
 const webpack = require('webpack')
+const zlib = require('zlib')
 
 // webpack plugins
 const TerserPlugin = require('terser-webpack-plugin')
@@ -140,7 +141,7 @@ if (fs.existsSync(APP_VALUES.HOSTRULES_ABSPATH)) {
 
 const config = {
     entry: ['./client/index.js'],
-    target: 'web',
+    target: ['web', 'es5'],
     output: {
         path: path.resolve(__dirname, 'build'),
         filename: '[name].bundle.js?v=' + BUILD_NUMBER,
@@ -150,7 +151,7 @@ const config = {
     module: {
         rules: [
             {
-                test: /\.m?js$/,
+                test: /\.js$/,
                 /*resolve: {
                     fullySpecified: false
                 },*/
@@ -318,7 +319,9 @@ if (DEV_MODE) {
             filename: '[path][base].br[query]',
             algorithm: 'brotliCompress',
             compressionOptions: {
-                level: 11,
+                params: {
+                    [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
+                },
             },
             threshold: 10240,
             minRatio: 0.95,
@@ -329,23 +332,28 @@ if (DEV_MODE) {
     const terserOptions = {
         extractComments: 'all',
         terserOptions: {
+            ecma: undefined,
+            parse: {
+            },
+            module: true,
+            mangle: {},
             compress: {
+                booleans_as_integers: false,
                 drop_console: true,
                 pure_getters: true, /* 1kb */
+                unsafe:false,
+                passes:2,
                 //unsafe_proto:true /* 20 bytes */
                 //booleans_as_integers:true, /* 200 bytes */
                 //unsafe_Function: true /* 10 Bytes */
                 //unsafe_proto:true /* 10 Bytes */
             },
-            mangle: {},
-            output: {
-                comments: false,
-                semicolons: true,
-                shebang: true,
-                beautify: false
+            format: {
+                comments: false
             }
         }
     }
+    config.optimization.minimize = true
     config.optimization.minimizer.push(
         new TerserPlugin(terserOptions)
     )
