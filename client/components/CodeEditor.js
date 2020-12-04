@@ -82,6 +82,16 @@ const snippets = {
             displayText: 'mount event'
         },
         {
+            text: `
+on('customevent',p=>{
+\tif(p.action === 'modalClosed'){
+\t\t
+\t}else if(p.action === 'modalButtonClicked'){
+\t}
+})`,
+            displayText: 'custom event'
+        },
+        {
             text: `DomUtil.waitForElement('.selector').then(()=>{\n\t\n})`,
             displayText: 'waitForElement'
         },
@@ -91,7 +101,6 @@ const snippets = {
         },
     ]
 }
-
 
 
 function getFirstLine(text) {
@@ -363,6 +372,7 @@ class CodeEditor extends React.Component {
             this._curLineNr = loc.line
             this._curLine = this._editor.doc.getLine(loc.line).trim()
             this._curLineEndsWithComma = this._curLine.endsWith(',')
+
             let tempJson
             try {
                 tempJson = JSON.parse('{' + (this._curLineEndsWithComma ? this._curLine.substring(0, this._curLine.length - 1) : this._curLine) + '}')
@@ -391,34 +401,45 @@ class CodeEditor extends React.Component {
                         }
                     }
                 ]
-                if(this.props.propertyTemplates){
+                if (this.props.propertyTemplates) {
                     contextMenuItems.push({
-                            icon: <AddIcon/>,
-                            name: 'Add',
-                            items: this.props.propertyTemplates.map(f => ({
-                                name: f.title,
-                                onClick: () => {
-                                    this.changeLine({
-                                        value,
-                                        lineNr: this._curLineNr,
-                                        line: `${this._curLine}${!this._curLine || this._curLineEndsWithComma ? '' : ','}${f.template}${this._curLineEndsWithComma ? ',' : ''}`
-                                    })
-                                }
-                            }))
-                        })
-                }
-            } else if(this.props.templates){
-                contextMenuItems = [
-                    {
                         icon: <AddIcon/>,
                         name: 'Add',
-                        items: templates.map(f => ({
+                        items: this.props.propertyTemplates.map(f => ({
                             name: f.title,
                             onClick: () => {
                                 this.changeLine({
                                     value,
                                     lineNr: this._curLineNr,
-                                    line: `${this._curLine}${this._curLineEndsWithComma ? '' : ','}${f.template}${this._curLineEndsWithComma ? ',' : ''}`
+                                    line: `${this._curLine}${!this._curLine || this._curLineEndsWithComma ? '' : ','}${f.template}${this._curLineEndsWithComma ? ',' : ''}`
+                                })
+                            }
+                        }))
+                    })
+                }
+            } else if (this.props.templates) {
+                let commaAtEnd = this._curLineEndsWithComma, commaAtStart = !this._curLineEndsWithComma
+                if (!commaAtEnd) {
+                    const nextLine = this._editor.doc.getLine(this._curLineNr + 1).trim()
+                    if (nextLine.startsWith('{')) {
+                        commaAtEnd = true
+                    }
+                    if (this._curLine.endsWith('[')) {
+                        commaAtStart = false
+                    }
+
+                }
+                contextMenuItems = [
+                    {
+                        icon: <AddIcon/>,
+                        name: 'Add',
+                        items: this.props.templates.map(f => ({
+                            name: f.title,
+                            onClick: () => {
+                                this.changeLine({
+                                    value,
+                                    lineNr: this._curLineNr,
+                                    line: `${this._curLine}${commaAtStart ? ',' : ''}${f.template}${commaAtEnd ? ',' : ''}`
                                 })
                             }
                         }))

@@ -1,6 +1,5 @@
 import {getType, getTypes, getTypeQueries} from 'util/types'
 import DomUtil from 'client/util/dom'
-import md5 from 'util/md5'
 import config from 'gen/config'
 
 /**
@@ -209,7 +208,7 @@ const Util = {
 
             return _app_.config.UPLOAD_URL + '/' + (user.picture._id ? user.picture._id : user.picture)
         }
-        return 'https://gravatar.com/avatar/' + md5(user ? user.email : '') + '?s=50&r=pg&d=mp'
+        return '/placeholder.svg'
     },
     getMediaSrc(media, src) {
         return src ? src : (media.src ? media.src : _app_.config.UPLOAD_URL + '/' + media._id)

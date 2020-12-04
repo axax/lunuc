@@ -7,7 +7,7 @@ import ClientUtil from 'client/util'
 import {getCmsPage} from '../util/cmsPage'
 import {resolveData} from '../util/dataResolver'
 import {pubsub} from 'api/subscription'
-import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
+import {DEFAULT_DATA_RESOLVER, DEFAULT_TEMPLATE, DEFAULT_SCRIPT, DEFAULT_STYLE, CAPABILITY_MANAGE_CMS_PAGES} from '../constants'
 import Cache from 'util/cache'
 import {withFilter} from 'graphql-subscriptions'
 import {getHostFromHeaders} from 'util/host'
@@ -312,7 +312,8 @@ export default db => ({
                 ...rest,
                 dataResolver: DEFAULT_DATA_RESOLVER,
                 template: DEFAULT_TEMPLATE,
-                script: DEFAULT_SCRIPT
+                script: DEFAULT_SCRIPT,
+                style: DEFAULT_STYLE
             })
         },
         updateCmsPage: async ({_id, slug, realSlug, query, props, createdBy, ...rest}, req) => {

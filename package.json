@@ -27,8 +27,8 @@
     "test": "export PORT=3001;export MONGO_URL=mongodb://localhost:27018; jest",
     "posttest": "npm run mongodb:clear",
     "client": "export BABEL_ENV=client;API_PORT=3000 node ./server/index.js",
-    "client:dev": "export BABEL_ENV=client;API_PORT=3000 webpack-dev-server",
-    "build": "export BABEL_ENV=client_build;NODE_ENV=production webpack -p",
+    "client:dev": "export BABEL_ENV=client;API_PORT=3000 webpack serve",
+    "build": "export BABEL_ENV=client_build;NODE_ENV=production webpack",
     "api": "export BABEL_ENV=api;PORT=3000 node ./api/index.js",
     "api:dev": "export BABEL_ENV=api;PORT=3000 nodemon ./api/index.js --watch api --watch extensions -i 'gensrc/*' -i 'extensions/*/client.js' -i 'extensions/*/components/*' -i 'extensions/*/containers/*'",
     "api:local": "export MONGO_URL=mongodb://localhost:27018/lunuc;export BABEL_ENV=api;PORT=3000 nodemon ./api/index.js --watch api --watch extensions --ignore 'gensrc/*'",
@@ -65,8 +65,8 @@
     "@babel/preset-env": "^7.12.7",
     "@babel/preset-react": "^7.12.7",
     "@babel/register": "^7.12.1",
-    "@material-ui/core": "^4.11.1",
-    "@material-ui/icons": "^4.9.1",
+    "@material-ui/core": "^4.11.2",
+    "@material-ui/icons": "^4.11.2",
     "babel-plugin-css-modules-transform": "^1.6.2",
     "babel-plugin-dynamic-import-node": "^2.3.3",
     "babel-plugin-module-resolver": "^4.0.0",
@@ -116,7 +116,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.6.0",
     "@google-cloud/translate": "^6.0.4",
-    "aws-sdk": "^2.802.0",
+    "aws-sdk": "^2.803.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
@@ -125,7 +125,7 @@
     "mssql": "^6.2.3",
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
-    "ytdl-core": "^4.1.1",
+    "ytdl-core": "^4.1.2",
     "lighthouse": "^6.5.0"
   },
   "devDependencies": {
@@ -133,7 +133,7 @@
     "babel-jest": "^26.6.3",
     "babel-loader": "^8.2.2",
     "babel-plugin-graphql-tag": "^3.1.0",
-    "compression-webpack-plugin": "^6.1.1",
+    "compression-webpack-plugin": "^7.0.0",
     "copy-webpack-plugin": "^6.3.2",
     "css-loader": "^5.0.1",
     "eslint": "^7.14.0",
@@ -145,10 +145,10 @@
     "prop-types": "^15.7.2",
     "react-test-renderer": "^17.0.1",
     "style-loader": "^2.0.0",
-    "terser-webpack-plugin": "^4.2.3",
-    "webpack": "^4.44.2",
-    "webpack-bundle-analyzer": "^3.9.0",
-    "webpack-cli": "^3.3.12",
+    "terser-webpack-plugin": "^5.0.3",
+    "webpack": "^5.9.0",
+    "webpack-bundle-analyzer": "^4.2.0",
+    "webpack-cli": "^4.2.0",
     "webpack-dev-server": "^3.11.0"
   }
 }

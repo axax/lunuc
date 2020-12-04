@@ -7,103 +7,28 @@ export const DEFAULT_DATA_RESOLVER = `[
     "track": {
       "event": "visit"
     }
-  },
-  {
-    "data":{
-      "type":"Word",
-      "fields": [{"name":"it", "label": "Italian"}, {"name":"de", "label": "German"}]
-    }
-  },
-  {
-    "t": "$Word",
-    "d": [
-      "de",
-      "it",
-      {
-        "categories": [
-          "name",
-          "_id"
-        ]
-      }
-    ],
-    "f":"categories.name=\\\\\\"italienisch basis\\\\\\"",
-    "l": 20,
-    "o": 0
   }
 ]`
 
 
 export const DEFAULT_TEMPLATE = `[
   {
-    "t": "h1$",
-    "c": "Inital Demo Page"
-  },
-  {
-    "t": "p$",
-    "c": "Resolve date from the database and show it here."
-  },
-  {
-    "t": "table.mytable",
-    "p": {},
+    "t": "div.page",
     "c": [
       {
-        "t": "tbody",
-        "c": {
-          "t": "tr",
-          "c": {
-            "$loop": {
-              "s": "cols",
-              "$d": "data.fields",
-              "c": {
-                "t": "th",
-                "c": "$.cols{label}"
-              }
+        "t": "h1",
+        "$inlineEditor": {
+          "elementKey": "headline",
+          "options": {
+            "c": {
+              "trKey": "genid_40yjkwyge"
             }
           }
-        }
-      },
-      {
-        "t": "tbody",
-        "c": [
-          {
-            "$loop": {
-              "s": "result",
-              "$d": "data.Word.results",
-              "c": [
-                {
-                  "t": "tr",
-                  "c": [
-                    {
-                      "$loop": {
-                        "s": "cols",
-                        "d": "data.fields",
-                        "c": [
-                          {
-                            "t": "td",
-                            "c": "$.cols{this.scope.result[name]?this.scope.result[name]:''}"
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "t": "tfoot",
-        "c": {
-          "t": "tr",
-          "c": {
-            "t": "td",
-            "c": "Page \${data.Word.page} of \${Math.ceil(data.Word.total / data.Word.limit)}",
-            "p": {
-                "colSpan":"\${data.fields.length}"
-            }
-          }
-        }
+        },
+        "p": {
+          "data-element-key": "headline"
+        },
+        "c": "Page"
       }
     ]
   }
@@ -137,30 +62,473 @@ on('urlchange',()=>{
 
 on('beforerunscript',()=>{
 \t// this is called before the script is executed
-})
+})`
 
-setStyle(\`
-.mytable {
-\twidth: 100%;
-\tborder: 2px solid #eee;
-\tbackground: #fff;
-\tborder-spacing: 0px;
-\tbox-shadow: 0px 10px 50px 0px rgba(0,0,0,0.12);
-\tborder-radius: 5px;
+export const DEFAULT_STYLE = `//!#Basic
+.page{
+  
 }
 
-.mytable th {
-\tcolor:#fff;
-\tbackground:#444;
-\tpadding: 15px;
-\ttext-align:left;
-}
-.mytable td {
-\tborder-top: 1px solid #eee;
-\tpadding: 15px;
+
+//!#Grid
+.row {
+\tdisplay: flex;
+\tbox-sizing: border-box;
+\tflex-wrap: wrap;
+\tflex: 0 1 auto;
+\tflex-direction: row;
+\tmargin-right: -0.5rem;
+\tmargin-left: -0.5rem;
+\t
+\t
+\t&.vcenter{
+\t\talign-items: center;
+\t}\t
+  
+\t&.row-reverse{
+\t\tflex-direction: row-reverse;
+\t}
+
+\t&.equal-height-mobile{
+\t\t.col{
+\t\t\tline-height:0;
+\t\t\theight:100%;\t\t\t\t
+\t\t}
+\t\timg{
+\t\t\theight: 100%;
+\t\t\twidth: 100%;
+\t\t\tobject-fit: cover;
+\t\t}
+\t}
+
+\t&.flex-end{
+\t\talign-items: flex-end;
+\t}
+\t&.row-space-3{\t
+\t\tmargin-left: -1.5rem;
+\t\tmargin-right: -1.5rem;
+\t\t> .col{
+    \tpadding-bottom: 1.5rem;
+\t\t\tpadding-right: 1.5rem;
+\t\t\tpadding-left: 1.5rem;
+\t\t}
+\t}
+\t
+\t&.row-space-4{\t
+\t\tmargin-left: -2rem;
+\t\tmargin-right: -2rem;
+\t\t> .col{
+\t\t\tpadding-right: 2rem;
+\t\t\tpadding-left: 2rem;
+\t\t}
+\t}
+\t.col {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+    padding-bottom: 1rem;
+    width: 100%;
+    position: relative;
+\t\t&:empty{
+\t\t\tpadding-bottom: 0;
+\t\t}
+\t}
+\t
+\t
+\t&.grid{
+
+\t\tposition:relative;
+\t\t&:after,&:before{
+\t\t\tcontent: ' ';
+\t\t\tposition:absolute;
+\t\t\tbackground:white;
+\t\t\tdisplay:block;
+\t\t\tz-index:1;
+\t\t}
+\t\t&:after{
+\t\t\tright:0;
+\t\t\ttop:0;
+\t\t\tbottom:0;
+\t\t\twidth:3px;\t\t\t\t
+\t\t}
+\t\t&:before{
+\t\t\tright:0;
+\t\t\tleft:0;
+\t\t\tbottom:0;
+\t\t\theight:3px;\t\t\t\t
+\t\t}
+\t\t.col {
+\t\t\tborder-bottom:solid 1px black;
+\t\t\tpadding-top: 2rem;
+\t\t\tborder-right:solid 1px black;\t\t\t
+\t\t}
+\t\t
+\t}
 }
 
-.mytable tr:hover td {
-\tbackground: rgba(0,0,0,0.05);
-}\`)
+@media (min-width: 23.4375rem) {
+\t.row{
+\t\t.col{
+\t\t\t&.col-xs-1 {
+        max-width: 8.3333333333%;
+        flex: 0 0 8.3333333333%;
+    \t}
+\t\t\t&.col-xs-2 {
+        max-width: 16.6666666667%;
+        flex: 0 0 16.6666666667%;
+    \t}
+\t\t\t&.col-xs-3 {
+        max-width: 25%;
+        flex: 0 0 25%;
+    \t}
+\t\t\t&.col-xs-4 {
+        max-width: 33.3333333333%;
+        flex: 0 0 33.3333333333%;
+    \t}
+\t\t\t&.col-xs-5 {
+        max-width: 41.6666666667%;
+        flex: 0 0 41.6666666667%;
+   \t\t}
+\t\t\t&.col-xs-6 {
+        max-width: 50%;
+        flex: 0 0 50%;
+   \t \t}
+\t\t\t&.col-xs-7 {
+        max-width: 58.3333333333%;
+        flex: 0 0 58.3333333333%;
+    \t}
+\t\t\t&.col-xs-8 {
+        max-width: 66.6666666667%;
+        flex: 0 0 66.6666666667%;
+    \t}
+\t\t\t&.col-xs-9 {
+        max-width: 75%;
+        flex: 0 0 75%;
+    \t}
+\t\t\t&.col-xs-10 {
+        max-width: 83.3333333333%;
+        flex: 0 0 83.3333333333%;
+    \t}
+\t\t\t&.col-xs-11 {
+        max-width: 91.6666666667%;
+        flex: 0 0 91.6666666667%;
+    \t}
+\t\t\t&.col-xs-12 {
+        max-width: 100%;
+        flex: 0 0 100%;
+    \t}
+\t\t}
+\t}
+}
+
+@media (min-width: 48rem) {
+\t.row{\t
+\t\t&.equal-height{
+\t\t\t.col{
+\t\t\t\tline-height:0;
+\t\t\t\theight:100%;\t\t\t\t
+\t\t\t}
+\t\t\timg{
+\t\t\t\theight: 100%;
+\t\t\t\twidth: 100%;
+\t\t\t\tobject-fit: cover;
+\t\t\t}
+\t\t\t&.h25{\t\t\t
+\t\t\t\theight:25rem;
+\t\t\t}
+\t\t\t&.h30{\t\t\t
+\t\t\t\theight:30rem;
+\t\t\t}
+\t\t\t&.h35{\t\t\t
+\t\t\t\theight:35rem;
+\t\t\t}
+\t\t\t&.h40{\t\t\t
+\t\t\t\theight:40rem;
+\t\t\t}
+\t\t}
+\t\t&.row-sm-reverse{
+\t\t\tflex-direction: row-reverse;
+\t\t}
+\t\t.col{
+\t\t\t&.col-sm-1 {
+        max-width: 8.3333333333%;
+        flex: 0 0 8.3333333333%;
+    \t}
+\t\t\t&.col-sm-2 {
+        max-width: 16.6666666667%;
+        flex: 0 0 16.6666666667%;
+    \t}
+\t\t\t&.col-sm-3 {
+        max-width: 25%;
+        flex: 0 0 25%;
+    \t}
+\t\t\t&.col-sm-4 {
+        max-width: 33.3333333333%;
+        flex: 0 0 33.3333333333%;
+    \t}
+\t\t\t&.col-sm-5 {
+        max-width: 41.6666666667%;
+        flex: 0 0 41.6666666667%;
+   \t\t}
+\t\t\t&.col-sm-6 {
+        max-width: 50%;
+        flex: 0 0 50%;
+   \t \t}
+\t\t\t&.col-sm-7 {
+        max-width: 58.3333333333%;
+        flex: 0 0 58.3333333333%;
+    \t}
+\t\t\t&.col-sm-8 {
+        max-width: 66.6666666667%;
+        flex: 0 0 66.6666666667%;
+    \t}
+\t\t\t&.col-sm-9 {
+        max-width: 75%;
+        flex: 0 0 75%;
+    \t}
+\t\t\t&.col-sm-10 {
+        max-width: 83.3333333333%;
+        flex: 0 0 83.3333333333%;
+    \t}
+\t\t\t&.col-sm-11 {
+        max-width: 91.6666666667%;
+        flex: 0 0 91.6666666667%;
+    \t}
+\t\t\t&.col-sm-12 {
+        max-width: 100%;
+        flex: 0 0 100%;
+    \t}
+
+\t\t\t&.col-sm-push{
+        max-width: none;
+        flex: 0 0 0%;
+\t\t\t\tmargin-left: auto;
+\t\t\t}
+\t\t}
+\t\t
+\t}
+}
+
+@media (min-width: 62rem) {
+\t.row{
+\t\t.col{
+\t\t\t&.col-md-1 {
+        max-width: 8.3333333333%;
+        flex: 0 0 8.3333333333%;
+    \t}\t\t\t
+\t\t\t&.col-md-1-5 {
+        max-width: 20%;
+        flex: 0 0 20%;
+    \t}\t
+\t\t\t&.col-md-3-5 {
+        max-width: 60%;
+        flex: 0 0 60%;
+    \t}
+\t\t\t&.col-md-2 {
+        max-width: 16.6666666667%;
+        flex: 0 0 16.6666666667%;
+    \t}
+\t\t\t&.col-md-3 {
+        max-width: 25%;
+        flex: 0 0 25%;
+    \t}
+\t\t\t&.col-md-4 {
+        max-width: 33.3333333333%;
+        flex: 0 0 33.3333333333%;
+    \t}
+\t\t\t&.col-md-5 {
+        max-width: 41.6666666667%;
+        flex: 0 0 41.6666666667%;
+   \t\t}
+\t\t\t&.col-md-6 {
+        max-width: 50%;
+        flex: 0 0 50%;
+   \t \t}
+\t\t\t&.col-md-7 {
+        max-width: 58.3333333333%;
+        flex: 0 0 58.3333333333%;
+    \t}
+\t\t\t&.col-md-8 {
+        max-width: 66.6666666667%;
+        flex: 0 0 66.6666666667%;
+    \t}
+\t\t\t&.col-md-9 {
+        max-width: 75%;
+        flex: 0 0 75%;
+    \t}
+\t\t\t&.col-md-10 {
+        max-width: 83.3333333333%;
+        flex: 0 0 83.3333333333%;
+    \t}
+\t\t\t&.col-md-11 {
+        max-width: 91.6666666667%;
+        flex: 0 0 91.6666666667%;
+    \t}
+\t\t\t&.col-md-12 {
+        max-width: 100%;
+        flex: 0 0 100%;
+    \t}
+\t\t}
+\t}
+}
+
+@media (min-width: 75rem) {
+\t.row{
+\t\t.col{
+\t\t\t&.col-lg-1 {
+        max-width: 8.3333333333%;
+        flex: 0 0 8.3333333333%;
+    \t}
+\t\t\t&.col-lg-2 {
+        max-width: 16.6666666667%;
+        flex: 0 0 16.6666666667%;
+    \t}
+\t\t\t&.col-lg-3 {
+        max-width: 25%;
+        flex: 0 0 25%;
+    \t}
+\t\t\t&.col-lg-4 {
+        max-width: 33.3333333333%;
+        flex: 0 0 33.3333333333%;
+    \t}
+\t\t\t&.col-lg-5 {
+        max-width: 41.6666666667%;
+        flex: 0 0 41.6666666667%;
+   \t\t}
+\t\t\t&.col-lg-6 {
+        max-width: 50%;
+        flex: 0 0 50%;
+   \t \t}
+\t\t\t&.col-lg-7 {
+        max-width: 58.3333333333%;
+        flex: 0 0 58.3333333333%;
+    \t}
+\t\t\t&.col-lg-8 {
+        max-width: 66.6666666667%;
+        flex: 0 0 66.6666666667%;
+    \t}
+\t\t\t&.col-lg-9 {
+        max-width: 75%;
+        flex: 0 0 75%;
+    \t}
+\t\t\t&.col-lg-10 {
+        max-width: 83.3333333333%;
+        flex: 0 0 83.3333333333%;
+    \t}
+\t\t\t&.col-lg-11 {
+        max-width: 91.6666666667%;
+        flex: 0 0 91.6666666667%;
+    \t}
+\t\t\t&.col-lg-12 {
+        max-width: 100%;
+        flex: 0 0 100%;
+    \t}
+\t\t}
+\t}
+}
+
+@media (min-width: 93.75rem) {
+\t.row{
+\t\t.col{
+\t\t\t&.col-xl-1 {
+        max-width: 8.3333333333%;
+        flex: 0 0 8.3333333333%;
+    \t}
+\t\t\t&.col-xl-2 {
+        max-width: 16.6666666667%;
+        flex: 0 0 16.6666666667%;
+    \t}
+\t\t\t&.col-xl-3 {
+        max-width: 25%;
+        flex: 0 0 25%;
+    \t}
+\t\t\t&.col-xl-4 {
+        max-width: 33.3333333333%;
+        flex: 0 0 33.3333333333%;
+    \t}
+\t\t\t&.col-xl-5 {
+        max-width: 41.6666666667%;
+        flex: 0 0 41.6666666667%;
+   \t\t}
+\t\t\t&.col-xl-6 {
+        max-width: 50%;
+        flex: 0 0 50%;
+   \t \t}
+\t\t\t&.col-xl-7 {
+        max-width: 58.3333333333%;
+        flex: 0 0 58.3333333333%;
+    \t}
+\t\t\t&.col-xl-8 {
+        max-width: 66.6666666667%;
+        flex: 0 0 66.6666666667%;
+    \t}
+\t\t\t&.col-xl-9 {
+        max-width: 75%;
+        flex: 0 0 75%;
+    \t}
+\t\t\t&.col-xl-10 {
+        max-width: 83.3333333333%;
+        flex: 0 0 83.3333333333%;
+    \t}
+\t\t\t&.col-xl-11 {
+        max-width: 91.6666666667%;
+        flex: 0 0 91.6666666667%;
+    \t}
+\t\t\t&.col-xl-12 {
+        max-width: 100%;
+        flex: 0 0 100%;
+    \t}
+\t\t}
+\t}
+}
+//!#Editor
+main[data-layout-content=true]{
+\tbackground-color:#fff;
+}
+
+h1[data-isempty=true],
+h2[data-isempty=true],
+h3[data-isempty=true],
+h4[data-isempty=true],
+h5[data-isempty=true],
+h6[data-isempty=true],
+ul[data-isempty=true],
+p[data-isempty=true],
+a[data-isempty=true],
+section[data-isempty=true],
+div[data-isempty=true]{
+\tmin-height:1rem;
+\tdisplay:block;
+\tcontent:'empty';
+\tbackground-color: rgba(255,0,0,0.2);
+}
+
+[_inlineeditor=true]{\t
+\t&.row,&[data-element-key="container"],
+\t&[data-element-key="background"],
+\t&[data-element-key="custom"]{
+\t\tpadding:0.5rem;
+\t\tposition:relative;
+\t\t&:after{
+\t\t\tdisplay:block;
+\t\t\tcontent:'';
+\t\t\tposition:absolute;
+\t\t\ttop:0;
+\t\t\tleft:0;
+\t\t\tright:0;
+\t\t\tbottom:0;
+\t\t\tbackground-color: rgba(0,0,0,0.02);
+\t\t\tpointer-events:none;
+\t\t}
+\t\t> .col[_inlineeditor=true]{
+\t\t\tborder:dashed 1px rgba(0,0,0,0.1);
+\t\t}
+\t}
+}
+
+img[_inlineeditor=true]{
+\tmin-width:1rem;
+\tmin-height:1rem;
+}
 `

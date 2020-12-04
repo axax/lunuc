@@ -1,15 +1,19 @@
 import React from 'react'
 import CodeEditor from 'client/components/CodeEditor'
 import {BuildIcon} from 'ui/admin'
+import {jsonPropertyTemplates, jsonTemplates} from './templates/dataResolver'
 
 class DataResolverEditor extends React.Component {
 
     render() {
-        return <CodeEditor showFab actions={[{
-                name: 'Create example',
-                icon: <BuildIcon />,
-                onClick: this.createExample.bind(this)
-            }]} lineNumbers controlled type="json" {...this.props}/>
+        return <CodeEditor showFab
+                           templates={jsonTemplates}
+                           propertyTemplates={jsonPropertyTemplates}
+                           actions={[{
+                               name: 'Create example',
+                               icon: <BuildIcon/>,
+                               onClick: this.createExample.bind(this)
+                           }]} lineNumbers controlled type="json" {...this.props}/>
     }
 
     createExample() {

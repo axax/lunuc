@@ -39,7 +39,10 @@ export const jsonTemplates = [
                         }`
     },
     {
-        title: 'Form Select', template: `{"t":"label","c":[{
+        title: 'Form Select', template: `{"t":"label","c":
+        [
+        {"t":"span","$inlineEditor":false,"c":"Select"},
+        {
         "t": "select",
         "$inlineEditor":false,
         "p": {
@@ -67,6 +70,42 @@ export const jsonTemplates = [
             }
           }
         ]
-      },{"t":"span","$inlineEditor":false,"c":"Select"}]}`
+      }]}`
+    },
+    {
+        title: 'Modal Component', template: `
+  {
+    "$is": "\$\{modal.open}",
+    "comment":"use customevent modalClose or modalButtonClicked to handle events",
+    "t": "Cms",
+    "$inlineEditor": {
+        "elementKey": "Cms"
+    },
+    "p": {
+      "data-element-key": "cms",
+      "id": "modal",
+      "slug": "core/modal",
+      "props": {
+        "id": "modal",
+        "buttonLabel": "Close",
+        "title": "New Modal",
+        "text": "This is a modal",
+        "open": "\$\{modal.open}",
+        "width": "400px",
+        "height": "200px",
+        "buttons": [{
+            "label": "Cancel",
+            "className": "button1 large",
+            "key": "cancel"
+          },
+          {
+            "label": "Yes",
+            "className": "button2",
+            "key": "yes"
+          }
+        ]
+      }
+    }
+  }`
     }
 ]

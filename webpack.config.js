@@ -150,7 +150,10 @@ const config = {
     module: {
         rules: [
             {
-                test: /\.js$/,
+                test: /\.m?js$/,
+                /*resolve: {
+                    fullySpecified: false
+                },*/
                 exclude: excludeFunction,
                 loader: 'babel-loader'
             },
@@ -195,7 +198,6 @@ const config = {
                     content = content.replace(/new TypeError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new TypeError()')
                     content = content.replace(/new ReferenceError\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'new ReferenceError()')
                     content = content.replace(/throw E\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)/g, 'throw E()')
-
                     compilation.assets[key] = {
                         source: function () {
                             return new Buffer(content)
@@ -293,12 +295,12 @@ if (DEV_MODE) {
         }
     }
 
-    /* config.resolve = {
+     config.resolve = {
          alias: {
              'react': 'preact/compat',
              'react-dom': 'preact/compat'
          },
-     }*/
+     }
     /* For Debugging porpuses */
     //config.devtool = 'eval'
 
@@ -326,26 +328,26 @@ if (DEV_MODE) {
 
     const terserOptions = {
         extractComments: 'all',
-        compress: {
-            drop_console: true,
-            pure_getters: true, /* 1kb */
-            //unsafe_proto:true /* 20 bytes */
-            //booleans_as_integers:true, /* 200 bytes */
-            //unsafe_Function: true /* 10 Bytes */
-            //unsafe_proto:true /* 10 Bytes */
-        },
-        mangle: {},
-        output: {
-            comments: false,
-            semicolons: true,
-            shebang: true,
-            beautify: false
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                pure_getters: true, /* 1kb */
+                //unsafe_proto:true /* 20 bytes */
+                //booleans_as_integers:true, /* 200 bytes */
+                //unsafe_Function: true /* 10 Bytes */
+                //unsafe_proto:true /* 10 Bytes */
+            },
+            mangle: {},
+            output: {
+                comments: false,
+                semicolons: true,
+                shebang: true,
+                beautify: false
+            }
         }
     }
     config.optimization.minimizer.push(
-        new TerserPlugin({
-            terserOptions
-        })
+        new TerserPlugin(terserOptions)
     )
 
     config.resolve = {
