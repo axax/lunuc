@@ -80,12 +80,10 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
 
         fs.copyFile(file.path, path.join(upload_dir, _id.toString()), async (err) => {
             if (err) throw err
-            if(!data._id)
-                createMediaEntry({db, _id, file, data, context})
+            createMediaEntry({db, _id, file, data, context})
         })
     }else{
-        if( !data._id)
-            createMediaEntry({db, file, data, context, _id})
+        createMediaEntry({db, file, data, context, _id})
     }
 
 })
@@ -131,6 +129,12 @@ const createMediaEntry = async ({db, _id, file, data, context}) => {
     if (_id) {
         media._id = _id
     }
-    // save to db
-    mediaResolver(db).Mutation.createMedia(media, {context})
+
+    if(!data._id) {
+        // save to db
+        mediaResolver(db).Mutation.createMedia(media, {context})
+    }else{
+        // update media
+        mediaResolver(db).Mutation.updateMedia(media, {context})
+    }
 }

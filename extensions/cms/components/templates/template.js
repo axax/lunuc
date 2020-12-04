@@ -6,7 +6,7 @@ export const jsonPropertyTemplates = [
 ]
 
 export const jsonTemplates = [
-    {title: 'For loop', template: '"{$for": {"d": "data","s":"loop","c": [{"c":"$.loop{loop.value}"}]}}'},
+    {title: 'For loop', template: '{"$for": {"d": "data","s":"loop","c": [{"c":"$.loop{loop.value}"}]}}'},
     {
         title: 'Form Checkbox',
         template: '{"t":"label","c":[{"t":"input","$inlineEditor":false,"p":{"name":"check","type":"checkbox","checked":"","onClick":{"_forceUpdate":true}}},{"t":"span","$inlineEditor":false,"c":"Checkbox (${bindings.check})"}]}'
@@ -107,5 +107,19 @@ export const jsonTemplates = [
       }
     }
   }`
+    },
+    {
+        title: 'Form Button', template: `
+          {
+            "t": "button",
+            "c": "Button",
+            "p": {
+              "disabled": "",
+              "id": "button",
+              "onClick": {
+                "action": "button"
+              }
+            }
+          },`
     }
 ]

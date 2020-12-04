@@ -17,6 +17,7 @@ export const jsonTemplates = [
         "name",
         "structure"
     ],
+    "restriction":{"type":"role","role":"anonymous"},
     "l": 500,
     "s": "_id desc",
     "f": ""
