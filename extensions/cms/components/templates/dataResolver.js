@@ -22,6 +22,26 @@ export const jsonTemplates = [
     "s": "_id desc",
     "f": ""
   }`
+    },    {
+        title: 'GenericData Query', template: `
+  {
+    "key": "GenericData",
+    "cache": {
+      "policy": "\$\{this.context.id?'cache-only':''}",
+      "expires":600000,
+      "key":"GenericData"
+    },    
+    "t": "GenericData",
+    "d": [
+        "data",
+        "_id",
+        {"definition":["name"]}
+    ],
+    "restriction":{"type":"role","role":"anonymous"},
+    "l": 500,
+    "s": "_id desc",
+    "f": "definition.name==TypeName"
+  }`
     },
     {
         title: 'Global KeyValue', template: `{
