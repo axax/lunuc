@@ -174,12 +174,12 @@ const GenericResolver = {
             } else {
                 cacheTime = cache
             }
-            if (!isNaN(cacheTime) && cacheTime > 0 ) {
+            if (!isNaN(cacheTime) && cacheTime > 0) {
                 if (!cacheKey) {
                     //create cacheKey
                     cacheKey = collectionName + JSON.stringify(match) + context.lang + JSON.stringify(otherOptions)
                 }
-                if(cachePolicy !== 'cache-only') {
+                if (cachePolicy !== 'cache-only') {
                     const resultFromCache = Cache.get(cacheKey)
                     if (resultFromCache) {
                         console.log(`GenericResolver from cache for ${collectionName} complete: total time ${new Date() - startTime}ms`)
@@ -372,7 +372,11 @@ const GenericResolver = {
 
             return {
                 _id: data._id,
-                status: 'deleted'
+                status: 'deleted',
+                createdBy: {
+                    _id: ObjectId(context.id),
+                    username: context.username
+                }
             }
         } else {
             throw new Error('Error deleting entry. You might not have premissions to manage other users')
@@ -395,7 +399,11 @@ const GenericResolver = {
             $in.push(ObjectId(id))
             result.push({
                 _id: id,
-                status: 'deleted'
+                status: 'deleted',
+                createdBy: {
+                    _id: ObjectId(context.id),
+                    username: context.username
+                }
             })
         })
 
