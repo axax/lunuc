@@ -281,7 +281,7 @@ const GenericResolver = {
             username = data.createdBy
         } else {
             createdBy = userContext.id
-            username = userContext.id
+            username = userContext.username
         }
 
         //check if this field is a reference

@@ -51,10 +51,11 @@ export const getTypeQueries = (typeName) => {
     const result = {name: nameStartLower}
 
     let query = '_id status'
+    let queryMutation = '_id status'
     if (!noUserRelation) {
         query += ' createdBy{_id username}'
+        queryMutation += ' createdBy{_id username}'
     }
-    let queryMutation = '_id status'
 
     let insertParams = '', cloneParams = '', insertUpdateQuery = '', updateParams = '', cloneQuery = ''
 

@@ -126,6 +126,11 @@ class TypeEdit extends React.Component {
 
                     if( !editedData._id && data['create' + type]) {
                         editedData._id = data['create' + type]._id
+
+                        if(!editedData.createdBy){
+                            editedData.createdBy = data['create' + type].createdBy
+                        }
+
                     }
 
                     if (action.key === 'save_close') {

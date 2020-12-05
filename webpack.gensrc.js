@@ -388,7 +388,7 @@ function gensrcExtension(name, options) {
                 // if a mutationResult is set we return that otherwise we return a simple Status object
 
                 // Maybe it is better to return only a Status instead of the whole type when create, update or delete is performed
-                typeSchema += 'type ' + mutationResult + '{\n\t_id:ID!\n\tstatus:String\n}\n\n'
+                typeSchema += 'type ' + mutationResult + '{\n\t_id:ID!\n\tstatus:String\n'+(type.noUserRelation?'':'\tcreatedBy: UserPublic\n')+ '}\n\n'
             }
             typeSchema += 'type Query{\n\t' + nameStartLower + 's(sort:String,limit:Int=10,offset:Int=0,page:Int=0,filter:String' + (type.collectionClonable ? ',_version:String' : '') + '): ' + type.name + 'Result\n}\n\n'
 
