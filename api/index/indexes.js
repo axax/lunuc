@@ -80,6 +80,7 @@ export const createAllIndexes = async (db) => {
     }
 
     Hook.call('index', {db})
+    console.log(`Creating indexes... ${new Date() - _app_.start}ms`)
 
 }
 

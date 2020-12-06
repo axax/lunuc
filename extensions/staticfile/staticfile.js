@@ -20,7 +20,7 @@ export const createOrDeleteStaticFile = async (staticFile, {db,force}) => {
 
     if (Util.ensureDirectoryExistence(currentDir + pathParts.join('/'))) {
 
-        const filePath = currentDir + '/' + staticFile.name
+        const filePath = currentDir + staticFile.name
 
         if(staticFile.active) {
 

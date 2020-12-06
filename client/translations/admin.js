@@ -14,7 +14,10 @@ export const translations = {
         'Types.createdBy': 'Erstellt von Benutzer',
         'GenericForm.fieldIsRequired': 'Bitte ausfüllen',
         'Login.title':'Anmelden',
-        'Login.subtitle':'Sie müssen sich anmelden um die Seite %pathname% zusehen'
+        'Login.subtitle':'Sie müssen sich anmelden um die Seite %pathname% zusehen',
+        "core.save": "Speichern",
+        "core.saveandclose": "Speichern & Schliessen",
+        "core.cancel": "Abbrechen",
     },
     en: {
         'TypesContainer.filter': 'Filter expression (for specifc fields use field=term)',
@@ -31,6 +34,9 @@ export const translations = {
         'Types.createdBy': 'Created by user',
         'GenericForm.fieldIsRequired': 'Field is required',
         'Login.title':'Login',
-        'Login.subtitle':'You must log in to view the page at %pathname%'
+        'Login.subtitle':'You must log in to view the page at %pathname%',
+        "core.save": "Save",
+        "core.saveandclose": "Save & close",
+        "core.cancel": "Cancel",
     }
 }

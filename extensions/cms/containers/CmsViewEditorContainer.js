@@ -452,6 +452,7 @@ class CmsViewEditorContainer extends React.Component {
                                                         expanded={EditorPageOptions.serverScriptExpanded}>
                         <ScriptEditor
                             key={'script'+slug}
+                            identifer={'script'+slug}
                             onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll', true)}
                             scrollPosition={EditorPageOptions.serverScriptScroll}
                             onBlur={() => {
@@ -797,7 +798,7 @@ class CmsViewEditorContainer extends React.Component {
                                                 }).then((res) => {
                                                     // double escape
                                                     const newText = Util.escapeForJson(Util.escapeForJson(res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g,'')))
-                                                    setPropertyByPath(newText, lang + path + '.' + key, base)
+                                                    setPropertyByPath(newText, lang + path + '.' + key.replace(/\./g,'\\\.'), base)
                                                     saveResolver()
 
                                                 })

@@ -4,6 +4,7 @@ import GenericForm from '../GenericForm'
 import Hook from '../../../util/hook'
 import {getFormFields, addAlwaysUpdateData, referencesToIds} from '../../../util/typesAdmin'
 import {SimpleDialog} from 'ui/admin'
+import {_t} from 'util/i18n'
 
 class TypeEdit extends React.Component {
 
@@ -55,14 +56,14 @@ class TypeEdit extends React.Component {
             maxWidth: 'xl',
             open,
             onClose: this.handleSaveData.bind(this),
-            actions: [{key: 'cancel', label: 'Abbrechen'}, {
+            actions: [{key: 'cancel', label: _t('core.cancel')}, {
                 key: 'save',
-                label: 'Speichern',
+                label: _t('core.save'),
                 type: 'primary'
             },
                 {
                     key: 'save_close',
-                    label: 'Speichern & Schliessen',
+                    label: _t('core.saveandclose'),
                     type: 'primary'
                 }],
             children: <GenericForm key="genericForm" autoFocus innerRef={ref => {

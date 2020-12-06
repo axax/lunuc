@@ -368,16 +368,21 @@ export default class AggregationBuilder {
         const typeFields = getFormFields(type)
 
         let fieldDefinition = {}
-
         if (fieldData.constructor === Object) {
             const fieldNames = Object.keys(fieldData)
             if (fieldNames.length > 0) {
 
                 // there should be only one attribute
                 fieldDefinition.name = fieldNames[0]
+                let data = fieldData[fieldDefinition.name]
+
+                if(fieldDefinition.name.indexOf('.')>0){
+                    const parts = fieldDefinition.name.split('.')
+                    fieldDefinition.name = parts[0]
+                    data = [parts[1]]
+                }
 
 
-                const data = fieldData[fieldDefinition.name]
 
                 if (data.constructor === Array) {
                     // if a value is in this format {'categories':['name']}

@@ -136,6 +136,7 @@ class CodeEditor extends React.Component {
             error: props.error,
             lineNumbers: props.lineNumbers,
             type: props.type,
+            identifer: props.identifer,
             fileIndex: props.fileIndex || 0,
             showFileSplit: true,
             stateDate: new Date()
@@ -145,7 +146,7 @@ class CodeEditor extends React.Component {
     static getDerivedStateFromProps(nextProps, prevState) {
         if (!!nextProps.error !== !!prevState.error ||
             (!prevState._stateUpdate &&
-                !prevState.stateError && nextProps.controlled &&
+                !prevState.stateError && (nextProps.controlled || nextProps.identifer !== prevState.identifer) &&
                 (nextProps.children !== prevState.data || nextProps.lineNumbers !== prevState.lineNumbers || nextProps.type !== prevState.type)
             )) {
             console.log(nextProps.error, prevState.error)
@@ -427,7 +428,6 @@ class CodeEditor extends React.Component {
                     if (this._curLine.endsWith('[')) {
                         commaAtStart = false
                     }
-
                 }
                 contextMenuItems = [
                     {

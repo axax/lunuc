@@ -278,7 +278,14 @@ const Util = {
 
         return user
     },
-    userHasCapability: async (db, context, capability) => {
+    userHasCapability: async (db, context, access) => {
+
+        let capability
+        if(access.constructor === Object){
+            capability = access.role
+        }else{
+            capability = access
+        }
 
         if( capability === 'anonymous'){
             return true
