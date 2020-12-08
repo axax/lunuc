@@ -712,11 +712,12 @@ export default class AggregationBuilder {
             })
         }
 
+
+
         const countQuery = dataQuery.slice(0)
         countQuery.push({
             "$count": "count"
         })
-
 
         if (!doMatchAfterLookup) {
             // add sort
@@ -731,6 +732,11 @@ export default class AggregationBuilder {
         // sort again within the result
         dataFacetQuery.push({$sort: sort})
 
+
+        // add right before the group
+        if( this.options.beforeProject){
+            tempQuery.push(this.options.beforeProject)
+        }
 
         // project
         if (projectResult) {
