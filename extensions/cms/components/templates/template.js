@@ -120,6 +120,6 @@ export const jsonTemplates = [
                 "action": "button"
               }
             }
-          },`
+          }`
     }
 ]

@@ -261,8 +261,10 @@ if (DEV_MODE) {
     const PORT = (process.env.PORT || 8080)
     const API_PORT = (process.env.API_PORT || 3000)
 
+    config.plugins.push(new webpack.HotModuleReplacementPlugin())
 
     config.devServer = {
+        publicPath: '/',
         contentBase: [path.join(__dirname, ''), path.join(__dirname, 'static'), path.join(__dirname, APP_VALUES.UPLOAD_DIR)],
         historyApiFallback: {
             rewrites: [
@@ -296,16 +298,14 @@ if (DEV_MODE) {
         }
     }
 
-     config.resolve = {
-         alias: {
-             'react': 'preact/compat',
-             'react-dom': 'preact/compat'
-         },
-     }
-    /* For Debugging porpuses */
-    //config.devtool = 'eval'
+    config.resolve = {
+        alias: {
+            'react': 'preact/compat',
+            'react-dom': 'preact/compat'
+        },
+    }
 
-    config.plugins.push(new webpack.HotModuleReplacementPlugin())
+    config.devtool = 'inline-source-map'
 
 } else {
     console.log('Build for production')
@@ -333,16 +333,15 @@ if (DEV_MODE) {
         extractComments: 'all',
         terserOptions: {
             ecma: undefined,
-            parse: {
-            },
+            parse: {},
             module: true,
             mangle: {},
             compress: {
                 booleans_as_integers: false,
                 drop_console: true,
                 pure_getters: true, /* 1kb */
-                unsafe:false,
-                passes:2,
+                unsafe: false,
+                passes: 2,
                 //unsafe_proto:true /* 20 bytes */
                 //booleans_as_integers:true, /* 200 bytes */
                 //unsafe_Function: true /* 10 Bytes */
@@ -366,13 +365,8 @@ if (DEV_MODE) {
     }
 
     /*const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-     config.plugins.push(new BundleAnalyzerPlugin())*/
+    config.plugins.push(new BundleAnalyzerPlugin())*/
 
-    //config.devtool = 'source-map'
-    // config.devtool = ''
-
-
-    //config.devtool = "#eval-source-map"
 }
 
 module.exports = config

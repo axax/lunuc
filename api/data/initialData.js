@@ -134,7 +134,7 @@ export const createUsers = async (db) => {
                 role: (await db.collection('UserRole').findOne({name: 'administrator'}))._id,
                 emailConfirmed: true,
                 requestNewPassword: false,
-                email: 'axax@gmx.net',
+                email: 'info@lunuc.com',
                 username: 'admin',
                 password: Util.hashPassword('password')
             }

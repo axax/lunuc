@@ -20,6 +20,9 @@ import {decodeToken} from './util/jwt'
 import {HEADER_TIMEOUT, SESSION_HEADER, USE_COOKIES} from './constants'
 import {parseCookies} from './util/parseCookies'
 
+const MONGO_URL = (process.env.LUNUC_MONGO_URL || process.env.MONGO_URL)
+const BACKUP_MONGO_URL= '' //'mongodb://localhost:27018/lunuc'
+
 const PORT = (process.env.PORT || 3000)
 
 process.on('SIGINT', () => {
@@ -51,7 +54,7 @@ export let server
 export const start = (done) => {
 
 
-    dbConnection((err, db, client) => dbPreparation(db, () => {
+    dbConnection(MONGO_URL, (err, db, client) => dbPreparation(db, () => {
 
         if (!db) {
             console.error(err)
@@ -193,6 +196,14 @@ export const start = (done) => {
 
         }
     }))
+
+    if(BACKUP_MONGO_URL) {
+        dbConnection(BACKUP_MONGO_URL, (err, db, client) => {
+
+            _app_.backupDb = db
+
+        })
+    }
 }
 
 

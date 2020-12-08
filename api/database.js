@@ -6,9 +6,6 @@ import Hook from '../util/hook'
 import Util from './util'
 import {registerTrs} from '../util/i18nServer'
 
-const MONGO_URL = (process.env.LUNUC_MONGO_URL || process.env.MONGO_URL)
-
-//const MONGO_URL="mongodb://localhost:27018/lunuc"
 
 /*
 
@@ -38,13 +35,13 @@ export const dbPreparation = async (db, cb) => {
 }
 
 
-export const dbConnection = (cb) => {
-    if (!MONGO_URL || MONGO_URL === '') {
+export const dbConnection = (dburl, cb) => {
+    if (!dburl) {
         console.error('Mongo URL missing. Please set env variable (export MONGO_URL=mongodb://user:password@mongodb/)')
 
         cb(new Error('Mongo URL missing. Please set env variable (export MONGO_URL=mongodb://user:password@mongodb/)'), null)
     } else {
-        const urlParts = MONGO_URL.split('?')
+        const urlParts = dburl.split('?')
         const urlParams = urlParts.length > 1 ? ClientUtil.extractQueryParams(urlParts[1], true) : {}
         const options = {
             /* http://mongodb.github.io/node-mongodb-native/2.1/reference/connecting/connection-settings/ */
@@ -63,11 +60,12 @@ export const dbConnection = (cb) => {
             options,
             function (err, client) {
                 if (err) {
-                    console.error(err.message, MONGO_URL)
+                    console.error(err.message, dburl)
                 } else {
-                    console.log(`Connection to db ${MONGO_URL} established. 🚀`)
+                    console.log(`Connection to db ${dburl} established. 🚀`)
                     const parts = urlParts[0].split('/')
                     const db = client.db(parts[parts.length - 1])
+
                     Hook.call('dbready', {db})
 
                     cb(err, db, client)
