@@ -173,7 +173,8 @@ export default () => {
                             <FileDrop key="fileDrop" multi={true}
                                       conversion={conversion && conversion.length > 0 ? JSON.parse(conversion[0].conversion) : null}
                                       accept="*/*"
-                                      uploadTo="/graphql/upload" resizeImages={true}
+                                      uploadTo="/graphql/upload"
+                                      resizeImages={true}
                                       data={{group: groupIds, useCdn}}
                                       maxSize={10000}
                                       imagePreview={false}

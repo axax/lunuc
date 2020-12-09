@@ -63,7 +63,7 @@ const UploadUtil = {
 
             let width = oriImg.width, height = oriImg.height
 
-            if (width > height) {
+            if ( maxWidth!== undefined && (width > height || maxHeight===undefined)) {
                 if (width > maxWidth) {
                     height *= maxWidth / width
                     width = maxWidth
@@ -74,7 +74,6 @@ const UploadUtil = {
                     height = maxHeight
                 }
             }
-
             const canvas = document.createElement('canvas')
             canvas.width = width
             canvas.height = height
