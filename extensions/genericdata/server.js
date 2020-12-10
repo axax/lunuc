@@ -3,6 +3,7 @@ import resolver from './gensrc/resolver'
 import Hook from 'util/hook'
 import {deepMergeToFirst} from 'util/deepMerge'
 import Cache from 'util/cache'
+import GenericResolver from "../../api/resolver/generic/genericResolver";
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
@@ -19,8 +20,77 @@ Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
     Cache.clearStartWith('GenericDataDefinition')
 })
 
-Hook.on('typeBeforeCreate', ({type, data}) => {
+/*Hook.on('typeBeforeCreate', ({type, data}) => {
     if( type==='GenericData'){
         //TODO
+    }
+})*/
+
+Hook.on('beforeTypeLoaded', async ({type, db, context, otherOptions}) => {
+    if (type === 'GenericData' && otherOptions.genericType) {
+
+        const data = await GenericResolver.entities(db, context, 'GenericDataDefinition', ['name', 'structure'],
+            {
+                filter: `name==${otherOptions.genericType}`,
+                limit: 1,
+                includeCount: false,
+                projectResult: true,
+                postConvert: false,
+                cache: {
+                    expires: 86400000,
+                    key: `GenericDataDefinition${otherOptions.genericType}`
+                }
+            })
+        if (data.results.length === 1) {
+
+            const struct = data.results[0].structure
+            if (struct && struct.fields) {
+                struct.fields.forEach(field => {
+
+                    if (field.genericType) {
+
+                        if (!otherOptions.lookups) {
+                            otherOptions.lookups = []
+                        }
+
+                        let id, $match
+                        if (field.multi) {
+                            id = {
+                                $map: {
+                                    input: `$data.${field.name}`, in: {$toObjectId: '$$this'}
+                                }
+                            }
+                            $match = {$expr: {$in: ['$_id', '$$id']}}
+                        } else {
+                            id = {$toObjectId: `$data.${field.name}`}
+                            $match = {$expr: {$eq: ['$_id', '$$id']}}
+                        }
+                        otherOptions.lookups.push(
+                            {
+                                $lookup: {
+                                    from: 'GenericData',
+                                    let: {
+                                        id
+                                    },
+                                    pipeline: [
+                                        {
+                                            $match
+                                        },
+                                        {
+                                            $project: {
+                                                _id: 1,
+                                                data: 1
+                                            }
+                                        }
+                                    ],
+                                    as: `data.${field.name}`
+                                }
+                            })
+
+                    }
+
+                })
+            }
+        }
     }
 })

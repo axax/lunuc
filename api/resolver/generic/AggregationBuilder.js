@@ -470,7 +470,6 @@ export default class AggregationBuilder {
             })
         }
         if (filters && filters.parts['createdBy.username']) {
-            // TODO
             const typeFields = getFormFields('User')
             hasMatchInReference = true
             this.addFilterToMatch({
@@ -672,6 +671,9 @@ export default class AggregationBuilder {
             }
         }
 
+        if(this.options.lookups){
+            lookups.push(...this.options.lookups)
+        }
 
         if (lookups.length > 0) {
             for (const lookup of lookups) {

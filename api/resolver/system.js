@@ -52,7 +52,8 @@ const findAndReplaceObjectIds = function (obj) {
                         }
                     })
                 } else if (v.constructor === String) {
-                    if (ObjectId.isValid(v)) {
+                    if (v.indexOf('.')<0 && ObjectId.isValid(v)) {
+                        console.log(v)
                         obj[i] = ObjectId(v)
                     }
                 } else {
@@ -289,7 +290,6 @@ export const systemResolver = (db) => ({
             const jsonParsed = JSON.parse(json)
             findAndReplaceObjectIds(jsonParsed)
             const startTimeAggregate = new Date()
-
             const explanation = await db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).explain()
             let results = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
             console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)

@@ -189,6 +189,16 @@ const GenericResolver = {
                 }
             }
         }
+
+        if (Hook.hooks['beforeTypeLoaded'] && Hook.hooks['beforeTypeLoaded'].length) {
+            let c = Hook.hooks['beforeTypeLoaded'].length
+            for (let i = 0; i < Hook.hooks['beforeTypeLoaded'].length; ++i) {
+                await Hook.hooks['beforeTypeLoaded'][i].callback({
+                    type: typeName, db, context, otherOptions
+                })
+            }
+        }
+
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
             match,
             includeCount: (includeCount !== false),
@@ -198,7 +208,7 @@ const GenericResolver = {
         /* if (typeName.indexOf("GenericData") >= 0) {
              console.log(JSON.stringify(dataQuery, null, 4))
          }*/
-        // console.log(options,JSON.stringify(dataQuery, null, 4))
+        //console.log(options,JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
