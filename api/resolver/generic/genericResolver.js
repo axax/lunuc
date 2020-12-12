@@ -130,12 +130,13 @@ const GenericResolver = {
         let {match, _version, cache, includeCount, postConvert, ...otherOptions} = options
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
+
+
         // Default match
         if (!match) {
             // if not specific match is defined, only select items that belong to the current user
             if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
                 match = {}
-
             } else {
                 if (typeName === 'User') {
                     match = {_id: {$in: await Util.userAndJuniorIds(db, context.id)}}
@@ -194,7 +195,7 @@ const GenericResolver = {
             let c = Hook.hooks['beforeTypeLoaded'].length
             for (let i = 0; i < Hook.hooks['beforeTypeLoaded'].length; ++i) {
                 await Hook.hooks['beforeTypeLoaded'][i].callback({
-                    type: typeName, db, context, otherOptions
+                    type: typeName, db, context, otherOptions, match
                 })
             }
         }

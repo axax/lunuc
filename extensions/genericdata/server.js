@@ -3,7 +3,9 @@ import resolver from './gensrc/resolver'
 import Hook from 'util/hook'
 import {deepMergeToFirst} from 'util/deepMerge'
 import Cache from 'util/cache'
-import GenericResolver from "../../api/resolver/generic/genericResolver";
+import GenericResolver from '../../api/resolver/generic/genericResolver'
+import Util from '../../api/util'
+import {ObjectId} from 'mongodb'
 
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
@@ -26,10 +28,10 @@ Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
     }
 })*/
 
-Hook.on('beforeTypeLoaded', async ({type, db, context, otherOptions}) => {
+Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => {
     if (type === 'GenericData' && otherOptions.genericType) {
 
-        const data = await GenericResolver.entities(db, context, 'GenericDataDefinition', ['name', 'structure'],
+        const data = await GenericResolver.entities(db, context, 'GenericDataDefinition', ['_id','name', 'structure'],
             {
                 filter: `name==${otherOptions.genericType}`,
                 limit: 1,
@@ -42,8 +44,20 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, otherOptions}) => {
                 }
             })
         if (data.results.length === 1) {
-
             const struct = data.results[0].structure
+
+            if(struct.access && struct.access.read) {
+                if( struct.access.read.type==='role') {
+                    if (!await Util.userHasCapability(db, context, struct.access.read)) {
+                        throw new Error(`no permission to access data GenericType.${otherOptions.genericType}`)
+                    }
+                }else if( struct.access.read.type==='user') {
+                    match.createdBy =  {$in: await Util.userAndJuniorIds(db, context.id)}
+                }
+            }
+
+            match.definition = {$eq: ObjectId(data.results[0]._id)}
+
             if (struct && struct.fields) {
                 struct.fields.forEach(field => {
 
@@ -91,6 +105,8 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, otherOptions}) => {
 
                 })
             }
+        }else{
+            throw new Error(`Invalid type GenericType.${otherOptions.genericType}`)
         }
     }
 })
