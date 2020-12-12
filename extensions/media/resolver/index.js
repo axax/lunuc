@@ -106,6 +106,34 @@ export default db => ({
                     }
                 }
 
+                if (count === 0 && types['KeyValue']) {
+                    const data = await GenericResolver.entities(db, context, 'KeyValue', ['value', 'key'], {
+                        limit: 1,
+                        filter: _idStr
+                    })
+                    if (data.total > 0) {
+                        count++
+
+                        data.results.forEach(item => {
+                            locations.push({location: 'KeyValue', _id: item._id, key: item.key})
+                        })
+                    }
+                }
+
+                if (count === 0 && types['KeyValueGlobal']) {
+                    const data = await GenericResolver.entities(db, context, 'KeyValueGlobal', ['value', 'key'], {
+                        limit: 1,
+                        filter: _idStr
+                    })
+                    if (data.total > 0) {
+                        count++
+
+                        data.results.forEach(item => {
+                            locations.push({location: 'KeyValueGlobal', _id: item._id, key: item.key})
+                        })
+                    }
+                }
+
 
                 if (count === 0  && types['CronJob']) {
                     const data = await GenericResolver.entities(db, context, 'CronJob', ['script', 'name'], {

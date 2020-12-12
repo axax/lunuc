@@ -10,7 +10,7 @@ class JsonDomInput extends React.Component {
         this.state = JsonDomInput.getStateFromProps(props)
     }
 
-    static getStateFromProps (props){
+    static getStateFromProps(props) {
         return {
             valueOri: props.value,
             value: props.value || '',
@@ -35,7 +35,13 @@ class JsonDomInput extends React.Component {
 
     valueChange = (e) => {
         const {onChange} = this.props
-        const target = e.target, value = (target.type === 'checkbox' ? target.checked : target.value)
+        const target = e.target, curValue = this.state.value
+        let value = (target.type === 'checkbox' ? target.checked : target.value)
+
+        if (curValue && curValue.constructor === Object) {
+            value = {...curValue, displayValue: value}
+        }
+
         this.setState({value, checked: target.checked})
         if (onChange) {
             onChange(e, value)
@@ -59,10 +65,11 @@ class JsonDomInput extends React.Component {
                 props.checked = this.state.checked
                 props.value = value
             } else {
+                console.log(stateValue)
                 if (stateValue.constructor === Object) {
-                    console.log(stateValue)
+                    props.value = stateValue.displayValue
+
                 } else if (stateValue.constructor === Array) {
-                    console.log(stateValue)
 
                 } else {
                     props.value = stateValue

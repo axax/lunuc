@@ -136,7 +136,7 @@ class CodeEditor extends React.Component {
             error: props.error,
             lineNumbers: props.lineNumbers,
             type: props.type,
-            identifer: props.identifer,
+            identifier: props.identifier,
             fileIndex: props.fileIndex || 0,
             showFileSplit: true,
             stateDate: new Date()
@@ -145,13 +145,12 @@ class CodeEditor extends React.Component {
 
     static getDerivedStateFromProps(nextProps, prevState) {
         if (!!nextProps.error !== !!prevState.error ||
+            nextProps.identifier !== prevState.identifier ||
             (!prevState._stateUpdate &&
-                !prevState.stateError && (nextProps.controlled || nextProps.identifer !== prevState.identifer) &&
+                !prevState.stateError && (nextProps.controlled) &&
                 (nextProps.children !== prevState.data || nextProps.lineNumbers !== prevState.lineNumbers || nextProps.type !== prevState.type)
             )) {
-            console.log(nextProps.error, prevState.error)
-
-            console.log('CodeEditor update state')
+            console.log('CodeEditor update state ' +  nextProps.identifier)
             return CodeEditor.getStateFromProps(nextProps, prevState)
         }
         return {...prevState, _stateUpdate: false}
@@ -166,6 +165,7 @@ class CodeEditor extends React.Component {
     shouldComponentUpdate(nextProps, nextState) {
         return nextState.stateError !== this.state.stateError ||
             nextState.stateDate !== this.state.stateDate ||
+            nextState.identifier !== this.state.identifier ||
             nextState.error !== this.state.error ||
             nextState.fileIndex !== this.state.fileIndex ||
             nextState.showContextMenu !== this.state.showContextMenu ||

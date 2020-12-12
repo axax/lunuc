@@ -452,7 +452,7 @@ class CmsViewEditorContainer extends React.Component {
                                                         expanded={EditorPageOptions.serverScriptExpanded}>
                         <ScriptEditor
                             key={'script'+slug}
-                            identifer={'script'+slug}
+                            identifier={'serverScript'+cmsPage._id}
                             onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll', true)}
                             scrollPosition={EditorPageOptions.serverScriptScroll}
                             onBlur={() => {
@@ -481,6 +481,7 @@ class CmsViewEditorContainer extends React.Component {
                                                         onChange={this.handleSettingChange.bind(this, 'scriptExpanded', true)}
                                                         expanded={EditorPageOptions.scriptExpanded}>
                         <ScriptEditor
+                            identifier={'script'+cmsPage._id}
                             onScroll={this.handleSettingChange.bind(this, 'scriptScroll', true)}
                             scrollPosition={EditorPageOptions.scriptScroll}
                             onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
