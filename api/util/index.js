@@ -310,6 +310,26 @@ const Util = {
         return false
 
     },
+    getAccessFilter: async (db, context, access) => {
+
+        if(!access){
+            // do nothing
+        }else if (access.type === 'user') {
+            if (!context.id) {
+                // use anonymouse user
+                const anonymousUser = await Util.userByName(db, 'anonymous')
+                context.id = anonymousUser._id.toString()
+            }
+            return {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+        } else if (access.type === 'role') {
+
+            if (!await Util.userHasCapability(db, context, access.role)) {
+                return {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
+            }
+        }
+
+        return {}
+    },
     getUserRoles: async (db, id) => {
         const cacheKeyUserRole = 'UserRole' + id
         let userRole = Cache.get(cacheKeyUserRole)

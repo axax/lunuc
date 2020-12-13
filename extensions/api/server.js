@@ -29,7 +29,7 @@ const runApiScript = ({api, db, req, res}) => {
                 }
             })()
             this.resolve({data})`)
-            tpl.call({require, resolve, db, req, res, __dirname})
+            tpl.call({require, resolve, db, context: req.context, req, res, __dirname})
         } catch (error) {
             resolve({error})
         }

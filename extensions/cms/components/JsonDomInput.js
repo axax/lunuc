@@ -65,7 +65,6 @@ class JsonDomInput extends React.Component {
                 props.checked = this.state.checked
                 props.value = value
             } else {
-                console.log(stateValue)
                 if (stateValue.constructor === Object) {
                     props.value = stateValue.displayValue
 

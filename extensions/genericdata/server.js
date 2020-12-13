@@ -47,14 +47,13 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
             const struct = data.results[0].structure
 
             if(struct.access && struct.access.read) {
-                if( struct.access.read.type==='role') {
-                    if (!await Util.userHasCapability(db, context, struct.access.read)) {
-                        throw new Error(`no permission to access data GenericType.${otherOptions.genericType}`)
-                    }
-                }else if( struct.access.read.type==='user') {
-                    match.createdBy =  {$in: await Util.userAndJuniorIds(db, context.id)}
+                const accessMatch = await Util.getAccessFilter(db, context, struct.access.read)
+                if(accessMatch.createdBy){
+                    match.createdBy = accessMatch.createdBy
                 }
+
             }
+
 
             match.definition = {$eq: ObjectId(data.results[0]._id)}
 

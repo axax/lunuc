@@ -166,26 +166,9 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
 
                     // restriction = if it is set to 'user' only entries that belongs to the user are returned
                     if (segment.restriction) {
-
                         const restriction = segment.restriction.constructor === String ? {type: segment.restriction} : segment.restriction
 
-                        if (restriction.type === 'user') {
-                            if (!context.id) {
-                                // use anonymouse user
-                                const anonymousUser = await Util.userByName(db, 'anonymous')
-                                context.id = anonymousUser._id.toString()
-                            }
-                            match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
-                        } else if (restriction.type === 'role') {
-
-                            if (await Util.userHasCapability(db, context, restriction.role)) {
-                                match = {}
-                            } else {
-                                match = {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
-                            }
-                        } else {
-                            match = {}
-                        }
+                        match = await Util.getAccessFilter(db, context, restriction)
                     } else {
                         match = {}
                     }
