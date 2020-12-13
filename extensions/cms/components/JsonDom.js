@@ -381,6 +381,7 @@ class JsonDom extends React.Component {
             this.addLocationToScope()
             this.runJsEvent('urlchange', false, before)
         })
+
         this.moveInHtmlComponents()
         this.checkMetaTags(this.props)
     }
@@ -392,7 +393,7 @@ class JsonDom extends React.Component {
                 let content = ''
                 const tags = document.body.querySelectorAll('h1,h2,h3,h4')
                 for (let i = 0; i < tags.length; i++) {
-                    content += ' ' + tags[i].innerText.trim()
+                    content += ' ' + tags[i].textContent.trim()
                     if (content.indexOf('.', content.length - 1) === -1) {
                         content += '.'
                     }
@@ -419,7 +420,9 @@ class JsonDom extends React.Component {
 
     componentWillUnmount() {
         this.runJsEvent('unmount')
-        this._historyUnlisten()
+        if(this._historyUnlisten) {
+            this._historyUnlisten()
+        }
         this._ismounted = false
         this.removeParentRef(this.props)
         this.removeAddedDomElements()
