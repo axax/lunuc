@@ -90,6 +90,29 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
 
 
 
+const removeInvalidProperties = function (obj) {
+    for (const i in obj) {
+        if(i.indexOf('.')>=0){
+            delete obj[i]
+        }else {
+            const v = obj[i]
+            if (v) {
+                if (v.constructor === Array) {
+                    v.forEach((x) => {
+                        if (x.constructor === Object) {
+                            removeInvalidProperties(x)
+                        }
+                    })
+                } else if (v.constructor === Object) {
+                    removeInvalidProperties(v)
+                }
+            }
+        }
+    }
+    return null
+}
+
+
 const createMediaEntry = async ({db, _id, file, data, context}) => {
     // const mimeType = MimeType.detectByFileName(file.name)
     // call image classifier if requested
@@ -113,6 +136,7 @@ const createMediaEntry = async ({db, _id, file, data, context}) => {
                 resolve({error,meta})
             })
         }))
+        removeInvalidProperties(meta)
         data.info = meta
     }
 

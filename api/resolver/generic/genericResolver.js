@@ -335,7 +335,7 @@ const GenericResolver = {
                 return o
             }, {})
 
-            const allData = {
+            const resultData = {
                 _id: doc._id,
                 status: 'created',
                 createdBy: {
@@ -346,9 +346,9 @@ const GenericResolver = {
             }
 
             Hook.call('typeCreated', {type: typeName, data, db, context})
-            Hook.call('typeCreated_' + typeName, {data, db})
+            Hook.call('typeCreated_' + typeName, {data, db, context, resultData})
 
-            return allData
+            return resultData
         }
     },
     deleteEnity: async (db, context, typeName, {_version, ...data}) => {
@@ -469,7 +469,7 @@ const GenericResolver = {
 
         if (!await Util.userHasCapability(db, context, options.capability ? options.capability : CAPABILITY_MANAGE_OTHER_USERS)) {
 
-            if (data.createdBy && data.createdBy !== context.id) {
+            if (data.createdBy && data.createdBy.toString() !== context.id) {
                 throw new Error('user is not allow to change field createdBy')
             }
 

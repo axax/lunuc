@@ -109,3 +109,14 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
         }
     }
 })
+
+
+
+
+Hook.on('typeCreated_GenericData', async ({resultData, db, context}) => {
+   // resultData.data = JSON.parse(resultData.data)
+
+})
+
+
+

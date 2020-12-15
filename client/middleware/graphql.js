@@ -386,7 +386,7 @@ export const graphql = (query, operationOptions = {}) => {
 
                 const options = operationOptions.options ? (typeof operationOptions.options === 'function' ? operationOptions.options(this.props) : operationOptions.options) : {},
                     variables = options.variables,
-                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(this.props) : operationOptions.skip) : false
+                    skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(this.props, this.prevData) : operationOptions.skip) : false
 
                 return <Query skip={skip} query={query} variables={variables} hiddenVariables={options.hiddenVariables}
                               fetchPolicy={options.fetchPolicy}>{(res) => {

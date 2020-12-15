@@ -8,6 +8,7 @@ import {getType} from 'util/types'
 import {isEditMode, getSlugVersion, CMS_PAGE_QUERY} from '../util/cmsView'
 import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
+import Hook from "../../../util/hook";
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -15,7 +16,6 @@ class CmsViewContainer extends React.Component {
 
     constructor(props) {
         super(props)
-        this.setUpSubsciptions(props)
         this.addResources(props)
     }
 
@@ -25,8 +25,7 @@ class CmsViewContainer extends React.Component {
         const cmsPageOld = this.props.cmsPage
         if (cmsPage) {
             if (!cmsPageOld || (cmsPage.subscriptions !== cmsPageOld.subscriptions)) {
-                this.removeSubscriptions()
-                this.setUpSubsciptions(props)
+                this.setUpSubscriptions(props)
             }
 
             if (!cmsPageOld || cmsPage.resources !== cmsPageOld.resources) {
@@ -67,7 +66,7 @@ class CmsViewContainer extends React.Component {
     }
 
     componentDidMount() {
-        this.setUpSubsciptions(this.props)
+        this.setUpSubscriptions(this.props)
     }
 
     componentWillUnmount() {
@@ -80,7 +79,6 @@ class CmsViewContainer extends React.Component {
     render() {
         const {slug, aboutToChange, cmsPage, children, dynamic, fetchMore, settings, setKeyValue, updateResolvedData, ...props} = this.props
         const editMode = isEditMode(this.props)
-
         if (!cmsPage) {
             // show a loader here
             return null //<div className={classNameByPath(slug, 'Cms--loading')}/>
@@ -129,7 +127,7 @@ class CmsViewContainer extends React.Component {
             {...props}>{children}</JsonDom>
 
 
-        console.info(`render ${this.constructor.name} for ${slug} (loading=${this.props.loading}, change=${!!aboutToChange}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
+        console.info(`render ${this.constructor.name} for ${slug} ${this.props.id}  (loading=${this.props.loading}, change=${!!aboutToChange}) in ${new Date() - startTime}ms / time since index.html loaded ${(new Date()).getTime() - _app_.start.getTime()}ms`)
         return content
     }
 
@@ -221,7 +219,7 @@ class CmsViewContainer extends React.Component {
     }
 
 
-    setUpSubsciptions(props) {
+    setUpSubscriptions(props) {
         if (!props.cmsPage) return
 
         const {cmsPage: {subscriptions}, slug} = props
@@ -231,7 +229,6 @@ class CmsViewContainer extends React.Component {
         this.removeSubscriptions(subscriptions)
 
         const _this = this
-
         // register new supscriptions
         subscriptions.forEach(subs => {
 
@@ -261,12 +258,6 @@ class CmsViewContainer extends React.Component {
                         }
                     }
 
-/*($sort: String,$limit: Int,$page: Int,$filter: String)
-                    gqlQuery = `query ${nameStartLower}{
-                ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryFields}}}}`
-*/
-
-
                     query = `${subscriptionData.constructor===String?subscriptionData:subscriptionData.query}`
 
                 } else {
@@ -295,6 +286,7 @@ class CmsViewContainer extends React.Component {
                 if (!query) return
 
                 const qqlSubscribe = `subscription ${subscriptionName}${argsDefinition?'('+argsDefinition+')':''}{${subscriptionName}${args?'('+args+')':''}{${query}}}`
+
                 this.registeredSubscriptions[subs] = client.subscribe({
                     query: qqlSubscribe,
                     variables
@@ -361,6 +353,9 @@ class CmsViewContainer extends React.Component {
                                         }
                                     })
 
+                                    Hook.call('CmsViewContainerSubscription', {type:subs, storedData, resolvedDataJson})
+
+
                                     // back to string data
                                     const newStoreData = Object.assign({}, storedData)
                                     newStoreData.cmsPage = Object.assign({}, storedData.cmsPage)
@@ -389,7 +384,6 @@ class CmsViewContainer extends React.Component {
         if (!query || query.constructor !== String) return
 
         const {success, error, ...rest} = options
-
         if (query.startsWith('mutation')) {
             client.mutate({
                 mutation: query,

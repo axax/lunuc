@@ -116,16 +116,16 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.7.0",
     "@google-cloud/translate": "^6.0.5",
-    "aws-sdk": "^2.809.0",
+    "aws-sdk": "^2.810.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
     "puppeteer": "^5.5.0",
     "nodemon": "^2.0.6",
-    "mssql": "^6.2.3",
+    "mssql": "^6.3.0",
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
-    "ytdl-core": "^4.1.4",
+    "ytdl-core": "^4.1.5",
     "lighthouse": "^6.5.0"
   },
   "devDependencies": {
@@ -146,7 +146,7 @@
     "react-test-renderer": "^17.0.1",
     "style-loader": "^2.0.0",
     "terser-webpack-plugin": "^5.0.3",
-    "webpack": "^5.10.1",
+    "webpack": "^5.10.2",
     "webpack-bundle-analyzer": "^4.2.0",
     "webpack-cli": "^4.2.0",
     "webpack-dev-server": "^3.11.0"

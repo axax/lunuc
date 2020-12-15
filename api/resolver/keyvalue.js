@@ -11,13 +11,25 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
 
     let res
     try {
-        res = await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', {
+        const dataToUpdate = {
             _id,
             key,
-            value,
-            ispublic,
-            createdBy: (createdBy ? ObjectId(createdBy) : ObjectId(context.id))
-        }, {capability: CAPABILITY_MANAGE_TYPES, primaryKey: _id ? '_id' : 'key', upsert: await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)})
+            value
+        }
+
+        if(createdBy){
+            dataToUpdate.createdBy = ObjectId(createdBy)
+        }else if(!_id){
+            dataToUpdate.createdBy = ObjectId(context.id)
+            dataToUpdate.ispublic = false
+        }
+
+        if( ispublic !== undefined){
+            dataToUpdate.ispublic = ispublic
+        }
+
+
+        res = await GenericResolver.updateEnity(db, context, 'KeyValueGlobal',dataToUpdate , {capability: CAPABILITY_MANAGE_TYPES, primaryKey: _id ? '_id' : 'key', upsert: await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)})
 
 
         // TODO: we don't have the key here (sometimes we only have the id)

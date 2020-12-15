@@ -72,7 +72,8 @@ export default function (WrappedComponent) {
             if (!dynamic && isEditMode(this.props) && window.self === window.top) {
                 return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
                                                setKeyValue={this.setKeyValue.bind(this)}
-                                               WrappedComponent={WrappedComponent} {...this.props}/>
+                                               WrappedComponent={WrappedComponent}
+                                               {...this.props}/>
             } else {
                 return <WrappedComponent updateResolvedData={this.updateResolvedData.bind(this)}
                                          setKeyValue={this.setKeyValue.bind(this)}
@@ -176,7 +177,6 @@ export default function (WrappedComponent) {
 
         updateResolvedData({json, path, value}) {
             const {cmsPageVariables, cmsPage} = this.props
-
             const storeData = client.readQuery({
                 query: CMS_PAGE_QUERY,
                 variables: cmsPageVariables
@@ -206,6 +206,13 @@ export default function (WrappedComponent) {
 
     const withGql = compose(
         graphql(CMS_PAGE_QUERY, {
+            skip: (props, prevData) => {
+
+                if(prevData && prevData.cmsPage && prevData.cmsPage.slug===props.slug && !prevData.cmsPage.urlSensitiv){
+                    return true
+                }
+                return false 
+            },
             options(ownProps) {
                 let hiddenVariables
                 if (!ownProps.dynamic) {
@@ -214,7 +221,6 @@ export default function (WrappedComponent) {
                         meta: JSON.stringify({referer: urlStacK && urlStacK.length>1?urlStacK[1]:document.referrer})
                     }
                 }
-
                 return {
                     variables: getGqlVariables(ownProps),
                     hiddenVariables,
