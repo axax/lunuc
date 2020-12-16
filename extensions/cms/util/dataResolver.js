@@ -159,7 +159,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     let type, match
                     if (t.indexOf('$') === 0) {
                         type = t.substring(1)
-                        subscriptions.push(type)
+                        subscriptions.push({type, callback: false, autoUpdate: segment.key || type})
                     } else {
                         type = t
                     }
@@ -240,11 +240,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         console.warn(`segment ${segment.key} can not be reduced`, e)
                     }
                 } else if (segment.subscription) {
-                    if (segment.subscription.constructor === String) {
-                        subscriptions.push(segment.subscription)
-                    } else {
-                        subscriptions.push(JSON.stringify(segment.subscription))
-                    }
+                    subscriptions.push(segment.subscription)
                 } else if (segment.system) {
                     resolveSystemData(segment, req, resolvedData)
                 } else if (segment.keyValueGlobals) {
@@ -359,7 +355,12 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
             }
             delete resolvedData._data
             if (addDataResolverSubsription) {
-                subscriptions.push('{"cmsPageData":"resolvedData"}')
+                subscriptions.push({
+                    name: 'cmsPageData',
+                    query: 'resolvedData',
+                    callback: true,
+                    autoUpdate: false
+                })
             }
         } catch (e) {
             console.log(e)
@@ -367,7 +368,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
         }
     }
     console.log(`dataResolver for ${scope.page.slug} in ${new Date().getTime() - startTime}ms`)
-    return {resolvedData, subscriptions}
+    return {resolvedData, subscriptions: subscriptions.length > 0 ? JSON.stringify(subscriptions) : ''}
 }
 
 

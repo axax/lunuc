@@ -113,9 +113,14 @@ export default function (WrappedComponent) {
                 client.mutate({
                     mutation: 'mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}',
                     variables,
-                    update: (store, {data: {setKeyValue}}) => {
+                    update: (store, {data}) => {
+
+                        if(!data){
+                            return
+                        }
+
                         if (callback) {
-                            callback({key, value, setKeyValue})
+                            callback({key, value, setKeyValue: data.setKeyValue})
                         }
                         if (resolvedDataJson) {
                             this.updateResolvedData({json: resolvedDataJson})
@@ -183,7 +188,7 @@ export default function (WrappedComponent) {
             })
 
             // upadate data in resolvedData string
-            if (storeData.cmsPage && storeData.cmsPage.resolvedData) {
+            if (storeData && storeData.cmsPage && storeData.cmsPage.resolvedData) {
                 const newData = Object.assign({}, storeData.cmsPage)
                 if (path && value!==undefined) {
                     const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
@@ -211,7 +216,7 @@ export default function (WrappedComponent) {
                 if(prevData && prevData.cmsPage && prevData.cmsPage.slug===props.slug && !prevData.cmsPage.urlSensitiv){
                     return true
                 }
-                return false 
+                return false
             },
             options(ownProps) {
                 let hiddenVariables

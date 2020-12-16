@@ -120,8 +120,7 @@
         },
         {
           "name": "subscriptions",
-          "hidden": true,
-          "multi": true
+          "hidden": true
         },
         {
           "name": "online",

@@ -296,7 +296,7 @@ function gensrcExtension(name, options) {
 
 
         let schema = GENSRC_HEADER + 'export default `\n'
-        let resolver = GENSRC_HEADER + `import Util from 'api/util'\nimport {ObjectId} from 'mongodb'\nimport {pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
+        let resolver = GENSRC_HEADER + `import {matchExpr} from '../../../client/util/json'\nimport Util from 'api/util'\nimport {ObjectId} from 'mongodb'\nimport {pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
         resolver += `import GenericResolver from 'api/resolver/generic/genericResolver'\n\nexport default db => ({\n`
         let resolverQuery = '\tQuery:{\n'
         let resolverMutation = '\tMutation:{\n'
@@ -407,7 +407,7 @@ function gensrcExtension(name, options) {
 
 
             typeSchema += 'type Subscription{\n'
-            typeSchema += '    subscribe' + type.name + ': ' + type.name + 'SubscribeResult\n'
+            typeSchema += '    subscribe' + type.name + '(filter:String): ' + type.name + 'SubscribeResult\n'
             typeSchema += '}\n\n'
 
 
@@ -448,6 +448,17 @@ function gensrcExtension(name, options) {
             async (payload, context) => {
                 if( payload ) {
                     //return payload.userId === context.id
+                    if(context.variables && context.variables.filter){
+
+                        const datas = payload.subscribeGenericData.data
+
+                        for(let i = 0; i < datas.length; i++){
+                            const data = datas[i]
+                            if( matchExpr(context.variables.filter, data)){
+                                return false
+                            }
+                        }
+                    }
                     return await Util.userCanSubscribe(db,context,'${type.name}',payload)
                 }
             }

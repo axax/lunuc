@@ -201,34 +201,43 @@ function mainInit() {
     }
 }
 
+const noneAssign = !Object.assign || !Object.values,
+    noneFetch =  !window.fetch || !Promise.prototype.finally || !window.AbortController || !window.Event,
+    noneIntl = !window.Intl
 
-if (!Object.assign || !window.fetch || !window.Intl || !Promise.prototype.finally) {
-
-    let counter = 0
-    const onload = () => {
-        counter++
-        if (counter === 3) {
-            mainInit()
-        }
+let maxCounter = 0, counter = 0
+const onload = () => {
+    counter++
+    if (counter === maxCounter) {
+        mainInit()
     }
+}
+if(noneAssign) {
+    maxCounter++
     // Load polyfill and bable to support old browsers
     DomUtil.addScript('https://unpkg.com/babel-standalone@6.26.0/babel.min.js', {
         async: true,
         onload
     })
+}
+
+if(noneFetch || noneAssign){
+    maxCounter++
     DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CObject.values%2CPromise.prototype.finally%2CAbortController%2CEvent', {
         async: true,
         onload
     })
+}
 
+if(noneIntl){
+    maxCounter++
     // timezone support
     DomUtil.addScript('https://unpkg.com/date-time-format-timezone@latest/build/browserified/date-time-format-timezone-complete-min.js', {
         async: true,
         onload
     })
+}
 
-} else {
-    //console.info(`Time ${(new Date()).getTime() - _app_.start.getTime()}ms`)
-
+if ( maxCounter===0) {
     mainInit()
 }

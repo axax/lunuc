@@ -439,8 +439,7 @@ const Util = {
         let restString = ''
         if (filter) {
             let operator = 'or'
-            filter.split(/ +(?=(?:(?:[^"]*"){2})*[^"]*$)/g).forEach(i => {
-
+            filter.split(/ +(?=(?:(?:[^"]*"){3})*[^"]*$)/g).forEach(i => {
                 if (i === '') {
                     //ignore
                 } else if (i === '||') {

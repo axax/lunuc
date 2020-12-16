@@ -211,10 +211,8 @@ class CmsViewContainer extends React.Component {
     removeSubscriptions(subscriptions) {
         // remove all subscriptions
         Object.keys(this.registeredSubscriptions).forEach(key => {
-            if (!subscriptions || subscriptions.indexOf(key) < 0) {
-                this.registeredSubscriptions[key].unsubscribe()
-                delete this.registeredSubscriptions[key]
-            }
+            this.registeredSubscriptions[key].unsubscribe()
+            delete this.registeredSubscriptions[key]
         })
     }
 
@@ -225,151 +223,171 @@ class CmsViewContainer extends React.Component {
         const {cmsPage: {subscriptions}, slug} = props
         if (!subscriptions) return
 
-        // remove unsed subscriptions
-        this.removeSubscriptions(subscriptions)
+        let subscriptionArray
+        try{
+            subscriptionArray = JSON.parse(subscriptions)
+        }catch (e) {
+            console.error(e)
+            return
+        }
+
+        // remove subscriptions
+        this.removeSubscriptions(subscriptionArray)
 
         const _this = this
+
         // register new supscriptions
-        subscriptions.forEach(subs => {
+        subscriptionArray.forEach(subscription => {
 
-            if (!this.registeredSubscriptions[subs]) {
-                let query = '',
-                    subscriptionName = '',
-                    argsDefinition = '',
-                    args = '',
-                    variables = {},
-                    isTypeSubscription = false
+            const subscriptionKey = subscription.key || subscription.name || subscription.type
 
-                if (subs.indexOf('{') === 0) {
-                    const obj = JSON.parse(subs)
-                    subscriptionName = Object.keys(obj)[0]
-                    const subscriptionData = obj[subscriptionName]
+            if(!subscriptionKey){
+                return
+            }
 
-                    if(subscriptionData.constructor===Object){
+            if (!this.registeredSubscriptions[subscriptionKey]) {
+                let subscriptionQuery = subscription.query,
+                    subscriptionName = subscription.name,
+                    subscriptionVariablesDefinition = '',
+                    subscriptionVariables = ''
 
+                if( subscription.type){
 
-                        if(subscriptionData.variables){
-                            variables = subscriptionData.variables
+                    subscriptionName = `subscribe${subscription.type}`
 
-                            Object.keys(subscriptionData.variables).forEach((key)=>{
-                                argsDefinition+='$'+key+': String'
-                                args+=key+':$'+key
-                            })
+                    if(!subscription.query) {
+
+                        // create query based on type structure
+                        const type = getType(subscription.type)
+
+                        if (!type) {
+                            console.error('Invalid type for subscription')
+                            return
                         }
-                    }
 
-                    query = `${subscriptionData.constructor===String?subscriptionData:subscriptionData.query}`
-
-                } else {
-                    isTypeSubscription = true
-                    const type = getType(subs)
-                    subscriptionName = `subscribe${subs}`
-                    if (type) {
-                        query += 'action data{_id'
+                        subscriptionQuery = 'action data{_id'
                         type.fields.map(({name, required, multi, reference, localized}) => {
 
                             if (reference) {
-                                // todo: field name might be different than name
-                                //query += ' ' + name + '{_id name}'
+                                // todo: query for subtypes
+                                //subscriptionQuery += ' ' + name + '{_id name}'
                             } else {
                                 if (localized) {
-                                    query += ' ' + name + '{__typename ' + _app_.lang + '}'
+                                    subscriptionQuery += ' ' + name + '{__typename ' + _app_.lang + '}'
                                 } else {
-                                    query += ' ' + name
+                                    subscriptionQuery += ' ' + name
                                 }
                             }
                         })
-                        query += '}'
+                        subscriptionQuery += '}'
                     }
                 }
 
-                if (!query) return
+                if(subscription.variables){
+                    Object.keys(subscription.variables).forEach((key)=>{
+                        subscriptionVariablesDefinition+='$'+key+': String'
+                        subscriptionVariables+=key+':$'+key
+                    })
+                }
 
-                const qqlSubscribe = `subscription ${subscriptionName}${argsDefinition?'('+argsDefinition+')':''}{${subscriptionName}${args?'('+args+')':''}{${query}}}`
 
-                this.registeredSubscriptions[subs] = client.subscribe({
+                if (!subscriptionQuery){
+                    console.error('invalid query for subscription')
+                    return
+                }
+                if (!subscriptionName){
+                    console.error('invalid name for subscription')
+                    return
+                }
+
+                const qqlSubscribe = `subscription ${subscriptionName}${subscriptionVariablesDefinition?'('+subscriptionVariablesDefinition+')':''}{${subscriptionName}${subscriptionVariables?'('+subscriptionVariables+')':''}{${subscriptionQuery}}}`
+
+                this.registeredSubscriptions[subscriptionKey] = client.subscribe({
                     query: qqlSubscribe,
-                    variables
+                    variables: subscription.variables
                 }).subscribe({
                     next(supscriptionData) {
-
-                        if (!isTypeSubscription) {
-                            // this kind of subscription is handle by the JsonDom Script
+                        if (subscription.callback!==false) {
+                            // callback to JsonDom Script
                             _this._subscriptionCallback(supscriptionData)
-                            return
                         }
-                        if (!supscriptionData.data) {
-                            //console.warn('subscription data missing')
-                            return
-                        }
-                        const {action, data} = supscriptionData.data['subscribe' + subs]
-                        if (data) {
-                            const storedData = client.readQuery({
-                                query: CMS_PAGE_QUERY,
-                                variables: _this.props.cmsPageVariables
-                            })
+                        if (subscription.autoUpdate) {
 
-                            // upadate data in resolvedData string
-                            if (storedData.cmsPage && storedData.cmsPage.resolvedData) {
+                            if (!supscriptionData.data) {
+                                //console.warn('subscription data missing')
+                                return
+                            }
+                            const {action, data} = supscriptionData.data[subscriptionName]
+                            if (data) {
+                                const storedData = client.readQuery({
+                                    query: CMS_PAGE_QUERY,
+                                    variables: _this.props.cmsPageVariables
+                                })
 
-                                const resolvedDataJson = JSON.parse(storedData.cmsPage.resolvedData)
-                                if (resolvedDataJson[subs] && resolvedDataJson[subs].results) {
+                                // upadate data in resolvedData string
+                                if (storedData.cmsPage && storedData.cmsPage.resolvedData) {
 
+                                    const resolvedDataJson = JSON.parse(storedData.cmsPage.resolvedData)
+                                    if (resolvedDataJson[subscription.autoUpdate] && resolvedDataJson[subscription.autoUpdate].results) {
 
-                                    const refResults = resolvedDataJson[subs].results
+                                        const refResults = resolvedDataJson[subscription.autoUpdate].results
 
-                                    data.forEach(entry=>{
-                                        // remove null values from new data
-                                        const noNullData = Util.removeNullValues(entry)
-                                        Object.keys(noNullData).map(k => {
-                                            // check for localized values
-                                            if (noNullData[k].constructor === Object && noNullData[k].__typename === 'LocalizedString') {
-                                                const v = noNullData[k][_app_.lang]
-                                                if (v) {
-                                                    noNullData[k] = v
+                                        data.forEach(entry=>{
+                                            // remove null values from new data
+                                            const noNullData = Util.removeNullValues(entry)
+                                            Object.keys(noNullData).map(k => {
+                                                // check for localized values
+                                                if (noNullData[k].constructor === Object && noNullData[k].__typename === 'LocalizedString') {
+                                                    const v = noNullData[k][_app_.lang]
+                                                    if (v) {
+                                                        noNullData[k] = v
+                                                    }
                                                 }
+                                            })
+                                            if (['update', 'delete'].indexOf(action) >= 0) {
+
+                                                // find data to update
+                                                const idx = refResults.findIndex(o => o._id === entry._id)
+
+                                                if (idx > -1) {
+                                                    if (action === 'update') {
+                                                        // update data
+                                                        refResults[idx] = Object.assign({}, refResults[idx], noNullData)
+                                                    } else {
+                                                        // delete data
+                                                        refResults.splice(idx, 1)
+                                                    }
+                                                } else {
+                                                    console.warn(`Data ${entry._id} does not exist.`)
+                                                }
+
+                                            } else {
+                                                //create
+                                                refResults.unshift(noNullData)
                                             }
                                         })
-                                        if (['update', 'delete'].indexOf(action) >= 0) {
 
-                                            // find data to update
-                                            const idx = refResults.findIndex(o => o._id === entry._id)
-
-                                            if (idx > -1) {
-                                                if (action === 'update') {
-                                                    // update data
-                                                    refResults[idx] = Object.assign({}, refResults[idx], noNullData)
-                                                } else {
-                                                    // delete data
-                                                    refResults.splice(idx, 1)
-                                                }
-                                            } else {
-                                                console.warn(`Data ${entry._id} does not exist.`)
-                                            }
-
-                                        } else {
-                                            //create
-                                            refResults.unshift(noNullData)
-                                        }
-                                    })
-
-                                    Hook.call('CmsViewContainerSubscription', {type:subs, storedData, resolvedDataJson})
+                                        Hook.call('CmsViewContainerSubscription', {subscription, storedData, resolvedDataJson})
 
 
-                                    // back to string data
-                                    const newStoreData = Object.assign({}, storedData)
-                                    newStoreData.cmsPage = Object.assign({}, storedData.cmsPage)
-                                    newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
+                                        // back to string data
+                                        const newStoreData = Object.assign({}, storedData)
+                                        newStoreData.cmsPage = Object.assign({}, storedData.cmsPage)
+                                        newStoreData.cmsPage.resolvedData = JSON.stringify(resolvedDataJson)
 
-                                    // save new data
-                                    client.writeQuery({
-                                        query: CMS_PAGE_QUERY,
-                                        variables: _this.props.cmsPageVariables,
-                                        data: newStoreData
-                                    })
+                                        // save new data
+                                        client.writeQuery({
+                                            query: CMS_PAGE_QUERY,
+                                            variables: _this.props.cmsPageVariables,
+                                            data: newStoreData
+                                        })
+                                    }
                                 }
                             }
+
                         }
+
+
                     },
                     error(err) {
                         console.error('err', err)
