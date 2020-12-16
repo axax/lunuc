@@ -201,9 +201,18 @@ function mainInit() {
     }
 }
 
-const noneAssign = !Object.assign || !Object.values,
-    noneFetch =  !window.fetch || !Promise.prototype.finally || !window.AbortController || !window.Event,
-    noneIntl = !window.Intl
+const noneBasicEs6 = (() => {
+        if (window.fetch) {
+            return false
+        }
+        try {
+            new Function('(a = {x:1}) => {const {x} = a; return `${a}`}')
+            return false
+        } catch (err) {
+            return true
+        }
+    })(),
+    noneObject = !Object.assign || !Object.values || !window.fetch || !Promise.prototype.finally || !window.AbortController || !window.Event
 
 let maxCounter = 0, counter = 0
 const onload = () => {
@@ -212,7 +221,7 @@ const onload = () => {
         mainInit()
     }
 }
-if(noneAssign) {
+if (noneBasicEs6) {
     maxCounter++
     // Load polyfill and bable to support old browsers
     DomUtil.addScript('https://unpkg.com/babel-standalone@6.26.0/babel.min.js', {
@@ -221,7 +230,7 @@ if(noneAssign) {
     })
 }
 
-if(noneFetch || noneAssign){
+if (noneObject) {
     maxCounter++
     DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CObject.values%2CPromise.prototype.finally%2CAbortController%2CEvent', {
         async: true,
@@ -229,7 +238,7 @@ if(noneFetch || noneAssign){
     })
 }
 
-if(noneIntl){
+if (!window.Intl || noneBasicEs6 || noneObject) {
     maxCounter++
     // timezone support
     DomUtil.addScript('https://unpkg.com/date-time-format-timezone@latest/build/browserified/date-time-format-timezone-complete-min.js', {
@@ -238,6 +247,6 @@ if(noneIntl){
     })
 }
 
-if ( maxCounter===0) {
+if (maxCounter === 0) {
     mainInit()
 }
