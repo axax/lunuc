@@ -213,6 +213,8 @@ export const userResolver = (db) => ({
                 LOGIN_ATTEMPTS_MAP[ip].lasttry = new Date().getTime()
                 LOGIN_ATTEMPTS_MAP[ip].count++
                 console.log(`Invalid login attempt from ${username}`)
+                Hook.call('invalidLogin', {context, db, username, ip})
+
                 //invalid login
             } else {
                 if (LOGIN_ATTEMPTS_MAP[ip]) {

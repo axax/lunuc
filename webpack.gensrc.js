@@ -138,6 +138,10 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
             }
         }
 
+        Object.keys(manifestJson).forEach(key=>{
+            delete manifestJson[key].description
+            delete manifestJson[key].author
+        })
         const manifestStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJson, null, 2)}\nexport default extensions`
 
         fs.writeFile(GENSRC_PATH + "/extensions.js", manifestStr, function (err) {
@@ -403,7 +407,7 @@ function gensrcExtension(name, options) {
             }
             typeSchema += '}\n\n'
 
-            typeSchema += 'type ' + type.name + 'SubscribeResult {\n\tdata:[' + type.name + ']\n\taction:String\n}\n\n'
+            typeSchema += 'type ' + type.name + 'SubscribeResult {\n\tdata:[' + type.name + ']\n\tfilter:String\n\taction:String\n}\n\n'
 
 
             typeSchema += 'type Subscription{\n'
@@ -449,15 +453,22 @@ function gensrcExtension(name, options) {
                 if( payload ) {
                     //return payload.userId === context.id
                     if(context.variables && context.variables.filter){
+                    
+                        const filters = JSON.parse(context.variables.filter),
+                        action = payload.subscribeGenericData.action,
+                        datas = payload.subscribeGenericData.data,
+                        filter = filters[action]
+                        
+                        if( filter ){
 
-                        const datas = payload.subscribeGenericData.data
-
-                        for(let i = 0; i < datas.length; i++){
-                            const data = datas[i]
-                            if( matchExpr(context.variables.filter, data)){
-                                return false
+                            for(let i = 0; i < datas.length; i++){
+                                const data = datas[i]
+                                if( matchExpr(filter, data)){
+                                    return false
+                                }
                             }
                         }
+                        payload.subscribeGenericData.filter = filter
                     }
                     return await Util.userCanSubscribe(db,context,'${type.name}',payload)
                 }

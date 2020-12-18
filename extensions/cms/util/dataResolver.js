@@ -240,6 +240,13 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                         console.warn(`segment ${segment.key} can not be reduced`, e)
                     }
                 } else if (segment.subscription) {
+
+                    if( segment.subscription.filter && segment.subscription.filter.create ){
+                        if(!segment.subscription.variables){
+                            segment.subscription.variables = {}
+                        }
+                        segment.subscription.variables.filter = JSON.stringify(segment.subscription.filter)
+                    }
                     subscriptions.push(segment.subscription)
                 } else if (segment.system) {
                     resolveSystemData(segment, req, resolvedData)

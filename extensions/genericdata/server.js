@@ -54,7 +54,6 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
 
             }
 
-
             match.definition = {$eq: ObjectId(data.results[0]._id)}
 
             if (struct && struct.fields) {

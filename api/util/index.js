@@ -178,7 +178,7 @@ const Util = {
                 }
             }
             if (map) {
-                console.log(`load KeyValueGlobal "${keys.join(',')}" from cache`)
+                //console.log(`load KeyValueGlobal "${keys.join(',')}" from cache`)
                 return map
             }
         }

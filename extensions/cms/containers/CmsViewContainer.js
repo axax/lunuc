@@ -265,7 +265,7 @@ class CmsViewContainer extends React.Component {
                             return
                         }
 
-                        subscriptionQuery = 'action data{_id'
+                        subscriptionQuery = 'action filter data{_id'
                         type.fields.map(({name, required, multi, reference, localized}) => {
 
                             if (reference) {
@@ -317,8 +317,8 @@ class CmsViewContainer extends React.Component {
                                 //console.warn('subscription data missing')
                                 return
                             }
-                            const {action, data} = supscriptionData.data[subscriptionName]
-                            if (data) {
+                            const {action, filter, data} = supscriptionData.data[subscriptionName]
+                            if (data && (!filter || filter === subscription.filter[action])) {
                                 const storedData = client.readQuery({
                                     query: CMS_PAGE_QUERY,
                                     variables: _this.props.cmsPageVariables
@@ -328,6 +328,9 @@ class CmsViewContainer extends React.Component {
                                 if (storedData.cmsPage && storedData.cmsPage.resolvedData) {
 
                                     const resolvedDataJson = JSON.parse(storedData.cmsPage.resolvedData)
+
+                                    console.log(subscription.autoUpdate, data)
+
                                     if (resolvedDataJson[subscription.autoUpdate] && resolvedDataJson[subscription.autoUpdate].results) {
 
                                         const refResults = resolvedDataJson[subscription.autoUpdate].results

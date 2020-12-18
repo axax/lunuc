@@ -85,6 +85,16 @@ Hook.on('HookError', async ({entry, error}) => {
     }
 })
 
+Hook.on('invalidLogin', async ({context, db, username, ip}) => {
+    console.log(username, ip)
+    GenericResolver.createEntity(db, {context}, 'Log', {
+        location: 'login',
+        type: 'invalidLogin',
+        message: `invalid login attempt from ${username} with ip ${ip}`,
+        meta: {username, ip}
+    })
+})
+
 /*
 // add routes for this extension
 Hook.on('GlobalError', ({error, db, cronjobId, context}) => {
