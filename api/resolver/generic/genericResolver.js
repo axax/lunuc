@@ -200,9 +200,11 @@ const GenericResolver = {
             }
         }
 
+        const estimateCount = includeCount !== false && !options.filter && Object.keys(match).length===0
+
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
             match,
-            includeCount: (includeCount !== false),
+            includeCount: (includeCount !== false && !estimateCount),
             lang: context.lang, ...otherOptions
         })
         const {dataQuery, countQuery} = aggregationBuilder.query()
@@ -238,13 +240,7 @@ const GenericResolver = {
         if (result.meta && result.meta.length > 0) {
             result.total = result.meta[0].count
         } else {
-            /*const countResults = await collection.aggregate(countQuery, {allowDiskUse: true}).toArray()
-             if (countResults.length > 0) {
-             result.total = countResults[0].count
-             } else {
-             result.total = 0
-             }*/
-            result.total = 0
+            result.total = estimateCount ? await collection.estimatedDocumentCount() : 0
         }
         //console.log(JSON.stringify(result, null, 4))
 
@@ -252,7 +248,6 @@ const GenericResolver = {
         //result.meta.aggregateTime = new Date() - startTimeAggregate
 
         Hook.call('typeLoaded', {type: typeName, data, db, context, result, dataQuery, collectionName, aggregateTime})
-
         if (cacheKey) {
             Cache.set(cacheKey, result, cacheTime)
         }

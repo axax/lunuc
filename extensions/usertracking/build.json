@@ -23,6 +23,21 @@
           "index": 1
         },
         {
+          "name": "day",
+          "type": "Int",
+          "index": 1
+        },
+        {
+          "name": "month",
+          "type": "Int",
+          "index": 1
+        },
+        {
+          "name": "year",
+          "type": "Int",
+          "index": 1
+        },
+        {
           "name": "event",
           "index": 1
         },

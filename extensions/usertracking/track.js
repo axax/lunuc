@@ -26,6 +26,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
             referer = ''//req.headers['referer']
         }
 
+        const date = new Date()
         const insertData = {
             ip: ip.replace('::ffff:', ''),
             agent: req.headers['user-agent'],
@@ -34,6 +35,9 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
             event,
             host: host,
             slug,
+            day: date.getDate(),
+            month: date.getMonth()+1,
+            year: date.getFullYear(),
             createdBy: await Util.userOrAnonymousId(db, context)
         }
 
