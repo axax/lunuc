@@ -60,7 +60,7 @@ const AdminSwitch = (props) => <Async {...props} expose="Switch"
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onMouseOver', 'onMouseOut', 'onClick', 'onKeyDown', 'onKeyUp', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput']
+    static events = ['onMouseOver', 'onMouseOut', 'onMouseDown', 'onClick', 'onKeyDown', 'onKeyUp', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput']
 
     /*
      * Default components
@@ -148,7 +148,7 @@ class JsonDom extends React.Component {
                 url = location.origin + '/lunucapi/tracking?url=' + encodeURIComponent(url) + tracking
             }
 
-            if (url.startsWith('https://') || url.startsWith('http://') || native) {
+            if (url.indexOf('https://')===0 || url.indexOf('http://')===0 || native) {
                 return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
 
                     if (onClick) {
@@ -1031,7 +1031,10 @@ class JsonDom extends React.Component {
                     }
 
                     if (_app_.JsonDom.elementWatch!=false &&
-                        (((eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) || ($observe && $observe.if !== 'false')) &&
+                        (
+                            ((eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) ||
+                            ($observe && $observe.if !== 'false')
+                        ) &&
                         (!!window.IntersectionObserver || eleProps.inlineSvg)) {
 
                         h.push(React.createElement(

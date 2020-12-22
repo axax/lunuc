@@ -599,7 +599,7 @@ const GenericResolver = {
 
             if (fields) {
                 Object.keys(result).forEach(field => {
-                    if (fields[field]) {
+                    if (fields[field] && result[field]) {
                         if (fields[field].reference && result[field].constructor !== Object) {
                             // is a reference
                             // TODO also resolve fields of subtype
@@ -610,9 +610,8 @@ const GenericResolver = {
                     }
                 })
             }
-
             Hook.call('typeCloned', {type: typeName, db, context})
-            Hook.call('typeCloned_' + typeName, {db, context})
+            Hook.call('typeCloned_' + typeName, {db, context, result})
 
             return result
         }

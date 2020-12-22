@@ -69,7 +69,15 @@
         {
           "name": "name",
           "required": true,
-          "index": 1
+          "index": 1,
+          "tab": "Allgemein"
+        },
+        {
+          "name": "group",
+          "type": "MediaGroup",
+          "multi": true,
+          "index": 1,
+          "tab": "Allgemein"
         }
       ]
     },
