@@ -29,7 +29,6 @@ class ElementWatch extends React.Component {
         } else {
             tagSrc = eleProps.id
         }
-
         return {
             oriSrc: eleProps.src,
             tagSrc,
@@ -39,17 +38,25 @@ class ElementWatch extends React.Component {
         }
     }
 
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if(prevState.tagSrc !== this.state.tagSrc) {
+            this.initObserver()
+        }
+    }
 
     componentDidMount() {
+        this.initObserver()
+    }
+
+    initObserver(){
         const {tagSrc} = this.state
-        const {eleProps} = this.props
 
         if (!tagSrc || !ElementWatch.hasLoaded[tagSrc]) {
             if (!!window.IntersectionObserver) {
                 setTimeout(() => {
                     this.addIntersectionObserver()
                 }, 0)
-            } else if (eleProps.inlineSvg) {
+            } else if (this.props.inlineSvg) {
                 this.fetchSvg()
             }
         }

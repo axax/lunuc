@@ -36,7 +36,7 @@ export const getType = (typeName) => {
     return types[typeName]
 }
 
-export const getTypeQueries = (typeName) => {
+export const getTypeQueries = (typeName, queryFields ) => {
 
     if (typeQueries[typeName]) return typeQueries[typeName]
 
@@ -50,10 +50,20 @@ export const getTypeQueries = (typeName) => {
     const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
     const result = {name: nameStartLower}
 
-    let query = '_id status'
+    let query = ''
+    if(!queryFields || queryFields.indexOf('_id')>=0){
+        query += '_id '
+    }
+    if(!queryFields || queryFields.indexOf('status')>=0){
+        query += 'status '
+    }
+
     let queryMutation = '_id status'
     if (!noUserRelation) {
-        query += ' createdBy{_id username}'
+
+        if(!queryFields || queryFields.indexOf('createdBy')>=0) {
+            query += 'createdBy{_id username} '
+        }
         queryMutation += ' createdBy{_id username}'
     }
 
@@ -73,24 +83,26 @@ export const getTypeQueries = (typeName) => {
             let t = localized ? 'LocalizedStringInput' : (type && type !== 'Object' ? type : 'String')
 
 
-            if (reference) {
-                t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
+            if(!queryFields || queryFields.indexOf(name)>=0) {
+                if (reference) {
+                    t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
 
-                if (name !== 'createdBy') {
+                    if (name !== 'createdBy') {
 
-                    query += ' ' + name + '{_id'
-                    if (rest.fields) {
-                        query += ' ' + rest.fields.join(' ')
-                    } else {
-                        query += queryStatemantForType(type)
+                        query += ' ' + name + '{_id'
+                        if (rest.fields) {
+                            query += ' ' + rest.fields.join(' ')
+                        } else {
+                            query += queryStatemantForType(type)
+                        }
+                        query += '} '
                     }
-                    query += '}'
-                }
-            } else {
-                if (localized) {
-                    query += ' ' + name + '{' + LANGUAGES.join(' ') + '}'
                 } else {
-                    query += ' ' + name
+                    if (localized) {
+                        query += name + '{' + LANGUAGES.join(' ') + '} '
+                    } else {
+                        query += name +' '
+                    }
                 }
             }
 

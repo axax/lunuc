@@ -1177,13 +1177,13 @@ class JsonDom extends React.Component {
     renderTemplate(str, scope) {
         str = str.trim()
         // Simple content type detection
-        if (str.startsWith('<')) {
+        if (str.indexOf('<')==0) {
             //It is html
             str = JSON.stringify({
                 t: 'div.JsonDom-html',
                 $c: Util.escapeForJson(str)
             })
-        } else if (str.startsWith('{') || str.startsWith('[')) {
+        } else if (str.indexOf('{')==0 || str.indexOf('[')==0) {
             //It is json
             // replace control character
             str = str.replace(/\\/g, '\\\\').replace(/"###/g, '').replace(/###"/g, '')
