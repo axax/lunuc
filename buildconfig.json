@@ -143,7 +143,6 @@
     "UPLOAD_URL": "/uploads",
     "LANGUAGES": ["de","en","fr","it"],
     "DEFAULT_LANGUAGE": "de",
-    "DEFAULT_RESULT_LIMIT": 10,
     "API_PREFIX": "lunucapi",
     "PRETTYURL_SEPERATOR": "-",
     "HTML_HEAD": ""

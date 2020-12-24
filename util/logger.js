@@ -1,4 +1,4 @@
-import config from 'gen/config'
+import config from 'gen/config-client'
 
 
 const debugStyle = 'color: #006400; font-weight:bold'

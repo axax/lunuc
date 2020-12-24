@@ -9,7 +9,7 @@ import AddChatMessage from '../components/chat/AddChatMessage'
 import {connect} from 'react-redux'
 import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
-import config from 'gen/config'
+import config from 'gen/config-client'
 import {graphql} from '../../../client/middleware/graphql'
 
 const {ADMIN_BASE_URL} = config

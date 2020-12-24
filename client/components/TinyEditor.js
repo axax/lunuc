@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import DomUtil from 'client/util/dom'
 import Util from '../util'
-import config from 'gen/config'
+import config from 'gen/config-client'
 
 const {DEFAULT_LANGUAGE} = config
 

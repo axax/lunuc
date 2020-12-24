@@ -1,6 +1,6 @@
 import {getType, getTypes, getTypeQueries} from 'util/types'
 import DomUtil from 'client/util/dom'
-import config from 'gen/config'
+import config from 'gen/config-client'
 
 /**
  * Object with general client helper methods. It is also accessible in the CMS Editor

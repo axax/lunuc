@@ -19,7 +19,7 @@ import {
 } from 'ui/admin'
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
-import config from 'gen/config'
+import config from 'gen/config-client'
 import CodeEditor from './CodeEditor'
 import TinyEditor from './TinyEditor'
 import {withStyles} from 'ui/admin'

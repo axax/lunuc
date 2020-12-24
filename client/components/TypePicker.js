@@ -18,7 +18,7 @@ import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
 import classNames from 'classnames'
-import {DEFAULT_LANGUAGE} from 'gen/config'
+import {DEFAULT_LANGUAGE} from 'gen/config-client'
 
 import {client} from '../middleware/graphql'
 import Util from '../util'

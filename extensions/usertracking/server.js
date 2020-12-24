@@ -23,40 +23,55 @@ Hook.on('trackUser', ({req, event, slug, db, context, data, meta}) => {
 
 Hook.on('cmsCustomResolver', async ({db, segment, context, req, scope, editmode, dynamic}) => {
     if (segment.track && req && !editmode && !dynamic) {
-        trackUser({req, event: segment.track.event, context, db, slug: scope.page.slug, data:scope.params, meta: scope.page.meta})
+        trackUser({
+            req,
+            event: segment.track.event,
+            context,
+            db,
+            slug: scope.page.slug,
+            data: scope.params,
+            meta: scope.page.meta
+        })
     }
 })
 
 
 Hook.on('typeBeforeCreate', ({type, data, req}) => {
-    if( type==='UserTracking'){
-        if( !data.ip ){
+    if (type === 'UserTracking') {
+        if (!data.ip) {
             const ip = clientAddress(req)
-            data.ip=ip.replace('::ffff:','')
+            data.ip = ip.replace('::ffff:', '')
         }
-        if( !data.agent ){
-            data.agent=req.headers['user-agent']
+        if (!data.agent) {
+            data.agent = req.headers['user-agent']
         }
-        if( !data.referer ){
-            data.referer=req.headers['referer']
+        if (!data.referer) {
+            data.referer = req.headers['referer']
         }
-        if( !data.host ){
-            data.host=getHostFromHeaders(req.headers)
+        if (!data.host) {
+            data.host = getHostFromHeaders(req.headers)
         }
+
+
+        const date = new Date()
+        data.day = date.getDate()
+        data.month = date.getMonth() + 1
+        data.year = date.getFullYear()
+
     }
 })
 
 
 // add some extra data to the table
-Hook.on('cmsPageStatus',  async ({db, slug, req, data}) => {
+Hook.on('cmsPageStatus', async ({db, slug, req, data}) => {
 
     const keys = ['CmsViewContainerSettings']
-    const keyvalueMap = (await Util.keyvalueMap(db, req.context, keys, {cache:true, parse:true}))
+    const keyvalueMap = (await Util.keyvalueMap(db, req.context, keys, {cache: true, parse: true}))
 
-    if(keyvalueMap.CmsViewContainerSettings && keyvalueMap.CmsViewContainerSettings.tracking) {
+    if (keyvalueMap.CmsViewContainerSettings && keyvalueMap.CmsViewContainerSettings.tracking) {
 
         const countTotal = await db.collection('UserTracking').count({slug})
-        const lastEntry = await db.collection('UserTracking').findOne({slug}, {sort: { _id: -1 }})
+        const lastEntry = await db.collection('UserTracking').findOne({slug}, {sort: {_id: -1}})
         data.usertracking = {countTotal, lastEntry}
     }
 

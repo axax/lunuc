@@ -560,13 +560,20 @@ export default class AggregationBuilder {
                 }
 
 
-                const {lookup} = this.createAndAddLookup(fieldDefinition, lookups, {usePipeline})
+                if(refFields && refFields.length===1 && refFields[0]==='_id'){
+                    // it is only the id lookup doesn't make sense
+                    projectResultData[fieldName + '._id'] = '$'+fieldName
+                    groups[fieldName] = {'$first':'$'+fieldName}
+                }else {
+                    const {lookup} = this.createAndAddLookup(fieldDefinition, lookups, {usePipeline})
 
-                if (lookup.$lookup.pipeline) {
-                    lookup.$lookup.pipeline.push({$project: projectPipeline})
+                    if (lookup.$lookup.pipeline) {
+                        lookup.$lookup.pipeline.push({$project: projectPipeline})
+                    }
+
+                    groups[fieldName] = this.createGroup(fieldDefinition)
+
                 }
-
-                groups[fieldName] = this.createGroup(fieldDefinition)
                 this.createAndAddFilterToMatch(fieldDefinition, hasMatchInReference ? match : rootMatch, {filters})
 
             } else {

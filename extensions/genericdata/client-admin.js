@@ -8,7 +8,7 @@ import {
 import Util from '../../client/util'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
 import {client} from 'client/middleware/graphql'
-import config from 'gen/config'
+import config from 'gen/config-client'
 
 const GenericForm = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>

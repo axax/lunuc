@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {Route, Redirect} from 'react-router-dom'
-import config from 'gen/config'
+import config from 'gen/config-client'
 
 
 const PrivateRoute = ({component: Component, isAuthenticated, ...rest}) => (

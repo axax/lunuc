@@ -4,7 +4,7 @@ import React from 'react'
 import {render} from 'react-dom'
 import App from './components/App'
 import {getStore} from './store/index'
-import config from 'gen/config'
+import config from 'gen/config-client'
 import DomUtil from 'client/util/dom'
 
 if (typeof localStorage === 'object') {

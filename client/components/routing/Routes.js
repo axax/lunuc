@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import {Router, Route, Switch} from 'react-router-dom'
 import PrivateRoute from './PrivateRoute'
 import Hook from 'util/hook'
-import config from 'gen/config'
+import config from 'gen/config-client'
 import {createBrowserHistory} from 'history'
 const {ADMIN_BASE_URL} = config
 import LogoutContainer from 'client/containers/LogoutContainer'

@@ -167,8 +167,28 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         })
 
         /* generate config */
-        let configContent = `${GENSRC_HEADER}export default ${JSON.stringify(Object.assign({}, APP_CONFIG.options, APP_VALUES))}\n`
+        const config = Object.assign({}, APP_CONFIG.options, APP_VALUES)
+
+
+        let configContent = `${GENSRC_HEADER}export default ${JSON.stringify(config)}\n`
         fs.writeFile(GENSRC_PATH + "/config.js", configContent, function (err) {
+            if (err) {
+                return console.log(err)
+            }
+        })
+
+        // for client
+        delete config.HOSTRULES_ABSPATH
+        delete config.WEBROOT_ABSPATH
+        delete config.STATIC_DIR
+        delete config.STATIC_PRIVATE_DIR
+        delete config.STATIC_TEMPLATE_DIR
+        delete config.BACKUP_DIR
+        delete config.UPLOAD_DIR
+        delete config.UPLOAD_DIR_ABSPATH
+        configContent = `${GENSRC_HEADER}export default ${JSON.stringify(config)}\n`
+
+        fs.writeFile(GENSRC_PATH + "/config-client.js", configContent, function (err) {
             if (err) {
                 return console.log(err)
             }

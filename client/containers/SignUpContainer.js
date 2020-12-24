@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import config from 'gen/config'
+import config from 'gen/config-client'
 import BlankLayout from 'client/components/layout/BlankLayout'
 import {Link} from 'react-router-dom'
 import {Card, SimpleButton, TextField, Row, Col, Typography} from 'ui/admin'

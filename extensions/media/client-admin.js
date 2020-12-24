@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import Hook from 'util/hook'
 import Async from 'client/components/Async'
-import config from 'gen/config'
+import config from 'gen/config-client'
 import Util from '../../client/util'
 import DomUtil from '../../client/util/dom'
 import {

@@ -1,6 +1,7 @@
 import extensions from 'gen/extensions'
 import Hook from 'util/hook'
-import config from 'gen/config'
+import config from 'gen/config-client'
+
 const {LANGUAGES} = config
 
 export const types = {}, typeQueries = {}
@@ -36,7 +37,7 @@ export const getType = (typeName) => {
     return types[typeName]
 }
 
-export const getTypeQueries = (typeName, queryFields ) => {
+export const getTypeQueries = (typeName, queryFields) => {
 
     if (typeQueries[typeName]) return typeQueries[typeName]
 
@@ -51,17 +52,17 @@ export const getTypeQueries = (typeName, queryFields ) => {
     const result = {name: nameStartLower}
 
     let query = ''
-    if(!queryFields || queryFields.indexOf('_id')>=0){
+    if (!queryFields || queryFields.indexOf('_id') >= 0) {
         query += '_id '
     }
-    if(!queryFields || queryFields.indexOf('status')>=0){
+    if (!queryFields || queryFields.indexOf('status') >= 0) {
         query += 'status '
     }
 
     let queryMutation = '_id status'
     if (!noUserRelation) {
 
-        if(!queryFields || queryFields.indexOf('createdBy')>=0) {
+        if (!queryFields || queryFields.indexOf('createdBy') >= 0) {
             query += 'createdBy{_id username} '
         }
         queryMutation += ' createdBy{_id username}'
@@ -83,7 +84,7 @@ export const getTypeQueries = (typeName, queryFields ) => {
             let t = localized ? 'LocalizedStringInput' : (type && type !== 'Object' ? type : 'String')
 
 
-            if(!queryFields || queryFields.indexOf(name)>=0) {
+            if (!queryFields || queryFields.indexOf(name) >= 0) {
                 if (reference) {
                     t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
 
@@ -101,7 +102,7 @@ export const getTypeQueries = (typeName, queryFields ) => {
                     if (localized) {
                         query += name + '{' + LANGUAGES.join(' ') + '} '
                     } else {
-                        query += name +' '
+                        query += name + ' '
                     }
                 }
             }
@@ -124,12 +125,11 @@ export const getTypeQueries = (typeName, queryFields ) => {
             selectParamsString += `,${item.name}:${item.defaultValue}`
         })
     }
-    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable ? ',$_version: String' : ''}){
-                ${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable ? ',_version:$_version' : ''}){limit offset total results{${query}}}}`
+    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable ? ',$_version: String' : ''}){${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable ? ',_version:$_version' : ''}){limit offset total results{${query}}}}`
 
 
     result.create = `mutation create${name}(${collectionClonable ? '$_version:String,' : ''}${insertParams}){create${name}(${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
-    result.update = `mutation update${name}($_id:ID!${noUserRelation?'':',$createdBy:ID'}${collectionClonable ? ',$_version:String' : ''},${updateParams}){update${name}(_id:$_id${noUserRelation?'':',createdBy:$createdBy'}${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
+    result.update = `mutation update${name}($_id:ID!${noUserRelation ? '' : ',$createdBy:ID'}${collectionClonable ? ',$_version:String' : ''},${updateParams}){update${name}(_id:$_id${noUserRelation ? '' : ',createdBy:$createdBy'}${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
     result.delete = `mutation delete${name}($_id:ID!${collectionClonable ? ',$_version:String' : ''}){delete${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.deleteMany = `mutation delete${name}s($_id: [ID]${collectionClonable ? ',$_version:String' : ''}){delete${name}s(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.clone = `mutation clone${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}${cloneParams}){clone${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}${cloneQuery}){${query}}}`

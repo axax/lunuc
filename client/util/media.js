@@ -1,5 +1,5 @@
 import React from 'react'
-import config from 'gen/config'
+import config from 'gen/config-client'
 const {UPLOAD_URL} = config
 
 const getImageSrc = (item) => {

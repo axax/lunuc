@@ -17,7 +17,7 @@ import CodeEditor from 'client/components/CodeEditor'
 import {COMMAND_QUERY} from '../constants'
 import PropTypes from 'prop-types'
 import * as NotificationAction from 'client/actions/NotificationAction'
-import config from 'gen/config'
+import config from 'gen/config-client'
 import {Query, client} from '../middleware/graphql'
 import FileDrop from '../components/FileDrop'
 

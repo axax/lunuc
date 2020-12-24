@@ -6,11 +6,13 @@ import Util from 'client/util'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import GenericForm from 'client/components/GenericForm'
 import {Row, Col, Typography, SimpleList, DeleteIconButton, SimpleDialog} from 'ui/admin'
-import config from 'gen/config'
+import config from 'gen/config-client'
 import {graphql} from '../../../client/middleware/graphql'
 
-const {ADMIN_BASE_URL, DEFAULT_RESULT_LIMIT} = config
+const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'
+
+const DEFAULT_RESULT_LIMIT = 10
 
 const PostEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "post" */ '../components/post/PostEditor')}/>

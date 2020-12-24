@@ -1,5 +1,5 @@
 import Hook from 'util/hook'
-import config from 'gen/config'
+import config from 'gen/config-client'
 import {getAllCapabilites} from 'util/capabilities'
 import {getType, getTypes} from './types'
 import Util from '../client/util'

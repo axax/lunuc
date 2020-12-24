@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import UploadUtil from 'client/util/upload'
 import {_t, registerTrs} from 'util/i18n'
 
-import config from 'gen/config'
+import config from 'gen/config-client'
 const {UPLOAD_URL} = config
 
 //expose

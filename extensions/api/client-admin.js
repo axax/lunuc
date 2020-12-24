@@ -1,6 +1,6 @@
 import React from 'react'
 import Hook from "../../util/hook";
-import config from 'gensrc/config'
+import config from 'gensrc/config-client'
 
 export default () => {
 

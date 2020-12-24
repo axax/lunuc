@@ -34,7 +34,7 @@ import {
 } from 'ui/admin'
 import Util from 'client/util'
 import TypeEdit from 'client/components/types/TypeEdit'
-import config from 'gen/config'
+import config from 'gen/config-client'
 import Hook from 'util/hook'
 import {
     getTypes,
@@ -51,12 +51,15 @@ import {getImageTag} from 'client/util/media'
 import {deepMerge} from 'util/deepMerge'
 import DomUtil from 'client/util/dom'
 import {_t} from 'util/i18n'
-const {ADMIN_BASE_URL, LANGUAGES, DEFAULT_RESULT_LIMIT} = config
+const {ADMIN_BASE_URL, LANGUAGES} = config
 import {COLLECTIONS_QUERY} from '../constants'
 import CodeEditor from '../components/CodeEditor'
 import GenericForm from '../components/GenericForm'
 import {client, Query} from '../middleware/graphql'
 import json2csv from 'util/json2csv'
+
+
+const DEFAULT_RESULT_LIMIT = 10
 
 const styles = theme => ({
     textLight: {

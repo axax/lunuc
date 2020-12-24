@@ -330,7 +330,12 @@ if (DEV_MODE) {
 
 
     const terserOptions = {
-        extractComments: 'all',
+        extractComments: {
+            condition: false,
+            banner: () => {
+                return ''
+            }
+        },
         terserOptions: {
             ecma: undefined,
             parse: {},

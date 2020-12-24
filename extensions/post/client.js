@@ -1,6 +1,6 @@
 import React from 'react'
 import Hook from 'util/hook'
-import config from 'gen/config'
+import config from 'gen/config-client'
 
 const {ADMIN_BASE_URL} = config
 import Async from 'client/components/Async'

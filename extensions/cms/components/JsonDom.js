@@ -37,7 +37,7 @@ const QuillEditor = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor')}/>
 
 const CodeEditor = (props) => <Async {...props}
-                                      load={import(/* webpackChunkName: "admin" */ '../../../client/components/CodeEditor')}/>
+                                     load={import(/* webpackChunkName: "admin" */ '../../../client/components/CodeEditor')}/>
 
 
 const MarkDown = (props) => <Async {...props}
@@ -117,7 +117,7 @@ class JsonDom extends React.Component {
         },
         Print,
         'input': props => {
-            const {binding,...rest} = props
+            const {binding, ...rest} = props
             if (!props.name || binding === false) {
                 return <input {...rest} />
             }
@@ -148,7 +148,7 @@ class JsonDom extends React.Component {
                 url = location.origin + '/lunucapi/tracking?url=' + encodeURIComponent(url) + tracking
             }
 
-            if (url.indexOf('https://')===0 || url.indexOf('http://')===0 || native) {
+            if (url.indexOf('https://') === 0 || url.indexOf('http://') === 0 || native) {
                 return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
 
                     if (onClick) {
@@ -420,7 +420,7 @@ class JsonDom extends React.Component {
 
     componentWillUnmount() {
         this.runJsEvent('unmount')
-        if(this._historyUnlisten) {
+        if (this._historyUnlisten) {
             this._historyUnlisten()
         }
         this._ismounted = false
@@ -458,7 +458,7 @@ class JsonDom extends React.Component {
                     if (parseResolvedData) {
                         // if there are placeholders ${} in the resolvedData String that needs to be parsed with the client scope
                         // the flag parseResolvedData needs to be set to true
-                        this.resolvedDataJson = JSON.parse(new Function(DomUtil.toES5(`const Util = this.Util; const {${Object.keys(scope).join(',')}} = this.scope; return \`${resolvedData.replace(/\\/g, '\\\\')}\``)).call({
+                        this.resolvedDataJson = JSON.parse(new Function(DomUtil.toES5(`const Util=this.Util;const {${Object.keys(scope).join(',')}}=this.scope;return \`${resolvedData.replace(/\\/g, '\\\\')}\``)).call({
                             scope,
                             Util
                         }))
@@ -492,13 +492,10 @@ class JsonDom extends React.Component {
                         this.runJsEvent('beforerunscript', false, scope)
                         try {
                             this.jsOnStack = {}
-                            this.scriptResult = new Function(DomUtil.toES5(`
-                    const  __this=this._this
-                    const {serverMethod, on, setLocal, getLocal, refresh, getComponent, addMetaTag, setStyle, fetchMore} = __this
-                    const {history, clientQuery, setKeyValue, updateResolvedData} = __this.props
-                    const {scope, getKeyValueFromLS, parent, root, Util, DomUtil} = this
-                    const _t = this._t.bind(scope.data),forceUpdate = refresh
-                    ${script}`)).call({
+                            this.scriptResult = new Function(DomUtil.toES5('const  __this=this._this;const {serverMethod, on, setLocal, getLocal, refresh, getComponent, addMetaTag, setStyle, fetchMore}=__this;' +
+                                'const {history, clientQuery, setKeyValue, updateResolvedData}=__this.props;' +
+                                'const {scope, getKeyValueFromLS, parent, root, Util, DomUtil}=this;' +
+                                'const _t=this._t.bind(scope.data),forceUpdate=refresh;' + script)).call({
                                 _this: this,
                                 scope,
                                 Util,
@@ -542,8 +539,7 @@ class JsonDom extends React.Component {
             let parsedStyle
             if (style.indexOf('${') > -1) {
                 try {
-                    parsedStyle = new Function(DomUtil.toES5(`const {scope,Util} = this
-                             return \`${style}\``)).call({
+                    parsedStyle = new Function(DomUtil.toES5(`const {scope,Util}=this;return \`${style}\``)).call({
                         scope: this.scope,
                         Util: Util,
                         set: (key, value) => {
@@ -627,7 +623,7 @@ class JsonDom extends React.Component {
             cb.bind(this)(event)
         }
 
-        if(target.type==='radio'){
+        if (target.type === 'radio') {
             // we need to refresh all radio elements
             this.refresh()
         }
@@ -833,12 +829,7 @@ class JsonDom extends React.Component {
 
                         let tpl
                         if ($for) {
-                            tpl = new Function(DomUtil.toES5(`const ${s} = this.${s},
-                                                    Util = this.Util,
-                                                    _i = Util.tryCatch.bind(this),
-                                                    _t = this._t.bind(this.scope.data)
-                                                    ${loopOrFor.eval ? loopOrFor.eval : ''}
-                                                    return \`${cStr}\``))
+                            tpl = new Function(DomUtil.toES5(`const ${s}=this.${s},Util =this.Util,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``))
                         }
                         data.forEach((loopChild, childIdx) => {
                             if (loopOrFor.convert === 'String') {
@@ -852,11 +843,7 @@ class JsonDom extends React.Component {
 
 
                             if ($loop) {
-                                tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}} = this.${s},
-                                                    Util = this.Util,
-                                                    _i = Util.tryCatch.bind(this),
-                                                    _t = this._t.bind(this.scope.data)
-                                                    return \`${cStr}\``))
+                                tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}}=this.${s},Util=this.Util,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);return \`${cStr}\``))
                             }
                             // remove tabs and parse
                             const json = JSON.parse(tpl.call({
@@ -952,7 +939,7 @@ class JsonDom extends React.Component {
                             }
                             if (eleProps.type === 'radio') {
 
-                                if(eleProps.value === undefined ){
+                                if (eleProps.value === undefined) {
                                     eleProps.value = eleProps.defaultValue || ''
                                 }
 
@@ -963,7 +950,7 @@ class JsonDom extends React.Component {
                                 }
                                 eleProps.checked = this.bindings[eleProps.name] === eleProps.value
 
-                            }else if (this.bindings[eleProps.name] === undefined) {
+                            } else if (this.bindings[eleProps.name] === undefined) {
                                 this.bindings[eleProps.name] = eleProps.value
                             } else {
                                 eleProps.value = this.bindings[eleProps.name]
@@ -1004,7 +991,7 @@ class JsonDom extends React.Component {
                         eleProps.className = className + (eleProps.className ? ' ' + eleProps.className : '')
                     }
 
-                    if (editMode && ($inlineEditor !== false || _app_.JsonDom.inlineEditor===true) ) {
+                    if (editMode && ($inlineEditor !== false || _app_.JsonDom.inlineEditor === true)) {
 
                         if (this.props.inlineEditor || ($inlineEditor && $inlineEditor.mode === 'source')) {
                             const rawJson = this.getJsonRaw(this.props, true)
@@ -1030,7 +1017,7 @@ class JsonDom extends React.Component {
                         eleProps.dangerouslySetInnerHTML = {__html: $c}
                     }
 
-                    if (_app_.JsonDom.elementWatch!=false &&
+                    if (_app_.JsonDom.elementWatch != false &&
                         (
                             ((eleType.name === 'SmartImage' || eleProps.inlineSvg) && eleProps.src && (!$observe || $observe.if !== 'false')) ||
                             ($observe && $observe.if !== 'false')
@@ -1177,13 +1164,13 @@ class JsonDom extends React.Component {
     renderTemplate(str, scope) {
         str = str.trim()
         // Simple content type detection
-        if (str.indexOf('<')==0) {
+        if (str.indexOf('<') == 0) {
             //It is html
             str = JSON.stringify({
                 t: 'div.JsonDom-html',
                 $c: Util.escapeForJson(str)
             })
-        } else if (str.indexOf('{')==0 || str.indexOf('[')==0) {
+        } else if (str.indexOf('{') == 0 || str.indexOf('[') == 0) {
             //It is json
             // replace control character
             str = str.replace(/\\/g, '\\\\').replace(/"###/g, '').replace(/###"/g, '')
@@ -1196,12 +1183,7 @@ class JsonDom extends React.Component {
         }
         try {
             // Scope properties get destructed so they can be accessed directly by property name
-            return new Function(DomUtil.toES5(`const {${Object.keys(scope).join(',')}} = this.scope,
-            Util = this.Util,
-            _i = Util.tryCatch.bind(this),
-            _r = this.renderIntoHtml,
-            _t = this._t.bind(data)
-            return \`${str}\``)).call({
+            return new Function(DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope,Util=this.Util,_i=Util.tryCatch.bind(this),_r=this.renderIntoHtml,_t=this._t.bind(data);return \`${str}\``)).call({
                 scope,
                 parent: this.props._parentRef,
                 Util,
@@ -1228,9 +1210,9 @@ class JsonDom extends React.Component {
                     const callCb = () => {
                         if (args.length && args[0]._forceUpdate) {
                             // call with little delay because onClick is triggered before onChange
-                            setTimeout(()=> {
+                            setTimeout(() => {
                                 this.refresh()
-                            },0)
+                            }, 0)
                         } else {
                             try {
                                 cb(...args)
