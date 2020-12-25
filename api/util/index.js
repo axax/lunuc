@@ -255,8 +255,13 @@ const Util = {
         return user
     },
     userAndJuniorIds: async (db, id) => {
-
-        const user = await Util.userById(db, id)
+        let user
+        if(!id){
+            user = await Util.userByName(db, 'anonymous')
+            id = user._id.toString()
+        }else{
+            user = await Util.userById(db, id)
+        }
 
         const ids = []
         ids.push(ObjectId(id))
@@ -311,15 +316,9 @@ const Util = {
 
     },
     getAccessFilter: async (db, context, access) => {
-
         if(!access){
             // do nothing
         }else if (access.type === 'user') {
-            if (!context.id) {
-                // use anonymouse user
-                const anonymousUser = await Util.userByName(db, 'anonymous')
-                context.id = anonymousUser._id.toString()
-            }
             return {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
         } else if (access.type === 'role') {
 

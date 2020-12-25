@@ -133,7 +133,7 @@
     "babel-jest": "^26.6.3",
     "babel-loader": "^8.2.2",
     "babel-plugin-graphql-tag": "^3.1.0",
-    "compression-webpack-plugin": "^7.1.0",
+    "compression-webpack-plugin": "^7.1.1",
     "copy-webpack-plugin": "^7.0.0",
     "css-loader": "^5.0.1",
     "eslint": "^7.16.0",
@@ -148,7 +148,7 @@
     "terser-webpack-plugin": "^5.0.3",
     "webpack": "^5.11.0",
     "webpack-bundle-analyzer": "^4.3.0",
-    "webpack-cli": "^4.2.0",
+    "webpack-cli": "^4.3.0",
     "webpack-dev-server": "^3.11.0"
   }
 }
