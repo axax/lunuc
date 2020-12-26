@@ -279,7 +279,6 @@ Add this to the file:
 
 `sudo iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 53 -j REDIRECT --to-port 53`
 
-
 ### Disable Apache 2
 `sudo systemctl disable apache2 && sudo systemctl stop apache2`
 `/etc/init.d/apache2 stop`
@@ -297,24 +296,5 @@ Add this to the file:
 /opt/lunuc
 /srv/uploads
 
-## Contributors
-
-### Contribution Guidelines
-
-Please ensure your pull request adheres to the following guidelines:
-
-- Search previous suggestions before making a new one, as yours may be a duplicate.
-- Suggested READMEs should be beautiful or stand out in some way.
-- Make an individual pull request for each suggestion.
-- New categories, or improvements to the existing categorization are welcome.
-- Keep descriptions short and simple, but descriptive.
-- Start the description with a capital and end with a full stop/period.
-- Check your spelling and grammar.
-- Make sure your text editor is set to remove trailing whitespace.
-
-Thank you for your suggestions!
-
-## License
-
-[MIT](./LICENSE)
-
+### Backup uploads
+`rsync -rav -e ssh --exclude='*@*' --delete user@lunuc.com:/path/to/uploads/ /local/distination/lunucbackup/uploads`

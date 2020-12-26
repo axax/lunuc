@@ -279,9 +279,9 @@ export default class AggregationBuilder {
                         }
                     }
                     filterValue = ids
-                    if(comparator === '$ne' || (filterOptions && filterOptions.comparator==='!=')){
+                    if (comparator === '$ne' || (filterOptions && filterOptions.comparator === '!=')) {
                         comparator = '$nin'
-                    }else {
+                    } else {
                         comparator = '$in'
                     }
                 } else if (ObjectId.isValid(filterValue)) {
@@ -332,17 +332,17 @@ export default class AggregationBuilder {
         let matchExpression
 
         if (['$gt', '$gte', '$lt', '$lte'].indexOf(comparator) >= 0) {
-            matchExpression = {[comparator]: type === 'ID'?filterValue:parseFloat(filterValue)}
-        } else if( comparator === '$ne'){
-            if( !filterOptions.inDoubleQuotes && filterValue==='null'){
+            matchExpression = {[comparator]: type === 'ID' ? filterValue : parseFloat(filterValue)}
+        } else if (comparator === '$ne') {
+            if (!filterOptions.inDoubleQuotes && filterValue === 'null') {
                 matchExpression = {[comparator]: null}
-            }else {
+            } else {
                 matchExpression = {[comparator]: filterValue}
             }
-        }else {
-            if(type !== 'ID' && filterOptions && filterOptions.comparator==='!='){
-                matchExpression = { $not: {[comparator]: filterValue, $options: 'i'} }
-            }else {
+        } else {
+            if (type !== 'ID' && filterOptions && filterOptions.comparator === '!=') {
+                matchExpression = {$not: {[comparator]: filterValue, $options: 'i'}}
+            } else {
                 matchExpression = {[comparator]: filterValue}
 
                 if (comparator === '$regex') {
@@ -376,12 +376,11 @@ export default class AggregationBuilder {
                 fieldDefinition.name = fieldNames[0]
                 let data = fieldData[fieldDefinition.name]
 
-                if(fieldDefinition.name.indexOf('.')>0){
+                if (fieldDefinition.name.indexOf('.') > 0) {
                     const parts = fieldDefinition.name.split('.')
                     fieldDefinition.name = parts[0]
                     data = [parts[1]]
                 }
-
 
 
                 if (data.constructor === Array) {
@@ -434,6 +433,17 @@ export default class AggregationBuilder {
 
     }
 
+
+    projectByField(fieldName, fields, projectResultData) {
+        for (const subField of fields) {
+            if (subField.constructor === Object) {
+                const keys = Object.keys(subField)
+                this.projectByField(fieldName + '.' + keys[0], subField[keys[0]], projectResultData)
+            } else {
+                projectResultData[fieldName + '.' + subField] = 1
+            }
+        }
+    }
 
     query() {
         const typeDefinition = getType(this.type) || {}
@@ -505,6 +515,7 @@ export default class AggregationBuilder {
                         const refFieldDefinition = this.getFieldDefinition(refField, fieldDefinition.type)
                         const refFieldName = refFieldDefinition.name
 
+
                         if (fieldDefinition.fields) {
                             projectResultData[fieldName + '.' + refFieldName] = 1
                         }
@@ -526,10 +537,10 @@ export default class AggregationBuilder {
                                 projectPipeline[refFieldName] = 1
                             }
 
-                           /* if (refFieldDefinition.type === 'Object') {
-                                console.log(refFieldDefinition)
-                                projectPipeline[refFieldName] = {$convert: {input: '$' + refFieldName, to: "string", onError: "error" }}
-                            }*/
+                            /* if (refFieldDefinition.type === 'Object') {
+                                 console.log(refFieldDefinition)
+                                 projectPipeline[refFieldName] = {$convert: {input: '$' + refFieldName, to: "string", onError: "error" }}
+                             }*/
 
 
                             if (!refFieldDefinition.reference) {
@@ -560,11 +571,11 @@ export default class AggregationBuilder {
                 }
 
 
-                if(refFields && refFields.length===1 && refFields[0]==='_id'){
+                if (refFields && refFields.length === 1 && refFields[0] === '_id') {
                     // it is only the id lookup doesn't make sense
-                    projectResultData[fieldName + '._id'] = '$'+fieldName
-                    groups[fieldName] = {'$first':'$'+fieldName}
-                }else {
+                    projectResultData[fieldName + '._id'] = '$' + fieldName
+                    groups[fieldName] = {'$first': '$' + fieldName}
+                } else {
                     const {lookup} = this.createAndAddLookup(fieldDefinition, lookups, {usePipeline})
 
                     if (lookup.$lookup.pipeline) {
@@ -588,9 +599,7 @@ export default class AggregationBuilder {
 
                 }
                 if (fieldDefinition.fields) {
-                    for (const subField of fieldDefinition.fields) {
-                        projectResultData[fieldName + '.' + subField] = 1
-                    }
+                    this.projectByField(fieldName, fieldDefinition.fields, projectResultData)
                 } else {
 
                     if (fieldDefinition.projectLocal) {
@@ -636,7 +645,7 @@ export default class AggregationBuilder {
             if (!hasMatchInReference) {
 
                 // merge ors
-                if(rootMatch.$or && match.$or){
+                if (rootMatch.$or && match.$or) {
                     match.$or.push(...rootMatch.$or)
                     delete rootMatch.$or
                 }
@@ -678,7 +687,7 @@ export default class AggregationBuilder {
             }
         }
 
-        if(this.options.lookups){
+        if (this.options.lookups) {
             lookups.push(...this.options.lookups)
         }
 
@@ -689,18 +698,18 @@ export default class AggregationBuilder {
         }
 
         // add at the beginning of the query
-        if( this.options.before){
-            if( this.options.before.constructor === Array){
+        if (this.options.before) {
+            if (this.options.before.constructor === Array) {
                 for (let i = this.options.before.length - 1; i >= 0; i--) {
                     tempQuery.unshift(this.options.before[i])
                 }
-            }else {
+            } else {
                 tempQuery.unshift(this.options.before)
             }
         }
 
         // add right before the group
-        if( this.options.beforeGroup){
+        if (this.options.beforeGroup) {
             tempQuery.push(this.options.beforeGroup)
         }
 
@@ -720,7 +729,6 @@ export default class AggregationBuilder {
                 $match: match
             })
         }
-
 
 
         const countQuery = dataQuery.slice(0)
@@ -743,7 +751,7 @@ export default class AggregationBuilder {
 
 
         // add right before the group
-        if( this.options.beforeProject){
+        if (this.options.beforeProject) {
             tempQuery.push(this.options.beforeProject)
         }
 
@@ -758,11 +766,11 @@ export default class AggregationBuilder {
                     projectResultData[k] = 1
                 })
             }
-            if( this.options.project){
+            if (this.options.project) {
                 Object.keys(this.options.project).forEach((k) => {
-                    if(this.options.project[k]=== null){
+                    if (this.options.project[k] === null) {
                         delete projectResultData[k]
-                    }else {
+                    } else {
                         projectResultData[k] = this.options.project[k]
                     }
                 })
