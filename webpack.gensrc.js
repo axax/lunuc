@@ -178,8 +178,8 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
         })
 
         // for client
-        delete config.HOSTRULES_ABSPATH
-        delete config.WEBROOT_ABSPATH
+        //delete config.HOSTRULES_ABSPATH
+        //delete config.WEBROOT_ABSPATH
         delete config.STATIC_DIR
         delete config.STATIC_PRIVATE_DIR
         delete config.STATIC_TEMPLATE_DIR

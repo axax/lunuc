@@ -29,7 +29,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
         const date = new Date()
         const insertData = {
             ip: ip.replace('::ffff:', ''),
-            agent: req.headers['user-agent'],
+            agent: req.headers['x-user-agent'] || req.headers['user-agent'],
             referer,
             data,
             event,

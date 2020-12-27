@@ -49,6 +49,10 @@
         {
           "name": "referer",
           "index": 1
+        },
+        {
+          "name": "geodata",
+          "type": "Object"
         }
       ]
     }

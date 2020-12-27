@@ -15,7 +15,7 @@ import Util from '../client/util'
 import {loadAllHostrules} from '../util/hostrules'
 import {PassThrough} from 'stream'
 import {contextByRequest} from '../api/util/sessionContext'
-
+import {parseUserAgent} from '../util/userAgent'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
@@ -228,7 +228,7 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
 }
 
 
-const parseWebsite = async (urlToFetch, host) => {
+const parseWebsite = async (urlToFetch, host, agent, remoteAddress) => {
     const puppeteer = require('puppeteer')
 
     console.log(`fetch ${urlToFetch}`)
@@ -241,6 +241,15 @@ const parseWebsite = async (urlToFetch, host) => {
     await page.setRequestInterception(true)
     await page.setExtraHTTPHeaders({'x-host-rule': host})
 
+    // add header for the navigation requests
+    page.on('request', request => {
+        const headers = request.headers()
+        headers['x-forwarded-for'] = remoteAddress
+        headers['x-user-agent'] = agent
+        request.continue({headers})
+    })
+
+
     page.on('request', (request) => {
         if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
             request.abort()
@@ -251,7 +260,8 @@ const parseWebsite = async (urlToFetch, host) => {
 
     await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
 
-    const html = await page.content()
+    let html = await page.content()
+    html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
 
 
     await page.close()
@@ -312,13 +322,14 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
     const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
 
     const agent = req.headers['user-agent']
+    const {version, browser, isBot} = parseUserAgent(agent)
 
-    if (agent && (agent.indexOf('bingbot') > -1 || agent.indexOf('msnbot') > -1 || agent.indexOf('YandexBot') > -1 || agent.indexOf('PetalBot') > -1)) {
+    if (isBot || (browser === 'firefox' && version <= 12) || (browser === 'msie' && version <= 6)) {
 
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${urlPathname}`)
         const baseUrl = `http://localhost:${PORT}`
-        let html = await parseWebsite(baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : ''), host)
+        let html = await parseWebsite(baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : ''), host, agent, req.connection.remoteAddress)
         const re = new RegExp(baseUrl, 'g')
         html = html.replace(re, `https://${host}`)
 
@@ -356,26 +367,19 @@ function hasHttpsWwwRedirect(host, req, res) {
         if (!config.DEV_MODE && this.constructor.name === 'Server') {
             if (process.env.LUNUC_FORCE_HTTPS === 'true') {
 
-                const agent = req.headers['user-agent'], agentParts = agent ? agent.split(' ') : []
+                const agent = req.headers['user-agent']
 
-                let browser, version
-                if (agentParts.length > 2) {
 
-                    const browserPart = agentParts[agentParts.length - 1].split('/'),
-                        versionPart = agentParts[agentParts.length - 2].split('/')
-
-                    browser = browserPart[0].trim().toLowerCase()
-                    if (versionPart.length > 1) {
-                        version = parseInt(versionPart[1])
-                    }
-
-                }
+                const {browser, version} = parseUserAgent(agent)
 
 
                 console.log(`${req.connection.remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
 
-                if (browser === 'safari' && version < 6) {
-                    // only a little test as safari version small 6 doesn't support tls 1.2
+                if ((browser === 'safari' && version < 6) ||
+                    (browser === 'firefox' && version <= 12) ||
+                    (browser === 'opera' && version <= 10) ||
+                    (browser === 'msie' && version <= 6)) {
+                    // for browser that doesn't support tls 1.2
                 } else {
                     res.writeHead(301, {'Location': 'https://' + newhost + req.url})
                     res.end()

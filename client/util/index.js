@@ -34,7 +34,7 @@ const Util = {
     },
     tryCatch: function (str, ignoreError) {
         try {
-            return new Function(`const {${Object.keys(this).join(',')}} = this; return ${str}`).bind(this).call()
+            return new Function(`const {${Object.keys(this).join(',')}}=this;return ${str}`).bind(this).call()
         } catch (e) {
             if (!ignoreError)
                 console.log(e, str)

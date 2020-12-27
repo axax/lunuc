@@ -88,7 +88,7 @@ class JsonDom extends React.Component {
         /* Other components */
         FileDrop,
         MarkDown,
-        'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, ...props}) => {
+        'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, onContextMenuFigure, ...props}) => {
             const imgTag = () => {
                 let imageData = Util.getImageObject(src, options)
                 imageData['data-smartimage'] = true
@@ -102,7 +102,7 @@ class JsonDom extends React.Component {
             }
 
             if (caption || wrapper) {
-                return <figure style={figureStyle} className={figureClassName}>
+                return <figure style={figureStyle} className={figureClassName} onContextMenu={onContextMenuFigure}>
                     {imgTag()}
                     {caption && <figcaption dangerouslySetInnerHTML={{__html: caption}}/>}
                 </figure>
@@ -492,9 +492,9 @@ class JsonDom extends React.Component {
                         this.runJsEvent('beforerunscript', false, scope)
                         try {
                             this.jsOnStack = {}
-                            this.scriptResult = new Function(DomUtil.toES5('const  __this=this._this;const {serverMethod, on, setLocal, getLocal, refresh, getComponent, addMetaTag, setStyle, fetchMore}=__this;' +
-                                'const {history, clientQuery, setKeyValue, updateResolvedData}=__this.props;' +
-                                'const {scope, getKeyValueFromLS, parent, root, Util, DomUtil}=this;' +
+                            this.scriptResult = new Function(DomUtil.toES5('const __this=this._this;const {serverMethod,on,setLocal,getLocal,refresh,getComponent,addMetaTag,setStyle,fetchMore}=__this;' +
+                                'const {history,clientQuery,setKeyValue,updateResolvedData}=__this.props;' +
+                                'const {scope,getKeyValueFromLS,parent,root,Util,DomUtil}=this;' +
                                 'const _t=this._t.bind(scope.data),forceUpdate=refresh;' + script)).call({
                                 _this: this,
                                 scope,

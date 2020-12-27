@@ -43,7 +43,7 @@ Hook.on('typeBeforeCreate', ({type, data, req}) => {
             data.ip = ip.replace('::ffff:', '')
         }
         if (!data.agent) {
-            data.agent = req.headers['user-agent']
+            data.agent = req.headers['x-user-agent'] || req.headers['user-agent']
         }
         if (!data.referer) {
             data.referer = req.headers['referer']
