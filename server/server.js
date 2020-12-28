@@ -240,13 +240,12 @@ const parseWebsite = async (urlToFetch, host, agent, remoteAddress) => {
 
     await page.setRequestInterception(true)
     await page.setExtraHTTPHeaders({'x-host-rule': host})
-console.log('parseWebsite',remoteAddress)
     page.on('request', (request) => {
         if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
             request.abort()
         } else {
             const headers = request.headers()
-            headers['x-forwarded-for'] = remoteAddress
+            headers['x-track-ip'] = remoteAddress
             headers['x-user-agent'] = agent
             request.continue({headers})
         }
