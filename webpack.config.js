@@ -347,7 +347,7 @@ if (DEV_MODE) {
                 pure_getters: true, /* 1kb */
                 unsafe: false,
                 passes: 2,
-                arguments: true, /* 50 bytes */
+                /*arguments: true,*/ /* 50 bytes */
                 //unsafe: true /* 80 Bytes */
                 //toplevel: true /* 10 bytes */
                 //arguments: true /* 50 bytes */

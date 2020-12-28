@@ -241,20 +241,22 @@ const parseWebsite = async (urlToFetch, host, agent, remoteAddress) => {
     await page.setRequestInterception(true)
     await page.setExtraHTTPHeaders({'x-host-rule': host})
 
-    // add header for the navigation requests
-    page.on('request', request => {
-        const headers = request.headers()
-        headers['x-forwarded-for'] = remoteAddress
-        headers['x-user-agent'] = agent
-        request.continue({headers})
-    })
-
-
     page.on('request', (request) => {
         if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
             request.abort()
         } else {
-            request.continue()
+            const headers = request.headers()
+            headers['x-forwarded-for'] = remoteAddress
+            headers['x-user-agent'] = agent
+            request.continue({headers})
+        }
+    })
+
+    let statusCode = 200
+    page.on('response', response => {
+        if (response.status() === 404 && response._request._resourceType === 'document' && response.url().endsWith('/404')) {
+
+            statusCode = 404
         }
     })
 
@@ -267,7 +269,7 @@ const parseWebsite = async (urlToFetch, host, agent, remoteAddress) => {
     await page.close()
     await browser.close()
 
-    return html
+    return {html, statusCode}
 }
 
 
@@ -329,13 +331,13 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${urlPathname}`)
         const baseUrl = `http://localhost:${PORT}`
-        let html = await parseWebsite(baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : ''), host, agent, req.connection.remoteAddress)
+        const pageData = await parseWebsite(baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : ''), host, agent, req.connection.remoteAddress)
         const re = new RegExp(baseUrl, 'g')
-        html = html.replace(re, `https://${host}`)
+        pageData.html = pageData.html.replace(re, `https://${host}`)
 
 
-        res.writeHead(statusCode, headers)
-        res.write(html)
+        res.writeHead(pageData.statusCode === 404 ? 404 : statusCode, headers)
+        res.write(pageData.html)
         res.end()
 
     } else {
