@@ -246,7 +246,8 @@ const parseWebsite = async (urlToFetch, host, agent, remoteAddress) => {
         } else {
             const headers = request.headers()
             headers['x-track-ip'] = remoteAddress
-            headers['x-user-agent'] = agent
+            headers['x-track-host'] = host
+            headers['x-track-user-agent'] = agent
             request.continue({headers})
         }
     })
