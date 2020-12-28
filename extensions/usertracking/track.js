@@ -8,7 +8,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
     const ip = clientAddress(req)
 
 
-    if (ip && ip !== '::1' && ip !== '::ffff:127.0.0.1') {
+    if (ip && (req.headers['x-user-agent'] || (ip !== '::1' && ip !== '::ffff:127.0.0.1'))) {
         const host = getHostFromHeaders(req.headers)
 
         let referer
