@@ -39,6 +39,24 @@ Hook.on('typeDeleted_Media', ({ids}) => {
     }
 })
 
+Hook.on('typeUpdated_Media', ({result}) => {
+    addFilePrefix(result)
+})
+
+const addFilePrefix = (result) => {
+    const fileName = path.join(__dirname, '../../' + UPLOAD_DIR + '/' + result._id)
+    const fileNamePrivate = path.join(__dirname, '../../' + UPLOAD_DIR + '/private' + result._id)
+
+    try {
+        if (result.private) {
+            fs.renameSync(fileName, fileNamePrivate)
+        } else {
+            fs.renameSync(fileNamePrivate, fileName)
+        }
+    }catch (e) {
+        console.log(e)
+    }
+}
 
 
 // add some extra data to the table

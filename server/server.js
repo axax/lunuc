@@ -16,6 +16,9 @@ import {loadAllHostrules} from '../util/hostrules'
 import {PassThrough} from 'stream'
 import {contextByRequest} from '../api/util/sessionContext'
 import {parseUserAgent} from '../util/userAgent'
+import {USE_COOKIES} from "../api/constants";
+import {parseCookies} from "../api/util/parseCookies";
+import {decodeToken} from "../api/util/jwt";
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
@@ -664,9 +667,22 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
     let filename = path.join(ABS_UPLOAD_DIR, modUri.substring(UPLOAD_URL.length + 1)) //.replace(/\.\.\//g, ''))
 
+    if (!fs.existsSync(filename)) {
+        let context
+        if (USE_COOKIES) {
+            const cookies = parseCookies(req)
+            context = decodeToken(cookies.auth)
+            context.session = cookies.session
+        } else {
+            //context = decodeToken(payload.auth)
+            //context.session = payload.session
+        }
+        if(context && context.role === 'administrator') {
+            filename = path.join(ABS_UPLOAD_DIR, 'private'+modUri.substring(UPLOAD_URL.length + 1))
+        }
+    }
 
     if (fs.existsSync(filename)) {
-
 
         // Check if there is a modified image
         const modImage = await resizeImage(parsedUrl, req, filename)

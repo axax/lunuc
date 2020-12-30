@@ -28,9 +28,15 @@ export default db => ({
                     const filePath = uploadPath + "/" + file
                     const stat = fs.lstatSync(filePath)
                     if (!stat.isDirectory()) {
-                        if (!idMap[file]) {
+                        let id
+                        if(file.indexOf('private')===0){
+                            id = file.substring(7)
+                        }else{
+                            id = file
+                        }
+                        if (!idMap[id]) {
                             fs.unlinkSync(filePath)
-                            idsRemoved.push(file)
+                            idsRemoved.push(id)
                         }
                     }
                 })

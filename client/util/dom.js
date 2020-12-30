@@ -84,9 +84,6 @@ const DomUtil = {
     },
     toES5: (code) => {
         if (typeof window !== 'undefined' && window.Babel) {
-            if (code.length < 500 && DomUtil.es5Cache && DomUtil.es5Cache[code]) {
-                return DomUtil.es5Cache[code]
-            }
             const startTime = new Date().getTime()
             const result = Babel.transform(code, {
                 sourceMap: false,
@@ -99,13 +96,6 @@ const DomUtil = {
                     ['es2015', {modules: false, loose: true}]
                 ]
             })
-
-            if (code.length < 500) {
-                if (!DomUtil.es5Cache) {
-                    DomUtil.es5Cache = {}
-                }
-                DomUtil.es5Cache[code] = result.code
-            }
             console.log(`Js to es5 in ${new Date().getTime() - startTime}ms for ${code.substring(0, 60)}...`)
             return result.code
         }
@@ -113,13 +103,15 @@ const DomUtil = {
     },
     waitForElement: (selector) => {
         return new Promise(resolve => {
-            if (document.querySelector(selector)) {
-                return resolve(document.querySelector(selector))
+            const el = document.querySelector(selector)
+            if (el) {
+                return resolve(el)
             }
 
             const observer = new MutationObserver(mutations => {
-                if (document.querySelector(selector)) {
-                    resolve(document.querySelector(selector))
+                const el = document.querySelector(selector)
+                if (el) {
+                    resolve(el)
                     observer.disconnect()
                 }
             })

@@ -96,7 +96,7 @@
     "node-cron": "^2.0.3",
     "node-fetch": "^2.6.1",
     "nodemailer": "^6.4.17",
-    "preact": "^10.5.7",
+    "preact": "^10.5.8",
     "react": "^17.0.1",
     "react-autosuggest": "^10.0.4",
     "react-codemirror2": "^7.2.1",
@@ -116,7 +116,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.7.0",
     "@google-cloud/translate": "^6.0.5",
-    "aws-sdk": "^2.817.0",
+    "aws-sdk": "^2.819.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
@@ -137,7 +137,7 @@
     "copy-webpack-plugin": "^7.0.0",
     "css-loader": "^5.0.1",
     "eslint": "^7.16.0",
-    "eslint-plugin-react": "^7.21.5",
+    "eslint-plugin-react": "^7.22.0",
     "jest-cli": "^26.6.3",
     "less": "^4.0.0",
     "less-loader": "^7.2.1",
@@ -149,6 +149,6 @@
     "webpack": "^5.11.1",
     "webpack-bundle-analyzer": "^4.3.0",
     "webpack-cli": "^4.3.0",
-    "webpack-dev-server": "^3.11.0"
+    "webpack-dev-server": "^3.11.1"
   }
 }

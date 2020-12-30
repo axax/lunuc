@@ -468,26 +468,37 @@ export default class AggregationBuilder {
 
 
         // if there is filter like _id=12323213
-        if (filters && filters.parts._id) {
-            // if there is a filter on _id
-            // handle it here
-            this.addFilterToMatch({
-                filterKey: '_id',
-                filterValue: filters.parts._id.value,
-                filterOptions: filters.parts._id,
-                type: 'ID',
-                match: rootMatch
-            })
-        }
-        if (filters && filters.parts['createdBy.username']) {
-            const typeFields = getFormFields('User')
-            hasMatchInReference = true
-            this.addFilterToMatch({
-                filterKey: 'createdBy.username',
-                filterValue: filters.parts['createdBy.username'].value,
-                filterOptions: filters.parts['createdBy.username'],
-                match
-            })
+        if (filters) {
+            if (filters.parts._id) {
+                // if there is a filter on _id
+                // handle it here
+                let idFilters
+                if(filters.parts._id.constructor !== Array){
+                    idFilters = [filters.parts._id]
+                }else{
+                    idFilters = filters.parts._id
+                }
+                idFilters.forEach((idFilter)=>{
+                    this.addFilterToMatch({
+                        filterKey: '_id',
+                        filterValue: idFilter.value,
+                        filterOptions: idFilter,
+                        type: 'ID',
+                        match: rootMatch
+                    })
+                })
+
+            }
+            if (filters.parts['createdBy.username']) {
+                const typeFields = getFormFields('User')
+                hasMatchInReference = true
+                this.addFilterToMatch({
+                    filterKey: 'createdBy.username',
+                    filterValue: filters.parts['createdBy.username'].value,
+                    filterOptions: filters.parts['createdBy.username'],
+                    match
+                })
+            }
         }
 
         this.fields.forEach((field, i) => {
