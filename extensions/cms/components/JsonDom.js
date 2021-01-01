@@ -88,7 +88,7 @@ class JsonDom extends React.Component {
         /* Other components */
         FileDrop,
         MarkDown,
-        'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, onContextMenuFigure, ...props}) => {
+        'SmartImage': ({src, options, caption, wrapper, inlineSvg, svgData, tagName, figureStyle, figureClassName, figureProps, ...props}) => {
             const imgTag = () => {
                 let imageData = Util.getImageObject(src, options)
                 imageData['data-smartimage'] = true
@@ -101,8 +101,10 @@ class JsonDom extends React.Component {
                 }
             }
 
+            /*TODO remove  figureStyle, figureClassName use figureProps instead */
+
             if (caption || wrapper) {
-                return <figure style={figureStyle} className={figureClassName} onContextMenu={onContextMenuFigure}>
+                return <figure style={figureStyle} className={figureClassName} {...figureProps}>
                     {imgTag()}
                     {caption && <figcaption dangerouslySetInnerHTML={{__html: caption}}/>}
                 </figure>
@@ -453,7 +455,9 @@ class JsonDom extends React.Component {
             scope = this.getScope(this.props)
         let content
         if (!this.error) {
+            let isNew = false
             if (this.resolvedDataJson === undefined) {
+                isNew = true
                 try {
                     if (parseResolvedData) {
                         // if there are placeholders ${} in the resolvedData String that needs to be parsed with the client scope
@@ -476,7 +480,7 @@ class JsonDom extends React.Component {
             if (!this.error) {
                 scope.data = this.resolvedDataJson
                 scope.props = _props
-                scope.dataState = {loading}
+                scope.dataState = {loading, isNew}
 
                 // find root parent
                 let root = this, parent = this.props._parentRef

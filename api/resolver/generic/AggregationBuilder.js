@@ -255,18 +255,25 @@ export default class AggregationBuilder {
      type: of the collection field
      */
     addFilterToMatch({filterKey, filterValue, type, multi, filterOptions, match}) {
+
+        const rawComperator = filterOptions && filterOptions.comparator
+
         let comparator = '$regex' // default comparator
 
-        if (filterOptions && filterOptions.comparator && comparatorMap[filterOptions.comparator]) {
-            comparator = comparatorMap[filterOptions.comparator]
+        if (rawComperator && comparatorMap[rawComperator]) {
+            comparator = comparatorMap[rawComperator]
         }
 
-        if (type && ['Boolean', 'ID'].indexOf(type) >= 0 && comparator === '$regex') {
-            comparator = '$eq'
+        if (comparator === '$regex' && (type === 'Boolean' || type === 'ID' || type === 'Float')) {
+
+            if (rawComperator === '!=') {
+                comparator = '$ne'
+            } else {
+                comparator = '$eq'
+            }
         }
 
         if (type === 'ID') {
-
             if (filterValue) {
                 if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
                     filterValue = filterValue.substring(1, filterValue.length - 1).split(',')
@@ -279,7 +286,7 @@ export default class AggregationBuilder {
                         }
                     }
                     filterValue = ids
-                    if (comparator === '$ne' || (filterOptions && filterOptions.comparator === '!=')) {
+                    if (comparator === '$ne') {
                         comparator = '$nin'
                     } else {
                         comparator = '$in'
@@ -314,43 +321,38 @@ export default class AggregationBuilder {
                 return {added: true}
             }
         } else if (type === 'Boolean') {
-            filterValue = (filterValue === 'true')
-        }
-
-
-        if (comparator === '$eq') {
-            if (multi && filterValue && filterValue.constructor !== Array) {
-                comparator = '$in'
-                filterValue = [filterValue]
-            } else if (!filterValue) {
-                comparator = '$in'
-                filterValue = [null, ""]
+            if (filterValue === 'true' || filterValue === 'TRUE') {
+                filterValue = true
+            } else if (filterValue === 'false' || filterValue === 'FALSE') {
+                filterValue = false
             }
+        } else if (type === 'Float') {
+            filterValue = parseFloat(filterValue)
         }
-
 
         let matchExpression
-
         if (['$gt', '$gte', '$lt', '$lte'].indexOf(comparator) >= 0) {
             matchExpression = {[comparator]: type === 'ID' ? filterValue : parseFloat(filterValue)}
-        } else if (comparator === '$ne') {
-            if (!filterOptions.inDoubleQuotes && filterValue === 'null') {
+        } else if (comparator === '$ne' || comparator === '$eq') {
+
+            if (multi && filterValue && filterValue.constructor !== Array) {
+                matchExpression = {[comparator === '$eq' ? '$in' : '$nin']: [filterValue]}
+            } else if (filterValue==='') {
+                matchExpression = {[comparator === '$eq' ? '$in' : '$nin']: [null, ""]}
+            } else if (!filterOptions.inDoubleQuotes && filterValue === 'null') {
                 matchExpression = {[comparator]: null}
             } else {
                 matchExpression = {[comparator]: filterValue}
             }
-        } else {
-            if (type !== 'ID' && filterOptions && filterOptions.comparator === '!=') {
+        } else if (comparator === '$regex') {
+            if (rawComperator === '!=') {
                 matchExpression = {$not: {[comparator]: filterValue, $options: 'i'}}
             } else {
-                matchExpression = {[comparator]: filterValue}
-
-                if (comparator === '$regex') {
-                    matchExpression.$options = 'i'
-                }
+                matchExpression = {[comparator]: filterValue, $options: 'i'}
             }
+        } else {
+            matchExpression = {[comparator]: filterValue}
         }
-
 
         if (!filterOptions || filterOptions.operator === 'or') {
             if (!match.$or) {
@@ -473,12 +475,12 @@ export default class AggregationBuilder {
                 // if there is a filter on _id
                 // handle it here
                 let idFilters
-                if(filters.parts._id.constructor !== Array){
+                if (filters.parts._id.constructor !== Array) {
                     idFilters = [filters.parts._id]
-                }else{
+                } else {
                     idFilters = filters.parts._id
                 }
-                idFilters.forEach((idFilter)=>{
+                idFilters.forEach((idFilter) => {
                     this.addFilterToMatch({
                         filterKey: '_id',
                         filterValue: idFilter.value,
@@ -500,6 +502,7 @@ export default class AggregationBuilder {
                 })
             }
         }
+
 
         this.fields.forEach((field, i) => {
             const fieldDefinition = this.getFieldDefinition(field, this.type)
