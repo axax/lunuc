@@ -55,12 +55,16 @@ class SystemContainer extends React.Component {
         const {classes} = this.props
 
         return <BaseLayout>
-            <Typography variant="h3" component="h1" gutterBottom>System</Typography>
-            <Typography variant="h4" component="h2" gutterBottom>Extensions</Typography>
-            <Typography variant="subtitle1" gutterBottom>Below are all extensions listed that are currently used with
-                this build. You have the option to disable extensions (if supported by the extension) for your session,
-                but not for other users. In order to deactivate a extension completely you have to do it in the
-                configbuild.</Typography>
+            <div key="systemHead">
+                <Typography variant="h3" component="h1" gutterBottom>System</Typography>
+                <Typography variant="h4" component="h2" gutterBottom>Extensions</Typography>
+                <Typography variant="subtitle1" gutterBottom>Below are all extensions listed that are currently used
+                    with
+                    this build. You have the option to disable extensions (if supported by the extension) for your
+                    session,
+                    but not for other users. In order to deactivate a extension completely you have to do it in the
+                    configbuild.</Typography>
+            </div>
 
             <ContentBlock>
                 {
@@ -68,14 +72,15 @@ class SystemContainer extends React.Component {
                         const extension = extensions[k]
                         Hook.call('ExtensionSystemInfo', {extension})
 
-                        return <ExpansionPanel className={{detail:classes.detail}} heading={<Typography variant="h6"><SimpleSwitch color="primary"
+                        return <ExpansionPanel className={{detail: classes.detail}}
+                                               heading={<Typography variant="h6"><SimpleSwitch color="primary"
                                                                                                checked={extensionStates[k].enabled}
                                                                                                onClick={this.setExtensionState.bind(this, k)}
                                                                                                contrast/>{extension.name}
-                        </Typography>} key={k}>
+                                               </Typography>} key={k}>
                             <div className={classes.column}>
                                 <Typography variant="body2" gutterBottom>{extension.description}</Typography>
-                                { extension.options && extension.options.types &&
+                                {extension.options && extension.options.types &&
                                 <ul>
                                     {extension.options.types.map(type => {
                                         return <li key={type.name}>{type.name} {type.fields && type.fields.length &&
@@ -98,7 +103,7 @@ class SystemContainer extends React.Component {
 
             <Button color="secondary" onClick={e => {
                 client.resetStore()
-            } } variant="contained">Clear API cache</Button>
+            }} variant="contained">Clear API cache</Button>
 
         </BaseLayout>
     }

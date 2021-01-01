@@ -51,6 +51,7 @@ import {getImageTag} from 'client/util/media'
 import {deepMerge} from 'util/deepMerge'
 import DomUtil from 'client/util/dom'
 import {_t} from 'util/i18n'
+
 const {ADMIN_BASE_URL, LANGUAGES} = config
 import {COLLECTIONS_QUERY} from '../constants'
 import CodeEditor from '../components/CodeEditor'
@@ -205,14 +206,14 @@ class TypesContainer extends React.Component {
         window.removeEventListener('popstate', this._urlChanged)
     }
 
-    handleWindowClose(){
+    handleWindowClose() {
         this.saveSettings()
     }
 
-    urlChanged(){
+    urlChanged() {
         const params = Util.extractQueryParams(window.location.search.substring(1))
-        if(params.f && params.f !==this.state.filter){
-            this.setState({filter:params.f})
+        if (params.f && params.f !== this.state.filter) {
+            this.setState({filter: params.f})
         }
     }
 
@@ -620,7 +621,7 @@ class TypesContainer extends React.Component {
 
             columns.map(c => {
                 console.log(formFields[c.id])
-                if (formFields[c.id] && formFields[c.id].type !== 'Object' && formFields[c.id].uitype  !== 'password' && this.isColumnActive(type, c.id)) {
+                if (formFields[c.id] && formFields[c.id].type !== 'Object' && formFields[c.id].uitype !== 'password' && this.isColumnActive(type, c.id)) {
                     activeFormFields[c.id] = Object.assign({}, formFields[c.id])
                     activeFormFields[c.id].fullWidth = true
                     delete activeFormFields[c.id].tab
@@ -729,11 +730,11 @@ class TypesContainer extends React.Component {
         const selectedLength = Object.keys(this.state.selectedrows).length
         const {description} = this.types[type]
         const content = [
-            title === false ? '' :
+            title === false ? null :
                 <Typography key="typeTitle" variant="h3"
                             gutterBottom>{title || (this.fixType ? this.fixType : 'Types')}</Typography>,
             description ?
-                <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : '',
+                <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : null,
             <ButtonGroup size="small" key="layoutChanger" className={classes.layoutChanger} disableElevation
                          variant="contained" color="primary">
                 <Button onClick={() => {
@@ -747,51 +748,53 @@ class TypesContainer extends React.Component {
                 }} variant={this.pageParams.layout === 'module' ? 'outlined' : ''}
                         className={classes.nomargin}><ViewModuleIcon/></Button>
             </ButtonGroup>,
-            <Row spacing={2} key="typeHeader">
-                {!this.fixType &&
-                <Col md={6}>
-                    <SimpleSelect
-                        value={type}
-                        onChange={this.handleTypeChange}
-                        items={this.typesToSelect}
-                    />
-                </Col>
-                }
-                <Col xs={12} md={(this.fixType ? 12 : 6)} align="right">
-
-                    <Paper elevation={1} component="form" className={classes.searchRoot}>
-                        <InputBase
-                            value={this.state.filter}
-                            onChange={(e) => {
-                                this.setState({filter: e.target.value})
-                                this.handleFilter({value: e.target.value, target: e.target}, false)
-                            }}
-                            onKeyDown={(e) => {
-                                this.handelFilterKeyDown(e, e.target.value)
-                            }}
-                            className={classes.searchInput}
-                            placeholder={_t('TypesContainer.filter')}
+            <div key="typeHeader">
+                <Row spacing={2}>
+                    {!this.fixType &&
+                    <Col md={6}>
+                        <SimpleSelect
+                            value={type}
+                            onChange={this.handleTypeChange}
+                            items={this.typesToSelect}
                         />
-                        <IconButton onClick={() => {
-                            this.setState({filter: ''})
+                    </Col>
+                    }
+                    <Col xs={12} md={(this.fixType ? 12 : 6)} align="right">
 
-                            this.handleFilter({value: ''}, true)
-                        }} className={classes.searchIconButton}>
-                            <DeleteIcon/>
-                        </IconButton>
-                        <Divider className={classes.searchDivider} orientation="vertical"/>
-                        <IconButton color="primary"
-                                    onClick={() => {
-                                        this.setState({viewFilterDialog: true})
-                                    }}
-                                    className={classes.searchIconButton}>
-                            <SettingsIcon/>
-                        </IconButton>
-                    </Paper>
+                        <Paper elevation={1} component="form" className={classes.searchRoot}>
+                            <InputBase
+                                value={this.state.filter}
+                                onChange={(e) => {
+                                    this.setState({filter: e.target.value})
+                                    this.handleFilter({value: e.target.value, target: e.target}, false)
+                                }}
+                                onKeyDown={(e) => {
+                                    this.handelFilterKeyDown(e, e.target.value)
+                                }}
+                                className={classes.searchInput}
+                                placeholder={_t('TypesContainer.filter')}
+                            />
+                            <IconButton onClick={() => {
+                                this.setState({filter: ''})
 
-                </Col>
-            </Row>,
-            layout==='list'?this.renderTable(columns):null,
+                                this.handleFilter({value: ''}, true)
+                            }} className={classes.searchIconButton}>
+                                <DeleteIcon/>
+                            </IconButton>
+                            <Divider className={classes.searchDivider} orientation="vertical"/>
+                            <IconButton color="primary"
+                                        onClick={() => {
+                                            this.setState({viewFilterDialog: true})
+                                        }}
+                                        className={classes.searchIconButton}>
+                                <SettingsIcon/>
+                            </IconButton>
+                        </Paper>
+
+                    </Col>
+                </Row>
+            </div>,
+            layout === 'list' ? <div key="rebderedTable">{this.renderTable(columns)}</div> : null,
             dataToDelete &&
             <SimpleDialog key="deleteDialog" open={confirmDeletionDialog} onClose={this.handleConfirmDeletion}
                           actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
@@ -1417,7 +1420,7 @@ class TypesContainer extends React.Component {
     goTo(args) {
         const {baseUrl, fixType} = this.props
         const {type, page, limit, sort, filter, _version, layout, multi, baseFilter, noLayout} = Object.assign({}, this.pageParams, args)
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${noLayout?'&noLayout='+noLayout:''}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${noLayout ? '&noLayout=' + noLayout : ''}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
     }
 
 
