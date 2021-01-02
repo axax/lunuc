@@ -674,9 +674,10 @@ class JsonDom extends React.Component {
 
                 if (!item) return
 
-                const {t, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $inlineEditor, $set} = item
+                const {t, k, p, c, x, $c, $if, $is, $ifexist, $observe, $for, $loop, $inlineEditor, $set} = item
                 /*
                  t = type
+                 k = key
                  c = children
                  $c = children as html
                  $if = condition (only parse if condition is fullfilled)
@@ -859,9 +860,8 @@ class JsonDom extends React.Component {
 
                             const key = rootKey + '.' + aIdx + '.$loop.' + childIdx
                             scope[s] = loopChild
-                            h.push(this.parseRec(json, key, scope))
-
-
+                            const com = this.parseRec(json, key, scope)
+                            h.push(com && com.length === 1 ? com[0] : com)
                         })
                     } catch (ex) {
 
@@ -878,8 +878,7 @@ class JsonDom extends React.Component {
                 } else {
 
                     const {editMode, location, match, dynamic, history, children} = this.props
-
-                    const key = rootKey + '.' + aIdx, eleProps = {}
+                    const key = !editMode && k ? k : rootKey + '.' + aIdx, eleProps = {}
                     let tagName, className
                     if (!t || t.constructor !== String) {
                         tagName = 'div'
@@ -973,7 +972,6 @@ class JsonDom extends React.Component {
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
                     eleProps.key = key
-
                     if (t === 'Cms') {
                         // if we have a cms component in another cms component the location props gets not refreshed
                         // that's way we pass it directly to the reactElement as a prop

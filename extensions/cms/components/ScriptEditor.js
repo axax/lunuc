@@ -4,7 +4,7 @@ import CodeEditor from 'client/components/CodeEditor'
 class ScriptEditor extends React.Component {
     render(){
         const {...rest} = this.props
-        return <CodeEditor showFab lineNumbers type="customJs" {...rest}/>
+        return <CodeEditor fileSplit showFab lineNumbers type="customJs" {...rest}/>
     }
 }
 
