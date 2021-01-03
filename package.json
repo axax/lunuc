@@ -96,7 +96,7 @@
     "node-cron": "^2.0.3",
     "node-fetch": "^2.6.1",
     "nodemailer": "^6.4.17",
-    "preact": "^10.5.8",
+    "preact": "^10.5.9",
     "react": "^17.0.1",
     "react-autosuggest": "^10.0.4",
     "react-codemirror2": "^7.2.1",
@@ -125,7 +125,7 @@
     "mssql": "^6.3.1",
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
-    "ytdl-core": "^4.3.1",
+    "ytdl-core": "^4.4.0",
     "lighthouse": "^7.0.0"
   },
   "devDependencies": {

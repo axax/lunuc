@@ -16,6 +16,7 @@ import {sendMail} from '../util/mail'
 import {getType} from 'util/types'
 import {rmDir} from '../util/dir'
 import {listBackups, createBackup, removeBackup} from './backups'
+
 const {UPLOAD_DIR} = config
 
 
@@ -52,7 +53,7 @@ const findAndReplaceObjectIds = function (obj) {
                         }
                     })
                 } else if (v.constructor === String) {
-                    if (v.indexOf('.')<0 && ObjectId.isValid(v)) {
+                    if (v.indexOf('.') < 0 && ObjectId.isValid(v)) {
                         console.log(v)
                         obj[i] = ObjectId(v)
                     }
@@ -75,7 +76,7 @@ export const systemResolver = (db) => ({
 
             const currentId = id || (context.id + String((new Date()).getTime()))
 
-            if (command.indexOf('&') < 0 && command.indexOf('>') < 0) {
+            if (command.indexOf('&') < 0 && command.indexOf('>') < 0 && command.indexOf('..') < 0 && command.indexOf('/.') < 0 && command.indexOf('./') < 0) {
                 for (const c of SKIP_CAPABILITY_CHECK) {
                     if (command.indexOf(c) === 0) {
                         performCheck = false

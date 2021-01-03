@@ -738,12 +738,12 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
                     if (!transcodeOptions || transcodeOptions.exists) {
 
-                        delete headerExtra['Cache-Control']
                         headerExtra['Accept-Ranges'] = 'bytes'
 
                         const range = req.headers.range
 
                         if (req.headers.range) {
+                            //delete headerExtra['Cache-Control']
                             const parts = range.replace(/bytes=/, '').split('-'),
                                 partialstart = parts[0],
                                 partialend = parts[1],
