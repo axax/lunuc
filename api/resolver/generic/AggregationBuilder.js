@@ -360,7 +360,11 @@ export default class AggregationBuilder {
             }
             match.$or.push({[filterKey]: matchExpression})
         } else {
-            match[filterKey] = matchExpression
+            if(match[filterKey]){
+                match[filterKey] = {...match[filterKey],...matchExpression}
+            }else {
+                match[filterKey] = matchExpression
+            }
         }
         return {added: true}
     }
@@ -467,7 +471,6 @@ export default class AggregationBuilder {
             lookups = [],
             projectResultData = {},
             hasMatchInReference = false
-
 
         // if there is filter like _id=12323213
         if (filters) {

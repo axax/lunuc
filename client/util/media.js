@@ -1,9 +1,10 @@
 import React from 'react'
 import config from 'gen/config-client'
+
 const {UPLOAD_URL} = config
 
 const getImageSrc = (item) => {
-    return item.src ? item.src : UPLOAD_URL + '/' + item._id
+    return item.src ? item.src : UPLOAD_URL + '/' + item._id + (item.name ? '/' + config.PRETTYURL_SEPERATOR + '/' + item.name : '')
 }
 
 export const getImageTag = (item, props) => {
