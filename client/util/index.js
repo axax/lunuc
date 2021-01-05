@@ -64,14 +64,15 @@ const Util = {
         if (options) {
             lang = options.lang
         }
-        return new Intl.DateTimeFormat(lang || _app_.lang || Intl.DateTimeFormat().resolvedOptions().locale, Object.assign({
+        const intlOptions = Intl.DateTimeFormat().resolvedOptions()
+        return new Intl.DateTimeFormat(lang || _app_.lang || intlOptions.locale, Object.assign({
             year: 'numeric',
             month: 'numeric',
             day: 'numeric',
             hour: 'numeric',
             minute: 'numeric',
             second: 'numeric',
-            timeZone: 'UTC'
+            timeZone: intlOptions.timeZone || 'UTC'
         }, options))
     },
     formattedDateFromObjectId: (objectId, options) => {
