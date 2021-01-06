@@ -146,12 +146,13 @@ export default db => ({
 
             return {status: 'complete', message: `${countProducts} products and ${countCategories} categories has been imported.`}
         },
-        placeOrder: async ({}, {context}) => {
+        placeOrder: async ({}, req) => {
+            const {context} = req
             Util.checkIfUserIsLoggedIn(context)
 
             const user = await Util.userById(db, context.id)
 
-            await sendMail(db, context, {slug:'shop/mail/template/order', recipient: user.email, subject:'test', body: '{}'})
+            await sendMail(db, context, {slug:'shop/mail/template/order', recipient: user.email, subject:'test', body: '{}', req})
 
             return {status: 'complete', message: `.`}
         }

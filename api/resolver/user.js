@@ -249,8 +249,9 @@ export const userResolver = (db) => ({
 
             return {status: 'done'}
         },
-        forgotPassword: async ({username, url, subject}, {context, headers}) => {
+        forgotPassword: async ({username, url, subject}, req) => {
 
+            const {context, headers} = req
             const userCollection = db.collection('User')
 
             const resetToken = crypto.randomBytes(16).toString("hex")
@@ -268,7 +269,8 @@ export const userResolver = (db) => ({
                     slug: 'core/forgot-password/mail',
                     recipient: user.email,
                     subject: subject || 'Password reset',
-                    body: `{"url":"${url}?token=${resetToken}","name":"${user.username}"}`
+                    body: `{"url":"${url}?token=${resetToken}","name":"${user.username}"}`,
+                    req
                 })
 
                 return {status: 'ok'}
@@ -325,7 +327,8 @@ export const userResolver = (db) => ({
                 throw new ApiError('Something went wrong. Please try again!', 'general.error')
             }
         },
-        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl}, {context}) => {
+        sendConformationEmail: async ({mailTemplate, mailSubject, mailUrl}, req) => {
+            const {context} = req
             Util.checkIfUserIsLoggedIn(context)
 
             const user = await Util.userById(db, context.id)
@@ -334,7 +337,8 @@ export const userResolver = (db) => ({
                 slug: mailTemplate,
                 recipient: user.email,
                 subject: mailSubject,
-                body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${user.signupToken}","name":"${user.username || user.email}","meta":${JSON.stringify(user.meta)}}`
+                body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${user.signupToken}","name":"${user.username || user.email}","meta":${JSON.stringify(user.meta)}}`,
+                req
             })
 
             return {status: 'ok'}
@@ -405,7 +409,8 @@ export const userResolver = (db) => ({
                         slug: mailTemplate,
                         recipient: email,
                         subject: mailSubject,
-                        body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${signupToken}","name":"${username || email}","meta":${meta}}`
+                        body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${signupToken}","name":"${username || email}","meta":${meta}}`,
+                        req
                     })
                 }
                 const result = await auth.createToken(email, password, db, context)
