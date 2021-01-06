@@ -143,14 +143,21 @@ class JsonDom extends React.Component {
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
 
-            if (_app_.ssr) {
-                url = new URL(url, location.origin).href
+            let isAbs = url.indexOf('https://') === 0 || url.indexOf('http://') === 0
+
+            if (_app_.ssr && !isAbs) {
+                isAbs = true
+                try {
+                    url = new URL(url, location.origin).href
+                }catch (e) {
+                    console.error(e)
+                }
             }
             if (tracking) {
                 url = location.origin + '/lunucapi/tracking?url=' + encodeURIComponent(url) + tracking
             }
 
-            if (url.indexOf('https://') === 0 || url.indexOf('http://') === 0 || native) {
+            if (isAbs || native) {
                 return <a href={url} target={newTarget} rel={rel} onClick={(e) => {
 
                     if (onClick) {
