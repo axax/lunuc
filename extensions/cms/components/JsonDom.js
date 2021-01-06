@@ -150,7 +150,7 @@ class JsonDom extends React.Component {
                 try {
                     url = new URL(url, location.origin).href
                 }catch (e) {
-                    console.error(e)
+                    console.error(e, url)
                 }
             }
             if (tracking) {

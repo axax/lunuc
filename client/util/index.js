@@ -254,7 +254,11 @@ const Util = {
         }
 
         if (_app_.ssr && data.src.indexOf('https://') !== 0 && data.src.indexOf('http://') !== 0) {
-            data.src = new URL(data.src, location.origin).href
+            try {
+                data.src = new URL(data.src, location.origin).href
+            }catch (e) {
+                console.error(e, data.src)
+            }
         }
 
         if (options) {
