@@ -116,16 +116,16 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.7.0",
     "@google-cloud/translate": "^6.0.5",
-    "aws-sdk": "^2.822.0",
+    "aws-sdk": "^2.823.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
     "puppeteer": "^5.5.0",
-    "nodemon": "^2.0.6",
+    "nodemon": "^2.0.7",
     "mssql": "^6.3.1",
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
-    "ytdl-core": "^4.4.0",
+    "ytdl-core": "^4.4.1",
     "lighthouse": "^7.0.0"
   },
   "devDependencies": {

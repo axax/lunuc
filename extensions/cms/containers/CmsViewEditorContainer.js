@@ -251,8 +251,8 @@ class CmsViewEditorContainer extends React.Component {
 
         const loadingState = this.props.loading
 
-
         const isSmallScreen = window.innerWidth < 1000
+
         // extend with value from state because they are more update to date
         const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template, meta: {PageOptions}})
 
@@ -420,17 +420,28 @@ class CmsViewEditorContainer extends React.Component {
             <DataEditDialog key="dataEditDialog"/>
         ]
 
-
         if (!canManageCmsPages) {
             return inner
         } else {
             const {slug, _version} = getSlugVersion(props.slug)
+            const sideMenu = [{
+                label:_t('CmsViewEditorContainer.preview'),
+                link: location.pathname + '?preview=true'
+            }]
+            if(EditorOptions.sideMenu){
+                sideMenu.push(...EditorOptions.sideMenu)
+            }
+
             const sidebar = cmsPage._id && <div>
                 <MenuList>
-                    <MenuListItem onClick={e => {
-                        const win = window.open(location.pathname + '?preview=true', '_blank')
-                        win.focus()
-                    }} button primary={_t('CmsViewEditorContainer.preview')}/>
+                    {
+                        sideMenu.map(menu => {
+                            return <MenuListItem onClick={e => {
+                                const win = window.open(menu.link, '_blank')
+                                win.focus()
+                            }} button primary={menu.label}/>
+                        })
+                    }
                 </MenuList>
                 <Divider/>
 
@@ -520,16 +531,16 @@ class CmsViewEditorContainer extends React.Component {
                                 expanded={EditorPageOptions.settingsExpanded}>
 
                         <TextField key="pageTitle"
+                                   name="pageTitle"
                                    label={_t('CmsViewEditorContainer.pageTitle')}
                                    InputLabelProps={{
                                        shrink: true,
                                    }}
                                    onBlur={(e) => {
                                        let value = {...cmsPage.name, [_app_.lang]: e.target.value}
-
                                        this.saveCmsPage(value, this.props.cmsPage, 'name')
                                    }}
-                                   defaultValue={cmsPage.name ? cmsPage.name[_app_.lang] : ''}
+                                   value={(cmsPage.name ? cmsPage.name[_app_.lang] : '')}
                                    fullWidth={true}/>
 
                         {canMangeCmsTemplate && <React.Fragment><SimpleSwitch

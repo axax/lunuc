@@ -17,19 +17,23 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy}, {con
             value
         }
 
-        if(createdBy){
+        if (createdBy) {
             dataToUpdate.createdBy = ObjectId(createdBy)
-        }else if(!_id){
+        } else if (!_id) {
             dataToUpdate.createdBy = ObjectId(context.id)
             dataToUpdate.ispublic = false
         }
 
-        if( ispublic !== undefined){
+        if (ispublic !== undefined) {
             dataToUpdate.ispublic = ispublic
         }
 
 
-        res = await GenericResolver.updateEnity(db, context, 'KeyValueGlobal',dataToUpdate , {capability: CAPABILITY_MANAGE_TYPES, primaryKey: _id ? '_id' : 'key', upsert: await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)})
+        res = await GenericResolver.updateEnity(db, context, 'KeyValueGlobal', dataToUpdate, {
+            capability: CAPABILITY_MANAGE_TYPES,
+            primaryKey: _id ? '_id' : 'key',
+            upsert: await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
+        })
 
 
         // TODO: we don't have the key here (sometimes we only have the id)
@@ -67,16 +71,33 @@ export const keyvalueResolver = (db) => ({
                 match
             })
         },
-        keyValueGlobals: async ({keys, limit, sort, offset, page, filter}, {context}) => {
+        keyValueGlobals: async ({keys, limit, sort, offset, page, filter}, {context}, {operation}) => {
+            const selection = operation.selectionSet.selections[0].selectionSet.selections
+
+            const querySelection = selection[selection.length - 1].selectionSet.selections
+
+            const fields = []
+            querySelection.forEach(se => {
+                const val = se.name.value
+                if(val!=='status' && val!=='_id' && val!=='createdBy')
+                {
+                    fields.push(val)
+                }
+            })
+
+            if (fields.length === 0) {
+                fields.push('key', 'value', 'ispublic')
+            }
+
             const match = {}
             if (keys && keys.length > 0) {
                 match.key = {$in: keys}
             }
             // if user don't have capability to manage keys he can only see the public ones or the one that are assign to them
             if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
-                match.$or =[{createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}},{ispublic:true}]
+                match.$or = [{createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}, {ispublic: true}]
             }
-            const data = await GenericResolver.entities(db, context, 'KeyValueGlobal', ['key', 'value', 'ispublic'], {
+            const data = await GenericResolver.entities(db, context, 'KeyValueGlobal', fields, {
                 limit,
                 offset,
                 sort,

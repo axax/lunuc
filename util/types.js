@@ -37,9 +37,11 @@ export const getType = (typeName) => {
     return types[typeName]
 }
 
-export const getTypeQueries = (typeName, queryFields) => {
+export const getTypeQueries = (typeName, queryFields, opts) => {
 
-    if (typeQueries[typeName]) return typeQueries[typeName]
+    const cacheKey = typeName + (queryFields ? queryFields.join('') : '') + (opts ? JSON.stringify(opts) : '')
+
+    if (typeQueries[cacheKey]) return typeQueries[cacheKey]
 
     const types = getTypes()
 
@@ -71,9 +73,10 @@ export const getTypeQueries = (typeName, queryFields) => {
     let insertParams = '', cloneParams = '', insertUpdateQuery = '', updateParams = '', cloneQuery = ''
 
     if (fields) {
-        fields.map(({clone, name, type, required, multi, reference, localized, readOnly, hidden, ...rest}) => {
+        fields.map(({clone, name, type, required, multi, reference, localized, readOnly, hidden, alwaysLoad, ...rest}) => {
 
             if (hidden) return
+            if (alwaysLoad === false && opts && opts.loadAll === false) return
 
             if (insertParams !== '' && !readOnly) {
                 insertParams += ', '
@@ -133,7 +136,7 @@ export const getTypeQueries = (typeName, queryFields) => {
     result.delete = `mutation delete${name}($_id:ID!${collectionClonable ? ',$_version:String' : ''}){delete${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.deleteMany = `mutation delete${name}s($_id: [ID]${collectionClonable ? ',$_version:String' : ''}){delete${name}s(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.clone = `mutation clone${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}${cloneParams}){clone${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}${cloneQuery}){${query}}}`
-    typeQueries[typeName] = result
+    typeQueries[cacheKey] = result
     return result
 }
 

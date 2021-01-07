@@ -293,7 +293,9 @@ class TypesContainer extends React.Component {
                     fields.forEach(field => {
                         if (columnsMap[field.name]) {
                             let fieldValue = item[field.name]
-                            if (field.reference) {
+                            if(field.alwaysLoad===false){
+                                dynamic[field.name]  = '...'
+                            }else if (field.reference) {
                                 if (fieldValue) {
                                     if (fieldValue.constructor === Array) {
                                         if (field.type === 'Media') {
@@ -1118,7 +1120,7 @@ class TypesContainer extends React.Component {
 
     getData({type, page, limit, sort, filter, _version}, cacheFirst, typeChanged) {
         if (type) {
-            const queries = getTypeQueries(type)
+            const queries = getTypeQueries(type, false, {loadAll: false})
             if (queries) {
                 const storeKey = this.getStoreKey(type),
                     variables = {limit, page, sort, _version, filter: this.extendFilter(filter)}
@@ -1513,7 +1515,43 @@ class TypesContainer extends React.Component {
     }
 
     handleEditDataClick = (data) => {
-        this.setState({createEditDialog: true, dataToEdit: data})
+
+        //load missing data if needed
+        const {type, _version} = this.pageParams
+
+        const typeData = this.types[type]
+        const fieldsToLoad = []
+        typeData.fields.forEach(field => {
+            if (field.alwaysLoad === false) {
+                fieldsToLoad.push(field.name)
+            }
+        })
+        if (fieldsToLoad.length > 0) {
+
+            const queries = getTypeQueries(type, fieldsToLoad),
+                variables = {_version, filter: '_id=' + data._id}
+            client.query({
+                fetchPolicy: 'network-only',
+                forceFetch: true,
+                query: queries.query,
+                variables
+            }).then(response => {
+                const storeKey = this.getStoreKey(type)
+
+                fieldsToLoad.forEach(field=>{
+                    data[field] = response.data[storeKey].results[0][field]
+                })
+                this.setState({createEditDialog: true, dataToEdit: data})
+
+            }).catch(error => {
+                console.log(error.message)
+                this._renderedTable = null
+                this.setState({data: null})
+            })
+
+        }else {
+            this.setState({createEditDialog: true, dataToEdit: data})
+        }
     }
 
     handleCopyClick = (data, fields) => {

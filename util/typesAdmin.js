@@ -207,7 +207,8 @@ Hook.on('Types', ({types}) => {
             },
             {
                 name: 'value',
-                uitype: 'editor'
+                uitype: 'editor',
+                alwaysLoad: false
             },
             {
                 name: 'ispublic',
