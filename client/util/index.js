@@ -48,9 +48,9 @@ const Util = {
         const token = localStorage.getItem('token')
         return token ? `JWT ${token}` : null
     },
-    dateFromObjectId: (objectId) => {
+    dateFromObjectId: (objectId, defValue) => {
         if (!objectId) {
-            return ''
+            return defValue || ''
         }
         if (objectId.indexOf('#') === 0) {
             // this is only a tmp id / timestemp
@@ -76,16 +76,10 @@ const Util = {
         }, options))
     },
     formattedDateFromObjectId: (objectId, options) => {
-        if (objectId === 0) {
-            return new Util.getDateTimeFormat(options).format(new Date())
-        }
-        return Util.getDateTimeFormat(options).format(Util.dateFromObjectId(objectId))
+        return Util.getDateTimeFormat(options).format(Util.dateFromObjectId(objectId, new Date()))
     },
     formattedDatetimeFromObjectId: (objectId) => {
-        if (objectId === 0) {
-            return Util.getDateTimeFormat().format(new Date())
-        }
-        return Util.getDateTimeFormat().format(Util.dateFromObjectId(objectId))
+        return Util.getDateTimeFormat().format(Util.dateFromObjectId(objectId, new Date()))
     },
     formattedDatetime(stamp, options) {
         if (!stamp) return ''

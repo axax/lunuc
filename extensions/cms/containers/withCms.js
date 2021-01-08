@@ -212,8 +212,7 @@ export default function (WrappedComponent) {
     const withGql = compose(
         graphql(CMS_PAGE_QUERY, {
             skip: (props, prevData) => {
-
-                if(prevData && prevData.cmsPage && prevData.cmsPage.slug===props.slug && !prevData.cmsPage.urlSensitiv){
+                if(prevData && prevData.cmsPage && prevData.cmsPage.slug===props.slug && !prevData.cmsPage.urlSensitiv && !props.cmsRender){
                     return true
                 }
                 return false
@@ -245,9 +244,6 @@ export default function (WrappedComponent) {
                         // we define a new state here when component is reused with a new slug
                         result.aboutToChange = true
                     }
-                }
-
-                if (cmsPage) {
                     urlSensitivMap[cmsPage.slug] = !!cmsPage.urlSensitiv
                 }
                 return result

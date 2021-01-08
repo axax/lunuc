@@ -17,6 +17,9 @@ import {preprocessCss} from '../util/cssPreprocessor'
 import {parseStyles} from 'client/util/style'
 import ElementWatch from './ElementWatch'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants'
+import * as CmsActions from '../actions/CmsAction'
+import {connect} from 'react-redux'
+import {bindActionCreators} from 'redux'
 
 const JsonDomHelper = (props) => <Async {...props}
                                         load={import(/* webpackChunkName: "admin" */ './JsonDomHelper')}/>
@@ -1439,6 +1442,10 @@ class JsonDom extends React.Component {
         }
     }
 
+    reload = props=>{
+        this.props.cmsActions.cmsRender(props)
+    }
+
 }
 
 JsonDom.propTypes = {
@@ -1487,4 +1494,19 @@ JsonDom.propTypes = {
     dynamic: PropTypes.bool
 }
 
-export default JsonDom
+
+/**
+ * Map the actions to props.
+ */
+const mapDispatchToProps = (dispatch) => {
+    return {cmsActions: bindActionCreators(CmsActions, dispatch)}
+}
+
+/**
+ * Connect the component to
+ * the Redux store.
+ */
+export default connect(
+    null,
+    mapDispatchToProps
+)(JsonDom)

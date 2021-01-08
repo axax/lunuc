@@ -39,12 +39,15 @@ export const getSlugVersion = (slug) => {
 
 
 export const getGqlVariables = props => {
-    const {slug, urlSensitiv, dynamic, user, _props} = props,
+    const {slug, urlSensitiv, dynamic, user, _props, cmsRender} = props,
         variables = {
             dynamic: !!dynamic,
             ...getSlugVersion(slug)
         }
-    if (_props && _props.$) {
+
+    if(cmsRender){
+        variables.props = JSON.stringify(cmsRender.props.$)
+    }else if (_props && _props.$) {
         variables.props = JSON.stringify(_props.$)
     }
 

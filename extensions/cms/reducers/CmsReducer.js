@@ -1,12 +1,10 @@
 import * as types from '../constants/ActionTypes'
 
 
-export default function cms(state = {editData:null,edit: {key: null, json: {}, scope: null}}, action) {
+export default function cms(state = {render: null}, action) {
     switch (action.type) {
-        case types.CMS_EDIT_TEMPLATE:
-            return {...state, edit: {key: action.key, json: action.json, scope: action.scope}}
-        case types.CMS_EDIT_DATA:
-            return {...state, editData: action.editData}
+        case types.CMS_RENDER:
+            return {...state, render: {props: action.props}}
         default:
             return state
     }

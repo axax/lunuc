@@ -32,7 +32,7 @@ import NetworkStatusHandler from 'client/components/layout/NetworkStatusHandler'
 import * as ErrorHandlerAction from 'client/actions/ErrorHandlerAction'
 import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
-import * as CmsActions from '../actions/CmsAction'
+import * as CmsActions from '../actions/CmsEditorAction'
 import {getTypeQueries} from 'util/types'
 import TypeEdit from '../../../client/components/types/TypeEdit'
 import withType from '../../../client/components/types/withType'
@@ -1559,8 +1559,8 @@ const CmsViewEditorContainerWithGql = compose(
  */
 const mapStateToProps = (store) => {
     return {
-        cmsTemplateEditData: store.cms.edit,
-        cmsEditData: store.cms.editData
+        cmsTemplateEditData: store.cmsEditor.edit,
+        cmsEditData: store.cmsEditor.editData
     }
 }
 

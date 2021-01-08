@@ -10,6 +10,7 @@ import {
 } from './constants'
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
+import CmsEditorReducer from './reducers/CmsEditorReducer'
 import CmsReducer from './reducers/CmsReducer'
 
 const TypesContainer = (props) => <Async {...props}
@@ -26,6 +27,7 @@ const ErrorPage = (props) => <Async {...props}
 
 // add redux reducer
 Hook.on('reducer', ({reducers}) => {
+    reducers.cmsEditor = CmsEditorReducer
     reducers.cms = CmsReducer
 })
 

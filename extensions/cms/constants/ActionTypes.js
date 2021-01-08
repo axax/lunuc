@@ -1,2 +1,3 @@
 export const CMS_EDIT_TEMPLATE = 'CMS_EDIT_TEMPLATE'
 export const CMS_EDIT_DATA = 'CMS_EDIT_DATA'
+export const CMS_RENDER = 'CMS_RENDER'

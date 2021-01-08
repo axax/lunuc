@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import PropTypes from 'prop-types'
 import {withStyles} from 'ui/admin'
-import * as CmsActions from '../actions/CmsAction'
+import * as CmsActions from '../actions/CmsEditorAction'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import {

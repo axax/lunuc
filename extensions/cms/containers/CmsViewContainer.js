@@ -9,6 +9,7 @@ import {isEditMode, getSlugVersion, CMS_PAGE_QUERY} from '../util/cmsView'
 import withCms from './withCms'
 import {client} from '../../../client/middleware/graphql'
 import Hook from "../../../util/hook";
+import {connect} from 'react-redux'
 
 class CmsViewContainer extends React.Component {
     oriTitle = document.title
@@ -20,7 +21,6 @@ class CmsViewContainer extends React.Component {
     }
 
     shouldComponentUpdate(props) {
-
         const {cmsPage} = props
         const cmsPageOld = this.props.cmsPage
         if (cmsPage) {
@@ -463,4 +463,22 @@ CmsViewContainer.propTypes = {
     inEditor: PropTypes.bool
 }
 
-export default withCms(CmsViewContainer)
+
+
+/**
+ * Map the state to props.
+ */
+const mapStateToProps = (store) => {
+    return {
+        cmsRender: store.cms.render
+    }
+}
+
+/**
+ * Connect the component to
+ * the Redux store.
+ */
+export default connect(
+    mapStateToProps
+)(withCms(CmsViewContainer))
+
