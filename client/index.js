@@ -26,6 +26,13 @@ function removeTrailingSlash(url) {
     }
     return url
 }
+function addCanonicalTag(href){
+    DomUtil.createAndAddTag('link', 'head', {
+        id: 'canonicalTag',
+        rel: 'canonical',
+        href
+    })
+}
 
 function mainInit() {
     const store = getStore()
@@ -116,20 +123,12 @@ function mainInit() {
     // has trailing slash --> set canonical link of seo
     const cleanPathnameWithoutTrailingSlash = removeTrailingSlash(cleanPathname)
     if (cleanPathnameWithoutTrailingSlash !== cleanPathname) {
-        DomUtil.createAndAddTag('link', 'head', {
-            id: 'canonicalTag',
-            rel: 'canonical',
-            href: loc.origin + cleanPathnameWithoutTrailingSlash + loc.search + loc.hash
-        })
+        addCanonicalTag(loc.origin +cleanPathnameWithoutTrailingSlash + loc.search + loc.hash)
     }
 
     if (contextLanguage === config.DEFAULT_LANGUAGE) {
         // set canonical link
-        DomUtil.createAndAddTag('link', 'head', {
-            id: 'canonicalTag',
-            rel: 'canonical',
-            href: loc.origin + (basePath === '/' ? '' : basePath)
-        })
+        addCanonicalTag(loc.origin +(basePath === '/' ? '' : basePath))
     }
     if (hasMultiLanguages) {
 

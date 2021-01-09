@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
 import * as UserActions from 'client/actions/UserAction'
-import {USER_DATA_QUERY} from '../constants'
 import {client} from '../middleware/graphql'
 
 class UserDataContainer extends React.PureComponent {
@@ -20,7 +19,7 @@ class UserDataContainer extends React.PureComponent {
 
         client.query({
             fetchPolicy: (_app_.lang !== _app_.langBefore || this.state.force ? 'network-only' : 'cache-first'),
-            query: USER_DATA_QUERY
+            query: 'query{me{username language email _id emailConfirmed requestNewPassword picture{_id} role{_id capabilities}}}'
         }).then(response => {
             _app_.user = response.data.me
             userActions.setUser(response.data.me, !!response.data.me)

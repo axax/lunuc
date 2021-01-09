@@ -1,15 +1,12 @@
-import * as types from '../constants/ActionTypes'
-
-
 export default function errorHandler(state = {messages:{}}, action) {
 	switch (action.type) {
-		case types.ADD_ERROR:
+		case 'ADD_ERROR':
 			return {...state, messages:{...state.messages,[action.key]:{msg: action.msg, type: 'error'}}}
-		case types.CLEAR_ERROR:
+		case 'CLEAR_ERROR':
             const clearError = Object.assign({},{messages:Object.assign({},state.messages)})
 			delete clearError.messages[action.key]
 			return clearError
-		case types.CLEAR_ERRORS:
+		case 'CLEAR_ERRORS':
 			return Object.assign({},state,{messages:{}})
 		default:
 			return state

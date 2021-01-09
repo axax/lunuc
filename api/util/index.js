@@ -438,7 +438,9 @@ const Util = {
         let restString = ''
         if (filter) {
             let operator = 'or'
-            filter.split(/ +(?=(?:(?:[^"]*"){3})*[^"]*$)/g).forEach(i => {
+
+            /* 'group==5ed25740fa5ea8681ef58a99 && mimeType=audio && info.format.tags.artist=="Globi"' */
+            filter.match(/(?:[^\s"]+|"[^"]*")+/g).forEach(i => {
                 if (i === '') {
                     //ignore
                 } else if (i === '||') {
