@@ -470,7 +470,7 @@ CmsViewContainer.propTypes = {
  */
 const mapStateToProps = (store) => {
     return {
-        cmsRender: store.cms.render
+        cmsRender: store.cms ? store.cms.render : null
     }
 }
 

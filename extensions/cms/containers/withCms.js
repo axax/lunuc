@@ -119,9 +119,6 @@ export default function (WrappedComponent) {
                             return
                         }
 
-                        if (callback) {
-                            callback({key, value, setKeyValue: data.setKeyValue})
-                        }
                         if (resolvedDataJson) {
                             this.updateResolvedData({json: resolvedDataJson})
                         } else {
@@ -151,6 +148,11 @@ export default function (WrappedComponent) {
 
                               }*/
                         }
+
+                        if (callback) {
+                            callback({key, value, setKeyValue: data.setKeyValue})
+                        }
+
                     },
                 })
                 // clear local key values as there is a user session now
