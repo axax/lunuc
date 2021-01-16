@@ -23,6 +23,8 @@ import {parseCookies} from './util/parseCookies'
 const MONGO_URL = (process.env.LUNUC_MONGO_URL || process.env.MONGO_URL)
 const BACKUP_MONGO_URL= '' //'mongodb://localhost:27018/lunuc'
 
+//const MONGO_URL = "mongodb://127.0.0.1:27018/lunuc"
+
 const PORT = (process.env.PORT || 3000)
 
 process.on('SIGINT', () => {
