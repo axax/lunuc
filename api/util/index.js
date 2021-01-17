@@ -465,7 +465,10 @@ const Util = {
                         if (value.length > 1 && value.endsWith('"') && value.startsWith('"')) {
                             value = value.substring(1, value.length - 1)
                             inDoubleQuotes=true
-
+                        }else if(value==='true'){
+                            value = true
+                        }else if(value==='false'){
+                            value = false
                         }
                         if (parts[key]) {
                             if (parts[key].constructor !== Array) {
