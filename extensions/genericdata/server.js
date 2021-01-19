@@ -107,7 +107,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
             throw new Error(`Invalid type GenericType.${otherOptions.genericType}`)
         }
     }
-})
+}, 99)
 
 
 

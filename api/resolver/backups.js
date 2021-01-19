@@ -5,8 +5,8 @@ import config from '../../gensrc/config'
 import {execSync} from 'child_process'
 import os from 'os'
 import zipper from 'zip-local'
-
-const {BACKUP_DIR, UPLOAD_DIR, HOSTRULES_ABSPATH} = config
+import {MONGO_URL} from '../server'
+const {BACKUP_DIR, BACKUP_URL, UPLOAD_DIR, HOSTRULES_ABSPATH} = config
 
 const ABS_UPLOAD_DIR = path.join(__dirname, '../../' + UPLOAD_DIR)
 
@@ -85,6 +85,12 @@ export const createDbBackup = ()=>{
 
 }
 
+
+export const mongoExport = ({type, query}) => {
+    const fileName = `${type}-${new Date().getTime()}.json`
+    const response = execSync(`mongoexport --uri "${MONGO_URL}" -c ${type} -q '${query}' -o "${getBackupDir('export')}/${fileName}"`)
+    return BACKUP_URL+'/exportdumps/'+fileName
+}
 
 export const createMediaBackup = (filesToBackup)=>{
     // make sure upload dir exists

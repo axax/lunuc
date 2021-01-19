@@ -69,6 +69,10 @@ export const systemSchemaRaw = `
         result: String
     }
     
+    type ExportQueryResult {
+        result: String
+    }
+    
     type SearchInCollections{
         collection: String
         field: String
@@ -89,7 +93,8 @@ export const systemSchemaRaw = `
     	collections (filter: String): CollectionResult
     	collectionAggregate (collection: String!, json: String!): CollectionAggregateResult
     	importCollection (collection: String!, json: String!): ImportCollectionResult
-    	bulkEdit (collection: String!, _id: [ID]!, script: String!): BulkEditResult
+    	bulkEdit (collection: String!, _id: [ID]!, script: String!): BulkEditResult,
+    	exportQuery (type: String!, query: String): ExportQueryResult
     }
     
       

@@ -15,7 +15,7 @@ import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail'
 import {getType} from 'util/types'
 import {rmDir} from '../util/dir'
-import {listBackups, createBackup, removeBackup} from './backups'
+import {listBackups, createBackup, removeBackup, mongoExport} from './backups'
 
 const {UPLOAD_DIR} = config
 
@@ -299,7 +299,11 @@ export const systemResolver = (db) => ({
         },
         importCollection: async ({collection, json}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)
-            const jsonParsed = JSON.parse(json)
+            let jsonParsed = JSON.parse(json)
+
+            if(jsonParsed.constructor !== Array){
+                jsonParsed = [jsonParsed]
+            }
 
             const col = db.collection(collection)
             const typeDefinition = getType(collection)
@@ -310,6 +314,9 @@ export const systemResolver = (db) => ({
                     const match = {}, set = {}
 
                     if (entry._id) {
+                        if(entry._id.$oid){
+                            entry._id = entry._id.$oid
+                        }
                         match._id = ObjectId(entry._id)
                     }
                     typeDefinition.fields.forEach(field => {
@@ -322,7 +329,6 @@ export const systemResolver = (db) => ({
                         }
                     })
 
-                    console.log(match, set)
                     col.updateOne(match, {$set: set}, {upsert: true})
 
                 })
@@ -363,6 +369,10 @@ export const systemResolver = (db) => ({
             }
 
             return {result}
+        },
+        exportQuery: async ({type, query}) =>{
+
+            return {result:mongoExport({type, query})}
         }
     },
     Mutation: {

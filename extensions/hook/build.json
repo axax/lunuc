@@ -18,6 +18,7 @@
             "typeUpdated",
             "typeDeleted",
             "typeLoaded",
+            "beforeTypeLoaded",
             "typeCloned",
             "index",
             "tracking",

@@ -30,7 +30,8 @@ import {
     Paper,
     ButtonGroup,
     ViewModuleIcon,
-    ViewListIcon
+    ViewListIcon,
+    CloudUploadIcon
 } from 'ui/admin'
 import Util from 'client/util'
 import TypeEdit from 'client/components/types/TypeEdit'
@@ -419,6 +420,13 @@ class TypesContainer extends React.Component {
                                     icon: <FileCopyIcon/>
                                 })
                         }
+                        entryActions.push(
+                            {
+                                name: _t('TypesContainer.exportEntry'),
+                                disabled: (item.status == 'deleting' || item.status == 'updating'),
+                                onClick: this.handleExportClick.bind(this, item, fields),
+                                icon: <CloudUploadIcon/>
+                            })
                         Hook.call('TypeTableEntryAction', {type, actions: entryActions, item, container: this})
 
                         dynamic._action = <SimpleMenu mini items={entryActions}/>
@@ -1563,6 +1571,25 @@ class TypesContainer extends React.Component {
             }
         })
         this.cloneData(this.pageParams, {_id: data._id, ...newData})
+    }
+    handleExportClick = (data, fields) => {
+
+        const {type} = this.pageParams
+        const query = '{"_id":{"$oid":"'+data._id+'"}}'
+
+        client.query({
+            fetchPolicy: 'network-only',
+            query: `query exportQuery($type: String!, $query: String){exportQuery(type:$type,query:$query){result}}`,
+            variables: {
+                type,
+                query
+            }
+        }).then(response => {
+            const a = document.createElement('a')
+            a.href = response.data.exportQuery.result
+            a.target = '_blank'
+            a.click()
+        })
     }
 
     handleConfirmDeletion = (action) => {

@@ -10,7 +10,7 @@ class ErrorPage extends React.Component {
         return {
             code: props.code || '404',
             title: props.title || 'Page not found',
-            message: props.message || 'WE ARE SORRY',
+            message: props.message || (props.code==='401'?_app_.user.username + ' ist nicht berechtigt diese Seite zu öffnen':'WE ARE SORRY'),
             background: props.background || '#33cc99'
         }
 
@@ -252,16 +252,27 @@ hr:after {
                 <div className='_404'>{code}</div>
                 <hr/>
                 <div className="_1">{title.toUpperCase()}</div>
-                <div className="_2">{message.toUpperCase()}</div>
-                <a className='btn' onClick={(e) => {
+                <div className="_2">{message}</div>
+                {code==401 ? <a className='btn' onClick={(e) => {
                     e.preventDefault()
                     /*if(document.referrer && document.referrer.indexOf(location.origin)===0) {
                         window.open(document.referrer,'_self')
                     } else {*/
-                        location.href = location.origin
-                        //history.go(-1)
+                    location.href = location.origin+'/admin/login?forward='+location.pathname
+                    //history.go(-1)
                     /*}*/
-                }} href="#">GO BACK</a>
+                }} href="#">Mit einem anderen Benutzer anmelden</a>: <a className='btn' onClick={(e) => {
+                    e.preventDefault()
+                    /*if(document.referrer && document.referrer.indexOf(location.origin)===0) {
+                        window.open(document.referrer,'_self')
+                    } else {*/
+                    location.href = location.origin
+                    //history.go(-1)
+                    /*}*/
+                }} href="#">Back to Home</a>}
+
+
+
             </div>
         </div>
     }
