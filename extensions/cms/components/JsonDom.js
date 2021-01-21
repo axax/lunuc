@@ -834,13 +834,13 @@ class JsonDom extends React.Component {
                      s = scope in loop to access data
                      */
                     try {
-                        const re = new RegExp('\\$\\.' + s + '{', 'g'),
-                            re2 = new RegExp('"' + s + '###', 'g'),
-                            re3 = new RegExp('###' + s + '"', 'g')
-                        const cStr = JSON.stringify(c).replace(re, '${') /* $.loop{ --> ${ */
+                        /* $.loop{ --> ${ */
                         /* "$.loop" --> ${JSON.stringify(this.loop)} the whole loop item */
+                        const re = new RegExp('\\$\\.' + s + '{', 'g'),
+                            re2 = new RegExp('"' + s + '###|###' + s + '"', 'g'),
+                            cStr = JSON.stringify(c).replace(re, '${')
                             .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
-                            .replace(re2, '').replace(re3, '')
+                            .replace(re2, '')
 
                         let tpl
                         if ($for) {
@@ -1185,7 +1185,7 @@ class JsonDom extends React.Component {
         } else if (str.indexOf('{') == 0 || str.indexOf('[') == 0) {
             //It is json
             // replace control character
-            str = str.replace(/\\/g, '\\\\').replace(/"###/g, '').replace(/###"/g, '')
+            str = str.replace(/\\/g, '\\\\').replace(/"###|###"/g, '')
         } else {
             //Is other
             str = JSON.stringify({

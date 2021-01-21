@@ -566,7 +566,7 @@ class CodeEditor extends React.Component {
                 }}
                 onBlur={(editor, e) => {
                     if (onBlur) {
-                        onBlur(e, data)
+                        onBlur(e, this.state.data)
                     }
                 }}
                 onChange={(editor, dataObject, changedData) => {
