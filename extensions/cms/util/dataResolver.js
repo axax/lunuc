@@ -520,7 +520,13 @@ const checkFilter = (filters, value, key) => {
 
                     for (let y = 0; y < keys.length; y++) {
                         const fieldKey = keys[y]
-                        if (value[key][fieldKey] && re.test(value[key][fieldKey])) {
+                        let valueToCheck
+                        if(fieldKey.indexOf('.')>=0){
+                            valueToCheck = propertyByPath(fieldKey, value[key])
+                        }else{
+                            valueToCheck = value[key][fieldKey]
+                        }
+                        if (valueToCheck && re.test(valueToCheck)) {
                             return false
                         }
                     }
@@ -720,6 +726,12 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                             resolveReduce(re.loop.reduce, rootData, value[key])
                         }
                     })
+                }else if(value.constructor === Array){
+                    for(let i = value.length-1; i>=0; i--){
+                        if (checkFilter(re.loop.filter, value, i)) {
+                            value.splice(i, 1)
+                        }
+                    }
                 }
             } else if (re.reduce) {
                 const arr = propertyByPath(re.path, currentData)
