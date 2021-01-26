@@ -102,7 +102,7 @@ export const systemResolver = (db) => ({
                     })
 
 
-                    rmDir(path.join(ABS_UPLOAD_DIR, '/screenshots'), true)
+                    //rmDir(path.join(ABS_UPLOAD_DIR, '/screenshots'), true)
 
 
                     Cache.cache = {}

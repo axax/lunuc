@@ -1183,7 +1183,7 @@ class TypesContainer extends React.Component {
     createData(input, optimisticInput, {type, page, limit, sort, filter, _version}) {
         const {user} = this.props
         if (type) {
-            const queries = getTypeQueries(type)
+            const queries = getTypeQueries(type, false, {loadAll: false})
             return client.mutate({
                 mutation: queries.create,
                 variables: {
@@ -1235,7 +1235,7 @@ class TypesContainer extends React.Component {
 
     updateData(changedData, optimisticData, {type, page, limit, sort, filter, _version}) {
         if (type) {
-            const queries = getTypeQueries(type)
+            const queries = getTypeQueries(type, false, {loadAll: false})
             return client.mutate({
                 mutation: queries.update,
                 /* only send what has changed*/
@@ -1282,7 +1282,7 @@ class TypesContainer extends React.Component {
     deleteData({type, page, limit, sort, filter, _version}, ids) {
         if (type && ids.length > 0) {
 
-            const queries = getTypeQueries(type),
+            const queries = getTypeQueries(type, false, {loadAll: false}),
                 storeKey = this.getStoreKey(type)
             client.mutate({
                 mutation: (ids.length > 1 ? queries.deleteMany : queries.delete),
@@ -1340,7 +1340,7 @@ class TypesContainer extends React.Component {
 
         if (type) {
 
-            const queries = getTypeQueries(type),
+            const queries = getTypeQueries(type, false, {loadAll: false}),
                 storeKey = this.getStoreKey(type)
 
             client.mutate({

@@ -65,7 +65,7 @@
     "@babel/preset-env": "^7.12.11",
     "@babel/preset-react": "^7.12.10",
     "@babel/register": "^7.12.10",
-    "@material-ui/core": "^4.11.2",
+    "@material-ui/core": "^4.11.3",
     "@material-ui/icons": "^4.11.2",
     "babel-plugin-css-modules-transform": "^1.6.2",
     "babel-plugin-dynamic-import-node": "^2.3.3",
@@ -85,7 +85,7 @@
     "express": "^4.17.1",
     "express-graphql": "^0.12.0",
     "formidable": "^1.2.2",
-    "graphql": "^15.4.0",
+    "graphql": "^15.5.0",
     "graphql-subscriptions": "^1.1.0",
     "http2-proxy": "^5.0.51",
     "jsonwebtoken": "^8.5.1",
@@ -96,7 +96,7 @@
     "node-cron": "^2.0.3",
     "node-fetch": "^2.6.1",
     "nodemailer": "^6.4.17",
-    "preact": "^10.5.11",
+    "preact": "^10.5.12",
     "react": "^17.0.1",
     "react-autosuggest": "^10.1.0",
     "react-codemirror2": "^7.2.1",
@@ -114,7 +114,7 @@
     "zip-local": "^0.3.4"
   },
   "optionalDependencies": {
-    "@google-cloud/storage": "^5.7.2",
+    "@google-cloud/storage": "^5.7.3",
     "@google-cloud/translate": "^6.1.0",
     "aws-sdk": "^2.831.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
@@ -125,8 +125,8 @@
     "mssql": "^6.3.1",
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
-    "ytdl-core": "^4.4.4",
-    "lighthouse": "^7.0.0"
+    "ytdl-core": "^4.4.5",
+    "lighthouse": "^7.0.1"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
@@ -146,7 +146,7 @@
     "react-test-renderer": "^17.0.1",
     "style-loader": "^2.0.0",
     "terser-webpack-plugin": "^5.1.1",
-    "webpack": "^5.17.0",
+    "webpack": "^5.18.0",
     "webpack-bundle-analyzer": "^4.4.0",
     "webpack-cli": "^4.4.0",
     "webpack-dev-server": "^3.11.2"
