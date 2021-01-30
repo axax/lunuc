@@ -1221,6 +1221,12 @@ const baseElements = [
         name: 'Hintergrund',
         options: {
             ...imageOptions('$set_image_'),
+            $set_image_options_background: {
+                newLine: true,
+                fullWidth: true,
+                label: 'Background Extra (Gradient)',
+                tab: IMAGE_OPTIMIZATION_TAB
+            },
             p_style_backgroundImage: {
                 fullWidth: true,
                 value: '',
@@ -1228,7 +1234,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
-                template: '${this.context._id?\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\'\\\')\':\'\'}',
+                template: '${_comp.$set.image.options.background?_comp.$set.image.options.background+", ":""}${this.context._id?\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\'\\\')\':\'\'}',
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },
@@ -1240,6 +1246,11 @@ const baseElements = [
             p_style_backgroundPosition: {
                 value: '',
                 label: 'Position',
+                tab: DEFAULT_TAB
+            },
+            p_style_backgroundColor: {
+                value: '',
+                label: 'Farbe',
                 tab: DEFAULT_TAB
             },
             t: {

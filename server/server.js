@@ -778,6 +778,13 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
     }
 }
 
+function decodeURIComponentSafe(s) {
+    if (!s) {
+        return s
+    }
+    return decodeURIComponent(s.replace(/%(?![0-9][0-9a-fA-F]+)/g, '%25'))
+}
+
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
@@ -789,7 +796,13 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
             return
         }
 
-        const parsedUrl = url.parse(req.url, true), urlPathname = decodeURI(parsedUrl.pathname)
+        const parsedUrl = url.parse(req.url, true)
+        let urlPathname
+        try {
+            urlPathname = decodeURIComponent(parsedUrl.pathname)
+        }catch (e) {
+            urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
+        }
 
         //small security check
         if (urlPathname.indexOf('../') >= 0) {
