@@ -27,14 +27,14 @@ class ElementWatch extends React.Component {
             tagImg = Util.getImageObject(eleProps.src, eleProps.options)
             tagSrc = tagImg.src
         } else {
-            tagSrc = eleProps.id
+            tagSrc = eleProps.id || props._key
         }
         return {
             oriSrc: eleProps.src,
             tagSrc,
             tagImg,
             madeVisible: state && state.madeVisible ? true : false,
-            initialVisible: tagName === 'SmartImage' ? false : ($observe.initialClass && !$observe.waitVisible) || !!$observe.waitVisible
+            initialVisible: tagName === 'SmartImage' ? false : ($observe.initialClass && !$observe.waitVisible) || !$observe.waitVisible
         }
     }
 
@@ -66,6 +66,7 @@ class ElementWatch extends React.Component {
     render() {
         const {initialVisible, madeVisible, tagImg, tagSrc} = this.state
         const {$observe, eleProps, eleType, jsonDom, _key, c, $c, scope} = this.props
+
         if (!initialVisible && !madeVisible && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
 
             const lazyImage = $observe.lazyImage
@@ -91,7 +92,6 @@ class ElementWatch extends React.Component {
                     ($c ? null : jsonDom.parseRec(c, _key, scope))
                 )
             }
-
             return <div _key={_key} data-wait-visible={jsonDom.instanceId}
                         style={{minHeight: '1rem', minWidth: '1rem'}}></div>
         } else {

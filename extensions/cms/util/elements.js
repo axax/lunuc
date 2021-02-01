@@ -521,6 +521,14 @@ const baseElements = [
                     {
                         name: 'Button 3',
                         value: 'button3'
+                    },
+                    {
+                        name: 'Button 4',
+                        value: 'button4'
+                    },
+                    {
+                        name: 'Button 5',
+                        value: 'button5'
                     }
                 ],
                 tab: DEFAULT_TAB
@@ -582,6 +590,7 @@ const baseElements = [
                 label: 'Target',
                 tab: DEFAULT_TAB
             },
+            ...marginOptions('p_'),
             ...classOptions('p_'),
             ...imageOptions('c_0_p_'),
             ...lazyImageOptions('c_0_$observe_')
