@@ -52,6 +52,8 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
     if(!modSlug){
         modSlug = slug
         slugMatch = {slug}
+    }else{
+        console.log(slugMatch, slug)
     }
 
     const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '')

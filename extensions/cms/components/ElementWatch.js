@@ -33,7 +33,7 @@ class ElementWatch extends React.Component {
             oriSrc: eleProps.src,
             tagSrc,
             tagImg,
-            madeVisible: state && state.madeVisible ? true : false,
+            madeVisible: state && state.madeVisible ? true : ElementWatch.hasLoaded[tagSrc],
             initialVisible: tagName === 'SmartImage' ? false : ($observe.initialClass && !$observe.waitVisible) || !$observe.waitVisible
         }
     }
@@ -66,7 +66,6 @@ class ElementWatch extends React.Component {
     render() {
         const {initialVisible, madeVisible, tagImg, tagSrc} = this.state
         const {$observe, eleProps, eleType, jsonDom, _key, c, $c, scope} = this.props
-
         if (!initialVisible && !madeVisible && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
 
             const lazyImage = $observe.lazyImage
@@ -95,7 +94,6 @@ class ElementWatch extends React.Component {
             return <div _key={_key} data-wait-visible={jsonDom.instanceId}
                         style={{minHeight: '1rem', minWidth: '1rem'}}></div>
         } else {
-
             if (ElementWatch.hasLoaded[tagSrc] && ElementWatch.hasLoaded[tagSrc].svgData) {
                 eleProps.svgData = ElementWatch.hasLoaded[tagSrc].svgData
             }
@@ -166,7 +164,9 @@ class ElementWatch extends React.Component {
 
                                     img.onerror = img.onload = () => {
                                         clearTimeout(timeout)
-                                        ElementWatch.hasLoaded[tagSrc] = true
+                                        if(!$observe.waitVisible) {
+                                            ElementWatch.hasLoaded[tagSrc] = true
+                                        }
                                         this.setState({madeVisible: true})
                                     }
 
@@ -175,7 +175,7 @@ class ElementWatch extends React.Component {
 
                             } else {
 
-                                if (tagSrc) {
+                                if (tagSrc && !$observe.waitVisible) {
                                     ElementWatch.hasLoaded[tagSrc] = true
                                 }
                                 this.setState({madeVisible: true})

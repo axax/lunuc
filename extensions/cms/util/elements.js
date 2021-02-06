@@ -748,14 +748,23 @@ const baseElements = [
                                                 p: {
                                                     'href': '$.item{item.link?item.link:\'\'}'
                                                 },
-                                                c: {
-                                                    $inlineEditor: false,
-                                                    t: 'SmartImage',
-                                                    p: {
-                                                        caption: "$.item{Util.escapeForJson(item.text)}",
-                                                        src: "$.item{Util.escapeForJson(item.image)}"
+                                                c: [
+                                                    {
+                                                        $inlineEditor: false,
+                                                        $is: '$.item{item.title?true:false}',
+                                                        t: 'div.slide-title',
+                                                        c: '$.item{item.title}'
+
+                                                    },
+                                                    {
+                                                        $inlineEditor: false,
+                                                        t: 'SmartImage',
+                                                        p: {
+                                                            caption: "$.item{Util.escapeForJson(item.text)}",
+                                                            src: "$.item{Util.escapeForJson(item.image)}"
+                                                        }
                                                     }
-                                                }
+                                                ]
                                             }
                                         }
                                     },
@@ -816,6 +825,11 @@ const baseElements = [
                 link: {
                     tab: 'Slides',
                     label: 'Link',
+                    fullWidth: true
+                },
+                title: {
+                    tab: 'Slides',
+                    label: 'Title',
                     fullWidth: true
                 },
                 text: {
@@ -952,7 +966,7 @@ const baseElements = [
             c_0_c: {
                 fullWidth: true,
                 value: '',
-                uitype:'textarea',
+                uitype: 'textarea',
                 label: 'Code',
                 tab: DEFAULT_TAB
             },
@@ -982,11 +996,11 @@ const baseElements = [
                     $inlineEditor: false,
                     t: 'CodeEditor',
                     c: '',
-                    p:{
-                        height:'auto',
+                    p: {
+                        height: 'auto',
                         controlled: true,
-                        readOnly:'nocursor',
-                        lineNumbers:true
+                        readOnly: 'nocursor',
+                        lineNumbers: true
                     }
                 }
             ]
