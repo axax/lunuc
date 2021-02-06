@@ -1,5 +1,5 @@
 import natural from 'natural'
-import Telegraf from 'telegraf'
+import {Telegraf} from 'telegraf'
 import Stemmer from './Stemmer'
 import stopwords_en from 'natural/lib/natural/util/stopwords'
 import Util from 'api/util'
