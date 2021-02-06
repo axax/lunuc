@@ -14,7 +14,6 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
     if(!host){
         host = ''
     }
-
     if (host && host.startsWith('www.')) {
         host = host.substring(4)
     }
@@ -35,13 +34,14 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
 
         for(let i = 0;i < hostsChecks.length; i++) {
             const currentHost = hostsChecks[i]
-            if (hostrules[currentHost] && hostrules[currentHost].slugContext && slug.indexOf(hostrules[currentHost].slugContext) < 0) {
+            if (hostrules[currentHost] && hostrules[currentHost].slugContext && (slug + '/').indexOf(hostrules[currentHost].slugContext+'/')!== 0) {
                 modSlug = hostrules[currentHost].slugContext + (slug.length > 0 ? '/' : '') + slug
                 if (hostrules[currentHost].slugFallback) {
                     slugMatch = {$or: [{slug: modSlug}, {slug}]}
                 } else {
                     slugMatch = {slug: modSlug}
                 }
+                break
             }
         }
     }
@@ -52,8 +52,6 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
     if(!modSlug){
         modSlug = slug
         slugMatch = {slug}
-    }else{
-        console.log(slugMatch, slug)
     }
 
     const cacheKey = 'cmsPage-' + (_version ? _version + '-' : '') + slug + (host ? '-' + host : '')
