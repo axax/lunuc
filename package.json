@@ -86,7 +86,7 @@
     "express-graphql": "^0.12.0",
     "formidable": "^1.2.2",
     "graphql": "^15.5.0",
-    "graphql-subscriptions": "^1.1.0",
+    "graphql-subscriptions": "^1.2.0",
     "http2-proxy": "^5.0.51",
     "jsonwebtoken": "^8.5.1",
     "mail-notifier": "^0.5.0",
@@ -116,7 +116,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.7.4",
     "@google-cloud/translate": "^6.1.0",
-    "aws-sdk": "^2.838.0",
+    "aws-sdk": "^2.839.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
@@ -146,7 +146,7 @@
     "react-test-renderer": "^17.0.1",
     "style-loader": "^2.0.0",
     "terser-webpack-plugin": "^5.1.1",
-    "webpack": "^5.20.2",
+    "webpack": "^5.21.0",
     "webpack-bundle-analyzer": "^4.4.0",
     "webpack-cli": "^4.5.0",
     "webpack-dev-server": "^3.11.2"
