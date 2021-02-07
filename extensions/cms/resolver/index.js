@@ -38,13 +38,33 @@ export default db => ({
         cmsPages: async ({limit, page, offset, filter, sort, _version}, {headers, context}) => {
             Util.checkIfUserIsLoggedIn(context)
             const fields = ['public', 'slug', 'hostRule', 'name', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'compress', 'isTemplate']
+
+
+
             if (filter) {
+
+                const parsedFilter = Util.parseFilter(filter)
+                const hasRest = parsedFilter.rest.length>0
                 // search in fields
-                fields.push('dataResolver')
-                fields.push('script')
-                fields.push('serverScript')
-                fields.push('template')
-                fields.push('style')
+                if(hasRest || parsedFilter.parts.dataResolver) {
+                    fields.push('dataResolver')
+                }
+
+                if(hasRest || parsedFilter.parts.script) {
+                    fields.push('script')
+                }
+
+                if(hasRest || parsedFilter.parts.serverScript) {
+                    fields.push('serverScript')
+                }
+
+                if(hasRest || parsedFilter.parts.template) {
+                    fields.push('template')
+                }
+
+                if(hasRest || parsedFilter.parts.style) {
+                    fields.push('style')
+                }
             }
 
             const data = await GenericResolver.entities(db, context, 'CmsPage', fields, {
