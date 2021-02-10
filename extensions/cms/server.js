@@ -97,7 +97,7 @@ Hook.on('cmsTemplateRenderer', async ({db, context, body, slug, req}) => {
                          _props={{context: mailContext}}
                          resolvedData={JSON.stringify(resolvedData)}
                          editMode={false}/>
-        </Provider>)
+        </Provider>, context)
 
     } catch (e) {
         throw new Error(`Error in template: ${e.message}`)

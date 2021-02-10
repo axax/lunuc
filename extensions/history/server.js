@@ -28,7 +28,7 @@ Hook.on('typeUpdated', async ({db, data, type, context}) => {
 
 
 // Hook when a type has been deleted
-/*Hook.on('typeDeleted', async ({db, data, type, context}) => {
+Hook.on('typeDeleted', async ({db, data, type, context}) => {
     const meta = {keys: Object.keys(data)}
     db.collection('History').insertOne({
         type,
@@ -37,7 +37,7 @@ Hook.on('typeUpdated', async ({db, data, type, context}) => {
         meta,
         createdBy: await Util.userOrAnonymousId(db, context)
     })
-})*/
+})
 
 
 

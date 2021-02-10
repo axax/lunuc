@@ -92,9 +92,9 @@ const setUpWs = () => {
     }
 }
 setUpWs()
-const getHeaders = () => {
+const getHeaders = (lang) => {
     const headers = {
-        'Content-Language': _app_.lang,
+        'Content-Language': lang || _app_.lang,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     }
@@ -124,7 +124,7 @@ const getFetchMore = ({prevData, type, query, variables, fetchPolicy}) => {
     }
 }
 
-export const finalFetch = ({type = RequestType.query, cacheKey, query, variables, hiddenVariables, fetchPolicy = 'cache-first', signal}) => {
+export const finalFetch = ({type = RequestType.query, cacheKey, query, variables, hiddenVariables, fetchPolicy = 'cache-first', signal, lang}) => {
 
     return new Promise((resolve, reject) => {
 
@@ -161,7 +161,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
         fetch(GRAPHQL_URL, {
             method: 'POST',
             signal,
-            headers: getHeaders(),
+            headers: getHeaders(lang),
             body
         }).then(r => {
             removeLoader()
