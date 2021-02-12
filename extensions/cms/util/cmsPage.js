@@ -76,7 +76,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
         } else {
             match = slugMatch
         }
-        cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle', 'compress'], {
+        cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle','publicEdit', 'compress'], {
             match,
             limit: 1,
             _version
@@ -109,7 +109,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
 
                     const template = JSON.parse(result.template)
 
-                    if (result.compress) {
+                    if (result.compress && !result.publicEdit) {
                         Util.findProperties(template, '$inlineEditor').forEach(({element}) => {
                             delete element.$inlineEditor
                         })

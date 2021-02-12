@@ -151,7 +151,7 @@ const styles = theme => ({
     }
 })
 
-const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section', 'Cms']
+const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section', 'Cms', 'Print']
 const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul']}
 const ALLOW_DROP_FROM = {'Row': ['Col']}
 

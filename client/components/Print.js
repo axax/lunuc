@@ -4,6 +4,7 @@ import DomUtil from 'client/util/dom'
 import Util from 'client/util'
 import injectSheet from 'react-jss'
 import {_t, registerTrs} from '../../util/i18n'
+import classNames from 'classnames'
 
 const PAGE_HEIGHT = 1430, PAGE_WIDTH= 1010
 
@@ -136,8 +137,8 @@ class Print extends React.PureComponent {
     }
 
     render() {
-        const {classes, children, style, buttonLabel} = this.props
-        return <div className={classes.root}>
+        const {classes, children, style, buttonLabel, className} = this.props
+        return <div className={classNames(classes.root,className)}>
             <button className={classes.button}
                     onClick={this.createPdf.bind(this)}>{buttonLabel || 'Create PDF'}</button>
             <div className={classes.overlay}></div>
@@ -382,7 +383,6 @@ class Print extends React.PureComponent {
                     holderNode.parentNode.insertBefore(br, holderNode)
                     offsetTop = this.offsetTop(br)+ paddingBottom + paddingTop
 
-console.log(holderNode)
                 }
 
             }

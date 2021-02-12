@@ -119,6 +119,11 @@
           "type": "Boolean"
         },
         {
+          "name": "publicEdit",
+          "hidden": true,
+          "type": "Boolean"
+        },
+        {
           "name": "subscriptions",
           "hidden": true
         },
