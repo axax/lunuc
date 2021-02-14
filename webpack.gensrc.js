@@ -320,7 +320,7 @@ function gensrcExtension(name, options) {
 
 
         let schema = GENSRC_HEADER + 'export default `\n'
-        let resolver = GENSRC_HEADER + `import {matchExpr} from '../../../client/util/json'\nimport Util from 'api/util'\nimport {ObjectId} from 'mongodb'\nimport {pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
+        let resolver = GENSRC_HEADER + `import {matchExpr} from '../../../client/util/json'\nimport Util from 'api/util'\nimport {ObjectId} from 'mongodb'\nimport {pubsubHooked, pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
         resolver += `import GenericResolver from 'api/resolver/generic/genericResolver'\n\nexport default db => ({\n`
         let resolverQuery = '\tQuery:{\n'
         let resolverMutation = '\tMutation:{\n'
@@ -453,19 +453,20 @@ function gensrcExtension(name, options) {
 
                 resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, req) => {
             const result = await GenericResolver.createEntity(db, req, '${type.name}', {...rest,${refResolversObjectId}})
-            ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:[result]}})
+            ${type.subscription===false?'//':''}pubsubHooked.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:[result]}}, db, req.context)
             return result
         },
         update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation?'':'createdBy,'}...rest}, {context}) => {
-            ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: [{${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}]}})
-            return GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${type.noUserRelation?'':'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}})
+            const result =  await GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${type.noUserRelation?'':'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}})
+            ${type.subscription===false?'//':''}pubsubHooked.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: [result]}}, db, context)
+            return result
         },
         delete${type.name}: async ({_id}, {context}) => {
-             ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: [{_id}]}})
+             ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: [{_id}]}}, db, context)
             return GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
         },
         delete${type.name}s: async ({_id}, {context}) => {
-             ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: _id.map(x => ({_id:x}))}})
+             ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: _id.map(x => ({_id:x}))}}, db, context)
             return GenericResolver.deleteEnities(db, context, '${type.name}', {_id})
         },\n`
                 resolverSubscription += `       subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),

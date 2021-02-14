@@ -535,8 +535,18 @@ const GenericResolver = {
             throw new Error(_t('core.update.permission.error', context.lang, {name: collectionName}))
         }
 
+        const newData = Object.keys(data).reduce((o, k) => {
+            const item = data[k]
+            if (item && item.constructor === ObjectId) {
+                o[k] = {_id: item}
+            } else {
+                o[k] = item
+            }
+            return o
+        }, {})
+
         const returnValue = {
-            ...data,
+            ...newData,
             modifiedAt: dataSet.modifiedAt,
             createdBy: {
                 _id: ObjectId(context.id),

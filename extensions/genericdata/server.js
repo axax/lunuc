@@ -28,6 +28,66 @@ Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
     }
 })*/
 
+
+Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
+    if(triggerName==='subscribeGenericData') {
+        if(payload.subscribeGenericData.action==='update' || payload.subscribeGenericData.action==='create') {
+            const item = payload.subscribeGenericData.data[0]
+            if(item.definition){
+
+                const data = await GenericResolver.entities(db, context, 'GenericDataDefinition', ['_id','name', 'structure'],
+                    {
+                        filter: `_id==${item.definition._id}`,
+                        limit: 1,
+                        includeCount: false,
+                        projectResult: true,
+                        postConvert: false,
+                        cache: {
+                            expires: 86400000,
+                            key: `GenericDataDefinition${item.definition._id}`
+                        }
+                    })
+                if (data.results.length === 1) {
+                    const struct = data.results[0].structure
+
+
+                    if (struct && struct.fields) {
+                        let jsonData
+
+                        for(let i=0; i<struct.fields.length; i++){
+                            const field = struct.fields[i]
+                            if (field.genericType && field.pickerField) {
+                                if(!jsonData){
+                                    jsonData = JSON.parse(item.data)
+                                }
+                                const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id',{definition:['_id']},'data'],
+                                    {
+                                        filter: `_id==${jsonData[field.name]}`,
+                                        limit: 1,
+                                        includeCount: false,
+                                        projectResult: true
+                                    })
+                                if (subData.results.length === 1) {
+
+                                    jsonData[field.name] = subData.results
+                                    jsonData[field.name][0].data = JSON.parse(jsonData[field.name][0].data)
+                                }
+                            }
+                        }
+                        if(jsonData){
+                            item.data = JSON.stringify(jsonData)
+                            console.log(item.data)
+                        }
+                    }
+
+                }
+            }
+            console.log(triggerName, payload.subscribeGenericData.data)
+        }
+    }
+})
+
+
 Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => {
     if (type === 'GenericData' && otherOptions.genericType) {
 

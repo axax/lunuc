@@ -363,6 +363,7 @@ class JsonDom extends React.Component {
     }
 
     componentDidCatch(e, info) {
+        console.log(e)
         this.error = {type: 'unknown', e}
         this.forceUpdate()
     }
@@ -514,6 +515,7 @@ class JsonDom extends React.Component {
                                 scope,
                                 Util,
                                 DomUtil,
+                                Hook,
                                 _t,
                                 getKeyValueFromLS,
                                 root,

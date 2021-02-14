@@ -1,13 +1,16 @@
 import {PubSub} from 'graphql-subscriptions'
+import Hook from '../util/hook'
 
 // the default PubSub is based on EventEmitters. It can easily
 // be replaced with one different one, e.g. Redis
 const pubsub = new PubSub()
 
+const _publish = pubsub.publish
+
 // if pubsubDelayed is used it will be published after the current request has completed
 const pubsubDelayed = {
     publish: (triggerName, payload, context) => {
-        setTimeout(()=> {
+        setTimeout(() => {
             if (context.responded) {
                 pubsub.publish(triggerName, payload)
             } else {
@@ -16,7 +19,20 @@ const pubsubDelayed = {
                 }
                 context.delayedPubsubs.push({triggerName, payload})
             }
-        },400)
+        }, 400)
+    }
+}
+
+const pubsubHooked = {
+    publish: async (triggerName, payload, db, context) => {
+
+        if (Hook.hooks['beforePubSub'] && Hook.hooks['beforePubSub'].length) {
+            for (let i = 0; i < Hook.hooks['beforePubSub'].length; ++i) {
+                await Hook.hooks['beforePubSub'][i].callback({triggerName, payload, db, context})
+            }
+        }
+
+        pubsub.publish(triggerName, payload)
     }
 }
 
@@ -27,4 +43,4 @@ setInterval(()=>{
 	pubsub.publish('newNotification', {newNotification: {key: 'test.notification', message: `Notification Nr. ${counter}`}} )
 },5000)*/
 
-export {pubsub, pubsubDelayed}
+export {pubsub, pubsubDelayed, pubsubHooked}

@@ -48,7 +48,8 @@ const styles = theme => ({
         border: '1px dashed rgba(0,0,0,0.3)',
         pointerEvents: 'none',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        boxShadow: '0px 0px 5px 0px rgba(235,252,0,1)'
     },
     bgYellow: {
         background: 'rgba(245, 245, 66,0.05)',
@@ -989,7 +990,7 @@ const m = Math.max((offX+offY) / 2,100)
                         })
                     }
 
-                    if (_options.menu.addBelow !== false) {
+                    if (_options.menu.addAbove !== false) {
 
                         menuItems.push({
                             name: 'Element oberhalb einfügen',
@@ -999,7 +1000,9 @@ const m = Math.max((offX+offY) / 2,100)
                                 this.setState({addChildDialog: {selected: false, addabove: true}})
                             }
                         })
+                    }
 
+                    if (_options.menu.addBelow !== false) {
                         menuItems.push({
                             name: 'Element unterhalb einfügen',
                             icon: <PlaylistAddIcon/>,
@@ -1008,7 +1011,8 @@ const m = Math.max((offX+offY) / 2,100)
                                 this.setState({addChildDialog: {selected: false, addbelow: true}})
                             }
                         })
-
+                    }
+                    if (_options.menu.wrap !== false) {
                         menuItems.push({
                             name: 'Element ausserhalb einfügen',
                             icon: <FlipToBackIcon/>,
@@ -1105,10 +1109,10 @@ const m = Math.max((offX+offY) / 2,100)
                     key={rest._key + '.highlighter'}
                     data-highlighter={rest._key}
                     style={{
-                        top: this.state.top,
-                        left: this.state.left,
-                        height: this.state.height,
-                        width: this.state.width
+                        top: this.state.top-1,
+                        left: this.state.left-1,
+                        height: this.state.height+2,
+                        width: this.state.width+2
                     }}
                     className={classNames(classes.highlighter, isCms || _options.picker ? classes.bgBlue : classes.bgYellow)}>{_options.picker || isCms ?
                     <div
@@ -1137,7 +1141,10 @@ const m = Math.max((offX+offY) / 2,100)
                 for (let i = 0; i < children.length; i++) {
                     if (children[i].key) {
                         index = parseInt(children[i].key.substring(children[i].key.lastIndexOf('.') + 1))
-                        kids.push(this.getDropArea(this.props, index))
+
+                        if(!_options.excludeDrop || _options.excludeDrop.indexOf(index)<0) {
+                            kids.push(this.getDropArea(this.props, index))
+                        }
                     }
                     kids.push(children[i])
                 }

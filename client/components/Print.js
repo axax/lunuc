@@ -41,7 +41,8 @@ const styles = {
         fontFamily: '\'Roboto\', sans-serif',
         padding: '2rem',
         height: '100%',
-        width: '100%'
+        width: '100%',
+        overflow: 'hidden'
     },
     printAreaInner: {
         '& img': {
@@ -104,7 +105,7 @@ class Print extends React.PureComponent {
             }
         }, 'Print')
 
-        DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js',{id: 'pdfmake'})
+        DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.70/pdfmake.min.js',{id: 'pdfmake'})
         DomUtil.addScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js', {id: 'html2canvas'})
     }
 
@@ -179,7 +180,6 @@ class Print extends React.PureComponent {
             paddingTop = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-top')),
             paddingBottom = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-bottom'))
 
-
         setTimeout(()=> {
 
 
@@ -212,10 +212,10 @@ class Print extends React.PureComponent {
 
                 html2canvas(printArea, {
                     imageTimeout: 20000,
-                    width: PAGE_WIDTH,
+                    width: PAGE_WIDTH - 1,
                     height: PAGE_HEIGHT,
                     scale:1,
-                    scrollX: -window.scrollX,
+                    scrollX: -window.scrollX - 7,
                     scrollY: page>0?-(marginTopLast-paddingTop+window.scrollY):-window.scrollY,
                     /*logging: true,*/
                     /*proxy: ( (ENV=="development" )?"linkedin/src/php/html2canvasproxy.php":"php/html2canvasproxy.php"),*/
@@ -248,6 +248,12 @@ class Print extends React.PureComponent {
 
 
                     const data = createCanvas.toDataURL()
+/*
+                    const img = document.createElement('img')
+                    img.src = data
+
+                    document.body.appendChild(img)
+                    console.log(data)*/
                     pdfContent.push({
                         image: data,
                         width: 595
@@ -259,9 +265,9 @@ class Print extends React.PureComponent {
                         // $pai.css({marginTop:0})
                         //$pa.css({overflow:"visible",height:"auto"})
 
-                        //window.open(data);
+                       // window.open(data);
 
-                        var docDefinition = {
+                        const docDefinition = {
                             pageMargins: [0, 0, 0, 0],
                             pageSize: 'A4',
 
