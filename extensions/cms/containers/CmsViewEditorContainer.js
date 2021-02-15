@@ -373,7 +373,7 @@ class CmsViewEditorContainer extends React.Component {
         const inner = [
             !loadingState && <WrappedComponent key="cmsView"
                                                cmsEditData={cmsEditData}
-                                               onChange={this.handleTemplateChange}
+                                               onTemplateChange={this.handleTemplateChange}
                                                inEditor={canManageCmsPages}
                                                onError={this.handleCmsError.bind(this)}
                                                onDataResolverPropertyChange={this.handleDataResolverPropertySave.bind(this)}
@@ -422,7 +422,7 @@ class CmsViewEditorContainer extends React.Component {
             <DataEditDialog key="dataEditDialog"/>
         ]
 
-        if (!canManageCmsPages) {
+        if (!canManageCmsPages || props.dynamic) {
             return inner
         } else {
             const {slug, _version} = getSlugVersion(props.slug)

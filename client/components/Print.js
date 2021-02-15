@@ -138,14 +138,14 @@ class Print extends React.PureComponent {
     }
 
     render() {
-        const {classes, children, style, buttonLabel, className} = this.props
+        const {classes, children, style, printAreaInnerStyle, buttonLabel, className} = this.props
         return <div className={classNames(classes.root,className)}>
             <button className={classes.button}
                     onClick={this.createPdf.bind(this)}>{buttonLabel || 'Create PDF'}</button>
             <div className={classes.overlay}></div>
             <div className={classes.wrapper}>
                 <div className={classes.printArea} style={style}>
-                    <div className={classes.printAreaInner}>{children}</div>
+                    <div className={classes.printAreaInner} style={printAreaInnerStyle}>{children}</div>
                 </div>
             </div>
         </div>

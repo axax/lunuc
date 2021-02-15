@@ -19,8 +19,8 @@ export const isPreview = () => {
 }
 
 export const isEditMode = (props) => {
-    const {user} = props
-    return ((props.cmsPage && props.cmsPage.publicEdit) || (user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_CONTENT)) && !isPreview())
+    const {user, dynamic} = props
+    return ((props.cmsPage && props.cmsPage.publicEdit) || (!dynamic && user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_CONTENT)) && !isPreview() && props.editMode !== false)
 }
 
 export const getSlugVersion = (slug) => {
@@ -51,7 +51,7 @@ export const getGqlVariables = props => {
         variables.props = JSON.stringify(_props.$)
     }
 
-    if (!dynamic && isEditMode(props)) {
+    if (isEditMode(props)) {
         variables.editmode = true
     }
 

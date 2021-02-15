@@ -55,7 +55,7 @@ class CmsViewContainer extends React.Component {
             props.children != this.props.children ||
             Util.shallowCompare(props._props, this.props._props) ||
             /* only if in edit mode */
-            (!props.dynamic && isEditMode(props) && (
+            (isEditMode(props) && (
                 cmsPage.template !== cmsPageOld.template ||
                 cmsPage.script !== cmsPageOld.script ||
                 cmsPage.style !== cmsPageOld.style ||

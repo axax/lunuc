@@ -69,7 +69,7 @@ export default function (WrappedComponent) {
                 }
             }
 
-            if (!dynamic && isEditMode(this.props) && window.self === window.top) {
+            if (isEditMode(this.props) && window.self === window.top) {
                 return <CmsViewEditorContainer updateResolvedData={this.updateResolvedData.bind(this)}
                                                setKeyValue={this.setKeyValue.bind(this)}
                                                WrappedComponent={WrappedComponent}
@@ -230,7 +230,7 @@ export default function (WrappedComponent) {
                 return {
                     variables: getGqlVariables(ownProps),
                     hiddenVariables,
-                    fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) && !ownProps.dynamic ? 'network-only' : 'cache-and-network') // cache-first
+                    fetchPolicy: ownProps.fetchPolicy || (isEditMode(ownProps) ? 'network-only' : 'cache-and-network') // cache-first
                 }
             },
             props: ({data: {loading, cmsPage, variables, fetchMore, networkStatus}, ownProps}) => {

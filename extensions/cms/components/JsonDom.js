@@ -231,8 +231,8 @@ class JsonDom extends React.Component {
                                      dynamic={true} {...rest}/>
         },
         'ContentEditable': ({_this, onChange, ...props}) => {
-            return <ContentEditable
-                onChange={(v) => _this.emitChange(props._key, v)} {...props} />
+            return <ContentEditable key={props._key}
+                onChange={(v) => _this.onContentEditableChange(props._key, v)} {...props} />
         }
     }
 
@@ -518,6 +518,7 @@ class JsonDom extends React.Component {
                                 Hook,
                                 _t,
                                 getKeyValueFromLS,
+                                getComponentByKey,
                                 root,
                                 parent
                             })
@@ -649,22 +650,32 @@ class JsonDom extends React.Component {
         this.runJsEvent('subscription', false, data)
     }
 
-    emitChange(key, value) {
-        const {onChange} = this.props
-
-        if (!onChange)
-            return
+    onContentEditableChange(key, value) {
         const jsonClone = this.getJsonRaw(this.props)
         const o = getComponentByKey(key, jsonClone)
         if (o) {
-            if (o.c && o.c.constructor === String) {
+            if (o.c !== undefined && o.c.constructor === String) {
                 o.c = value
-            } else if (o.$c && o.$c.constructor === String) {
+            } else if (o.$c != undefined && o.$c.constructor === String) {
                 o.$c = value
             }
-            onChange(jsonClone)
+            this.onTemplateChange(jsonClone)
         }
     }
+
+
+    onTemplateChange(json) {
+        const status = {}
+        this.runJsEvent('templatechange', false, {json, status})
+        if(!status.abort) {
+            const {onTemplateChange} = this.props
+            if (onTemplateChange) {
+                onTemplateChange(json)
+            }
+        }
+    }
+
+
 
 
     emitJsonError(e, meta) {
@@ -889,7 +900,7 @@ class JsonDom extends React.Component {
 
                 } else {
 
-                    const {editMode, location, match, dynamic, history, children} = this.props
+                    const {editMode, location, match, history, children} = this.props
                     const key = !editMode && k ? k : rootKey + '.' + aIdx, eleProps = {}
                     let tagName, className
                     if (!t || t.constructor !== String) {
@@ -902,7 +913,7 @@ class JsonDom extends React.Component {
                     } else if (t.slice(-1) === '$') {
                         // editable
                         tagName = t.slice(0, -1) // remove last char
-                        if (editMode && this.props.inlineEditor && !dynamic) {
+                        if (editMode && this.props.inlineEditor) {
                             eleProps.tag = tagName
                             tagName = 'ContentEditable'
                         }
@@ -919,21 +930,21 @@ class JsonDom extends React.Component {
 
                     if (p) {
                         // remove properties with empty values unless they start with $
-                        Object.keys(p).forEach(key => {
-                            if (key === '#') {
-                            } else if (key.startsWith('$')) {
-                                eleProps[key.substring(1)] = p[key]
-                            } else if (p[key] !== '') {
-                                if (JsonDom.events.indexOf(key) > -1 && p[key].constructor === Object) {
+                        Object.keys(p).forEach(elKey => {
+                            if (elKey === '#') {
+                            } else if (elKey.startsWith('$')) {
+                                eleProps[elKey.substring(1)] = p[elKey]
+                            } else if (p[elKey] !== '') {
+                                if (JsonDom.events.indexOf(elKey) > -1 && p[elKey].constructor === Object) {
                                     // replace events with real functions and pass payload
-                                    const payload = p[key]
-                                    eleProps[key] = (...args) => {
-                                        const eLower = key.substring(2).toLowerCase()
+                                    const payload = p[elKey]
+                                    eleProps[elKey] = (...args) => {
+                                        const eLower = elKey.substring(2).toLowerCase()
                                         Hook.call('JsonDomUserEvent', {event: eLower, payload, container: this})
-                                        this.runJsEvent(eLower, false, payload, ...args)
+                                        this.runJsEvent(eLower, false, payload, ...args, {key})
                                     }
                                 } else {
-                                    eleProps[key] = p[key]
+                                    eleProps[elKey] = p[elKey]
                                 }
                             }
                         })
@@ -1021,7 +1032,7 @@ class JsonDom extends React.Component {
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
                             eleProps._user = this.props.user
-                            eleProps._onChange = this.props.onChange
+                            eleProps._onChange = this.onTemplateChange.bind(this)
                             eleProps._onDataResolverPropertyChange = this.props.onDataResolverPropertyChange
                             eleType = JsonDomHelper
                         }
@@ -1470,7 +1481,7 @@ JsonDom.propTypes = {
     serverMethod: PropTypes.func,
     clientQuery: PropTypes.func,
     subscriptionCallback: PropTypes.func,
-    onChange: PropTypes.func, /* Is fired when the json dom has changed */
+    onTemplateChange: PropTypes.func, /* Is fired when the json dom has changed */
     onDataResolverPropertyChange: PropTypes.func, /* Is fired when a property of the dataResolver has changed */
     onError: PropTypes.func,
     onFetchMore: PropTypes.func,

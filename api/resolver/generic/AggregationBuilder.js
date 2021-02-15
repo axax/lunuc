@@ -8,6 +8,7 @@ const comparatorMap = {
     ':': '$regex',
     '=': '$regex',
     '==': '$eq',
+    '===': '$eq',
     '>': '$gt',
     '>=': '$gte',
     '<': '$lt',
@@ -342,7 +343,12 @@ export default class AggregationBuilder {
             } else if (!filterOptions.inDoubleQuotes && filterValue === 'null') {
                 matchExpression = {[comparator]: null}
             } else {
-                matchExpression = {[comparator]: filterValue}
+                if(!filterOptions.inDoubleQuotes && !isNaN(filterValue)) {
+                    matchExpression = {[comparator]: parseFloat(filterValue)}
+                }else{
+                    matchExpression = {[comparator]: filterValue}
+                }
+
             }
         } else if (comparator === '$regex') {
             if (rawComperator === '!=') {

@@ -938,7 +938,6 @@ const m = Math.max((offX+offY) / 2,100)
                             name: _options.menuTitle.sourceRemove || 'Eintrag löschen',
                             icon: <DeleteIcon/>,
                             onClick: (e) => {
-                                //JsonDomHelper.disableEvents = true
                                 this.setState({deleteSourceConfirmDialog: parsedSource})
                             }
                         })
@@ -1201,9 +1200,11 @@ const m = Math.max((offX+offY) / 2,100)
                                               this.handleDeleteClick()
                                           }
 
-                                          this.setState({deleteConfirmDialog: null}, () => {
+                                          this.setState({deleteConfirmDialog: null})
+
+                                          setTimeout(()=>{
                                               JsonDomHelper.disableEvents = false
-                                          })
+                                          },200)
                                       }}
                                       actions={[
                                           {

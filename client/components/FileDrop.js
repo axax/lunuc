@@ -157,7 +157,7 @@ class FileDrop extends React.Component {
     }
 
     render() {
-        const {style, classes, multi, label, accept, className, name, onChange, imagePreview} = this.props
+        const {style, classes, multi, label, accept, className, name, onChange, imagePreview, deleteButton} = this.props
         const {isHover, images, uploading, uploadCompleted, errorMessage, successMessage, uploadingFile} = this.state
         return <div style={style} className={classNames(classes.uploader, isHover && classes.uploaderOver, className)}>
             <input className={classes.inputFile}
@@ -171,25 +171,25 @@ class FileDrop extends React.Component {
             {
                 (imagePreview===undefined || imagePreview) && images.map(i => {
                     return <div key={'uploadImage'+i} className={classes.imageWrap}><img className={classes.image} src={i}/>
-                        <button className={classes.imageDelete} onClick={
+                        {deleteButton !== false ? <button className={classes.imageDelete} onClick={
                             (e)=>{
                                 this.setState({images:[]})
                                 if( onChange ) {
                                     onChange({target: {name, value: ''}})
                                 }
                             }
-                        }>×</button>
+                        }>×</button>:null}
                     </div>
                 })
             }
 
+            <div data-drop-text>
+                <CloudUploadIcon className={classNames(classes.uploadIcon, isHover && classes.uploadIconOver)}
+                                 color="disabled"/>
 
-            <CloudUploadIcon className={classNames(classes.uploadIcon, isHover && classes.uploadIconOver)}
-                             color="disabled"/>
-
-            <Typography component="div"
-                        variant="caption">{label || _t('FileDrop.dropArea')}</Typography>
-
+                <Typography component="div"
+                            variant="caption">{label || _t('FileDrop.dropArea')}</Typography>
+            </div>
             {errorMessage && <Typography variant="body2" color="error">{errorMessage}</Typography>}
             {successMessage && <Typography variant="body2" color="primary">{successMessage}</Typography>}
 
