@@ -399,7 +399,7 @@ class CmsViewEditorContainer extends React.Component {
                                           title={simpleDialog.title}>
                 {simpleDialog.text}
             </SimpleDialog>,
-            cmsTemplateEditData.key && <SimpleDialog fullWidth={true} maxWidth="lg" key="templateEditor" open={true}
+            cmsTemplateEditData && cmsTemplateEditData.key && <SimpleDialog fullWidth={true} maxWidth="lg" key="templateEditor" open={true}
                                                   onClose={this.handleComponentEditClose.bind(this)}
                                                   actions={[{
                                                       key: 'ok',
@@ -1564,7 +1564,10 @@ const CmsViewEditorContainerWithGql = compose(
 /**
  * Map the state to props.
  */
-const mapStateToProps = (store) => {
+const mapStateToProps = (store, props) => {
+    if(props.dynamic){
+        return null
+    }
     return {
         cmsTemplateEditData: store.cmsEditor.edit,
         cmsEditData: store.cmsEditor.editData

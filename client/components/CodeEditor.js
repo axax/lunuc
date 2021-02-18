@@ -3,8 +3,7 @@ import PropTypes from 'prop-types'
 import {SimpleMenu, SimpleDialog, ViewListIcon, LaunchIcon, EditIcon, CodeIcon, AddIcon} from 'ui/admin'
 import {withStyles} from '@material-ui/core/styles'
 import classNames from 'classnames'
-
-import {UnControlled as UnControlledCodeMirror} from 'react-codemirror2'
+import CodeMirrorWrapper from './codemirror/CodeMirrorWrapper'
 import CodeMirror from 'codemirror'
 import './codemirror/javascript'
 import './codemirror/search'
@@ -150,7 +149,7 @@ class CodeEditor extends React.Component {
                 !prevState.stateError && (nextProps.controlled) &&
                 (nextProps.children !== prevState.data || nextProps.lineNumbers !== prevState.lineNumbers || nextProps.type !== prevState.type)
             )) {
-            console.log('CodeEditor update state ' +  nextProps.identifier)
+            console.log('CodeEditor update state ' + nextProps.identifier)
             return CodeEditor.getStateFromProps(nextProps, prevState)
         }
         return {...prevState, _stateUpdate: false}
@@ -248,34 +247,35 @@ class CodeEditor extends React.Component {
         const {height, onFileChange, onChange, onBlur, onScroll, error, onError, readOnly, lineNumbers, type, actions, showFab, style, fabButtonStyle, className, scrollPosition, fileSplit, classes} = this.props
         const {stateError, showFileSplit, fileIndex, showContextMenu, editData, data} = this.state
         const options = {
-            mode: {},
-            /* theme: 'material-ocean',*/
-            historyEventDelay: 1250,
-            readOnly,
-            lineNumbers,
-            tabSize: 2,
-            foldGutter: true,
-            lint: false,
-            gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-            indentWithTabs: false,
-            smartIndent: true,
-            autoClearEmptyLines: false,
-            lineWrapping: false,
-            /*  lineWrapping: false,
-             matchBrackets: true,*/
-            extraKeys: {
-                'Ctrl-E': () => {
-                    this.snippet()
+                mode: {},
+                /* theme: 'material-ocean',*/
+                historyEventDelay: 1250,
+                readOnly,
+                lineNumbers,
+                tabSize: 2,
+                foldGutter: true,
+                lint: false,
+                gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+                indentWithTabs: false,
+                smartIndent: true,
+                autoClearEmptyLines: false,
+                lineWrapping: false,
+                /*  lineWrapping: false,
+                 matchBrackets: true,*/
+                extraKeys: {
+                    'Ctrl-E': () => {
+                        this.snippet()
+                    },
+                    'Ctrl-Space': 'autocomplete',
+                    'Ctrl-L': (cm) => {
+                        this.autoFormatSelection()
+                    }
                 },
-                'Ctrl-Space': 'autocomplete',
-                'Ctrl-L': (cm) => {
-                    this.autoFormatSelection()
+                hintOptions: {
+                    completeSingle: false,
                 }
             },
-            hintOptions: {
-                completeSingle: false,
-            }
-        }
+            hasError = (error || stateError)
 
         if (['js', 'javascript', 'json'].indexOf(type) >= 0) {
             options.mode.name = 'javascript'
@@ -518,6 +518,7 @@ class CodeEditor extends React.Component {
                     return (
                         <a key={'file' + i}
                            onClick={() => {
+                               //this._editor.clearHistory()
                                this.setState({fileIndex: i})
 
                                if (onFileChange) {
@@ -528,7 +529,7 @@ class CodeEditor extends React.Component {
                     )
                 })}</div>
                 : null}
-            <UnControlledCodeMirror
+            <CodeMirrorWrapper
                 className={!height && classes.codemirror}
                 autoCursor={false}
                 key="editor"
@@ -541,6 +542,7 @@ class CodeEditor extends React.Component {
                         editor.setSize(null, height)
                     }
                 }}
+                hasError={hasError}
                 value={value}
                 options={options}
                 onContextMenu={((editor, e) => {
@@ -592,7 +594,7 @@ class CodeEditor extends React.Component {
                             newDataAsJson = JSON.parse(newData)
                         } catch (e) {
                             const newStateError = `Fehler in der JSON Struktur: ${e.message}`
-                            if(stateError !== newStateError) {
+                            if (stateError !== newStateError) {
                                 console.error(e)
                                 this.setState({
                                     data: newData,
@@ -620,7 +622,7 @@ class CodeEditor extends React.Component {
                     })
 
                 }}/>
-            {(error || stateError) &&
+            {hasError &&
             <div style={{color: 'red'}}>{error ? error + ' ' : ''}{stateError ? stateError : ''}</div>}</div>
     }
 }

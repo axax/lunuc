@@ -76,13 +76,11 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
                         }
                         if(jsonData){
                             item.data = JSON.stringify(jsonData)
-                            console.log(item.data)
                         }
                     }
 
                 }
             }
-            console.log(triggerName, payload.subscribeGenericData.data)
         }
     }
 })

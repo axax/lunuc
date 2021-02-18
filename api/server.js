@@ -123,7 +123,7 @@ export const start = (done) => {
                 graphqlHTTP({
                     schema,
                     rootValue,
-                    graphiql: true,
+                    graphiql: process.env.NODE_ENV !== 'production',
                     customFormatErrorFn: formatError,
                     extensions({document, variables, operationName, result}) {
                         //UserStats.addData(req, {operationName})

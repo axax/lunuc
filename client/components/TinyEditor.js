@@ -156,7 +156,7 @@ class TinyEditor extends React.Component {
 
             }
             if (!window.tinymce) {
-                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.6.1/tinymce.min.js', {
+                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.7.0/tinymce.min.js', {
                     onload: assestLoaded
                 },{ignoreIfExist:true})
             } else {

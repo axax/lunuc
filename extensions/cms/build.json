@@ -20,7 +20,11 @@
           "required": false,
           "clone": "${slug}_copy",
           "index": 1,
-          "unique": true
+          "unique": true,
+          "compoundIndex": [{
+            "slug": 1,
+            "public": 1
+          }]
         },
         {
           "name": "hostRule",

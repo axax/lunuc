@@ -79,10 +79,10 @@ export default db => ({
             return data
         },
         cmsPage: async ({slug, query, props, nosession, editmode, dynamic, meta, _version}, req) => {
+            const startTime = (new Date()).getTime()
             const {context, headers} = req
 
             const userIsLoggedIn = Util.isUserLoggedIn(context)
-            const startTime = (new Date()).getTime()
             let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, headers, editmode})
             if (!cmsPages.results || cmsPages.results.length === 0) {
 

@@ -38,7 +38,16 @@ export const createAllIndexes = async (db) => {
                     if( field.index === 'text') {
                         textIndex[field.name] = 'text'
                     }else{
-                        const index2create = []
+                        if( field.compoundIndex){
+                            field.compoundIndex.forEach(idx=>{
+                                console.log(`Creating compound index for ${JSON.stringify(idx)}`)
+                                db.collection(typeName).createIndex(idx, {
+                                    background: true
+                                })
+                            })
+
+                        }
+
                         if( field.index.constructor === Object){
                             Object.keys(field.index).forEach(k=>{
                                 const idx = field.index[k]

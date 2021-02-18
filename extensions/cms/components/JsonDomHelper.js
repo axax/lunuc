@@ -1259,7 +1259,7 @@ const m = Math.max((offX+offY) / 2,100)
                 )}
                 {(addChildDialog &&
                     <AddToBody>
-                        <SimpleDialog fullWidth={true} maxWidth="md" key="addChildDialog" open={true}
+                        <SimpleDialog fullWidth={true} maxWidth="lg" key="addChildDialog" open={true}
                                       onClose={(e) => {
                                           const selected = addChildDialog.selected
                                           if (e.key === 'save' && selected) {
