@@ -206,7 +206,7 @@ if(!window.LUNUC_PREPARSED) {
                 return false
             }
             try {
-                new Function('(a={x:1})=>{const {x}=a;return `${a}`}')
+                new Function('(a={x:1})=>{const {x}=a;let b=1;return `${a}`}')
                 return false
             } catch (err) {
                 return true
