@@ -21,6 +21,7 @@ const runApiScript = ({api, db, req, res}) => {
         try {
             const tpl = new Function(`
             const require = this.require
+            this.responseStatus = {}
             const data = (async () => {
                 try{
                     ${api.script}
@@ -28,7 +29,7 @@ const runApiScript = ({api, db, req, res}) => {
                     this.resolve({error})
                 }
             })()
-            this.resolve({data})`)
+            this.resolve({data, responseStatus: this.responseStatus})`)
             tpl.call({require, resolve, db, context: req.context, req, res, __dirname})
         } catch (error) {
             resolve({error})
@@ -63,7 +64,9 @@ Hook.on('appready', ({app, db}) => {
         } else {
             const result = await runApiScript({api, db, req, res})
 
-            if (result.error) {
+            if( result.responseStatus && result.responseStatus.ignore){
+
+            }else if (result.error) {
                 console.error(result.error)
                 res.writeHead(500, {'content-type': 'application/json'})
                 res.end(`{"status":"error","message":"${result.error.message}"}`)
