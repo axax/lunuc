@@ -152,7 +152,7 @@ class JsonDom extends React.Component {
                 isAbs = true
                 try {
                     url = new URL(url, location.origin).href
-                }catch (e) {
+                } catch (e) {
                     console.error(e, url)
                 }
             }
@@ -232,7 +232,7 @@ class JsonDom extends React.Component {
         },
         'ContentEditable': ({_this, onChange, ...props}) => {
             return <ContentEditable key={props._key}
-                onChange={(v) => _this.onContentEditableChange(props._key, v)} {...props} />
+                                    onChange={(v) => _this.onContentEditableChange(props._key, v)} {...props} />
         }
     }
 
@@ -328,10 +328,10 @@ class JsonDom extends React.Component {
 
             }
 
-            if (slugChanged && this._ismounted) {
+            if (slugChanged) {
                 // componentWillUnmount is not triggered for the root JsonDom when it is reused be another component
                 // So if the slug has changed and the component is still mounted we have to call unmount
-                this.runJsEvent('unmount')
+                this.triggerUnmountEvent()
             }
 
             if (slugChanged || locationChanged || templateChanged || propsChanged || scriptChanged) {
@@ -369,13 +369,10 @@ class JsonDom extends React.Component {
     }
 
     componentDidMount() {
-        this._ismounted = true
         this.node = ReactDOM.findDOMNode(this)
 
-
         this.addStyle(this.props.style)
-
-        this.runJsEvent('mount', true)
+        this.triggerMountEvent()
 
         let pr = this.props._parentRef
         while (pr) {
@@ -397,6 +394,43 @@ class JsonDom extends React.Component {
 
         this.moveInHtmlComponents()
         this.checkMetaTags(this.props)
+    }
+
+    componentWillUnmount() {
+        if (this._historyUnlisten) {
+            this._historyUnlisten()
+        }
+        this.triggerUnmountEvent()
+        this.removeParentRef(this.props)
+        this.removeAddedDomElements()
+        this.json = this.jsonRaw = this.componentRefs = null
+        if (this.node && this.node.oriParent) {
+            this.node.oriParent.appendChild(this.node)
+        }
+    }
+
+    // is called after render
+    componentDidUpdate(prevProps, prevState) {
+        if (this.props.style !== prevProps.style) {
+            this.addStyle(this.props.style)
+        }
+        this.triggerMountEvent()
+        this.runJsEvent('update', true)
+        this.moveInHtmlComponents()
+    }
+
+    triggerMountEvent() {
+        if (!this._ismounted) {
+            this._ismounted = true
+            this.runJsEvent('mount', true)
+        }
+    }
+
+    triggerUnmountEvent() {
+        if (this._ismounted) {
+            this._ismounted = false
+            this.runJsEvent('unmount')
+        }
     }
 
     checkMetaTags(props) {
@@ -429,31 +463,6 @@ class JsonDom extends React.Component {
                 }*/
             }
         }
-    }
-
-    componentWillUnmount() {
-        this.runJsEvent('unmount')
-        if (this._historyUnlisten) {
-            this._historyUnlisten()
-        }
-        this._ismounted = false
-        this.removeParentRef(this.props)
-        this.removeAddedDomElements()
-        this.json = this.jsonRaw = this.componentRefs = null
-        if (this.node && this.node.oriParent) {
-            this.node.oriParent.appendChild(this.node)
-        }
-    }
-
-    // is called after render
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        this._ismounted = true
-
-        if (this.props.style !== prevProps.style) {
-            this.addStyle(this.props.style)
-        }
-        this.runJsEvent('update', true)
-        this.moveInHtmlComponents()
     }
 
     render() {
@@ -667,15 +676,13 @@ class JsonDom extends React.Component {
     onTemplateChange(json) {
         const status = {}
         this.runJsEvent('templatechange', false, {json, status})
-        if(!status.abort) {
+        if (!status.abort) {
             const {onTemplateChange} = this.props
             if (onTemplateChange) {
                 onTemplateChange(json)
             }
         }
     }
-
-
 
 
     emitJsonError(e, meta) {
@@ -852,8 +859,8 @@ class JsonDom extends React.Component {
                         const re = new RegExp('\\$\\.' + s + '{', 'g'),
                             re2 = new RegExp('"' + s + '###|###' + s + '"', 'g'),
                             cStr = JSON.stringify(c).replace(re, '${')
-                            .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
-                            .replace(re2, '')
+                                .replace('"$.' + s + '"', '${JSON.stringify(this.' + s + ')}')
+                                .replace(re2, '')
 
                         let tpl
                         if ($for) {
@@ -1081,6 +1088,10 @@ class JsonDom extends React.Component {
     getScope(props) {
         if (this.updateScope) {
             this.updateScope = false
+            Object.keys(this.scope).forEach((key) => {
+                delete this.scope[key]
+            })
+
             this.scope.page = {slug: props.slug}
             this.scope.user = props.user
             this.scope.editMode = props.editMode
@@ -1109,6 +1120,7 @@ class JsonDom extends React.Component {
             this.scope.bindings = this.bindings
 
             this.addLocationToScope()
+
         }
         return this.scope
     }
@@ -1270,6 +1282,7 @@ class JsonDom extends React.Component {
 
 
     fetchMore = (callback) => {
+        console.log(this.props)
         const scope = this.getScope(this.props)
         if (scope.fetchingMore || !this._ismounted) {
             return
@@ -1456,7 +1469,7 @@ class JsonDom extends React.Component {
         }
     }
 
-    reload = props=>{
+    reload = props => {
         this.props.cmsActions.cmsRender(props)
     }
 

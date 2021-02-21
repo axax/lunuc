@@ -33,7 +33,11 @@ class CmsViewContainer extends React.Component {
             }
         }
 
-        if (!cmsPage && (props.loading || props.aboutToChange) ) {
+        if(props.aboutToChange){
+            false
+        }
+
+        if (!cmsPage && (props.loading || props.aboutToChange)) {
             // if there is still no cmsPage and it is still loading
             // there is no need to update
             return false
@@ -77,7 +81,7 @@ class CmsViewContainer extends React.Component {
     }
 
     render() {
-        const {slug, aboutToChange, cmsPage, children, dynamic, fetchMore, settings, setKeyValue, updateResolvedData, ...props} = this.props
+        const {slug, aboutToChange, cmsPage, children, dynamic, settings, setKeyValue, updateResolvedData, ...props} = this.props
         const editMode = isEditMode(this.props)
         if (!cmsPage) {
             // show a loader here
@@ -114,7 +118,7 @@ class CmsViewContainer extends React.Component {
                 this._subscriptionCallback = cb
             }}
             onFetchMore={(query, cb) => {
-                fetchMore({
+                this.props.fetchMore({
                     variables: {
                         query
                     },
