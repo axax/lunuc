@@ -430,6 +430,8 @@ class JsonDom extends React.Component {
         if (this._ismounted) {
             this._ismounted = false
             this.runJsEvent('unmount')
+            // clear event stack
+            this.jsOnStack = {}
         }
     }
 
