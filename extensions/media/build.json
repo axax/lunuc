@@ -3,6 +3,7 @@
     {
       "description": "Media can either be an internal or an external source.",
       "name": "Media",
+      "entryClonable": true,
       "fields": [
         {
           "name": "name",
@@ -21,20 +22,27 @@
           "type": "MediaGroup",
           "multi": true,
           "index": 1,
-          "tab": "Allgemein"
+          "tab": "Allgemein",
+          "compoundIndex": [{
+            "group": 1,
+            "mimeType": 1
+          }]
         },
         {
-          "name": "mimeType"
+          "name": "mimeType",
+          "index": 1
         },
         {
           "name": "meta",
           "type": "Object",
-          "uitype": "json"
+          "uitype": "json",
+          "alwaysLoad": false
         },
         {
           "name": "info",
           "type": "Object",
-          "uitype": "json"
+          "uitype": "json",
+          "alwaysLoad": false
         },
         {
           "name": "references",

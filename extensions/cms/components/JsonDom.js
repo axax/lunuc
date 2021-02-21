@@ -1002,6 +1002,7 @@ class JsonDom extends React.Component {
                         eleProps.history = history
                         eleProps.match = match
                         eleProps._this = this
+                        eleProps.inEditor = this.props.inEditor
                     }
                     if (key.startsWith('inHtmlComponent')) {
                         eleProps._key = key

@@ -10,7 +10,7 @@ import {
     Button
 } from 'ui/admin'
 
-const {UPLOAD_URL, ADMIN_BASE_URL} = config
+const {UPLOAD_URL, ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
 import {_t, registerTrs} from 'util/i18n'
 import UploadUtil from '../../client/util/upload'
 import {client} from 'client/middleware/graphql'
@@ -57,7 +57,7 @@ export default () => {
                         d.data =
                             <a target="_blank" onDoubleClick={(e) => {
                                 e.preventDefault()
-                            }} rel="noopener noreferrer" href={item.src || (UPLOAD_URL + '/' + item._id)}>
+                            }} rel="noopener noreferrer" href={item.src || (UPLOAD_URL + '/' + item._id + '/' + PRETTYURL_SEPERATOR + '/' + item.name)}>
                                 {image}
                             </a>
                     }

@@ -343,12 +343,15 @@ export default class AggregationBuilder {
             } else if (!filterOptions.inDoubleQuotes && filterValue === 'null') {
                 matchExpression = {[comparator]: null}
             } else {
-                if(!filterOptions.inDoubleQuotes && !isNaN(filterValue)) {
+                if(filterOptions.inDoubleQuotes){
+                    matchExpression = {[comparator]: filterValue}
+                }else if( !isNaN(filterValue)) {
                     matchExpression = {[comparator]: parseFloat(filterValue)}
+                }else if(filterValue.startsWith('[') && filterValue.endsWith(']')) {
+                    matchExpression = {'$in': filterValue.substring(1,filterValue.length-1).split(',')}
                 }else{
                     matchExpression = {[comparator]: filterValue}
                 }
-
             }
         } else if (comparator === '$regex') {
             if (rawComperator === '!=') {
