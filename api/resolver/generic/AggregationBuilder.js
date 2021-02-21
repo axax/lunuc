@@ -347,7 +347,7 @@ export default class AggregationBuilder {
                     matchExpression = {[comparator]: filterValue}
                 }else if( !isNaN(filterValue)) {
                     matchExpression = {[comparator]: parseFloat(filterValue)}
-                }else if(filterValue.startsWith('[') && filterValue.endsWith(']')) {
+                }else if(filterValue && filterValue.startsWith('[') && filterValue.endsWith(']')) {
                     matchExpression = {'$in': filterValue.substring(1,filterValue.length-1).split(',')}
                 }else{
                     matchExpression = {[comparator]: filterValue}
