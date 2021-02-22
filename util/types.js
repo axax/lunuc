@@ -76,7 +76,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
         fields.map(({clone, name, type, required, multi, reference, localized, readOnly, hidden, alwaysLoad, ...rest}) => {
 
             if (hidden) return
-            if (alwaysLoad === false && opts && opts.loadAll === false) return
+            const excludeSelect = alwaysLoad === false && opts && opts.loadAll === false
 
             if (insertParams !== '' && !readOnly) {
                 insertParams += ', '
@@ -87,7 +87,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
             let t = localized ? 'LocalizedStringInput' : (type && type !== 'Object' ? type : 'String')
 
 
-            if (!queryFields || queryFields.indexOf(name) >= 0) {
+            if (!excludeSelect && (!queryFields || queryFields.indexOf(name) >= 0)) {
                 if (reference) {
                     t = (multi ? '[' : '') + 'ID' + (multi ? ']' : '')
 

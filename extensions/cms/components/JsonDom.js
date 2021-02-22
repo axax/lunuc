@@ -346,6 +346,7 @@ class JsonDom extends React.Component {
                 this.removeAddedDomElements(true)
                 this.scriptResult = null
                 this.runScript = true
+                this.jsOnStack = {}
             }
 
             if (resourcesChanged) {
@@ -370,7 +371,6 @@ class JsonDom extends React.Component {
 
     componentDidMount() {
         this.node = ReactDOM.findDOMNode(this)
-
         this.addStyle(this.props.style)
         this.triggerMountEvent()
 
@@ -430,8 +430,6 @@ class JsonDom extends React.Component {
         if (this._ismounted) {
             this._ismounted = false
             this.runJsEvent('unmount')
-            // clear event stack
-            this.jsOnStack = {}
         }
     }
 

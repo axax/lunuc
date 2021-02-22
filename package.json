@@ -106,7 +106,7 @@
     "react-router-dom": "^5.2.0",
     "redux": "^4.0.5",
     "request-promise": "^4.2.6",
-    "sharp": "^0.27.1",
+    "sharp": "^0.27.2",
     "socket.io": "^3.1.1",
     "subscriptions-transport-ws": "^0.9.18",
     "telegraf": "^4.1.0",
@@ -116,7 +116,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.8.0",
     "@google-cloud/translate": "^6.1.0",
-    "aws-sdk": "^2.848.0",
+    "aws-sdk": "^2.849.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",

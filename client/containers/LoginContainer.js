@@ -131,7 +131,7 @@ class LoginContainer extends React.Component {
                                 <Typography gutterBottom>{_t('Login.subtitle', from)}</Typography>
 
 
-                                <TextField label="Username"
+                                <TextField label={_t('Login.username')}
                                            error={!!error}
                                            disabled={!!loading}
                                            autoComplete="current-password"
@@ -140,11 +140,10 @@ class LoginContainer extends React.Component {
                                            value={username}
                                            onChange={this.handleInputChange}
                                            type="text"
-                                           placeholder="Enter Username"
                                            name="username" required/>
 
 
-                                <TextField label="Password"
+                                <TextField label={_t('Login.password')}
                                            error={!!error}
                                            helperText={error}
                                            disabled={!!loading}
@@ -158,7 +157,6 @@ class LoginContainer extends React.Component {
                                                }
                                            }}
                                            type="password"
-                                           placeholder="Enter Password"
                                            name="password" required/>
 
 
