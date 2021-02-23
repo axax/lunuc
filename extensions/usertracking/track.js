@@ -29,6 +29,7 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
         const insertData = {
             ip: ip.replace('::ffff:', ''),
             agent: req.headers['x-track-user-agent'] || req.headers['user-agent'],
+            isBot: req.headers['x-track-is-bot']==='true'?true:false,
             referer,
             data,
             event,

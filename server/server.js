@@ -12,6 +12,7 @@ import {getHostFromHeaders} from 'util/host'
 import finalhandler from 'finalhandler'
 import sharp from 'sharp'
 import Util from '../client/util'
+import ApiUtil from '../api/util'
 import {loadAllHostrules} from '../util/hostrules'
 import {PassThrough} from 'stream'
 import {contextByRequest} from '../api/util/sessionContext'
@@ -231,7 +232,8 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
 }
 
 
-const parseWebsite = async (urlToFetch, host, agent, remoteAddress) => {
+const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
+
     const puppeteer = require('puppeteer')
 
     console.log(`fetch ${urlToFetch}`)
@@ -250,6 +252,7 @@ const parseWebsite = async (urlToFetch, host, agent, remoteAddress) => {
             const headers = request.headers()
             headers['x-track-ip'] = remoteAddress
             headers['x-track-host'] = host
+            headers['x-track-is-bot'] = isBot
             headers['x-track-user-agent'] = agent
             request.continue({headers})
         }
@@ -334,14 +337,50 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${urlPathname}`)
         const baseUrl = `http://localhost:${PORT}`
-        const pageData = await parseWebsite(baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : ''), host, agent, req.connection.remoteAddress)
+        const urlToFetch = baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : '')
+
+        const cacheFileDir = path.join(__dirname, 'cache', host.replace(/\W/g, ''))
+        const cacheFileName = cacheFileDir+'/' + urlToFetch.replace(/\W/g, '')+'.html'
+
+
+        let sentFromCache = false
+        if (ApiUtil.ensureDirectoryExistence(cacheFileDir)) {
+
+
+            let isFile = fs.existsSync(cacheFileName)
+
+            if (isFile) {
+                /*const statsFile = fs.statSync(cacheFileName)
+                const now = new Date().getTime(),
+                    modeTime = new Date(statsFile.mtime).getTime() + 86400000 * 5; // 5days in miliseconds
+                if (modeTime > now) {*/
+                    //from cache
+                    console.log(`send from cache ${cacheFileName}`)
+
+                    sendFile(req, res, {headers, filename: cacheFileName, statusCode: 200})
+                    sentFromCache = true
+               // }
+            }
+            // return isFile
+        }
+
+        const pageData = await parseWebsite(urlToFetch, host, agent, isBot, req.connection.remoteAddress)
         const re = new RegExp(baseUrl, 'g')
         pageData.html = pageData.html.replace(re, `https://${host}`)
 
 
-        res.writeHead(pageData.statusCode === 404 ? 404 : statusCode, headers)
-        res.write(pageData.html)
-        res.end()
+        if(!sentFromCache){
+            res.writeHead(pageData.statusCode === 404 ? 404 : statusCode, headers)
+            res.write(pageData.html)
+            res.end()
+        }
+
+        console.log(`update cache for ${cacheFileName}`)
+        fs.writeFile(cacheFileName, pageData.html,  (err) => {
+            if (err) {
+                console.error("Error writing to file " + cacheFileName, err)
+            }
+        })
 
     } else {
         let indexfile

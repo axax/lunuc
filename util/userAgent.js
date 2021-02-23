@@ -3,19 +3,8 @@ export const parseUserAgent = agent => {
 
     let browser, version, isBot = false
     if (agent) {
-        if (agent.indexOf('bingbot') >= 0) {
-            browser = 'bingobt'
-            isBot = true
-        } else if (agent.indexOf('msnbot') >= 0) {
-            browser = 'msnbot'
-            isBot = true
-        } else if (agent.indexOf('YandexBot') >= 0) {
-            browser = 'yandexbot'
-            isBot = true
-        } else if (agent.indexOf('PetalBot') >= 0) {
-            browser = 'petalbot'
-            isBot = true
-        }
+
+        isBot = /AhrefsBot|bingbot|msnbot|YandexBot|PetalBot|Googlebot/.test(agent)
 
         const agentParts = agent.toLowerCase().split(' ')
 
