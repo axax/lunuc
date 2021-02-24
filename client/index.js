@@ -241,7 +241,7 @@ if(!window.LUNUC_PREPARSED) {
     if (!window.Intl || noneBasicEs6 || noneObject) {
         maxCounter++
         // timezone support
-        DomUtil.addScript('https://unpkg.com/date-time-format-timezone@latest/build/browserified/date-time-format-timezone-complete-min.js', {
+        DomUtil.addScript('/date-time-format-timezone-min.js', {
             async: true,
             onload
         })

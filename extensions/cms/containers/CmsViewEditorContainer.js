@@ -596,11 +596,11 @@ class CmsViewEditorContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
                                 expanded={EditorPageOptions.revisionsExpanded}>
                         <MenuList>
-                            <Query
+                            { !loadingState && <Query
                                 query={'query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action, meta}}}'}
                                 fetchPolicy="cache-and-network"
                                 variables={{
-                                    limit: 300,
+                                    limit: 100,
                                     filter: `data._id==${cmsPage._id}`
                                 }}>
                                 {({loading, error, data}) => {
@@ -644,7 +644,7 @@ class CmsViewEditorContainer extends React.Component {
                                     if (data.historys.results === 0) return 'No history entries'
                                     return menuItems
                                 }}
-                            </Query>
+                            </Query>}
                         </MenuList>
                     </Expandable>
 
