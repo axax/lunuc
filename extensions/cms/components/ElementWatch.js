@@ -50,13 +50,12 @@ class ElementWatch extends React.Component {
 
     initObserver(){
         const {tagSrc} = this.state
-
         if (!tagSrc || !ElementWatch.hasLoaded[tagSrc]) {
             if (!!window.IntersectionObserver) {
                 setTimeout(() => {
                     this.addIntersectionObserver()
                 }, 0)
-            } else if (this.props.inlineSvg) {
+            } else if (this.props.eleProps && this.props.eleProps.inlineSvg) {
                 this.fetchSvg()
             }
         }
@@ -120,7 +119,6 @@ class ElementWatch extends React.Component {
 
 
     fetchSvg() {
-
         const {tagImg, tagSrc} = this.state
 
         fetch(tagSrc).then((response) => response.blob()).then((blob) => {

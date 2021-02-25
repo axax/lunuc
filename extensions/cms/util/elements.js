@@ -130,7 +130,12 @@ const baseElements = [
                 ],
                 tab: DEFAULT_TAB
             },
-            ...classOptions('p_'),
+            p_className: {
+                label: 'Bild Klassenname'
+            },
+            p_figureClassName: {
+                label: 'Figure Klassenname'
+            },
             p_wrapper: {
                 label: 'Zoom',
                 type: 'Boolean'
