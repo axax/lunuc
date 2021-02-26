@@ -273,7 +273,6 @@ export default class AggregationBuilder {
                 comparator = '$eq'
             }
         }
-
         if (type === 'ID') {
             if (filterValue) {
                 if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
@@ -295,6 +294,7 @@ export default class AggregationBuilder {
                 } else if (ObjectId.isValid(filterValue)) {
                     // match by id
                     filterValue = ObjectId(filterValue)
+
                 } else {
                     return {added: false, error: 'Search for ID. But ID is not valid'}
                 }
@@ -335,21 +335,22 @@ export default class AggregationBuilder {
         if (['$gt', '$gte', '$lt', '$lte'].indexOf(comparator) >= 0) {
             matchExpression = {[comparator]: type === 'ID' ? filterValue : parseFloat(filterValue)}
         } else if (comparator === '$ne' || comparator === '$eq') {
-
             if (multi && filterValue && filterValue.constructor !== Array) {
                 matchExpression = {[comparator === '$eq' ? '$in' : '$nin']: [filterValue]}
-            } else if (filterValue==='') {
+            } else if (filterValue === '') {
                 matchExpression = {[comparator === '$eq' ? '$in' : '$nin']: [null, ""]}
             } else if (!filterOptions.inDoubleQuotes && filterValue === 'null') {
                 matchExpression = {[comparator]: null}
+            } else if (filterValue.constructor === ObjectId) {
+                matchExpression = {[comparator]: filterValue}
             } else {
-                if(filterOptions.inDoubleQuotes){
+                if (filterOptions.inDoubleQuotes) {
                     matchExpression = {[comparator]: filterValue}
-                }else if( !isNaN(filterValue)) {
+                } else if (!isNaN(filterValue)) {
                     matchExpression = {[comparator]: parseFloat(filterValue)}
-                }else if(filterValue && filterValue.constructor===String && filterValue.startsWith('[') && filterValue.endsWith(']')) {
-                    matchExpression = {'$in': filterValue.substring(1,filterValue.length-1).split(',')}
-                }else{
+                } else if (filterValue && filterValue.constructor === String && filterValue.startsWith('[') && filterValue.endsWith(']')) {
+                    matchExpression = {'$in': filterValue.substring(1, filterValue.length - 1).split(',')}
+                } else {
                     matchExpression = {[comparator]: filterValue}
                 }
             }
@@ -369,9 +370,9 @@ export default class AggregationBuilder {
             }
             match.$or.push({[filterKey]: matchExpression})
         } else {
-            if(match[filterKey]){
-                match[filterKey] = {...match[filterKey],...matchExpression}
-            }else {
+            if (match[filterKey]) {
+                match[filterKey] = {...match[filterKey], ...matchExpression}
+            } else {
                 match[filterKey] = matchExpression
             }
         }
