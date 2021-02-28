@@ -203,7 +203,7 @@ class TypePicker extends React.Component {
             <div className={classes.clips}>
                 {value.map((value, i) =>
                     [
-                        (value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
+                        (value && value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
                             <div draggable={true}
                                  data-index={i}
                                  onDragStart={(e) => {
@@ -232,7 +232,7 @@ class TypePicker extends React.Component {
                                   className={classNames(classes.clip)}
                                   label={typeDataToLabel(value, pickerField)}
                                   onDelete={this.handleRemovePick.bind(this, i)}
-                                  avatar={value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
+                                  avatar={value && value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
                                       <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>),
                         <div key={'drop' + i}
                              data-index={i}

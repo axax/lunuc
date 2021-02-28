@@ -673,6 +673,11 @@ async function resizeImage(parsedUrl, req, filename) {
                             quality,
                             force: true
                         }).toFile(modfilename)
+                    } else if (format === 'jpg' || format === 'jpeg') {
+                        await resizedFile.jpeg({
+                            quality,
+                            force: true
+                        }).toFile(modfilename)
                     } else {
                         await resizedFile.jpeg({
                             quality,

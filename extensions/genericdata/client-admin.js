@@ -53,7 +53,6 @@ export default () => {
 
 
     Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, parentRef}) {
-
         if (type === 'GenericData') {
             if (dataToEdit && dataToEdit.definition) {
 
@@ -236,7 +235,19 @@ export default () => {
             const struct = JSON.parse(definition.structure)
             const data = {}
             struct.fields.forEach(field => {
-                data[field.name] = editedData['data_' + field.name]
+                if(field.genericType){
+                    // only keep reference _id
+                    const fieldData = editedData['data_' + field.name]
+                    if(fieldData.constructor===Array && fieldData.length>0 && fieldData[0]._id){
+                        data[field.name] = fieldData.map(e=>e._id)
+                    }else if(fieldData._id){
+                        data[field.name] = fieldData._id
+                    }else{
+                        data[field.name] = editedData['data_' + field.name]
+                    }
+                }else {
+                    data[field.name] = editedData['data_' + field.name]
+                }
                 delete editedData['data_' + field.name]
             })
 

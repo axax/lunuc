@@ -10,6 +10,9 @@ const {LANGUAGES} = config, typeFormFields = {}
 export const typeDataToLabel = (item, pickerField) => {
     let label = []
 
+    if(!item){
+        return 'null'
+    }
     if(!pickerField && item.__typename=== 'GenericData'){
         try {
             const structur = JSON.parse(item.definition.structure)
