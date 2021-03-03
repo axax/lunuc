@@ -182,7 +182,7 @@ class ElementWatch extends React.Component {
 
                     }
                 })
-            }, {rootMargin: $observe.rootMargin || '0px 0px 0px 0px'})
+            }, {rootMargin: $observe.rootMargin || '0px 0px 0px 0px', threshold: $observe.threshold || 0})
             observer.observe(ele)
         }
     }
