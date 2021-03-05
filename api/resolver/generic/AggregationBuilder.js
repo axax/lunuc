@@ -330,7 +330,6 @@ export default class AggregationBuilder {
         } else if (type === 'Float') {
             filterValue = parseFloat(filterValue)
         }
-
         let matchExpression
         if (['$gt', '$gte', '$lt', '$lte'].indexOf(comparator) >= 0) {
             matchExpression = {[comparator]: type === 'ID' ? filterValue : parseFloat(filterValue)}
@@ -345,6 +344,8 @@ export default class AggregationBuilder {
                 matchExpression = {[comparator]: filterValue}
             } else {
                 if (filterOptions.inDoubleQuotes) {
+                    matchExpression = {[comparator]: filterValue}
+                }else if(filterValue===true || filterValue===false){
                     matchExpression = {[comparator]: filterValue}
                 } else if (!isNaN(filterValue)) {
                     matchExpression = {[comparator]: parseFloat(filterValue)}
