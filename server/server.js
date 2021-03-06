@@ -332,7 +332,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
     const agent = req.headers['user-agent']
     const {version, browser, isBot} = parseUserAgent(agent)
 
-    if (isBot || (browser === 'firefox' && version <= 12) || (browser === 'msie' && version <= 6)) {
+    if (isBot || (browser === 'firefox' && version <= 12) || (browser === 'chrome' && version <= 16)  || (browser === 'msie' && version <= 6)) {
 
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${urlPathname}`)
