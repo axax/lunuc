@@ -482,7 +482,7 @@ class JsonDom extends React.Component {
                     if (parseResolvedData) {
                         // if there are placeholders ${} in the resolvedData String that needs to be parsed with the client scope
                         // the flag parseResolvedData needs to be set to true
-                        this.resolvedDataJson = JSON.parse(new Function(DomUtil.toES5(`const Util=this.Util;const {${Object.keys(scope).join(',')}}=this.scope;return \`${resolvedData.replace(/\\/g, '\\\\')}\``)).call({
+                        this.resolvedDataJson = JSON.parse(new Function(DomUtil.toES5(`'use strict';const Util=this.Util;const {${Object.keys(scope).join(',')}}=this.scope;return \`${resolvedData.replace(/\\/g, '\\\\')}\``)).call({
                             scope,
                             Util
                         }))
@@ -565,7 +565,7 @@ class JsonDom extends React.Component {
             let parsedStyle
             if (style.indexOf('${') > -1) {
                 try {
-                    parsedStyle = new Function(DomUtil.toES5(`const {scope,Util}=this;return \`${style}\``)).call({
+                    parsedStyle = new Function(DomUtil.toES5(`'use strict';const {scope,Util}=this;return \`${style}\``)).call({
                         scope: this.scope,
                         Util: Util,
                         set: (key, value) => {
@@ -864,7 +864,7 @@ class JsonDom extends React.Component {
 
                         let tpl
                         if ($for) {
-                            tpl = new Function(DomUtil.toES5(`const ${s}=this.${s},Util =this.Util,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``))
+                            tpl = new Function(DomUtil.toES5(`'use strict';const ${s}=this.${s},Util =this.Util,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);${loopOrFor.eval ? loopOrFor.eval : ''};return \`${cStr}\``))
                         }
                         data.forEach((loopChild, childIdx) => {
                             if (loopOrFor.convert === 'String') {
@@ -878,7 +878,7 @@ class JsonDom extends React.Component {
 
 
                             if ($loop) {
-                                tpl = new Function(DomUtil.toES5(`const {${Object.keys(loopChild).join(',')}}=this.${s},Util=this.Util,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);return \`${cStr}\``))
+                                tpl = new Function(DomUtil.toES5(`'use strict';const {${Object.keys(loopChild).join(',')}}=this.${s},Util=this.Util,_i=Util.tryCatch.bind(this),_t=this._t.bind(this.scope.data);return \`${cStr}\``))
                             }
                             // remove tabs and parse
                             const json = JSON.parse(tpl.call({
@@ -1221,7 +1221,7 @@ class JsonDom extends React.Component {
         }
         try {
             // Scope properties get destructed so they can be accessed directly by property name
-            return new Function(DomUtil.toES5(`const {${Object.keys(scope).join(',')}}=this.scope,Util=this.Util,_i=Util.tryCatch.bind(this),_r=this.renderIntoHtml,_t=this._t.bind(data);return \`${str}\``)).call({
+            return new Function(DomUtil.toES5(`'use strict';const {${Object.keys(scope).join(',')}}=this.scope,Util=this.Util,_i=Util.tryCatch.bind(this),_r=this.renderIntoHtml,_t=this._t.bind(data);return \`${str}\``)).call({
                 scope,
                 parent: this.props._parentRef,
                 Util,
