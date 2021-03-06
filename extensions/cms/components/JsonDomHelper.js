@@ -184,7 +184,12 @@ const highlighterHandler = (e, observer, after) => {
         clearTimeout(aftershockTimeout)
         aftershockTimeout = setTimeout(() => {
             highlighterHandler(e, observer, true)
-        }, 100)
+            for(let i=0;i<10;i++) {
+                setTimeout(() => {
+                    highlighterHandler(e, observer, true)
+                }, i*50)
+            }
+        }, 50)
     }
 }
 

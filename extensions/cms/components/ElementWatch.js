@@ -90,7 +90,7 @@ class ElementWatch extends React.Component {
                     ($c ? null : jsonDom.parseRec(c, _key, scope))
                 )
             }
-            return <div _key={_key} data-wait-visible={jsonDom.instanceId}
+            return <div data-element-watch-key={_key} data-wait-visible={jsonDom.instanceId}
                         style={{minHeight: '1rem', minWidth: '1rem'}}></div>
         } else {
             if (ElementWatch.hasLoaded[tagSrc] && ElementWatch.hasLoaded[tagSrc].svgData) {
@@ -98,6 +98,8 @@ class ElementWatch extends React.Component {
             }
 
             if ($observe.initialClass || $observe.visibleClass) {
+                eleProps['data-element-watch-key'] = _key
+
                 // we change props here so components get updated
                 if (!eleProps.className) {
                     eleProps.className = ''
@@ -137,12 +139,13 @@ class ElementWatch extends React.Component {
         const {tagSrc} = this.state
         const {$observe, eleProps, _key, tagName} = this.props
 
-        const ele = document.querySelector(`[_key='${_key}']`)
+        const ele = document.querySelector(`[data-element-watch-key='${_key}']`)
+
         if (ele) {
             let observer = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {
+                    //console.log(_key, entry.intersectionRatio)
                     if (entry.isIntersecting) {
-
                         observer.unobserve(entry.target)
                         if (this.state.initialVisible) {
                             ele.classList.add($observe.visibleClass)
