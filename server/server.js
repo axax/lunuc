@@ -421,6 +421,7 @@ function hasHttpsWwwRedirect(host, req, res) {
 
                 if ((browser === 'safari' && version < 6) ||
                     (browser === 'firefox' && version <= 12) ||
+                    (browser === 'chrome' && version <= 16) ||
                     (browser === 'opera' && version <= 10) ||
                     (browser === 'msie' && version <= 6)) {
                     // for browser that doesn't support tls 1.2
