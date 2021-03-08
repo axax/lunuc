@@ -4,6 +4,7 @@ import Util from 'client/util'
 
 class ElementWatch extends React.Component {
     static hasLoaded = {}
+    static loadedSvgData = {}
 
     constructor(props) {
         super(props)
@@ -39,7 +40,7 @@ class ElementWatch extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        if(prevState.tagSrc !== this.state.tagSrc) {
+        if (prevState.tagSrc !== this.state.tagSrc) {
             this.initObserver()
         }
     }
@@ -48,7 +49,7 @@ class ElementWatch extends React.Component {
         this.initObserver()
     }
 
-    initObserver(){
+    initObserver() {
         const {tagSrc} = this.state
         if (!tagSrc || !ElementWatch.hasLoaded[tagSrc]) {
             if (!!window.IntersectionObserver) {
@@ -85,7 +86,7 @@ class ElementWatch extends React.Component {
                         src: tmpSrc,
                         alt: (tagImg.alt || eleProps.alt),
                         key: _key + 'watch',
-                        'data-element-watch-key':_key,
+                        'data-element-watch-key': _key,
                         _key
                     },
                     ($c ? null : jsonDom.parseRec(c, _key, scope))
@@ -94,8 +95,8 @@ class ElementWatch extends React.Component {
             return <div data-element-watch-key={_key} data-wait-visible={jsonDom.instanceId}
                         style={{minHeight: '1rem', minWidth: '1rem'}}></div>
         } else {
-            if (ElementWatch.hasLoaded[tagSrc] && ElementWatch.hasLoaded[tagSrc].svgData) {
-                eleProps.svgData = ElementWatch.hasLoaded[tagSrc].svgData
+            if (eleProps.inlineSvg && ElementWatch.loadedSvgData[tagSrc]) {
+                eleProps.svgData = ElementWatch.loadedSvgData[tagSrc]
             }
 
             if ($observe.initialClass || $observe.visibleClass) {
@@ -128,7 +129,8 @@ class ElementWatch extends React.Component {
             const reader = new FileReader()
 
             reader.addEventListener("load", () => {
-                ElementWatch.hasLoaded[tagSrc] = {svgData: reader.result}
+                ElementWatch.hasLoaded[tagSrc] = true
+                ElementWatch.loadedSvgData[tagSrc] = reader.result
                 this.setState({madeVisible: true})
             }, false)
 
@@ -166,7 +168,7 @@ class ElementWatch extends React.Component {
 
                                     img.onerror = img.onload = () => {
                                         clearTimeout(timeout)
-                                        if(!$observe.waitVisible) {
+                                        if (!$observe.waitVisible) {
                                             ElementWatch.hasLoaded[tagSrc] = true
                                         }
                                         this.setState({madeVisible: true})
