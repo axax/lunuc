@@ -284,9 +284,10 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
 
         await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
 
+
+        console.log(`url fetched ${urlToFetch}`)
         let html = await page.content()
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
-
 
         page.close()
         browser.close()
@@ -393,6 +394,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
 
         const re = new RegExp(baseUrl, 'g')
         pageData.html = pageData.html.replace(re, `https://${host}`)
+
 
 
         if(pageData.statusCode === 500 || pageData.statusCode === 404){
@@ -1065,6 +1067,12 @@ ioHttps.on('connection', stream)
 if (USE_HTTPX) {
     app.http.on('upgrade', webSocket)
     app.https.on('upgrade', webSocket)
+    app.http.on('error', (e)=>{
+        console.log('http error', e)
+    })
+    app.https.on('error', (e)=>{
+        console.log('https error', e)
+    })
 } else {
     app.on('upgrade', webSocket)
 }
