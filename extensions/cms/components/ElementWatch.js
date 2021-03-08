@@ -85,6 +85,7 @@ class ElementWatch extends React.Component {
                         src: tmpSrc,
                         alt: (tagImg.alt || eleProps.alt),
                         key: _key + 'watch',
+                        'data-element-watch-key':_key,
                         _key
                     },
                     ($c ? null : jsonDom.parseRec(c, _key, scope))
