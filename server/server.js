@@ -109,9 +109,13 @@ const sendError = (res, code) => {
     }
 
 
-    res.writeHead(code, {'Content-Type': 'text/plain'})
-    res.write(`${code} ${msg}\n`)
-    res.end()
+    try {
+        res.writeHead(code, {'Content-Type': 'text/plain'})
+        res.write(`${code} ${msg}\n`)
+        res.end()
+    }catch (e) {
+        console.error(`Error sending error: ${e.message}`)
+    }
 }
 
 
@@ -353,6 +357,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         if(req.headers.accept && req.headers.accept.indexOf('text/html')<0){
             res.writeHead(404)
             res.end()
+            return
         }
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${urlPathname}`)
@@ -392,18 +397,22 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
 
         if(pageData.statusCode === 500 || pageData.statusCode === 404){
 
-            res.writeHead(pageData.statusCode, headers)
-            if(pageData.statusCode === 404){
-                res.write(pageData.html)
+            if(!sentFromCache) {
+                res.writeHead(pageData.statusCode, headers)
+                if (pageData.statusCode !== 500) {
+                    res.write(pageData.html)
 
+                }
+                res.end()
             }
-            res.end()
 
         }else {
 
             if(!sentFromCache){
                 res.writeHead(statusCode, headers)
-                res.write(pageData.html)
+                if(statusCode !== 500) {
+                    res.write(pageData.html)
+                }
                 res.end()
             }
 
