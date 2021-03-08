@@ -453,7 +453,7 @@ function hasHttpsWwwRedirect(host, req, res) {
         }
 
         if (!config.DEV_MODE && this.constructor.name === 'Server') {
-            if (process.env.LUNUC_FORCE_HTTPS === 'true') {
+            if (process.env.LUNUC_FORCE_HTTPS === 'true' && !req.headers['x-track-ip']) {
 
                 const agent = req.headers['user-agent']
 
