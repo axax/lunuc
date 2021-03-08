@@ -374,6 +374,10 @@ const Util = {
     },
     chunkArray(arr, chunk, opts) {
 
+        if(!arr || arr.constructor !== Array){
+            return []
+        }
+
         let chunkInt = parseInt(chunk)
 
         if (isNaN(chunkInt)) {

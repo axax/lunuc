@@ -234,48 +234,64 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
 
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
 
-    const puppeteer = require('puppeteer')
 
-    console.log(`fetch ${urlToFetch}`)
-    const browser = await puppeteer.launch({
-        ignoreHTTPSErrors: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    })
-    const page = await browser.newPage()
+    try {
+        const puppeteer = require('puppeteer')
 
-    await page.setRequestInterception(true)
-    await page.setExtraHTTPHeaders({'x-host-rule': host})
-    page.on('request', (request) => {
-        if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
-            request.abort()
-        } else {
-            const headers = request.headers()
-            headers['x-track-ip'] = remoteAddress
-            headers['x-track-host'] = host
-            headers['x-track-is-bot'] = isBot
-            headers['x-track-user-agent'] = agent
-            request.continue({headers})
-        }
-    })
+        console.log(`fetch ${urlToFetch}`)
+        const browser = await puppeteer.launch({
+            ignoreHTTPSErrors: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        })
+        const page = await browser.newPage()
 
-    let statusCode = 200
-    page.on('response', response => {
-        if (response.status() === 404 && response._request._resourceType === 'document' && response.url().endsWith('/404')) {
+        setTimeout(async () => {
+            const procInfo = await browser.process()
+            if (!procInfo.signalCode) {
+                browser.process().kill('SIGINT')
+                console.log('browser still running after 10s. kill process')
+            }
 
-            statusCode = 404
-        }
-    })
-
-    await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
-
-    let html = await page.content()
-    html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
+        }, 10000)
 
 
-    await page.close()
-    await browser.close()
+        await page.setRequestInterception(true)
+        await page.setExtraHTTPHeaders({'x-host-rule': host})
+        page.on('request', (request) => {
+            if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
+                request.abort()
+            } else {
+                const headers = request.headers()
+                headers['x-track-ip'] = remoteAddress
+                headers['x-track-host'] = host
+                headers['x-track-is-bot'] = isBot
+                headers['x-track-user-agent'] = agent
+                request.continue({headers})
+            }
+        })
 
-    return {html, statusCode}
+        let statusCode = 200
+        page.on('response', response => {
+            if (response.status() === 404 && response._request._resourceType === 'document' && response.url().endsWith('/404')) {
+
+                statusCode = 404
+            }
+        })
+
+        await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
+
+        let html = await page.content()
+        html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
+
+
+        page.close()
+        browser.close()
+
+        return {html, statusCode}
+    }catch (e) {
+        return {html: e.message, statusCode: 500}
+
+    }
 }
 
 
@@ -334,6 +350,10 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
 
     if (isBot || (browser === 'firefox' && version <= 12) || (browser === 'chrome' && version <= 16)  || (browser === 'msie' && version <= 6)) {
 
+        if(req.headers.accept && req.headers.accept.indexOf('text/html')<0){
+            res.writeHead(404)
+            res.end()
+        }
         // return rentered html for bing as they are not able to render js properly
         //const html = await parseWebsite(`${req.secure ? 'https' : 'http'}://${host}${host === 'localhost' ? ':' + PORT : ''}${urlPathname}`)
         const baseUrl = `http://localhost:${PORT}`
@@ -365,22 +385,35 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         }
 
         const pageData = await parseWebsite(urlToFetch, host, agent, isBot, req.connection.remoteAddress)
+
         const re = new RegExp(baseUrl, 'g')
         pageData.html = pageData.html.replace(re, `https://${host}`)
 
 
-        if(!sentFromCache){
-            res.writeHead(pageData.statusCode === 404 ? 404 : statusCode, headers)
-            res.write(pageData.html)
-            res.end()
-        }
+        if(pageData.statusCode === 500 || pageData.statusCode === 404){
 
-        console.log(`update cache for ${cacheFileName}`)
-        fs.writeFile(cacheFileName, pageData.html,  (err) => {
-            if (err) {
-                console.error("Error writing to file " + cacheFileName, err)
+            res.writeHead(pageData.statusCode, headers)
+            if(pageData.statusCode === 404){
+                res.write(pageData.html)
+
             }
-        })
+            res.end()
+
+        }else {
+
+            if(!sentFromCache){
+                res.writeHead(statusCode, headers)
+                res.write(pageData.html)
+                res.end()
+            }
+
+            console.log(`update cache for ${cacheFileName}`)
+            fs.writeFile(cacheFileName, pageData.html, (err) => {
+                if (err) {
+                    console.error("Error writing to file " + cacheFileName, err)
+                }
+            })
+        }
 
     } else {
         let indexfile

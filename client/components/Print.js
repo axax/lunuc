@@ -170,7 +170,7 @@ class Print extends React.PureComponent {
         if (!window.html2canvas) return false
         if (!window.pdfMake) return false
 
-        const {classes, pdfName} = this.props
+        const {classes, pdfName, showDate} = this.props
         const overlay = this.$(`.${classes.overlay}`)[0],
             printArea = this.$(`.${classes.printArea}`)[0],
             printAreaInner = this.$(`.${classes.printAreaInner}`, printArea)[0],
@@ -247,7 +247,7 @@ class Print extends React.PureComponent {
                     context.textBaseline = "top"
                     context.font = "10px sans-serif"
                     context.fillStyle = "rgba(0,0,0,0.5)"
-                    context.fillText((page + 1) + ' / '+(breaks.length + 1)+ ' - '+Util.formatDate(new Date()), 10, canvas.height-20)
+                    context.fillText((page + 1) + ' / '+(breaks.length + 1)+ (showDate ? ' - '+Util.formatDate(new Date()):''), 10, canvas.height-20)
 
 
                     const data = createCanvas.toDataURL()

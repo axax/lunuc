@@ -1239,6 +1239,8 @@ class CmsViewEditorContainer extends React.Component {
             this._saveSettings()
 
 
+        const cmsPage = this.props.cmsPage
+
         clearTimeout(this._setStyleDelayed)
         this._setStyleDelayed = setTimeout(() => {
             this.setState({style})
@@ -1247,7 +1249,7 @@ class CmsViewEditorContainer extends React.Component {
         this._autoSaveStyle = () => {
             clearTimeout(this._autoSaveStyleTimeout)
             this._autoSaveStyleTimeout = 0
-            this.saveCmsPage(style, this.props.cmsPage, 'style')
+            this.saveCmsPage(style, cmsPage , 'style')
         }
 
         clearTimeout(this._autoSaveStyleTimeout)
@@ -1257,11 +1259,14 @@ class CmsViewEditorContainer extends React.Component {
     handleServerScriptChange = (serverScript, instantSave) => {
         if (this._saveSettings)
             this._saveSettings()
+
+        const cmsPage = this.props.cmsPage
+
         this.setState({serverScript})
         this._autoSaveServerScript = () => {
             clearTimeout(this._autoSaveServerScriptTimeout)
             this._autoSaveServerScriptTimeout = 0
-            this.saveCmsPage(serverScript, this.props.cmsPage, 'serverScript')
+            this.saveCmsPage(serverScript, cmsPage, 'serverScript')
         }
 
         clearTimeout(this._autoSaveServerScriptTimeout)
@@ -1278,10 +1283,13 @@ class CmsViewEditorContainer extends React.Component {
         this.setState({dataResolver: str}, () => {
             this._tmpDataResolver = null
         })
+
+        const cmsPage = this.props.cmsPage
+
         this._autoSaveDataResolver = () => {
             clearTimeout(this._autoSaveDataResolverTimeout)
             this._autoSaveDataResolverTimeout = 0
-            this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
+            this.saveCmsPage(str, cmsPage, 'dataResolver')
         }
         clearTimeout(this._autoSaveDataResolverTimeout)
         if (instantSave === true) {
@@ -1293,6 +1301,9 @@ class CmsViewEditorContainer extends React.Component {
 
     handleTemplateChange = (str, instantSave, skipHistory) => {
         clearTimeout(this._templateTimeout)
+
+        const cmsPage = this.props.cmsPage
+
         this._templateTimeout = setTimeout(() => {
             if (str.constructor !== String) {
                 str = JSON.stringify(str, null, 2)
@@ -1314,7 +1325,7 @@ class CmsViewEditorContainer extends React.Component {
                 clearTimeout(this._autoSaveTemplateTimeout)
                 this._autoSaveTemplateTimeout = 0
                 this._autoSaveTemplate = null
-                this.saveCmsPage(str, this.props.cmsPage, 'template')
+                this.saveCmsPage(str, cmsPage, 'template')
 
             }
 
@@ -1329,7 +1340,6 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleResourceChange = (str) => {
-        console.log(str)
         this.setState({resources: str})
         this.saveCmsPage(str, this.props.cmsPage, 'resources')
     }
