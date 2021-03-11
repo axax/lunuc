@@ -238,9 +238,9 @@ export default () => {
                 if(field.genericType){
                     // only keep reference _id
                     const fieldData = editedData['data_' + field.name]
-                    if(fieldData.constructor===Array && fieldData.length>0 && fieldData[0]._id){
+                    if(fieldData && fieldData.constructor===Array && fieldData.length>0 && fieldData[0]._id){
                         data[field.name] = fieldData.map(e=>e._id)
-                    }else if(fieldData._id){
+                    }else if(fieldData && fieldData._id){
                         data[field.name] = fieldData._id
                     }else{
                         data[field.name] = editedData['data_' + field.name]
