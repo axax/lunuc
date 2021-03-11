@@ -108,14 +108,15 @@ export default db => ({
                 return {status: 'ok'}
             }
         },
-        unsubscribeNewsletter: async ({email, token}, {context}) => {
+        unsubscribeNewsletter: async ({email, token, mailing}, {context}) => {
 
             const collection = db.collection('NewsletterSubscriber')
 
 
             let result = (await collection.findOneAndUpdate({email, token}, {
                 $set: {
-                    state: 'unsubscribed'
+                    state: 'unsubscribed',
+                    unsubscribeMailing: mailing?ObjectId(mailing):null
                 }
             }, {returnOriginal: false}))
 

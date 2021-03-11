@@ -595,6 +595,14 @@ const baseElements = [
                 label: 'Target',
                 tab: DEFAULT_TAB
             },
+            ['data-is-invisible']: {
+                fullWidth: true,
+                type:'Boolean',
+                value: false,
+                placeholder: 'Ausblenden',
+                label: 'Ausblenden',
+                tab: DEFAULT_TAB
+            },
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...imageOptions('c_0_p_'),

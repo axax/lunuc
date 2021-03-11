@@ -2,7 +2,8 @@
 export const jsonPropertyTemplates = [
     {title: 'Click Event', template: '"onClick":{"action":"click"}'},
     {title: 'Change Event', template: '"onChange":{"action":"change"}'},
-    {title: 'Inline Editor false', template: '"$inlineEditor":false'}
+    {title: 'Inline Editor false', template: '"$inlineEditor":false'},
+    {title: 'Observer', template: '"$observe": {"threshold": 0, "waitVisible": true,"initialClass": "animation","visibleClass": "fade-in-up"}'},
 ]
 
 export const jsonTemplates = [

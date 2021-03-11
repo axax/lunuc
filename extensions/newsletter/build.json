@@ -32,6 +32,11 @@
           "tab": "General"
         },
         {
+          "name": "unsubscribeMailing",
+          "type": "NewsletterMailing",
+          "tab": "General"
+        },
+        {
           "name": "list",
           "multi": true,
           "index": 1,
