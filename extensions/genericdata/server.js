@@ -87,82 +87,88 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
 
 
 Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => {
-    if (type === 'GenericData' && otherOptions.genericType) {
 
-        const data = await GenericResolver.entities(db, context, 'GenericDataDefinition', ['_id','name', 'structure'],
-            {
-                filter: `name==${otherOptions.genericType}`,
-                limit: 1,
-                includeCount: false,
-                projectResult: true,
-                postConvert: false,
-                cache: {
-                    expires: 86400000,
-                    key: `GenericDataDefinition${otherOptions.genericType}`
-                }
-            })
-        if (data.results.length === 1) {
-            const struct = data.results[0].structure
+    if (type === 'GenericData' ) {
 
-            if(struct.access && struct.access.read) {
-                const accessMatch = await Util.getAccessFilter(db, context, struct.access.read)
-                if(accessMatch.createdBy){
-                    match.createdBy = accessMatch.createdBy
-                }
+        const genericType = otherOptions.genericType || otherOptions.meta
 
-            }
+        if (genericType) {
+            const data = await GenericResolver.entities(db, context, 'GenericDataDefinition', ['_id', 'name', 'structure'],
+                {
+                    filter: `name==${genericType}`,
+                    limit: 1,
+                    includeCount: false,
+                    projectResult: true,
+                    postConvert: false,
+                    cache: {
+                        expires: 86400000,
+                        key: `GenericDataDefinition${genericType}`
+                    }
+                })
+            if (data.results.length === 1) {
+                const struct = data.results[0].structure
 
-            match.definition = {$eq: ObjectId(data.results[0]._id)}
-
-            if (struct && struct.fields) {
-                struct.fields.forEach(field => {
-
-                    if (field.genericType) {
-
-                        if (!otherOptions.lookups) {
-                            otherOptions.lookups = []
-                        }
-
-                        let id, $match
-                        if (field.multi) {
-                            id = {
-                                $map: {
-                                    input: `$data.${field.name}`, in: {$toObjectId: '$$this'}
-                                }
-                            }
-                            $match = {$expr: {$in: ['$_id', '$$id']}}
-                        } else {
-                            id = {$toObjectId: `$data.${field.name}`}
-                            $match = {$expr: {$eq: ['$_id', '$$id']}}
-                        }
-                        otherOptions.lookups.push(
-                            {
-                                $lookup: {
-                                    from: 'GenericData',
-                                    let: {
-                                        id
-                                    },
-                                    pipeline: [
-                                        {
-                                            $match
-                                        },
-                                        {
-                                            $project: {
-                                                _id: 1,
-                                                data: 1
-                                            }
-                                        }
-                                    ],
-                                    as: `data.${field.name}`
-                                }
-                            })
-
+                if (struct.access && struct.access.read) {
+                    const accessMatch = await Util.getAccessFilter(db, context, struct.access.read)
+                    if (accessMatch.createdBy) {
+                        match.createdBy = accessMatch.createdBy
                     }
 
-                })
+                }
+
+                match.definition = {$eq: ObjectId(data.results[0]._id)}
+
+                if (struct && struct.fields) {
+                    struct.fields.forEach(field => {
+
+                        if (field.genericType) {
+
+                            if (!otherOptions.lookups) {
+                                otherOptions.lookups = []
+                            }
+
+                            let id, $match
+                            if (field.multi) {
+                                id = {
+                                    $map: {
+                                        input: `$data.${field.name}`, in: {$toObjectId: '$$this'}
+                                    }
+                                }
+                                $match = {$expr: {$in: ['$_id', '$$id']}}
+                            } else {
+                                id = {$toObjectId: `$data.${field.name}`}
+                                $match = {$expr: {$eq: ['$_id', '$$id']}}
+                            }
+                            otherOptions.lookups.push(
+                                {
+                                    $lookup: {
+                                        from: 'GenericData',
+                                        let: {
+                                            id
+                                        },
+                                        pipeline: [
+                                            {
+                                                $match
+                                            },
+                                            {
+                                                $project: {
+                                                    __typename: 'GenericData',
+                                                    _id: 1,
+                                                    data: 1
+                                                }
+                                            }
+                                        ],
+                                        as: `data.${field.name}`
+                                    }
+                                })
+
+                        }
+
+                    })
+                }
+            } else {
+                throw new Error(`Invalid type GenericType.${genericType}`)
             }
-        }else{
-            throw new Error(`Invalid type GenericType.${otherOptions.genericType}`)
         }
     }
 }, 99)

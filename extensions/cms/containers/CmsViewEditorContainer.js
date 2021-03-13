@@ -1300,43 +1300,45 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleTemplateChange = (str, instantSave, skipHistory) => {
-        clearTimeout(this._templateTimeout)
+        if(str!==this.state.template) {
+            clearTimeout(this._templateTimeout)
 
-        const cmsPage = this.props.cmsPage
+            const cmsPage = this.props.cmsPage
 
-        this._templateTimeout = setTimeout(() => {
-            if (str.constructor !== String) {
-                str = JSON.stringify(str, null, 2)
-            }
-
-            // save settings first
-            if (this._saveSettings)
-                this._saveSettings()
-
-            if (!skipHistory) {
-                this.templateChangeHistory.unshift(this.state.template)
-                if (this.templateChangeHistory.length > 10) {
-                    this.templateChangeHistory.length = 10
+            this._templateTimeout = setTimeout(() => {
+                if (str.constructor !== String) {
+                    str = JSON.stringify(str, null, 2)
                 }
-            }
 
-            this.setState({template: str, templateError: null})
-            this._autoSaveTemplate = () => {
+                // save settings first
+                if (this._saveSettings)
+                    this._saveSettings()
+
+                if (!skipHistory) {
+                    this.templateChangeHistory.unshift(this.state.template)
+                    if (this.templateChangeHistory.length > 10) {
+                        this.templateChangeHistory.length = 10
+                    }
+                }
+
+                this.setState({template: str, templateError: null})
+                this._autoSaveTemplate = () => {
+                    clearTimeout(this._autoSaveTemplateTimeout)
+                    this._autoSaveTemplateTimeout = 0
+                    this._autoSaveTemplate = null
+                    this.saveCmsPage(str, cmsPage, 'template')
+
+                }
+
                 clearTimeout(this._autoSaveTemplateTimeout)
-                this._autoSaveTemplateTimeout = 0
-                this._autoSaveTemplate = null
-                this.saveCmsPage(str, cmsPage, 'template')
+                if (instantSave) {
+                    this._autoSaveTemplate()
+                } else {
+                    this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 5000)
+                }
 
-            }
-
-            clearTimeout(this._autoSaveTemplateTimeout)
-            if (instantSave) {
-                this._autoSaveTemplate()
-            } else {
-                this._autoSaveTemplateTimeout = setTimeout(this._autoSaveTemplate, 5000)
-            }
-
-        }, instantSave ? 0 : 500)
+            }, instantSave ? 0 : 300)
+        }
     }
 
     handleResourceChange = (str) => {

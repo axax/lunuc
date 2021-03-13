@@ -13,15 +13,22 @@ export const typeDataToLabel = (item, pickerField) => {
     if(!item){
         return 'null'
     }
+
+    //TODO move to extension
     if(!pickerField && item.__typename=== 'GenericData'){
         try {
-            const structur = JSON.parse(item.definition.structure)
-            pickerField = structur.pickerField
-            item = JSON.parse(item.data)
+            if(item.data.constructor === Object){
+                item = item.data
+            }else if(item.definition) {
+                const structur = JSON.parse(item.definition.structure)
+                pickerField = structur.pickerField
+                item = JSON.parse(item.data)
+            }
         }catch (e) {
             console.log(e)
         }
     }
+
 
     let pickers = []
     if (pickerField) {

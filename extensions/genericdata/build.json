@@ -19,6 +19,7 @@
     {
       "name": "GenericData",
       "entryClonable": true,
+      "addMetaDataInQuery": true,
       "fields": [
         {
           "name": "data",

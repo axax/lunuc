@@ -31,10 +31,14 @@ export default () => {
 
                         const json = JSON.parse(item.data)
                         if (structur.pickerField) {
-                            if (json[structur.pickerField].constructor === String) {
-                                d.data = json[structur.pickerField]
+                            let picker = structur.pickerField
+                            if(structur.pickerField.constructor === Array){
+                                picker = structur.pickerField[0]
+                            }
+                            if (json[picker].constructor === String) {
+                                d.data = json[picker]
                             } else {
-                                d.data = json[structur.pickerField][_app_.lang]
+                                d.data = json[picker][_app_.lang]
                             }
                         } else {
 
@@ -252,6 +256,24 @@ export default () => {
             })
 
             editedData.data = JSON.stringify(data)
+
+
+        }
+    })
+
+
+    Hook.on('TypeTableBeforeEdit', function ({type, data, fieldsToLoad, variables}) {
+        if (type === 'GenericData' && data.definition) {
+
+            const struct = JSON.parse(data.definition.structure)
+            for(let i = 0; i<struct.fields.length;i++){
+                const field = struct.fields[i]
+                if (field.genericType) {
+                    fieldsToLoad.push('data') //load
+                    variables.meta = data.definition.name
+                    return
+                }
+            }
 
 
         }

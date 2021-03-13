@@ -366,21 +366,22 @@ class TypePicker extends React.Component {
             if (pickerField) {
                 queryFields = pickerField
             } else if (fields) {
+
                 queryFields = ''
 
-                fields.forEach(field=>{
-                    if(queryFields!=''){
-                        queryFields+=' '
+                fields.forEach(field => {
+                    if (queryFields != '') {
+                        queryFields += ' '
                     }
-                    if(field.constructor===String){
-                        queryFields+=field
-                    }else{
-                        Object.keys(field).forEach(key=>{
-                            queryFields+=key+'{'
-                            field[key].forEach(name=>{
-                                queryFields+=name+' '
+                    if (field.constructor === String) {
+                        queryFields += field
+                    } else {
+                        Object.keys(field).forEach(key => {
+                            queryFields += key + '{'
+                            field[key].forEach(name => {
+                                queryFields += name + ' '
                             })
-                            queryFields+='}'
+                            queryFields += '}'
                         })
                     }
                 })
@@ -391,17 +392,15 @@ class TypePicker extends React.Component {
                 gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){
                                                ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryFields}}}}`
 
-            try {
-                const storeData = client.readQuery({
-                    query: gqlQuery,
-                    variables
-                })
-                if (storeData && storeData[nameStartLower]) {
-                    // oh data are available in cache. show them first
-                    this.setState({selIdx: 0, data: storeData[nameStartLower]})
-                }
-            } catch (e) {
+            const storeData = client.readQuery({
+                query: gqlQuery,
+                variables
+            })
+            if (storeData && storeData[nameStartLower]) {
+                // oh data are available in cache. show them first
+                this.setState({selIdx: 0, data: storeData[nameStartLower]})
             }
+
             client.query({
                 fetchPolicy: 'network-only',
                 query: gqlQuery,

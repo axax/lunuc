@@ -48,7 +48,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
     if (!typeName || !types[typeName]) return null
 
 
-    const {name, fields, noUserRelation, selectParams, collectionClonable} = types[typeName]
+    const {name, fields, noUserRelation, selectParams, collectionClonable,addMetaDataInQuery} = types[typeName]
 
     const nameStartLower = name.charAt(0).toLowerCase() + name.slice(1)
     const result = {name: nameStartLower}
@@ -128,7 +128,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
             selectParamsString += `,${item.name}:${item.defaultValue}`
         })
     }
-    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable ? ',$_version: String' : ''}){${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable ? ',_version:$_version' : ''}){limit offset total results{${query}}}}`
+    result.query = `query ${nameStartLower}s($sort: String,$limit: Int,$page: Int,$filter: String${collectionClonable ? ',$_version: String' : ''}${addMetaDataInQuery ? ',$meta: String' : ''}){${nameStartLower}s(sort:$sort, limit: $limit, page:$page, filter:$filter${selectParamsString}${collectionClonable ? ',_version:$_version' : ''}${addMetaDataInQuery ? ',meta:$meta' : ''}){limit offset total results{${query}}}}`
 
 
     result.create = `mutation create${name}(${collectionClonable ? '$_version:String,' : ''}${insertParams}){create${name}(${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`

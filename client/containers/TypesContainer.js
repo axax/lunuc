@@ -1534,10 +1534,15 @@ class TypesContainer extends React.Component {
                 fieldsToLoad.push(field.name)
             }
         })
+
+        const variables = {_version, filter: '_id=' + data._id}
+
+        Hook.call('TypeTableBeforeEdit', {type, data, fieldsToLoad, variables})
+
         if (fieldsToLoad.length > 0) {
 
-            const queries = getTypeQueries(type, fieldsToLoad),
-                variables = {_version, filter: '_id=' + data._id}
+            const queries = getTypeQueries(type, fieldsToLoad)
+
             client.query({
                 fetchPolicy: 'network-only',
                 forceFetch: true,
