@@ -1,0 +1,41 @@
+{
+  "types": [
+    {
+      "access":{
+        "create": "anonymous"
+      },
+      "name": "MailTracking",
+      "fields": [
+        {
+          "name": "slug",
+          "index": 1
+        },
+        {
+          "name": "from",
+          "index": 1
+        },
+        {
+          "name": "to",
+          "index": 1
+        },
+        {
+          "name": "subject",
+          "index": 1
+        },
+        {
+          "name": "text",
+          "uitype": "editor"
+        },
+        {
+          "name": "html",
+          "uitype": "html"
+        },
+        {
+          "name": "response",
+          "type": "Object",
+          "uitype": "json"
+        }
+      ]
+    }
+  ]
+}

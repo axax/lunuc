@@ -26,7 +26,8 @@ function removeTrailingSlash(url) {
     }
     return url
 }
-function addCanonicalTag(href){
+
+function addCanonicalTag(href) {
     DomUtil.createAndAddTag('link', 'head', {
         id: 'canonicalTag',
         rel: 'canonical',
@@ -123,12 +124,12 @@ function mainInit() {
     // has trailing slash --> set canonical link of seo
     const cleanPathnameWithoutTrailingSlash = removeTrailingSlash(cleanPathname)
     if (cleanPathnameWithoutTrailingSlash !== cleanPathname) {
-        addCanonicalTag(loc.origin +cleanPathnameWithoutTrailingSlash + loc.search + loc.hash)
+        addCanonicalTag(loc.origin + cleanPathnameWithoutTrailingSlash + loc.search + loc.hash)
     }
 
     if (contextLanguage === config.DEFAULT_LANGUAGE) {
         // set canonical link
-        addCanonicalTag(loc.origin +(basePath === '/' ? '' : basePath))
+        addCanonicalTag(loc.origin + (basePath === '/' ? '' : basePath))
     }
     if (hasMultiLanguages) {
 
@@ -200,7 +201,7 @@ function mainInit() {
     }
 }
 
-if(!window.LUNUC_PREPARSED) {
+if (!window.LUNUC_PREPARSED) {
     const noneBasicEs6 = (() => {
             if (window.fetch) {
                 return false
@@ -212,7 +213,7 @@ if(!window.LUNUC_PREPARSED) {
                 return true
             }
         })(),
-        noneObject = !Object.assign || !Object.values || !window.fetch || !Promise.prototype.finally || !window.AbortController || !window.Event
+        noneObject = !Object.assign || !Object.values || !window.fetch || !window.AbortController || !window.Event || !window.Promise || !Promise.prototype.finally
 
     let maxCounter = 0, counter = 0
     const onload = () => {
@@ -232,7 +233,11 @@ if(!window.LUNUC_PREPARSED) {
 
     if (noneObject) {
         maxCounter++
-        DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CObject.values%2CPromise.prototype.finally%2CAbortController%2CEvent', {
+        let ua
+        if (navigator.userAgent.indexOf('PaleMoon') !== -1) {
+            ua=navigator.userAgent.replace('Firefox/','')
+        }
+        DomUtil.addScript('https://polyfill.io/v3/polyfill.min.js?features=fetch%2CURL%2Ces6%2CObject.values%2CPromise.prototype.finally%2CAbortController%2CEvent'+(ua?'&ua='+ua:''), {
             async: true,
             onload
         })

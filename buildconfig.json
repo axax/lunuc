@@ -48,6 +48,9 @@
     "usertracking": {
       "active": true
     },
+    "mailtracking": {
+      "active": true
+    },
     "crm": {
       "active": false
     },

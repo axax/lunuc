@@ -17,7 +17,7 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
-Hook.on('trackUser', ({req, event, slug, db, context, data, meta}) => {
+Hook.on('trackMail', ({req, event, slug, db, context, data, meta}) => {
     trackUser({req, event, context, db, slug, data, meta})
 })
 

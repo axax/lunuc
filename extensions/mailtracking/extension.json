@@ -1,0 +1,7 @@
+{
+  "name": "Mail tracking",
+  "description": "Collects mails",
+  "author": "Simon Schärer",
+  "dependencies": [
+  ]
+}

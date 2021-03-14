@@ -76,7 +76,9 @@ ${finalHtml}
         dkim: mailSettings.dkim
     })
 
-    const response = await transporter.sendMail(message)
-    return response
+    const mailResponse = await transporter.sendMail(message)
+
+    Hook.call('mailSent', {db, context, slug, mailResponse, req, message})
+    return mailResponse
 }
 
