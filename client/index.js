@@ -47,11 +47,13 @@ function mainInit() {
         config.LANGUAGES = _app_.languages
     }
 
+    const LANGUAGES = config.LANGUAGES, DEFAULT_LANGUAGE = config.DEFAULT_LANGUAGE
+
     // add config to the global app object
     _app_.config = config
 
     let contextLanguage, loc = window.location, basePath,
-        hasMultiLanguages = config.LANGUAGES && config.LANGUAGES.length > 1
+        hasMultiLanguages = LANGUAGES && LANGUAGES.length > 1
 
     // ie fallback
     if (!loc.origin) {
@@ -69,7 +71,7 @@ function mainInit() {
     // we expect the first part of the path to be the language when its length is 2
     contextLanguage = loc.pathname.split('/')[1].toLowerCase()
 
-    if (contextLanguage && config.LANGUAGES.indexOf(contextLanguage) >= 0) {
+    if (contextLanguage && LANGUAGES.indexOf(contextLanguage) >= 0) {
         _app_.contextPath = '/' + contextLanguage
         basePath = removeTrailingSlash(loc.pathname.substring(contextLanguage.length + 1))
     } else {
@@ -82,7 +84,7 @@ function mainInit() {
     // if multi languages
     if (hasMultiLanguages) {
         // if lang is not set already
-        if (!_app_.lang || config.LANGUAGES.indexOf(_app_.lang) < 0) {
+        if (!_app_.lang || LANGUAGES.indexOf(_app_.lang) < 0) {
             let lang
             const sessionLanguage = sessionStorage.getItem('lang')
             if (contextLanguage) {
@@ -91,15 +93,15 @@ function mainInit() {
                 if (!sessionLanguage && _app_.detectLang) {
                     lang = (navigator.language || navigator.userLanguage).substr(0, 2)
                 }
-                if (!lang || config.LANGUAGES.indexOf(lang) < 0) {
-                    lang = config.DEFAULT_LANGUAGE
+                if (!lang || LANGUAGES.indexOf(lang) < 0) {
+                    lang = DEFAULT_LANGUAGE
                 }
             }
             _app_.langBefore = sessionLanguage
             _app_.lang = lang
         }
 
-        if (!contextLanguage && config.DEFAULT_LANGUAGE !== _app_.lang && basePath !== _app_.redirect404 && loc.protocol !== 'file:') {
+        if (!contextLanguage && DEFAULT_LANGUAGE !== _app_.lang && basePath !== _app_.redirect404 && loc.protocol !== 'file:') {
             // add language to url and redirect
             window.location = loc.origin + '/' + _app_.lang + (basePath === '/' ? '' : basePath)
             return
@@ -109,7 +111,7 @@ function mainInit() {
         sessionStorage.setItem('lang', _app_.lang)
 
     } else {
-        _app_.lang = config.DEFAULT_LANGUAGE
+        _app_.lang = DEFAULT_LANGUAGE
     }
 
     render(
@@ -127,7 +129,7 @@ function mainInit() {
         addCanonicalTag(loc.origin + cleanPathnameWithoutTrailingSlash + loc.search + loc.hash)
     }
 
-    if (contextLanguage === config.DEFAULT_LANGUAGE) {
+    if (contextLanguage === DEFAULT_LANGUAGE) {
         // set canonical link
         addCanonicalTag(loc.origin + (basePath === '/' ? '' : basePath))
     }
@@ -139,9 +141,9 @@ function mainInit() {
             hreflang: 'x-default',
             href: loc.origin + (basePath === '/' ? '' : basePath)
         })
-        for (let i = 0; i < config.LANGUAGES.length; i++) {
-            const curLang = config.LANGUAGES[i]
-            const isDefault = curLang === config.DEFAULT_LANGUAGE
+        for (let i = 0; i < LANGUAGES.length; i++) {
+            const curLang = LANGUAGES[i]
+            const isDefault = curLang === DEFAULT_LANGUAGE
             DomUtil.createAndAddTag('link', 'head', {
                 rel: 'alternate',
                 hreflang: curLang,

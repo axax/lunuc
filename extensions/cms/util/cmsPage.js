@@ -79,6 +79,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
         cmsPages = await GenericResolver.entities(db, context, 'CmsPage', ['slug', 'name', 'template', 'script', 'style', 'serverScript', 'dataResolver', 'resources', 'ssr', 'public', 'urlSensitiv', 'parseResolvedData', 'alwaysLoadAssets', 'loadPageOptions', 'ssrStyle','publicEdit', 'compress'], {
             match,
             limit: 1,
+            includeCount: false,
             _version
         })
         // minify template if no user is logged in
