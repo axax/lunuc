@@ -451,14 +451,18 @@ function gensrcExtension(name, options) {
             return await GenericResolver.entities(db, context, '${type.name}', [${resolverFields}], {limit, offset, page, filter, sort${(type.collectionClonable ? ', _version' : '')}${(type.addMetaDataInQuery ? ', meta' : '')}})
         },\n`
 
-                resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, req) => {
+                resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, req, options) => {
             const result = await GenericResolver.createEntity(db, req, '${type.name}', {...rest,${refResolversObjectId}})
-            ${type.subscription===false?'//':''}pubsubHooked.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:[result]}}, db, req.context)
+            if(options && options.publish!==false){
+              ${type.subscription===false?'//':''}pubsubHooked.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:[result]}}, db, req.context)
+            }
             return result
         },
-        update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation?'':'createdBy,'}...rest}, {context}) => {
+        update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation?'':'createdBy,'}...rest}, {context}, options) => {
             const result =  await GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${type.noUserRelation?'':'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}})
-            ${type.subscription===false?'//':''}pubsubHooked.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: [result]}}, db, context)
+            if(options && options.publish!==false){
+                ${type.subscription===false?'//':''}pubsubHooked.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: [result]}}, db, context)
+            }
             return result
         },
         delete${type.name}: async ({_id}, {context}) => {

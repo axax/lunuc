@@ -24,8 +24,11 @@
           "index": 1,
           "tab": "Allgemein",
           "compoundIndex": [{
-            "group": 1,
-            "mimeType": 1
+            "unique": false,
+            "fields": {
+              "group": 1,
+              "mimeType": 1
+            }
           }]
         },
         {

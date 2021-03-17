@@ -269,21 +269,23 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     if (context.id) {
                         const user = await Util.userById(db, context.id)
 
-                        if (segment.user.meta) {
-                            if (segment.user.meta.constructor === Array) {
-                                resolvedData.user.meta = {}
-                                if (user.meta) {
-                                    segment.user.meta.forEach(m => {
-                                        resolvedData.user.meta[m] = user.meta[m]
-                                    })
+                        if(user) {
+                            if (segment.user.meta) {
+                                if (segment.user.meta.constructor === Array) {
+                                    resolvedData.user.meta = {}
+                                    if (user.meta) {
+                                        segment.user.meta.forEach(m => {
+                                            resolvedData.user.meta[m] = user.meta[m]
+                                        })
+                                    }
+                                } else {
+                                    resolvedData.user.meta = user.meta
                                 }
-                            } else {
-                                resolvedData.user.meta = user.meta
                             }
-                        }
 
-                        if (segment.user.roles) {
-                            resolvedData.user.roles = await Util.getUserRoles(db, user.role)
+                            if (segment.user.roles) {
+                                resolvedData.user.roles = await Util.getUserRoles(db, user.role)
+                            }
                         }
                     }
                 } else if (segment.keyValues) {

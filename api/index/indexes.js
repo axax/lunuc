@@ -17,6 +17,13 @@ export const createAllIndexes = async (db) => {
     db.collection('User').createIndex({email: 1}, {unique: true})
     db.collection('User').createIndex({username: 1}, {unique: true})
 
+   // await db.collection('Media').dropIndex( 'group_1_mimeType_1')
+  /*  console.log(await db.collection('Media').indexes())
+
+    await db.collection('GenericData').dropIndex( 'definition_1__id_1')
+    console.log(await db.collection('GenericData').indexes())*/
+    //await db.collection('GenericData').dropIndex( 'data.id_1')
+
     const types = getTypes()
 
     for (const typeName of Object.keys(types)) {
@@ -41,11 +48,10 @@ export const createAllIndexes = async (db) => {
                         if( field.compoundIndex){
                             field.compoundIndex.forEach(idx=>{
                                 console.log(`Creating compound index for ${JSON.stringify(idx)}`)
-                                db.collection(typeName).createIndex(idx, {
+                                db.collection(typeName).createIndex(idx.fields, {
                                     background: true
                                 })
                             })
-
                         }
 
                         if( field.index.constructor === Object){

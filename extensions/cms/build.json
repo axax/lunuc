@@ -22,8 +22,10 @@
           "index": 1,
           "unique": true,
           "compoundIndex": [{
-            "slug": 1,
-            "public": 1
+            "fields": {
+              "slug": 1,
+              "public": 1
+            }
           }]
         },
         {

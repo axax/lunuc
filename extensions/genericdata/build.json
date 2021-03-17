@@ -24,13 +24,31 @@
         {
           "name": "data",
           "uitype": "json",
-          "type": "Object"
+          "type": "Object",
+          "compoundIndex": [
+          {
+            "unique": false,
+            "fields":
+            {
+              "definition": 1,
+              "data.id": 1
+            }
+          }
+        ]
         },
         {
           "name": "definition",
           "type": "GenericDataDefinition",
           "required": true,
-          "index": 1
+          "index": 1,
+          "compoundIndex": [
+            {
+              "fields": {
+                "definition": 1,
+                "_id": 1
+              }
+            }
+          ]
         }
       ]
     }

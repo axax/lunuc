@@ -113,6 +113,9 @@ https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 `sudo ufw allow from 194.230.16.16 to any port 27017`
 sudo ufw status numbered
 sudo ufw delete 8
+
+#### When mongodb doesn't start
+`rm /tmp/mongodb-27017.sock`
  
 ## Implementation
 

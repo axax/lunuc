@@ -131,11 +131,12 @@ const GenericResolver = {
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)
 
+        const userCanManageTypes = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
         // Default match
         if (!match) {
             // if not specific match is defined, only select items that belong to the current user
-            if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_TYPES)) {
+            if (userCanManageTypes) {
                 match = {}
             } else {
                 if (typeName === 'User') {
@@ -205,7 +206,9 @@ const GenericResolver = {
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
             match,
             includeCount: (includeCount !== false && !estimateCount),
-            lang: context.lang, ...otherOptions
+            lang: context.lang,
+            ...otherOptions,
+            includeUserFilter: userCanManageTypes
         })
         const {dataQuery, countQuery} = aggregationBuilder.query()
         /* if (typeName.indexOf("GenericData") >= 0) {

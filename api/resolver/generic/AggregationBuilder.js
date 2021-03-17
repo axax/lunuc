@@ -464,7 +464,7 @@ export default class AggregationBuilder {
 
     query() {
         const typeDefinition = getType(this.type) || {}
-        const {projectResult, lang, includeCount} = this.options
+        const {projectResult, lang, includeCount, includeUserFilter} = this.options
 
         // limit and offset
         const limit = this.getLimit(),
@@ -485,6 +485,8 @@ export default class AggregationBuilder {
 
         // if there is filter like _id=12323213
         if (filters) {
+
+
             if (filters.parts._id) {
                 // if there is a filter on _id
                 // handle it here
@@ -505,15 +507,33 @@ export default class AggregationBuilder {
                 })
 
             }
-            if (filters.parts['createdBy.username']) {
-                const typeFields = getFormFields('User')
-                hasMatchInReference = true
-                this.addFilterToMatch({
-                    filterKey: 'createdBy.username',
-                    filterValue: filters.parts['createdBy.username'].value,
-                    filterOptions: filters.parts['createdBy.username'],
-                    match
-                })
+
+
+
+            // filter for inbuilt fields
+
+            if(includeUserFilter) {
+
+                if (filters.parts.createdBy) {
+                    this.addFilterToMatch({
+                        filterKey: 'createdBy',
+                        filterValue: filters.parts['createdBy'].value,
+                        filterOptions: filters.parts['createdBy'],
+                        type: 'ID',
+                        match
+                    })
+                }
+
+                if (filters.parts['createdBy.username']) {
+                    const typeFields = getFormFields('User')
+                    hasMatchInReference = true
+                    this.addFilterToMatch({
+                        filterKey: 'createdBy.username',
+                        filterValue: filters.parts['createdBy.username'].value,
+                        filterOptions: filters.parts['createdBy.username'],
+                        match
+                    })
+                }
             }
         }
 
@@ -678,10 +698,21 @@ export default class AggregationBuilder {
                     delete rootMatch.$or
                 }
 
+                const finalMatch = {...rootMatch, ...match}
+
+                // remove single or
+                if(finalMatch.$or && finalMatch.$or.length===1){
+                    Object.keys(finalMatch.$or[0]).forEach(key=>{
+                        finalMatch[key] = finalMatch.$or[0][key]
+                    })
+                    delete finalMatch.$or
+                }
+
                 dataQuery.push({
-                    $match: {...rootMatch, ...match}
+                    $match: finalMatch
                 })
             } else {
+
                 dataQuery.push({
                     $match: rootMatch
                 })
