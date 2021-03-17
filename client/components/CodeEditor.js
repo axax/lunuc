@@ -228,8 +228,15 @@ class CodeEditor extends React.Component {
         let newData = value
         const lines = value.split('\n')
         lines[lineNr] = line
-        const newJson = JSON.parse(lines.join('\n'))
-        newData = JSON.stringify(newJson, null, 2)
+
+        try {
+            const newJson = JSON.parse(lines.join('\n'))
+            newData = JSON.stringify(newJson, null, 2)
+        } catch (e) {
+            console.log(e, lines.join('\n'))
+            return false
+        }
+
         if (onChange) {
             if (this.state.isDataJson) {
                 // if input was Object output is an Object to
@@ -239,6 +246,8 @@ class CodeEditor extends React.Component {
             }
         }
         this.setState({data: newData})
+
+        return true
 
     }
 
@@ -436,11 +445,18 @@ class CodeEditor extends React.Component {
                         items: this.props.templates.map(f => ({
                             name: f.title,
                             onClick: () => {
-                                this.changeLine({
+                                if( !this.changeLine({
                                     value,
                                     lineNr: this._curLineNr,
                                     line: `${this._curLine}${commaAtStart ? ',' : ''}${f.template}${commaAtEnd ? ',' : ''}`
-                                })
+                                })){
+
+                                    this.changeLine({
+                                        value,
+                                        lineNr: this._curLineNr,
+                                        line: `${this._curLine}${commaAtStart ? ',' : ''}"c":${f.template}${commaAtEnd ? ',' : ''}`
+                                    })
+                                }
                             }
                         }))
                     }

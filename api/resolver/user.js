@@ -61,7 +61,9 @@ const createUser = async ({username, role, junior, password, language, email, em
     }
 
     if (meta !== undefined) {
-        meta = JSON.parse(meta)
+        if(meta.constructor !== Object) {
+            meta = JSON.parse(meta)
+        }
     }
 
 
@@ -380,6 +382,8 @@ export const userResolver = (db) => ({
 
             const options = {override: false}
 
+            meta = meta && meta.constructor!==Object ? JSON.parse(meta) : {}
+
             if (Hook.hooks['beforeSignUp'] && Hook.hooks['beforeSignUp'].length) {
                 let c = Hook.hooks['beforeSignUp'].length
                 for (let i = 0; i < Hook.hooks['beforeSignUp'].length; ++i) {
@@ -409,7 +413,7 @@ export const userResolver = (db) => ({
                         slug: mailTemplate,
                         recipient: email,
                         subject: mailSubject,
-                        body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${signupToken}","name":"${username || email}","meta":${meta}}`,
+                        body: `{"url":"${mailUrl}${mailUrl && mailUrl.indexOf('?') >= 0 ? '&' : '?'}token=${signupToken}","name":"${username || email}","meta":${JSON.stringify(meta)}}`,
                         req
                     })
                 }
