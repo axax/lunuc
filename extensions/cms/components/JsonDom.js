@@ -1239,13 +1239,26 @@ class JsonDom extends React.Component {
     }
 
     runJsEvent(name, async, ...args) {
+
+        let finalArgs
+        if(args.length){
+            finalArgs = args[0]
+        }else{
+            finalArgs = {}
+        }
         let t = this.jsOnStack[name]
-        if (t && t.length && !this.error) {
+        if(!t && finalArgs._forceUpdate){
+            // create dummy event
+            t = [()=>{}]
+        }
+
+
+        if ( t && t.length && !this.error) {
             for (let i = 0; i < t.length; i++) {
                 const cb = t[i]
                 if (cb) {
                     const callCb = () => {
-                        if (args.length && args[0]._forceUpdate) {
+                        if (finalArgs._forceUpdate) {
                             // call with little delay because onClick is triggered before onChange
                             setTimeout(() => {
                                 this.refresh()
@@ -1274,7 +1287,7 @@ class JsonDom extends React.Component {
         }
 
         // pass event to parent
-        if (this.props._parentRef && args.length && args[0]._passEvent) {
+        if (this.props._parentRef && finalArgs._passEvent) {
             this.props._parentRef.runJsEvent(name, async, ...args)
         }
     }
