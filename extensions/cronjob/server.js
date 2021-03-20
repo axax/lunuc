@@ -53,7 +53,8 @@ const registerCronJobs = async (db) => {
 
 const unregisterCronJobs = (db) => {
     registeredCronJobs.forEach(job => {
-        job.destroy()
+        console.log(`stop job`)
+        job.stop()
     })
 
     registeredCronJobs = []

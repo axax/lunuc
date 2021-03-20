@@ -857,8 +857,8 @@ const baseElements = [
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
             ...trOptions('$inlineEditor_groupOptions_$set\\_0\\_value_text_'),
             ...classOptions('p_'),
-            ...imageOptions('c_1_c_$for_c_c_1_$for_c_c_p_'),
-            ...lazyImageOptions('c_1_c_$for_c_c_1_$for_c_c_$observe_')
+            ...imageOptions('c_1_c_$for_c_c_1_$for_c_c_1_p_'),
+            ...lazyImageOptions('c_1_c_$for_c_c_1_$for_c_c_1_$observe_')
         }
     },
     {

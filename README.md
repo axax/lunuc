@@ -110,6 +110,10 @@ http://localhost:49160/
 https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 
 #### Mongodb external access
+`# network interfaces
+ net:
+   port: 27017
+   bindIp: 127.0.0.1,mongodb_server_ip`
 `sudo ufw allow from 194.230.16.16 to any port 27017`
 sudo ufw status numbered
 sudo ufw delete 8
