@@ -1462,10 +1462,13 @@ const m = Math.max((offX+offY) / 2,100)
                                                 tab: 'Slides',
                                                 tabPosition: 0,
                                                 action: 'add',
-                                                style: {marginBottom: '2rem'}
+                                                style: {marginBottom: '2rem'},
+                                                ...item.groupOptions[key]._addButton
                                             }
                                             Object.keys(item.groupOptions[key]).forEach(fieldKey => {
-                                                item.options['!' + key + '!' + fieldKey + '!0'] = item.groupOptions[key][fieldKey]
+                                                if(fieldKey !== '_addButton') {
+                                                    item.options['!' + key + '!' + fieldKey + '!0'] = item.groupOptions[key][fieldKey]
+                                                }
                                             })
                                         })
                                     }
@@ -1529,9 +1532,11 @@ const m = Math.max((offX+offY) / 2,100)
                                                      }
                                                  })
                                                  Object.keys(field.group).forEach(groupKey => {
-                                                     const newItem = Object.assign({}, item.groupOptions[field.key][groupKey])
-                                                     delete newItem.value
-                                                     item.options[curKey + groupKey + '!' + (curIdx + 1)] = newItem
+                                                     if(groupKey !== '_addButton') {
+                                                         const newItem = Object.assign({}, item.groupOptions[field.key][groupKey])
+                                                         delete newItem.value
+                                                         item.options[curKey + groupKey + '!' + (curIdx + 1)] = newItem
+                                                     }
                                                  })
                                              } else if (field.action === 'delete') {
                                                  Object.keys(field.group).forEach(groupKey => {
@@ -1591,46 +1596,48 @@ const m = Math.max((offX+offY) / 2,100)
                     newLine: true,
                     tab: 'Slides',
                     tabPosition:0,
-                    style: {marginBottom: '2rem'}
+                    style: {marginBottom: '2rem'},
+                    ...newJsonElement.groupOptions[key]._addButton
                 }
 
                 val.forEach((groupValue, idx) => {
                     Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
-                        const groupFieldOption = newJsonElement.groupOptions[key][fieldKey]
-                        let groupFieldValue
-                        if (groupFieldOption.tr && groupFieldOption.trKey) {
-                            if (this.props._scope.data.tr) {
-                                groupFieldValue = this.props._scope.data.tr[groupFieldOption.trKey + '-' + idx]
+                        if(fieldKey !== '_addButton') {
+                            const groupFieldOption = newJsonElement.groupOptions[key][fieldKey]
+                            let groupFieldValue
+                            if (groupFieldOption.tr && groupFieldOption.trKey) {
+                                if (this.props._scope.data.tr) {
+                                    groupFieldValue = this.props._scope.data.tr[groupFieldOption.trKey + '-' + idx]
+                                }
+                            } else {
+                                groupFieldValue = groupValue[fieldKey]
                             }
-                        } else {
-                            groupFieldValue = groupValue[fieldKey]
-                        }
-                        const optKey = '!' + key + '!' + fieldKey + '!' + idx,
-                            optData = {
-                                ...newJsonElement.groupOptions[key][fieldKey],
-                                value: groupFieldValue
+                            const optKey = '!' + key + '!' + fieldKey + '!' + idx,
+                                optData = {
+                                    ...newJsonElement.groupOptions[key][fieldKey],
+                                    value: groupFieldValue
+                                }
+
+                            if (optData.expandable && optData.expandable.constructor === String) {
+                                optData.expandable += ' ' + (idx + 1)
                             }
 
-                        if (optData.expandable && optData.expandable.constructor === String) {
-                            optData.expandable += ' ' + (idx + 1)
-                        }
+                            newJsonElement.options[optKey] = optData
 
-                        newJsonElement.options[optKey] = optData
-
-                        if (optData.expandable === false) {
-                            delete optData.expandable
-                            newJsonElement.options['!' + key + '!delete!' + idx] = {
-                                uitype: 'button',
-                                label: 'Löschen',
-                                action: 'delete',
-                                key,
-                                group: newJsonElement.groupOptions[key],
-                                index: idx,
-                                newLine: true,
-                                expandable: false
+                            if (optData.expandable === false) {
+                                delete optData.expandable
+                                newJsonElement.options['!' + key + '!delete!' + idx] = {
+                                    uitype: 'button',
+                                    label: 'Löschen',
+                                    action: 'delete',
+                                    key,
+                                    group: newJsonElement.groupOptions[key],
+                                    index: idx,
+                                    newLine: true,
+                                    expandable: false
+                                }
                             }
                         }
-
                     })
                 })
             }

@@ -751,14 +751,19 @@ class JsonDom extends React.Component {
                 }
 
                 //set
-                if ($set && $set.forEach) {
-                    $set.forEach(keyvalue => {
-                        if (keyvalue.chunk) {
-                            scope[keyvalue.key] = Util.chunkArray(keyvalue.value, keyvalue.chunk, keyvalue.chunkOptions)
-                        } else {
-                            scope[keyvalue.key] = keyvalue.value
+                if ($set) {
+                    if($set.constructor === Array) {
+                        for(let i = 0;i<$set.length;i++){
+                            const keyvalue = $set[i]
+                            if (keyvalue.chunk) {
+                                scope[keyvalue.key] = Util.chunkArray(keyvalue.value, keyvalue.chunk, keyvalue.chunkOptions)
+                            } else {
+                                scope[keyvalue.key] = keyvalue.value
+                            }
                         }
-                    })
+                    }else{
+                        scope.$set = $set
+                    }
                 }
 
                 // extend type

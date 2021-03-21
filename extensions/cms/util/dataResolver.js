@@ -69,7 +69,6 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     ObjectId
                 }).replace(/"###/g, '').replace(/###"/g, '')
 
-
                 const segment = JSON.parse(replacedSegmentStr)
                 if (tempBrowser) {
                     segment.website.pipeline = tempBrowser
@@ -281,6 +280,10 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                 } else {
                                     resolvedData.user.meta = user.meta
                                 }
+                            }
+
+                            if(segment.user.email){
+                                resolvedData.user.email = user.email
                             }
 
                             if (segment.user.roles) {

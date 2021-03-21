@@ -77,11 +77,23 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
 
     const _id = data._id ? ObjectId(data._id): ObjectId()
 
+    // obsolete
     if( !response.fileIds){
         response.fileIds = []
     }
-
     response.fileIds.push(_id)
+
+
+    if(!response.files){
+        response.files = []
+    }
+    response.files.push({
+        _id,
+        name: file.name,
+        size: file.size,
+        mimeType: file.type
+    })
+
 
     let uploadResult
     if( data.useCdn ) {

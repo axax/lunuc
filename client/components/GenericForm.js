@@ -643,7 +643,9 @@ class GenericForm extends React.Component {
         } else if (uitype === 'button') {
 
             currentFormFields.push(<Button key={fieldKey}
-                                           color="primary" variant="contained"
+                                           color="primary"
+                                           variant="contained"
+                                           style={field.style}
                                            onClick={() => {
                                                if (this.props.onButtonClick)
                                                    this.props.onButtonClick(field)

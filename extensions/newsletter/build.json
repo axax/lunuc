@@ -7,8 +7,21 @@
         {
           "name": "email",
           "required": true,
+          "index": 1
+        },
+        {
+          "name": "location",
+          "required": true,
           "index": 1,
-          "unique": true
+          "compoundIndex": [
+            {
+              "unique": true,
+              "fields": {
+                "email": 1,
+                "location": 1
+              }
+            }
+          ]
         },
         {
           "name": "confirmed",
@@ -41,7 +54,9 @@
           "multi": true,
           "index": 1,
           "type": "NewsletterList",
-          "fields": ["name"]
+          "fields": [
+            "name"
+          ]
         },
         {
           "name": "meta",
@@ -52,7 +67,9 @@
         {
           "name": "account",
           "type": "User",
-          "fields": ["username"],
+          "fields": [
+            "username"
+          ],
           "index": 1
         }
       ]
@@ -71,7 +88,13 @@
           "dynamic": {
             "type": "NewsletterSubscriber",
             "action": "count",
-            "query": {"list": {"$in": ["_id"]}}
+            "query": {
+              "list": {
+                "$in": [
+                  "_id"
+                ]
+              }
+            }
           }
         }
       ]
@@ -94,7 +117,9 @@
           "name": "list",
           "multi": true,
           "type": "NewsletterList",
-          "fields": ["name"],
+          "fields": [
+            "name"
+          ],
           "tab": "General"
         },
         {
@@ -124,13 +149,17 @@
           "name": "subscriber",
           "type": "NewsletterSubscriber",
           "index": 1,
-          "fields": ["email"]
+          "fields": [
+            "email"
+          ]
         },
         {
           "name": "mailing",
           "type": "NewsletterMailing",
           "index": 1,
-          "fields": ["subject"]
+          "fields": [
+            "subject"
+          ]
         },
         {
           "name": "mailResponse",
@@ -151,13 +180,17 @@
         {
           "name": "subscriber",
           "type": "NewsletterSubscriber",
-          "fields": ["email"],
+          "fields": [
+            "email"
+          ],
           "index": 1
         },
         {
           "name": "mailing",
           "type": "NewsletterMailing",
-          "fields": ["subject"],
+          "fields": [
+            "subject"
+          ],
           "index": 1
         },
         {

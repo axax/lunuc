@@ -597,7 +597,7 @@ const baseElements = [
             },
             ['data-is-invisible']: {
                 fullWidth: true,
-                type:'Boolean',
+                type: 'Boolean',
                 value: false,
                 placeholder: 'Ausblenden',
                 label: 'Ausblenden',
@@ -859,6 +859,82 @@ const baseElements = [
             ...classOptions('p_'),
             ...imageOptions('c_1_c_$for_c_c_1_$for_c_c_1_p_'),
             ...lazyImageOptions('c_1_c_$for_c_c_1_$for_c_c_1_$observe_')
+        }
+    },
+    {
+        tagName: 'section',
+        name: 'Timeline',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'timeline',
+                allowDrop: false
+            },
+            p: {
+                ['data-element-key']: 'timeline'
+            },
+            $set: {
+                value: []
+            },
+            c: [
+                {
+                    $inlineEditor: false,
+                    t: 'ul',
+                    c: {
+                        $for: {
+                            $d: '$set.value',
+                            s: 'item',
+                            c: {
+                                $inlineEditor: false,
+                                t: 'li',
+                                c: {
+                                    $inlineEditor: false,
+                                    $observe: {
+                                        waitVisible: true,
+                                        initialClass: 'animation',
+                                        visibleClass: 'fade-in-$.item{item._index%2 == 0?\'right\':\'left\'}'
+                                    },
+                                    c: [
+                                        {
+                                            $inlineEditor: false,
+                                            t: 'time',
+                                            c: '$.item{Util.escapeForJson(item.title)}'
+                                        },
+                                        {
+                                            $inlineEditor: false,
+                                            $c: '$.item{Util.escapeForJson(item.text)}'
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        groupOptions: {
+            $set_value: {
+                _addButton: {
+                    tab: 'Einträge',
+                    label: 'Element hinzufügen'
+                },
+                title: {
+                    expandable: "Element",
+                    tab: 'Einträge',
+                    label: 'Title',
+                    fullWidth: true
+                },
+                text: {
+                    tab: 'Einträge',
+                    expandable: false,
+                    label: 'Text',
+                    uitype: 'html',
+                }
+            }
+        },
+        options: {
+            ...trOptions('$set_'),
+            ...marginOptions('p_'),
+            ...classOptions('p_')
         }
     },
     {

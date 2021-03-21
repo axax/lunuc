@@ -69,7 +69,7 @@ export default db => ({
                 status: 'Newsletter sent to: ' + emails.join(',')
             }
         },
-        subscribeNewsletter: async ({email, meta, list}, {context}) => {
+        subscribeNewsletter: async ({email, location, meta, list}, {context}) => {
 
             const collection = db.collection('NewsletterSubscriber')
 
@@ -80,6 +80,7 @@ export default db => ({
             const data = {
                 $set: {
                     email,
+                    location,
                     state: 'subscribed',
                     meta: meta ? JSON.parse(meta) : undefined
                 }
