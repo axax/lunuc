@@ -14,7 +14,6 @@ import {withFilter} from 'graphql-subscriptions'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail'
 import {getType} from 'util/types'
-import {rmDir} from '../util/dir'
 import {listBackups, createBackup, removeBackup, mongoExport} from './backups'
 
 const {UPLOAD_DIR} = config

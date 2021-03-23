@@ -862,82 +862,6 @@ const baseElements = [
         }
     },
     {
-        tagName: 'section',
-        name: 'Timeline',
-        defaults: {
-            $inlineEditor: {
-                elementKey: 'timeline',
-                allowDrop: false
-            },
-            p: {
-                ['data-element-key']: 'timeline'
-            },
-            $set: {
-                value: []
-            },
-            c: [
-                {
-                    $inlineEditor: false,
-                    t: 'ul',
-                    c: {
-                        $for: {
-                            $d: '$set.value',
-                            s: 'item',
-                            c: {
-                                $inlineEditor: false,
-                                t: 'li',
-                                c: {
-                                    $inlineEditor: false,
-                                    $observe: {
-                                        waitVisible: true,
-                                        initialClass: 'animation',
-                                        visibleClass: 'fade-in-$.item{item._index%2 == 0?\'right\':\'left\'}'
-                                    },
-                                    c: [
-                                        {
-                                            $inlineEditor: false,
-                                            t: 'time',
-                                            c: '$.item{Util.escapeForJson(item.title)}'
-                                        },
-                                        {
-                                            $inlineEditor: false,
-                                            $c: '$.item{Util.escapeForJson(item.text)}'
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                }
-            ]
-        },
-        groupOptions: {
-            $set_value: {
-                _addButton: {
-                    tab: 'Einträge',
-                    label: 'Element hinzufügen'
-                },
-                title: {
-                    expandable: "Element",
-                    tab: 'Einträge',
-                    label: 'Title',
-                    fullWidth: true
-                },
-                text: {
-                    tab: 'Einträge',
-                    expandable: false,
-                    label: 'Text',
-                    uitype: 'html',
-                }
-            }
-        },
-        options: {
-            ...trOptions('$set_'),
-            ...marginOptions('p_'),
-            ...classOptions('p_')
-        }
-    },
-    {
         tagName: 'p',
         name: 'Text block',
         defaults: {
@@ -1383,8 +1307,140 @@ const baseElements = [
     }
 ]
 const advancedElements = [
+
     {
+
         subHeader: 'Advanced components',
+        tagName: 'section',
+        name: 'Timeline',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'timeline',
+                allowDrop: false
+            },
+            p: {
+                ['data-element-key']: 'timeline'
+            },
+            $set: {
+                value: []
+            },
+            c: [
+                {
+                    $inlineEditor: false,
+                    t: 'ul',
+                    c: {
+                        $for: {
+                            $d: '$set.value',
+                            s: 'item',
+                            c: {
+                                $inlineEditor: false,
+                                t: 'li',
+                                c: {
+                                    $inlineEditor: false,
+                                    $observe: {
+                                        waitVisible: true,
+                                        initialClass: 'animation',
+                                        visibleClass: 'fade-in-$.item{item._index%2 == 0?\'right\':\'left\'}'
+                                    },
+                                    c: [
+                                        {
+                                            $inlineEditor: false,
+                                            t: 'time',
+                                            c: '$.item{Util.escapeForJson(item.title)}'
+                                        },
+                                        {
+                                            $inlineEditor: false,
+                                            $c: '$.item{Util.escapeForJson(item.text)}'
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        groupOptions: {
+            $set_value: {
+                _addButton: {
+                    tab: 'Einträge',
+                    label: 'Element hinzufügen'
+                },
+                title: {
+                    expandable: "Element",
+                    tab: 'Einträge',
+                    label: 'Title',
+                    fullWidth: true
+                },
+                text: {
+                    tab: 'Einträge',
+                    expandable: false,
+                    label: 'Text',
+                    uitype: 'html',
+                }
+            }
+        },
+        options: {
+            ...trOptions('$set_'),
+            ...marginOptions('p_'),
+            ...classOptions('p_')
+        }
+    },
+    {
+
+        tagName: 'section',
+        name: 'Accordion',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'accordion',
+                allowDrop: false
+            },
+            p: {
+                ['data-element-key']: 'accordion'
+            },
+            $set: {
+                value: []
+            },
+            c: {
+                t: 'Cms',
+                $inlineEditor: false,
+                p: {
+                    slug: 'core/accordion',
+                    props: {
+                        title: '',
+                        items: [
+                        ]
+                    }
+                }
+            }
+        },
+        groupOptions: {
+            c_p_props_items: {
+                _addButton: {
+                    tab: 'Einträge',
+                    label: 'Element hinzufügen'
+                },
+                title: {
+                    expandable: 'Element',
+                    tab: 'Einträge',
+                    label: 'Überschrift',
+                    fullWidth: true
+                },
+                html: {
+                    tab: 'Einträge',
+                    expandable: false,
+                    label: 'Text',
+                    uitype: 'html',
+                }
+            }
+        },
+        options: {
+            /*...trOptions('$set_'),*/
+            ...marginOptions('p_'),
+            ...classOptions('p_')
+        }
+    },
+    {
         tagName: 'div',
         name: 'Data Container',
         defaults: {

@@ -19,21 +19,6 @@ const PASSWORD_MIN_LENGTH = 8
  */
 
 const Util = {
-    findProperties: (json, key, accumulator = [], parent, index) => {
-        if (json && (json.constructor === Object || json.constructor === Array)) {
-            const keys = json.constructor === Object ? Object.keys(json) : json
-            for (let i = 0; i < keys.length; i++) {
-                if (keys[i].constructor === Object) {
-                    Util.findProperties(keys[i], key, accumulator, json, i)
-                } else if (key === keys[i]) {
-                    accumulator.push({element: json, parent, index})
-                } else {
-                    Util.findProperties(json[keys[i]], key, accumulator, json)
-                }
-            }
-        }
-        return accumulator
-    },
     userOrAnonymousId: async (db, context) => {
         if (!context || !context.id) {
             const anonymousContext = await Util.anonymousUserContext(db)

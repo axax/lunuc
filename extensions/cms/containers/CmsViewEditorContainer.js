@@ -50,6 +50,7 @@ import {setKeyValueGlobal} from 'client/util/keyvalue'
 import {withStyles} from '@material-ui/core/styles'
 
 import {translations} from '../translations/admin'
+
 registerTrs(translations, 'CmsViewEditorContainer')
 
 const DEFAULT_EDITOR_SETTINGS = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
@@ -242,7 +243,7 @@ class CmsViewEditorContainer extends React.Component {
     render() {
         const {WrappedComponent, cmsPage, cmsEditData, cmsTemplateEditData, ...props} = this.props
 
-        const {template, resources, script, style, EditorOptions, EditorPageOptions,PageOptionsDefinition,PageOptions, dataResolver, serverScript, simpleDialog, showPageSettings} = this.state
+        const {template, resources, script, style, EditorOptions, EditorPageOptions, PageOptionsDefinition, PageOptions, dataResolver, serverScript, simpleDialog, showPageSettings} = this.state
 
         if (!cmsPage) {
             // show a loader here
@@ -368,8 +369,6 @@ class CmsViewEditorContainer extends React.Component {
             }
             return null
         }
-
-
         const inner = [
             !loadingState && <WrappedComponent key="cmsView"
                                                cmsEditData={cmsEditData}
@@ -399,14 +398,15 @@ class CmsViewEditorContainer extends React.Component {
                                           title={simpleDialog.title}>
                 {simpleDialog.text}
             </SimpleDialog>,
-            cmsTemplateEditData && cmsTemplateEditData.key && <SimpleDialog fullWidth={true} maxWidth="lg" key="templateEditor" open={true}
-                                                  onClose={this.handleComponentEditClose.bind(this)}
-                                                  actions={[{
-                                                      key: 'ok',
-                                                      label: 'Ok',
-                                                      type: 'primary'
-                                                  }]}
-                                                  title="Edit Component">
+            cmsTemplateEditData && cmsTemplateEditData.key &&
+            <SimpleDialog fullWidth={true} maxWidth="lg" key="templateEditor" open={true}
+                          onClose={this.handleComponentEditClose.bind(this)}
+                          actions={[{
+                              key: 'ok',
+                              label: 'Ok',
+                              type: 'primary'
+                          }]}
+                          title="Edit Component">
                 <TemplateEditor
                     fabButtonStyle={{bottom: '3rem', right: '1rem'}}
                     component={cmsTemplateEditData}
@@ -427,10 +427,10 @@ class CmsViewEditorContainer extends React.Component {
         } else {
             const {slug, _version} = getSlugVersion(props.slug)
             const sideMenu = [{
-                label:_t('CmsViewEditorContainer.preview'),
+                label: _t('CmsViewEditorContainer.preview'),
                 link: location.pathname + '?preview=true'
             }]
-            if(EditorOptions.sideMenu){
+            if (EditorOptions.sideMenu) {
                 sideMenu.push(...EditorOptions.sideMenu)
             }
 
@@ -465,8 +465,8 @@ class CmsViewEditorContainer extends React.Component {
                                                         onChange={this.handleSettingChange.bind(this, 'serverScriptExpanded', true)}
                                                         expanded={EditorPageOptions.serverScriptExpanded}>
                         <ScriptEditor
-                            key={'script'+slug}
-                            identifier={'serverScript'+cmsPage._id}
+                            key={'script' + slug}
+                            identifier={'serverScript' + cmsPage._id}
                             onScroll={this.handleSettingChange.bind(this, 'serverScriptScroll', true)}
                             scrollPosition={EditorPageOptions.serverScriptScroll}
                             onBlur={() => {
@@ -495,7 +495,7 @@ class CmsViewEditorContainer extends React.Component {
                                                         onChange={this.handleSettingChange.bind(this, 'scriptExpanded', true)}
                                                         expanded={EditorPageOptions.scriptExpanded}>
                         <ScriptEditor
-                            identifier={'script'+cmsPage._id}
+                            identifier={'script' + cmsPage._id}
                             onScroll={this.handleSettingChange.bind(this, 'scriptScroll', true)}
                             scrollPosition={EditorPageOptions.scriptScroll}
                             onChange={this.handleClientScriptChange.bind(this)}>{script}</ScriptEditor>
@@ -596,7 +596,7 @@ class CmsViewEditorContainer extends React.Component {
                                 onChange={this.handleSettingChange.bind(this, 'revisionsExpanded', true)}
                                 expanded={EditorPageOptions.revisionsExpanded}>
                         <MenuList>
-                            { !loadingState && <Query
+                            {!loadingState && <Query
                                 query={'query historys($filter:String,$limit:Int){historys(filter:$filter,limit:$limit){results{_id action, meta}}}'}
                                 fetchPolicy="cache-and-network"
                                 variables={{
@@ -619,17 +619,17 @@ class CmsViewEditorContainer extends React.Component {
 
                                                 let secondary
 
-                                                if(meta.keys.indexOf('template') >=0){
+                                                if (meta.keys.indexOf('template') >= 0) {
                                                     secondary = 'Tempalte wurde geändert'
-                                                }else if(meta.keys.indexOf('style') >=0){
+                                                } else if (meta.keys.indexOf('style') >= 0) {
                                                     secondary = 'Style hat geändert'
-                                                }else if(meta.keys.indexOf('dataResolver') >=0){
+                                                } else if (meta.keys.indexOf('dataResolver') >= 0) {
                                                     secondary = 'Data resolver hat geändert'
-                                                }else if(meta.keys.indexOf('serverScript') >=0){
+                                                } else if (meta.keys.indexOf('serverScript') >= 0) {
                                                     secondary = 'Server script hat geändert'
-                                                }else if(meta.keys.indexOf('script') >=0){
+                                                } else if (meta.keys.indexOf('script') >= 0) {
                                                     secondary = 'Script hat geändert'
-                                                }else{
+                                                } else {
                                                     secondary = 'Änderung'
                                                 }
 
@@ -682,7 +682,8 @@ class CmsViewEditorContainer extends React.Component {
                                         <CodeEditor lineNumbers
                                                     type="json"
                                                     readOnly={true}>{JSON.stringify(JSON.parse(parsedData.dataResolver), null, 2)}</CodeEditor>
-                                        <a href={'/system/diff?preview=true#value='+encodeURIComponent(parsedData.dataResolver)+'&orig1='+encodeURIComponent(dataResolver)} target="_blank">Show diff</a>
+                                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.dataResolver) + '&orig1=' + encodeURIComponent(dataResolver)}
+                                           target="_blank">Show diff</a>
 
                                     </div>
 
@@ -695,7 +696,8 @@ class CmsViewEditorContainer extends React.Component {
                                                     type="json"
                                                     readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>
 
-                                        <a href={'/system/diff?preview=true#value='+encodeURIComponent(parsedData.template)+'&orig1='+encodeURIComponent(template)} target="_blank">Show diff</a>
+                                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.template) + '&orig1=' + encodeURIComponent(template)}
+                                           target="_blank">Show diff</a>
                                     </div>
                                 } else if (parsedData.style) {
 
@@ -705,7 +707,8 @@ class CmsViewEditorContainer extends React.Component {
                                         <CodeEditor lineNumbers
                                                     type="css"
                                                     readOnly={true}>{parsedData.style}</CodeEditor>
-                                        <a href={'/system/diff?preview=true#value='+encodeURIComponent(parsedData.style)+'&orig1='+encodeURIComponent(style)} target="_blank">Show diff</a>
+                                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.style) + '&orig1=' + encodeURIComponent(style)}
+                                           target="_blank">Show diff</a>
                                     </div>
 
                                 } else if (parsedData.script) {
@@ -716,7 +719,8 @@ class CmsViewEditorContainer extends React.Component {
                                         <CodeEditor lineNumbers
                                                     type="js"
                                                     readOnly={true}>{parsedData.script}</CodeEditor>
-                                        <a href={'/system/diff?preview=true#value='+encodeURIComponent(parsedData.script)+'&orig1='+encodeURIComponent(script)} target="_blank">Show diff</a>
+                                        <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.script) + '&orig1=' + encodeURIComponent(script)}
+                                           target="_blank">Show diff</a>
 
                                     </div>
 
@@ -777,7 +781,7 @@ class CmsViewEditorContainer extends React.Component {
                 },
                 {
                     name: _t('CmsViewEditorContainer.pagesettings'), onClick: () => {
-                        this.setState({showPageSettings:true })
+                        this.setState({showPageSettings: true})
                     }
                 },
                 {
@@ -817,8 +821,8 @@ class CmsViewEditorContainer extends React.Component {
                                                     },
                                                 }).then((res) => {
                                                     // double escape
-                                                    const newText = Util.escapeForJson(Util.escapeForJson(res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g,'')))
-                                                    setPropertyByPath(newText, lang + path + '.' + key.replace(/\./g,'\\\.'), base)
+                                                    const newText = Util.escapeForJson(Util.escapeForJson(res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g, '')))
+                                                    setPropertyByPath(newText, lang + path + '.' + key.replace(/\./g, '\\\.'), base)
                                                     saveResolver()
 
                                                 })
@@ -837,7 +841,7 @@ class CmsViewEditorContainer extends React.Component {
                 }
             ]
             config.LANGUAGES.forEach(lang => {
-                if( lang !== _app_.lang) {
+                if (lang !== _app_.lang) {
                     moreMenu[2].items.push({
                         name: lang, onClick: () => {
                             window.location.href = Util.translateUrl(lang)
@@ -902,22 +906,27 @@ class CmsViewEditorContainer extends React.Component {
                 inner
             }, this)
             return <UIProvider>
-               <Drawer anchor="right" classes={{paper:this.props.classes.pageOptionsDrawer}} open={showPageSettings} onClose={() =>  {
-                    if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
-                        return
-                    }
-                    this.setState({showPageSettings:false })
-               }}> {showPageSettings && <div style={{padding:'1rem'}}>
-                   {PageOptionsDefinition ? [
-                   <Typography key="pageOptionTitle" variant="subtitle1">{_t('CmsViewEditorContainer.pagesettings')}</Typography>,
-                   <GenericForm key="pageOptionForm" primaryButton={true} caption={_t('CmsViewEditorContainer.save')} onClick={(formData) => {
-                       const pageName = cmsPage.realSlug.split('/')[0]
-                       this.setState({PageOptions:formData})
-                       setKeyValueGlobal('PageOptions-'+pageName,formData).then(()=>{
-                           // refresh whole page
-                           location.href = location.href.split('#')[0]
-                       })
-               }} fields={PageOptionsDefinition.reduce((obj, item) => {return {...obj,[item.name]: item}}, {})} values={PageOptions || {}}/>]:_t('CmsViewEditorContainer.noOptions')}</div>}
+                <Drawer anchor="right" classes={{paper: this.props.classes.pageOptionsDrawer}} open={showPageSettings}
+                        onClose={() => {
+                            if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
+                                return
+                            }
+                            this.setState({showPageSettings: false})
+                        }}> {showPageSettings && <div style={{padding: '1rem'}}>
+                    {PageOptionsDefinition ? [
+                        <Typography key="pageOptionTitle"
+                                    variant="subtitle1">{_t('CmsViewEditorContainer.pagesettings')}</Typography>,
+                        <GenericForm key="pageOptionForm" primaryButton={true}
+                                     caption={_t('CmsViewEditorContainer.save')} onClick={(formData) => {
+                            const pageName = cmsPage.realSlug.split('/')[0]
+                            this.setState({PageOptions: formData})
+                            setKeyValueGlobal('PageOptions-' + pageName, formData).then(() => {
+                                // refresh whole page
+                                location.href = location.href.split('#')[0]
+                            })
+                        }} fields={PageOptionsDefinition.reduce((obj, item) => {
+                            return {...obj, [item.name]: item}
+                        }, {})} values={PageOptions || {}}/>] : _t('CmsViewEditorContainer.noOptions')}</div>}
                 </Drawer>
                 <DrawerLayout sidebar={!loadingState && sidebar}
                               open={EditorOptions.drawerOpen}
@@ -937,13 +946,13 @@ class CmsViewEditorContainer extends React.Component {
                                               if (this.addNewSiteForm.props.values._id) {
                                                   const queries = getTypeQueries('CmsPage')
                                                   let slug = this.addNewSiteForm.state.fields.slug.trim()
-                                                  if(slug.startsWith('/')){
+                                                  if (slug.startsWith('/')) {
                                                       slug = slug.substring(1)
                                                   }
-                                                  if(!canMangeCmsTemplate){
+                                                  if (!canMangeCmsTemplate) {
                                                       //prefix needs to be same as current page
                                                       const prefix = cmsPage.realSlug.split('/')[0]
-                                                      if(!slug.startsWith(prefix+'/')){
+                                                      if (!slug.startsWith(prefix + '/')) {
                                                           slug = prefix + '/' + slug
                                                       }
                                                   }
@@ -963,8 +972,11 @@ class CmsViewEditorContainer extends React.Component {
                                                                       window.location.href = `/${slug}`
                                                                   }, 500
                                                               )
-                                                          }else{
-                                                              this.addNewSiteForm.setState( {isValid: false, fieldErrors: {slug: errors[0].message}})
+                                                          } else {
+                                                              this.addNewSiteForm.setState({
+                                                                  isValid: false,
+                                                                  fieldErrors: {slug: errors[0].message}
+                                                              })
                                                           }
                                                       }
                                                   })
@@ -1020,7 +1032,7 @@ class CmsViewEditorContainer extends React.Component {
                                              label: 'Vorlage',
                                              searchFields: ['name'],
                                              required: true,
-                                             filter: !canMangeCmsTemplate?'isTemplate=true':''
+                                             filter: !canMangeCmsTemplate ? 'isTemplate=true' : ''
                                          },
                                          slug: {
                                              fullWidth: true,
@@ -1238,9 +1250,6 @@ class CmsViewEditorContainer extends React.Component {
         if (this._saveSettings)
             this._saveSettings()
 
-
-        const cmsPage = this.props.cmsPage
-
         clearTimeout(this._setStyleDelayed)
         this._setStyleDelayed = setTimeout(() => {
             this.setState({style})
@@ -1249,7 +1258,7 @@ class CmsViewEditorContainer extends React.Component {
         this._autoSaveStyle = () => {
             clearTimeout(this._autoSaveStyleTimeout)
             this._autoSaveStyleTimeout = 0
-            this.saveCmsPage(style, cmsPage , 'style')
+            this.saveCmsPage(style, this.props.cmsPage, 'style')
         }
 
         clearTimeout(this._autoSaveStyleTimeout)
@@ -1260,13 +1269,11 @@ class CmsViewEditorContainer extends React.Component {
         if (this._saveSettings)
             this._saveSettings()
 
-        const cmsPage = this.props.cmsPage
-
         this.setState({serverScript})
         this._autoSaveServerScript = () => {
             clearTimeout(this._autoSaveServerScriptTimeout)
             this._autoSaveServerScriptTimeout = 0
-            this.saveCmsPage(serverScript, cmsPage, 'serverScript')
+            this.saveCmsPage(serverScript, this.props.cmsPage, 'serverScript')
         }
 
         clearTimeout(this._autoSaveServerScriptTimeout)
@@ -1284,12 +1291,10 @@ class CmsViewEditorContainer extends React.Component {
             this._tmpDataResolver = null
         })
 
-        const cmsPage = this.props.cmsPage
-
         this._autoSaveDataResolver = () => {
             clearTimeout(this._autoSaveDataResolverTimeout)
             this._autoSaveDataResolverTimeout = 0
-            this.saveCmsPage(str, cmsPage, 'dataResolver')
+            this.saveCmsPage(str, this.props.cmsPage, 'dataResolver')
         }
         clearTimeout(this._autoSaveDataResolverTimeout)
         if (instantSave === true) {
@@ -1300,10 +1305,8 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     handleTemplateChange = (str, instantSave, skipHistory) => {
-        if(str!==this.state.template) {
+        if (str !== this.state.template) {
             clearTimeout(this._templateTimeout)
-
-            const cmsPage = this.props.cmsPage
 
             this._templateTimeout = setTimeout(() => {
                 if (str.constructor !== String) {
@@ -1326,7 +1329,7 @@ class CmsViewEditorContainer extends React.Component {
                     clearTimeout(this._autoSaveTemplateTimeout)
                     this._autoSaveTemplateTimeout = 0
                     this._autoSaveTemplate = null
-                    this.saveCmsPage(str, cmsPage, 'template')
+                    this.saveCmsPage(str, this.props.cmsPage, 'template')
 
                 }
 
@@ -1347,7 +1350,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     drawerWidthChange = (newWidth) => {
-        this.handleSettingChange('drawerWidth', false,  newWidth)
+        this.handleSettingChange('drawerWidth', false, newWidth)
     }
 
     drawerOpenClose = (open) => {
@@ -1457,7 +1460,7 @@ class CmsViewEditorContainer extends React.Component {
             // update cache
             const data = client.readQuery({
                 query: CMS_PAGE_QUERY,
-                variables:  getGqlVariables(this.props)
+                variables: getGqlVariables(this.props)
             })
             if (data && data.cmsPage) {
                 const metaJson = JSON.parse(data.cmsPage.meta)
@@ -1467,7 +1470,7 @@ class CmsViewEditorContainer extends React.Component {
                 data.cmsPage.meta = JSON.stringify(metaJson)
                 client.writeQuery({
                     query: CMS_PAGE_QUERY,
-                    variables:  getGqlVariables(this.props),
+                    variables: getGqlVariables(this.props),
                     data
                 })
             }
@@ -1577,7 +1580,7 @@ const CmsViewEditorContainerWithGql = compose(
  * Map the state to props.
  */
 const mapStateToProps = (store, props) => {
-    if(props.dynamic){
+    if (props.dynamic) {
         return null
     }
     return {

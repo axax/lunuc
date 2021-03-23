@@ -1044,7 +1044,7 @@ class JsonDom extends React.Component {
                             eleProps._WrappedComponent = eleType
                             eleProps._scope = scope
                             eleProps._user = this.props.user
-                            eleProps._onChange = this.onTemplateChange.bind(this)
+                            eleProps._onTemplateChange = this.onTemplateChange.bind(this)
                             eleProps._onDataResolverPropertyChange = this.props.onDataResolverPropertyChange
                             eleType = JsonDomHelper
                         }

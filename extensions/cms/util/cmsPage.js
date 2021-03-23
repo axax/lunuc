@@ -1,5 +1,6 @@
 import GenericResolver from 'api/resolver/generic/genericResolver'
 import Util from 'api/util'
+import DomAdminUtil from 'client/util/domAdmin'
 import {getHostFromHeaders} from 'util/host'
 import Cache from 'util/cache'
 import {preprocessCss} from './cssPreprocessor'
@@ -111,7 +112,7 @@ export const getCmsPage = async ({db, context, slug, editmode, checkHostrules, _
                     const template = JSON.parse(result.template)
 
                     if (result.compress && !result.publicEdit) {
-                        Util.findProperties(template, '$inlineEditor').forEach(({element}) => {
+                        DomAdminUtil.findProperties(template, '$inlineEditor').forEach(({element}) => {
                             delete element.$inlineEditor
                         })
                     }

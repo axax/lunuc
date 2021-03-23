@@ -113,12 +113,15 @@ export default db => ({
 
             const collection = db.collection('NewsletterSubscriber')
 
+            const $set = {
+                state: 'unsubscribed'
+            }
+            if(mailing !== undefined){
+                $set.unsubscribeMailing = mailing?ObjectId(mailing):null
+            }
 
             let result = (await collection.findOneAndUpdate({email, token}, {
-                $set: {
-                    state: 'unsubscribed',
-                    unsubscribeMailing: mailing?ObjectId(mailing):null
-                }
+                $set
             }, {returnOriginal: false}))
 
             if (result.ok) {

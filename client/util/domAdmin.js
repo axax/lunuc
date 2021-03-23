@@ -24,6 +24,21 @@ const DomUtilAdmin = {
             left,
             top
         }
+    },
+    findProperties: (json, key, accumulator = [], parent, index) => {
+        if (json && (json.constructor === Object || json.constructor === Array)) {
+            const keys = json.constructor === Object ? Object.keys(json) : json
+            for (let i = 0; i < keys.length; i++) {
+                if (keys[i].constructor === Object) {
+                    DomUtilAdmin.findProperties(keys[i], key, accumulator, json, i)
+                } else if (key === keys[i]) {
+                    accumulator.push({element: json, parent, index})
+                } else {
+                    DomUtilAdmin.findProperties(json[keys[i]], key, accumulator, json)
+                }
+            }
+        }
+        return accumulator
     }
 }
 

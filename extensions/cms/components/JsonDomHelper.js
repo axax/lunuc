@@ -536,7 +536,7 @@ const m = Math.max((offX+offY) / 2,100)
         e.preventDefault()
         JsonDomHelper.disableEvents = true
 
-        const {classes, _json, _onChange} = this.props
+        const {classes, _json, _onTemplateChange} = this.props
         e.currentTarget.classList.remove(classes.dropAreaOver)
 
         let sourceKey = JsonDomHelper.currentDragElement.props._key,
@@ -556,13 +556,13 @@ const m = Math.max((offX+offY) / 2,100)
                     // 3. add it to new position
                     addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
 
-                    _onChange(_json, true)
+                    _onTemplateChange(_json, true)
 
                 }
             } else {
                 addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
                 removeComponent(sourceKey, _json)
-                _onChange(_json, true)
+                _onTemplateChange(_json, true)
             }
         }
 
@@ -624,11 +624,31 @@ const m = Math.max((offX+offY) / 2,100)
     handleCopyClick(e) {
         e.stopPropagation()
         e.preventDefault()
-        const {_cmsActions, _onChange, _key, _json, _scope} = this.props
+        const {_cmsActions, _onTemplateChange, _key, _json, _scope} = this.props
 
         const source = getComponentByKey(_key, _json)
 
         if (source) {
+
+            //
+            const trKeys = []
+            DomUtilAdmin.findProperties(source, 'trKey').forEach(({element}) => {
+                trKeys.push(element.trKey)
+            })
+
+            let finalSource
+            if(trKeys.length>0){
+                let sourceStr = JSON.stringify(source)
+                trKeys.forEach(key=>{
+                    const newKey = 'genid_' + Math.random().toString(36).substr(2, 9)
+                    sourceStr = sourceStr.replace(new RegExp(key, "g"), newKey)
+                })
+                finalSource = JSON.parse(sourceStr)
+            }else{
+                finalSource = source
+            }
+
+
             const key = getParentKey(_key)
             let index = parseInt(_key.substring(_key.lastIndexOf('.') + 1))
             if (isNaN(index)) {
@@ -636,8 +656,8 @@ const m = Math.max((offX+offY) / 2,100)
             } else {
                 index++
             }
-            addComponent({key, json: _json, index, component: source})
-            _onChange(_json, true)
+            addComponent({key, json: _json, index, component: finalSource})
+            _onTemplateChange(_json, true)
 
             this.setState({toolbarHovered: false, hovered: false, dragging: false})
         }
@@ -684,7 +704,7 @@ const m = Math.max((offX+offY) / 2,100)
     }
 
     handleAddChildClick(component, index) {
-        const {_key, _json, _onChange, _onDataResolverPropertyChange} = this.props
+        const {_key, _json, _onTemplateChange, _onDataResolverPropertyChange} = this.props
 
         let newkey = _key
         if (index !== undefined) {
@@ -707,19 +727,19 @@ const m = Math.max((offX+offY) / 2,100)
 
         }
         addComponent({key: newkey, json: _json, index, component})
-        _onChange(_json)
+        _onTemplateChange(_json)
     }
 
 
     handleDeleteClick(e) {
-        const {_cmsActions, _key, _json, _scope, _onChange, _onDataResolverPropertyChange} = this.props
+        const {_cmsActions, _key, _json, _scope, _onTemplateChange, _onDataResolverPropertyChange} = this.props
         const source = getComponentByKey(_key, _json)
 
         if (source && source.$inlineEditor && source.$inlineEditor.dataResolver) {
             _onDataResolverPropertyChange({value: null, key: source.$inlineEditor.dataResolver})
         }
         removeComponent(_key, _json)
-        _onChange(_json, true)
+        _onTemplateChange(_json, true)
     }
 
 
@@ -740,7 +760,7 @@ const m = Math.max((offX+offY) / 2,100)
     }
 
     openPicker(picker) {
-        const {_onChange, _key, _json} = this.props
+        const {_onTemplateChange, _key, _json} = this.props
 
         const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
             left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
@@ -763,7 +783,7 @@ const m = Math.max((offX+offY) / 2,100)
                             source.p.src = newwindow.resultValue.constructor !== Array ? [newwindow.resultValue] : newwindow.resultValue
                         }
                         setTimeout(() => {
-                            _onChange(_json)
+                            _onTemplateChange(_json)
                         }, 0)
                     }
                 }
@@ -792,7 +812,7 @@ const m = Math.max((offX+offY) / 2,100)
     }
 
     render() {
-        const {classes, _WrappedComponent, _json, _cmsActions, _onChange, _onDataResolverPropertyChange, children, _tagName, _options, _user, _inlineEditor, onChange, onClick, ...rest} = this.props
+        const {classes, _WrappedComponent, _json, _cmsActions, _onTemplateChange, _onDataResolverPropertyChange, children, _tagName, _options, _user, _inlineEditor, onChange, onClick, ...rest} = this.props
         const {hovered, toolbarHovered, toolbarMenuOpen, addChildDialog, deleteConfirmDialog, deleteSourceConfirmDialog} = this.state
 
         const menuItems = [],
@@ -1320,7 +1340,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                                           _onDataResolverPropertyChange({
                                                                               value: Util.escapeForJson(val.replace(/\n/g, '')),
                                                                               path: 'tr.' + _app_.lang + '.' + groupFieldOption.trKey + '-' + groupIdx,
-                                                                              instantSave: 200
+                                                                              instantSave: true
                                                                           })
                                                                       }
                                                                   } else {
@@ -1348,7 +1368,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                                   _onDataResolverPropertyChange({
                                                                       value: Util.escapeForJson(Util.escapeForJson(val.replace(/\n/g, ''))),
                                                                       path: 'tr.' + _app_.lang + '.' + currentOpt.trKey,
-                                                                      instantSave: 200
+                                                                      instantSave: true
                                                                   })
                                                               }
 
@@ -1379,7 +1399,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                       })
                                                   }
 
-                                                  _onChange(_json, true)
+                                                  _onTemplateChange(_json, true)
 
                                               } else {
 
@@ -1403,7 +1423,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                       })
                                                       subJson.c = [wrapped]
 
-                                                      _onChange(_json, true)
+                                                      _onTemplateChange(_json, true)
                                                   }else {
 
                                                       // add new
@@ -1436,6 +1456,7 @@ const m = Math.max((offX+offY) / 2,100)
 
                             {!addChildDialog.edit && <SimpleSelect
                                 fullWidth={true}
+                                style={{width: 'calc(100% - 16px)'}}
                                 label="Element auswählen"
                                 value={addChildDialog.selected && addChildDialog.selected.defaults && addChildDialog.selected.defaults.$inlineEditor.elementKey}
                                 onChange={(e) => {
@@ -1666,7 +1687,7 @@ JsonDomHelper.propTypes = {
     _key: PropTypes.string.isRequired,
     _scope: PropTypes.object.isRequired,
     _json: PropTypes.any,
-    _onChange: PropTypes.func,
+    _onTemplateChange: PropTypes.func,
     _onDataResolverPropertyChange: PropTypes.func,
     _inlineEditor: PropTypes.bool
 }
