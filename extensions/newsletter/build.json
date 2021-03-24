@@ -11,7 +11,6 @@
         },
         {
           "name": "location",
-          "required": true,
           "index": 1,
           "compoundIndex": [
             {
