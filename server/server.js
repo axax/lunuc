@@ -113,7 +113,7 @@ const sendError = (res, code) => {
         res.writeHead(code, {'Content-Type': 'text/plain'})
         res.write(`${code} ${msg}\n`)
         res.end()
-    }catch (e) {
+    } catch (e) {
         console.error(`Error sending error: ${e.message}`)
     }
 }
@@ -293,7 +293,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         browser.close()
 
         return {html, statusCode}
-    }catch (e) {
+    } catch (e) {
         return {html: e.message, statusCode: 500}
 
     }
@@ -353,9 +353,9 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
     const agent = req.headers['user-agent']
     const {version, browser, isBot} = parseUserAgent(agent)
 
-    if (isBot || (browser === 'firefox' && version <= 12) || (browser === 'chrome' && version <= 16)  || (browser === 'msie' && version <= 6)) {
+    if (isBot || (browser === 'firefox' && version <= 12) || (browser === 'chrome' && version <= 16) || (browser === 'msie' && version <= 6)) {
 
-        if(req.headers.accept && req.headers.accept.indexOf('text/html')<0){
+        if (req.headers.accept && req.headers.accept.indexOf('text/html') < 0) {
             res.writeHead(404)
             res.end()
             return
@@ -366,7 +366,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         const urlToFetch = baseUrl + urlPathname + (parsedUrl.search ? parsedUrl.search : '')
 
         const cacheFileDir = path.join(__dirname, 'cache', host.replace(/\W/g, ''))
-        const cacheFileName = cacheFileDir+'/' + urlToFetch.replace(/\W/g, '')+'.html'
+        const cacheFileName = cacheFileDir + '/' + urlToFetch.replace(/\W/g, '') + '.html'
 
 
         let sentFromCache = false
@@ -380,12 +380,12 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
                 const now = new Date().getTime(),
                     modeTime = new Date(statsFile.mtime).getTime() + 86400000 * 5; // 5days in miliseconds
                 if (modeTime > now) {*/
-                    //from cache
-                    console.log(`send from cache ${cacheFileName}`)
+                //from cache
+                console.log(`send from cache ${cacheFileName}`)
 
-                    sendFile(req, res, {headers, filename: cacheFileName, statusCode: 200})
-                    sentFromCache = true
-               // }
+                sendFile(req, res, {headers, filename: cacheFileName, statusCode: 200})
+                sentFromCache = true
+                // }
             }
             // return isFile
         }
@@ -396,10 +396,9 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         pageData.html = pageData.html.replace(re, `https://${host}`)
 
 
+        if (pageData.statusCode === 500 || pageData.statusCode === 404) {
 
-        if(pageData.statusCode === 500 || pageData.statusCode === 404){
-
-            if(!sentFromCache) {
+            if (!sentFromCache) {
                 res.writeHead(pageData.statusCode, headers)
                 if (pageData.statusCode !== 500) {
                     res.write(pageData.html)
@@ -408,11 +407,11 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
                 res.end()
             }
 
-        }else {
+        } else {
 
-            if(!sentFromCache){
+            if (!sentFromCache) {
                 res.writeHead(statusCode, headers)
-                if(statusCode !== 500) {
+                if (statusCode !== 500) {
                     res.write(pageData.html)
                 }
                 res.end()
@@ -766,8 +765,8 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
             //context = decodeToken(payload.auth)
             //context.session = payload.session
         }
-        if(context && context.role === 'administrator') {
-            filename = path.join(ABS_UPLOAD_DIR, 'private'+modUri.substring(UPLOAD_URL.length + 1))
+        if (context && context.role === 'administrator') {
+            filename = path.join(ABS_UPLOAD_DIR, 'private' + modUri.substring(UPLOAD_URL.length + 1))
         }
     }
 
@@ -889,7 +888,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         let urlPathname
         try {
             urlPathname = decodeURIComponent(parsedUrl.pathname)
-        }catch (e) {
+        } catch (e) {
             urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
         }
 
@@ -950,6 +949,14 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 if (hostrule.redirects) {
 
                     let redirect = hostrule.redirects[urlPathname]
+                    if (!redirect) {
+                        if (urlPathname.endsWith('/')) {
+                            redirect = hostrule.redirects[urlPathname.slice(0, -1)]
+                        } else {
+                            redirect = hostrule.redirects[urlPathname + '/']
+                        }
+                    }
+
                     if (!redirect) {
                         redirect = hostrule.redirects['*']
                     }
@@ -1067,10 +1074,10 @@ ioHttps.on('connection', stream)
 if (USE_HTTPX) {
     app.http.on('upgrade', webSocket)
     app.https.on('upgrade', webSocket)
-    app.http.on('error', (e)=>{
+    app.http.on('error', (e) => {
         console.log('http error', e)
     })
-    app.https.on('error', (e)=>{
+    app.https.on('error', (e) => {
         console.log('https error', e)
     })
 } else {
