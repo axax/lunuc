@@ -137,6 +137,7 @@ class CmsViewEditorContainer extends React.Component {
         if (!dynamic) {
             this._handleWindowClose = this.saveUnsafedChanges.bind(this)
             window.addEventListener('beforeunload', this._handleWindowClose)
+            window.addEventListener('blur', this._handleWindowClose)
 
             const unblock = history.block((e) => {
                 this.saveUnsafedChanges()
@@ -189,6 +190,7 @@ class CmsViewEditorContainer extends React.Component {
         clearTimeout(this._watchCmsPageStatus)
         this.saveUnsafedChanges()
         window.removeEventListener('beforeunload', this._handleWindowClose)
+        window.removeEventListener('blur', this._handleWindowClose)
     }
 
 

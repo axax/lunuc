@@ -86,7 +86,8 @@ export default function (WrappedComponent) {
         setKeyValue({key, value, server, internal, callback}) {
 
             const {user, cmsPage, slug} = this.props
-            if (!key || !value || !cmsPage) {
+
+            if (!key || value===undefined || !cmsPage) {
                 return
             }
 
@@ -106,7 +107,7 @@ export default function (WrappedComponent) {
 
             const variables = {
                 key,
-                value: value.constructor === Object ? JSON.stringify(value) : value
+                value: value && value.constructor === Object ? JSON.stringify(value) : value
             }
 
             if (user.isAuthenticated) {
