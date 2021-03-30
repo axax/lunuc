@@ -419,7 +419,7 @@ function gensrcExtension(name, options) {
 
             typeSchema += 'type Mutation{\n'
             typeSchema += '\tcreate' + type.name + ' (' + insertFields + '):' + mutationResult + '\n'
-            typeSchema += '\tupdate' + type.name + ' (_id:ID!' + (updateFields.length > 0 ? ',' : '') + updateFields + '):' + mutationResult + '\n'
+            typeSchema += '\tupdate' + type.name + ' (_id:ID!' + (updateFields.length > 0 ? ',' : '') + updateFields + (type.addMetaDataInQuery ? ',meta:String' : '') +'):' + mutationResult + '\n'
             typeSchema += '\tdelete' + type.name + ' (_id:ID!' + (type.collectionClonable ? ',_version:String' : '') + '):' + mutationResult + '\n'
             typeSchema += '\tdelete' + type.name + 's (_id:[ID]' + (type.collectionClonable ? ',_version:String' : '') + '):[' + mutationResult + ']\n'
             if (type.entryClonable) {
