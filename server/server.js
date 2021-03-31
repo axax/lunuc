@@ -89,7 +89,10 @@ const defaultWSHandler = (err, req, socket, head) => {
 
 const webSocket = function (req, socket, head) {
     if (req.url === '/ws') {
-        //if(req.secure) {
+        socket.on('error', (e)=>{
+            console.log('ws socket error',e)
+        })
+
         proxy.ws(req, socket, head, {
             hostname: 'localhost',
             port: API_PORT,
@@ -1079,6 +1082,12 @@ if (USE_HTTPX) {
     })
     app.https.on('error', (e) => {
         console.log('https error', e)
+    })
+    app.http.on('clientError', (e) => {
+        console.log('http clientError', e)
+    })
+    app.https.on('clientError', (e) => {
+        console.log('https clientError', e)
     })
 } else {
     app.on('upgrade', webSocket)

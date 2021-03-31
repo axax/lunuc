@@ -399,17 +399,24 @@ class JsonDomHelper extends React.Component {
             const draggable = ReactDOM.findDOMNode(JsonDomHelper.currentDragElement)
             this._onDragTimeout = setTimeout(() => {
 
+                if(!JsonDomHelper.currentDragElement){
+                    return
+                }
+
                 /*const elementOnMouseOver = document.elementFromPoint(this._clientX, this._clientY)*/
 
                 const tags = document.querySelectorAll('.' + this.props.classes.dropArea)
 
-                const fromTagName = JsonDomHelper.currentDragElement ? JsonDomHelper.currentDragElement.props._tagName : '',
-                    allowDropIn = ALLOW_DROP_IN[fromTagName]
+                const dragableProps = JsonDomHelper.currentDragElement.props
+
+                const allowDropIn = ALLOW_DROP_IN[dragableProps._tagName]
 
                 const allTags = []
                 for (let i = 0; i < tags.length; ++i) {
                     const tag = tags[i]
-                    if (draggable === tag.nextSibling || draggable === tag.previousSibling /*|| !elementOnMouseOver.contains(tag)*/) {
+                    if (draggable === tag.nextSibling ||
+                        draggable === tag.previousSibling ||
+                        (dragableProps._options.leaveParent===false && draggable.parentNode !== tag.parentNode) /*|| !elementOnMouseOver.contains(tag)*/) {
                         tag.classList.remove(this.props.classes.dropAreaActive)
                         continue
                     }
@@ -430,7 +437,7 @@ class JsonDomHelper extends React.Component {
 
 
                             const allowDropFrom = ALLOW_DROP_FROM[tagName]
-                            if (!allowDropFrom || allowDropFrom.indexOf(fromTagName) >= 0) {
+                            if (!allowDropFrom || allowDropFrom.indexOf(dragableProps._tagName) >= 0) {
                                 const pos = DomUtilAdmin.elemOffset(node)
                                 const distanceTop = Math.abs(this._clientY - pos.top)
                                 const distanceMiddle = Math.abs(this._clientY - (pos.top + node.offsetHeight / 2))
