@@ -4,6 +4,13 @@ import {getAllCapabilites} from 'util/capabilities'
 import {getType, getTypes} from './types'
 import Util from '../client/util'
 import {_t} from 'util/i18n'
+import extensionsPrivate from 'gen/extensions-private'
+import extensions from 'gen/extensions'
+
+console.log('merge extension defintion')
+Object.keys(extensionsPrivate).forEach(key=>{
+    extensions[key] = extensionsPrivate[key]
+})
 
 const {LANGUAGES} = config, typeFormFields = {}
 

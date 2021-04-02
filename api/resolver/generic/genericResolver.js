@@ -440,7 +440,7 @@ const GenericResolver = {
             throw new Error('Error deleting entries. You might not have premissions to manage other users')
         }
     },
-    updateEnity: async (db, context, typeName, {_version, ...data}, options) => {
+    updateEnity: async (db, context, typeName, {_version, _meta, ...data}, options) => {
 
         Util.checkIfUserIsLoggedIn(context)
 
@@ -556,6 +556,13 @@ const GenericResolver = {
                 username: context.username
             },
             status: 'updated'
+        }
+
+        if(_meta){
+            const meta = JSON.parse(_meta)
+            if(meta.clearCachePrefix){
+                Cache.clearStartWith(meta.clearCachePrefix)
+            }
         }
 
         Hook.call('typeUpdated', {type: typeName, data, db, context})

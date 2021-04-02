@@ -38,7 +38,7 @@ export default function(WrappedComponent) {
         }
 
 
-        updateData(input, optimisticInput, options) {
+        updateData(input, optimisticInput, metaData) {
             const {type} = this.props
             if (type) {
                 const queries = getTypeQueries(type)
@@ -46,7 +46,8 @@ export default function(WrappedComponent) {
                     mutation: queries.update,
                     /* only send what has changed*/
                     variables: {
-                        _version: options && options._version,
+                        _version: metaData && metaData._version,
+                        _meta: metaData && metaData.data,
                         ...input
                     },
                     update: (store, {data}) => {

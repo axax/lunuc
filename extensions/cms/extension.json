@@ -4,5 +4,6 @@
   "author": "Simon Schärer",
   "dependencies": [
     "media"
-  ]
+  ],
+  "public": true
 }

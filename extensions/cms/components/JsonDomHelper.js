@@ -552,27 +552,28 @@ const m = Math.max((offX+offY) / 2,100)
             targetKey = e.currentTarget.getAttribute('data-key'),
             targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
 
+        if(targetKey) {
+            // 1. get element from json structure by key
+            const source = getComponentByKey(sourceKey, _json)
+            if (source) {
+                if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
+                    //2. remove it from json
+                    if (removeComponent(sourceKey, _json)) {
 
-        // 1. get element from json structure by key
-        const source = getComponentByKey(sourceKey, _json)
-        if (source) {
-            if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
-                //2. remove it from json
-                if (removeComponent(sourceKey, _json)) {
+                        // 3. add it to new position
+                        addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
 
-                    // 3. add it to new position
+                        _onTemplateChange(_json, true)
+
+                    }
+                } else {
                     addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
-
+                    removeComponent(sourceKey, _json)
                     _onTemplateChange(_json, true)
-
                 }
-            } else {
-                addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
-                removeComponent(sourceKey, _json)
-                _onTemplateChange(_json, true)
             }
-        }
 
+        }
         setTimeout(() => {
 
             JsonDomHelper.disableEvents = false
@@ -898,6 +899,7 @@ const m = Math.max((offX+offY) / 2,100)
         }
 
         events.onDragStart = e => {
+            console.log(e.target)
             if (isDraggable) {
                 this.onDragStart(e)
             } else {
@@ -1110,8 +1112,9 @@ const m = Math.max((offX+offY) / 2,100)
                 onMouseOut={this.onToolbarMouseOut.bind(this, classes.toolbar)}
                 style={{top: this.state.top, left: this.state.left, height: this.state.height}}
                 className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}>
-                <div
-                    className={classes.info}>{subJson ? subJson.t || 'Text' + ' - ' : ''}{rest.id || rest._key}</div>
+
+                <div style={{display:'none'}} className={classes.info}>{subJson ? subJson.t || 'Text' + ' - ' : ''}{rest.id || rest._key}</div>
+
                 {menuItems.length > 0 && <SimpleMenu
                     anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
                     anchorPosition={

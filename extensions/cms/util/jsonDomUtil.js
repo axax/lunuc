@@ -3,7 +3,7 @@
  */
 
 export const getComponentByKey = (key, json) => {
-    if (!json) return
+    if (!json || !key) return
     const posDash = key.lastIndexOf('-')
     let editedKey
     if (posDash >= 0) {

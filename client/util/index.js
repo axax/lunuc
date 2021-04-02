@@ -63,14 +63,14 @@ const Util = {
         if (options) {
             lang = options.lang
         }
-        const intlOptions = Intl.DateTimeFormat().resolvedOptions()
+        const intlOptions = Intl.DateTimeFormat().resolvedOptions(), numeric = 'numeric'
         return new Intl.DateTimeFormat(lang || _app_.lang || intlOptions.locale, Object.assign({
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: 'numeric',
-            second: 'numeric',
+            year: numeric,
+            month: numeric,
+            day: numeric,
+            hour: numeric,
+            minute: numeric,
+            second: numeric,
             timeZone: intlOptions.timeZone || 'UTC'
         }, options))
     },

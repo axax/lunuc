@@ -132,7 +132,7 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
 
 
     result.create = `mutation create${name}(${collectionClonable ? '$_version:String,' : ''}${insertParams}){create${name}(${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
-    result.update = `mutation update${name}($_id:ID!${noUserRelation ? '' : ',$createdBy:ID'}${collectionClonable ? ',$_version:String' : ''},${updateParams}){update${name}(_id:$_id${noUserRelation ? '' : ',createdBy:$createdBy'}${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
+    result.update = `mutation update${name}($_id:ID!${noUserRelation ? '' : ',$createdBy:ID'}${collectionClonable ? ',$_version:String' : ''}${addMetaDataInQuery ? ',$_meta:String' : ''},${updateParams}){update${name}(_id:$_id${noUserRelation ? '' : ',createdBy:$createdBy'}${addMetaDataInQuery ? ',_meta:$_meta' : ''}${collectionClonable ? ',_version:$_version' : ''},${insertUpdateQuery}){${queryMutation}}}`
     result.delete = `mutation delete${name}($_id:ID!${collectionClonable ? ',$_version:String' : ''}){delete${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.deleteMany = `mutation delete${name}s($_id: [ID]${collectionClonable ? ',$_version:String' : ''}){delete${name}s(_id: $_id${collectionClonable ? ',_version:$_version' : ''}){${queryMutation}}}`
     result.clone = `mutation clone${name}($_id: ID!${collectionClonable ? ',$_version:String' : ''}${cloneParams}){clone${name}(_id: $_id${collectionClonable ? ',_version:$_version' : ''}${cloneQuery}){${query}}}`

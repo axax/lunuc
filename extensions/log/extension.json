@@ -1,5 +1,6 @@
 {
   "name": "Log",
   "description": "Log",
-  "author": "Simon Schärer"
+  "author": "Simon Schärer",
+  "public": true
 }

@@ -5,9 +5,9 @@ const path = require('path')
 
 let APP_CONFIG
 
-if( fs.existsSync('/etc/lunuc/buildconfig.json')){
+if (fs.existsSync('/etc/lunuc/buildconfig.json')) {
     APP_CONFIG = require('/etc/lunuc/buildconfig.json')
-}else{
+} else {
     APP_CONFIG = require('./buildconfig.json')
 }
 
@@ -42,7 +42,8 @@ GenSourceCode.prototype.apply = function (compiler) {
 
         const exteionsion = fs.readdirSync(EXTENSION_PATH)
 
-        let clientContent = GENSRC_HEADER, serverContent = GENSRC_HEADER, manifestJson = {}, clientAdminContent = GENSRC_HEADER
+        let clientContent = GENSRC_HEADER, serverContent = GENSRC_HEADER, manifestJson = {},
+            clientAdminContent = GENSRC_HEADER
 
         clientContent += '\nconst settings = (_app_.localSettings && _app_.localSettings.extensions) || {}\n\n'
         clientAdminContent += '\nconst settings = (_app_.localSettings && _app_.localSettings.extensions) || {}\n\n'
@@ -138,13 +139,29 @@ import(/* webpackChunkName: "${file}" */ '.${EXTENSION_PATH}${file}/client.js')
             }
         }
 
-        Object.keys(manifestJson).forEach(key=>{
-            delete manifestJson[key].description
-            delete manifestJson[key].author
+        const manifestJsonPrivate = {}
+
+        Object.keys(manifestJson).forEach(key => {
+            if (manifestJson[key].public) {
+                delete manifestJson[key].description
+                delete manifestJson[key].author
+            } else {
+                manifestJsonPrivate[key] = manifestJson[key]
+                delete manifestJson[key]
+            }
+
         })
         const manifestStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJson, null, 2)}\nexport default extensions`
 
         fs.writeFile(GENSRC_PATH + "/extensions.js", manifestStr, function (err) {
+            if (err) {
+                return console.log(err)
+            }
+        })
+
+        const manifestPrivateStr = `${GENSRC_HEADER}const extensions=${JSON.stringify(manifestJsonPrivate, null, 2)}\nexport default extensions`
+
+        fs.writeFile(GENSRC_PATH + "/extensions-private.js", manifestPrivateStr, function (err) {
             if (err) {
                 return console.log(err)
             }
@@ -333,7 +350,8 @@ function gensrcExtension(name, options) {
             let typeSchema = 'type ' + type.name + '{\n'
             typeSchema += '\t_id: ID!' + (!type.noUserRelation ? '\n\tcreatedBy:UserPublic!' : '') + '\n\tstatus: String\n\tuserAccess: [UserPublic]\n'
 
-            let insertFields = '', cloneFields = '', updateFields = (type.noUserRelation?'':'createdBy: ID'), resolverFields = '', refResolvers = '',
+            let insertFields = '', cloneFields = '', updateFields = (type.noUserRelation ? '' : 'createdBy: ID'),
+                resolverFields = '', refResolvers = '',
                 refResolversObjectId = ''
 
             type.fields.forEach((field) => {
@@ -346,7 +364,7 @@ function gensrcExtension(name, options) {
                 let type = (field.type || 'String')
                 let isRef = false
 
-                if( type === 'Object'){
+                if (type === 'Object') {
                     type = 'String'
                 }
 
@@ -412,14 +430,14 @@ function gensrcExtension(name, options) {
                 // if a mutationResult is set we return that otherwise we return a simple Status object
 
                 // Maybe it is better to return only a Status instead of the whole type when create, update or delete is performed
-                typeSchema += 'type ' + mutationResult + '{\n\t_id:ID!\n\tstatus:String\n'+(type.noUserRelation?'':'\tcreatedBy: UserPublic\n')+ '}\n\n'
+                typeSchema += 'type ' + mutationResult + '{\n\t_id:ID!\n\tstatus:String\n' + (type.noUserRelation ? '' : '\tcreatedBy: UserPublic\n') + '}\n\n'
             }
-            typeSchema += 'type Query{\n\t' + nameStartLower + 's(sort:String,limit:Int=10,offset:Int=0,page:Int=0,filter:String' + (type.collectionClonable ? ',_version:String' : '')+ (type.addMetaDataInQuery ? ',meta:String' : '') + '): ' + type.name + 'Result\n}\n\n'
+            typeSchema += 'type Query{\n\t' + nameStartLower + 's(sort:String,limit:Int=10,offset:Int=0,page:Int=0,filter:String' + (type.collectionClonable ? ',_version:String' : '') + (type.addMetaDataInQuery ? ',meta:String' : '') + '): ' + type.name + 'Result\n}\n\n'
 
 
             typeSchema += 'type Mutation{\n'
             typeSchema += '\tcreate' + type.name + ' (' + insertFields + '):' + mutationResult + '\n'
-            typeSchema += '\tupdate' + type.name + ' (_id:ID!' + (updateFields.length > 0 ? ',' : '') + updateFields + (type.addMetaDataInQuery ? ',meta:String' : '') +'):' + mutationResult + '\n'
+            typeSchema += '\tupdate' + type.name + ' (_id:ID!' + (updateFields.length > 0 ? ',' : '') + updateFields + (type.addMetaDataInQuery ? ',_meta:String' : '') + '):' + mutationResult + '\n'
             typeSchema += '\tdelete' + type.name + ' (_id:ID!' + (type.collectionClonable ? ',_version:String' : '') + '):' + mutationResult + '\n'
             typeSchema += '\tdelete' + type.name + 's (_id:[ID]' + (type.collectionClonable ? ',_version:String' : '') + '):[' + mutationResult + ']\n'
             if (type.entryClonable) {
@@ -454,23 +472,23 @@ function gensrcExtension(name, options) {
                 resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, req, options) => {
             const result = await GenericResolver.createEntity(db, req, '${type.name}', {...rest,${refResolversObjectId}})
             if(options && options.publish!==false){
-              ${type.subscription===false?'//':''}pubsubHooked.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:[result]}}, db, req.context)
+              ${type.subscription === false ? '//' : ''}pubsubHooked.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:[result]}}, db, req.context)
             }
             return result
         },
-        update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation?'':'createdBy,'}...rest}, {context}, options) => {
-            const result =  await GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${type.noUserRelation?'':'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}})
+        update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation ? '' : 'createdBy,'}...rest}, {context}, options) => {
+            const result =  await GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${type.noUserRelation ? '' : 'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}})
             if(options && options.publish!==false){
-                ${type.subscription===false?'//':''}pubsubHooked.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: [result]}}, db, context)
+                ${type.subscription === false ? '//' : ''}pubsubHooked.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: [result]}}, db, context)
             }
             return result
         },
         delete${type.name}: async ({_id}, {context}) => {
-             ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: [{_id}]}}, db, context)
+             ${type.subscription === false ? '//' : ''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: [{_id}]}}, db, context)
             return GenericResolver.deleteEnity(db, context, '${type.name}', {_id})
         },
         delete${type.name}s: async ({_id}, {context}) => {
-             ${type.subscription===false?'//':''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: _id.map(x => ({_id:x}))}}, db, context)
+             ${type.subscription === false ? '//' : ''}pubsub.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'delete', data: _id.map(x => ({_id:x}))}}, db, context)
             return GenericResolver.deleteEnities(db, context, '${type.name}', {_id})
         },\n`
                 resolverSubscription += `       subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),
@@ -542,9 +560,9 @@ function gensrcExtension(name, options) {
 const deleteFolderRecursive = function (path, skip) {
     if (fs.existsSync(path)) {
         fs.readdirSync(path).forEach(function (file, index) {
-            if( skip && skip.indexOf(file)>=0){
+            if (skip && skip.indexOf(file) >= 0) {
                 console.log(`skip file ${file}`)
-            }else {
+            } else {
                 const curPath = path + "/" + file
                 if (fs.lstatSync(curPath).isDirectory()) { // recurse
                     deleteFolderRecursive(curPath, skip)
@@ -556,7 +574,7 @@ const deleteFolderRecursive = function (path, skip) {
         })
         try {
             fs.rmdirSync(path)
-        }catch (e) {
+        } catch (e) {
 
         }
     }
