@@ -245,7 +245,7 @@ if (!window.LUNUC_PREPARSED) {
         })
     }
 
-    if (!window.Intl || noneBasicEs6 || noneObject) {
+    if (!window.Intl || !Intl.DateTimeFormat() || !Intl.DateTimeFormat().resolvedOptions().timeZone) {
         maxCounter++
         // timezone support
         DomUtil.addScript('/date-time-format-timezone-min.js', {

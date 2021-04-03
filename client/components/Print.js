@@ -170,7 +170,7 @@ class Print extends React.PureComponent {
         if (!window.html2canvas) return false
         if (!window.pdfMake) return false
 
-        const {classes, pdfName, showDate} = this.props
+        const {classes, pdfName, showDate, scale} = this.props
         const overlay = this.$(`.${classes.overlay}`)[0],
             printArea = this.$(`.${classes.printArea}`)[0],
             printAreaInner = this.$(`.${classes.printAreaInner}`, printArea)[0],
@@ -212,12 +212,11 @@ class Print extends React.PureComponent {
                     marginTopLast = this.offsetTop(breaks[page - 1]) - offsetTop + this.outerHeight(breaks[page - 1])
                 }
 
-
                 html2canvas(printArea, {
                     imageTimeout: 20000,
                     width: PAGE_WIDTH - 1,
                     height: PAGE_HEIGHT,
-                    scale:1,
+                    scale: scale || 1,
                     scrollX: -window.scrollX - 7,
                     scrollY: page>0?-(marginTopLast-paddingTop+window.scrollY):-window.scrollY,
                     /*logging: true,*/

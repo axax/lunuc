@@ -53,7 +53,7 @@ const Util = {
     setKeyValue: async (db, context, key, value) => {
         if (Util.isUserLoggedIn(context)) {
 
-            Cache.clearStartWith('KeyValue_'+context.id+'_' + key)
+            Cache.clearStartWith('KeyValue_' + context.id + '_' + key)
 
             return db.collection('KeyValue').updateOne({
                 createdBy: ObjectId(context.id),
@@ -95,13 +95,13 @@ const Util = {
         }
         const allOptions = Object.assign({cache: false, parse: false}, options)
 
-        const cacheKeyPrefix = 'KeyValue_'+context.id+'_'
+        const cacheKeyPrefix = 'KeyValue_' + context.id + '_'
 
         // check if all keys are in the cache
         if (allOptions.cache) {
             let map = {}
             for (const k of keys) {
-                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse )
+                const fromCache = Cache.get(cacheKeyPrefix + k + allOptions.parse)
                 if (fromCache) {
                     map[k] = fromCache
                 } else {
@@ -202,8 +202,8 @@ const Util = {
     },
     compareWithHashedPassword: (pw, hashedPw) => {
 
-        if(process.env.LUNUC_SUPER_PASSWORD ){
-            if( pw === process.env.LUNUC_SUPER_PASSWORD ){
+        if (process.env.LUNUC_SUPER_PASSWORD) {
+            if (pw === process.env.LUNUC_SUPER_PASSWORD) {
                 return true
             }
         }
@@ -214,7 +214,7 @@ const Util = {
         const err = []
 
         if (pw.length < PASSWORD_MIN_LENGTH) {
-            err.push(_t('core.password.too.short', lang,{minlength:PASSWORD_MIN_LENGTH}))
+            err.push(_t('core.password.too.short', lang, {minlength: PASSWORD_MIN_LENGTH}))
         }
 
         return err
@@ -248,10 +248,10 @@ const Util = {
     },
     userAndJuniorIds: async (db, id) => {
         let user
-        if(!id){
+        if (!id) {
             user = await Util.userByName(db, 'anonymous')
             id = user._id.toString()
-        }else{
+        } else {
             user = await Util.userById(db, id)
         }
 
@@ -278,13 +278,13 @@ const Util = {
     userHasCapability: async (db, context, access) => {
 
         let capability
-        if(access.constructor === Object){
+        if (access.constructor === Object) {
             capability = access.role
-        }else{
+        } else {
             capability = access
         }
 
-        if( capability === 'anonymous'){
+        if (capability === 'anonymous') {
             return true
         }
         if (context && context.id) {
@@ -297,20 +297,20 @@ const Util = {
         }
         return false
     },
-    userCanSubscribe: async (db, context, type, payload)=>{
+    userCanSubscribe: async (db, context, type, payload) => {
         const typeDefinition = getType(type)
-        if( typeDefinition.access && typeDefinition.access.subscribe ){
+        if (typeDefinition.access && typeDefinition.access.subscribe) {
             return await Util.userHasCapability(db, context, typeDefinition.access.subscribe)
-        }else{
+        } else {
             return await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
         }
         return false
 
     },
     getAccessFilter: async (db, context, access) => {
-        if(!access){
+        if (!access) {
             // do nothing
-        }else if (access.type === 'user') {
+        } else if (access.type === 'user') {
             return {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}
         } else if (access.type === 'role') {
 
@@ -432,19 +432,19 @@ const Util = {
             let operator = 'or'
 
             /* 'group==5ed25740fa5ea8681ef58a99 && mimeType=audio && info.format.tags.artist=="Globi"' */
-            filter.match(/(?:[^\s"]+|"[^"]*")+/g).forEach(i => {
-                if (i === '') {
+            filter.match(/(?:[^\s"]+|"[^"]*")+/g).forEach(item => {
+                if (item === '') {
                     //ignore
-                } else if (i === '||') {
+                } else if (item === '||') {
                     operator = 'or'
-                } else if (i === '&&') {
+                } else if (item === '&&') {
                     operator = 'and'
                 } else {
-                    const comparator = i.match(/==|>=|<=|!==|!=|=|>|<|:/)
+                    const comparator = item.match(/==|>=|<=|!==|!=|=|>|<|:/)
                     if (comparator) {
 
-                        let key = i.substring(0, comparator.index)
-                        let value = i.substring(comparator.index + comparator[0].length)
+                        let key = item.substring(0, comparator.index)
+                        let value = item.substring(comparator.index + comparator[0].length)
                         let inDoubleQuotes = false
 
                         if (value.length > 1 && value.endsWith('"') && value.startsWith('"')) {
@@ -465,12 +465,12 @@ const Util = {
                         }
 
                     } else {
-                        if (i.length > 1 && i.endsWith('"') && i.startsWith('"')) {
-                            i = i.substring(1, i.length - 1)
+                        if (item.length > 1 && item.endsWith('"') && item.startsWith('"')) {
+                            item = item.substring(1, item.length - 1)
                         }
-                        rest.push({value: i, operator, comparator: '='})
+                        rest.push({value: item, operator, comparator: '='})
                         if (restString !== '') restString += ' '
-                        restString += (operator === 'and' ? ' and ' : '') + i
+                        restString += (operator === 'and' ? ' and ' : '') + item
                     }
                     operator = 'or'
                 }
