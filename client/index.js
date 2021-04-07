@@ -20,7 +20,7 @@ try {
         }
     }
 }catch (e) {
-    window.sessionStorage = window.localStorage = {setItem:()=>{},removeItem:()=>{},getItem:()=>{}}
+    _app_.noStorage = true
 }
 
 function removeTrailingSlash(url) {
@@ -89,8 +89,11 @@ function mainInit() {
     if (hasMultiLanguages) {
         // if lang is not set already
         if (!_app_.lang || LANGUAGES.indexOf(_app_.lang) < 0) {
-            let lang
-            const sessionLanguage = sessionStorage.getItem('lang')
+            let lang,sessionLanguage
+            if(!_app_.noStorage){
+                sessionLanguage = sessionStorage.getItem('lang')
+            }
+
             if (contextLanguage) {
                 lang = contextLanguage
             } else {
@@ -112,7 +115,9 @@ function mainInit() {
         }
 
         // keep language in session
-        sessionStorage.setItem('lang', _app_.lang)
+        if(!_app_.noStorage){
+            sessionStorage.setItem('lang', _app_.lang)
+        }
 
     } else {
         _app_.lang = DEFAULT_LANGUAGE

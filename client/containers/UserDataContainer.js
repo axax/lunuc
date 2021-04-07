@@ -9,9 +9,11 @@ class UserDataContainer extends React.PureComponent {
     state = {
         loading: false,
         loaded: false,
-        hasAuth: localStorage.getItem('token') || document.cookie.indexOf('authRole=')>=0,
-        force:  localStorage.getItem('refreshUserData')
+        hasAuth: !_app_.noStorage && (localStorage.getItem('token') || document.cookie.indexOf('authRole=')>=0),
+        force:  !_app_.noStorage && localStorage.getItem('refreshUserData')
     }
+
+
 
     getUserData = () => {
         const {userActions} = this.props

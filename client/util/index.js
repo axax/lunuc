@@ -44,8 +44,9 @@ const Util = {
     /* deprecated -> set USE_COOKIES=true */
     getAuthToken: () => {
         // get the authentication token from local storage if it exists
-        const token = localStorage.getItem('token')
+        const token = !_app_.noStorage && localStorage.getItem('token')
         return token ? `JWT ${token}` : null
+
     },
     dateFromObjectId: (objectId, defValue) => {
         if (!objectId) {
