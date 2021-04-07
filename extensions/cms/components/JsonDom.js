@@ -1374,7 +1374,7 @@ class JsonDom extends React.Component {
     }
 
     getLocal = (key, def) => {
-        if (typeof localStorage === 'undefined') return def
+        if (_app_.noStorage || typeof localStorage === 'undefined') return def
         const value = localStorage.getItem(key)
         if (value) {
             try {
@@ -1387,7 +1387,7 @@ class JsonDom extends React.Component {
         return def
     }
     setLocal = (key, value) => {
-        if (typeof localStorage !== 'undefined') {
+        if (!_app_.noStorage && typeof localStorage !== 'undefined') {
             localStorage.setItem(key, JSON.stringify(value))
         }
     }

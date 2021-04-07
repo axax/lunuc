@@ -157,9 +157,11 @@ export default function (WrappedComponent) {
                     },
                 })
                 // clear local key values as there is a user session now
-                localStorage.removeItem(NO_SESSION_KEY_VALUES)
-                localStorage.removeItem(NO_SESSION_KEY_VALUES_SERVER)
-            } else {
+                if(!_app_.noStorage) {
+                    localStorage.removeItem(NO_SESSION_KEY_VALUES)
+                    localStorage.removeItem(NO_SESSION_KEY_VALUES_SERVER)
+                }
+            } else if(!_app_.noStorage){
                 const localStorageKey = server ? NO_SESSION_KEY_VALUES_SERVER : NO_SESSION_KEY_VALUES
                 // if there is no user session store key value temporary in the localStorage
                 const kv = localStorage.getItem(localStorageKey)
