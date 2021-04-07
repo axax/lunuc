@@ -25,6 +25,7 @@
           "name": "data",
           "uitype": "json",
           "type": "Object",
+          "index": 1,
           "compoundIndex": [
           {
             "unique": false,
@@ -46,6 +47,12 @@
               "fields": {
                 "definition": 1,
                 "_id": 1
+              }
+            },
+            {
+              "fields": {
+                "definition": 1,
+                "_id": -1
               }
             }
           ]

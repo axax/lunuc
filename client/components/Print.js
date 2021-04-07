@@ -26,7 +26,7 @@ const styles = {
     },
     root: {
         backgroundColor: '#525659',
-        padding: '3.5em',
+        padding: '3.5em 0',
         minWidth: `calc(${PAGE_WIDTH}px + 7rem)`
     },
     wrapper: {

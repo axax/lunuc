@@ -504,38 +504,16 @@ const baseElements = [
                 tab: DEFAULT_TAB
             },
             p_className: {
+                fullWidth: true,
+                value: '',
                 label: 'Style',
-                uitype: 'select',
-                enum: [
-                    {
-                        name: 'Kein Style',
-                        value: ''
-                    },
-                    {
-                        name: 'Button',
-                        value: 'button'
-                    },
-                    {
-                        name: 'Button 1',
-                        value: 'button1'
-                    },
-                    {
-                        name: 'Button 2',
-                        value: 'button2'
-                    },
-                    {
-                        name: 'Button 3',
-                        value: 'button3'
-                    },
-                    {
-                        name: 'Button 4',
-                        value: 'button4'
-                    },
-                    {
-                        name: 'Button 5',
-                        value: 'button5'
-                    }
-                ],
+                tab: DEFAULT_TAB
+            },
+            p_gotop: {
+                fullWidth: true,
+                defaultValue: true,
+                type:'Boolean',
+                label: 'Scroll top',
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_')

@@ -29,9 +29,9 @@ export default db => ({
                     const stat = fs.lstatSync(filePath)
                     if (!stat.isDirectory()) {
                         let id
-                        if(file.indexOf('private')===0){
+                        if (file.indexOf('private') === 0) {
                             id = file.substring(7)
-                        }else{
+                        } else {
                             id = file
                         }
                         if (!idMap[id]) {
@@ -67,8 +67,14 @@ export default db => ({
                 const locations = []
 
 
-                const user = await db.collection('User').findOne({picture: ObjectId(_id)})
-                if( user ){
+                const user = await db.collection('User').findOne({
+                    $or: [
+                        {picture: ObjectId(_id)},
+                        {meta: {$regex: _id, $options: 'i'}}
+                    ]
+                })
+
+                if (user) {
 
                     count++
                     locations.push({location: 'User', _id: user._id, name: user.username})
@@ -88,7 +94,7 @@ export default db => ({
                         })
                     }
                 }
-                if (count === 0  && types['GenericData']) {
+                if (count === 0 && types['GenericData']) {
                     for (let j = 0; j < allGenericData.length; j++) {
                         if (allGenericData[j].data.indexOf(_idStr) > -1) {
                             locations.push({location: 'GenericData', _id: allGenericData[j]._id})
@@ -141,7 +147,7 @@ export default db => ({
                 }
 
 
-                if (count === 0  && types['CronJob']) {
+                if (count === 0 && types['CronJob']) {
                     const data = await GenericResolver.entities(db, context, 'CronJob', ['script', 'name'], {
                         limit: 1,
                         filter: _idStr

@@ -67,7 +67,7 @@ export const createAllIndexes = async (db) => {
                                 })
                             })
                         }else{
-                            db.collection(typeName).createIndex({[field.name]: field.index}, {
+                            db.collection(typeName).createIndex({[field.name+(field.type==='Object'?'.$**':'')]: field.index}, {
                                 background: true,
                                 unique: !!field.unique
                             })

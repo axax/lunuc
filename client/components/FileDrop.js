@@ -310,6 +310,16 @@ class FileDrop extends React.Component {
                     const {status, message} = e.target.response
                     if (status === 'success') {
 
+                        const {onSuccess, onChange, name} = this.props
+                        if (onSuccess) {
+                            onSuccess(e.target.response, this)
+                        }
+
+                        if (onChange) {
+                            // call with target
+                            onChange({target: {name, value: e.target.response}})
+                        }
+
                         if( this.uploadQueue.length > 0){
                             const fromQueue = this.uploadQueue.shift()
                             this.uploadData(fromQueue.dataUrl, fromQueue.file, fromQueue.uploadTo, true)
@@ -317,19 +327,6 @@ class FileDrop extends React.Component {
                         }
                         this.uploading = false
                         this.setState({successMessage: _t('FileDrop.uploadSuccess'), uploading: false})
-
-
-                        const {onSuccess, onChange, name} = this.props
-                        if (onSuccess) {
-                            onSuccess(e.target.response, this)
-                        }
-
-                        if (onChange) {
-
-                            // call with target
-                            onChange({target: {name, value: e.target.response}})
-                        }
-
 
                     } else {
                         this.uploading = false
