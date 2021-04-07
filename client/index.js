@@ -20,7 +20,7 @@ try {
         }
     }
 }catch (e) {
-    
+    window.sessionStorage = window.localStorage = {setItem:()=>{},removeItem:()=>{}}
 }
 
 function removeTrailingSlash(url) {
