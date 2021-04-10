@@ -6,7 +6,7 @@ import {ObjectId} from 'mongodb'
 const LINKEDIN_CLIENT_ID = '772exdl15hhf0d'
 
 // this is sensitive - never expose the secret publicly
-const LINKEDIN_SECRET = '7iKphLFIh8QmqnPT'
+const LINKEDIN_SECRET = ''
 
 
 //https://www.linkedin.com/psettings/member-data

@@ -1,10 +1,10 @@
-# Starter App
+# Lunuc Framework
 
 [![Build Status](https://travis-ci.org/axax/lunuc.svg?branch=master)](https://travis-ci.org/axax/lunuc)
 
-__This is a boilerplate / app template / framework. A full-stack setup to build progressive web apps and to play around with the latest web technologies.__
+__A full-stack setup to build progressive web apps.__
 
-https://www.lunuc.com/
+For more information and examples, go to https://www.lunuc.com/
 
 *Here is a list with the main features:*
 * React for UI
@@ -28,8 +28,6 @@ https://www.lunuc.com/
 * Use of Service worker
 * Template / Page builder
 * Docker integration
-
-*Todos*
 * Push notification
 * Use of AWS lambda
 

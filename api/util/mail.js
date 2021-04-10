@@ -64,19 +64,41 @@ ${finalHtml}
         attachments
     }
 
-    const transporter = nodemailer.createTransport({
-        service: mailSettings.service,
-        host: mailSettings.host,
-        port: mailSettings.port,
-        secure: !!mailSettings.secure,
-        auth: {
-            user: mailSettings.user,
-            pass: mailSettings.password
-        },
-        dkim: mailSettings.dkim
-    })
+    let mailResponse
 
-    const mailResponse = await transporter.sendMail(message)
+    let currentMailSettings = mailSettings
+    while(true) {
+        try {
+            const transporter = nodemailer.createTransport({
+                service: currentMailSettings.service,
+                host: currentMailSettings.host,
+                port: currentMailSettings.port,
+                secure: !!currentMailSettings.secure,
+                auth: {
+                    user: currentMailSettings.user,
+                    pass: currentMailSettings.password
+                },
+                dkim: currentMailSettings.dkim,
+                tls: {
+                    // do not fail on invalid certs
+                    rejectUnauthorized: false
+                },
+                connectionTimeout: currentMailSettings.connectionTimeout || 30000,
+                socketTimeout: currentMailSettings.socketTimeout || 90000
+            })
+
+            mailResponse = await transporter.sendMail(message)
+            break
+        } catch (e) {
+            console.log(e)
+            mailResponse = e.message
+            if(currentMailSettings.second){
+                currentMailSettings = currentMailSettings.second
+            }else{
+                break
+            }
+        }
+    }
 
     Hook.call('mailSent', {db, context, slug, mailResponse, req, message})
     return mailResponse
