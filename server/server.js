@@ -876,178 +876,229 @@ function decodeURIComponentSafe(s) {
     return decodeURIComponent(s.replace(/%(?![0-9][0-9a-fA-F]+)/g, '%25'))
 }
 
+// if there are more than {REQUEST_MAX_PER_TIME} request in {REQUEST_TIME_IN_MS}ms the remote ip gets blocked for {REQUEST_BLOCK_IP_FOR_IN_MS}ms
+const REQUEST_TIME_IN_MS = 10000,
+    REQUEST_MAX_PER_TIME = 80,
+    REQUEST_BLOCK_IP_FOR_IN_MS = 120000
+const ipMap = {}, blockedIps = {}
+let reqCounter = 0
+
+function isIpBlocked(req){
+
+    const remoteAdr = req.connection.remoteAddress
+
+    if(blockedIps[remoteAdr]){
+        // block for 1 min
+        if(Date.now()-blockedIps[remoteAdr].start>REQUEST_BLOCK_IP_FOR_IN_MS){
+            delete blockedIps[remoteAdr]
+        }else {
+            console.log(remoteAdr + ' is temporarily blocked due to too many request in a short time')
+            req.connection.destroy()
+            return true
+        }
+    }
+
+    if(!ipMap[remoteAdr] || Date.now()-ipMap[remoteAdr].start>REQUEST_TIME_IN_MS){
+        ipMap[remoteAdr] = {start:Date.now(),count:0}
+    }
+    ipMap[remoteAdr].count++
+
+    if(ipMap[remoteAdr].count>REQUEST_MAX_PER_TIME){
+        blockedIps[remoteAdr] = {start:Date.now()}
+        delete ipMap[remoteAdr]
+        req.connection.destroy()
+        return true
+    }
+
+    reqCounter++
+
+    if(reqCounter>100){
+        // clean up
+        reqCounter = 0
+        for(const ip in ipMap){
+            if(Date.now()-ip.start > REQUEST_TIME_IN_MS+1000){
+                delete ipMap[ip]
+            }
+        }
+    }
+
+    return false
+}
+
 // Initialize http api
 const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req, res) {
 
     try {
-        const host = getHostFromHeaders(req.headers)
-        req.isHttps = req.socket.encrypted || this.constructor.name === 'Server'
+        if(!isIpBlocked(req)) {
+            const host = getHostFromHeaders(req.headers)
+            req.isHttps = req.socket.encrypted || this.constructor.name === 'Server'
 
-        if (hasHttpsWwwRedirect.call(this, host, req, res)) {
-            return
-        }
+            if (hasHttpsWwwRedirect.call(this, host, req, res)) {
+                return
+            }
 
-        const parsedUrl = url.parse(req.url, true)
-        let urlPathname
-        try {
-            urlPathname = decodeURIComponent(parsedUrl.pathname)
-        } catch (e) {
-            urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
-        }
+            const parsedUrl = url.parse(req.url, true)
+            let urlPathname
+            try {
+                urlPathname = decodeURIComponent(parsedUrl.pathname)
+            } catch (e) {
+                urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
+            }
 
-        //small security check
-        if (urlPathname.indexOf('../') >= 0) {
-            sendError(res, 403)
-            return
-        }
+            //small security check
+            if (urlPathname.indexOf('../') >= 0) {
+                sendError(res, 403)
+                return
+            }
 
-        console.log(`${req.connection.remoteAddress}: ${urlPathname}`)
+            console.log(`${req.connection.remoteAddress}: ${urlPathname}`)
 
-        if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/' + API_PREFIX)) {
-            // there is also /graphql/upload
-            return proxy.web(req, res, {
-                hostname: 'localhost',
-                proxyTimeout: 1000 * 60 * 10,
-                port: API_PORT,
-                path: req.url,
-                onReq: (req, {headers}) => {
-                    headers['x-forwarded-for'] = req.socket.remoteAddress
-                    headers['x-forwarded-proto'] = req.isHttps ? 'https' : 'http'
-                    headers['x-forwarded-host'] = host
-                }
-            }, defaultWebHandler)
+            if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/' + API_PREFIX)) {
+                // there is also /graphql/upload
+                return proxy.web(req, res, {
+                    hostname: 'localhost',
+                    proxyTimeout: 1000 * 60 * 10,
+                    port: API_PORT,
+                    path: req.url,
+                    onReq: (req, {headers}) => {
+                        headers['x-forwarded-for'] = req.socket.remoteAddress
+                        headers['x-forwarded-proto'] = req.isHttps ? 'https' : 'http'
+                        headers['x-forwarded-host'] = host
+                    }
+                }, defaultWebHandler)
 
-        } else {
-
-            if (urlPathname.startsWith(BACKUP_URL + '/')) {
-                const context = contextByRequest(req)
-                if (context.id && context.role === 'administrator') {
-                    // only allow download if valid jwt token is set
-                    const backup_dir = path.join(__dirname, '../' + BACKUP_DIR)
-                    const filename = path.join(backup_dir, urlPathname.substring(BACKUP_URL.length))
-                    fs.exists(filename, (exists) => {
-                        if (exists) {
-                            const fileStream = fs.createReadStream(filename)
-                            const headerExtra = {}
-                            res.writeHead(200, {...headerExtra})
-                            fileStream.pipe(res)
-                        } else {
-                            console.log('not exists: ' + filename)
-                            sendError(res, 404)
-                        }
-                    })
-                } else {
-                    sendError(res, 403)
-                }
-
-
-            } else if (urlPathname.startsWith(UPLOAD_URL + '/')) {
-                await resolveUploadedFile(urlPathname, parsedUrl, req, res)
             } else {
 
-                // check with and without www
-                const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
-                const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
-
-                if (hostrule.redirects) {
-
-                    let redirect = hostrule.redirects[urlPathname]
-                    if (!redirect) {
-                        if (urlPathname.endsWith('/')) {
-                            redirect = hostrule.redirects[urlPathname.slice(0, -1)]
-                        } else {
-                            redirect = hostrule.redirects[urlPathname + '/']
-                        }
+                if (urlPathname.startsWith(BACKUP_URL + '/')) {
+                    const context = contextByRequest(req)
+                    if (context.id && context.role === 'administrator') {
+                        // only allow download if valid jwt token is set
+                        const backup_dir = path.join(__dirname, '../' + BACKUP_DIR)
+                        const filename = path.join(backup_dir, urlPathname.substring(BACKUP_URL.length))
+                        fs.exists(filename, (exists) => {
+                            if (exists) {
+                                const fileStream = fs.createReadStream(filename)
+                                const headerExtra = {}
+                                res.writeHead(200, {...headerExtra})
+                                fileStream.pipe(res)
+                            } else {
+                                console.log('not exists: ' + filename)
+                                sendError(res, 404)
+                            }
+                        })
+                    } else {
+                        sendError(res, 403)
                     }
 
-                    if (!redirect) {
-                        redirect = hostrule.redirects['*']
-                    }
-                    if (redirect) {
-                        res.writeHead(301, {'Location': redirect})
-                        res.end()
-                        return true
-                    }
 
-                }
-
-                hostrule.headers = {...hostrules.general.headers, ...hostrule.headers}
-
-                let staticFile
-
-                if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
-                    staticFile = path.join(hostrule.basedir, hostrule.fileMapping[urlPathname])
-                    console.log('mapped file: ' + staticFile)
-                } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
-
-                    fs.readFile(STATIC_TEMPLATE_DIR + urlPathname, 'utf8', function (err, data) {
-                        const ext = path.extname(urlPathname).split('.')[1]
-                        const mimeType = MimeType.detectByExtension(ext)
-
-                        const headerExtra = {
-                            'Cache-Control': 'public, max-age=31536000',
-                            'Content-Type': mimeType,
-                            'Last-Modified': new Date().toUTCString(),
-                            ...hostrule.headers[urlPathname]
-                        }
-                        res.writeHead(200, {'Content-Type': 'text/plain'})
-                        res.write(Util.replacePlaceholders(data, {parsedUrl, host, config}))
-                        res.end()
-                    })
-
-
-                    return
+                } else if (urlPathname.startsWith(UPLOAD_URL + '/')) {
+                    await resolveUploadedFile(urlPathname, parsedUrl, req, res)
                 } else {
-                    staticFile = path.join(STATIC_DIR, urlPathname)
-                }
-                const headers = hostrule.headers[urlPathname]
 
-                if (!await sendFileFromDir(req, res, staticFile, headers, parsedUrl)) {
+                    // check with and without www
+                    const hostRuleHost = req.headers['x-host-rule'] ? req.headers['x-host-rule'].split(':')[0] : host
+                    const hostrule = {...hostrules.general, ...(hostrules[hostRuleHost] || hostrules[hostRuleHost.substring(4)])}
 
-                    if (!await sendFileFromDir(req, res, WEBROOT_ABSPATH + urlPathname, headers, parsedUrl)) {
-                        if (!await sendFileFromDir(req, res, BUILD_DIR + urlPathname, headers, parsedUrl)) {
+                    if (hostrule.redirects) {
+
+                        let redirect = hostrule.redirects[urlPathname]
+                        if (!redirect) {
+                            if (urlPathname.endsWith('/')) {
+                                redirect = hostrule.redirects[urlPathname.slice(0, -1)]
+                            } else {
+                                redirect = hostrule.redirects[urlPathname + '/']
+                            }
+                        }
+
+                        if (!redirect) {
+                            redirect = hostrule.redirects['*']
+                        }
+                        if (redirect) {
+                            res.writeHead(301, {'Location': redirect})
+                            res.end()
+                            return true
+                        }
+
+                    }
+
+                    hostrule.headers = {...hostrules.general.headers, ...hostrule.headers}
+
+                    let staticFile
+
+                    if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
+                        staticFile = path.join(hostrule.basedir, hostrule.fileMapping[urlPathname])
+                        console.log('mapped file: ' + staticFile)
+                    } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
+
+                        fs.readFile(STATIC_TEMPLATE_DIR + urlPathname, 'utf8', function (err, data) {
+                            const ext = path.extname(urlPathname).split('.')[1]
+                            const mimeType = MimeType.detectByExtension(ext)
+
+                            const headerExtra = {
+                                'Cache-Control': 'public, max-age=31536000',
+                                'Content-Type': mimeType,
+                                'Last-Modified': new Date().toUTCString(),
+                                ...hostrule.headers[urlPathname]
+                            }
+                            res.writeHead(200, {'Content-Type': 'text/plain'})
+                            res.write(Util.replacePlaceholders(data, {parsedUrl, host, config}))
+                            res.end()
+                        })
 
 
-                            // special url
-                            const pos = urlPathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
-                            if (pos >= 0) {
-                                const decodedStr = decodeURIComponent(urlPathname.substring(pos + 5))
+                        return
+                    } else {
+                        staticFile = path.join(STATIC_DIR, urlPathname)
+                    }
+                    const headers = hostrule.headers[urlPathname]
 
-                                try {
-                                    const data = JSON.parse(decodedStr)
-                                    if (data.screenshot) {
-                                        //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
-                                        //console.log(decodeURI(urlPathname.substring(pos+5)))
+                    if (!await sendFileFromDir(req, res, staticFile, headers, parsedUrl)) {
 
-                                        const filename = decodedStr.replace(/[^\w\s]/gi, '') + '.png'
+                        if (!await sendFileFromDir(req, res, WEBROOT_ABSPATH + urlPathname, headers, parsedUrl)) {
+                            if (!await sendFileFromDir(req, res, BUILD_DIR + urlPathname, headers, parsedUrl)) {
 
-                                        const absFilename = path.join(ABS_UPLOAD_DIR, 'screenshots', filename)
 
-                                        if (!fs.existsSync(absFilename)) {
-                                            let url = data.screenshot.url
-                                            if (url.indexOf('/') === 0) {
-                                                url = (req.isHttps ? 'https://' : 'http://') + hostRuleHost + url
+                                // special url
+                                const pos = urlPathname.indexOf('/' + config.PRETTYURL_SEPERATOR + '/' + config.PRETTYURL_SEPERATOR + '/')
+                                if (pos >= 0) {
+                                    const decodedStr = decodeURIComponent(urlPathname.substring(pos + 5))
+
+                                    try {
+                                        const data = JSON.parse(decodedStr)
+                                        if (data.screenshot) {
+                                            //{"screenshot":{"url":"https:/stackoverflow.com/questions/4374822/remove-all-special-characters-with-regexp","options":{"height":300}}}
+                                            //console.log(decodeURI(urlPathname.substring(pos+5)))
+
+                                            const filename = decodedStr.replace(/[^\w\s]/gi, '') + '.png'
+
+                                            const absFilename = path.join(ABS_UPLOAD_DIR, 'screenshots', filename)
+
+                                            if (!fs.existsSync(absFilename)) {
+                                                let url = data.screenshot.url
+                                                if (url.indexOf('/') === 0) {
+                                                    url = (req.isHttps ? 'https://' : 'http://') + hostRuleHost + url
+                                                }
+                                                await doScreenCapture(url, absFilename, data.screenshot.options)
                                             }
-                                            await doScreenCapture(url, absFilename, data.screenshot.options)
+
+                                            await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
+
+
+                                        } else {
+                                            sendError(res, 404)
                                         }
 
-                                        await resolveUploadedFile(`${UPLOAD_URL}/screenshots/${filename}`, parsedUrl, req, res)
+                                    } catch (e) {
+                                        console.log(decodedStr)
 
 
-                                    } else {
-                                        sendError(res, 404)
+                                        console.error(e)
+                                        sendError(res, 500)
                                     }
 
-                                } catch (e) {
-                                    console.log(decodedStr)
-
-
-                                    console.error(e)
-                                    sendError(res, 500)
+                                } else {
+                                    sendIndexFile({req, res, urlPathname, hostrule, host, parsedUrl})
                                 }
-
-                            } else {
-                                sendIndexFile({req, res, urlPathname, hostrule, host, parsedUrl})
                             }
                         }
                     }

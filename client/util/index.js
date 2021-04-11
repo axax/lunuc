@@ -294,7 +294,9 @@ const Util = {
                 params += `&quality=${options.quality}`
             }
 
-            if (options.webp) {
+            if (options.format) {
+                params += '&format='+options.format
+            }else if (options.webp) {
                 params += '&format=webp'
             }
             if (params) {

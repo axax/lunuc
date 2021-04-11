@@ -105,7 +105,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
                         key: `GenericDataDefinition${genericType}`
                     }
                 })
-            if (data.results.length === 1) {
+            if (data.results.length === 1 && data.results[0].structure) {
                 const struct = data.results[0].structure
 
                 if (struct.access && struct.access.read) {

@@ -68,6 +68,9 @@ ${finalHtml}
 
     let currentMailSettings = mailSettings
     while(true) {
+        if(currentMailSettings.useSecond && currentMailSettings.second){
+            currentMailSettings = currentMailSettings.second
+        }
         try {
             const transporter = nodemailer.createTransport({
                 service: currentMailSettings.service,
@@ -86,7 +89,6 @@ ${finalHtml}
                 connectionTimeout: currentMailSettings.connectionTimeout || 30000,
                 socketTimeout: currentMailSettings.socketTimeout || 90000
             })
-
             mailResponse = await transporter.sendMail(message)
             break
         } catch (e) {
