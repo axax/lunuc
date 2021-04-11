@@ -878,7 +878,7 @@ function decodeURIComponentSafe(s) {
 
 // if there are more than {REQUEST_MAX_PER_TIME} request in {REQUEST_TIME_IN_MS}ms the remote ip gets blocked for {REQUEST_BLOCK_IP_FOR_IN_MS}ms
 const REQUEST_TIME_IN_MS = 10000,
-    REQUEST_MAX_PER_TIME = 80,
+    REQUEST_MAX_PER_TIME = 200,
     REQUEST_BLOCK_IP_FOR_IN_MS = 120000
 const ipMap = {}, blockedIps = {}
 let reqCounter = 0
