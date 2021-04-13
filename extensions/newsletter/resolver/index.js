@@ -141,8 +141,18 @@ export default db => ({
                 return {status: 'ok'}
             }
         },
-        confirmNewsletter: async (selector, {context}) => {
+        confirmNewsletter: async ({email, token, location}, {context}) => {
 
+            const selector = {}
+            if(email){
+                selector.email = email
+            }
+            if(token){
+                selector.token = token
+            }
+            if(location){
+                selector.location = location
+            }
             const $set = {
                 confirmed: true,
                 state: 'subscribed'
