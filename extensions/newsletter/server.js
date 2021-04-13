@@ -46,10 +46,10 @@ Hook.on('NewUserCreated', async ({meta, email, insertResult, db}) => {
     }
 })
 
-Hook.on('UserConfirmed', async ({context, user}) => {
+Hook.on('UserConfirmed', async ({context,db, user}) => {
     if (user && user.meta && user.meta.newsletter) {
         // also confirm newsletter
-        resolver.Query.confirmNewsletter({email: user.email, location: user.meta.newsletterLocation}, {context})
+        resolver(db).Query.confirmNewsletter({email: user.email, location: user.meta.newsletterLocation}, {context})
     }
 })
 
