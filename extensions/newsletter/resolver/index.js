@@ -3,6 +3,7 @@ import Util from '../../../api/util'
 import {CAPABILITY_RUN_SCRIPT} from '../../../util/capabilities'
 import {sendMail} from "../../../api/util/mail";
 import crypto from "crypto";
+import {getHostFromHeaders} from "../../../util/host";
 
 export default db => ({
     Query: {
@@ -45,12 +46,23 @@ export default db => ({
                     }
                     sub.mailing = mailing
 
+                    const headerList = {
+                        // List-Help: <mailto:admin@example.com?subject=help>
+                        //help: 'admin@example.com?subject=help',
+                        // List-Unsubscribe: <http://example.com> (Comment)
+                        unsubscribe: {
+                            url: `${(req.isHttps ? 'https://' : 'http://')}${getHostFromHeaders(req.headers)}?core/unsubscribe-newsletter?email=${sub.email}&token=${sub.token}&mailing=${sub.mailing}`,
+                            comment: 'Unsubscribe'
+                        }
+                    }
+
                     const result = await sendMail(db, req.context, {
                         slug: template,
                         recipient: sub.email,
                         subject,
                         body: sub,
                         text,
+                        headerList,
                         req
                     })
                     emails.push(sub.email)
@@ -69,19 +81,23 @@ export default db => ({
                 status: 'Newsletter sent to: ' + emails.join(',')
             }
         },
-        subscribeNewsletter: async ({email, location, meta, list}, {context}) => {
+        subscribeNewsletter: async ({email, location, url, meta, list}, req) => {
+
+            const {context}  = req
 
             const collection = db.collection('NewsletterSubscriber')
 
             // check if there is a user with same email
             const user = (await db.collection('User').findOne({email}))
 
+            const token = crypto.randomBytes(32).toString("hex")
             // insert or update
             const data = {
                 $set: {
+                    token,
                     email,
                     location,
-                    state: 'subscribed',
+                    state: 'optin',
                     meta: meta ? JSON.parse(meta) : undefined
                 }
             }
@@ -106,6 +122,40 @@ export default db => ({
             )
 
             if (insertResult.modifiedCount || insertResult.matchedCount || insertResult.upsertedCount) {
+
+                let finalUrl
+                if(url){
+                    finalUrl = url
+                }else{
+                    finalUrl = (req.isHttps ? 'https://' : 'http://') + getHostFromHeaders(req.headers) + '/core/newsletter/optin/confirm'
+                }
+                console.log(finalUrl, getHostFromHeaders(req.headers))
+
+                await sendMail(db, context, {
+                    slug: 'core/newsletter/optin/mail',
+                    recipient: email,
+                    subject: 'Anmeldung Newsletter',
+                    body: `{"url":"${url}?token=${token}&location=${location || ''}"}`,
+                    req
+                })
+
+                return {status: 'ok'}
+            }
+        },
+        confirmNewsletter: async ({token, location}, {context}) => {
+
+            const collection = db.collection('NewsletterSubscriber')
+
+            const $set = {
+                confirmed: true,
+                state: 'subscribed'
+            }
+
+            let result = (await collection.findOneAndUpdate({location, token}, {
+                $set
+            }, {returnOriginal: false}))
+
+            if (result.ok) {
                 return {status: 'ok'}
             }
         },

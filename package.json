@@ -116,7 +116,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.8.3",
     "@google-cloud/translate": "^6.2.0",
-    "aws-sdk": "^2.884.0",
+    "aws-sdk": "^2.885.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
@@ -147,8 +147,8 @@
     "react-test-renderer": "^17.0.2",
     "style-loader": "^2.0.0",
     "terser-webpack-plugin": "^5.1.1",
-    "webpack": "^5.31.2",
-    "webpack-bundle-analyzer": "^4.4.0",
+    "webpack": "^5.32.0",
+    "webpack-bundle-analyzer": "^4.4.1",
     "webpack-cli": "^4.6.0",
     "webpack-dev-server": "^3.11.2"
   }

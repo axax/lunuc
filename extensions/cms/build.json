@@ -5,7 +5,7 @@
       "genResolver": false,
       "collectionClonable": true,
       "entryClonable": true,
-      "mutationResult":"CmsPage",
+      "mutationResult": "CmsPage",
       "fields": [
         {
           "name": "name",
@@ -20,13 +20,7 @@
           "required": false,
           "clone": "${slug}_copy",
           "index": 1,
-          "unique": true,
-          "compoundIndex": [{
-            "fields": {
-              "slug": 1,
-              "public": 1
-            }
-          }]
+          "unique": true
         },
         {
           "name": "hostRule",

@@ -31,6 +31,7 @@
         {
           "name": "state",
           "enum": [
+            "optin",
             "subscribed",
             "unsubscribed",
             "invalid"
