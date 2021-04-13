@@ -51,7 +51,7 @@ export default db => ({
                         //help: 'admin@example.com?subject=help',
                         // List-Unsubscribe: <http://example.com> (Comment)
                         unsubscribe: {
-                            url: `${(req.isHttps ? 'https://' : 'http://')}${getHostFromHeaders(req.headers)}?core/unsubscribe-newsletter?email=${sub.email}&token=${sub.token}&mailing=${sub.mailing}`,
+                            url: `${(req.isHttps ? 'https://' : 'http://')}${getHostFromHeaders(req.headers)}/core/unsubscribe-newsletter?email=${sub.email}&token=${sub.token}&mailing=${sub.mailing}`,
                             comment: 'Unsubscribe'
                         }
                     }
@@ -129,29 +129,26 @@ export default db => ({
                 }else{
                     finalUrl = (req.isHttps ? 'https://' : 'http://') + getHostFromHeaders(req.headers) + '/core/newsletter/optin/confirm'
                 }
-                console.log(finalUrl, getHostFromHeaders(req.headers))
 
                 await sendMail(db, context, {
                     slug: 'core/newsletter/optin/mail',
                     recipient: email,
                     subject: 'Anmeldung Newsletter',
-                    body: `{"url":"${url}?token=${token}&location=${location || ''}"}`,
+                    body: `{"url":"${finalUrl}?token=${token}&location=${location || ''}"}`,
                     req
                 })
 
                 return {status: 'ok'}
             }
         },
-        confirmNewsletter: async ({token, location}, {context}) => {
-
-            const collection = db.collection('NewsletterSubscriber')
+        confirmNewsletter: async (selector, {context}) => {
 
             const $set = {
                 confirmed: true,
                 state: 'subscribed'
             }
 
-            let result = (await collection.findOneAndUpdate({location, token}, {
+            let result = (await db.collection('NewsletterSubscriber').findOneAndUpdate(selector, {
                 $set
             }, {returnOriginal: false}))
 

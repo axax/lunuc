@@ -324,6 +324,7 @@ export const userResolver = (db) => ({
             const result = await userCollection.findOneAndUpdate({'signupToken': token}, {$set: {emailConfirmed: true}})
             const user = result.value
             if (user) {
+                Hook.call('UserConfirmed', {context, db, user})
                 return {status: 'ok'}
             } else {
                 throw new ApiError('Something went wrong. Please try again!', 'general.error')

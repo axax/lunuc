@@ -7,7 +7,6 @@ import {deepMergeToFirst} from 'util/deepMerge'
 import {ObjectId} from "mongodb";
 
 
-
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
     deepMergeToFirst(resolvers, resolver(db), resolverGen(db))
@@ -20,26 +19,37 @@ Hook.on('schema', ({schemas}) => {
 })
 
 
-
-
 // Hook to add mongodb schema
 Hook.on('NewUserCreated', async ({meta, email, insertResult, db}) => {
     if (insertResult.insertedCount) {
-        if( meta && meta.newsletter){
+        if (meta && meta.newsletter) {
             const user = (await db.collection('User').findOne({email}))
 
             // insert or update
-            const data = {email, list:(meta.newsletterList?meta.newsletterList.reduce((o,id)=>{o.push(ObjectId(id));return o},[]):[]), confirmed:true, state:'subscribed'}
+            const data = {
+                email, list: (meta.newsletterList ? meta.newsletterList.reduce((o, id) => {
+                    o.push(ObjectId(id));
+                    return o
+                }, []) : []), confirmed: false, state: 'optin'
+            }
+
+            if (meta.newsletterLocation) {
+                data.location = meta.newsletterLocation
+            }
 
             if (user && user._id) {
                 data.account = user._id
             }
 
-            const collection = db.collection('NewsletterSubscriber')
-            const insertResult = await collection.insertOne(data)
+            const insertResult = await db.collection('NewsletterSubscriber').insertOne(data)
         }
     }
 })
 
-
+Hook.on('UserConfirmed', async ({context, user}) => {
+    if (user && user.meta && user.meta.newsletter) {
+        // also confirm newsletter
+        resolver.Query.confirmNewsletter({email: user.email, location: user.meta.newsletterLocation}, {context})
+    }
+})
 
