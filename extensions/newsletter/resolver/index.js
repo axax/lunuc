@@ -117,8 +117,14 @@ export default db => ({
 
                 }
             }
+
+            const selector = {email}
+            if(location){
+                selector.location = location
+            }
+
             const insertResult = await collection.updateOne(
-                {email}, data, {upsert: true}
+                selector, data, {upsert: true}
             )
 
             if (insertResult.modifiedCount || insertResult.matchedCount || insertResult.upsertedCount) {

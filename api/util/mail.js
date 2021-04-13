@@ -75,6 +75,8 @@ ${finalHtml}
         try {
             const transporter = nodemailer.createTransport({
                 service: currentMailSettings.service,
+                debug: currentMailSettings.debug || false,
+                logger: currentMailSettings.logger || false,
                 host: currentMailSettings.host,
                 port: currentMailSettings.port,
                 secure: !!currentMailSettings.secure,
