@@ -91,6 +91,22 @@ class Routes extends React.Component {
             }
             this.history._replace(o, state)
         }
+
+       /* let lastPosY = 0
+        this.history.listen((location, action) => {
+            if (action === 'POP') {
+                if(lastPosY>0) {
+                    setTimeout(() => {
+                        if (window.scrollY === 0) {
+                            window.scrollTo({top: lastPosY})
+                            lastPosY = 0
+                        }
+                    }, 100)
+                }
+            }else if( action === 'PUSH'){
+                lastPosY = window.scrollY
+            }
+        })*/
     }
 
     render() {

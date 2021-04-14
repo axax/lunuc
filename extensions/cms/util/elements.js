@@ -509,6 +509,30 @@ const baseElements = [
                 label: 'Style',
                 tab: DEFAULT_TAB
             },
+            p_target: {
+                fullWidth: true,
+                value: '',
+                label: 'Target',
+                enum: [
+                    {
+                        name: 'Im gleichen Fenster öffnen',
+                        value: '_self'
+                    },
+                    {
+                        name: 'Im neuen Fenster öffnen',
+                        value: '_blank'
+                    },
+                    {
+                        name: '_parent',
+                        value: '_parent'
+                    },
+                    {
+                        name: '_top',
+                        value: '_top'
+                    }
+                ],
+                tab: DEFAULT_TAB
+            },
             p_gotop: {
                 fullWidth: true,
                 defaultValue: true,
@@ -1248,7 +1272,7 @@ const baseElements = [
                 uitype: 'type_picker',
                 type: 'Media',
                 filter: 'mimeType=image',
-                template: '${_comp.$set.image.options.background?_comp.$set.image.options.background+", ":""}${this.context._id?\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\'\\\')\':\'\'}',
+                template: '${_comp.$set.image.options.background?_comp.$set.image.options.background:""}${this.context._id?(_comp.$set.image.options.background?\', \':\'\')+\'url(\\\'\'+_app_.config.UPLOAD_URL+\'/\'+_id+\'/-/\'+encodeURIComponent(name)+\'?format=\'+(_comp.$set.image.options.webp?\'webp\':\'\')+\'&quality=\'+(_comp.$set.image.options.quality || \'\')+\'&width=\'+(_comp.$set.image.options.resize.width || \'\')+\'&height=\'+(_comp.$set.image.options.resize.height || \'\')+\'\\\')\':\'\'}',
                 tab: DEFAULT_TAB,
                 tabPosition: 0
             },
@@ -1265,6 +1289,14 @@ const baseElements = [
             p_style_backgroundColor: {
                 value: '',
                 label: 'Farbe',
+                tab: DEFAULT_TAB
+            },
+            ['p_data-is-ivisible']: {
+                fullWidth: true,
+                type: 'Boolean',
+                value: false,
+                placeholder: 'Ausblenden',
+                label: 'Ausblenden',
                 tab: DEFAULT_TAB
             },
             t: {
