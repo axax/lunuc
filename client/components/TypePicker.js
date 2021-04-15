@@ -12,7 +12,8 @@ import {
     IconButton,
     InputAdornment,
     DeleteIcon,
-    SearchIcon
+    SearchIcon,
+    LaunchIcon
 } from 'ui/admin'
 import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'
@@ -45,7 +46,7 @@ const styles = theme => {
             marginBottom: theme.spacing(2)
         },
         clip: {
-            margin: theme.spacing(2) + 'px auto 0px ' + theme.spacing(1) + 'px;',
+            margin: theme.spacing(2) + 'px 0px 0px ' + theme.spacing(1) + 'px;',
             '&:first-child': {
                 marginLeft: 0
             },
@@ -85,6 +86,16 @@ const styles = theme => {
         dummyRemove: {
             position: 'absolute',
             left: '5px',
+            top: '5px',
+            zIndex: 2,
+            margin: 0,
+            padding: '0.2rem',
+            background: 'rgba(0,0,0,0.5)',
+            color: '#fff'
+        },
+        openFile: {
+            position: 'absolute',
+            left: '40px',
             top: '5px',
             zIndex: 2,
             margin: 0,
@@ -224,6 +235,15 @@ class TypePicker extends React.Component {
                                     <DeleteIcon/>
                                 </IconButton>
 
+                                <IconButton className={classes.openFile}
+                                            edge="end"
+                                            onClick={()=>{
+                                                window.open(getImageSrc(value), '_blank').focus()
+                                            }}
+                                >
+                                    <LaunchIcon/>
+                                </IconButton>
+
                             </div> :
                             <Chip draggable={true}
                                   data-index={i}
@@ -234,6 +254,9 @@ class TypePicker extends React.Component {
                                   className={classNames(classes.clip)}
                                   label={typeDataToLabel(value, pickerField)}
                                   onDelete={this.handleRemovePick.bind(this, i)}
+                                  onClick={()=>{
+                                      window.open(getImageSrc(value), '_blank').focus()
+                                  }}
                                   avatar={value && value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
                                       <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>),
                         <div key={'drop' + i}

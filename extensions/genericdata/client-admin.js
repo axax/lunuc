@@ -195,6 +195,7 @@ export default () => {
                             }
                         }
                     })
+
                     // override default
                     props.children = <React.Fragment>
                         <GenericForm autoFocus
@@ -211,7 +212,6 @@ export default () => {
                     </React.Fragment>
                 }
             } else {
-
 
                 const newFields = Object.assign({}, formFields)
                 newFields.definition.readOnly = false
@@ -250,11 +250,14 @@ export default () => {
                         data[field.name] = editedData['data_' + field.name]
                     }
                 }else {
-                    data[field.name] = editedData['data_' + field.name]
+                    if( field.type==='Object'){
+                        data[field.name] = JSON.parse(editedData['data_' + field.name])
+                    }else{
+                        data[field.name] = editedData['data_' + field.name]
+                    }
                 }
                 delete editedData['data_' + field.name]
             })
-
             editedData.data = JSON.stringify(data)
 
 

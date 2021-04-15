@@ -69,8 +69,8 @@ export default db => ({
 
                 const user = await db.collection('User').findOne({
                     $or: [
-                        {picture: ObjectId(_id)},
-                        {meta: {$regex: _id, $options: 'i'}}
+                        {picture: ObjectId(_id)}
+                       /* {meta: {$regex: _id, $options: 'i'}}*/
                     ]
                 })
 

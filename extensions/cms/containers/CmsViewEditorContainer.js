@@ -310,7 +310,7 @@ class CmsViewEditorContainer extends React.Component {
                     if (cmsEditData._id) {
                         return <Query key="dataEditor"
                                       query={getTypeQueries(cmsEditData.type).query}
-                                      variables={{filter: `_id=${cmsEditData._id}`}}
+                                      variables={{filter: `_id=${cmsEditData._id}`,meta: cmsEditData.resolverKey}}
                                       fetchPolicy="network-only">
 
                             {({loading, error, data}) => {
