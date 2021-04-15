@@ -6,6 +6,7 @@ import PrivateRoute from './PrivateRoute'
 import Hook from 'util/hook'
 import config from 'gen/config-client'
 import {createBrowserHistory} from 'history'
+
 const {ADMIN_BASE_URL} = config
 import LogoutContainer from 'client/containers/LogoutContainer'
 import Async from 'client/components/Async'
@@ -63,24 +64,24 @@ class Routes extends React.Component {
         this.history._push = this.history.push
         this.history.push = (path, state) => {
             let newPath
-            if( path.constructor === Object)
+            if (path.constructor === Object)
                 path = path.pathname
-            if (path.split('?')[0].split('#')[0]!==_app_.contextPath && path.indexOf(_app_.contextPath + '/') !== 0) {
+            if (path.split('?')[0].split('#')[0] !== _app_.contextPath && path.indexOf(_app_.contextPath + '/') !== 0) {
                 newPath = _app_.contextPath + path
             } else {
                 newPath = path
             }
-            if(!this.history._urlStack){
+            if (!this.history._urlStack) {
                 this.history._urlStack = []
             }
             const index = this.history._urlStack.indexOf(path)
-            if(index>=0) {
+            if (index >= 0) {
                 this.history._urlStack.splice(index, 1);
             }
 
             this.history._urlStack.unshift(path)
-            if(this.history._urlStack.length>10){
-                this.history._urlStack = this.history._urlStack.slice(0,9)
+            if (this.history._urlStack.length > 10) {
+                this.history._urlStack = this.history._urlStack.slice(0, 9)
             }
             this.history._last = this.history.location.pathname
             this.history._push(newPath, state)
@@ -92,21 +93,26 @@ class Routes extends React.Component {
             this.history._replace(o, state)
         }
 
-       /* let lastPosY = 0
-        this.history.listen((location, action) => {
-            if (action === 'POP') {
-                if(lastPosY>0) {
-                    setTimeout(() => {
-                        if (window.scrollY === 0) {
-                            window.scrollTo({top: lastPosY})
-                            lastPosY = 0
-                        }
-                    }, 100)
-                }
-            }else if( action === 'PUSH'){
-                lastPosY = window.scrollY
+       /* if (_app_.scrollRestoration) {
+            if ('scrollRestoration' in history) {
+                history.scrollRestoration = 'manual'
             }
-        })*/
+            let lastPosY = {}, lastKey
+            this.history.listen((location, action) => {
+                if (action === 'POP') {
+                    if (lastPosY[location.key] > 0) {
+                        setTimeout(() => {
+                            if (window.scrollY === 0) {
+                                window.scrollTo({top: lastPosY[location.key]})
+                            }
+                        }, 100)
+                    }
+                } else if (action === 'PUSH' && lastKey) {
+                    lastPosY[lastKey] = window.scrollY
+                }
+                lastKey = location.key
+            })
+        }*/
     }
 
     render() {
@@ -114,7 +120,7 @@ class Routes extends React.Component {
         const capabilities = (userData && userData.role && userData.role.capabilities) || []
         return <Router history={this.history}>
             <Switch>
-                {_app_.redirect404!==location.pathname && this.routes.map((o, i) => {
+                {_app_.redirect404 !== location.pathname && this.routes.map((o, i) => {
                     if (!isAuthenticated || !o.path.startsWith(ADMIN_BASE_URL) || o.path.startsWith(ADMIN_BASE_URL + '/login') || o.path.startsWith(ADMIN_BASE_URL + '/types') || o.path.startsWith(ADMIN_BASE_URL + '/logout') || capabilities.indexOf(CAPABILITY_ACCESS_ADMIN_PAGE) >= 0) {
                         if (o.private) {
                             return <PrivateRoute key={i} path={_app_.contextPath + o.path}

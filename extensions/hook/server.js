@@ -36,13 +36,18 @@ const register = async (db) => {
 
 
                     Hook.on(`${name}.${key}`, async (args) => {
+
                         const result = await new Promise(resolve => {
                             fun.call({require, resolve, Util, ...args})
                         })
                         if(result.error){
                             console.error(result.error)
                             Hook.call('HookError', {entry, error: result.error})
+                        }else if(result.data && result.data.constructor === Promise){
+                            // if result is a promise wait for it be finished
+                            await result.data
                         }
+                        return result
                     })
 
 
