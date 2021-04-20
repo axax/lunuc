@@ -620,13 +620,22 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                                                 if (!facet.values) {
                                                     facet.values = {}
                                                 }
-                                                if (!facet.values[lookupData[key][facetKey]]) {
-                                                    facet.values[lookupData[key][facetKey]] = {
-                                                        value: lookupData[key][facetKey],
-                                                        count: 1
+
+                                                let arr = lookupData[key][facetKey]
+                                                if(arr.constructor !== Array){
+                                                    arr = [arr]
+                                                }
+
+                                                for(let i =0; i<arr.length; i++) {
+                                                    const v = arr[i]
+                                                    if (!facet.values[v]) {
+                                                        facet.values[v] = {
+                                                            value: v,
+                                                            count: 1
+                                                        }
+                                                    } else {
+                                                        facet.values[v].count++
                                                     }
-                                                } else {
-                                                    facet.values[lookupData[key][facetKey]].count++
                                                 }
                                             }
                                         }
