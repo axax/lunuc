@@ -77,7 +77,15 @@ export function matchExpr(expr, scope) {
                 return true
             }
         } else if (match[2] === ' in ') {
-            if (match[3].indexOf('"' + prop + '"') === -1) {
+            if(prop && prop.constructor === Array){
+
+                for(let i = 0; i<prop.length;i++){
+                    if (match[3].indexOf('"' + prop[i] + '"') === -1) {
+                        return true
+                    }
+                }
+
+            }else if (match[3].indexOf('"' + prop + '"') === -1) {
                 return true
             }
         }
