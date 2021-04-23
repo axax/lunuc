@@ -82,6 +82,7 @@ export function matchExpr(expr, scope) {
                 for(let i = 0; i<prop.length;i++){
                     if (match[3].indexOf('"' + prop[i] + '"') >=0) {
                         exists = true
+                        break
                     }
                 }
                 return exists?false:true
