@@ -80,6 +80,7 @@ export function matchExpr(expr, scope) {
             if(prop && prop.constructor === Array){
                 let exists = false
                 for(let i = 0; i<prop.length;i++){
+                    console.log(prop[i], match[3])
                     if (match[3].indexOf('"' + prop[i] + '"') >=0) {
                         exists = true
                         break
