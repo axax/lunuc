@@ -557,7 +557,7 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
         currentData = rootData
     }
     reducePipe.forEach(re => {
-        if (re.path) {
+        if (re.path && re.$is !== 'false') {
 
             if (re.sort) {
                 const value = propertyByPath(re.path, currentData, '.', re.assign)

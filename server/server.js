@@ -292,7 +292,11 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         let html = await page.content()
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
 
-        page.close()
+        try {
+            page.close()
+        }catch (e) {
+            console.error(e)
+        }
         browser.close()
 
         return {html, statusCode}
