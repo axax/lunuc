@@ -78,13 +78,13 @@ export function matchExpr(expr, scope) {
             }
         } else if (match[2] === ' in ') {
             if(prop && prop.constructor === Array){
-
+                let exists = false
                 for(let i = 0; i<prop.length;i++){
-                    if (match[3].indexOf('"' + prop[i] + '"') === -1) {
-                        return true
+                    if (match[3].indexOf('"' + prop[i] + '"') >=0) {
+                        exists = true
                     }
                 }
-
+                return exists?false:true
             }else if (match[3].indexOf('"' + prop + '"') === -1) {
                 return true
             }

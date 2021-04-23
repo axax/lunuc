@@ -43,6 +43,9 @@ Url to access the mongo database:
 ### Install
 * `npm install`
 
+#### Troubleshooting
+`sudo npm install puppeteer --unsafe-perm=true`
+
 ### Development
 * `npm run dev`
 * visit `http://localhost:8080`
