@@ -141,7 +141,7 @@ class JsonDom extends React.Component {
                 return <Redirect to={{pathname: to}} push={push}/>
             }
         },
-        'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, ...rest}) => {
+        'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollIterations, ...rest}) => {
             let url = to || href || ''
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
@@ -194,13 +194,15 @@ class JsonDom extends React.Component {
                     } else if (url.indexOf('#') >= 0) {
 
                         DomUtil.waitForElement('#'+url.split('#')[1]).then((el)=> {
-                            setTimeout(() => {
-                                const y = el.getBoundingClientRect().top + window.pageYOffset + (scrollOffset || 0)
+                            for(let i=0;i<(scrollIterations || 1);i++) {
+                                setTimeout(() => {
+                                    const y = el.getBoundingClientRect().top + window.pageYOffset + (scrollOffset || 0)
 
-                                window.scrollTo({top: y, behavior: 'smooth'})
+                                    window.scrollTo({top: y, behavior: 'smooth'})
 
-                                //el.scrollIntoView()
-                            }, 100)
+                                    //el.scrollIntoView()
+                                }, 100*i)
+                            }
                         })
 
 
