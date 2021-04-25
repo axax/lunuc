@@ -189,7 +189,7 @@ class JsonDom extends React.Component {
 
                     if (gotop) {
                         setTimeout(() => {
-                            window.scrollTo({top: 0})
+                            window.scrollTo(0,0)
                         }, 0)
                     } else if (url.indexOf('#') >= 0) {
 
@@ -198,10 +198,10 @@ class JsonDom extends React.Component {
                                 setTimeout(() => {
                                     const y = el.getBoundingClientRect().top + window.pageYOffset + (scrollOffset || 0)
 
-                                    window.scrollTo({top: y, behavior: 'smooth'})
+                                    window.scrollTo(0, y)
 
                                     //el.scrollIntoView()
-                                }, 100*i)
+                                }, (scrollTimeout || 1200)*i)
                             }
                         })
 
