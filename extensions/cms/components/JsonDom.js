@@ -195,7 +195,7 @@ class JsonDom extends React.Component {
 
                         const checkScroll = (el, c) => {
                             if (el) {
-                                const y = el.getBoundingClientRect().top + window.pageYOffset + (scrollOffset || 0)
+                                const y = Math.floor(el.getBoundingClientRect().top + window.pageYOffset + (scrollOffset || 0))
 
                                 if (window.scrollY !== y) {
                                     window.scrollTo(0, y)
