@@ -63,7 +63,7 @@ const AdminSwitch = (props) => <Async {...props} expose="Switch"
 class JsonDom extends React.Component {
 
     /* Events that are listened to */
-    static events = ['onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseDown', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus','onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput']
+    static events = ['onMouseOver', 'onMouseOut', 'onMouseEnter', 'onMouseDown', 'onClick', 'onKeyDown', 'onKeyUp', 'onFocus', 'onBlur', 'onChange', 'onSubmit', 'onSuccess', 'onContextMenu', 'onCustomEvent', 'onFileContent', 'onFiles', 'onInput']
 
     /*
      * Default components
@@ -141,7 +141,7 @@ class JsonDom extends React.Component {
                 return <Redirect to={{pathname: to}} push={push}/>
             }
         },
-        'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollTimeout, scrollIterations, ...rest}) => {
+        'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, ...rest}) => {
             let url = to || href || ''
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
@@ -189,20 +189,28 @@ class JsonDom extends React.Component {
 
                     if (gotop) {
                         setTimeout(() => {
-                            window.scrollTo(0,0)
+                            window.scrollTo(0, 0)
                         }, 0)
                     } else if (url.indexOf('#') >= 0) {
 
-                        DomUtil.waitForElement('#'+url.split('#')[1]).then((el)=> {
-                            for(let i=0;i<(scrollIterations || 1);i++) {
-                                setTimeout(() => {
-                                    const y = el.getBoundingClientRect().top + window.pageYOffset + (scrollOffset || 0)
+                        const checkScroll = (el, c) => {
+                            if (el) {
+                                const y = el.getBoundingClientRect().top + window.pageYOffset + (scrollOffset || 0)
 
+                                if (window.scrollY !== y) {
                                     window.scrollTo(0, y)
-
-                                    //el.scrollIntoView()
-                                }, (scrollTimeout || 1200)*i)
+                                    if (c < 100) {
+                                        setTimeout(() => {
+                                            checkScroll(el, c + 1)
+                                        }, 50)
+                                    }
+                                }
                             }
+                        }
+
+                        DomUtil.waitForElement('#' + url.split('#')[1]).then((el) => {
+                            // check until postion is reached
+                            checkScroll(el, 0)
                         })
 
 
@@ -738,7 +746,7 @@ class JsonDom extends React.Component {
                 }
 
                 if ($is && $is !== 'true') {
-                    if ($is==='false' || matchExpr($is, scope)) {
+                    if ($is === 'false' || matchExpr($is, scope)) {
                         return
                     }
                 }
@@ -758,8 +766,8 @@ class JsonDom extends React.Component {
 
                 //set
                 if ($set) {
-                    if($set.constructor === Array) {
-                        for(let i = 0;i<$set.length;i++){
+                    if ($set.constructor === Array) {
+                        for (let i = 0; i < $set.length; i++) {
                             const keyvalue = $set[i]
                             if (keyvalue.chunk) {
                                 scope[keyvalue.key] = Util.chunkArray(keyvalue.value, keyvalue.chunk, keyvalue.chunkOptions)
@@ -767,7 +775,7 @@ class JsonDom extends React.Component {
                                 scope[keyvalue.key] = keyvalue.value
                             }
                         }
-                    }else{
+                    } else {
                         scope.$set = $set
                     }
                 }
@@ -1097,9 +1105,9 @@ class JsonDom extends React.Component {
     getScope(props) {
         if (this.updateScope) {
             this.updateScope = false
-           /* Object.keys(this.scope).forEach((key) => {
-                delete this.scope[key]
-            })*/
+            /* Object.keys(this.scope).forEach((key) => {
+                 delete this.scope[key]
+             })*/
 
             this.scope.page = {slug: props.slug}
             this.scope.user = props.user
@@ -1251,19 +1259,20 @@ class JsonDom extends React.Component {
     runJsEvent(name, async, ...args) {
 
         let finalArgs
-        if(args.length){
+        if (args.length) {
             finalArgs = args[0]
-        }else{
+        } else {
             finalArgs = {}
         }
         let t = this.jsOnStack[name]
-        if(!t && finalArgs._forceUpdate){
+        if (!t && finalArgs._forceUpdate) {
             // create dummy event
-            t = [()=>{}]
+            t = [() => {
+            }]
         }
 
 
-        if ( t && t.length && !this.error) {
+        if (t && t.length && !this.error) {
             for (let i = 0; i < t.length; i++) {
                 const cb = t[i]
                 if (cb) {
