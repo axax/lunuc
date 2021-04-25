@@ -141,7 +141,7 @@ class JsonDom extends React.Component {
                 return <Redirect to={{pathname: to}} push={push}/>
             }
         },
-        'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollIterations, ...rest}) => {
+        'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollTimeout, scrollIterations, ...rest}) => {
             let url = to || href || ''
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
