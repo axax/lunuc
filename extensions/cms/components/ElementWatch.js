@@ -138,58 +138,68 @@ class ElementWatch extends React.Component {
         })
     }
 
-    addIntersectionObserver() {
+
+    makeVisible(ele) {
         const {tagSrc} = this.state
         const {$observe, eleProps, _key, tagName} = this.props
+        if (this.state.initialVisible) {
+            ele.classList.add($observe.visibleClass)
+        } else {
+            ele.setAttribute('data-loading', true)
+            if (tagName === 'SmartImage') {
+                if (eleProps.inlineSvg) {
+                    this.fetchSvg()
+                } else {
+                    const img = new Image()
+
+                    const timeout = setTimeout(() => {
+                        // gifs can be show even if they are not fully loaded
+                        img.onerror = img.onload = null
+                        this.setState({madeVisible: true})
+                    }, 20000)
+
+                    img.onerror = img.onload = () => {
+                        clearTimeout(timeout)
+                        if (!$observe.waitVisible) {
+                            ElementWatch.hasLoaded[tagSrc] = true
+                        }
+                        this.setState({madeVisible: true})
+                    }
+
+                    img.src = tagSrc
+                }
+
+            } else {
+
+                if (tagSrc && !$observe.waitVisible) {
+                    ElementWatch.hasLoaded[tagSrc] = true
+                }
+                this.setState({madeVisible: true})
+            }
+        }
+    }
+
+    addIntersectionObserver() {
+        const {$observe, _key} = this.props
 
         const ele = document.querySelector(`[data-element-watch-key='${_key}']`)
 
         if (ele) {
-            let observer = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    //console.log(_key, entry.intersectionRatio)
-                    if (entry.isIntersecting) {
-                        observer.unobserve(entry.target)
-                        if (this.state.initialVisible) {
-                            ele.classList.add($observe.visibleClass)
-                        } else {
-                            ele.setAttribute('data-loading', true)
-                            if (tagName === 'SmartImage') {
-                                if (eleProps.inlineSvg) {
-                                    this.fetchSvg()
-                                } else {
-                                    const img = new Image()
+            if (_app_.JsonDom._elementWatchForceVisible || window._elementWatchForceVisible) {
+                this.makeVisible(ele)
+            } else {
+                let observer = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        //console.log(_key, entry.intersectionRatio)
+                        if (entry.isIntersecting) {
+                            observer.unobserve(entry.target)
 
-                                    const timeout = setTimeout(() => {
-                                        // gifs can be show even if they are not fully loaded
-                                        img.onerror = img.onload = null
-                                        this.setState({madeVisible: true})
-                                    }, 20000)
-
-                                    img.onerror = img.onload = () => {
-                                        clearTimeout(timeout)
-                                        if (!$observe.waitVisible) {
-                                            ElementWatch.hasLoaded[tagSrc] = true
-                                        }
-                                        this.setState({madeVisible: true})
-                                    }
-
-                                    img.src = tagSrc
-                                }
-
-                            } else {
-
-                                if (tagSrc && !$observe.waitVisible) {
-                                    ElementWatch.hasLoaded[tagSrc] = true
-                                }
-                                this.setState({madeVisible: true})
-                            }
+                            this.makeVisible(ele)
                         }
-
-                    }
-                })
-            }, {rootMargin: $observe.rootMargin || '0px 0px 0px 0px', threshold: $observe.threshold || 0})
-            observer.observe(ele)
+                    })
+                }, {rootMargin: $observe.rootMargin || '0px 0px 0px 0px', threshold: $observe.threshold || 0})
+                observer.observe(ele)
+            }
         }
     }
 }

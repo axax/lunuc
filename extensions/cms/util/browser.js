@@ -77,7 +77,7 @@ const openInBrowser = async (options, scope, resolvedData) => {
 
     const puppeteer = require('puppeteer')
 
-    const {url, pipeline, images, ignoreSsl, waitUntil, timeout, viewPort} = options
+    const {url, pipeline, images, ignoreSsl, waitUntil, timeout, viewPort, evaluateOnNewDocument} = options
     let data = {}, error
     const browserInstance = await puppeteer.launch({
         ignoreHTTPSErrors: true,
@@ -113,6 +113,12 @@ const openInBrowser = async (options, scope, resolvedData) => {
         })
 
         const gotoOptions = {waitUntil, timeout}
+
+        if(evaluateOnNewDocument){
+            await page.evaluateOnNewDocument(evaluateOnNewDocument => {
+                eval(evaluateOnNewDocument)
+            }, evaluateOnNewDocument)
+        }
 
         await page.goto(url, gotoOptions)
 

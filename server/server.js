@@ -285,6 +285,10 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
             }
         })
 
+        await page.evaluateOnNewDocument(() => {
+            window._elementWatchForceVisible = true
+        })
+
         await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
 
 
