@@ -8,7 +8,7 @@ import extensionsPrivate from 'gen/extensions-private'
 import extensions from 'gen/extensions'
 
 console.log('merge extension defintion')
-Object.keys(extensionsPrivate).forEach(key=>{
+Object.keys(extensionsPrivate).forEach(key => {
     extensions[key] = extensionsPrivate[key]
 })
 
@@ -17,25 +17,34 @@ const {LANGUAGES} = config, typeFormFields = {}
 export const typeDataToLabel = (item, pickerField) => {
     let label = []
 
-    if(!item){
+    if (!item) {
         return 'null'
     }
 
     //TODO move to extension
-    if(!pickerField && item.__typename=== 'GenericData'){
+    if (item.__typename === 'GenericData') {
+        const definition = item.definition
         try {
-            if(item.data.constructor === Object){
+            if (item.data.constructor === Object) {
                 item = item.data
-            }else if(item.definition) {
-                const structur = JSON.parse(item.definition.structure)
-                pickerField = structur.pickerField
+            } else {
                 item = JSON.parse(item.data)
             }
-        }catch (e) {
+        } catch (e) {
             console.log(e)
         }
-    }
 
+        if (!pickerField) {
+            if (definition) {
+                try {
+                    const structur = JSON.parse(item.definition.structure)
+                    pickerField = structur.pickerField
+                } catch (e) {
+                    console.log(e)
+                }
+            }
+        }
+    }
 
     let pickers = []
     if (pickerField) {
@@ -310,7 +319,7 @@ Hook.on('Types', ({types}) => {
                 type: 'UserRole',
                 reference: true,
                 fields: ['name'],
-                tab:'Access Control'
+                tab: 'Access Control'
             },
             {
                 name: 'junior',
@@ -319,7 +328,7 @@ Hook.on('Types', ({types}) => {
                 reference: true,
                 multi: true,
                 fields: ['username'],
-                tab:'Access Control'
+                tab: 'Access Control'
             }
         ]
     }

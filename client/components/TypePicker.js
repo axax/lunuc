@@ -180,15 +180,19 @@ class TypePicker extends React.Component {
                                                setTimeout(() => {
                                                    newwindow.addEventListener('beforeunload', (e) => {
                                                        const value = newwindow.resultValue
+
+                                                       delete value.createdBy
+
+                                                       //TODO: move to extension
                                                        if (type === 'GenericData') {
                                                            try {
                                                                const structure = JSON.parse(value.definition.structure)
                                                                if (structure.pickerField) {
                                                                    const data = JSON.parse(value.data)
                                                                    const newData = {[structure.pickerField]: data[structure.pickerField]}
-                                                                   const newStructure = {pickerField: structure.pickerField}
+                                                                   //const newStructure = {pickerField: structure.pickerField}
                                                                    newwindow.resultValue.data = JSON.stringify(newData)
-                                                                   newwindow.resultValue.definition.structure = JSON.stringify(newStructure)
+                                                                   delete newwindow.resultValue.definition //.structure = JSON.stringify(newStructure)
                                                                }
                                                            } catch (e) {
                                                                console.log(e)
@@ -318,7 +322,25 @@ class TypePicker extends React.Component {
     }
 
     handlePick(idx) {
-        this.selectValue(this.state.data.results[idx])
+        const value = this.state.data.results[idx]
+
+        const {type, pickerField} = this.props
+        //TODO: move to extension
+        if (type === 'GenericData') {
+            if (pickerField && pickerField.constructor === String) {
+                const data = JSON.parse(value.data)
+                const newData = {[pickerField]: data[pickerField]}
+                value.data = JSON.stringify(newData)
+            }
+        }
+        Util.removeNullValues(value, {
+            recursiv: true,
+            emptyObject: true,
+            emptyArray: true,
+            nullArrayItems: true
+        })
+
+        this.selectValue(value)
     }
 
     selectValue(item) {
@@ -386,11 +408,10 @@ class TypePicker extends React.Component {
         if (type) {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
-
             let queryFields
-            if (pickerField) {
+            if (pickerField && type!=='GenericData') {
                 queryFields = pickerField
-            } else if (fields) {
+            } else if (fields && type!=='GenericData') {
 
                 queryFields = ''
 
@@ -414,8 +435,7 @@ class TypePicker extends React.Component {
                 queryFields = queryStatemantForType(type)
             }
             const variables = {filter, limit: 20},
-                gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){
-                                               ${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryFields}}}}`
+                gqlQuery = `query ${nameStartLower}($sort: String,$limit: Int,$page: Int,$filter: String){${nameStartLower}(sort:$sort, limit: $limit, page:$page, filter:$filter){limit offset total results{_id __typename ${queryFields}}}}`
 
             const storeData = client.readQuery({
                 query: gqlQuery,
