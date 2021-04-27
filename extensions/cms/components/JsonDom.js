@@ -202,7 +202,7 @@ class JsonDom extends React.Component {
                                     if(step> (scrollStep || 10)){
                                         step = scrollStep || 10
                                     }
-                                    window.scrollTo(0, y)
+                                    window.scrollTo(0, window.scrollY + step)
                                     if (c < 100) {
                                         setTimeout(() => {
                                             checkScroll(el, c + 1)
