@@ -141,7 +141,7 @@ class JsonDom extends React.Component {
                 return <Redirect to={{pathname: to}} push={push}/>
             }
         },
-        'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, ...rest}) => {
+        'Link': ({to, href, target, gotop, native, onClick, tracking, scrollOffset, scrollStep, scrollTimeout, ...rest}) => {
             let url = to || href || ''
             const newTarget = target && target !== 'undefined' ? target : '_self',
                 rel = target === '_blank' ? 'noopener' : ''
@@ -198,11 +198,15 @@ class JsonDom extends React.Component {
                                 const y = Math.floor(el.getBoundingClientRect().top + window.pageYOffset + (scrollOffset || 0))
 
                                 if (window.scrollY !== y) {
+                                    let step = window.scrollY - y
+                                    if(step> (scrollStep || 10)){
+                                        step = scrollStep || 10
+                                    }
                                     window.scrollTo(0, y)
                                     if (c < 100) {
                                         setTimeout(() => {
                                             checkScroll(el, c + 1)
-                                        }, 50)
+                                        }, scrollTimeout || 50)
                                     }
                                 }
                             }
