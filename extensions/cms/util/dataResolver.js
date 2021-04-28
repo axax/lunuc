@@ -240,8 +240,8 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     }
                 } else if (segment.subscription) {
 
-                    if( segment.subscription.filter && segment.subscription.filter.create ){
-                        if(!segment.subscription.variables){
+                    if (segment.subscription.filter && segment.subscription.filter.create) {
+                        if (!segment.subscription.variables) {
                             segment.subscription.variables = {}
                         }
                         segment.subscription.variables.filter = JSON.stringify(segment.subscription.filter)
@@ -268,7 +268,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     if (context.id) {
                         const user = await Util.userById(db, context.id)
 
-                        if(user) {
+                        if (user) {
                             if (segment.user.meta) {
                                 if (segment.user.meta.constructor === Array) {
                                     resolvedData.user.meta = {}
@@ -282,7 +282,7 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                                 }
                             }
 
-                            if(segment.user.email){
+                            if (segment.user.email) {
                                 resolvedData.user.email = user.email
                             }
 
@@ -526,9 +526,9 @@ const checkFilter = (filters, value, key) => {
                     for (let y = 0; y < keys.length; y++) {
                         const fieldKey = keys[y]
                         let valueToCheck
-                        if(fieldKey.indexOf('.')>=0){
+                        if (fieldKey.indexOf('.') >= 0) {
                             valueToCheck = propertyByPath(fieldKey, value[key])
-                        }else{
+                        } else {
                             valueToCheck = value[key][fieldKey]
                         }
                         if (valueToCheck && re.test(valueToCheck)) {
@@ -622,11 +622,11 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                                                 }
 
                                                 let arr = lookupData[key][facetKey]
-                                                if(arr.constructor !== Array){
+                                                if (arr.constructor !== Array) {
                                                     arr = [arr]
                                                 }
 
-                                                for(let i =0; i<arr.length; i++) {
+                                                for (let i = 0; i < arr.length; i++) {
                                                     const v = arr[i]
                                                     if (!facet.values[v]) {
                                                         facet.values[v] = {
@@ -685,7 +685,13 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                 } else {
                     setPropertyByPath(lookedupData, re.path, currentData)
                 }
-
+            } else if (re.random) {
+                let value = propertyByPath(re.path, currentData, '.', false)
+                const picks = []
+                for (let i = 0; i < re.random; i++) {
+                    picks.push(value[Math.floor(Math.random() * value.length)])
+                }
+                rootData[re.key] = picks
             } else if (re.key) {
                 const value = propertyByPath(re.path, currentData, '.', re.assign)
                 if (re.assign && value && value.constructor === Object) {
@@ -740,8 +746,8 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
                             resolveReduce(re.loop.reduce, rootData, value[key])
                         }
                     })
-                }else if(value.constructor === Array){
-                    for(let i = value.length-1; i>=0; i--){
+                } else if (value.constructor === Array) {
+                    for (let i = value.length - 1; i >= 0; i--) {
                         if (checkFilter(re.loop.filter, value, i)) {
                             value.splice(i, 1)
                         }
@@ -752,6 +758,9 @@ const resolveReduce = (reducePipe, rootData, currentData) => {
 
                 resolveReduce(re.reduce, rootData, arr)
 
+            } else if (re.limit) {
+                let value = propertyByPath(re.path, currentData, '.', re.assign)
+                value.length = re.limit
             }
             if (re.remove) {
                 const parentPath = re.path.substring(0, re.path.lastIndexOf('.'))

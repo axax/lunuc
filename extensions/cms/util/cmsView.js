@@ -45,7 +45,7 @@ export const getGqlVariables = props => {
             ...getSlugVersion(slug)
         }
 
-    if(cmsRender){
+    if(cmsRender && cmsRender.props && cmsRender.props.$){
         variables.props = JSON.stringify(cmsRender.props.$)
     }else if (_props && _props.$) {
         variables.props = JSON.stringify(_props.$)
