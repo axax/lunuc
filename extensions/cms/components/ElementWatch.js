@@ -65,32 +65,47 @@ class ElementWatch extends React.Component {
 
     render() {
         const {initialVisible, madeVisible, tagImg, tagSrc} = this.state
-        const {$observe, eleProps, eleType, jsonDom, _key, c, $c, scope} = this.props
+        const {$observe, eleProps, eleType, jsonDom, _key, c, $c, scope, tagName} = this.props
         if (!initialVisible && !madeVisible && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
 
-            const lazyImage = $observe.lazyImage
-            if (lazyImage) {
-                const tmpSrc = Util.getImageObject(eleProps.src, {
-                    quality: lazyImage.quality || 25,
-                    resize: {
-                        width: lazyImage.width,
-                        height: lazyImage.height
-                    },
-                    webp: true
-                })
-                return React.createElement(
-                    eleType,
-                    {
-                        ...eleProps,
-                        options: null,
-                        src: tmpSrc,
-                        alt: (tagImg.alt || eleProps.alt),
-                        key: _key + 'watch',
-                        'data-element-watch-key': _key,
-                        _key
-                    },
-                    ($c ? null : jsonDom.parseRec(c, _key, scope))
-                )
+
+
+            if (tagName === 'SmartImage' && eleProps) {
+
+                let tmpSrc
+
+                const lazyImage = $observe.lazyImage,
+                    o = eleProps.options
+                if (lazyImage) {
+                    tmpSrc = Util.getImageObject(eleProps.src, {
+                        quality: lazyImage.quality || 25,
+                        resize: {
+                            width: lazyImage.width,
+                            height: lazyImage.height
+                        },
+                        webp: true
+                    })
+
+                }else if (o && o.resize && o.resize.width && o.resize.height) {
+                    tmpSrc = 'data:image/svg+xml;charset=UTF-8,'+ encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${o.resize.width}' height='${o.resize.height}' viewBox='0 0 ${o.resize.width} ${o.resize.height}'><rect fill='#dedfe0' width='${o.resize.width}' height='${o.resize.height}'/></svg>`)
+                }
+
+                if(tmpSrc) {
+                    return React.createElement(
+                        eleType,
+                        {
+                            ...eleProps,
+                            options: null,
+                            src: tmpSrc,
+                            alt: (tagImg.alt || eleProps.alt),
+                            key: _key + 'watch',
+                            'data-element-watch-key': _key,
+                            _key
+                        },
+                        ($c ? null : jsonDom.parseRec(c, _key, scope))
+                    )
+                }
+
             }
             return <div data-element-watch-key={_key} data-wait-visible={jsonDom.instanceId}
                         style={{minHeight: '1rem', minWidth: '1rem'}}></div>
