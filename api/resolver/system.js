@@ -53,7 +53,6 @@ const findAndReplaceObjectIds = function (obj) {
                     })
                 } else if (v.constructor === String) {
                     if (v.indexOf('.') < 0 && ObjectId.isValid(v)) {
-                        console.log(v)
                         obj[i] = ObjectId(v)
                     }
                 } else {

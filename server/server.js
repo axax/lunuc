@@ -1142,11 +1142,21 @@ if (USE_HTTPX) {
     app.https.on('error', (e) => {
         console.log('https error', e)
     })
-    app.http.on('clientError', (e) => {
+    app.http.on('clientError', (e, socket) => {
         console.log('http clientError', e)
+
+        if (err.code === 'ECONNRESET' || !socket.writable) {
+            return
+        }
+        socket.end('HTTP/1.1 400 Bad Request\r\n\r\n')
     })
-    app.https.on('clientError', (e) => {
-        console.log('https clientError', e)
+    app.https.on('clientError', (err, socket) => {
+        console.log('https clientError', err)
+
+        if (err.code === 'ECONNRESET' || !socket.writable) {
+            return
+        }
+        socket.end('HTTP/1.1 400 Bad Request\r\n\r\n')
     })
 } else {
     app.on('upgrade', webSocket)

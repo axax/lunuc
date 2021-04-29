@@ -78,6 +78,10 @@ http://localhost:49160/
 
 `sudo apt install npm`
 
+##### Update nodejs
+`sudo n stable`
+`sudo node -v`
+ 
 #### Clone repo into /opt
 `cd /opt`
 

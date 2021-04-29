@@ -55,7 +55,7 @@ export const createOrDeleteStaticFile = async (staticFile, {db,force}) => {
 
                 fs.writeFile(filePath, content, function (err) {
                     if (err) {
-                        return console.log(err)
+                        console.log('error writing file in createOrDeleteStaticFile', err)
                     }
                 })
 

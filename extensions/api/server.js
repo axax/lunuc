@@ -56,6 +56,8 @@ Hook.on('appready', ({app, db}) => {
 
         const slug = url.parse(req.url).pathname.substring(1)
 
+        console.log(`Api request: ${slug}`)
+
         const api = await getApi({slug, db})
 
         if (!api) {

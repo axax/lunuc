@@ -47,6 +47,7 @@ exports.createServer = (opts, handler) => {
         socket.on('error', (err) => {
                 console.log('Caught httpx server socket error: ')
                 console.log(err.stack)
+                //socket.destroy()
             }
         )
 

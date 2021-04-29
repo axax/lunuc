@@ -95,7 +95,7 @@ ${finalHtml}
             mailResponse = await transporter.sendMail(message)
             break
         } catch (e) {
-            console.log(e)
+            console.log('sendMail', e)
             mailResponse = e.message
             if(currentMailSettings.second){
                 currentMailSettings = currentMailSettings.second
