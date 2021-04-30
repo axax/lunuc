@@ -1142,8 +1142,8 @@ if (USE_HTTPX) {
     app.https.on('error', (e) => {
         console.log('https error', e)
     })
-    app.http.on('clientError', (e, socket) => {
-        console.log('http clientError', e)
+    app.http.on('clientError', (err, socket) => {
+        console.log('http clientError', err)
 
         if (err.code === 'ECONNRESET' || !socket.writable) {
             return
