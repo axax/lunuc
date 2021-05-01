@@ -832,7 +832,7 @@ async function resolveUploadedFile(uri, parsedUrl, req, res) {
 
                 headerExtra['Content-Type'] = mimeType
 
-                if ((ext === 'mp3' || ext === 'mp4' || ext === 'm4a')) {
+                if ((ext === 'mp3' || ext === 'mp4' || ext === 'm4v' || ext === 'm4a')) {
 
 
                     if (!transcodeOptions || transcodeOptions.exists) {

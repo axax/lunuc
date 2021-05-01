@@ -856,6 +856,7 @@ const baseElements = [
             }
         },
         options: {
+            ['data-slide-timeout']: {value: '7000', label: 'Anzeigezeit in ms pro Slide'},
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
             ...trOptions('$inlineEditor_groupOptions_$set\\_0\\_value_text_'),
             ...classOptions('p_'),
@@ -1233,6 +1234,84 @@ const baseElements = [
             c_4_p_className: {
                 label: 'Spalte 5',
                 value: 'col-md-1-5 col-sm-4 col-xs-6',
+                tab: DEFAULT_TAB
+            },
+            ...marginOptions('p_'),
+            ...classOptions('p_')
+        }
+    },
+    {
+        tagName: 'Row',
+        name: 'Layout 1/6',
+        defaults: {
+            $inlineEditor: {
+                elementKey: 'layout-1-6'
+            },
+            p: {
+                ['data-element-key']: 'layout-1-6'
+            },
+            c: [
+                {
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
+                    t: 'Col',
+                    c: []
+                },
+                {
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
+                    t: 'Col',
+                    c: []
+                },
+                {
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
+                    t: 'Col',
+                    c: []
+                },
+                {
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
+                    t: 'Col',
+                    c: []
+                },
+                {
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
+                    t: 'Col',
+                    c: []
+                },
+                {
+                    $inlineEditor: {elementKey: 'column', menu: {addBelow: false}},
+                    t: 'Col',
+                    c: []
+                }
+            ]
+        },
+        options: {
+            c_0_p_className: {
+                label: 'Spalte 1',
+                value: 'col-md-2 col-sm-3 col-xs-6',
+                tab: DEFAULT_TAB
+            },
+            c_1_p_className: {
+                label: 'Spalte 2',
+                value: 'col-md-2 col-sm-3 col-xs-6',
+                tab: DEFAULT_TAB
+            },
+            c_2_p_className: {
+                label: 'Spalte 3',
+                value: 'col-md-2 col-sm-3 col-xs-6',
+                tab: DEFAULT_TAB
+            },
+            c_3_p_className: {
+                label: 'Spalte 4',
+                value: 'col-md-2 col-sm-3 col-xs-6',
+                tab: DEFAULT_TAB
+            },
+            c_4_p_className: {
+                label: 'Spalte 5',
+                value: 'col-md-2 col-sm-3 col-xs-6',
+                tab: DEFAULT_TAB
+            },
+            c_5_p_className: {
+                label: 'Spalte 6',
+                value: 'col-md-2 col-sm-3 col-xs-6',
                 tab: DEFAULT_TAB
             },
             ...marginOptions('p_'),
