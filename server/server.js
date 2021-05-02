@@ -248,7 +248,11 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         console.log(`fetch ${urlToFetch}`)
         const browser = await puppeteer.launch({
             ignoreHTTPSErrors: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+            args: ['--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--no-zygote' /* Disables the use of a zygote process for forking child processes. Instead, child processes will be forked and exec'd directly.*/
+            ]
         })
         const page = await browser.newPage()
 
@@ -297,11 +301,14 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
 
         try {
-            page.close()
+
+            const pages = await browser.pages()
+            await pages.forEach(async (page) => await page.close())
+
         }catch (e) {
             console.error(e)
         }
-        browser.close()
+        await browser.close()
 
         return {html, statusCode}
     } catch (e) {
@@ -318,7 +325,7 @@ const doScreenCapture = async (url, filename, options) => {
 
     const browser = await puppeteer.launch({
         ignoreHTTPSErrors: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--no-zygote']
     })
     const page = await browser.newPage()
     await page.goto(url, {waitUntil: 'domcontentloaded'})

@@ -4,11 +4,23 @@ import resolverGen from './gensrc/resolver'
 import {deepMergeToFirst} from 'util/deepMerge'
 import url from "url";
 import config from 'gensrc/config'
+import Cache from '../../util/cache'
+const CACHE_PREFIX = 'ExtensionsApi-'
 
-//TODO implement cache
+
 const getApi = async ({slug, db}) => {
+
+    const cacheKey = `${CACHE_PREFIX}${slug}`
+
+    const cachedData = Cache.get(cacheKey)
+    if(cachedData){
+        return cachedData
+    }
+
+
     const apis = (await db.collection('Api').find({slug, active: true}).toArray())
     if (apis.length > 0) {
+        Cache.set(cacheKey, apis[0])
         return apis[0]
     }
 
@@ -86,4 +98,5 @@ Hook.on('appready', ({app, db}) => {
 
 // Hook when the type Api has changed
 Hook.on('typeUpdated_Api', ({db, result}) => {
+    Cache.clearStartWith(CACHE_PREFIX)
 })

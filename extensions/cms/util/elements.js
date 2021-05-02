@@ -856,7 +856,7 @@ const baseElements = [
             }
         },
         options: {
-            ['data-slide-timeout']: {value: '7000', label: 'Anzeigezeit in ms pro Slide'},
+            ['p_data-slide-timeout']: {value: '7000', label: 'Anzeigezeit in ms pro Slide'},
             $set_0_chunk: {value: '1', label: 'Anzahl pro Seite'},
             ...trOptions('$inlineEditor_groupOptions_$set\\_0\\_value_text_'),
             ...classOptions('p_'),
