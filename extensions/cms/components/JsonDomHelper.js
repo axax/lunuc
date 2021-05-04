@@ -142,9 +142,9 @@ const styles = theme => ({
         position: 'fixed',
         background: 'rgba(245, 245, 66,0.4)',
         padding: '1rem',
-        visibility:'hidden',
-        opacity:0,
-        transition:'visibility 0.3s linear,opacity 0.3s linear'
+        visibility: 'hidden',
+        opacity: 0,
+        transition: 'visibility 0.3s linear,opacity 0.3s linear'
     },
     tooltipShow: {
         opacity: 1,
@@ -152,7 +152,7 @@ const styles = theme => ({
     }
 })
 
-const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section', 'Cms', 'Print','td']
+const ALLOW_DROP = ['div', 'main', 'Col', 'Row', 'section', 'Cms', 'Print', 'td']
 const ALLOW_DROP_IN = {'Col': ['Row'], 'li': ['ul']}
 const ALLOW_DROP_FROM = {'Row': ['Col']}
 
@@ -184,10 +184,10 @@ const highlighterHandler = (e, observer, after) => {
         clearTimeout(aftershockTimeout)
         aftershockTimeout = setTimeout(() => {
             highlighterHandler(e, observer, true)
-            for(let i=0;i<10;i++) {
+            for (let i = 0; i < 10; i++) {
                 setTimeout(() => {
                     highlighterHandler(e, observer, true)
-                }, i*50)
+                }, i * 50)
             }
         }, 50)
     }
@@ -197,17 +197,17 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Alt') {
         JsonDomHelper.altKeyDown = true
         JsonDomHelper.disabledSelect = []
-        document.querySelectorAll('select').forEach(el=> {
-            if(!el.disabled){
-                el.disabled=true
+        document.querySelectorAll('select').forEach(el => {
+            if (!el.disabled) {
+                el.disabled = true
                 JsonDomHelper.disabledSelect.push(el)
             }
         })
     }
 })
-const altKeyReleased = ()=>{
+const altKeyReleased = () => {
     JsonDomHelper.altKeyDown = false
-    JsonDomHelper.disabledSelect.forEach(el=>{
+    JsonDomHelper.disabledSelect.forEach(el => {
         el.disabled = false
     })
 }
@@ -399,7 +399,7 @@ class JsonDomHelper extends React.Component {
             const draggable = ReactDOM.findDOMNode(JsonDomHelper.currentDragElement)
             this._onDragTimeout = setTimeout(() => {
 
-                if(!JsonDomHelper.currentDragElement){
+                if (!JsonDomHelper.currentDragElement) {
                     return
                 }
 
@@ -416,7 +416,7 @@ class JsonDomHelper extends React.Component {
                     const tag = tags[i]
                     if (draggable === tag.nextSibling ||
                         draggable === tag.previousSibling ||
-                        (dragableProps._options.leaveParent===false && draggable.parentNode !== tag.parentNode) /*|| !elementOnMouseOver.contains(tag)*/) {
+                        (dragableProps._options.leaveParent === false && draggable.parentNode !== tag.parentNode) /*|| !elementOnMouseOver.contains(tag)*/) {
                         tag.classList.remove(this.props.classes.dropAreaActive)
                         continue
                     }
@@ -552,7 +552,7 @@ const m = Math.max((offX+offY) / 2,100)
             targetKey = e.currentTarget.getAttribute('data-key'),
             targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
 
-        if(targetKey) {
+        if (targetKey) {
             // 1. get element from json structure by key
             const source = getComponentByKey(sourceKey, _json)
             if (source) {
@@ -586,7 +586,7 @@ const m = Math.max((offX+offY) / 2,100)
     resetDragState() {
         DomUtilAdmin.setAttrForSelector('.' + this.props.classes.dropArea, {className: this.props.classes.dropArea})
         JsonDomHelper.currentDragElement = null
-        if( JsonDomHelper.altKeyDown){
+        if (JsonDomHelper.altKeyDown) {
             altKeyReleased()
         }
         this.setState({toolbarHovered: false, hovered: false, dragging: false})
@@ -606,15 +606,15 @@ const m = Math.max((offX+offY) / 2,100)
         tooltip.style.left = opt.left + 'px'
         tooltip.style.top = opt.top + 'px'
         tooltip.innerText = msg
-        if(opt.closeIn){
+        if (opt.closeIn) {
             clearTimeout(this.tooltipTimeout)
-            this.tooltipTimeout = setTimeout(()=>{
+            this.tooltipTimeout = setTimeout(() => {
                 tooltip.classList.remove(classes.tooltipShow)
-                this.tooltipTimeout = setTimeout(()=> {
-                    if(tooltip && tooltip.parentNode) {
+                this.tooltipTimeout = setTimeout(() => {
+                    if (tooltip && tooltip.parentNode) {
                         tooltip.parentNode.removeChild(tooltip)
                     }
-                },300)
+                }, 300)
             }, opt.closeIn)
         }
     }
@@ -645,14 +645,14 @@ const m = Math.max((offX+offY) / 2,100)
             })
 
             let finalSource
-            if(trKeys.length>0){
+            if (trKeys.length > 0) {
                 let sourceStr = JSON.stringify(source)
-                trKeys.forEach(key=>{
+                trKeys.forEach(key => {
                     const newKey = 'genid_' + Math.random().toString(36).substr(2, 9)
                     sourceStr = sourceStr.replace(new RegExp(key, "g"), newKey)
                 })
                 finalSource = JSON.parse(sourceStr)
-            }else{
+            } else {
                 finalSource = source
             }
 
@@ -1113,7 +1113,8 @@ const m = Math.max((offX+offY) / 2,100)
                 style={{top: this.state.top, left: this.state.left, height: this.state.height}}
                 className={classNames(classes.toolbar, toolbarHovered && classes.toolbarHovered)}>
 
-                <div style={{display:'none'}} className={classes.info}>{subJson ? subJson.t || 'Text' + ' - ' : ''}{rest.id || rest._key}</div>
+                <div style={{display: 'none'}}
+                     className={classes.info}>{subJson ? subJson.t || 'Text' + ' - ' : ''}{rest.id || rest._key}</div>
 
                 {menuItems.length > 0 && <SimpleMenu
                     anchorReference={this.state.mouseY ? "anchorPosition" : "anchorEl"}
@@ -1143,10 +1144,10 @@ const m = Math.max((offX+offY) / 2,100)
                     key={rest._key + '.highlighter'}
                     data-highlighter={rest._key}
                     style={{
-                        top: this.state.top-1,
-                        left: this.state.left-1,
-                        height: this.state.height+2,
-                        width: this.state.width+2
+                        top: this.state.top - 1,
+                        left: this.state.left - 1,
+                        height: this.state.height + 2,
+                        width: this.state.width + 2
                     }}
                     className={classNames(classes.highlighter, isCms || _options.picker ? classes.bgBlue : classes.bgYellow)}>{_options.picker || isCms ?
                     <div
@@ -1176,7 +1177,7 @@ const m = Math.max((offX+offY) / 2,100)
                     if (children[i].key) {
                         index = parseInt(children[i].key.substring(children[i].key.lastIndexOf('.') + 1))
 
-                        if(!_options.excludeDrop || _options.excludeDrop.indexOf(index)<0) {
+                        if (!_options.excludeDrop || _options.excludeDrop.indexOf(index) < 0) {
                             kids.push(this.getDropArea(this.props, index))
                         }
                     }
@@ -1215,7 +1216,7 @@ const m = Math.max((offX+offY) / 2,100)
                 onDoubleClick={editElementEvent}
                 onChange={overrideOnChange || onChange}
                 onClick={overrideOnClick || onClick}
-                _inlineeditor={_inlineEditor?_inlineEditor.toString():''}
+                _inlineeditor={_inlineEditor ? _inlineEditor.toString() : ''}
                 data-isempty={isEmpty}
                 key={rest._key}
                 {...events}
@@ -1237,9 +1238,9 @@ const m = Math.max((offX+offY) / 2,100)
 
                                           this.setState({deleteConfirmDialog: null})
 
-                                          setTimeout(()=>{
+                                          setTimeout(() => {
                                               JsonDomHelper.disableEvents = false
-                                          },200)
+                                          }, 200)
                                       }}
                                       actions={[
                                           {
@@ -1298,7 +1299,6 @@ const m = Math.max((offX+offY) / 2,100)
                                       onClose={(e) => {
                                           const selected = addChildDialog.selected
                                           if (e.key === 'save' && selected) {
-
 
                                               let comp = {'t': selected.tagName, ...selected.defaults}
 
@@ -1365,7 +1365,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                               selected.options && selected.options[key],
                                                               comp.$inlineEditor && comp.$inlineEditor.options && comp.$inlineEditor.options[key])
 
-                                                          if (currentOpt.template && val!==undefined && val!==null) {
+                                                          if (currentOpt.template && val !== undefined && val !== null) {
                                                               setPropertyByPath(val, '$original_' + key, comp, '_')
                                                               val = Util.replacePlaceholders(currentOpt.template, {_comp: comp, ...(val.constructor === String ? {data: val} : val[0])})
 
@@ -1420,8 +1420,8 @@ const m = Math.max((offX+offY) / 2,100)
                                                       nullArrayItems: true
                                                   })
 
-                                                  if( addChildDialog.wrap){
-                                                      const wrapped = Object.assign({},subJson)
+                                                  if (addChildDialog.wrap) {
+                                                      const wrapped = Object.assign({}, subJson)
 
                                                       Object.keys(subJson).forEach((key) => {
                                                           delete subJson[key]
@@ -1434,7 +1434,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                       subJson.c = [wrapped]
 
                                                       _onTemplateChange(_json, true)
-                                                  }else {
+                                                  } else {
 
                                                       // add new
                                                       let pos
@@ -1497,7 +1497,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                 ...item.groupOptions[key]._addButton
                                             }
                                             Object.keys(item.groupOptions[key]).forEach(fieldKey => {
-                                                if(fieldKey !== '_addButton') {
+                                                if (fieldKey !== '_addButton') {
                                                     item.options['!' + key + '!' + fieldKey + '!0'] = item.groupOptions[key][fieldKey]
                                                 }
                                             })
@@ -1522,17 +1522,16 @@ const m = Math.max((offX+offY) / 2,100)
 
                             {addChildDialog.selected && addChildDialog.selected.options &&
                             <GenericForm primaryButton={false}
-                                         onPosChange={({field, newIndex})=>{
+                                         onPosChange={({field, newIndex}) => {
 
                                              const item = addChildDialog.selected,
                                                  curKey = '!' + field.key + '!'
                                              item.options = Object.assign({}, item.options)
 
-
                                              Object.keys(field.group).forEach(groupKey => {
                                                  const from = item.options[curKey + groupKey + '!' + field.index],
                                                      to = item.options[curKey + groupKey + '!' + newIndex]
-                                                 if( to && from ) {
+                                                 if (to && from) {
                                                      item.options[curKey + groupKey + '!' + field.index] = to
                                                      item.options[curKey + groupKey + '!' + newIndex] = from
                                                  }
@@ -1563,12 +1562,28 @@ const m = Math.max((offX+offY) / 2,100)
                                                      }
                                                  })
                                                  Object.keys(field.group).forEach(groupKey => {
-                                                     if(groupKey !== '_addButton') {
+                                                     if (groupKey !== '_addButton') {
                                                          const newItem = Object.assign({}, item.groupOptions[field.key][groupKey])
                                                          delete newItem.value
+                                                         if(newItem.expandable === false){
+                                                             delete newItem.expandable
+                                                         }
                                                          item.options[curKey + groupKey + '!' + (curIdx + 1)] = newItem
                                                      }
                                                  })
+
+
+                                                 item.options['!' + field.key + '!delete!' + (curIdx + 1)] = {
+                                                     uitype: 'button',
+                                                     label: 'Löschen',
+                                                     action: 'delete',
+                                                     key: field.key,
+                                                     group: item.groupOptions[field.key],
+                                                     index: (curIdx + 1),
+                                                     newLine: true,
+                                                     expandable: false
+                                                 }
+
                                              } else if (field.action === 'delete') {
                                                  Object.keys(field.group).forEach(groupKey => {
                                                      delete item.options[curKey + groupKey + '!' + field.index]
@@ -1597,6 +1612,7 @@ const m = Math.max((offX+offY) / 2,100)
 
         newJsonElement.options = deepMerge({}, newJsonElement.options, subJson.$inlineEditor && subJson.$inlineEditor.options)
         newJsonElement.groupOptions = deepMerge({}, newJsonElement.groupOptions, subJson.$inlineEditor && subJson.$inlineEditor.groupOptions)
+
         Object.keys(newJsonElement.options).forEach(key => {
 
             let val = propertyByPath('$original_' + key, subJson, '_')
@@ -1607,7 +1623,7 @@ const m = Math.max((offX+offY) / 2,100)
             if (newJsonElement.options[key].tr && newJsonElement.options[key].trKey) {
                 if (this.props._scope.data.tr) {
                     const trEl = this.props._scope.data.tr[newJsonElement.options[key].trKey]
-                    newJsonElement.options[key].value = trEl?trEl.replace(/\\"/g, '"'):''
+                    newJsonElement.options[key].value = trEl ? trEl.replace(/\\"/g, '"') : ''
                 }
             } else {
                 newJsonElement.options[key].value = val
@@ -1626,14 +1642,14 @@ const m = Math.max((offX+offY) / 2,100)
                     action: 'add',
                     newLine: true,
                     tab: 'Slides',
-                    tabPosition:0,
+                    tabPosition: 0,
                     style: {marginBottom: '2rem'},
                     ...newJsonElement.groupOptions[key]._addButton
                 }
 
                 val.forEach((groupValue, idx) => {
                     Object.keys(newJsonElement.groupOptions[key]).forEach(fieldKey => {
-                        if(fieldKey !== '_addButton') {
+                        if (fieldKey !== '_addButton') {
                             const groupFieldOption = newJsonElement.groupOptions[key][fieldKey]
                             let groupFieldValue
                             if (groupFieldOption.tr && groupFieldOption.trKey) {
@@ -1650,7 +1666,7 @@ const m = Math.max((offX+offY) / 2,100)
                                 }
 
                             if (optData.expandable && optData.expandable.constructor === String) {
-                                optData.expandable += ' ' + (idx + 1)
+                                optData.expandable += ' ' + (idx + 1) + (groupFieldValue && groupFieldValue.constructor === String ? ' (' + groupFieldValue.substring(0, 20) + ')' : '')
                             }
 
                             newJsonElement.options[optKey] = optData
