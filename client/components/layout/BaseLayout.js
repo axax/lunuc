@@ -41,9 +41,6 @@ const BaseLayout = props => {
     if (!userKeys.loading && menuItems.length===0) {
         menuItems.push(
             {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>},
-            {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
-            {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon/>},
-            {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon/>},
             {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}
         )
 
@@ -51,7 +48,12 @@ const BaseLayout = props => {
         const capabilities = (user.userData && user.userData.role && user.userData.role.capabilities) || []
 
         if (capabilities.indexOf(CAPABILITY_MANAGE_TYPES) >= 0) {
-            menuItems.splice(1, 0, {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>})
+
+            menuItems.push(
+                {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
+                {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon/>},
+                {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon/>},
+                {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>})
         }
 
 

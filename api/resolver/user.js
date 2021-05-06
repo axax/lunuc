@@ -60,7 +60,7 @@ const createUser = async ({username, role, junior, password, language, email, em
         }
     }
 
-    if (meta !== undefined) {
+    if (meta !== undefined && meta !== null) {
         if(meta.constructor !== Object) {
             meta = JSON.parse(meta)
         }

@@ -332,7 +332,7 @@ const doScreenCapture = async (url, filename, options) => {
 
     await page.setViewport({width: 1280, height: 800, ...options})
     if (options.delay) {
-        await page.waitFor(options.delay)
+        await page.waitForTimeout(options.delay)
     }
     console.log(options)
     if (options.padding) {
