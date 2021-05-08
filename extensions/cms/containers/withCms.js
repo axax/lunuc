@@ -107,7 +107,7 @@ export default function (WrappedComponent) {
 
             const variables = {
                 key,
-                value: value && value.constructor === Object ? JSON.stringify(value) : value
+                value: value && value.constructor !== String ? JSON.stringify(value) : value
             }
 
             if (user.isAuthenticated) {
