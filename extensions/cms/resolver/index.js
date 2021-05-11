@@ -82,7 +82,7 @@ export default db => ({
             const startTime = (new Date()).getTime()
             const {context, headers} = req
 
-            const userIsLoggedIn = Util.isUserLoggedIn(context)
+            let editable = Util.isUserLoggedIn(context)
             let cmsPages = await getCmsPage({db, context, slug, _version, checkHostrules: !dynamic, headers, editmode})
             if (!cmsPages.results || cmsPages.results.length === 0) {
 
@@ -112,6 +112,17 @@ export default db => ({
                 editmode,
                 dynamic
             })
+
+            if(resolvedData.access ){
+                if(resolvedData.access.read === false){
+                    throw new Error('No access rights')
+                }
+                if(resolvedData.access.edit === false){
+                    editable = false
+                }
+            }
+
+
             let html
             if (ssr) {
 
@@ -171,6 +182,7 @@ export default db => ({
                 compress,
                 subscriptions,
                 urlSensitiv,
+                editable,
                 cacheKey: '' // todo: remove
             }
 
@@ -185,7 +197,7 @@ export default db => ({
                 result.meta = JSON.stringify(meta)
             }
 
-            if (userIsLoggedIn && editmode) {
+            if (editable && editmode) {
                 // return all data if user is loggedin, and in editmode and has the capability to mange cms pages
                 result.name = name
 

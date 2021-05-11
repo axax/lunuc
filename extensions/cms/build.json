@@ -124,6 +124,11 @@
           "type": "Boolean"
         },
         {
+          "name": "editable",
+          "hidden": true,
+          "type": "Boolean"
+        },
+        {
           "name": "subscriptions",
           "hidden": true
         },

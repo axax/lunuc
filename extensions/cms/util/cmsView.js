@@ -11,7 +11,7 @@ export const settingKeyPrefix = 'CmsViewContainerSettings'
 
 // the graphql query is also need to access and update the cache when data arrive from a subscription
 let _gqlQuery
-export const CMS_PAGE_QUERY = `query cmsPage($slug:String!,$query:String,$meta:String,$props:String,$nosession:String,$editmode:Boolean,$dynamic:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,meta:$meta,props:$props,nosession:$nosession,editmode:$editmode,dynamic:$dynamic,_version:$_version){slug realSlug name{__typename ${config.LANGUAGES.join(' ')}} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData style parseResolvedData alwaysLoadAssets loadPageOptions ssrStyle publicEdit compress html meta subscriptions _id modifiedAt createdBy{_id username} status}}`
+export const CMS_PAGE_QUERY = `query cmsPage($slug:String!,$query:String,$meta:String,$props:String,$nosession:String,$editmode:Boolean,$dynamic:Boolean,$_version:String){cmsPage(slug:$slug,query:$query,meta:$meta,props:$props,nosession:$nosession,editmode:$editmode,dynamic:$dynamic,_version:$_version){slug realSlug name{__typename ${config.LANGUAGES.join(' ')}} urlSensitiv template script serverScript resources dataResolver ssr public online resolvedData style parseResolvedData alwaysLoadAssets loadPageOptions ssrStyle publicEdit compress html meta subscriptions editable _id modifiedAt createdBy{_id username} status}}`
 
 export const isPreview = () => {
     const params = new URLSearchParams(window.location.search)
@@ -19,8 +19,17 @@ export const isPreview = () => {
 }
 
 export const isEditMode = (props) => {
-    const {user, dynamic} = props
-    return ((props.cmsPage && props.cmsPage.publicEdit) || (!dynamic && user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_CONTENT)) && !isPreview() && props.editMode !== false)
+    const {user, dynamic, cmsPage} = props
+
+    if(cmsPage){
+        if(!cmsPage.editable){
+            return false
+        }else if( cmsPage.publicEdit ){
+            return true
+        }
+    }
+
+    return (!dynamic && user.isAuthenticated && Util.hasCapability(user, CAPABILITY_MANAGE_CMS_CONTENT)) && !isPreview() && props.editMode !== false
 }
 
 export const getSlugVersion = (slug) => {

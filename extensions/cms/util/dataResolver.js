@@ -4,7 +4,7 @@ import Cache from '../../../util/cache'
 import request from 'request-promise'
 import Util from '../../../api/util'
 import ClientUtil from 'client/util'
-import {CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities'
+import {CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities'
 import {addToWebsiteQueue} from './browser'
 import Hook from '../../../util/hook'
 import {translations} from '../../../util/i18nServer'
@@ -78,7 +78,21 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     continue
                 }
 
-                if (segment._data) {
+
+                if (segment.access) {
+
+                    if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+
+                        resolvedData.access = {}
+                        Object.keys(segment.access).forEach(key => {
+                            const usernames = segment.access[key].username
+                            if (usernames.indexOf(context.username) < 0) {
+                                resolvedData.access[key] = false
+                            }
+                        })
+                    }
+
+                } else if (segment._data) {
                     resolvedData._data = segment._data
                 } else if (segment.resolveFrom) {
                     if (segment.resolveFrom.KeyValueGlobal) {
