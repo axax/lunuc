@@ -331,7 +331,7 @@ const Util = {
         if (lang === _app_.lang) return path
         const p = path.split('/')
         if (p[1].length === 2 && p[1] !== lang) {
-            if (lang === '') {
+            if (lang === '' || lang === config.DEFAULT_LANGUAGE) {
                 //default language
                 p.splice(1, 1)
             } else {
