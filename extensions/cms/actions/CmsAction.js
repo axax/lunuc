@@ -1,6 +1,8 @@
 import * as types from '../constants/ActionTypes'
 
-export const cmsRender = (props) => ({
+export const cmsRender = (props, {slug, id}) => ({
     type: types.CMS_RENDER,
-    props
+    props,
+    slug,
+    id
 })

@@ -196,8 +196,8 @@ class JsonDom extends React.Component {
                         const checkScroll = (el, c) => {
                             if (el) {
                                 let y = Math.floor(el.getBoundingClientRect().top + window.pageYOffset + (scrollOffset || 0))
-                                if(y > window.document.documentElement.scrollHeight-window.innerHeight){
-                                    y = window.document.documentElement.scrollHeight-window.innerHeight
+                                if (y > window.document.documentElement.scrollHeight - window.innerHeight) {
+                                    y = window.document.documentElement.scrollHeight - window.innerHeight
                                 }
                                 if (window.scrollY !== y) {
                                     let step = y - window.scrollY
@@ -1506,7 +1506,7 @@ class JsonDom extends React.Component {
     }
 
     reload = props => {
-        this.props.cmsActions.cmsRender(props)
+        this.props.cmsActions.cmsRender(props, {slug: this.props.slug, id: this.props.id})
     }
 
 }
