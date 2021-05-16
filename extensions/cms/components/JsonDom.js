@@ -12,7 +12,7 @@ import CmsViewContainer from '../containers/CmsViewContainer'
 import {getKeyValueFromLS} from 'client/util/keyvalue'
 import {Link, Redirect} from 'react-router-dom'
 import JsonDomInput from './JsonDomInput'
-import {deepMergeOptional} from 'util/deepMerge'
+import {deepMerge, deepMergeOptional} from 'util/deepMerge'
 import {preprocessCss} from '../util/cssPreprocessor'
 import {parseStyles} from 'client/util/style'
 import ElementWatch from './ElementWatch'
@@ -1506,7 +1506,7 @@ class JsonDom extends React.Component {
     }
 
     reload = props => {
-        this.props.cmsActions.cmsRender(props, {slug: this.props.slug, id: this.props.id})
+        this.props.cmsActions.cmsRender(deepMerge({}, this.scope.props, props), {slug: this.props.slug, id: this.props.id})
     }
 
 }
