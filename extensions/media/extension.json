@@ -1,5 +1,6 @@
 {
   "name": "Media",
   "description": "Media handling",
-  "author": "Simon Schärer"
+  "author": "Simon Schärer",
+  "public": true
 }

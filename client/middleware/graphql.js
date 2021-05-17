@@ -161,6 +161,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
         fetch(GRAPHQL_URL, {
             method: 'POST',
             signal,
+            credentials: 'include',
             headers: getHeaders(lang),
             body
         }).then(r => {
