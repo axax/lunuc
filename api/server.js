@@ -21,7 +21,7 @@ import {HEADER_TIMEOUT, SESSION_HEADER, USE_COOKIES} from './constants'
 import {parseCookies} from './util/parseCookies'
 
 export const MONGO_URL = (process.env.LUNUC_MONGO_URL || process.env.MONGO_URL)
-const BACKUP_MONGO_URL= '' //'mongodb://localhost:27018/lunuc'
+const BACKUP_MONGO_URL = '' //'mongodb://localhost:27018/lunuc'
 
 //const MONGO_URL = "mongodb://127.0.0.1:27018/lunuc"
 
@@ -65,12 +65,23 @@ export const start = (done) => {
             // Initialize http api
             const app = express()
 
-            app.use(compression())
+            app.use(compression({
+                filter: (req, res) => {
+                    if (res.noCompression) {
+                        // don't compress responses with this request header
+                        return false
+                    }
+
+                    // fallback to standard filter function
+                    return compression.filter(req, res)
+
+                }
+            }))
 
             // delay response
-           /*  app.use(function (req, res, next) {
-              setTimeout(next, 1000)
-              })*/
+            /*  app.use(function (req, res, next) {
+               setTimeout(next, 1000)
+               })*/
 
             // Authentication
             auth.initialize(app, db)
@@ -91,12 +102,12 @@ export const start = (done) => {
 
             // ApolloServer
             // Construct a schema, using GraphQL schema language
-           /* const typeDefs = gql(schemaString)
-            const apolloServer = new ApolloServer({
-                typeDefs, resolvers, formatError,
-                context: ({ req }) => req
-            })
-            apolloServer.applyMiddleware({app, path: '/graphql'})*/
+            /* const typeDefs = gql(schemaString)
+             const apolloServer = new ApolloServer({
+                 typeDefs, resolvers, formatError,
+                 context: ({ req }) => req
+             })
+             apolloServer.applyMiddleware({app, path: '/graphql'})*/
 
             // Graphql-Express
             const schema = buildSchema(schemaString)
@@ -112,7 +123,7 @@ export const start = (done) => {
 
             //app.use(bodyParser.urlencoded({ extended: false }))
             // fix graphql limit of 100kb body size
-            app.use(bodyParser.json({ limit: '10000mb' }))
+            app.use(bodyParser.json({limit: '10000mb'}))
 
             // only allow post methode
             app.post('/graphql', (req, res, next) => {
@@ -129,7 +140,7 @@ export const start = (done) => {
                         //UserStats.addData(req, {operationName})
                     }
                 })(req, res, next).then(() => {
-                    if( req.context ) {
+                    if (req.context) {
                         req.context.responded = true
                         if (req.context.delayedPubsubs) {
                             for (const pub of req.context.delayedPubsubs) {
@@ -172,16 +183,16 @@ export const start = (done) => {
                     rootValue,
                     onConnect: (connectionParams, webSocket, context) => {
 
-                       // const host = webSocket.upgradeReq.headers.host
+                        // const host = webSocket.upgradeReq.headers.host
                     },
-                    onOperation: ({payload},params,ws) => {
+                    onOperation: ({payload}, params, ws) => {
 
                         let context
-                        if(USE_COOKIES) {
+                        if (USE_COOKIES) {
                             const cookies = parseCookies(ws.upgradeReq)
                             context = decodeToken(cookies.auth)
                             context.session = cookies.session
-                        }else{
+                        } else {
                             context = decodeToken(payload.auth)
                             context.session = payload.session
                         }
@@ -199,7 +210,7 @@ export const start = (done) => {
         }
     }))
 
-    if(BACKUP_MONGO_URL) {
+    if (BACKUP_MONGO_URL) {
         dbConnection(BACKUP_MONGO_URL, (err, db, client) => {
 
             _app_.backupDb = db

@@ -972,7 +972,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 // there is also /graphql/upload
                 return proxy.web(req, res, {
                     hostname: 'localhost',
-                    proxyTimeout: 1000 * 60 * 10,
+                    proxyTimeout: 3600000, /* 1h */
                     port: API_PORT,
                     path: req.url,
                     onReq: (req, {headers}) => {

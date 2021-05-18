@@ -57,11 +57,11 @@
     "url": "https://github.com/axax/issues"
   },
   "dependencies": {
-    "@babel/core": "^7.14.2",
+    "@babel/core": "^7.14.3",
     "@babel/plugin-proposal-class-properties": "^7.13.0",
     "@babel/plugin-proposal-export-default-from": "^7.12.13",
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
-    "@babel/plugin-transform-runtime": "^7.14.2",
+    "@babel/plugin-transform-runtime": "^7.14.3",
     "@babel/preset-env": "^7.14.2",
     "@babel/preset-react": "^7.13.13",
     "@babel/register": "^7.13.16",
@@ -107,7 +107,7 @@
     "redux": "^4.1.0",
     "request-promise": "^4.2.6",
     "sharp": "^0.28.2",
-    "socket.io": "^4.1.1",
+    "socket.io": "^4.1.2",
     "subscriptions-transport-ws": "^0.9.18",
     "telegraf": "^4.3.0",
     "web-push": "^3.4.4",
@@ -116,7 +116,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.8.5",
     "@google-cloud/translate": "^6.2.1",
-    "aws-sdk": "^2.907.0",
+    "aws-sdk": "^2.908.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
@@ -127,7 +127,7 @@
     "xml2js": "^0.4.23",
     "ytdl-core": "^4.8.0",
     "soap": "^0.38.0",
-    "lighthouse": "^7.4.0"
+    "lighthouse": "^7.5.0"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
