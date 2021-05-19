@@ -183,7 +183,7 @@ class CmsViewEditorContainer extends React.Component {
                     }
                 })
             }
-        }, instant ? 0 : 5000)
+        }, instant ? 0 : 10000)
     }
 
     componentWillUnmount() {

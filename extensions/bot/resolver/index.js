@@ -31,7 +31,6 @@ export default db => ({
 
                     ctx.on('command', (command, message_id) => {
                         pubsub.publish('subscribeBotMessage', {
-                            botId,
                             subscribeBotMessage: {
                                 id: currentId,
                                 response: text,
@@ -60,7 +59,6 @@ export default db => ({
                         })
 
                         pubsub.publish('subscribeBotMessage', {
-                            botId,
                             subscribeBotMessage: {
                                 id: currentId,
                                 response: text,
@@ -75,7 +73,6 @@ export default db => ({
                     })
                     ctx.on('deleteMessage', (message_id) => {
                         pubsub.publish('subscribeBotMessage', {
-                            botId,
                             subscribeBotMessage: {
                                 id: currentId,
                                 message_id,
@@ -115,9 +112,6 @@ export default db => ({
                             })*/
 
                             pubsub.publish('subscribeBotMessage', {
-                                userId: context.id,
-                                botId: botConnector.botId,
-                                sessionId: sessionId,
                                 subscribeBotMessage: {
                                     sessionId,
                                     isBot:true,
@@ -132,7 +126,7 @@ export default db => ({
                             })
                         }
 
-                    }else if (command === 'alive') {
+                    }else if (command === 'alive' || command === 'typing') {
                         if (!botConnector.sessions[sessionId] ) {
                             botConnector.sessions[sessionId] = {username: user.username, user_id: context.id}
                         }
@@ -147,9 +141,6 @@ export default db => ({
                         //const sessionData = botConnector.sessions[context.session]
 
                         pubsub.publish('subscribeBotMessage', {
-                            userId: context.id,
-                            botId: botConnector.botId,
-                            sessionId: sessionId,
                             subscribeBotMessage: {
                                 botId: botConnector.botId,
                                 id: currentId,
@@ -158,7 +149,7 @@ export default db => ({
                                 user_id: context.id,
                                 user_image: user && user.picture,
                                 message_id: ObjectId().toString(),
-                                event: 'alive',
+                                event: command,
                                 meta
                             }
                         })
@@ -166,9 +157,6 @@ export default db => ({
                         clearTimeout(botConnectorClearTimeout[sessionId])
                         botConnectorClearTimeout[sessionId] = setTimeout(() => {
                             pubsub.publish('subscribeBotMessage', {
-                                userId: context.id,
-                                botId: botConnector.botId,
-                                sessionId: sessionId,
                                 subscribeBotMessage: {
                                     botId: botConnector.botId,
                                     id: currentId,
@@ -183,9 +171,6 @@ export default db => ({
 
                             if(Object.keys(botConnector.sessions).length < 1) {
                                 pubsub.publish('subscribeBotMessage', {
-                                    userId: context.id,
-                                    botId: botConnector.botId,
-                                    sessionId: sessionId,
                                     subscribeBotMessage: {
                                         botId: botConnector.botId,
                                         id: currentId,
@@ -218,9 +203,6 @@ export default db => ({
                     })
 
                     pubsub.publish('subscribeBotMessage', {
-                        userId: context.id,
-                        botId,
-                        sessionId: sessionId,
                         subscribeBotMessage: {
                             botId,
                             botName: registeredBots[botId].data.name,
@@ -257,19 +239,25 @@ export default db => ({
             },
             (payload, context) => {
 
-                if (payload && (payload.subscribeBotMessage.event!=='alive' || payload.userId !== context.id)) {
-                    const sessionId = context.session
-                    const botConnector = botConnectors[payload.subscribeBotMessage.id]
-                    if (botConnector && botConnector.sessions[sessionId] ) {
-                        return true
-                    } else if(context.id){
-                        const bot = registeredBots[payload.botId]
-                        if (bot && bot.data.manager) {
-                            if (bot.hasManager(context.id)) {
-                                return true
-                            }
-                        }
 
+
+                if (payload) {
+                    const message = payload.subscribeBotMessage
+                    if(message.event!=='alive' || message.user_id !== context.id)
+                    {
+                        const sessionId = context.session
+                        const botConnector = botConnectors[message.id]
+                        if (botConnector && botConnector.sessions[sessionId]) {
+                            return true
+                        } else if (context.id) {
+                            const bot = registeredBots[message.botId]
+                            if (bot && bot.data.manager) {
+                                if (bot.hasManager(context.id)) {
+                                    return true
+                                }
+                            }
+
+                        }
                     }
                 }
                 return false

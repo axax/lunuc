@@ -276,6 +276,9 @@ export const resolveData = async ({db, context, dataResolver, scope, nosession, 
                     })
 
                     resolvedData[dataKey] = map
+
+                } else if (segment.session) {
+                    resolvedData.session = {id: context.session}
                 } else if (segment.user) {
 
                     resolvedData.user = {id: context.id}

@@ -12,9 +12,13 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
 
         let referer
         if (meta) {
-
+            let metaJson
             try {
-                const metaJson = JSON.parse(meta)
+                if (meta.constructor !== Object) {
+                    metaJson = JSON.parse(meta)
+                } else {
+                    metaJson = meta
+                }
                 referer = metaJson.referer
             } catch (e) {
                 console.log(e)
@@ -29,14 +33,14 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
         const insertData = {
             ip: ip.replace('::ffff:', ''),
             agent: req.headers['x-track-user-agent'] || req.headers['user-agent'],
-            isBot: req.headers['x-track-is-bot']==='true'?true:false,
+            isBot: req.headers['x-track-is-bot'] === 'true' ? true : false,
             referer,
             data,
             event,
             host: host,
             slug,
             day: date.getDate(),
-            month: date.getMonth()+1,
+            month: date.getMonth() + 1,
             year: date.getFullYear(),
             createdBy: await Util.userOrAnonymousId(db, context)
         }
