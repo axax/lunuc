@@ -201,7 +201,7 @@ const GenericResolver = {
             }
         }
 
-        const estimateCount = includeCount !== false && !options.filter && Object.keys(match).length===0
+        const estimateCount = includeCount !== false && !options.filter && Object.keys(match).length === 0
 
         const aggregationBuilder = new AggregationBuilder(typeName, data, {
             match,
@@ -214,7 +214,7 @@ const GenericResolver = {
         /* if (typeName.indexOf("GenericData") >= 0) {
              console.log(JSON.stringify(dataQuery, null, 4))
          }*/
-       /// console.log(options,JSON.stringify(dataQuery, null, 4))
+        /// console.log(options,JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
@@ -373,11 +373,22 @@ const GenericResolver = {
 
         const collection = db.collection(collectionName)
 
-        const deletedResult = await collection.deleteOne(options)
+        const deletedResult = await collection.findOneAndDelete(options)
 
-        if (deletedResult.deletedCount > 0) {
-            Hook.call('typeDeleted', {type: typeName, ids: [data._id], db})
-            Hook.call('typeDeleted_' + typeName, {ids: [data._id], db})
+        if (deletedResult.ok && deletedResult.value) {
+            Hook.call('typeDeleted', {
+                type: typeName,
+                ids: [data._id],
+                db,
+                context,
+                deletedDocuments: [deletedResult.value]
+            })
+            Hook.call('typeDeleted_' + typeName, {
+                ids: [data._id],
+                db,
+                context,
+                deletedDocuments: [deletedResult.value]
+            })
 
             return {
                 _id: data._id,
@@ -430,11 +441,13 @@ const GenericResolver = {
 
         const collection = db.collection(collectionName)
 
+        const deletedDocuments = await collection.find(options).toArray()
+
         const deletedResult = await collection.deleteMany(options)
 
         if (deletedResult.deletedCount > 0) {
-            Hook.call('typeDeleted', {type: typeName, ids: [data._id], db})
-            Hook.call('typeDeleted_' + typeName, {ids: [data._id], db})
+            Hook.call('typeDeleted', {type: typeName, ids: data._id, deletedDocuments, db, context})
+            Hook.call('typeDeleted_' + typeName, {ids: data._id, deletedDocuments, db, context})
             return result
         } else {
             throw new Error('Error deleting entries. You might not have premissions to manage other users')
@@ -558,9 +571,9 @@ const GenericResolver = {
             status: 'updated'
         }
 
-        if(_meta){
+        if (_meta) {
             const meta = JSON.parse(_meta)
-            if(meta.clearCachePrefix){
+            if (meta.clearCachePrefix) {
                 Cache.clearStartWith(meta.clearCachePrefix)
             }
         }

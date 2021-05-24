@@ -4,6 +4,8 @@ import Hook from 'util/hook'
 import {deepMergeToFirst} from 'util/deepMerge'
 import Util from '../../api/util'
 
+const TYPES_TO_IGNORE = ['History', 'Log', 'UserTracking', 'MailTracking']
+
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
     deepMergeToFirst(resolvers, resolver(db))
@@ -16,32 +18,36 @@ Hook.on('schema', ({schemas}) => {
 
 // Hook when a type has changed
 Hook.on('typeUpdated', async ({db, data, type, context}) => {
-    const meta = {keys: Object.keys(data)}
-    db.collection('History').insertOne({
-        type,
-        action:'update',
-        data,
-        meta,
-        createdBy: await Util.userOrAnonymousId(db, context)
-    })
+
+    if (!TYPES_TO_IGNORE.includes(type)) {
+        const meta = {keys: Object.keys(data)}
+        db.collection('History').insertOne({
+            type,
+            action: 'update',
+            data,
+            meta,
+            createdBy: await Util.userOrAnonymousId(db, context)
+        })
+    }
 })
 
 
 // Hook when a type has been deleted
-Hook.on('typeDeleted', async ({db, data, type, context}) => {
-    let meta = ''
-    if(data) {
-        meta = {keys: Object.keys(data)}
-    }
-    db.collection('History').insertOne({
-        type,
-        action:'delete',
-        data,
-        meta,
-        createdBy: await Util.userOrAnonymousId(db, context)
-    })
-})
+Hook.on('typeDeleted', async ({db, type, deletedDocuments, context, ids}) => {
 
+    if (!TYPES_TO_IGNORE.includes(type)) {
+        for (const data of deletedDocuments) {
+            db.collection('History').insertOne({
+                type,
+                action: 'delete',
+                data: data,
+                createdBy: await Util.userOrAnonymousId(db, context)
+            })
+        }
+    }
+
+
+})
 
 
 // Hook to create mongodb index

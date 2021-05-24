@@ -934,8 +934,10 @@ const m = Math.max((offX+offY) / 2,100)
 
                     if (_onDataResolverPropertyChange) {
                         overrideOnChange = (e, ...args) => {
-                            _onDataResolverPropertyChange({value: e.target.value, path: parsedSource._id})
-                            onChange(e, ...args)
+                            _onDataResolverPropertyChange({value: Util.escapeForJson(e.target.value), path: parsedSource._id})
+                            if(onChange) {
+                                onChange(e, ...args)
+                            }
                         }
                     }
 
