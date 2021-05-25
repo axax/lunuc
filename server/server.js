@@ -373,7 +373,8 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
 
     if (isBot || (browser === 'firefox' && version <= 12) || (browser === 'chrome' && version <= 16) || (browser === 'msie' && version <= 6)) {
 
-        if (req.headers.accept && req.headers.accept.indexOf('text/html') < 0) {
+        if ( req.headers.accept && req.headers.accept.indexOf('text/html') < 0) {
+            console.log('headers not valid', req.headers.accept)
             res.writeHead(404)
             res.end()
             return
