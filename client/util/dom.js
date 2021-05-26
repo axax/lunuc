@@ -101,16 +101,22 @@ const DomUtil = {
         }
         return code
     },
-    waitForElement: (selector) => {
-        return new Promise(resolve => {
+    waitForElement: (selector, options) => {
+        return new Promise((resolve, reject) => {
             const el = document.querySelector(selector)
             if (el) {
                 return resolve(el)
             }
+            const timer = setTimeout(()=>{
+                observer.disconnect()
+                reject()
+            }, options && options.timeout || 30000)
 
             const observer = new MutationObserver(mutations => {
                 const el = document.querySelector(selector)
                 if (el) {
+                    clearTimeout(timer)
+
                     resolve(el)
                     observer.disconnect()
                 }

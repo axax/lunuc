@@ -13,6 +13,7 @@ import Async from 'client/components/Async'
 import {
     CAPABILITY_ACCESS_ADMIN_PAGE
 } from 'util/capabilities'
+import {scrollByHash} from '../../../extensions/cms/util/urlUtil'
 
 const LoginContainer = (props) => <Async {...props}
                                          load={import(/* webpackChunkName: "admin" */ '../../containers/LoginContainer')}/>
@@ -96,26 +97,28 @@ class Routes extends React.Component {
             this.history._replace(o, state)
         }
 
-       /* if (_app_.scrollRestoration) {
-            if ('scrollRestoration' in history) {
-                history.scrollRestoration = 'manual'
-            }
-            let lastPosY = {}, lastKey
-            this.history.listen((location, action) => {
-                if (action === 'POP') {
-                    if (lastPosY[location.key] > 0) {
-                        setTimeout(() => {
-                            if (window.scrollY === 0) {
-                                window.scrollTo({top: lastPosY[location.key]})
-                            }
-                        }, 100)
-                    }
-                } else if (action === 'PUSH' && lastKey) {
-                    lastPosY[lastKey] = window.scrollY
-                }
-                lastKey = location.key
-            })
-        }*/
+        scrollByHash(location.href, {})
+
+        /* if (_app_.scrollRestoration) {
+             if ('scrollRestoration' in history) {
+                 history.scrollRestoration = 'manual'
+             }
+             let lastPosY = {}, lastKey
+             this.history.listen((location, action) => {
+                 if (action === 'POP') {
+                     if (lastPosY[location.key] > 0) {
+                         setTimeout(() => {
+                             if (window.scrollY === 0) {
+                                 window.scrollTo({top: lastPosY[location.key]})
+                             }
+                         }, 100)
+                     }
+                 } else if (action === 'PUSH' && lastKey) {
+                     lastPosY[lastKey] = window.scrollY
+                 }
+                 lastKey = location.key
+             })
+         }*/
     }
 
     render() {

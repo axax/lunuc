@@ -5,6 +5,7 @@ import Hook from 'util/hook'
 import {_t} from 'util/i18n'
 import Util from 'client/util'
 import {propertyByPath, matchExpr} from '../../../client/util/json'
+import {scrollByHash} from '../util/urlUtil'
 import {getComponentByKey} from '../util/jsonDomUtil'
 import DomUtil from 'client/util/dom'
 import Async from 'client/components/Async'
@@ -191,34 +192,8 @@ class JsonDom extends React.Component {
                         setTimeout(() => {
                             window.scrollTo(0, 0)
                         }, 0)
-                    } else if (url.indexOf('#') >= 0) {
-
-                        const checkScroll = (el, c) => {
-                            if (el) {
-                                let y = Math.floor(el.getBoundingClientRect().top + window.pageYOffset + (scrollOffset || 0))
-                                if (y > window.document.documentElement.scrollHeight - window.innerHeight) {
-                                    y = window.document.documentElement.scrollHeight - window.innerHeight
-                                }
-                                if (window.scrollY !== y) {
-                                    let step = y - window.scrollY
-                                    if (step > (scrollStep || 50)) {
-                                        step = scrollStep || 50
-                                    }
-                                    window.scrollTo(0, window.scrollY + step)
-                                    if (c < 5000) {
-                                        setTimeout(() => {
-                                            checkScroll(el, c + 1)
-                                        }, scrollTimeout || 5)
-                                    }
-                                }
-                            }
-                        }
-
-                        DomUtil.waitForElement('#' + url.split('#')[1]).then((el) => {
-                            // check until postion is reached
-                            checkScroll(el, 0)
-                        })
-
+                    } else {
+                        scrollByHash(url, {scrollOffset, scrollStep, scrollTimeout})
                     }
 
                     if (onClick) {
@@ -1506,7 +1481,10 @@ class JsonDom extends React.Component {
     }
 
     reload = props => {
-        this.props.cmsActions.cmsRender(deepMerge({}, this.scope.props, props), {slug: this.props.slug, id: this.props.id})
+        this.props.cmsActions.cmsRender(deepMerge({}, this.scope.props, props), {
+            slug: this.props.slug,
+            id: this.props.id
+        })
     }
 
 }
