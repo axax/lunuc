@@ -27,7 +27,8 @@
             "newPassword",
             "beforeSignUp",
             "NewUserCreated",
-            "Frontend"
+            "Frontend",
+            "OnMail"
           ]
         },
         {

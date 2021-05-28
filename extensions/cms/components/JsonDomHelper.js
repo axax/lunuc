@@ -899,7 +899,6 @@ const m = Math.max((offX+offY) / 2,100)
         }
 
         events.onDragStart = e => {
-            console.log(e.target)
             if (isDraggable) {
                 this.onDragStart(e)
             } else {
@@ -926,7 +925,6 @@ const m = Math.max((offX+offY) / 2,100)
                     }
                 })
             }
-
             if (hasJsonToEdit) {
 
 
@@ -934,8 +932,11 @@ const m = Math.max((offX+offY) / 2,100)
 
                     if (_onDataResolverPropertyChange) {
                         overrideOnChange = (e, ...args) => {
-                            _onDataResolverPropertyChange({value: Util.escapeForJson(e.target.value), path: parsedSource._id})
-                            if(onChange) {
+                            _onDataResolverPropertyChange({
+                                value: Util.escapeForJson(e.target.value),
+                                path: parsedSource._id
+                            })
+                            if (onChange) {
                                 onChange(e, ...args)
                             }
                         }
@@ -1567,7 +1568,7 @@ const m = Math.max((offX+offY) / 2,100)
                                                      if (groupKey !== '_addButton') {
                                                          const newItem = Object.assign({}, item.groupOptions[field.key][groupKey])
                                                          delete newItem.value
-                                                         if(newItem.expandable === false){
+                                                         if (newItem.expandable === false) {
                                                              delete newItem.expandable
                                                          }
                                                          item.options[curKey + groupKey + '!' + (curIdx + 1)] = newItem

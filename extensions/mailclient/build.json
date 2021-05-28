@@ -24,6 +24,61 @@
         {
           "name": "active",
           "type": "Boolean"
+        },
+        {
+          "name": "archive",
+          "type": "Boolean"
+        },
+        {
+          "name": "markSeen",
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "MailClientArchive",
+      "fields": [
+        {
+          "name": "client",
+          "type": "MailClient",
+          "multi": false,
+          "index": 1
+        },
+        {
+          "name": "messageId",
+          "label": "messageId",
+          "unique": true
+        },
+        {
+          "name": "receivedDate",
+          "type": "Float",
+          "uitype":"datetime"
+        },
+        {
+          "name": "priority",
+          "label": "Priority"
+        },
+        {
+          "name": "from",
+          "label": "From"
+        },
+        {
+          "name": "to",
+          "label": "To"
+        },
+        {
+          "name": "subject",
+          "label": "Subject"
+        },
+        {
+          "name": "text",
+          "label": "Text",
+          "uitype": "editor"
+        },
+        {
+          "name": "html",
+          "label": "Html",
+          "uitype": "html"
         }
       ]
     }

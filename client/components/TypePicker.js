@@ -187,12 +187,18 @@ class TypePicker extends React.Component {
                                                        if (type === 'GenericData') {
                                                            try {
                                                                const structure = JSON.parse(value.definition.structure)
+
                                                                if (structure.pickerField) {
                                                                    const data = JSON.parse(value.data)
-                                                                   const newData = {[structure.pickerField]: data[structure.pickerField]}
-                                                                   //const newStructure = {pickerField: structure.pickerField}
+                                                                   const newData = {}
+
+                                                                   const pickerFields = structure.pickerField.constructor === Array? structure.pickerField: [structure.pickerField]
+                                                                   for( const pickerField of pickerFields){
+                                                                       newData[pickerField] = data[pickerField]
+                                                                   }
+
                                                                    newwindow.resultValue.data = JSON.stringify(newData)
-                                                                   delete newwindow.resultValue.definition //.structure = JSON.stringify(newStructure)
+                                                                   delete newwindow.resultValue.definition
                                                                }
                                                            } catch (e) {
                                                                console.log(e)
@@ -259,7 +265,9 @@ class TypePicker extends React.Component {
                                   label={typeDataToLabel(value, pickerField)}
                                   onDelete={this.handleRemovePick.bind(this, i)}
                                   onClick={()=>{
-                                      window.open(getImageSrc(value), '_blank').focus()
+                                      if(value.type==='Media'){
+                                          window.open(getImageSrc(value), '_blank').focus()
+                                      }
                                   }}
                                   avatar={value && value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
                                       <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>),

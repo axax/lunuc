@@ -561,7 +561,7 @@ class CmsViewEditorContainer extends React.Component {
                                 onChange={this.handleFlagChange.bind(this, 'public')}
                             /><br/>
                             <SimpleSwitch
-                                label="Url sensitive (refresh component on url change)"
+                                label="Url sensitive (refresh component on url or props change)"
                                 checked={!!this.state.urlSensitiv}
                                 onChange={this.handleFlagChange.bind(this, 'urlSensitiv')}
                             /><br/>
