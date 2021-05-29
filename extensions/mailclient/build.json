@@ -78,7 +78,8 @@
         {
           "name": "html",
           "label": "Html",
-          "uitype": "html"
+          "uitype": "html",
+          "alwaysLoad": false
         }
       ]
     }
