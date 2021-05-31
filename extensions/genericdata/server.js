@@ -108,7 +108,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
                     postConvert: false,
                     cache: {
                         expires: 86400000,
-                        key: `GenericDataDefinition${genericType}`
+                        key: `GenericDataDefinition${genericType}WithStructure`
                     }
                 })
             if (data.results.length === 1 && data.results[0].structure) {

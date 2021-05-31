@@ -26,6 +26,10 @@ const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
 
 const hostrules = loadAllHostrules(true)
 
+setInterval(()=>{
+    // update changes
+    loadAllHostrules(true, hostrules)
+},60000)
 
 // Use Httpx
 const USE_HTTPX = process.env.LUNUC_HTTPX === 'false' ? false : true
@@ -448,7 +452,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
         let indexfile
 
         if (hostrule.fileMapping && hostrule.fileMapping['/index.html']) {
-            indexfile = path.join(hostrule.basedir, hostrule.fileMapping['/index.html'])
+            indexfile = path.join(hostrule._basedir, hostrule.fileMapping['/index.html'])
         } else {
             // default index
             indexfile = path.join(BUILD_DIR, '/index.min.html')
@@ -1042,7 +1046,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     let staticFile
 
                     if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
-                        staticFile = path.join(hostrule.basedir, hostrule.fileMapping[urlPathname])
+                        staticFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
                         console.log('mapped file: ' + staticFile)
                     } else if (urlPathname.length > 1 && fs.existsSync(STATIC_TEMPLATE_DIR + urlPathname)) {
 

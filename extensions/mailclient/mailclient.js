@@ -52,7 +52,7 @@ const startListening = async (db) => {
                                 from: mail.headers.from,
                                 receivedDate: new Date(mail.receivedDate),
                                 priority:mail.priority,
-                                messageId: String(mail.messageId),
+                                messageId: String(mail.messageId  || mail.uuid  ),
                                 createdBy: admin._id
                             })
                         }
