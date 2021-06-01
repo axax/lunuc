@@ -170,18 +170,22 @@ class Print extends React.PureComponent {
         if (!window.html2canvas) return false
         if (!window.pdfMake) return false
 
-        const {classes, pdfName, showDate, scale} = this.props
+        const {classes, pdfName, showDate} = this.props
         const overlay = this.$(`.${classes.overlay}`)[0],
             printArea = this.$(`.${classes.printArea}`)[0],
             printAreaInner = this.$(`.${classes.printAreaInner}`, printArea)[0],
             pdfContent = []
 
+        const scale = this.props.scale || 1
+
         overlay.style.display = 'flex'
 
 
         const offsetTop = this.offsetTop(printArea),
-            paddingTop = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-top')),
-            paddingBottom = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-bottom'))
+            paddingTop = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-top')) +
+                parseInt(window.getComputedStyle(printAreaInner, null).getPropertyValue('padding-top')),
+            paddingBottom = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-bottom')) +
+                parseInt(window.getComputedStyle(printAreaInner, null).getPropertyValue('padding-bottom'))
 
         setTimeout(()=> {
 
@@ -212,11 +216,12 @@ class Print extends React.PureComponent {
                     marginTopLast = this.offsetTop(breaks[page - 1]) - offsetTop + this.outerHeight(breaks[page - 1])
                 }
 
+
                 html2canvas(printArea, {
                     imageTimeout: 20000,
                     width: PAGE_WIDTH - 1,
                     height: PAGE_HEIGHT,
-                    scale: scale || 1,
+                    scale,
                     scrollX: -window.scrollX - 7,
                     scrollY: page>0?-(marginTopLast-paddingTop+window.scrollY):-window.scrollY,
                     /*logging: true,*/
@@ -234,19 +239,19 @@ class Print extends React.PureComponent {
 
                     context.fillStyle = "white"
                     if(!isFirstPage ){
-                        context.fillRect(0, 0, canvas.width, paddingTop)
+                        context.fillRect(0, 0, canvas.width, paddingTop * scale)
                     }
 
                     if(!isLastPage ){
-                        let h = (page+1)*PAGE_HEIGHT -(page*(paddingTop+paddingBottom))-marginTop
+                        let h = ((page+1)*PAGE_HEIGHT -(page*(paddingTop+paddingBottom))-marginTop) * scale
                        context.fillRect(0, canvas.height-h, canvas.width, h)
                     }
 
                     // draw page number
                     context.textBaseline = "top"
-                    context.font = "10px sans-serif"
+                    context.font = `${10 * scale}px sans-serif`
                     context.fillStyle = "rgba(0,0,0,0.5)"
-                    context.fillText((page + 1) + ' / '+(breaks.length + 1)+ (showDate ? ' - '+Util.formatDate(new Date()):''), 10, canvas.height-20)
+                    context.fillText((page + 1) + ' / '+(breaks.length + 1)+ (showDate ? ' - '+Util.formatDate(new Date()):''), 10 * scale, canvas.height-20*scale)
 
 
                     const data = createCanvas.toDataURL()

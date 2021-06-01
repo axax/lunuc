@@ -163,7 +163,7 @@ class Bot {
     }
 
 
-    communicate(key, ctx) {
+    communicate(key, ctx, opts) {
         if (ctx.message && ctx.message.text) {
             this.archiveMessage(ctx)
             let command = ctx.message.text.trim().toLowerCase()
@@ -173,8 +173,9 @@ class Bot {
                 this.commands[command.substring(1)].bind(this)({api: ctx, bot:this})
                 return
             } else {
-
-                this.createResult(ctx.message.text)
+                if(!opts || opts.createResult!==false) {
+                    this.createResult(ctx.message.text)
+                }
             }
         }
         this.handleOn(key, ctx)

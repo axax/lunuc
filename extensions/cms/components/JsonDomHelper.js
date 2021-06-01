@@ -546,33 +546,35 @@ const m = Math.max((offX+offY) / 2,100)
         const {classes, _json, _onTemplateChange} = this.props
         e.currentTarget.classList.remove(classes.dropAreaOver)
 
-        let sourceKey = JsonDomHelper.currentDragElement.props._key,
-            sourceIndex = parseInt(sourceKey.substring(sourceKey.lastIndexOf('.') + 1)),
-            sourceParentKey = getParentKey(sourceKey),
-            targetKey = e.currentTarget.getAttribute('data-key'),
-            targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
+        if(JsonDomHelper.currentDragElement) {
+            let sourceKey = JsonDomHelper.currentDragElement.props._key,
+                sourceIndex = parseInt(sourceKey.substring(sourceKey.lastIndexOf('.') + 1)),
+                sourceParentKey = getParentKey(sourceKey),
+                targetKey = e.currentTarget.getAttribute('data-key'),
+                targetIndex = parseInt(e.currentTarget.getAttribute('data-index'))
 
-        if (targetKey) {
-            // 1. get element from json structure by key
-            const source = getComponentByKey(sourceKey, _json)
-            if (source) {
-                if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
-                    //2. remove it from json
-                    if (removeComponent(sourceKey, _json)) {
+            if (targetKey) {
+                // 1. get element from json structure by key
+                const source = getComponentByKey(sourceKey, _json)
+                if (source) {
+                    if (isTargetAbove(sourceKey, targetKey + '.' + targetIndex)) {
+                        //2. remove it from json
+                        if (removeComponent(sourceKey, _json)) {
 
-                        // 3. add it to new position
+                            // 3. add it to new position
+                            addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
+
+                            _onTemplateChange(_json, true)
+
+                        }
+                    } else {
                         addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
-
+                        removeComponent(sourceKey, _json)
                         _onTemplateChange(_json, true)
-
                     }
-                } else {
-                    addComponent({key: targetKey, json: _json, index: targetIndex, component: source})
-                    removeComponent(sourceKey, _json)
-                    _onTemplateChange(_json, true)
                 }
-            }
 
+            }
         }
         setTimeout(() => {
 

@@ -46,6 +46,8 @@ export default db => ({
 
                     ctx.on('text', (text, message_id) => {
 
+
+
                         registeredBots[botId].archiveMessage({
                             message: {
                                 text,
@@ -217,7 +219,8 @@ export default db => ({
                         }
                     })
 
-                    registeredBots[botId].communicate('text', botConnector)
+                    // create a bot response if there is only one user in the current session
+                    registeredBots[botId].communicate('text', botConnector, {createResult: Object.keys(botConnector.sessions).length<2})
                 }
 
                 return {id: currentId}

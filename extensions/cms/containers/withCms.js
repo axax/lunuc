@@ -161,24 +161,29 @@ export default function (WrappedComponent) {
                     localStorage.removeItem(NO_SESSION_KEY_VALUES)
                     localStorage.removeItem(NO_SESSION_KEY_VALUES_SERVER)
                 }
-            } else if(!_app_.noStorage){
-                const localStorageKey = server ? NO_SESSION_KEY_VALUES_SERVER : NO_SESSION_KEY_VALUES
-                // if there is no user session store key value temporary in the localStorage
-                const kv = localStorage.getItem(localStorageKey)
-                let json
-                if (kv) {
-                    try {
-                        json = JSON.parse(kv)
-                    } catch (e) {
+            } else {
+                if(!_app_.noStorage){
+                    const localStorageKey = server ? NO_SESSION_KEY_VALUES_SERVER : NO_SESSION_KEY_VALUES
+                    // if there is no user session store key value temporary in the localStorage
+                    const kv = localStorage.getItem(localStorageKey)
+                    let json
+                    if (kv) {
+                        try {
+                            json = JSON.parse(kv)
+                        } catch (e) {
+                            json = {}
+                        }
+                    } else {
                         json = {}
                     }
-                } else {
-                    json = {}
+                    json[key] = value
+                    localStorage.setItem(localStorageKey, JSON.stringify(json))
+                    if (resolvedDataJson) {
+                        this.updateResolvedData({json: resolvedDataJson})
+                    }
                 }
-                json[key] = value
-                localStorage.setItem(localStorageKey, JSON.stringify(json))
-                if (resolvedDataJson) {
-                    this.updateResolvedData({json: resolvedDataJson})
+                if (callback) {
+                    callback({key, value})
                 }
             }
 

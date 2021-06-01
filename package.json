@@ -116,7 +116,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.8.5",
     "@google-cloud/translate": "^6.2.1",
-    "aws-sdk": "^2.918.0",
+    "aws-sdk": "^2.919.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
@@ -126,7 +126,7 @@
     "native-dns": "^0.7.0",
     "xml2js": "^0.4.23",
     "ytdl-core": "^4.8.2",
-    "soap": "^0.38.0",
+    "soap": "^0.39.0",
     "lighthouse": "^7.5.0"
   },
   "devDependencies": {
