@@ -6,13 +6,13 @@ import injectSheet from 'react-jss'
 import {_t, registerTrs} from '../../util/i18n'
 import classNames from 'classnames'
 
-const PAGE_HEIGHT = 1430, PAGE_WIDTH= 1010
+const PAGE_HEIGHT = 1430, PAGE_WIDTH = 1010
 
 const styles = {
     button: {
         height: '30px',
         backgroundColor: '#46b8da',
-        cursor:'pointer',
+        cursor: 'pointer',
         margin: 'auto',
         display: 'block',
         border: 'none',
@@ -32,7 +32,7 @@ const styles = {
     wrapper: {
         margin: 'auto',
         display: 'block',
-        width: PAGE_WIDTH+'px',
+        width: PAGE_WIDTH + 'px',
         border: 'solid 1px #E5E5E5',
         boxShadow: '0 4px 8px 0 rgba(0,0,0,0.12),0 2px 4px 0 rgba(0,0,0,0.08)'
     },
@@ -65,18 +65,12 @@ const styles = {
         display: 'none',
         lineHeight: 1.6
     },
-    invisible: {
-        visibility: 'hidden !important',
-        '& *': {
-            visibility: 'hidden !important'
-        }
-    },
     pageBreak: {
         width: '100%',
-       /* borderTop: 'dashed 1px #ffd633',*/
+        borderTop: 'dashed 1px #ffd633',
         position: 'relative',
-        top:0,
-       /* '&:after': {
+        top: 0,
+        '&:after': {
             position: 'absolute',
             right: '10px',
             display: 'block',
@@ -85,7 +79,7 @@ const styles = {
             fontSize: '0.7em',
             background: '#ffd633',
             padding: '3px'
-        }*/
+        }
     }
 }
 
@@ -95,44 +89,43 @@ class Print extends React.PureComponent {
         super(props)
 
         registerTrs({
-            de:{
+            de: {
                 "Print.almostDone": "Bitte warten... Das PDF ist gleich fertiggestellt!",
                 "Print.createPage": "Bitte warten... Es kann ein wenig dauern... Seite %page% von %numberOfPages% ist erstellt.",
             },
-            en:{
+            en: {
                 "Print.almostDone": "Please be patient... We are almost there... Enjoy!",
                 "Print.createPage": "Please be patient... It might take some time... Page %page% of %numberOfPages% is being produced"
             }
         }, 'Print')
 
-        DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.70/pdfmake.min.js',{id: 'pdfmake'})
+        DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.70/pdfmake.min.js', {id: 'pdfmake'})
         DomUtil.addScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js', {id: 'html2canvas'})
     }
 
     componentDidMount() {
-        if(this.props.onCustomEvent){
+        if (this.props.onCustomEvent) {
             this.props.onCustomEvent(this)
         }
         if (this.props.createOnMount) {
             setTimeout(() => {
                 this.createPdfWait()
             }, 300)
-        }else{
+        } else {
 
             setTimeout(() => {
-            const {classes} = this.props
+                const {classes} = this.props
 
-            const printArea = this.$(`.${classes.printArea}`)[0],
-                printAreaInner = this.$(`.${classes.printAreaInner}`, printArea)[0]
-
-
-
-            const offsetTop = this.offsetTop(printArea),
-                paddingTop = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-top')),
-                paddingBottom = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-bottom'))
+                const printArea = this.$(`.${classes.printArea}`)[0],
+                    printAreaInner = this.$(`.${classes.printAreaInner}`, printArea)[0]
 
 
-                this.calculatePageBreaks({printAreaInner,paddingTop,paddingBottom,offsetTop})
+                const offsetTop = this.offsetTop(printArea),
+                    paddingTop = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-top')),
+                    paddingBottom = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-bottom'))
+
+
+                this.calculatePageBreaks({printAreaInner, paddingTop, paddingBottom, offsetTop})
 
             }, 300)
         }
@@ -142,13 +135,14 @@ class Print extends React.PureComponent {
 
     render() {
         const {classes, children, style, printAreaInnerStyle, buttonLabel, className, showButtons} = this.props
-        return <div className={classNames(classes.root,className)}>
-            {showButtons!==false && <button className={classes.button}
-                    onClick={this.createPdf.bind(this)}>{buttonLabel || 'Create PDF'}</button>}
+        return <div className={classNames(classes.root, className)}>
+            {showButtons !== false && <button className={classes.button}
+                                              onClick={this.createPdf.bind(this)}>{buttonLabel || 'Create PDF'}</button>}
             <div className={classes.overlay}></div>
             <div className={classes.wrapper}>
-                <div className={classNames(classes.printArea,'print-area')} style={style}>
-                    <div className={classNames(classes.printAreaInner,'print-area-inner')} style={printAreaInnerStyle}>{children}</div>
+                <div className={classNames(classes.printArea, 'print-area')} style={style}>
+                    <div className={classNames(classes.printAreaInner, 'print-area-inner')}
+                         style={printAreaInnerStyle}>{children}</div>
                 </div>
             </div>
         </div>
@@ -182,17 +176,14 @@ class Print extends React.PureComponent {
 
 
         const offsetTop = this.offsetTop(printArea),
-            paddingTop = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-top')) +
-                parseInt(window.getComputedStyle(printAreaInner, null).getPropertyValue('padding-top')),
-            paddingBottom = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-bottom')) +
-                parseInt(window.getComputedStyle(printAreaInner, null).getPropertyValue('padding-bottom'))
+            pagePaddingTop = this.getPropertyAsNumber(printArea, 'padding-top') + this.getPropertyAsNumber(printAreaInner, 'padding-top'),
+            pagePaddingBottom =  this.getPropertyAsNumber(printArea, 'padding-bottom') + this.getPropertyAsNumber(printAreaInner, 'padding-bottom')
 
-        setTimeout(()=> {
+        setTimeout(() => {
 
-
-            this.calculatePageBreaks({printAreaInner,paddingTop,paddingBottom,offsetTop})
-         /*  ol.style.display = 'none'
-            return*/
+            this.calculatePageBreaks({printAreaInner, paddingTop: pagePaddingTop, paddingBottom: pagePaddingBottom, offsetTop})
+            /*  ol.style.display = 'none'
+               return*/
 
             const breaks = this.$('.' + classes.pageBreak, printAreaInner)
 
@@ -200,20 +191,17 @@ class Print extends React.PureComponent {
             const nextPage = page => {
                 overlay.innerText = _t('Print.createPage', {page: page + 1, numberOfPages: breaks.length + 1})
 
-                /*const fi = this.$(`.${classes.invisible}`, pa)
-                if (fi && fi.length > 0) {
-                    for (let i = 0; i < fi.length; i++)
-                        fi[i].classList.remove(classes.invisible)
-                }*/
+                const isLastPage = breaks.length === page,
+                    isFirstPage = page === 0
 
-                let marginTop, marginTopLast
-                const isLastPage = breaks.length===page, isFirstPage = page===0
+                let posCurrentBreak = 0, posPreviousBreak = 0
 
-                if(!isLastPage ){
-                    marginTop = this.offsetTop(breaks[page]) - offsetTop + this.outerHeight(breaks[page])
+
+                if (!isLastPage) {
+                    posCurrentBreak = this.offsetTop(breaks[page]) - offsetTop + this.outerHeight(breaks[page])
                 }
-                if(!isFirstPage) {
-                    marginTopLast = this.offsetTop(breaks[page - 1]) - offsetTop + this.outerHeight(breaks[page - 1])
+                if (!isFirstPage) {
+                    posPreviousBreak = this.offsetTop(breaks[page - 1]) - offsetTop + this.outerHeight(breaks[page - 1])
                 }
 
 
@@ -223,44 +211,44 @@ class Print extends React.PureComponent {
                     height: PAGE_HEIGHT,
                     scale,
                     scrollX: -window.scrollX - 7,
-                    scrollY: page>0?-(marginTopLast-paddingTop+window.scrollY):-window.scrollY,
+                    scrollY: page > 0 ? -(posPreviousBreak - pagePaddingTop + window.scrollY) : -window.scrollY,
                     /*logging: true,*/
                     /*proxy: ( (ENV=="development" )?"linkedin/src/php/html2canvasproxy.php":"php/html2canvasproxy.php"),*/
                 }).then(canvas => {
 
 
                     const createCanvas = document.createElement('canvas')
-                    createCanvas.height=canvas.height
-                    createCanvas.width=canvas.width
+                    createCanvas.height = canvas.height
+                    createCanvas.width = canvas.width
                     const context = createCanvas.getContext('2d')
                     context.clearRect(0, 0, canvas.width, canvas.height)
+                    context.drawImage(canvas, 0, 0)
 
-                    context.drawImage(canvas,0,0)
-
+                    // Cover top and bottom area with a white rect
                     context.fillStyle = "white"
                     if(!isFirstPage ){
-                        context.fillRect(0, 0, canvas.width, paddingTop * scale)
+                       context.fillRect(0, 0, canvas.width, pagePaddingTop * scale)
+                    }
+                    if(!isLastPage ){
+                       let h = posCurrentBreak - posPreviousBreak
+                       context.fillRect(0, ( (page>0?pagePaddingTop:0) + h) * scale, canvas.width, canvas.height - h*scale)
                     }
 
-                    if(!isLastPage ){
-                        let h = ((page+1)*PAGE_HEIGHT -(page*(paddingTop+paddingBottom))-marginTop) * scale
-                       context.fillRect(0, canvas.height-h, canvas.width, h)
-                    }
 
                     // draw page number
                     context.textBaseline = "top"
                     context.font = `${10 * scale}px sans-serif`
                     context.fillStyle = "rgba(0,0,0,0.5)"
-                    context.fillText((page + 1) + ' / '+(breaks.length + 1)+ (showDate ? ' - '+Util.formatDate(new Date()):''), 10 * scale, canvas.height-20*scale)
+                    context.fillText((page + 1) + ' / ' + (breaks.length + 1) + (showDate ? ' - ' + Util.formatDate(new Date()) : ''), 10 * scale, canvas.height - 20 * scale)
 
 
                     const data = createCanvas.toDataURL()
-/*
-                    const img = document.createElement('img')
-                    img.src = data
+                    /*
+                                        const img = document.createElement('img')
+                                        img.src = data
 
-                    document.body.appendChild(img)
-                    console.log(data)*/
+                                        document.body.appendChild(img)
+                                        console.log(data)*/
                     pdfContent.push({
                         image: data,
                         width: 595
@@ -272,7 +260,7 @@ class Print extends React.PureComponent {
                         // $pai.css({marginTop:0})
                         //$pa.css({overflow:"visible",height:"auto"})
 
-                       // window.open(data);
+                        // window.open(data);
 
                         const docDefinition = {
                             pageMargins: [0, 0, 0, 0],
@@ -326,80 +314,80 @@ class Print extends React.PureComponent {
 
              doc.text('Hello world!', 10, 10)
              doc.save('a4.pdf')*/
-        },1000) // little delay for images
+        }, 1000) // little delay for images
 
         return true
     }
 
 
-    calculatePageBreaks({printAreaInner,paddingTop,paddingBottom,offsetTop}) {
+    getPropertyAsNumber(printArea, propName) {
+        return parseInt(window.getComputedStyle(printArea, null).getPropertyValue(propName));
+    }
+
+    calculatePageBreaks({printAreaInner, paddingTop, paddingBottom, offsetTop}) {
 
         const {classes} = this.props
+
         //remove existing breaks
         this.$('.' + classes.pageBreak, printAreaInner).forEach(n => {
             n.parentNode.removeChild(n)
         })
 
+        // check if there is a break needed
         if (printAreaInner.clientHeight < PAGE_HEIGHT) {
             return
         }
 
         console.log('calculatePageBreaks')
 
-        this.setBreakRec(printAreaInner,{offsetTop,PAGE_HEIGHT,paddingBottom,paddingTop})
+        this.setBreakRec(printAreaInner, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
 
     }
 
-    setBreakRec(node, {offsetTop,paddingBottom,paddingTop}){
+    setBreakRec(node, {offsetTop, paddingBottom, paddingTop}) {
 
-        const innerPageHeight = PAGE_HEIGHT - paddingTop -paddingBottom
+        const innerPageHeight = PAGE_HEIGHT - paddingTop - paddingBottom
 
         node.childNodes.forEach(childNode => {
-
             const newOffsetTop = this.offsetTop(childNode)
+
             let pos = newOffsetTop - offsetTop + this.outerHeight(childNode)
 
-            if (pos > innerPageHeight ) {
+            if (pos > innerPageHeight) {
 
-                if(childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE ){
-                    offsetTop =this.setBreakRec(childNode,{offsetTop,PAGE_HEIGHT,paddingBottom,paddingTop})
-                }else{
+                // A break is needed
+
+                if (childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
+                    offsetTop = this.setBreakRec(childNode, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
+                } else {
 
                     let br, holderNode, height
 
+                    if (childNode.tagName === 'TD' || childNode.tagName === 'TH' || childNode.tagName === 'TR') {
 
-                    if(childNode.tagName==='TD' || childNode.tagName==='TH' || childNode.tagName==='TR'){
-
-                        holderNode = childNode.tagName==='TR'?childNode:childNode.parentNode
-                        height = (pos - innerPageHeight +this.outerHeight(holderNode))+'px'
-
+                        holderNode = childNode.tagName === 'TR' ? childNode : childNode.parentNode
                         br = document.createElement('tr')
                         const td = document.createElement('td')
                         td.className = this.props.classes.pageBreak
                         td.colSpan = 99
-                        /*td.style.height = height*/
                         br.appendChild(td)
 
-                      /*  childNode.style.position = 'relative'
-                        br.style.position = 'absolute'
-                        childNode.appendChild(br)*/
-                    }else{
-
-                        height = (pos - innerPageHeight +this.outerHeight(childNode))+'px'
+                        /*  childNode.style.position = 'relative'
+                          br.style.position = 'absolute'
+                          childNode.appendChild(br)*/
+                    } else {
                         br = document.createElement('div')
                         br.className = this.props.classes.pageBreak
-                       /* br.style.height = height*/
                         holderNode = childNode
                     }
 
 
                     holderNode.parentNode.insertBefore(br, holderNode)
-                    offsetTop = this.offsetTop(br)+ paddingBottom + paddingTop
+                    offsetTop = this.offsetTop(br) // + paddingBottom + paddingTop
 
                 }
 
             }
-
 
 
         })

@@ -48,7 +48,11 @@ export const typeDataToLabel = (item, pickerField) => {
 
     let pickers = []
     if (pickerField) {
-        pickers.push(pickerField)
+        if (pickerField.constructor === Array) {
+            pickers.push(...pickerField)
+        } else {
+            pickers.push(pickerField)
+        }
     } else {
         for (const key of Object.keys(item)) {
             if (['_id', 'createdBy', '__typename', 'status'].indexOf(key) < 0) {

@@ -133,18 +133,28 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
                                 otherOptions.lookups = []
                             }
 
-                            let id, $match
-                            if (field.multi) {
-                                id = {
-                                    $map: {
-                                        input: `$data.${field.name}`, in: {$toObjectId: '$$this'}
+                            let id = {
+                                    $cond:
+                                        {
+                                            if: {$isArray: `$data.${field.name}`},
+                                            then: {
+                                                $map: {
+                                                    input: `$data.${field.name}`, in: {$toObjectId: '$$this'}
+                                                }
+                                            },
+                                            else: {$toObjectId: `$data.${field.name}`}
+                                        }
+                                },
+                                $match = {
+                                    $expr: {
+                                        $cond:
+                                            {
+                                                if: {$isArray: `$$id`},
+                                                then: {$in: ['$_id', '$$id']},
+                                                else: {$eq: ['$_id', '$$id']}
+                                            }
                                     }
                                 }
-                                $match = {$expr: {$in: ['$_id', '$$id']}}
-                            } else {
-                                id = {$toObjectId: `$data.${field.name}`}
-                                $match = {$expr: {$eq: ['$_id', '$$id']}}
-                            }
                             otherOptions.lookups.push(
                                 {
                                     $lookup: {
@@ -179,6 +189,14 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
     }
 }, 99)
 
+
+Hook.on('typeBeforeUpdate', async ({type, data, db, context}) => {
+
+    if (type === 'GenericData') {
+       // console.log(data)
+    }
+
+})
 
 Hook.on('typeCreated_GenericData', async ({resultData, db, context}) => {
     // resultData.data = JSON.parse(resultData.data)

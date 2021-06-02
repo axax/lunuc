@@ -144,7 +144,7 @@ class TypePicker extends React.Component {
     render() {
         const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, type, filter, label} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
-        console.log(`render TypePicker | hasFocus=${hasFocus}`, data)
+        console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         return <FormControl
             fullWidth={fullWidth} className={classNames(classes.root, className)}>
             {!value.length || multi ?

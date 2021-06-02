@@ -455,6 +455,9 @@ const GenericResolver = {
     },
     updateEnity: async (db, context, typeName, {_version, _meta, ...data}, options) => {
 
+        Hook.call('typeBeforeUpdate', {type: typeName, _version, data, db, context})
+
+
         Util.checkIfUserIsLoggedIn(context)
 
         if (!options) {
