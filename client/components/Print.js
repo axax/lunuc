@@ -67,10 +67,10 @@ const styles = {
     },
     pageBreak: {
         width: '100%',
-        borderTop: 'dashed 1px #ffd633',
+       /* borderTop: 'dashed 1px #ffd633',*/
         position: 'relative',
         top: 0,
-        '&:after': {
+       /* '&:after': {
             position: 'absolute',
             right: '10px',
             display: 'block',
@@ -79,7 +79,7 @@ const styles = {
             fontSize: '0.7em',
             background: '#ffd633',
             padding: '3px'
-        }
+        }*/
     }
 }
 
@@ -99,7 +99,7 @@ class Print extends React.PureComponent {
             }
         }, 'Print')
 
-        DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.70/pdfmake.min.js', {id: 'pdfmake'})
+        DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.71/pdfmake.min.js', {id: 'pdfmake'})
         DomUtil.addScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js', {id: 'html2canvas'})
     }
 
@@ -177,11 +177,16 @@ class Print extends React.PureComponent {
 
         const offsetTop = this.offsetTop(printArea),
             pagePaddingTop = this.getPropertyAsNumber(printArea, 'padding-top') + this.getPropertyAsNumber(printAreaInner, 'padding-top'),
-            pagePaddingBottom =  this.getPropertyAsNumber(printArea, 'padding-bottom') + this.getPropertyAsNumber(printAreaInner, 'padding-bottom')
+            pagePaddingBottom = this.getPropertyAsNumber(printArea, 'padding-bottom') + this.getPropertyAsNumber(printAreaInner, 'padding-bottom')
 
         setTimeout(() => {
 
-            this.calculatePageBreaks({printAreaInner, paddingTop: pagePaddingTop, paddingBottom: pagePaddingBottom, offsetTop})
+            this.calculatePageBreaks({
+                printAreaInner,
+                paddingTop: pagePaddingTop,
+                paddingBottom: pagePaddingBottom,
+                offsetTop
+            })
             /*  ol.style.display = 'none'
                return*/
 
@@ -226,12 +231,12 @@ class Print extends React.PureComponent {
 
                     // Cover top and bottom area with a white rect
                     context.fillStyle = "white"
-                    if(!isFirstPage ){
-                       context.fillRect(0, 0, canvas.width, pagePaddingTop * scale)
+                    if (!isFirstPage) {
+                        context.fillRect(0, 0, canvas.width, pagePaddingTop * scale)
                     }
-                    if(!isLastPage ){
-                       let h = posCurrentBreak - posPreviousBreak
-                       context.fillRect(0, ( (page>0?pagePaddingTop:0) + h) * scale, canvas.width, canvas.height - h*scale)
+                    if (!isLastPage) {
+                        let h = posCurrentBreak - posPreviousBreak
+                        context.fillRect(0, ((page > 0 ? pagePaddingTop : 0) + h) * scale, canvas.width, canvas.height - h * scale)
                     }
 
 
@@ -349,48 +354,39 @@ class Print extends React.PureComponent {
         const innerPageHeight = PAGE_HEIGHT - paddingTop - paddingBottom
 
         node.childNodes.forEach(childNode => {
-            const newOffsetTop = this.offsetTop(childNode)
+                const newOffsetTop = this.offsetTop(childNode)
 
-            let pos = newOffsetTop - offsetTop + this.outerHeight(childNode)
+                let pos = newOffsetTop - offsetTop + this.outerHeight(childNode)
 
-            if (pos > innerPageHeight) {
+                if (pos > innerPageHeight) {
 
-                // A break is needed
-
-                if (childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
-                    offsetTop = this.setBreakRec(childNode, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
-                } else {
-
-                    let br, holderNode, height
-
+                    // A break is needed
                     if (childNode.tagName === 'TD' || childNode.tagName === 'TH' || childNode.tagName === 'TR') {
 
-                        holderNode = childNode.tagName === 'TR' ? childNode : childNode.parentNode
-                        br = document.createElement('tr')
-                        const td = document.createElement('td')
+                        // special treatment for breaks within a table
+
+                        const holderNode = childNode.tagName === 'TR' ? childNode : childNode.parentNode,
+                            br = document.createElement('tr'),
+                            td = document.createElement('td')
                         td.className = this.props.classes.pageBreak
                         td.colSpan = 99
+                        td.style.border = 'none'
                         br.appendChild(td)
+                        holderNode.parentNode.insertBefore(br, holderNode)
+                        offsetTop = this.offsetTop(br)
 
-                        /*  childNode.style.position = 'relative'
-                          br.style.position = 'absolute'
-                          childNode.appendChild(br)*/
+
+                    } else if (childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
+                        offsetTop = this.setBreakRec(childNode, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
                     } else {
-                        br = document.createElement('div')
+                        let br = document.createElement('div')
                         br.className = this.props.classes.pageBreak
-                        holderNode = childNode
+                        childNode.parentNode.insertBefore(br, childNode)
+                        offsetTop = this.offsetTop(br)
                     }
-
-
-                    holderNode.parentNode.insertBefore(br, holderNode)
-                    offsetTop = this.offsetTop(br) // + paddingBottom + paddingTop
-
                 }
-
             }
-
-
-        })
+        )
         return offsetTop
     }
 

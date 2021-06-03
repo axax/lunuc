@@ -115,8 +115,8 @@
   },
   "optionalDependencies": {
     "@google-cloud/storage": "^5.8.5",
-    "@google-cloud/translate": "^6.2.1",
-    "aws-sdk": "^2.919.0",
+    "@google-cloud/translate": "^6.2.2",
+    "aws-sdk": "^2.920.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
@@ -127,7 +127,7 @@
     "xml2js": "^0.4.23",
     "ytdl-core": "^4.8.2",
     "soap": "^0.39.0",
-    "lighthouse": "^7.5.0"
+    "lighthouse": "^8.0.0"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
@@ -139,7 +139,7 @@
     "css-loader": "^5.2.6",
     "eslint": "^7.27.0",
     "eslint-plugin-react": "^7.24.0",
-    "jest-cli": "^27.0.3",
+    "jest-cli": "^27.0.4",
     "less": "^4.1.1",
     "less-loader": "^9.0.0",
     "mini-css-extract-plugin": "^1.6.0",
