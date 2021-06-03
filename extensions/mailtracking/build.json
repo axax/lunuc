@@ -28,7 +28,8 @@
         },
         {
           "name": "html",
-          "uitype": "html"
+          "uitype": "html",
+          "alwaysLoad": false
         },
         {
           "name": "response",

@@ -107,7 +107,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
                     projectResult: true,
                     postConvert: false,
                     cache: {
-                        expires: 86400000,
+                        expires: 86400000, /* 24h */
                         key: `GenericDataDefinition${genericType}WithStructure`
                     }
                 })
@@ -200,6 +200,36 @@ Hook.on('typeBeforeUpdate', async ({type, data, db, context}) => {
 
 Hook.on('typeCreated_GenericData', async ({resultData, db, context}) => {
     // resultData.data = JSON.parse(resultData.data)
+
+})
+
+Hook.on('AggregationBuilderBeforeQuery', async ({db, type, filters}) => {
+
+    // performance optimization
+    if( type === 'GenericData' && filters) {
+        const part = filters.parts['definition.name']
+        if(part && part.value && part.comparator==='=='){
+
+
+            const cacheKey= 'GenericDataDefinition-ID-' + part.value
+            let definitionId = Cache.get(cacheKey)
+
+            if (!definitionId) {
+                definitionId = await db.collection('GenericDataDefinition').distinct('_id',{name:part.value})
+                console.log(`load GenericDataDefinition id by name ${part.value}`)
+                Cache.set(cacheKey, definitionId, 86400000) // cache expires in 100 min
+            }
+
+            if(definitionId && definitionId.length === 1)
+            {
+                filters.parts['definition'] = filters.parts['definition.name']
+                delete filters.parts['definition.name']
+
+                filters.parts['definition'].value = definitionId[0]
+            }
+        }
+
+    }
 
 })
 

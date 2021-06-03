@@ -181,41 +181,43 @@ class TypePicker extends React.Component {
                                                    newwindow.addEventListener('beforeunload', (e) => {
                                                        const value = newwindow.resultValue
 
-                                                       delete value.createdBy
+                                                       if(value) {
 
-                                                       //TODO: move to extension
-                                                       if (type === 'GenericData') {
-                                                           try {
-                                                               const structure = JSON.parse(value.definition.structure)
+                                                           delete value.createdBy
 
-                                                               if (structure.pickerField) {
-                                                                   const data = JSON.parse(value.data)
-                                                                   const newData = {}
+                                                           //TODO: move to extension
+                                                           if (type === 'GenericData' && value.definition) {
+                                                               try {
+                                                                   const structure = JSON.parse(value.definition.structure)
 
-                                                                   const pickerFields = structure.pickerField.constructor === Array? structure.pickerField: [structure.pickerField]
-                                                                   for( const pickerField of pickerFields){
-                                                                       newData[pickerField] = data[pickerField]
+                                                                   if (structure.pickerField) {
+                                                                       const data = JSON.parse(value.data)
+                                                                       const newData = {}
+
+                                                                       const pickerFields = structure.pickerField.constructor === Array ? structure.pickerField : [structure.pickerField]
+                                                                       for (const pickerField of pickerFields) {
+                                                                           newData[pickerField] = data[pickerField]
+                                                                       }
+
+                                                                       value.data = JSON.stringify(newData)
+                                                                       delete value.definition
                                                                    }
-
-                                                                   newwindow.resultValue.data = JSON.stringify(newData)
-                                                                   delete newwindow.resultValue.definition
+                                                               } catch (e) {
+                                                                   console.log(e)
                                                                }
-                                                           } catch (e) {
-                                                               console.log(e)
                                                            }
+                                                           Util.removeNullValues(value, {
+                                                               recursiv: true,
+                                                               emptyObject: true,
+                                                               emptyArray: true,
+                                                               nullArrayItems: true
+                                                           })
+                                                           this.selectValue(value)
                                                        }
-                                                       Util.removeNullValues(value, {
-                                                           recursiv: true,
-                                                           emptyObject: true,
-                                                           emptyArray: true,
-                                                           nullArrayItems: true
-                                                       })
-                                                       this.selectValue(value)
                                                        delete e['returnValue']
                                                    })
                                                }, 500)
-                                           }}
-                                       >
+                                           }}>
                                            <SearchIcon/>
                                        </IconButton>
                                    </InputAdornment>
@@ -417,6 +419,7 @@ class TypePicker extends React.Component {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
             let queryFields
+            // TODO: move to genericData extension
             if (pickerField && type!=='GenericData') {
                 queryFields = pickerField
             } else if (fields && type!=='GenericData') {

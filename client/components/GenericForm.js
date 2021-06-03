@@ -778,8 +778,7 @@ class GenericForm extends React.Component {
     }
 }
 
-GenericForm
-    .propTypes = {
+GenericForm.propTypes = {
     updatekey: PropTypes.string,
     fields: PropTypes.object.isRequired,
     values: PropTypes.object,

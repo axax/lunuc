@@ -3,6 +3,7 @@ import {getType} from 'util/types'
 import {getFormFields} from 'util/typesAdmin'
 import {ObjectId} from 'mongodb'
 import config from 'gen/config'
+import Hook from 'util/hook'
 
 const comparatorMap = {
     ':': '$regex',
@@ -275,7 +276,9 @@ export default class AggregationBuilder {
         }
         if (type === 'ID') {
             if (filterValue) {
-                if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
+                if( filterValue.constructor === ObjectId){
+                    // do nothing
+                }else if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
                     filterValue = filterValue.substring(1, filterValue.length - 1).split(',')
                     const ids = []
                     for (const id of filterValue) {
@@ -462,7 +465,7 @@ export default class AggregationBuilder {
         }
     }
 
-    query() {
+    async query(db) {
         const typeDefinition = getType(this.type) || {}
         const {projectResult, lang, includeCount, includeUserFilter} = this.options
 
@@ -482,6 +485,14 @@ export default class AggregationBuilder {
             lookups = [],
             projectResultData = {},
             hasMatchInReference = false
+
+
+        const aggHook = Hook.hooks['AggregationBuilderBeforeQuery']
+        if ( aggHook && aggHook.length ) {
+            for (let i = 0; i < aggHook.length; ++i) {
+                await aggHook[i].callback({filters, type: this.type, db})
+            }
+        }
 
         // if there is filter like _id=12323213
         if (filters) {

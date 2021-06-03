@@ -210,7 +210,8 @@ const GenericResolver = {
             ...otherOptions,
             includeUserFilter: userCanManageTypes
         })
-        const {dataQuery, countQuery} = aggregationBuilder.query()
+
+        const {dataQuery, countQuery} = await aggregationBuilder.query(db)
         /* if (typeName.indexOf("GenericData") >= 0) {
              console.log(JSON.stringify(dataQuery, null, 4))
          }*/

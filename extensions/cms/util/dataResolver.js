@@ -448,6 +448,9 @@ function resolveSystemData(segment, req, resolvedData) {
         if (segment.system.cache.count) {
             data.cache.count = Object.keys(Cache.cache).length
         }
+        if (segment.system.cache.size) {
+            data.cache.size = JSON.stringify(Cache.cache).length
+        }
     }
     if (segment.system.client) {
         data.client = {
