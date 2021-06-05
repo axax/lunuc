@@ -7,6 +7,32 @@ import GenericResolver from '../../api/resolver/generic/genericResolver'
 import Util from '../../api/util'
 import {ObjectId} from 'mongodb'
 
+async function getGenericTypeDefinitionWithStructure(db, {name, id}) {
+
+    if (!id && !name) {
+        return
+    }
+
+
+    const cacheKeyPrefix = 'GenericDataDefinition-WithStructure-', cacheKey = cacheKeyPrefix + (id ? id : name)
+
+    let definition = Cache.get(cacheKey)
+    if (definition === undefined) {
+        definition = await db.collection('GenericDataDefinition').findOne({$or: [{_id: id && ObjectId(id)}, {name}]})
+
+        console.log(`load GenericDataDefinition by id=${id} or by name=${name} -> ${definition}`)
+
+        // put in cache with both name and id as key
+        Cache.set(cacheKey, definition, 86400000) // cache expires in 100 min
+        if (definition) {
+            Cache.setAlias(cacheKeyPrefix + (id ? definition.name : definition._id), cacheKey)
+        }
+    }
+
+    return definition
+}
+
+
 // Hook to add mongodb resolver
 Hook.on('resolver', ({db, resolvers}) => {
     deepMergeToFirst(resolvers, resolver(db))
@@ -22,61 +48,45 @@ Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
     Cache.clearStartWith('GenericDataDefinition')
 })
 
-/*Hook.on('typeBeforeCreate', ({type, data}) => {
-    if( type==='GenericData'){
-        //TODO
-    }
-})*/
-
-
 Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
     if (triggerName === 'subscribeGenericData') {
         if (payload.subscribeGenericData.action === 'update' || payload.subscribeGenericData.action === 'create') {
             const item = payload.subscribeGenericData.data[0]
-            if (item.definition) {
+            if (item && item.definition) {
 
-                const data = await GenericResolver.entities(db, context, 'GenericDataDefinition', ['_id', 'name', 'structure'],
-                    {
-                        filter: `_id==${item.definition._id}`,
-                        limit: 1,
-                        includeCount: false,
-                        projectResult: true,
-                        postConvert: false,
-                        cache: {
-                            expires: 86400000,
-                            key: `GenericDataDefinition${item.definition._id}`
-                        }
-                    })
-                if (data.results.length === 1) {
-                    const struct = data.results[0].structure
+                const def = await getGenericTypeDefinitionWithStructure(db, {id: item.definition._id})
 
+                if (def && def.structure) {
+                    const struct = def.structure
 
-                    if (struct && struct.fields) {
+                    if (struct.fields) {
                         let jsonData
 
                         for (let i = 0; i < struct.fields.length; i++) {
                             const field = struct.fields[i]
                             if (field.genericType && field.pickerField) {
                                 if (!jsonData) {
-                                    jsonData = JSON.parse(item.data)
+                                    jsonData = item.data.constructor === Object ? item.data : JSON.parse(item.data)
                                 }
                                 const ids = jsonData[field.name]
-                                const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
-                                    {
-                                        filter: `_id==${ids.constructor === Array ? '[' + ids.join(',') + ']' : ids}`,
-                                        limit: 1000,
-                                        includeCount: false,
-                                        projectResult: true
-                                    })
+                                if (ids) {
+                                    const subData = await GenericResolver.entities(db, context, 'GenericData', ['_id', {definition: ['_id']}, 'data'],
+                                        {
+                                            filter: `_id==${ids.constructor === Array ? '[' + ids.join(',') + ']' : ids}`,
+                                            limit: 1000,
+                                            includeCount: false,
+                                            projectResult: true
+                                        })
 
-                                if (subData.results.length > 0) {
-                                    jsonData[field.name] = []
+                                    if (subData.results.length > 0) {
+                                        jsonData[field.name] = []
 
-                                    subData.results.forEach(row => {
-                                        row.data = JSON.parse(row.data)
-                                        jsonData[field.name].push(row)
+                                        subData.results.forEach(row => {
+                                            row.data = JSON.parse(row.data)
+                                            jsonData[field.name].push(row)
 
-                                    })
+                                        })
+                                    }
                                 }
                             }
                         }
@@ -94,25 +104,16 @@ Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
 
 Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => {
 
+
     if (type === 'GenericData') {
 
         const genericType = otherOptions.genericType || otherOptions.meta
 
         if (genericType) {
-            const data = await GenericResolver.entities(db, context, 'GenericDataDefinition', ['_id', 'name', 'structure'],
-                {
-                    filter: `name==${genericType}`,
-                    limit: 1,
-                    includeCount: false,
-                    projectResult: true,
-                    postConvert: false,
-                    cache: {
-                        expires: 86400000, /* 24h */
-                        key: `GenericDataDefinition${genericType}WithStructure`
-                    }
-                })
-            if (data.results.length === 1 && data.results[0].structure) {
-                const struct = data.results[0].structure
+            const def = await getGenericTypeDefinitionWithStructure(db, {name: genericType})
+
+            if (def && def.structure) {
+                const struct = def.structure
 
                 if (struct.access && struct.access.read) {
                     const accessMatch = await Util.getAccessFilter(db, context, struct.access.read)
@@ -122,9 +123,9 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
 
                 }
 
-                match.definition = {$eq: ObjectId(data.results[0]._id)}
+                match.definition = {$eq: ObjectId(def._id)}
 
-                if (struct && struct.fields) {
+                if (struct.fields) {
                     struct.fields.forEach(field => {
 
                         if (field.genericType) {
@@ -190,45 +191,97 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
 }, 99)
 
 
-Hook.on('typeBeforeUpdate', async ({type, data, db, context}) => {
+Hook.on('typeBeforeUpdate', async ({type, data, _meta, db, context}) => {
 
-    if (type === 'GenericData') {
-       // console.log(data)
+    if (type === 'GenericData' && data.definition) {
+
+        /*  const def = await getGenericTypeDefinitionWithStructure(db,{id:data.definition})
+
+          if(def.trigger && def.trigger.update){
+              console.log(def.trigger.update)
+          }*/
+
+        if (_meta) {
+
+            const meta = JSON.parse(_meta)
+
+            if (meta.partialUpdate) {
+                // if object it is updated partially
+                data.data = JSON.parse(data.data)
+
+                console.log(data)
+            }
+        }
+
+
     }
 
 })
 
+
+Hook.on('typeBeforeCreate', async ({db, type, data}) => {
+    if (type === 'GenericData' && data.definition) {
+
+        const def = await getGenericTypeDefinitionWithStructure(db, {id: data.definition})
+
+
+        if (def && def.structure) {
+            const struct = def.structure
+            if (struct.fields) {
+                for (let i = 0; i < struct.fields.length; i++) {
+                    const field = struct.fields[i]
+                    if (field.autoinc) {
+
+                        const last = await db.collection('GenericData').find({definition: ObjectId(data.definition)}).sort({_id: -1}).limit(1).toArray()
+                        if (last && last.length) {
+                            try {
+                                const nr = parseFloat(last[0].data[field.name])
+                                if (data.data.constructor !== Object) {
+                                    data.data = JSON.parse(data.data)
+                                }
+                                data.data[field.name] = nr + 1
+                            } catch (e) {
+                                console.log(e)
+                            }
+
+                        }
+
+                    }
+                }
+
+            }
+
+        }
+
+
+    }
+
+})
+
+
 Hook.on('typeCreated_GenericData', async ({resultData, db, context}) => {
     // resultData.data = JSON.parse(resultData.data)
-
 })
 
 Hook.on('AggregationBuilderBeforeQuery', async ({db, type, filters}) => {
 
     // performance optimization
-    if( type === 'GenericData' && filters) {
+    if (type === 'GenericData' && filters) {
         const part = filters.parts['definition.name']
-        if(part && part.value && part.comparator==='=='){
+        if (part && part.value && part.comparator === '==') {
+
+            const def = await getGenericTypeDefinitionWithStructure(db, {name: part.value})
 
 
-            const cacheKey= 'GenericDataDefinition-ID-' + part.value
-            let definitionId = Cache.get(cacheKey)
+            if (def) {
+                console.log(`change name ${part.value} to id ${def._id}`)
 
-            if (!definitionId) {
-                definitionId = await db.collection('GenericDataDefinition').distinct('_id',{name:part.value})
-                console.log(`load GenericDataDefinition id by name ${part.value}`)
-                Cache.set(cacheKey, definitionId, 86400000) // cache expires in 100 min
-            }
-
-            if(definitionId && definitionId.length === 1)
-            {
                 filters.parts['definition'] = filters.parts['definition.name']
                 delete filters.parts['definition.name']
 
-                filters.parts['definition'].value = definitionId[0]
+                filters.parts['definition'].value = def._id
             }
         }
-
     }
 
 })

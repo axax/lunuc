@@ -25,6 +25,7 @@ const {DEFAULT_LANGUAGE} = config
 
 import {client} from '../middleware/graphql'
 import Util from '../util'
+import Hook from "../../util/hook";
 
 const styles = theme => {
     return {
@@ -185,27 +186,8 @@ class TypePicker extends React.Component {
 
                                                            delete value.createdBy
 
-                                                           //TODO: move to extension
-                                                           if (type === 'GenericData' && value.definition) {
-                                                               try {
-                                                                   const structure = JSON.parse(value.definition.structure)
+                                                           Hook.call('TypePickerWindowCallback', {value, type})
 
-                                                                   if (structure.pickerField) {
-                                                                       const data = JSON.parse(value.data)
-                                                                       const newData = {}
-
-                                                                       const pickerFields = structure.pickerField.constructor === Array ? structure.pickerField : [structure.pickerField]
-                                                                       for (const pickerField of pickerFields) {
-                                                                           newData[pickerField] = data[pickerField]
-                                                                       }
-
-                                                                       value.data = JSON.stringify(newData)
-                                                                       delete value.definition
-                                                                   }
-                                                               } catch (e) {
-                                                                   console.log(e)
-                                                               }
-                                                           }
                                                            Util.removeNullValues(value, {
                                                                recursiv: true,
                                                                emptyObject: true,

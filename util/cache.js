@@ -12,7 +12,7 @@ const Cache = {
         Cache.cache[key] = {data, validUntil: (expiresIn ? (new Date()).getTime() + expiresIn : 0)}
     },
     get: function (key) {
-        const o = Cache.cache[key]
+        const o = Cache.cache[key] || Cache.cache[Cache.aliases[key]]
         if (o) {
             if (Cache.isValid(o)) {
                 return o.data
@@ -20,7 +20,7 @@ const Cache = {
                 delete Cache.cache[key]
             }
         }
-        return null
+        return
     },
     isValid: function (o) {
         return o.validUntil === 0 || (new Date()).getTime() < o.validUntil

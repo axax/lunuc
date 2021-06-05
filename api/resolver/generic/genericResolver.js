@@ -164,6 +164,7 @@ const GenericResolver = {
                 }
             }
         }
+        //console.log(`1 time ${new Date() - startTime}ms`)
 
         let cacheKey, cacheTime, cachePolicy
         if (cache !== undefined) {
@@ -193,7 +194,6 @@ const GenericResolver = {
         }
 
         if (Hook.hooks['beforeTypeLoaded'] && Hook.hooks['beforeTypeLoaded'].length) {
-            let c = Hook.hooks['beforeTypeLoaded'].length
             for (let i = 0; i < Hook.hooks['beforeTypeLoaded'].length; ++i) {
                 await Hook.hooks['beforeTypeLoaded'][i].callback({
                     type: typeName, db, context, otherOptions, match
@@ -262,7 +262,6 @@ const GenericResolver = {
     createEntity: async (db, req, typeName, {_version, ...data}) => {
         const {context} = req
 
-        Hook.call('typeBeforeCreate', {type: typeName, _version, data, db, req})
 
         const typeDefinition = getType(typeName)
 
@@ -275,6 +274,16 @@ const GenericResolver = {
         }
 
         Util.checkIfUserIsLoggedIn(userContext)
+
+
+        if (Hook.hooks['typeBeforeCreate'] && Hook.hooks['typeBeforeCreate'].length) {
+            for (let i = 0; i < Hook.hooks['typeBeforeCreate'].length; ++i) {
+                await Hook.hooks['typeBeforeCreate'][i].callback({
+                    type: typeName, _version, data, db, req
+                })
+            }
+        }
+
 
         if (!context.lang) {
             throw new Error('lang on context is missing')
@@ -456,10 +465,18 @@ const GenericResolver = {
     },
     updateEnity: async (db, context, typeName, {_version, _meta, ...data}, options) => {
 
-        Hook.call('typeBeforeUpdate', {type: typeName, _version, data, db, context})
-
 
         Util.checkIfUserIsLoggedIn(context)
+
+
+        if (Hook.hooks['typeBeforeUpdate'] && Hook.hooks['typeBeforeUpdate'].length) {
+            for (let i = 0; i < Hook.hooks['typeBeforeUpdate'].length; ++i) {
+                await Hook.hooks['typeBeforeUpdate'][i].callback({
+                    type: typeName, _version, _meta, data, db, context
+                })
+            }
+        }
+
 
         if (!options) {
             options = {}

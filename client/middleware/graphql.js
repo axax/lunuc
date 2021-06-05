@@ -54,35 +54,75 @@ function removeLoader() {
 
 
 /* Websocket */
-let wsConnection, subscribeCount = 0
+let wsCurrentConnection, subscribeCount = 0, openWsSubscription = []
+
+const createWsSubscription = (id, payload, next) => {
+    openWsSubscription.push({
+        id,
+        payload,
+        next
+    })
+
+    if (wsCurrentConnection && wsCurrentConnection.readyState === 1) {
+        wsCurrentConnection.send(JSON.stringify({type:'start', id, payload}))
+    }
+}
+
+const removeWsSubscription = (id) => {
+    if (wsCurrentConnection) {
+        if (wsCurrentConnection.readyState === 1) {
+            wsCurrentConnection.send(`{"type":"stop","id":${id}}`)
+        }
+    }
+    // remove from array by id
+    for (let i = 0; i < openWsSubscription.length; i++) {
+        if(openWsSubscription[i].id === id){
+            openWsSubscription.splice(i, 1)
+            break
+        }
+    }
+}
+
 
 const setUpWs = () => {
     if (!_app_.ssr) {
 
         try {
-            wsConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])
+            wsCurrentConnection = new WebSocket(GRAPHQL_WS_URL, ['graphql-ws'])
 
             if (navigator.userAgent.indexOf('Chrome-Lighthouse') > -1) {
                 throw Error('Chrome-Lighthouse does not support ws')
             }
 
-            wsConnection.onopen = () => {
-                wsConnection.send('{"type":"connection_init","payload":{}}')
+            wsCurrentConnection.onopen = () => {
+                wsCurrentConnection.send('{"type":"connection_init","payload":{}}')
 
-                const event = new Event('init')
-
-                wsConnection.dispatchEvent(event)
+                for (let i = 0; i < openWsSubscription.length; i++) {
+                    const sub = openWsSubscription[i]
+                    wsCurrentConnection.send(JSON.stringify({type:'start', id:sub.id, payload:sub.payload}))
+                }
 
                 return false
             }
-            wsConnection.onerror = error => {
+            wsCurrentConnection.onerror = error => {
                 console.log(`WebSocket error: ${error}`)
             }
 
-            wsConnection.onclose = () => {
+            wsCurrentConnection.onclose = () => {
                 console.log(`WebSocket closed.  Try to reconnect in 5 seconds`)
                 setTimeout(setUpWs, 5000)
             }
+
+            wsCurrentConnection.addEventListener('message', (e) => {
+                const msg = JSON.parse(e.data)
+                if (msg.payload) {
+                    for (let i = 0; i < openWsSubscription.length; i++) {
+                        const sub = openWsSubscription[i]
+                        sub.next(msg.payload)
+                    }
+                }
+            }, false)
+
 
         } catch (e) {
             // without ws
@@ -313,46 +353,17 @@ export const client = {
 
         return {
             subscribe: ({next}) => {
-                const subscribeData = {
-                    id,
-                    type: 'start',
-                    payload: {
-                        variables,
-                        query,
-                        extensions,
-                        auth: Util.getAuthToken(), // auth is only set when USE_COOKIES is false
-                        session: _app_.session // session is only set when USE_COOKIES is false
-                    }
+                const payload = {
+                    variables,
+                    query,
+                    extensions,
+                    auth: Util.getAuthToken(), // auth is only set when USE_COOKIES is false
+                    session: _app_.session // session is only set when USE_COOKIES is false
                 }
-
-                const onMessage = (e) => {
-                    const msg = JSON.parse(e.data)
-                    if (msg.payload) {
-                        next(msg.payload)
-                    }
-                }
-                const onInit = () => {
-                    wsConnection.send(JSON.stringify(subscribeData))
-                    wsConnection.addEventListener('message', onMessage, false)
-                }
-
-                if (wsConnection) {
-                    if (wsConnection.readyState === 1) {
-                        onInit()
-                    } else {
-                        wsConnection.addEventListener('init', onInit, false)
-                    }
-                }
-
+                createWsSubscription(id, payload, next)
                 return {
                     unsubscribe: () => {
-                        if (wsConnection) {
-                            if (wsConnection.readyState === 1) {
-                                wsConnection.send(`{"type":"stop","id":${id}}`)
-                            }
-                            wsConnection.removeEventListener('message', onInit, false)
-                            wsConnection.removeEventListener('message', onMessage, false)
-                        }
+                        removeWsSubscription(id)
                     }
                 }
             }

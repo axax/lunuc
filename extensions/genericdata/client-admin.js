@@ -32,7 +32,7 @@ export default () => {
                         const json = JSON.parse(item.data)
                         if (structur.pickerField) {
                             let picker = structur.pickerField
-                            if(structur.pickerField.constructor === Array){
+                            if (structur.pickerField.constructor === Array) {
                                 picker = structur.pickerField[0]
                             }
                             if (json[picker].constructor === String) {
@@ -153,7 +153,7 @@ export default () => {
                                                                       clearTimeout(translateTimeout)
                                                                       translateTimeout = setTimeout(() => {
                                                                           parentRef.setState({
-                                                                              forceSave:true,
+                                                                              forceSave: true,
                                                                               dataToEdit: {
                                                                                   ...dataToEdit,
                                                                                   data: JSON.stringify(json)
@@ -239,20 +239,20 @@ export default () => {
             const struct = JSON.parse(definition.structure)
             const data = {}
             struct.fields.forEach(field => {
-                if(field.genericType){
+                if (field.genericType) {
                     // only keep reference _id
                     const fieldData = editedData['data_' + field.name]
-                    if(fieldData && fieldData.constructor===Array && fieldData.length>0 && fieldData[0]._id){
-                        data[field.name] = fieldData.map(e=>e._id)
-                    }else if(fieldData && fieldData._id){
+                    if (fieldData && fieldData.constructor === Array && fieldData.length > 0 && fieldData[0]._id) {
+                        data[field.name] = fieldData.map(e => e._id)
+                    } else if (fieldData && fieldData._id) {
                         data[field.name] = fieldData._id
-                    }else{
+                    } else {
                         data[field.name] = editedData['data_' + field.name]
                     }
-                }else {
-                    if( field.type==='Object'){
+                } else {
+                    if (field.type === 'Object') {
                         data[field.name] = JSON.parse(editedData['data_' + field.name])
-                    }else{
+                    } else {
                         data[field.name] = editedData['data_' + field.name]
                     }
                 }
@@ -269,7 +269,7 @@ export default () => {
         if (type === 'GenericData' && data.definition) {
 
             const struct = JSON.parse(data.definition.structure)
-            for(let i = 0; i<struct.fields.length;i++){
+            for (let i = 0; i < struct.fields.length; i++) {
                 const field = struct.fields[i]
                 if (field.genericType) {
                     fieldsToLoad.push('data') //load
@@ -308,6 +308,29 @@ export default () => {
                     a.click()
                 }
             })
+        }
+    })
+
+    Hook.on('TypePickerWindowCallback', function ({type, value}) {
+        if (type === 'GenericData' && value.definition) {
+            try {
+                const structure = JSON.parse(value.definition.structure)
+
+                if (structure.pickerField) {
+                    const data = JSON.parse(value.data)
+                    const newData = {}
+
+                    const pickerFields = structure.pickerField.constructor === Array ? structure.pickerField : [structure.pickerField]
+                    for (const pickerField of pickerFields) {
+                        newData[pickerField] = data[pickerField]
+                    }
+
+                    value.data = JSON.stringify(newData)
+                    delete value.definition
+                }
+            } catch (e) {
+                console.log('Error in TypePickerWindowCallback', e)
+            }
         }
     })
 

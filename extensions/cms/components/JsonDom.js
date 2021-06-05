@@ -364,7 +364,6 @@ class JsonDom extends React.Component {
     }
 
     componentDidMount() {
-        this.node = ReactDOM.findDOMNode(this)
         this.addStyle(this.props.style)
         this.triggerMountEvent()
 
@@ -416,7 +415,11 @@ class JsonDom extends React.Component {
     triggerMountEvent() {
         if (!this._ismounted) {
             this._ismounted = true
-            this.runJsEvent('mount', true)
+            setTimeout(()=>{
+                this.node = ReactDOM.findDOMNode(this)
+                this.runJsEvent('mount')
+            },0)
+
         }
     }
 
