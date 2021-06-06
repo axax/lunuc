@@ -17,13 +17,12 @@ class QuillEditor extends React.Component {
         this.state = QuillEditor.propsToState(props)
     }
 
-    /* static getDerivedStateFromProps(nextProps, prevState) {
-         if (prevState.value !== nextProps.children) {
-             console.log(nextProps.children, prevState.value)
-             return QuillEditor.propsToState(nextProps)
-         }
-         return null
-     }*/
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (prevState.value !== nextProps.value) {
+            return QuillEditor.propsToState(nextProps)
+        }
+        return null
+    }
 
     static propsToState(props) {
         return {value: props.children || props.value}
@@ -31,12 +30,16 @@ class QuillEditor extends React.Component {
 
     shouldComponentUpdate(props, state) {
         const readOnlyChanged = props.readOnly !== this.props.readOnly
+
+
         if (readOnlyChanged) {
             this.isInit = false
         } else if (this.state.value !== state.value) {
             setTimeout(() => {
+                const sY = window.scrollY, sX = window.scrollX
                 this.quill.setContents([])
                 this.quill.clipboard.dangerouslyPasteHTML(0, state.value)
+                window.scrollTo(sX, sY)
             }, 0)
         }
 
@@ -129,12 +132,12 @@ class QuillEditor extends React.Component {
                     const {onChange, name} = this.props
 
                     if (onChange) {
-                       /* this.editor.root.querySelectorAll('a').forEach(a => {
-                            const href = a.getAttribute('href')
-                            if (href && href.indexOf('/') === 0) {
-                                a.removeAttribute('target')
-                            }
-                        })*/
+                        /* this.editor.root.querySelectorAll('a').forEach(a => {
+                             const href = a.getAttribute('href')
+                             if (href && href.indexOf('/') === 0) {
+                                 a.removeAttribute('target')
+                             }
+                         })*/
                         let html = this.quill.root.innerHTML
                         if (html === '<p><br></p>') {
                             html = ''

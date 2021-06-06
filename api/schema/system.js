@@ -87,7 +87,7 @@ export const systemSchemaRaw = `
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!, scope: String, id: String, sync: Boolean): RunResult
     	killRun(id: String!): RunResult
-    	sendMail(recipient: String!, subject: String, body: String, slug: String, from: String): MailResult
+    	sendMail(recipient: String!, subject: String, body: String, slug: String, from: String, replyTo: String): MailResult
     	backups(type: String!): BackupResult
     	ping: PingResult
     	collections (filter: String): CollectionResult

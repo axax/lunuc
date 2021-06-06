@@ -8,7 +8,7 @@ import nodemailer from 'nodemailer'
  */
 
 
-export const sendMail = async (db, context, {settings, recipient, from, subject, body, html, text, slug, headerList, attachments, req}) => {
+export const sendMail = async (db, context, {settings, recipient, from, replyTo, subject, body, html, text, slug, headerList, attachments, req}) => {
     let mailSettings
     if(settings){
         mailSettings = settings
@@ -56,6 +56,7 @@ ${finalHtml}
     }
 
     const message = {
+        replyTo,
         from: from || mailSettings.from,
         to: recipient,
         subject: subject,

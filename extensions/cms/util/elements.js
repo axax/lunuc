@@ -456,7 +456,7 @@ const baseElements = [
     },
     {
         tagName: 'div',
-        name: 'Texteditor',
+        name: 'Texteditor (Rich-Text)',
         defaults: {
             $c: '',
             $inlineEditor: {

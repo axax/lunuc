@@ -116,7 +116,7 @@
   "optionalDependencies": {
     "@google-cloud/storage": "^5.8.5",
     "@google-cloud/translate": "^6.2.2",
-    "aws-sdk": "^2.921.0",
+    "aws-sdk": "^2.922.0",
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "@ffprobe-installer/ffprobe": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
@@ -137,7 +137,7 @@
     "compression-webpack-plugin": "^8.0.0",
     "copy-webpack-plugin": "^9.0.0",
     "css-loader": "^5.2.6",
-    "eslint": "^7.27.0",
+    "eslint": "^7.28.0",
     "eslint-plugin-react": "^7.24.0",
     "jest-cli": "^27.0.4",
     "less": "^4.1.1",
