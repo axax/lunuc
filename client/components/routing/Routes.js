@@ -65,7 +65,6 @@ class Routes extends React.Component {
         this.history._push = this.history.push
         this.history.push = (path, state) => {
 
-
             let newPath
             if (path.constructor === Object)
                 path = path.pathname
@@ -88,7 +87,8 @@ class Routes extends React.Component {
                 this.history._urlStack = this.history._urlStack.slice(0, 9)
             }
             this.history._last = this.history.location.pathname
-            this.history._push(newPath, state)
+            // encodeURI again as it gets decoded in react routing
+            this.history._push(encodeURI(newPath), state)
         }
         this.history.replace = (o, state) => {
             if (o.pathname !== _app_.contextPath && o.pathname.indexOf(_app_.contextPath + '/') < 0) {

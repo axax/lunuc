@@ -11,7 +11,7 @@ const stream = (socket)=>{
         //Inform other members in the room of new user's arrival
         if(roomSessions && roomSessions.size > 1){
             console.log('new user')
-            socket.to(data.room).emit('new user', {socketId:data.socketId})
+            socket.to(data.room).emit('new user', {socketId:data.socketId, username: data.username})
         }
 
     })

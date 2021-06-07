@@ -1131,7 +1131,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
     }
 })
 
-
+/* this is only used for video conference tool */
+//TODO: Move this to an extension as it doesn't belong here
 let stream = require('./stream')
 
 let ioHttp = require('socket.io')(app.http)
