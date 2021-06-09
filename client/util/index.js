@@ -158,8 +158,7 @@ const Util = {
             query = window && window.location.search.substring(1)
         }
 
-        const a = query.split('&')
-
+        const a = decodeURI(query).split('&')
         const b = {}
         for (let i = 0; i < a.length; ++i) {
             const p = a[i].split('=', 2)
