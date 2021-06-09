@@ -7,9 +7,17 @@ import {
 import Async from 'client/components/Async'
 import compose from '../../../util/compose'
 import DomUtil from '../../../client/util/dom'
-import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
-import {setPropertyByPath} from "../../../client/util/json";
+import {setPropertyByPath} from '../../../client/util/json'
 import {client, graphql} from '../../../client/middleware/graphql'
+import {
+    QUERY_KEY_VALUES_GLOBAL,
+    QUERY_KEY_VALUES,
+    QUERY_SET_KEY_VALUE,
+    QUERY_SET_KEY_VALUE_GLOBAL,
+    setKeyValueToLS,
+    getKeyValueFromLS
+} from '../../../client/util/keyvalue'
+import {NO_SESSION_KEY_VALUES} from '../../../client/constants'
 
 // admin pack
 const ErrorPage = (props) => <Async {...props}
@@ -83,11 +91,61 @@ export default function (WrappedComponent) {
         }
 
 
-        setKeyValue({key, value, server, internal, callback}) {
+
+
+        /**
+         * get a user or gobal value by a key
+         * @param {String} key
+         * @param {Boolean} server if true the values are sent to the server on a request
+         * @param {Boolean} global if true the value is stored as globally for all users
+         * @param {Function} callback a function that gets called at the end
+         */
+        /* it is not used */
+        /*getKeyValue({key, global, server, callback}){
+
+            if (!key) {
+                return
+            }
+
+            if (global || this.props.user.isAuthenticated) {
+                client.query({
+                    query: global ? QUERY_KEY_VALUES_GLOBAL : QUERY_KEY_VALUES,
+                    variables: {keys: key.constructor!==Array?[key]:key}
+                }).then((res)=>{
+                    let result
+                    if(res.data ){
+                        const data = global ? res.data.keyValueGlobals : res.data.keyValues
+                        if(data){
+                            if(key.constructor!==Array){
+                                result = data.results[0]
+                            }else{
+                                result = data.results
+                            }
+                        }
+                    }
+                    callback(result)
+                }).catch(callback)
+            }else {
+                callback(getKeyValueFromLS(key))
+            }
+        }*/
+
+
+        /**
+         * set a user or gobal value by a key
+         * @param {String} key
+         * @param {Any} value
+         * @param {Boolean} server if true the values are sent to the server on a request
+         * @param {Boolean} internal if true resolved data get updated automatically
+         * @param {Boolean} global if true the value is stored as globally for all users
+         * @param {Function} callback a function that gets called at the end
+         *
+         */
+        setKeyValue({key, value, server, internal, global, callback}) {
 
             const {user, cmsPage, slug} = this.props
 
-            if (!key || value===undefined || !cmsPage) {
+            if (!key || value === undefined || !cmsPage) {
                 return
             }
 
@@ -110,44 +168,18 @@ export default function (WrappedComponent) {
                 value: value && value.constructor !== String ? JSON.stringify(value) : value
             }
 
-            if (user.isAuthenticated) {
+            if (global || user.isAuthenticated) {
                 client.mutate({
-                    mutation: 'mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}',
+                    mutation: global ? QUERY_SET_KEY_VALUE_GLOBAL : QUERY_SET_KEY_VALUE,
                     variables,
                     update: (store, {data}) => {
 
-                        if(!data){
+                        if (!data) {
                             return
                         }
 
                         if (resolvedDataJson) {
                             this.updateResolvedData({json: resolvedDataJson})
-                        } else {
-
-                            /*  try {
-                                  const storedData = store.readQuery({
-                                      query: QUERY_KEY_VALUES,
-                                      variables: {key: settingKeyPrefix + slug}
-                                  })
-                                  console.log(storedData)
-
-                                  let newData = {keyValue: null}
-                                  if (storedData.keyValue) {
-                                      newData.keyValue = Object.assign({}, storedData.keyValue, {value: setKeyValue.value})
-                                  } else {
-                                      newData.keyValue = setKeyValue
-                                  }
-
-                                  // Write our data back to the cache.
-                                  store.writeQuery({
-                                      query: gql`query keyValue($key:String!){keyValue(key:$key){key value createdBy{_id}}}`,
-                                      variables: {key: settingKeyPrefix + slug},
-                                      data: newData
-                                  })
-                              }catch (e) {
-                                  console.log(e)
-
-                              }*/
                         }
 
                         if (callback) {
@@ -159,34 +191,18 @@ export default function (WrappedComponent) {
                 // clear local key values as there is a user session now
                 if(!_app_.noStorage) {
                     localStorage.removeItem(NO_SESSION_KEY_VALUES)
-                    localStorage.removeItem(NO_SESSION_KEY_VALUES_SERVER)
+                    localStorage.removeItem(NO_SESSION_KEY_VALUES+'_SERVER')
                 }
             } else {
-                if(!_app_.noStorage){
-                    const localStorageKey = server ? NO_SESSION_KEY_VALUES_SERVER : NO_SESSION_KEY_VALUES
-                    // if there is no user session store key value temporary in the localStorage
-                    const kv = localStorage.getItem(localStorageKey)
-                    let json
-                    if (kv) {
-                        try {
-                            json = JSON.parse(kv)
-                        } catch (e) {
-                            json = {}
-                        }
-                    } else {
-                        json = {}
-                    }
-                    json[key] = value
-                    localStorage.setItem(localStorageKey, JSON.stringify(json))
-                    if (resolvedDataJson) {
-                        this.updateResolvedData({json: resolvedDataJson})
-                    }
+                setKeyValueToLS({key, value, server})
+
+                if (resolvedDataJson) {
+                    this.updateResolvedData({json: resolvedDataJson})
                 }
                 if (callback) {
                     callback({key, value})
                 }
             }
-
         }
 
 
@@ -200,7 +216,7 @@ export default function (WrappedComponent) {
             // upadate data in resolvedData string
             if (storeData && storeData.cmsPage && storeData.cmsPage.resolvedData) {
                 const newData = Object.assign({}, storeData.cmsPage)
-                if (path && value!==undefined) {
+                if (path && value !== undefined) {
                     const resolvedDataJson = JSON.parse(cmsPage.resolvedData)
                     setPropertyByPath(value, path, resolvedDataJson)
                     newData.resolvedData = JSON.stringify(resolvedDataJson)
@@ -222,7 +238,7 @@ export default function (WrappedComponent) {
     const withGql = compose(
         graphql(CMS_PAGE_QUERY, {
             skip: (props, prevData) => {
-                if(prevData && prevData.cmsPage && prevData.cmsPage.slug===props.slug && !prevData.cmsPage.urlSensitiv && !props.cmsRender){
+                if (prevData && prevData.cmsPage && prevData.cmsPage.slug === props.slug && !prevData.cmsPage.urlSensitiv && !props.cmsRender) {
                     return true
                 }
                 return false
@@ -232,7 +248,7 @@ export default function (WrappedComponent) {
                 if (!ownProps.dynamic) {
                     const urlStacK = ownProps.history._urlStack
                     hiddenVariables = {
-                        meta: JSON.stringify({referer: urlStacK && urlStacK.length>1?urlStacK[1]:document.referrer})
+                        meta: JSON.stringify({referer: urlStacK && urlStacK.length > 1 ? urlStacK[1] : document.referrer})
                     }
                 }
                 return {

@@ -97,7 +97,7 @@ export default db => ({
             } = cmsPages.results[0]
             const scope = {
                 ...createScopeForDataResolver(query, props),
-                page: {slug, host: getHostFromHeaders(headers), meta},
+                page: {slug, host: getHostFromHeaders(headers), meta, referer: req.headers['referer']},
                 editmode
             }
             const ispublic = cmsPages.results[0].public

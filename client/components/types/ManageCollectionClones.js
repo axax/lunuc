@@ -14,9 +14,6 @@ import {withKeyValues} from 'client/containers/generic/withKeyValues'
 import {theme} from 'ui/admin'
 import {client, Query} from '../../middleware/graphql'
 
-const gqlKeyValueGlobalsQuery = `query{keyValueGlobals(keys:['TypesSelectedVersions']){results{key value status createdBy{_id username}}}}`
-
-
 class ManageCollectionClones extends React.PureComponent {
 
     state = {

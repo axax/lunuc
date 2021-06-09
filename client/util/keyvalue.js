@@ -1,16 +1,14 @@
-import {NO_SESSION_KEY_VALUES, NO_SESSION_KEY_VALUES_SERVER} from 'client/constants'
-import {client, NetworkStatus, RequestType, useQuery} from '../middleware/graphql'
-
+import {NO_SESSION_KEY_VALUES} from 'client/constants'
+import {client, useQuery} from '../middleware/graphql'
 
 export const QUERY_KEY_VALUES = 'query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}'
+export const QUERY_SET_KEY_VALUE = 'mutation setKeyValue($key:String!,$value:String!){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}'
+export const QUERY_KEY_VALUES_GLOBAL = 'query keyValueGlobals($keys:[String]){keyValueGlobals(keys:$keys){limit offset total results{key value status}}}'
 export const QUERY_SET_KEY_VALUE_GLOBAL = 'mutation setKeyValueGlobal($key:String!,$value:String!){setKeyValueGlobal(key:$key,value:$value){key value status}}'
 
 export const useKeyValues = (keys) => {
-
-   // const [response, setResponse] = useState({data: null, networkStatus: 0, loading: true})
-
-    const {data,loading} = useQuery(QUERY_KEY_VALUES, {variables:{keys}})
-    const enhancedData={}
+    const {data, loading} = useQuery(QUERY_KEY_VALUES, {variables: {keys}})
+    const enhancedData = {}
     if (data && data.keyValues.results) {
         for (const i in data.keyValues.results) {
             const o = data.keyValues.results[i]
@@ -21,21 +19,8 @@ export const useKeyValues = (keys) => {
             }
         }
     }
-    return {loading,data: enhancedData}
-
+    return {loading, data: enhancedData}
 }
-
-export const setKeyValueGlobal = (key, value) =>{
-    return client.mutate({
-        mutation: QUERY_SET_KEY_VALUE_GLOBAL,
-        variables: {key, value: value.constructor === Object ? JSON.stringify(value) : value},
-        update: (store, {data: {setKeyValue}}) => {
-        }
-    })
-}
-
-const keyValuesFromLS = {}
-
 
 export const getKeyValueFromLS = (key) => {
     const kv = getKeyValuesFromLS()
@@ -47,28 +32,34 @@ export const getKeyValueFromLS = (key) => {
 }
 
 export const getKeyValuesFromLS = () => {
-    const kvServer = getKeyValuesFromLSByKey(NO_SESSION_KEY_VALUES_SERVER),
-        kvClient = getKeyValuesFromLSByKey(NO_SESSION_KEY_VALUES)
+    const kvServer = getValuesFromLocalStorageAsJson(NO_SESSION_KEY_VALUES + '_SERVER'),
+        kvClient = getValuesFromLocalStorageAsJson(NO_SESSION_KEY_VALUES)
     return Object.assign({}, kvClient, kvServer)
 }
 
-export const getKeyValuesFromLSByKey = (localStorageKey) => {
+export const setKeyValueToLS = ({key, value, server}) => {
+    if (!_app_.noStorage) {
+        const localStorageKey = NO_SESSION_KEY_VALUES + (server ? '_SERVER' : '')
 
-    if (!keyValuesFromLS[localStorageKey]) {
-        try {
-            keyValuesFromLS[localStorageKey] = JSON.parse(localStorage.getItem(localStorageKey))
-        } finally {
-        }
-        if (!keyValuesFromLS[localStorageKey]) keyValuesFromLS[localStorageKey] = {}
+        const kv = getValuesFromLocalStorageAsJson(localStorageKey)
+        kv[key] = value
+
+        localStorage.setItem(localStorageKey, JSON.stringify(kv))
     }
-    return keyValuesFromLS[localStorageKey]
 }
 
-export const setKeyValueToLS = (key, value, server) => {
-    const localStorageKey = server ? NO_SESSION_KEY_VALUES_SERVER : NO_SESSION_KEY_VALUES
+const getValuesFromLocalStorageAsJson = (localStorageKey) => {
+    let json = {}
+    if (!_app_.noStorage) {
+        const kv = localStorage.getItem(localStorageKey)
+        if (kv) {
+            try {
+                json = JSON.parse(kv)
+            } catch (e) {
+                json = {}
+            }
+        }
+    }
 
-    const kv = getKeyValuesFromLSByKey(localStorageKey)
-    kv[key] = value
-
-    localStorage.setItem(localStorageKey, JSON.stringify(kv))
+    return json
 }

@@ -449,7 +449,6 @@ CmsViewContainer.propTypes = {
     cmsPageVariables: PropTypes.object,
     cmsPage: PropTypes.object,
     cmsPages: PropTypes.object,
-    keyValue: PropTypes.object,
     setKeyValue: PropTypes.func.isRequired,
     updateResolvedData: PropTypes.func.isRequired,
     slug: PropTypes.string.isRequired,

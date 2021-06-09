@@ -1,6 +1,6 @@
 import Util from '../../../client/util'
 import {CAPABILITY_MANAGE_CMS_CONTENT} from '../constants'
-import {NO_SESSION_KEY_VALUES_SERVER} from '../../../client/constants'
+import {NO_SESSION_KEY_VALUES} from '../../../client/constants'
 import config from 'gen/config-client'
 
 //map with slugs that are url sensitive
@@ -66,7 +66,7 @@ export const getGqlVariables = props => {
 
     // add settings from local storage if user is not logged in
     if (!user.isAuthenticated) {
-        const kv = !_app_.noStorage && localStorage.getItem(NO_SESSION_KEY_VALUES_SERVER)
+        const kv = !_app_.noStorage && localStorage.getItem(NO_SESSION_KEY_VALUES + '_SERVER')
         if (kv) {
             variables.nosession = kv
         }

@@ -21,7 +21,6 @@ const DEFAULT_PARAM_MAX_LENGTH = 100,
 export const resolveData = async ({db, context, dataResolver, scope, nosession, req, editmode, dynamic}) => {
     const startTime = new Date().getTime()
     const resolvedData = {_meta: {}}, subscriptions = []
-
     if (dataResolver && dataResolver.trim() !== '') {
         let debugInfo = null
         try {

@@ -46,7 +46,6 @@ import config from 'gen/config-client'
 import {getFormFields} from '../../../util/typesAdmin'
 import Hook from '../../../util/hook'
 import {client, Query, graphql} from '../../../client/middleware/graphql'
-import {setKeyValueGlobal} from 'client/util/keyvalue'
 import {withStyles} from '@material-ui/core/styles'
 
 import {translations} from '../translations/admin'
@@ -297,8 +296,8 @@ class CmsViewEditorContainer extends React.Component {
                         } else {
                             editDialogProps.dataToEdit = data.genericDatas.results[0]
                         }
-                        if(cmsEditData.resolverKey){
-                            editDialogProps.meta = {data:JSON.stringify({clearCachePrefix: cmsEditData.resolverKey})}
+                        if (cmsEditData.resolverKey) {
+                            editDialogProps.meta = {data: JSON.stringify({clearCachePrefix: cmsEditData.resolverKey})}
                         }
                         return React.createElement(
                             withType(TypeEdit),
@@ -310,7 +309,7 @@ class CmsViewEditorContainer extends React.Component {
                     if (cmsEditData._id) {
                         return <Query key="dataEditor"
                                       query={getTypeQueries(cmsEditData.type).query}
-                                      variables={{filter: `_id=${cmsEditData._id}`,meta: cmsEditData.resolverKey}}
+                                      variables={{filter: `_id=${cmsEditData._id}`, meta: cmsEditData.resolverKey}}
                                       fetchPolicy="network-only">
 
                             {({loading, error, data}) => {
@@ -925,10 +924,17 @@ class CmsViewEditorContainer extends React.Component {
                                      caption={_t('CmsViewEditorContainer.save')} onClick={(formData) => {
                             const pageName = cmsPage.realSlug.split('/')[0]
                             this.setState({PageOptions: formData})
-                            setKeyValueGlobal('PageOptions-' + pageName, formData).then(() => {
-                                // refresh whole page
-                                location.href = location.href.split('#')[0]
+
+
+                            this.props.setKeyValue({
+                                key: 'PageOptions-' + pageName,
+                                value: formData,
+                                global: true,
+                                callback: () => {
+                                    location.href = location.href.split('#')[0]
+                                }
                             })
+
                         }} fields={PageOptionsDefinition.reduce((obj, item) => {
                             return {...obj, [item.name]: item}
                         }, {})} values={PageOptions || {}}/>] : _t('CmsViewEditorContainer.noOptions')}</div>}
