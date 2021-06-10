@@ -13,7 +13,7 @@ export class ApiError extends Error {
 // Use this error for form validation. Add a list with errors to match the proper form field
 export class ValidationError extends GraphQLError {
     constructor(errors) {
-        super('The request is invalid.')
+        super('Fehler beim Speichern des Objects')
         this.state = errors.reduce((result, error) => {
             if (Object.prototype.hasOwnProperty.call(result, error.key)) {
                 result[error.key].push(error.message)

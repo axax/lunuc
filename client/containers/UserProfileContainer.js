@@ -4,6 +4,7 @@ import compose from 'util/compose'
 import BaseLayout from 'client/components/layout/BaseLayout'
 import {Button, Typography, TextField, DeleteIconButton, Chip, ContentBlock} from 'ui/admin'
 import {graphql} from '../middleware/graphql'
+import {_t} from 'util/i18n'
 
 class UserProfileContainer extends React.Component {
 
@@ -25,6 +26,7 @@ class UserProfileContainer extends React.Component {
             return Object.assign({}, prevState, {
                 me: nextProps.me,
                 username: nextProps.me.username,
+                email: nextProps.me.email,
                 note: nextProps.me.note
             })
         }
@@ -91,17 +93,15 @@ class UserProfileContainer extends React.Component {
         e.preventDefault()
         this.setState({usernameError: '', loading: true})
 
-        this.props.updateMe({username: this.state.username})
+        this.props.updateMe({username: this.state.username, email: this.state.email})
             .then(resp => {
                 this.setState({loading: false})
             })
-            .catch(error => {
+            .catch(res => {
                 this.setState({loading: false})
-                console.log(error)
-                if (error.graphQLErrors.length > 0) {
-                    const e = error.graphQLErrors[0]
-                    if (e.key === 'username.taken') {
-                        this.setState({username: this.props.me.username, usernameError: e.message})
+                if (res.error) {
+                    if (res.error.key === 'username.taken') {
+                        this.setState({username: this.props.me.username, usernameError: res.error.message})
                     }
                 }
             })
@@ -136,15 +136,14 @@ class UserProfileContainer extends React.Component {
         const {me} = this.props
         if (!me) return <BaseLayout/>
         console.log('render UserProfileContainer')
-        const {username, usernameError, loading, note} = this.state
-
+        const {username, email, usernameError, loading, note} = this.state
         let noteElements = []
-
         if (note) {
             note.forEach(
-                (o) => noteElements.push(<div key={o._id}>
+                (o) => noteElements.push(<div key={o._id} style={{display:'flex'}}>
                     <TextField multiline name="note" id={o._id} onBlur={this.handleBlur}
                                onChange={this.handleInputChange}
+                               fullWidth={true}
                                defaultValue={o.value}/>
                     <DeleteIconButton id={o._id} onClick={(e) => this.deleteNote(e, o)}/>
                 </div>)
@@ -153,21 +152,23 @@ class UserProfileContainer extends React.Component {
 
         return (
             <BaseLayout>
-                <Typography variant="h3" component="h1" gutterBottom>Profile</Typography>
+                <Typography variant="h3" component="h1" gutterBottom>{_t('Profile.title')}</Typography>
 
 
-                <ContentBlock>
-                    <TextField type="text" name="username" value={username} onChange={this.handleInputChange}/>
-                    <Button onClick={this.updateProfile.bind(this)} variant="contained" color="primary">Update
-                        profile</Button>
+                <ContentBlock style={{maxWidth: '600px'}}>
+                    <TextField fullWidth={true} type="text" label="Benutzername" name="username" value={username} onChange={this.handleInputChange}/>
+                    <TextField fullWidth={true} type="email" label="Email" name="email" value={email} onChange={this.handleInputChange}/>
+                    <Button onClick={this.updateProfile.bind(this)} variant="contained" color="primary">{_t('core.save')}</Button>
                     {usernameError ? <strong>{usernameError}</strong> : ''}
 
                 </ContentBlock>
 
-                <Typography variant="h4" component="h2" gutterBottom>Role & capabilities</Typography>
+                <Typography variant="h4" component="h2" gutterBottom>{_t('Profile.roleCapabilities')}</Typography>
+                <Typography variant="subtitle2" component="p" gutterBottom>{_t('Profile.roleHint')}</Typography>
 
-                <ContentBlock>
-                    <p>Role {me.role.name}</p>
+
+                <ContentBlock style={{maxWidth: '600px'}}>
+                    <Typography variant="subtitle1" component="p" gutterBottom>{_t('Profile.currentRole', me.role)}</Typography>
                     {
                         me.role.capabilities.map((v, i) => {
                             return <Chip key={i} label={v}/>
@@ -176,11 +177,11 @@ class UserProfileContainer extends React.Component {
                 </ContentBlock>
 
 
-                <Typography variant="h4" component="h2" gutterBottom>Notes</Typography>
+                <Typography variant="h4" component="h2" gutterBottom>{_t('Profile.note')}</Typography>
                 <ContentBlock>
                     {noteElements}
                     <br/>
-                    <Button variant="contained" color="primary" onClick={this.createNote}>Add new note</Button>
+                    <Button variant="contained" color="primary" onClick={this.createNote}>{_t('Profile.addNote')}</Button>
                 </ContentBlock>
 
 
@@ -199,25 +200,15 @@ UserProfileContainer.propTypes = {
     loading: PropTypes.bool
 }
 
-const gqlQuery = `query{me{username email _id note{_id value}role{_id name capabilities}}}`
+const gqlQuery = 'query{me{username email _id note{_id value}role{_id name capabilities}}}'
 
+const gqlUpdate = 'mutation updateMe($username: String, $email: String){updateMe(username:$username,email:$email){_id username}}'
 
-const gqlUpdate = `
-  mutation updateMe($username: String){updateMe(username:$username){_id username}}
-`
+const gqlUpdateNote = 'mutation updateNote($id: ID!, $value: String){updateNote(value:$value,_id:$id){_id value}}'
 
-const gqlUpdateNote = `
-	mutation updateNote($id: ID!, $value: String){updateNote(value:$value,_id:$id){_id value}}
-`
+const gqlCreateNote = 'mutation createNote{createNote{_id value}}'
 
-
-const gqlCreateNote = `
-	mutation createNote{createNote{_id value}}
-`
-
-const gqlDeleteNote = `
-	mutation deleteNote($id: ID!){deleteNote(_id:$id){_id value}}
-`
+const gqlDeleteNote = 'mutation deleteNote($id: ID!){deleteNote(_id:$id){_id value}}'
 
 
 const UserProfileContainerWithGql = compose(
@@ -234,9 +225,9 @@ const UserProfileContainerWithGql = compose(
     }),
     graphql(gqlUpdate, {
         props: ({ownProps, mutate}) => ({
-            updateMe: ({username}) => {
+            updateMe: ({username, email}) => {
                 return mutate({
-                    variables: {username}
+                    variables: {username, email}
                 })
             }
         })

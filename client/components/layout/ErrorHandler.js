@@ -4,7 +4,7 @@ import {connect} from 'react-redux'
 import {bindActionCreators} from 'redux'
 import * as Actions from 'client/actions/ErrorHandlerAction'
 import {SimpleDialog, Snackbar} from 'ui/admin'
-
+import {_t} from 'util/i18n'
 
 class ErrorHandler extends React.Component {
 
@@ -36,7 +36,7 @@ class ErrorHandler extends React.Component {
         }
 
         return <SimpleDialog open={true} onClose={this.handleDialogClose.bind(this, key)}
-                             actions={[{autoFocus: true, key: 'ok', label: 'Ok', type: 'primary'}]} title="Error">
+                             actions={[{autoFocus: true, key: 'ok', label: 'Ok', type: 'primary'}]} title={_t('ErrorHandler.title')}>
             {msg}
         </SimpleDialog>
 

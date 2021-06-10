@@ -25,10 +25,12 @@ import {useHistory} from 'react-router-dom'
 import {Link} from 'react-router-dom'
 import {useKeyValues} from '../../util/keyvalue'
 import {CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities'
+
 const {ADMIN_BASE_URL, APP_NAME} = config
 
 import {registerTrs} from 'util/i18n'
 import {translations} from '../../translations/admin'
+
 registerTrs(translations, 'AdminTranslations')
 
 let menuItems = []
@@ -38,7 +40,7 @@ const BaseLayout = props => {
 
     const userKeys = useKeyValues(['BaseLayoutSettings'])
 
-    if (!userKeys.loading && menuItems.length===0) {
+    if (!userKeys.loading && menuItems.length === 0) {
         menuItems.push(
             {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>},
             {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}
@@ -57,14 +59,28 @@ const BaseLayout = props => {
         }
 
 
-        Hook.call('MenuMenu', {menuItems})
+        Hook.call('MenuMenu', {menuItems, user})
 
         const settings = userKeys.data.BaseLayoutSettings
 
-        if (settings && settings.menu && settings.menu.hide) {
-            for (let i = menuItems.length - 1; i >= 0; i--) {
-                if (settings.menu.hide.indexOf(menuItems[i].name) >= 0) {
-                    menuItems.splice(i, 1)
+        if (settings && settings.menu) {
+
+            if(settings.menu.genericTypes){
+                menuItems.push({divider:true, auth: true})
+
+                settings.menu.genericTypes.forEach(type=>{
+                    menuItems.push({name: type.label || type.name, to: ADMIN_BASE_URL + '/types/GenericData?fixType=GenericData&title='+encodeURIComponent(type.label || type.name)+
+                        '&baseFilter='+encodeURIComponent('definition.name=='+type.name), auth: true, icon: <SettingsIcon/>})
+                })
+
+            }
+
+            // deprecated. will probably be removed in the future
+            if (settings.menu.hide) {
+                for (let i = menuItems.length - 1; i >= 0; i--) {
+                    if (settings.menu.hide.indexOf(menuItems[i].name) >= 0) {
+                        menuItems.splice(i, 1)
+                    }
                 }
             }
         }
@@ -77,14 +93,16 @@ const BaseLayout = props => {
     return <UIProvider>
         <ResponsiveDrawerLayout title={APP_NAME}
                                 menuItems={menuItems}
-                                extra={ history._urlStack && history._urlStack.length>0 && <div style={{
+                                extra={history._urlStack && history._urlStack.length > 0 && <div style={{
                                     padding: '1rem',
                                     border: '1px solid #f1f1f1',
                                     margin: '1rem',
                                     fontSize: '0.8rem'
-                                }}>{history._urlStack.map((u,i) => {
-                                    return <Link key={'urlstack'+i} style={{display: 'block', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                        overflow: 'hidden' }} to={u}>{u}</Link>
+                                }}>{history._urlStack.map((u, i) => {
+                                    return <Link key={'urlstack' + i} style={{
+                                        display: 'block', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                        overflow: 'hidden'
+                                    }} to={u}>{u}</Link>
                                 })}</div>}
                                 headerRight={
                                     [

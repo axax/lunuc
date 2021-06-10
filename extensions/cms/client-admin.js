@@ -5,7 +5,11 @@ const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
 import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
+import {_t, registerTrs} from '../../util/i18n'
 
+import {translations} from './translations/admin'
+
+registerTrs(translations, 'CmsViewEditorContainer')
 
 const WebIcon = (props) => <Async {...props} expose="WebIcon"
                                   load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
@@ -30,7 +34,7 @@ export default () => {
 
     // add entry to main menu
     Hook.on('MenuMenu', ({menuItems}) => {
-        menuItems.push({name: 'Cms', to: ADMIN_BASE_URL + '/cms', auth: true, icon: <WebIcon/>})
+        menuItems.push({name: _t('CmsMenu.pages'), to: ADMIN_BASE_URL + '/cms', auth: true, icon: <WebIcon/>})
     })
 
     // add some extra data to the table

@@ -110,7 +110,7 @@ class LoginContainer extends React.Component {
     }
 
     render() {
-        const {signupLink} = this.props
+        const {signupLink, showSignupLink} = this.props
         const from = this.getFromUrl()
 
         const {redirectToReferrer, loading, username, password, error} = this.state
@@ -165,8 +165,8 @@ class LoginContainer extends React.Component {
                                                   showProgress={loading}
                                                   onClick={this.login.bind(this)}>Login</SimpleButton>
                                 </div>
-                                <Typography>Don&apos;t have an account? <Link to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign
-                                    up</Link></Typography>
+                                {showSignupLink && <Typography>Don&apos;t have an account? <Link to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign
+                                    up</Link></Typography>}
                             </form>
                         </Card>
                     </Col>

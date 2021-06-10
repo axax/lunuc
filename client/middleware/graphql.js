@@ -216,7 +216,7 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
                         rejectData.error = response.errors[0]
                         getStore().dispatch(addError({
                             key: 'graphql_error',
-                            msg: rejectData.error.message + (rejectData.error.path ? ' (in operation ' + rejectData.error.path.join('/') + ')' : '')
+                            msg: rejectData.error.message /* + (rejectData.error.path ? ' (in operation ' + rejectData.error.path.join('/') + ')' : '') */
                         }))
                     }
                     reject(rejectData)
@@ -339,7 +339,6 @@ export const client = {
                 update(proxy, r)
             }).catch((e) => {
                 proxy.writeQuery = client.writeQuery
-                console.log(e)
                 update(proxy, e)
             })
         }

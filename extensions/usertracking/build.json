@@ -2,7 +2,10 @@
   "types": [
     {
       "access":{
-        "create": "anonymous"
+        "create": "anonymous",
+        "subscribe": {
+          "role": "access_admin_page"
+        }
       },
       "name": "UserTracking",
       "fields": [

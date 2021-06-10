@@ -34,7 +34,7 @@ class HomeContainer extends React.Component {
         Hook.call('HomeContainerRender', {user, content, match, location, history})
 
         return <BaseLayout>
-            <Typography variant="h3" component="h1" gutterBottom>Administration console</Typography>
+            <Typography variant="h3" component="h1" gutterBottom>Willkommen</Typography>
             {content}</BaseLayout>
     }
 }

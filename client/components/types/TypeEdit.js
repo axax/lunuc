@@ -6,6 +6,9 @@ import {getFormFields, addAlwaysUpdateData, referencesToIds} from '../../../util
 import {SimpleDialog} from 'ui/admin'
 import {_t} from 'util/i18n'
 
+/*
+edit popup with form to edit an object of a type
+ */
 class TypeEdit extends React.Component {
 
     constructor(props) {
@@ -166,7 +169,7 @@ class TypeEdit extends React.Component {
                     // only send data if they have really changed
                     addAlwaysUpdateData(editedData, editedDataToUpdate, type)
 
-                    updateData({_id: dataToEdit._id, ...editedDataToUpdate}, editedData, meta).then(callback)
+                    updateData({_id: dataToEdit._id, ...editedDataToUpdate}, editedData, meta).then(callback).catch(callback)
                 } else {
                     if (action.key === 'save_close') {
                         closeModal()
@@ -176,7 +179,7 @@ class TypeEdit extends React.Component {
             } else {
                 // create a new entry
 
-                createData(editedDataWithRefs, editedData, meta).then(callback)
+                createData(editedDataWithRefs, editedData, meta).then(callback).catch(callback)
             }
 
         } else if (action && (action.key === 'cancel' || action.key === 'Escape')) {

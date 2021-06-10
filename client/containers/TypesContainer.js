@@ -236,11 +236,14 @@ class TypesContainer extends React.Component {
             this.pageParams.limit !== pageParams.limit ||
             this.pageParams.sort !== pageParams.sort ||
             this.pageParams.layout !== pageParams.layout ||
+            this.pageParams.baseFilter !== pageParams.baseFilter ||
             this.pageParams.filter !== pageParams.filter) {
 
             this.pageParams = pageParams
             if (props.baseFilter) {
                 this.baseFilter = props.baseFilter
+            }else if (this.pageParams.baseFilter) {
+                this.baseFilter = this.pageParams.baseFilter
             }
             this.getData(pageParams, true, typeChanged)
 
@@ -742,10 +745,10 @@ class TypesContainer extends React.Component {
         const content = [
             title === false ? null :
                 <Typography key="typeTitle" variant="h3"
-                            gutterBottom>{title || (this.fixType ? this.fixType : 'Types')}</Typography>,
+                            gutterBottom>{title || this.pageParams.title || (this.fixType ? this.fixType : 'Types')}</Typography>,
             description ?
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : null,
-            <ButtonGroup size="small" key="layoutChanger" className={classes.layoutChanger} disableElevation
+            false && <ButtonGroup size="small" key="layoutChanger" className={classes.layoutChanger} disableElevation
                          variant="contained" color="primary">
                 <Button onClick={() => {
                     this.setSettingsForType(this.pageParams.type, {layout: 'list'})
@@ -1073,7 +1076,7 @@ class TypesContainer extends React.Component {
 
     determinPageParams(props) {
         const {params} = props.match
-        const {p, l, s, f, v, noLayout, fixType, baseFilter, multi, layout} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v, noLayout, fixType, title, baseFilter, multi, layout} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
@@ -1096,6 +1099,7 @@ class TypesContainer extends React.Component {
         const result = {
             baseFilter,
             multi,
+            title,
             fixType: finalFixType,
             noLayout: finalNoLayout,
             limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,

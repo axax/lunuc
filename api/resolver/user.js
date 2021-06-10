@@ -548,9 +548,9 @@ export const userResolver = (db) => ({
 
             const userCollection = db.collection('User')
 
-            let existingUser = (await userCollection.findOne({$or: [{'username': user.username}]}))
+            let existingUser = (await userCollection.findOne({$or: [{'username': user.username},{'email': user.email}]}))
             if (existingUser != null && existingUser._id.toString() !== context.id) {
-                throw new ApiError(`Username ${user.username} already taken`, 'username.taken', {x: 'sss'})
+                throw new ApiError(`Username or Email already taken`, 'username.taken', {x: 'sss'})
             } else {
 
 
@@ -563,7 +563,7 @@ export const userResolver = (db) => ({
                     user.meta = JSON.parse(user.meta)
                 }
 
-                const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}, {returnOriginal: false}))
+                const result = (await userCollection.findOneAndUpdate({_id: ObjectId(context.id)}, {$set: user}))
                 if (result.ok !== 1) {
                     throw new ApiError('User could not be changed')
                 }

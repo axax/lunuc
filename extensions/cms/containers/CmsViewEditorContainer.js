@@ -41,16 +41,12 @@ import {CAPABILITY_MANAGE_CMS_CONTENT, CAPABILITY_MANAGE_CMS_TEMPLATE} from '../
 import CodeEditor from 'client/components/CodeEditor'
 import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import GenericForm from '../../../client/components/GenericForm'
-import {_t, registerTrs} from 'util/i18n'
+import {_t} from 'util/i18n'
 import config from 'gen/config-client'
 import {getFormFields} from '../../../util/typesAdmin'
 import Hook from '../../../util/hook'
 import {client, Query, graphql} from '../../../client/middleware/graphql'
 import {withStyles} from '@material-ui/core/styles'
-
-import {translations} from '../translations/admin'
-
-registerTrs(translations, 'CmsViewEditorContainer')
 
 const DEFAULT_EDITOR_SETTINGS = {inlineEditor: true, fixedLayout: true, drawerOpen: false, drawerWidth: 500}
 
@@ -696,12 +692,15 @@ class CmsViewEditorContainer extends React.Component {
                                     return <div>
                                         <Typography gutterBottom>Template changed</Typography>
 
-                                        <CodeEditor lineNumbers
-                                                    type="json"
-                                                    readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>
+                                        {canMangeCmsTemplate && <CodeEditor lineNumbers
+                                                                            type="json"
+                                                                            readOnly={true}>{JSON.stringify(JSON.parse(parsedData.template), null, 2)}</CodeEditor>}
 
+                                        {canMangeCmsTemplate &&
                                         <a href={'/system/diff?preview=true#value=' + encodeURIComponent(parsedData.template) + '&orig1=' + encodeURIComponent(template)}
-                                           target="_blank">Show diff</a>
+                                           target="_blank">Show diff</a>}
+
+
                                     </div>
                                 } else if (parsedData.style) {
 
@@ -787,73 +786,79 @@ class CmsViewEditorContainer extends React.Component {
                     name: _t('CmsViewEditorContainer.pagesettings'), onClick: () => {
                         this.setState({showPageSettings: true})
                     }
-                },
-                {
-                    divider: true,
-                    name: _t('CmsViewEditorContainer.languages'),
-                    items: []
-                },
-                {
-                    divider: true,
-                    name: _t('CmsViewEditorContainer.autotranslate'), onClick: () => {
-                        const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path: 'tr'})
-                        if (segment.tr && segment.tr[config.DEFAULT_LANGUAGE]) {
-                            let timeout
-                            const saveResolver = () => {
-                                clearTimeout(timeout)
-                                timeout = setTimeout(() => {
-                                    this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2), true)
-                                }, 100)
-                            }
-                            const transRec = (o, base, path) => {
-                                if (!o || o.constructor !== Object) {
-                                    return
-                                }
-
-                                Object.keys(o).forEach(key => {
-                                    if (o[key] && o[key].constructor === String) {
-                                        config.LANGUAGES.forEach(lang => {
-                                            if (lang !== config.DEFAULT_LANGUAGE) {
-                                                const text = o[key].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
-                                                client.query({
-                                                    fetchPolicy: 'no-cache',
-                                                    query: 'query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}',
-                                                    variables: {
-                                                        text,
-                                                        toIso: lang,
-                                                        fromIso: config.DEFAULT_LANGUAGE
-                                                    },
-                                                }).then((res) => {
-                                                    // double escape
-                                                    const newText = Util.escapeForJson(Util.escapeForJson(res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g, '')))
-                                                    setPropertyByPath(newText, lang + path + '.' + key.replace(/\./g, '\\\.'), base)
-                                                    saveResolver()
-
-                                                })
-
-                                            }
-                                        })
-                                    }
-                                })
-                            }
-                            transRec(segment.tr[config.DEFAULT_LANGUAGE], segment.tr, '')
-
-
-                        }
-
-                    }
                 }
             ]
-            config.LANGUAGES.forEach(lang => {
-                if (lang !== _app_.lang) {
-                    moreMenu[2].items.push({
-                        name: lang, onClick: () => {
-                            window.location.href = Util.translateUrl(lang)
+            if (config.LANGUAGES.length > 1) {
+                moreMenu.push(
+                    {
+                        divider: true,
+                        name: _t('CmsViewEditorContainer.languages'),
+                        items: []
+                    },
+                    {
+                        divider: true,
+                        name: _t('CmsViewEditorContainer.autotranslate'), onClick: () => {
+                            const {segment, dataResolver} = this.findSegmentInDataResolverByKeyOrPath({path: 'tr'})
+                            if (segment.tr && segment.tr[config.DEFAULT_LANGUAGE]) {
+                                let timeout
+                                const saveResolver = () => {
+                                    clearTimeout(timeout)
+                                    timeout = setTimeout(() => {
+                                        this.handleDataResolverChange(JSON.stringify(dataResolver, null, 2), true)
+                                    }, 100)
+                                }
+                                const transRec = (o, base, path) => {
+                                    if (!o || o.constructor !== Object) {
+                                        return
+                                    }
+
+                                    Object.keys(o).forEach(key => {
+                                        if (o[key] && o[key].constructor === String) {
+                                            config.LANGUAGES.forEach(lang => {
+                                                if (lang !== config.DEFAULT_LANGUAGE) {
+                                                    const text = o[key].replace(/\\n/g, '\n').replace(/%(\w+)%/g, '@_$1_')
+                                                    client.query({
+                                                        fetchPolicy: 'no-cache',
+                                                        query: 'query translate($text: String!, $toIso: String!){translate(text: $text, toIso: $toIso){text toIso}}',
+                                                        variables: {
+                                                            text,
+                                                            toIso: lang,
+                                                            fromIso: config.DEFAULT_LANGUAGE
+                                                        },
+                                                    }).then((res) => {
+                                                        // double escape
+                                                        const newText = Util.escapeForJson(Util.escapeForJson(res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g, '')))
+                                                        setPropertyByPath(newText, lang + path + '.' + key.replace(/\./g, '\\\.'), base)
+                                                        saveResolver()
+
+                                                    })
+
+                                                }
+                                            })
+                                        }
+                                    })
+                                }
+                                transRec(segment.tr[config.DEFAULT_LANGUAGE], segment.tr, '')
+
+
+                            }
 
                         }
-                    })
-                }
-            })
+                    }
+                )
+                config.LANGUAGES.forEach(lang => {
+                    if (lang !== _app_.lang) {
+                        moreMenu[2].items.push({
+                            name: lang, onClick: () => {
+                                window.location.href = Util.translateUrl(lang)
+
+                            }
+                        })
+                    }
+                })
+            }
+
+
 
             if (this.templateChangeHistory.length > 0) {
                 moreMenu.push(

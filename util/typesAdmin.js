@@ -323,7 +323,7 @@ Hook.on('Types', ({types}) => {
                 type: 'UserRole',
                 reference: true,
                 fields: ['name'],
-                tab: 'Access Control'
+                tab: _t('Types.accessControl')
             },
             {
                 name: 'junior',
@@ -332,7 +332,7 @@ Hook.on('Types', ({types}) => {
                 reference: true,
                 multi: true,
                 fields: ['username'],
-                tab: 'Access Control'
+                tab: _t('Types.accessControl')
             }
         ]
     }

@@ -15,7 +15,8 @@ export const translations = {
         'CmsViewEditorContainer.languages': 'Sprachvarianten',
         'CmsViewEditorContainer.undochange': 'Änderung Rückgängig',
         'CmsViewEditorContainer.logout': 'Abmelden',
-        'CmsViewEditorContainer.noOptions': 'Es sind keine Optionen definiert'
+        'CmsViewEditorContainer.noOptions': 'Es sind keine Optionen definiert',
+        'CmsMenu.pages': 'Seiten'
     },
     en: {
         'CmsViewEditorContainer.save': 'Speichern',
@@ -33,6 +34,7 @@ export const translations = {
         'CmsViewEditorContainer.languages': 'Language variants',
         'CmsViewEditorContainer.undochange': 'Undo change',
         'CmsViewEditorContainer.logout': 'Logout',
-        'CmsViewEditorContainer.noOptions': 'There are no options defined'
+        'CmsViewEditorContainer.noOptions': 'There are no options defined',
+        'CmsMenu.pages': 'Pages'
     }
 }

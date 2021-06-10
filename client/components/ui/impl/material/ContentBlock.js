@@ -10,9 +10,9 @@ const styles = theme => ({
 
 class ContentBlock extends React.PureComponent {
     render() {
-        const {classes, children} = this.props
+        const {classes, children, style} = this.props
 
-        return <div className={classes.contentBlock} children={children} />
+        return <div className={classes.contentBlock} style={style} children={children} />
     }
 }
 
