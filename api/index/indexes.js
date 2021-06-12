@@ -40,7 +40,9 @@ export const createAllIndexes = async (db) => {
                         if( field.index === 'text') {
                             textIndex[field.name + '.' + lang] = 'text'
                         }else{
-                            db.collection(typeName).createIndex({[field.name + '.' + lang]: field.index}, {background: true, unique: !!field.unique})
+                            db.collection(typeName).createIndex({[field.name + '.' + lang]: field.index}, {background: true, unique: !!field.unique}).catch(async e=>{
+                                console.error(`Error creating index for ${typeName}.${field.name}.${lang}`, e)
+                            })
                         }
 
                     }
@@ -54,6 +56,8 @@ export const createAllIndexes = async (db) => {
                                 db.collection(typeName).createIndex(idx.fields, {
                                     background: true,
                                     unique: idx.unique
+                                }).catch(async e=>{
+                                    console.error(`Error creating compound index for ${typeName}`, e)
                                 })
                             })
                         }
@@ -64,12 +68,16 @@ export const createAllIndexes = async (db) => {
                                 console.log(`Creating subindex for ${typeName}.${field.name}.${k}`)
                                 db.collection(typeName).createIndex({[field.name+'.'+k]: idx}, {
                                     background: true
+                                }).catch(async e=>{
+                                    console.error(`Error creating index for ${typeName}.${field.name}.${k}`, e)
                                 })
                             })
                         }else{
                             db.collection(typeName).createIndex({[field.name+(field.type==='Object'?'.$**':'')]: field.index}, {
                                 background: true,
                                 unique: !!field.unique
+                            }).catch(async e=>{
+                                console.error(`Error creating index for ${typeName}.${field.name}`, e)
                             })
                         }
 
@@ -86,6 +94,8 @@ export const createAllIndexes = async (db) => {
             db.collection(typeName).createIndex({createdBy:1}, {
                 background: true,
                 unique: false
+            }).catch(async e=>{
+                console.error(`Error creating index for ${typeName}.createdBy`, e)
             })
         }
 
@@ -93,7 +103,7 @@ export const createAllIndexes = async (db) => {
 
         if( Object.keys(textIndex).length > 0){
             db.collection(typeName).createIndex(textIndex).catch(async e=>{
-                console.error(e)
+                console.error('Error creating text index', e)
             })
         }
     }

@@ -53,7 +53,6 @@ export const trackUser = async ({req, event, slug, db, context, data, meta}) => 
             }
 
             // for real time tracking
-            console.log(insertData)
             pubsub.publish('subscribeUserTracking', {
                 userId: context.id,
                 subscribeUserTracking: {action: 'create', data: [insertData]}

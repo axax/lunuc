@@ -15,6 +15,7 @@ import ListItemIcon from '@material-ui/core/ListItemIcon'
 import {connect} from 'react-redux'
 import {useHistory} from 'react-router-dom'
 import React, {useState} from 'react'
+import Util from '../../../../../util'
 
 const drawerWidth = 300;
 
@@ -56,7 +57,7 @@ const useStyles = makeStyles(theme => ({
         },
     },
     content: {
-        position:'relative',
+        position: 'relative',
         boxSizing: 'border-box',
         backgroundColor: theme.palette.background.default,
         width: '100%',
@@ -87,15 +88,26 @@ const removeTrailingSlash = (link) => {
 const findActiveItem = (props) => {
     let currentLink = removeTrailingSlash(window.location.pathname)
     const contextLang = currentLink.split('/')[1].toLowerCase()
+    const params = Util.extractQueryParams(window.location.search.substring(1))
 
     if (contextLang === _app_.lang) {
         currentLink = currentLink.substring(3)
     }
 
+
     let maybeItem = null
-    for (let i = 0; i < props.menuItems.length; i++) {
-        const item = props.menuItems[i]
-        if ( item.to) {
+    for (let i = 0; i < props.items.length; i++) {
+        const item = props.items[i]
+        if (item.to) {
+
+            if (item.to.indexOf('?') >= 0) {
+                const paramsItem = Util.extractQueryParams(item.to.split('?')[1])
+                if (params.fixType == paramsItem.fixType && params.baseFilter == paramsItem.baseFilter) {
+                    return item
+                }
+            }
+
+
             const to = removeTrailingSlash(item.to)
             if (to === currentLink) {
                 // exact match
@@ -111,6 +123,45 @@ const findActiveItem = (props) => {
     return maybeItem
 }
 
+
+const MenuList = (props) => {
+    const {items, isAuthenticated, depth} = props
+    const classes = useStyles()
+    const history = useHistory()
+    const activeItem = findActiveItem(props)
+
+    return <List disablePadding={depth>0} style={{paddingLeft: (depth*16)+'px'}}>
+        {items.map((item, i) => {
+            if (item.auth && isAuthenticated || !item.auth) {
+                if (item.divider) {
+                    return <Divider key={i}/>
+                }
+                return [<ListItem onClick={() => {
+                    history.push(item.to)
+                }}
+                                 key={i}
+                                 button>
+                    {
+                        item.icon && <ListItemIcon>
+                            {item.icon.constructor === String ?
+                                <div dangerouslySetInnerHTML={{__html: item.icon}}/> : item.icon}
+                        </ListItemIcon>
+                    }
+                    <ListItemText disableTypography
+                                  primary={<Typography variant="subtitle1"
+                                                       component="h3"
+                                                       className={(activeItem === item ? classes.listItemActive : '')}>{item.name}</Typography>}/>
+
+                    {item.actions}
+
+                </ListItem>,
+                item.items && <MenuList items={item.items} 	depth={depth + 1} isAuthenticated={isAuthenticated}/>]
+            }
+        })}
+    </List>
+
+}
+
 const ResponsiveDrawer = (props) => {
 
     const [mobileOpen, setMobileOpen] = useState(false)
@@ -123,41 +174,11 @@ const ResponsiveDrawer = (props) => {
 
     const classes = useStyles()
 
-    const activeItem = findActiveItem(props)
-    const history = useHistory()
     const drawer = (
         <div>
-
             <div className={classes.drawerHeader}/>
             <Divider/>
-            <List>
-
-                {menuItems.map((item, i) => {
-                    if (item.auth && isAuthenticated || !item.auth) {
-                        if( item.divider){
-                            return <Divider key={i}/>
-                        }
-                        return <ListItem onClick={() => {
-                            history.push(item.to)
-                        }}
-                                         key={i}
-                                         button>
-                            {
-                                item.icon && <ListItemIcon>
-                                    {item.icon.constructor === String ?
-                                        <div dangerouslySetInnerHTML={{__html: item.icon}}/> : item.icon}
-                                </ListItemIcon>
-                            }
-                            <ListItemText disableTypography
-                                          primary={<Typography variant="subtitle1"
-                                                               component="h3"
-                                                               className={(activeItem === item ? classes.listItemActive : '')}>{item.name}</Typography>}/>
-                        </ListItem>
-
-                    }
-                })}
-
-            </List>
+            <MenuList depth={0} items={menuItems} isAuthenticated={isAuthenticated}/>
             <Divider/>
             {extra}
         </div>

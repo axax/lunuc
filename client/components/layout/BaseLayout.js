@@ -10,7 +10,10 @@ import {
     BuildIcon,
     SettingsIcon,
     AccountCircleIcon,
+    SimpleDialog,
+    SimpleMenu,
     BackupIcon,
+    EditIcon,
     InsertDriveFileIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
@@ -28,8 +31,9 @@ import {CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities'
 
 const {ADMIN_BASE_URL, APP_NAME} = config
 
-import {registerTrs} from 'util/i18n'
+import {_t, registerTrs} from 'util/i18n'
 import {translations} from '../../translations/admin'
+import CodeEditor from '../CodeEditor'
 
 registerTrs(translations, 'AdminTranslations')
 
@@ -40,9 +44,31 @@ const BaseLayout = props => {
 
     const userKeys = useKeyValues(['BaseLayoutSettings'])
 
+    const [openMenuEditor, setOpenMenuEditor] = React.useState(false)
+
+    const handleOpenMenuEditor = () => {
+        setOpenMenuEditor(true)
+    }
+
+    const handleCloseMenuEditor = () => {
+        setOpenMenuEditor(false)
+    }
+
+    const settings = userKeys.data.BaseLayoutSettings
+
+
     if (!userKeys.loading && menuItems.length === 0) {
         menuItems.push(
-            {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>},
+            {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>, actions: [<SimpleMenu key="menu" mini items={[
+                    {
+                        name: _t('BaseLayout.editMenu'),
+                        onClick: handleOpenMenuEditor,
+                        icon: <EditIcon/>
+                    }
+                ]} />], items: [
+                    {name: 'Dashboard', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>}
+                ]
+            },
             {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}
         )
 
@@ -61,7 +87,6 @@ const BaseLayout = props => {
 
         Hook.call('MenuMenu', {menuItems, user})
 
-        const settings = userKeys.data.BaseLayoutSettings
 
         if (settings && settings.menu) {
 
@@ -128,7 +153,25 @@ const BaseLayout = props => {
             <ErrorHandler/>
             <NotificationHandler/>
             <NetworkStatusHandler/>
-
+            <SimpleDialog
+                fullWidth={true} maxWidth="lg"
+                open={openMenuEditor}
+                onClose={handleCloseMenuEditor}
+                actions={[{
+                    key: 'cancel',
+                    label: _t('core.cancel'),
+                    type: 'secondary'
+                },
+                    {
+                        key: 'save',
+                        label: _t('core.save'),
+                        type: 'primary'
+                    }]}
+            >
+                <CodeEditor lineNumbers type="json">
+                    {settings}
+                </CodeEditor>
+            </SimpleDialog>
 
             {children}
         </ResponsiveDrawerLayout>

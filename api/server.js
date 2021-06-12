@@ -9,7 +9,7 @@ import {SubscriptionServer} from 'subscriptions-transport-ws'
 import {execute, subscribe} from 'graphql'
 import {schemaString} from './schema/index'
 import {resolver} from './resolver/index'
-import {dbConnection, dbPreparation} from './database'
+import {dbConnection, dbPreparation, MONGO_URL, BACKUP_MONGO_URL} from './database'
 import {auth} from './auth'
 import {formatError} from './error'
 import {handleUpload, handleMediaDumpUpload, handleDbDumpUpload} from './upload'
@@ -19,11 +19,8 @@ import {pubsub} from './subscription'
 import {decodeToken} from './util/jwt'
 import {HEADER_TIMEOUT, SESSION_HEADER, USE_COOKIES} from './constants'
 import {parseCookies} from './util/parseCookies'
+import {createUserRoles, createUsers} from './data/initialData'
 
-export const MONGO_URL = (process.env.LUNUC_MONGO_URL || process.env.MONGO_URL)
-const BACKUP_MONGO_URL = '' //'mongodb://localhost:27018/lunuc'
-
-//const MONGO_URL = "mongodb://127.0.0.1:27018/lunuc"
 
 const PORT = (process.env.PORT || 3000)
 
@@ -211,8 +208,9 @@ export const start = (done) => {
     }))
 
     if (BACKUP_MONGO_URL) {
-        dbConnection(BACKUP_MONGO_URL, (err, db, client) => {
-
+        dbConnection(BACKUP_MONGO_URL, async (err, db, client) => {
+            await createUserRoles(db)
+            await createUsers(db)
             _app_.backupDb = db
 
         })

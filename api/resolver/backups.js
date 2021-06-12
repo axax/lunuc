@@ -5,7 +5,7 @@ import config from '../../gensrc/config'
 import {execSync} from 'child_process'
 import os from 'os'
 import zipper from 'zip-local'
-import {MONGO_URL} from '../server'
+import {MONGO_URL} from '../database'
 const {BACKUP_DIR, BACKUP_URL, UPLOAD_DIR, HOSTRULES_ABSPATH} = config
 
 const ABS_UPLOAD_DIR = path.join(__dirname, '../../' + UPLOAD_DIR)
@@ -79,7 +79,7 @@ export const createDbBackup = ()=>{
         name = 'backup.db.' + date + '.gz',
         fullName = path.join(backup_dir, name)
 
-    const response = execSync('mongodump --uri $LUNUC_MONGO_URL -v --archive="' + fullName + '" --gzip')
+    const response = execSync(`mongodump --uri ${MONGO_URL} -v --archive="${fullName}" --gzip`)
     console.log('createDbDump', response)
     return {fullName, name, date}
 

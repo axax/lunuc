@@ -7,6 +7,14 @@ import Util from './util'
 import {registerTrs} from '../util/i18nServer'
 
 
+
+export const MONGO_URL = (process.env.LUNUC_MONGO_URL || process.env.MONGO_URL)
+export const BACKUP_MONGO_URL = '' // mongodb://localhost:27018/lunuc'
+
+
+/*export const MONGO_URL = "mongodb://127.0.0.1:27018/lunuc"
+export const BACKUP_MONGO_URL = ''*/
+
 /*
 
  Backup: mongodump --uri $LUNUC_MONGO_URL -v --archive=backup.25022018.gz --gzip

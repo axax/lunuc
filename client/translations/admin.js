@@ -1,5 +1,6 @@
 export const translations = {
     de: {
+        'BaseLayout.editMenu': 'Menü bearbeiten',
         'TypesContainer.filter': 'Suche (spezifisches Feld z.B. name=xyz)',
         'TypesContainer.createdAt': 'Erstellungszeit / ID',
         'TypesContainer.actions': 'Aktionen',
@@ -31,6 +32,7 @@ export const translations = {
         'core.cancel': 'Abbrechen',
     },
     en: {
+        'BaseLayout.editMenu': 'Edit menu',
         'TypesContainer.filter': 'Filter expression (for specifc fields use field=term)',
         'TypesContainer.createdAt': 'Created at / id',
         'TypesContainer.actions': 'Actions',

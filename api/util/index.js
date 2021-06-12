@@ -225,7 +225,7 @@ const Util = {
     },
     checkIfUserIsLoggedIn: (context) => {
         if (!context || !context.username) {
-            throw new ApiError('User is not logged in (or authenticated).', 'authentication_error')
+            throw new ApiError(_t('core.not.logged.in'), 'authentication_error')
         }
     },
     isUserLoggedIn: (context) => {

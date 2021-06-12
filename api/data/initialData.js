@@ -17,6 +17,8 @@ import config from 'gen/config'
 import fs from 'fs'
 import zipper from 'zip-local'
 import Hook from 'util/hook'
+import {execSync} from "child_process";
+import {MONGO_URL} from '../database'
 
 const {UPLOAD_DIR} = config
 
@@ -28,25 +30,23 @@ ObjectId.prototype.valueOf = function () {
 
 export const createAllInitialData = async (db) => {
     console.log('Inserting data...')
+
+    const allCollections = await db.listCollections().toArray()
+
+    if (allCollections.length === 0) {
+        console.log('Db is completely empty...')
+
+        const dbFile = path.join(__dirname, './initialDb.gz')
+
+
+        const response = execSync(`mongorestore --nsInclude=lunuc.* --noIndexRestore --uri="${MONGO_URL}" --drop --gzip --archive="${dbFile}"`)
+        console.log('restoreDbDump', response)
+    }
+
+
     await createUserRoles(db)
     await createUsers(db)
 
-
-    // Update from non localized field to localized
-    /*db.collection('CmsPage').find().forEach((x) => {
-        let name = x.name
-        if( name=== undefined){
-            name= x.slug
-        }
-
-        if( name.constructor !== Object){
-            db.collection('CmsPage').updateOne({
-                _id: x._id
-            }, {$set: {name:{en:name,de:name}}})
-        }
-
-
-    })*/
     createUploads()
 }
 

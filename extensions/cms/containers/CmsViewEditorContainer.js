@@ -349,12 +349,12 @@ class CmsViewEditorContainer extends React.Component {
                                          }}
                                          actions={[{
                                              key: 'cancel',
-                                             label: 'Abbrechen',
+                                             label: _t('core.cancel'),
                                              type: 'secondary'
                                          },
                                              {
                                                  key: 'save',
-                                                 label: 'Speichern',
+                                                 label: _t('core.save'),
                                                  type: 'primary'
                                              }]}
                                          title="Bearbeitung">
