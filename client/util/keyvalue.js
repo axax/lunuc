@@ -22,6 +22,19 @@ export const useKeyValues = (keys) => {
     return {loading, data: enhancedData}
 }
 
+export const setKeyValue = ({key, value})=>{
+
+    const variables = {
+        key,
+        value: value && value.constructor !== String ? JSON.stringify(value) : value
+    }
+
+    return client.mutate({
+        mutation: QUERY_SET_KEY_VALUE,
+        variables
+    })
+}
+
 export const getKeyValueFromLS = (key) => {
     const kv = getKeyValuesFromLS()
     try {

@@ -225,13 +225,13 @@ class CodeEditor extends React.Component {
 
     changeLine({lineNr, line, value}) {
         const {onChange} = this.props
-        let newData = value
+        let newDataAsString = value, newDataAsJson
         const lines = value.split('\n')
         lines[lineNr] = line
 
         try {
-            const newJson = JSON.parse(lines.join('\n'))
-            newData = JSON.stringify(newJson, null, 2)
+            newDataAsJson = JSON.parse(lines.join('\n'))
+            newDataAsString = JSON.stringify(newDataAsJson, null, 2)
         } catch (e) {
             console.log(e, lines.join('\n'))
             return false
@@ -240,12 +240,12 @@ class CodeEditor extends React.Component {
         if (onChange) {
             if (this.state.isDataJson) {
                 // if input was Object output is an Object to
-                onChange(newJson)
+                onChange(newDataAsJson)
             } else {
-                onChange(newData)
+                onChange(newDataAsString)
             }
         }
-        this.setState({data: newData})
+        this.setState({data: newDataAsString})
 
         return true
 
@@ -588,37 +588,37 @@ class CodeEditor extends React.Component {
                     }
                 }}
                 onChange={(editor, dataObject, changedData) => {
-                    let newData
+                    let newDataAsString
                     if (filenames) {
-                        newData = ''
+                        newDataAsString = ''
                         filenames.forEach((file, i) => {
-                            newData += '//!#' + file + '\n'
+                            newDataAsString += '//!#' + file + '\n'
                             if (i !== finalFileIndex) {
-                                newData += files[i].trim() + '\n'
+                                newDataAsString += files[i].trim() + '\n'
                             } else {
-                                newData += changedData + '\n'
+                                newDataAsString += changedData + '\n'
                                 // filenames.push(getFirstLine(file))
                             }
                         })
                     } else {
-                        newData = changedData
+                        newDataAsString = changedData
                     }
                     let newDataAsJson
-                    if (newData && (this.state.isDataJson || type === 'json')) {
+                    if (newDataAsString && (this.state.isDataJson || type === 'json')) {
 
                         try {
-                            newDataAsJson = JSON.parse(newData)
+                            newDataAsJson = JSON.parse(newDataAsString)
                         } catch (e) {
                             const newStateError = `Fehler in der JSON Struktur: ${e.message}`
                             if (stateError !== newStateError) {
                                 console.error(e)
                                 this.setState({
-                                    data: newData,
+                                    data: newDataAsString,
                                     stateError: newStateError
                                 }, () => {
 
                                     if (onError) {
-                                        onError(e, newData)
+                                        onError(e, newDataAsString)
                                     }
                                 })
                             }
@@ -626,13 +626,13 @@ class CodeEditor extends React.Component {
                         }
                     }
 
-                    this.setState({stateError: false, data: newData}, () => {
+                    this.setState({stateError: false, data: newDataAsString}, () => {
                         if (onChange) {
                             if (this.state.isDataJson) {
                                 // if input was Object output is an Object to
                                 onChange(newDataAsJson)
                             } else {
-                                onChange(newData)
+                                onChange(newDataAsString)
                             }
                         }
                     })

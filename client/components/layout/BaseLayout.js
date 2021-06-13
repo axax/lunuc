@@ -26,7 +26,7 @@ import {UIProvider} from 'ui/admin'
 import 'gen/extensions-client-admin'
 import {useHistory} from 'react-router-dom'
 import {Link} from 'react-router-dom'
-import {useKeyValues} from '../../util/keyvalue'
+import {useKeyValues, setKeyValue} from '../../util/keyvalue'
 import {CAPABILITY_MANAGE_TYPES} from '../../../util/capabilities'
 
 const {ADMIN_BASE_URL, APP_NAME} = config
@@ -37,7 +37,6 @@ import CodeEditor from '../CodeEditor'
 
 registerTrs(translations, 'AdminTranslations')
 
-let menuItems = []
 
 const BaseLayout = props => {
     const {children, isAuthenticated, user} = props
@@ -50,62 +49,81 @@ const BaseLayout = props => {
         setOpenMenuEditor(true)
     }
 
-    const handleCloseMenuEditor = () => {
-        setOpenMenuEditor(false)
-    }
+    let newSettings, menuEditor
+    const handleCloseMenuEditor = (p) => {
+        if (p.key === 'save') {
+            if (menuEditor) {
 
-    const settings = userKeys.data.BaseLayoutSettings
+                if (menuEditor.state.stateError) {
+                    return
+                }
 
-
-    if (!userKeys.loading && menuItems.length === 0) {
-        menuItems.push(
-            {name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>, actions: [<SimpleMenu key="menu" mini items={[
-                    {
-                        name: _t('BaseLayout.editMenu'),
-                        onClick: handleOpenMenuEditor,
-                        icon: <EditIcon/>
-                    }
-                ]} />], items: [
-                    {name: 'Dashboard', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>}
-                ]
-            },
-            {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}
-        )
-
-
-        const capabilities = (user.userData && user.userData.role && user.userData.role.capabilities) || []
-
-        if (capabilities.indexOf(CAPABILITY_MANAGE_TYPES) >= 0) {
-
-            menuItems.push(
-                {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
-                {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon/>},
-                {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon/>},
-                {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>})
-        }
-
-
-        Hook.call('MenuMenu', {menuItems, user})
-
-
-        if (settings && settings.menu) {
-
-            if(settings.menu.genericTypes){
-                menuItems.push({divider:true, auth: true})
-
-                settings.menu.genericTypes.forEach(type=>{
-                    menuItems.push({name: type.label || type.name, to: ADMIN_BASE_URL + '/types/GenericData?fixType=GenericData&title='+encodeURIComponent(type.label || type.name)+
-                        '&baseFilter='+encodeURIComponent('definition.name=='+type.name), auth: true, icon: <SettingsIcon/>})
+                setKeyValue({key: 'BaseLayoutSettings', value: menuEditor.state.data}).then(()=>{
+                    location.href = location.href
                 })
+
 
             }
 
-            // deprecated. will probably be removed in the future
-            if (settings.menu.hide) {
-                for (let i = menuItems.length - 1; i >= 0; i--) {
-                    if (settings.menu.hide.indexOf(menuItems[i].name) >= 0) {
-                        menuItems.splice(i, 1)
-                    }
+
+        }
+        setOpenMenuEditor(false)
+    }
+    const settings = userKeys.data && userKeys.data.BaseLayoutSettings
+
+    const menuItems = [
+        {
+            name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>, actions: [<SimpleMenu key="menu" mini items={[
+                {
+                    name: _t('BaseLayout.editMenu'),
+                    onClick: handleOpenMenuEditor,
+                    icon: <EditIcon/>
+                }
+            ]}/>],/* items: [
+                {name: 'Dashboard', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>}
+            ]*/
+        },
+        {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}
+    ]
+
+
+    const capabilities = (user.userData && user.userData.role && user.userData.role.capabilities) || []
+
+    if (capabilities.indexOf(CAPABILITY_MANAGE_TYPES) >= 0) {
+
+        menuItems.push(
+            {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
+            {name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon/>},
+            {name: 'Backup', to: ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon/>},
+            {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>})
+    }
+
+
+    Hook.call('MenuMenu', {menuItems, user})
+
+
+    if (settings && settings.menu) {
+
+        if (settings.menu.genericTypes) {
+            menuItems.push({divider: true, auth: true})
+
+            settings.menu.genericTypes.forEach(type => {
+                menuItems.push({
+                    name: type.label || type.name,
+                    to: ADMIN_BASE_URL + '/types/GenericData?fixType=GenericData&title=' + encodeURIComponent(type.label || type.name) +
+                        '&baseFilter=' + encodeURIComponent('definition.name==' + type.name),
+                    auth: true,
+                    icon: <SettingsIcon/>
+                })
+            })
+
+        }
+
+        // deprecated. will probably be removed in the future
+        if (settings.menu.hide) {
+            for (let i = menuItems.length - 1; i >= 0; i--) {
+                if (settings.menu.hide.indexOf(menuItems[i].name) >= 0) {
+                    menuItems.splice(i, 1)
                 }
             }
         }
@@ -168,7 +186,9 @@ const BaseLayout = props => {
                         type: 'primary'
                     }]}
             >
-                <CodeEditor lineNumbers type="json">
+                <CodeEditor lineNumbers type="json" forceJson={true} ref={(e) => {
+                    menuEditor = e
+                }}>
                     {settings}
                 </CodeEditor>
             </SimpleDialog>
