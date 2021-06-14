@@ -37,6 +37,14 @@ import CodeEditor from '../CodeEditor'
 
 registerTrs(translations, 'AdminTranslations')
 
+const iconComponents = {
+    home: HomeIconButton,
+    build: BuildIcon,
+    settings: SettingsIcon,
+    account: AccountCircleIcon,
+    edit: EditIcon,
+    drive: InsertDriveFileIcon
+}
 
 const BaseLayout = props => {
     const {children, isAuthenticated, user} = props
@@ -58,7 +66,7 @@ const BaseLayout = props => {
                     return
                 }
 
-                setKeyValue({key: 'BaseLayoutSettings', value: menuEditor.state.data}).then(()=>{
+                setKeyValue({key: 'BaseLayoutSettings', value: menuEditor.state.data}).then(() => {
                     location.href = location.href
                 })
 
@@ -73,7 +81,11 @@ const BaseLayout = props => {
 
     const menuItems = [
         {
-            name: 'Home', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>, actions: [<SimpleMenu key="menu" mini items={[
+            name: 'Home',
+            key: 'home',
+            to: ADMIN_BASE_URL + '/',
+            icon: <HomeIcon/>,
+            actions: [<SimpleMenu key="menu" mini items={[
                 {
                     name: _t('BaseLayout.editMenu'),
                     onClick: handleOpenMenuEditor,
@@ -101,23 +113,63 @@ const BaseLayout = props => {
 
     Hook.call('MenuMenu', {menuItems, user})
 
-
     if (settings && settings.menu) {
+
+        if (settings.menu.items) {
+
+            const genMenuEntry = (item) => {
+                const Icon = iconComponents[item.icon] || SettingsIcon
+                return {
+                    name: item.label || item.type,
+                    to: item.to || `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}&title=${encodeURIComponent(item.label || item.type)}`,
+                    auth: true,
+                    icon: <Icon/>
+                }
+            }
+
+            settings.menu.items.forEach(item => {
+                let existingItem
+                if (item.key) {
+                    const existingItems = menuItems.filter(m => m.key === item.key)
+                    if (existingItems.length > 0) {
+                        existingItem = existingItems[0]
+                    }
+                }
+
+                if (existingItem) {
+                    // extend menu item
+                    if (item.items) {
+                        if(!existingItem.items){
+                            existingItem.items = []
+                        }
+                        item.items.forEach(subitem=> {
+                            existingItem.items.push(genMenuEntry(subitem))
+                        })
+                    }
+
+                } else {
+                    // add new menu item
+                    menuItems.push(genMenuEntry(item))
+                }
+
+            })
+        }
 
         if (settings.menu.genericTypes) {
             menuItems.push({divider: true, auth: true})
 
             settings.menu.genericTypes.forEach(type => {
+                const Icon = iconComponents[type.icon] || SettingsIcon
                 menuItems.push({
                     name: type.label || type.name,
                     to: ADMIN_BASE_URL + '/types/GenericData?fixType=GenericData&title=' + encodeURIComponent(type.label || type.name) +
                         '&baseFilter=' + encodeURIComponent('definition.name==' + type.name),
                     auth: true,
-                    icon: <SettingsIcon/>
+                    icon: <Icon/>
                 })
             })
-
         }
+
 
         // deprecated. will probably be removed in the future
         if (settings.menu.hide) {
@@ -136,7 +188,8 @@ const BaseLayout = props => {
     return <UIProvider>
         <ResponsiveDrawerLayout title={APP_NAME}
                                 menuItems={menuItems}
-                                extra={history._urlStack && history._urlStack.length > 0 && <div style={{
+                                extra={!userKeys.loading && history._urlStack && history._urlStack.length > 0 &&
+                                <div style={{
                                     padding: '1rem',
                                     border: '1px solid #f1f1f1',
                                     margin: '1rem',

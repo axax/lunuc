@@ -15,7 +15,8 @@
         {
           "name": "src",
           "fullWidth": true,
-          "tab": "Allgemein"
+          "tab": "Allgemein",
+          "vagueSearchable": false
         },
         {
           "name": "group",
@@ -33,6 +34,7 @@
         },
         {
           "name": "mimeType",
+          "vagueSearchable": false,
           "index": 1
         },
         {
@@ -54,7 +56,8 @@
         },
         {
           "name": "size",
-          "type": "Float"
+          "type": "Float",
+          "vagueSearchable": false
         },
         {
           "name": "classifyImage",

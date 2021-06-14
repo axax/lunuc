@@ -9,6 +9,11 @@ import Util from '../../client/util'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../cms/constants'
 import {client} from 'client/middleware/graphql'
 import config from 'gen/config-client'
+import {_t, registerTrs} from '../../util/i18n'
+
+import {translations} from './translations/admin'
+
+registerTrs(translations, 'GenericData')
 
 const GenericForm = (props) => <Async {...props}
                                       load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
@@ -56,8 +61,32 @@ export default () => {
     })
 
 
-    Hook.on('TypeCreateEdit', function ({type, props, formFields, dataToEdit, parentRef}) {
+    Hook.on('TypeCreateEdit', function ({type, props, meta, formFields, dataToEdit, parentRef}) {
         if (type === 'GenericData') {
+
+            if((!dataToEdit || !dataToEdit.definition) && meta && meta.baseFilter){
+                let b = decodeURIComponent(meta.baseFilter)
+                if(b.startsWith('definition')){
+                    b = b.substring(11)
+
+                    dataToEdit = Object.assign({},dataToEdit)
+
+                    if(b.startsWith('name')){
+                        b = b.substring(5)
+                    }else  if(b.startsWith('_id')){
+                        b = b.substring(3)
+                    }
+                    if(b.startsWith('=')){
+                        b = b.substring(1)
+                    }
+                    dataToEdit.definition = b
+
+                }
+            }
+
+
+
+
             if (dataToEdit && dataToEdit.definition) {
 
                 if (!dataToEdit.definition.structure) {
@@ -69,7 +98,7 @@ export default () => {
                         }
                     }).then(response => {
                         if (response.data.genericDataDefinitions.results) {
-                            let newDataToEdit = Object.assign({}, dataToEdit, {definition: response.data.genericDataDefinitions.results[0]})
+                            let newDataToEdit = Object.assign({}, dataToEdit, {definition: response.data.genericDataDefinitions.results[0], createdBy:_app_.user})
 
                             parentRef.setState({dataToEdit: newDataToEdit})
                         }
@@ -218,8 +247,7 @@ export default () => {
 
                 delete newFields.data
                 // override default
-                props.children = [<Typography key="GenericDataLabel" variant="subtitle1" gutterBottom>Please select a
-                    generic type you want to create and press save.</Typography>,
+                props.children = [<Typography key="GenericDataLabel" variant="subtitle1" gutterBottom>{_t('GenericData.createNewHint')}</Typography>,
                     <GenericForm key="genericForm" autoFocus innerRef={ref => {
                         parentRef.createEditForm = ref
                     }} onBlur={event => {

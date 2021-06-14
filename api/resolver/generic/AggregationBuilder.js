@@ -64,7 +64,8 @@ export default class AggregationBuilder {
             if (sort.constructor === String) {
 
                 const typeFields = getFormFields(this.type)
-                // sort looks like "field1 asc, field2 desc"
+
+                // the sort string is in this format "field1 asc, field2 desc"
                 return sort.split(',').reduce((acc, val) => {
                     const a = val.trim().split(' ')
                     let fieldName = a[0]
@@ -148,10 +149,12 @@ export default class AggregationBuilder {
 
 
     // filter where clause
-    createAndAddFilterToMatch({name, reference, type, multi, localized}, match, {exact, filters}) {
+    createAndAddFilterToMatch({name, reference, type, multi, localized, searchable, vagueSearchable}, match, {exact, filters}) {
         let hasAtLeastOneMatch = false
 
-        if (filters) {
+        if (filters && searchable !== false) {
+
+
             if (localized) {
                 config.LANGUAGES.forEach(lang => {
                     if (this.createAndAddFilterToMatch({name: name + '.' + lang, reference}, match, {exact, filters})) {
@@ -199,6 +202,7 @@ export default class AggregationBuilder {
                 }
             } else if (type === 'Object') {
 
+
                 // filter in an Object without definition
                 for (const filterKey in filters.parts) {
                     if (filterKey.startsWith(name + '.')) {
@@ -224,37 +228,48 @@ export default class AggregationBuilder {
                                 hasAtLeastOneMatch = true
                             }
                         }
-
-
                     }
                 }
             }
 
 
-            if (!exact && !reference && ['Boolean'].indexOf(type) < 0) {
-                filters.rest.forEach(e => {
-                    hasAtLeastOneMatch = true
-                    const {added} = this.addFilterToMatch({
-                        filterKey: name,
-                        filterValue: e.value,
-                        filterOptions: e,
-                        type,
-                        multi,
-                        match
-                    })
-                    if (added) {
+            if (!exact && !reference && vagueSearchable !== false && ['Boolean'].indexOf(type) < 0) {
+
+                // if it is an object only add filter if searchable is explicitly set to true
+                if( type !== 'Object' || vagueSearchable === true) {
+                    filters.rest.forEach(e => {
                         hasAtLeastOneMatch = true
-                    }
-                })
+                        const {added} = this.addFilterToMatch({
+                            filterKey: name,
+                            filterValue: e.value,
+                            filterOptions: e,
+                            type,
+                            multi,
+                            match
+                        })
+                        if (added) {
+                            hasAtLeastOneMatch = true
+                        }
+                    })
+                }
             }
         }
         return hasAtLeastOneMatch
     }
 
-    /*
-     filterKey: is the name of the collection field
-     filterValue: is always a string
-     type: of the collection field
+
+    /**
+     * get a user or gobal value by a key
+     *
+     * @param {String} filterKey is the name of the collection field
+     * @param {String} filterValue is always a string
+     * @param {String} type is the type of the field. it can be Boolean, ID, Object, Float
+     * @param {Boolean} multi if true the field can store multiple values. it must be an array
+     * @param {Object} filterOptions contains information about the filter
+     * @param {Object} match the match where the filter should be added to
+     * @param {Function} callback a function that gets called at the end
+     *
+     * @returns {Object} an object that contains information about how the filter was added
      */
     addFilterToMatch({filterKey, filterValue, type, multi, filterOptions, match}) {
 
@@ -276,9 +291,9 @@ export default class AggregationBuilder {
         }
         if (type === 'ID') {
             if (filterValue) {
-                if( filterValue.constructor === ObjectId){
+                if (filterValue.constructor === ObjectId) {
                     // do nothing
-                }else if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
+                } else if (filterValue.startsWith('[') && filterValue.endsWith(']')) {
                     filterValue = filterValue.substring(1, filterValue.length - 1).split(',')
                     const ids = []
                     for (const id of filterValue) {
@@ -332,7 +347,18 @@ export default class AggregationBuilder {
             }
         } else if (type === 'Float') {
             filterValue = parseFloat(filterValue)
+        } else if (type === 'Object') {
+
+            filterValue = {
+                body: `function(data) {return data && Object.keys(data).some(key => /${filterValue}/i.test(data[key]))}`,
+                args: ['$'+filterKey],
+                lang: 'js'
+            }
+
+            comparator = '$function'
+            filterKey = '$expr'
         }
+
         let matchExpression
         if (['$gt', '$gte', '$lt', '$lte'].indexOf(comparator) >= 0) {
             matchExpression = {[comparator]: type === 'ID' ? filterValue : parseFloat(filterValue)}
@@ -348,7 +374,7 @@ export default class AggregationBuilder {
             } else {
                 if (filterOptions.inDoubleQuotes) {
                     matchExpression = {[comparator]: filterValue}
-                }else if(filterValue===true || filterValue===false){
+                } else if (filterValue === true || filterValue === false) {
                     matchExpression = {[comparator]: filterValue}
                 } else if (!isNaN(filterValue)) {
                     matchExpression = {[comparator]: parseFloat(filterValue)}
@@ -488,7 +514,7 @@ export default class AggregationBuilder {
 
 
         const aggHook = Hook.hooks['AggregationBuilderBeforeQuery']
-        if ( aggHook && aggHook.length ) {
+        if (aggHook && aggHook.length) {
             for (let i = 0; i < aggHook.length; ++i) {
                 await aggHook[i].callback({filters, type: this.type, db})
             }
@@ -520,10 +546,8 @@ export default class AggregationBuilder {
             }
 
 
-
             // filter for inbuilt fields
-
-            if(includeUserFilter) {
+            if (includeUserFilter) {
 
                 if (filters.parts.createdBy) {
                     this.addFilterToMatch({
@@ -536,7 +560,6 @@ export default class AggregationBuilder {
                 }
 
                 if (filters.parts['createdBy.username']) {
-                    const typeFields = getFormFields('User')
                     hasMatchInReference = true
                     this.addFilterToMatch({
                         filterKey: 'createdBy.username',
@@ -712,8 +735,8 @@ export default class AggregationBuilder {
                 const finalMatch = {...rootMatch, ...match}
 
                 // remove single or
-                if(finalMatch.$or && finalMatch.$or.length===1){
-                    Object.keys(finalMatch.$or[0]).forEach(key=>{
+                if (finalMatch.$or && finalMatch.$or.length === 1) {
+                    Object.keys(finalMatch.$or[0]).forEach(key => {
                         finalMatch[key] = finalMatch.$or[0][key]
                     })
                     delete finalMatch.$or

@@ -45,6 +45,7 @@ class Routes extends React.Component {
 
     routes = [
         {exact: true, private: true, path: ADMIN_BASE_URL + '/', component: HomeContainer},
+        {exact: true, private: true, path: ADMIN_BASE_URL + '/home/:name*', component: HomeContainer},
         {path: ADMIN_BASE_URL + '/login', component: LoginContainer},
         {path: ADMIN_BASE_URL + '/logout', component: LogoutContainer},
         {path: ADMIN_BASE_URL + '/signup', component: SignUpContainer},

@@ -29,7 +29,7 @@ export default () => {
 
     Hook.on('HomeContainerRender', ({content, match, location, history}) => {
         content.splice(0,content.length)
-        content.push(<CmsViewContainer key="widgets" match={match} dynamic={true} location={location} history={history} slug={'system/widget'}/>)
+        content.push(<CmsViewContainer key="widgets" match={match} dynamic={true} urlSensitiv={true} location={location} history={history} slug={'system/widget'}/>)
     })
 
     // add entry to main menu

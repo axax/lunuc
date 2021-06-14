@@ -270,7 +270,7 @@ class CmsViewContainer extends React.Component {
                         }
 
                         subscriptionQuery = 'action filter data{_id'
-                        type.fields.map(({name, required, multi, reference, localized}) => {
+                        type.fields.map(({name, reference, localized}) => {
 
                             if (reference) {
                                 // todo: query for subtypes

@@ -352,6 +352,7 @@ class TypePicker extends React.Component {
 
     handleChange(e) {
         const value = e.target.value.trim()
+        clearTimeout(this.pickTimeout)
         if (value === '') {
             this.setState({data: null, textValue: value})
         } else {
@@ -365,7 +366,6 @@ class TypePicker extends React.Component {
             } else {
                 filter = e.target.value
             }
-            clearTimeout(this.pickTimeout)
             this.pickTimeout = setTimeout(() => {
                 clearTimeout(this.pickTimeout)
                 this.pickTimeout = 0

@@ -102,7 +102,11 @@ const findActiveItem = (props) => {
 
             if (item.to.indexOf('?') >= 0) {
                 const paramsItem = Util.extractQueryParams(item.to.split('?')[1])
-                if (params.fixType == paramsItem.fixType && params.baseFilter == paramsItem.baseFilter) {
+
+                if ( (params.fixType && params.fixType === paramsItem.fixType && params.baseFilter && params.baseFilter === paramsItem.baseFilter) ||
+                    (!params.baseFilter && params.fixType && params.fixType === paramsItem.fixType) ||
+                    (params.key && params.key === paramsItem.key)) {
+
                     return item
                 }
             }
@@ -112,7 +116,7 @@ const findActiveItem = (props) => {
             if (to === currentLink) {
                 // exact match
                 return item
-            } else if (currentLink.startsWith(to)) {
+            } else if (props.depth === 0 && currentLink.startsWith(to)) {
                 // take the longest one
                 if (!maybeItem || item.to.length > maybeItem.to.length) {
                     maybeItem = item
@@ -129,7 +133,6 @@ const MenuList = (props) => {
     const classes = useStyles()
     const history = useHistory()
     const activeItem = findActiveItem(props)
-
     return <List disablePadding={depth>0} style={{paddingLeft: (depth*16)+'px'}}>
         {items.map((item, i) => {
             if (item.auth && isAuthenticated || !item.auth) {

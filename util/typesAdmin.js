@@ -85,7 +85,7 @@ export const getFormFields = (type) => {
         //throw new Error('Cannot find type "'+type+'" in getFormFields')
     }
     typeFormFields[type] = {}
-    if (!types[type].noUserRelation && Util.hasCapability({userData: _app_.user}, 'manage_other_users')) {
+    if (!types[type].noUserRelation /*&& Util.hasCapability({userData: _app_.user}, 'manage_other_users')*/) {
         // add field so the createdBy User can be changed
         typeFormFields[type].createdBy = {
             label: _t('Types.createdBy'),
@@ -109,8 +109,9 @@ export const getFormFields = (type) => {
                 label = _t(`${type}.field.${field.name}`, null, field.name)
                 placeholder = _t('Types.enterField', field)
             }
-            typeFormFields[type][field.name] = {
-                placeholder,
+            typeFormFields[type][field.name] = Object.assign({},field, {label, placeholder, uitype})
+
+             /*   placeholder,
                 label,
                 uitype,
                 multi: !!field.multi,
@@ -126,8 +127,10 @@ export const getFormFields = (type) => {
                 subFields: field.subFields,
                 reference: !!field.reference,
                 enum: field.enum,
-                name: field.name
-            }
+                name: field.name,
+                searchable: !!field.searchable,
+                vagueSearchable:
+            }*/
         }
     })
     return typeFormFields[type]

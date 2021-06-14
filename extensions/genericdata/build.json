@@ -26,6 +26,7 @@
           "uitype": "json",
           "type": "Object",
           "index": 1,
+          "vagueSearchable": true,
           "compoundIndex": [
           {
             "unique": false,

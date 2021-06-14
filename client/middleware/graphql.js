@@ -444,7 +444,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
     const cacheKey = getCacheKey({query, variables})
 
     const [response, setResponse] = useState({
-        data: _app_.ssr ? client.readQuery({cacheKey}) : null,
+        data: _app_.ssr ||  fetchPolicy === 'cache-first'? client.readQuery({cacheKey}) : null,
         networkStatus: 0,
         loading: !_app_.ssr,
         fetchMore: getFetchMore({

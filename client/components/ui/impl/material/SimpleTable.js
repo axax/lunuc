@@ -18,6 +18,7 @@ import DeleteIcon from '@material-ui/icons/Delete'
 import classNames from 'classnames'
 import {lighten} from '@material-ui/core/styles/colorManipulator'
 import SimpleMenu from './SimpleMenu'
+import {_t} from 'util/i18n'
 
 const styles = theme => ({
     scrollArea: {
@@ -46,6 +47,9 @@ const styles = theme => ({
     title: {
         flex: '0 0 auto',
     },
+    th: {
+        fontWeight:'bold'
+    }
 })
 
 
@@ -95,11 +99,11 @@ class SimpleTable extends React.Component {
             }
 
             <div className={classes.scrollArea}>
-                <Table>
+                <Table size="small">
                     <TableHead>
                         <TableRow>
                             {columns && columns.map(column => {
-                                return !column.hidden && <TableCell key={column.id}>
+                                return !column.hidden && <TableCell className={classes.th} key={column.id}>
 
                                         {column.sortable ?
                                             <Tooltip
@@ -154,6 +158,7 @@ class SimpleTable extends React.Component {
                     <TableRow>
                         <TableCell>{footer}</TableCell>
                         <TablePagination
+                            labelRowsPerPage={_t('TablePagination.rowsPerPage')}
                             rowsPerPageOptions={[5, 10, 25, 50, 100, 1000, 2500, 5000]}
                             count={count}
                             rowsPerPage={rowsPerPage}

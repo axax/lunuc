@@ -119,9 +119,6 @@ class TypesContainer extends React.Component {
     createEditForm = null
     typesToSelect = []
     settings = {}
-    fixType = null
-    baseFilter = null
-    noLayout = false
 
     constructor(props) {
         super(props)
@@ -129,15 +126,9 @@ class TypesContainer extends React.Component {
         this.types = getTypes()
         this.parseSettings(props)
 
-        this.pageParams = this.determinPageParams(props)
-        this.baseFilter = props.baseFilter
+        this.pageParams = this.determinePageParams(props)
 
-        // store on object instance to preserve value when url change
-        this.noLayout = this.pageParams.noLayout
-        this.fixType = this.pageParams.fixType
-        if (this.pageParams.baseFilter) {
-            this.baseFilter = this.pageParams.baseFilter
-        }
+        // initial state
         this.state = {
             selectAllRows: false,
             selectedrows: {},
@@ -157,16 +148,13 @@ class TypesContainer extends React.Component {
             filter: this.pageParams.filter
         }
 
-        if (!this.fixType) {
-            // if it is not a fix type a selection box with all types is shown
-            // prepare list with types for select box
-            Object.keys(this.types).map((k) => {
-                if (!this.settings[k] || !this.settings[k].hide) {
-                    const t = this.types[k]
-                    this.typesToSelect.push({value: k, name: k, hint: t.usedBy && 'used by ' + t.usedBy.join(',')})
-                }
-            })
-        }
+        // prepare list with types for select box
+        Object.keys(this.types).map((k) => {
+            if (!this.settings[k] || !this.settings[k].hide) {
+                const t = this.types[k]
+                this.typesToSelect.push({value: k, name: k, hint: t.usedBy && 'used by ' + t.usedBy.join(',')})
+            }
+        })
     }
 
     parseSettings(props) {
@@ -221,7 +209,7 @@ class TypesContainer extends React.Component {
 
     shouldComponentUpdate(props, state) {
         const settingsChanged = this.props.keyValueMap.TypesContainerSettings !== props.keyValueMap.TypesContainerSettings
-        const pageParams = this.determinPageParams(props),
+        const pageParams = this.determinePageParams(props),
             typeChanged = this.pageParams.type !== pageParams.type
 
         if (settingsChanged) {
@@ -240,11 +228,6 @@ class TypesContainer extends React.Component {
             this.pageParams.filter !== pageParams.filter) {
 
             this.pageParams = pageParams
-            if (props.baseFilter) {
-                this.baseFilter = props.baseFilter
-            }else if (this.pageParams.baseFilter) {
-                this.baseFilter = this.pageParams.baseFilter
-            }
             this.getData(pageParams, true, typeChanged)
 
             return false
@@ -536,7 +519,7 @@ class TypesContainer extends React.Component {
             this._renderedTable =
                 <SimpleTable key="typeTable"
                              style={{marginBottom: window.opener && selectedLength > 0 && this.pageParams.multi === 'true' ? '5rem' : ''}}
-                             title={type}
+                             title=""
                              onRowClick={this.handleRowClick.bind(this)}
                              dataSource={dataSource}
                              columns={columnsFiltered}
@@ -588,7 +571,7 @@ class TypesContainer extends React.Component {
                              }
                              actions={actions}
                              footer={<div style={{display: 'flex', alignItems: 'center'}}><p
-                                 style={{marginRight: '2rem'}}>{`${selectedLength} rows selected`}</p>{selectedLength ?
+                                 style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows',{count: selectedLength})}</p>{selectedLength ?
                                  <SimpleSelect
                                      label="Select action"
                                      value=""
@@ -611,7 +594,7 @@ class TypesContainer extends React.Component {
         const startTime = new Date()
         const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, viewFilterDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
         const {title, classes} = this.props
-        const {type, layout} = this.pageParams
+        const {type, layout, fixType, noLayout} = this.pageParams
         const formFields = getFormFields(type), columns = this.getTableColumns(type)
 
         if (!this.types[type]) {
@@ -745,7 +728,7 @@ class TypesContainer extends React.Component {
         const content = [
             title === false ? null :
                 <Typography key="typeTitle" variant="h3"
-                            gutterBottom>{title || this.pageParams.title || (this.fixType ? this.fixType : 'Types')}</Typography>,
+                            gutterBottom>{title || this.pageParams.title || (fixType ? fixType : 'Types')}</Typography>,
             description ?
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : null,
             false && <ButtonGroup size="small" key="layoutChanger" className={classes.layoutChanger} disableElevation
@@ -763,7 +746,7 @@ class TypesContainer extends React.Component {
             </ButtonGroup>,
             <div key="typeHeader">
                 <Row spacing={2}>
-                    {!this.fixType &&
+                    {!fixType &&
                     <Col md={6}>
                         <SimpleSelect
                             value={type}
@@ -772,7 +755,7 @@ class TypesContainer extends React.Component {
                         />
                     </Col>
                     }
-                    <Col xs={12} md={(this.fixType ? 12 : 6)} align="right">
+                    <Col xs={12} md={(fixType ? 12 : 6)} align="right">
 
                         <Paper elevation={1} component="form" className={classes.searchRoot}>
                             <InputBase
@@ -810,9 +793,9 @@ class TypesContainer extends React.Component {
             layout === 'list' ? <div key="rebderedTable">{this.renderTable(columns)}</div> : null,
             dataToDelete &&
             <SimpleDialog key="deleteDialog" open={confirmDeletionDialog} onClose={this.handleConfirmDeletion}
-                          actions={[{key: 'yes', label: 'Yes'}, {key: 'no', label: 'No', type: 'primary'}]}
-                          title="Confirm deletion">
-                Are you sure you want to delete {dataToDelete.length > 1 ? 'the selected items' : 'this item'}?
+                          actions={[{key: 'yes', label: _t('core.yes')}, {key: 'no', label: _t('core.no'), type: 'primary'}]}
+                          title={ _t('TypesContainer.deleteConfirmTitle')}>
+                {dataToDelete.length > 1 ? _t('TypesContainer.deleteConfirmTextMulti') : _t('TypesContainer.deleteConfirmText') }
             </SimpleDialog>,
             dataToBulkEdit &&
             <SimpleDialog fullWidth={true}
@@ -916,7 +899,7 @@ class TypesContainer extends React.Component {
 
         console.info(`render ${this.constructor.name} in ${new Date() - startTime}ms`)
 
-        if (this.noLayout) {
+        if (noLayout) {
             return content
         }
         return <BaseLayout>{content}</BaseLayout>
@@ -1074,13 +1057,14 @@ class TypesContainer extends React.Component {
         return typeColumns
     }
 
-    determinPageParams(props) {
-        const {params} = props.match
+    determinePageParams(props) {
+        const {params} = props.match || {}
         const {p, l, s, f, v, noLayout, fixType, title, baseFilter, multi, layout} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
-            finalNoLayout = noLayout === 'true' ? true : noLayout === 'false' ? false : props.noLayout
+            finalNoLayout = noLayout === 'true' ? true : noLayout === 'false' ? false : props.noLayout,
+            finalBaseFilter = baseFilter || props.baseFilter
 
         let type
         if (finalFixType) {
@@ -1097,7 +1081,7 @@ class TypesContainer extends React.Component {
         }
         const typeSettings = this.settings[type] || {}
         const result = {
-            baseFilter,
+            baseFilter: finalBaseFilter,
             multi,
             title,
             fixType: finalFixType,
@@ -1127,7 +1111,8 @@ class TypesContainer extends React.Component {
     }
 
     extendFilter(filter) {
-        return filter + (this.baseFilter ? (filter ? ' && ' : '') + this.baseFilter : '')
+        const {baseFilter} = this.pageParams
+        return filter + (baseFilter ? (filter ? ' && ' : '') + baseFilter : '')
     }
 
     getData({type, page, limit, sort, filter, _version}, cacheFirst, typeChanged) {
@@ -1432,9 +1417,9 @@ class TypesContainer extends React.Component {
     }
 
     goTo(args) {
-        const {baseUrl, fixType} = this.props
-        const {type, page, limit, sort, filter, _version, layout, multi, baseFilter, noLayout} = Object.assign({}, this.pageParams, args)
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL}${fixType ? '' : '/types/' + type}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${noLayout ? '&noLayout=' + noLayout : ''}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
+        const {baseUrl} = this.props
+        const {type, page, limit, sort, filter, fixType, _version, layout, multi, baseFilter, noLayout} = Object.assign({}, this.pageParams, args)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types'+(type?'/'+type:'')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
     }
 
 
