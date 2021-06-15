@@ -616,7 +616,6 @@ class TypesContainer extends React.Component {
 
 
             columns.map(c => {
-                console.log(formFields[c.id])
                 if (formFields[c.id] && formFields[c.id].type !== 'Object' && formFields[c.id].uitype !== 'password' && this.isColumnActive(type, c.id)) {
                     activeFormFields[c.id] = Object.assign({}, formFields[c.id])
                     activeFormFields[c.id].fullWidth = true
@@ -911,7 +910,6 @@ class TypesContainer extends React.Component {
         if (settings && settings[type]) {
             // check settings from props if available
             s = settings[type]
-            return settings[type].columns[id] === undefined || settings[type].columns[id]
         } else {
             s = this.settings[type]
         }
@@ -919,6 +917,13 @@ class TypesContainer extends React.Component {
         if (s && s.columns) {
             return s.columns[id] === undefined || s.columns[id]
         }
+
+        // check if field is hidden by default
+        const formFields = getFormFields(type)
+        if(formFields && formFields[id] && formFields[id].hideColumnInTypes){
+            return false
+        }
+
         return true
     }
 

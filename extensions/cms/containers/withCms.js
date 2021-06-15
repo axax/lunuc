@@ -27,6 +27,11 @@ const ErrorPage = (props) => <Async {...props}
 const CmsViewEditorContainer = (props) => <Async {...props}
                                                  load={import(/* webpackChunkName: "admin" */ './CmsViewEditorContainer')}/>
 
+/*const AdminComponents = (props) => <Async {...props} expose="AdminComponents"
+                                          load={import( webpackChunkName: "admin" '../client-admin')}/>*/
+
+
+
 // enhance cmsview with editor functionalities if in edit mode
 export default function (WrappedComponent) {
 
@@ -83,6 +88,10 @@ export default function (WrappedComponent) {
                                                WrappedComponent={WrappedComponent}
                                                {...this.props}/>
             } else {
+                /*return <AdminComponents><WrappedComponent updateResolvedData={this.updateResolvedData.bind(this)}
+                                         setKeyValue={this.setKeyValue.bind(this)}
+                                         {...this.props}
+                                         cmsPage={cmsPage}/></AdminComponents>*/
                 return <WrappedComponent updateResolvedData={this.updateResolvedData.bind(this)}
                                          setKeyValue={this.setKeyValue.bind(this)}
                                          {...this.props}

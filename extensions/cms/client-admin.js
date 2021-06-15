@@ -2,30 +2,61 @@ import React from 'react'
 import Hook from 'util/hook'
 import config from 'gen/config-client'
 const {ADMIN_BASE_URL, PRETTYURL_SEPERATOR} = config
-import Async from 'client/components/Async'
 import CmsViewContainer from './containers/CmsViewContainer'
 import {Link} from 'react-router-dom'
 import {_t, registerTrs} from '../../util/i18n'
-
+import {
+    Button,
+    Select,
+    SimpleMenu,
+    Switch,
+    ResponsiveDrawerLayout,
+    Typography,
+    WebIcon
+} from 'ui/admin'
 import {translations} from './translations/admin'
+import TypesContainer from 'client/containers/TypesContainer'
+import GenericForm from 'client/components/GenericForm'
+import JsonDom from './components/JsonDom'
 
 registerTrs(translations, 'CmsViewEditorContainer')
-
-const WebIcon = (props) => <Async {...props} expose="WebIcon"
-                                  load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
-
-const Typography = (props) => <Async {...props} expose="Typography"
-                                     load={import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
-
-const GenericForm = (props) => <Async {...props}
-                                      load={import(/* webpackChunkName: "admin" */ '../../client/components/GenericForm')}/>
 
 
 const cmsPageEditorUrl = (slug, _version) => {
     return `/${(_version && _version !== 'default' ? '@' + _version + '/' : '')}${slug}`
 }
 
+
+
+const addAdminComponents = (components) => {
+    /* Admin Elements */
+    components['AdminButton'] = Button
+    components['AdminSelect'] = Select
+    components['AdminSwitch'] = Switch
+    components['AdminSimpleMenu'] = SimpleMenu
+    components['DrawerLayout'] = ResponsiveDrawerLayout
+    components['TypesContainer'] = (props) => <TypesContainer noLayout={true} title={false}
+                                                              baseUrl={location.pathname} {...props}/>
+
+}
+
+/*export class AdminComponents extends React.Component {
+
+    constructor(props) {
+        super(props)
+        addAdminComponents(JsonDom.components)
+    }
+
+    render() {
+        return this.props.children
+    }
+}*/
+
 export default () => {
+
+    Hook.on('JsonDom', ({components}) => {
+        addAdminComponents(components)
+    })
 
     Hook.on('HomeContainerRender', ({content, match, location, history}) => {
         content.splice(0,content.length)

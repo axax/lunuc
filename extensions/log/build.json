@@ -22,7 +22,8 @@
         {
           "name": "meta",
           "type": "Object",
-          "uitype": "json"
+          "uitype": "json",
+          "hideColumnInTypes": true
         }
       ]
     }

@@ -16,7 +16,8 @@
           "name": "src",
           "fullWidth": true,
           "tab": "Allgemein",
-          "vagueSearchable": false
+          "vagueSearchable": false,
+          "hideColumnInTypes": true
         },
         {
           "name": "group",
@@ -41,18 +42,21 @@
           "name": "meta",
           "type": "Object",
           "uitype": "json",
-          "alwaysLoad": false
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
         },
         {
           "name": "info",
           "type": "Object",
           "uitype": "json",
-          "alwaysLoad": false
+          "alwaysLoad": false,
+          "hideColumnInTypes": true
         },
         {
           "name": "references",
           "type": "Object",
-          "uitype": "json"
+          "uitype": "json",
+          "hideColumnInTypes": true
         },
         {
           "name": "size",
@@ -61,19 +65,23 @@
         },
         {
           "name": "classifyImage",
-          "type": "Boolean"
+          "type": "Boolean",
+          "hideColumnInTypes": true
         },
         {
           "name": "useCdn",
-          "type": "Boolean"
+          "type": "Boolean",
+          "hideColumnInTypes": true
         },
         {
           "name": "private",
-          "type": "Boolean"
+          "type": "Boolean",
+          "hideColumnInTypes": true
         },
         {
           "name": "conversion",
-          "type": "MediaConversion"
+          "type": "MediaConversion",
+          "hideColumnInTypes": true
         }
       ]
     },

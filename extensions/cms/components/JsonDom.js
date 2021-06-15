@@ -42,23 +42,9 @@ const QuillEditor = (props) => <Async {...props}
 const CodeEditor = (props) => <Async {...props}
                                      load={import(/* webpackChunkName: "admin" */ '../../../client/components/CodeEditor')}/>
 
-
 const MarkDown = (props) => <Async {...props}
                                    load={import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown')}/>
 
-const DrawerLayout = (props) => <Async {...props} expose="ResponsiveDrawerLayout"
-                                       load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-
-const TypesContainer = (props) => <Async {...props}
-                                         load={import(/* webpackChunkName: "admin" */ '../../../client/containers/TypesContainer')}/>
-
-
-const AdminButton = (props) => <Async {...props} expose="Button"
-                                      load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const AdminSelect = (props) => <Async {...props} expose="Select"
-                                      load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
-const AdminSwitch = (props) => <Async {...props} expose="Switch"
-                                      load={import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 
 class JsonDom extends React.Component {
 
@@ -70,16 +56,6 @@ class JsonDom extends React.Component {
      * new components can be added with the JsonDom hook
      * */
     static components = {
-        /* Admin Elements */
-        AdminButton,
-        AdminSelect,
-        AdminSwitch,
-
-        /* Material Design / admin Component */
-        DrawerLayout,
-        'TypesContainer': (props) => <TypesContainer noLayout={true} title={false}
-                                                     baseUrl={location.pathname} {...props}/>,
-
         /* Default UI Implementation Components */
         Col: ({className, ...rest}) => {
             return <div className={'col' + (className ? ' ' + className : '')} {...rest} />
@@ -997,7 +973,6 @@ class JsonDom extends React.Component {
                             eleProps.props.data = Object.assign(propertyByPath(eleProps.props.$data, scope), eleProps.props.data)
                         }
                     }
-
 
                     let eleType = JsonDom.components[tagName] || this.extendedComponents[tagName] || tagName
 
