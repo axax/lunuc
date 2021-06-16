@@ -188,7 +188,7 @@ const BaseLayout = props => {
     return <UIProvider>
         <ResponsiveDrawerLayout title={APP_NAME}
                                 menuItems={menuItems}
-                                extra={!userKeys.loading && settings.history !== false && history._urlStack && history._urlStack.length > 0 &&
+                                extra={!userKeys.loading && (!settings || settings.history !== false) && history._urlStack && history._urlStack.length > 0 &&
                                 <div style={{
                                     padding: '1rem',
                                     border: '1px solid #f1f1f1',
