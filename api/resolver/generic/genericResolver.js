@@ -259,7 +259,7 @@ const GenericResolver = {
         console.log(`GenericResolver for ${collectionName} complete: aggregate time = ${aggregateTime}ms total time ${new Date() - startTime}ms`)
         return result
     },
-    createEntity: async (db, req, typeName, {_version, ...data}) => {
+    createEntity: async (db, req, typeName, {_version, ...data}, options) => {
         const {context} = req
 
 
@@ -293,7 +293,9 @@ const GenericResolver = {
 
         let createdBy, username
         if (data.createdBy && data.createdBy !== context.id) {
-            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+            if( !options || !options.skipCheck ) {
+                await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+            }
             createdBy = data.createdBy
 
             // TODO: resolve username

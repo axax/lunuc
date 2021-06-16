@@ -77,7 +77,9 @@ class TypeEdit extends React.Component {
                 Hook.call('TypeCreateEditChange', {field, type, props, dataToEdit})
             }} primaryButton={false} fields={formFields} values={dataToEdit}/>
         }
-        Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, parentRef: this})
+        if(open) {
+            Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, parentRef: this})
+        }
         return <SimpleDialog {...props}/>
     }
 

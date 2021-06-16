@@ -1422,11 +1422,19 @@ class JsonDom extends React.Component {
         }
     }
 
-    addMetaTag = (name, content) => DomUtil.createAndAddTag('meta', 'head', {
-        name,
-        content,
-        data: {jsonDomId: this.instanceId}
-    })
+    addMetaTag = (name, content) => {
+
+        let attr
+        if(name.constructor !== Object){
+            attr = {name, content}
+        }else{
+            attr = name
+        }
+        attr.data = {jsonDomId: this.instanceId}
+
+
+        DomUtil.createAndAddTag('meta', 'head', attr)
+    }
 
     refresh = (id, runScript) => {
         if (id === true) {
