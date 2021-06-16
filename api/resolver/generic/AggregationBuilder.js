@@ -829,8 +829,8 @@ export default class AggregationBuilder {
             "$count": "count"
         })
 
-        if (!doMatchAfterLookup) {
-            // add sort
+        if (!doMatchAfterLookup && !dataFacetQuery.some(f => !!f.$match) ) {
+            // add sort at the beginning if there is not another match
             // it is much faster when skip limit is outside of facet
             if (!includeCount) {
                 dataQuery.push({$sort: sort})

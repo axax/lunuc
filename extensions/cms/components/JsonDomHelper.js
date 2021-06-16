@@ -546,7 +546,7 @@ const m = Math.max((offX+offY) / 2,100)
         const {classes, _json, _onTemplateChange} = this.props
         e.currentTarget.classList.remove(classes.dropAreaOver)
 
-        if(JsonDomHelper.currentDragElement) {
+        if (JsonDomHelper.currentDragElement) {
             let sourceKey = JsonDomHelper.currentDragElement.props._key,
                 sourceIndex = parseInt(sourceKey.substring(sourceKey.lastIndexOf('.') + 1)),
                 sourceParentKey = getParentKey(sourceKey),
@@ -681,8 +681,10 @@ const m = Math.max((offX+offY) / 2,100)
 
         const {_cmsActions, _options} = this.props
 
+
         const dataSource = this.parseDataSource(_options.source)
         dataSource.options = options
+
         _cmsActions.editCmsData(dataSource)
 
     }
@@ -934,10 +936,12 @@ const m = Math.max((offX+offY) / 2,100)
 
                     if (_onDataResolverPropertyChange) {
                         overrideOnChange = (e, ...args) => {
-                            _onDataResolverPropertyChange({
-                                value: Util.escapeForJson(e.target.value),
-                                path: parsedSource._id
-                            })
+                            if (e.target === ReactDOM.findDOMNode(this)) {
+                                _onDataResolverPropertyChange({
+                                    value: Util.escapeForJson(e.target.value),
+                                    path: parsedSource._id
+                                })
+                            }
                             if (onChange) {
                                 onChange(e, ...args)
                             }
