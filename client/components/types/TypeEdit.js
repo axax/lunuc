@@ -174,8 +174,8 @@ class TypeEdit extends React.Component {
                             }
                         } else if( fieldDefinition.type === 'Object'){
                             // stringify Object and compare
-                            const s1 = before.constructor !== String ? JSON.stringify(before): before
-                            const s2 = editedDataWithRefs[k].constructor !== String ? JSON.stringify(editedDataWithRefs[k]): editedDataWithRefs[k]
+                            const s1 = before ? before.constructor !== String ? JSON.stringify(before): before : ''
+                            const s2 = editedDataWithRefs[k] ? editedDataWithRefs[k].constructor !== String ? JSON.stringify(editedDataWithRefs[k]): editedDataWithRefs[k] : ''
 
                             if( s1 !== s2) {
                                 editedDataToUpdate[k] = s2

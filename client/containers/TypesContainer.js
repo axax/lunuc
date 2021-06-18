@@ -71,13 +71,13 @@ const styles = theme => ({
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
-        maxWidth: 150
+        maxWidth: 200
     },
     tableLargeContent: {
         overflowX: 'hidden',
         overflowY: 'auto',
         maxWidth: 600,
-        maxHeight: 200
+        maxHeight: 250
     },
     script: {
         fontFamily: '"Courier 10 Pitch", Courier, monospace',

@@ -44,7 +44,7 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
-// Hook when the type Api has changed
+// Hook when the type GenericDataDefinition has changed
 Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
     Cache.clearStartWith('GenericDataDefinition')
 })
