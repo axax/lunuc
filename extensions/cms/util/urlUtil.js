@@ -15,7 +15,7 @@ export const scrollByHash = (url, {scrollStep, scrollOffset, scrollTimeout}) => 
                     y = de.scrollHeight - w.innerHeight
                 }
 
-                if (w.scrollY !== y || c < 3) {
+                if ( Math.abs(w.scrollY - y) > 2 || c < 3) {
                     let step = y - w.scrollY
                     if (step > (scrollStep || 50)) {
                         step = scrollStep || 50
