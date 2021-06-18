@@ -280,9 +280,9 @@ class TypesContainer extends React.Component {
                     fields.forEach(field => {
                         if (columnsMap[field.name]) {
                             let fieldValue = item[field.name]
-                            if(field.alwaysLoad===false){
-                                dynamic[field.name]  = '...'
-                            }else if (field.reference) {
+                            if (field.alwaysLoad === false) {
+                                dynamic[field.name] = '...'
+                            } else if (field.reference) {
                                 if (fieldValue) {
                                     if (fieldValue.constructor === Array) {
                                         if (field.type === 'Media') {
@@ -327,12 +327,17 @@ class TypesContainer extends React.Component {
                                     <img style={{height: '40px'}}
                                          src={fieldValue}/>
                             } else if (['json', 'editor', 'jseditor'].indexOf(field.uitype) >= 0) {
-                                if (fieldValue && fieldValue.length > 50) {
-                                    dynamic[field.name] = <span
-                                        className={classes.script}>{fieldValue.substring(0, 20) + '...' + fieldValue.substring(fieldValue.length - 20)}</span>
+                                if ( fieldValue && fieldValue.constructor === String) {
+                                    if (fieldValue.length > 50) {
+                                        dynamic[field.name] = <span
+                                            className={classes.script}>{fieldValue.substring(0, 20) + '...' + fieldValue.substring(fieldValue.length - 20)}</span>
+                                    } else {
+                                        dynamic[field.name] = <span className={classes.script}>{fieldValue}</span>
+                                    }
                                 } else {
-                                    dynamic[field.name] = <span className={classes.script}>{fieldValue}</span>
+                                    dynamic[field.name] = ''
                                 }
+
                             } else if (field.uitype === 'datetime') {
                                 dynamic[field.name] = Util.formattedDatetime(fieldValue)
                             } else if (field.uitype === 'password') {
@@ -571,7 +576,7 @@ class TypesContainer extends React.Component {
                              }
                              actions={actions}
                              footer={<div style={{display: 'flex', alignItems: 'center'}}><p
-                                 style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows',{count: selectedLength})}</p>{selectedLength ?
+                                 style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows', {count: selectedLength})}</p>{selectedLength ?
                                  <SimpleSelect
                                      label="Select action"
                                      value=""
@@ -731,7 +736,7 @@ class TypesContainer extends React.Component {
             description ?
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : null,
             false && <ButtonGroup size="small" key="layoutChanger" className={classes.layoutChanger} disableElevation
-                         variant="contained" color="primary">
+                                  variant="contained" color="primary">
                 <Button onClick={() => {
                     this.setSettingsForType(this.pageParams.type, {layout: 'list'})
                     this.goTo({layout: 'list'})
@@ -792,9 +797,13 @@ class TypesContainer extends React.Component {
             layout === 'list' ? <div key="rebderedTable">{this.renderTable(columns)}</div> : null,
             dataToDelete &&
             <SimpleDialog key="deleteDialog" open={confirmDeletionDialog} onClose={this.handleConfirmDeletion}
-                          actions={[{key: 'yes', label: _t('core.yes')}, {key: 'no', label: _t('core.no'), type: 'primary'}]}
-                          title={ _t('TypesContainer.deleteConfirmTitle')}>
-                {dataToDelete.length > 1 ? _t('TypesContainer.deleteConfirmTextMulti') : _t('TypesContainer.deleteConfirmText') }
+                          actions={[{key: 'yes', label: _t('core.yes')}, {
+                              key: 'no',
+                              label: _t('core.no'),
+                              type: 'primary'
+                          }]}
+                          title={_t('TypesContainer.deleteConfirmTitle')}>
+                {dataToDelete.length > 1 ? _t('TypesContainer.deleteConfirmTextMulti') : _t('TypesContainer.deleteConfirmText')}
             </SimpleDialog>,
             dataToBulkEdit &&
             <SimpleDialog fullWidth={true}
@@ -920,7 +929,7 @@ class TypesContainer extends React.Component {
 
         // check if field is hidden by default
         const formFields = getFormFields(type)
-        if(formFields && formFields[id] && formFields[id].hideColumnInTypes){
+        if (formFields && formFields[id] && formFields[id].hideColumnInTypes) {
             return false
         }
 
@@ -1237,7 +1246,6 @@ class TypesContainer extends React.Component {
                 update: (store, {data}) => {
                     const storeKey = this.getStoreKey(type),
                         responseItem = data['update' + type]
-
                     const extendedFilter = this.extendFilter(filter)
 
                     const variables = {limit, page, sort, _version, filter: extendedFilter}
@@ -1263,6 +1271,8 @@ class TypesContainer extends React.Component {
                                 data: {...storeData, [storeKey]: newData}
                             })
                             this._renderedTable = null
+
+
                             this.setState({data: newData})
                         }
                     }
@@ -1424,7 +1434,7 @@ class TypesContainer extends React.Component {
     goTo(args) {
         const {baseUrl} = this.props
         const {type, page, limit, sort, filter, fixType, _version, layout, multi, baseFilter, noLayout} = Object.assign({}, this.pageParams, args)
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types'+(type?'/'+type:'')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types' + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
     }
 
 
@@ -1503,7 +1513,6 @@ class TypesContainer extends React.Component {
             key = parts[0]
             value = {[parts[1]]: value}
         }
-
         if (value !== data[key]) {
             const changedData = {_id: data._id, [key]: value}
             addAlwaysUpdateData(data, changedData, this.pageParams.type)
@@ -1545,7 +1554,7 @@ class TypesContainer extends React.Component {
             }).then(response => {
                 const storeKey = this.getStoreKey(type)
 
-                fieldsToLoad.forEach(field=>{
+                fieldsToLoad.forEach(field => {
                     data[field] = response.data[storeKey].results[0][field]
                 })
                 this.setState({createEditDialog: true, dataToEdit: data})
@@ -1556,7 +1565,7 @@ class TypesContainer extends React.Component {
                 this.setState({data: null})
             })
 
-        }else {
+        } else {
             this.setState({createEditDialog: true, dataToEdit: data})
         }
     }
@@ -1574,7 +1583,7 @@ class TypesContainer extends React.Component {
     handleExportClick = (data, fields) => {
 
         const {type} = this.pageParams
-        const query = '{"_id":{"$oid":"'+data._id+'"}}'
+        const query = '{"_id":{"$oid":"' + data._id + '"}}'
 
         client.query({
             fetchPolicy: 'network-only',

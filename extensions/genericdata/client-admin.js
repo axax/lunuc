@@ -27,34 +27,62 @@ export default () => {
     // add some extra data to the table
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
         if (type === 'GenericData' && data.results.length > 0) {
-            dataSource.forEach((d, i) => {
+            dataSource.forEach((row, i) => {
 
-                if (d.data) {
-                    const item = data.results[i]
-                    try {
-                        const structur = JSON.parse(item.definition.structure)
+                const item = data.results[i]
 
-                        const json = JSON.parse(item.data)
-                        if (structur.pickerField) {
-                            let picker = structur.pickerField
-                            if (structur.pickerField.constructor === Array) {
-                                picker = structur.pickerField[0]
-                            }
-                            if (json[picker].constructor === String) {
-                                d.data = json[picker]
-                            } else {
-                                d.data = json[picker][_app_.lang]
-                            }
-                        } else {
+                try {
+                    const structur = JSON.parse(item.definition.structure)
 
-                            if (json.title.constructor === String) {
-                                d.data = json.title
-                            } else {
-                                d.data = json.title[_app_.lang]
-                            }
+                    let pickerFields
+
+                    if (structur.pickerField) {
+                        // can be a String or an Array
+                        pickerFields = structur.pickerField
+                    }else if(item.data.title){
+                        // take title attribute if available
+                        pickerFields = 'title'
+
+                    } else {
+
+                        // take the fist attribute of the object if none is specified
+                        const keys = Object.keys(item.data)
+
+                        if( keys.length > 0){
+                            pickerFields = keys[0]
                         }
-                    } catch (e) {
                     }
+                    if(pickerFields) {
+                        if (pickerFields.constructor !== Array) {
+                            pickerFields = [pickerFields]
+                        }
+                        row.data = ''
+                        pickerFields.forEach(picker => {
+                            let value
+                            if (item.data[picker].constructor === Object) {
+                                //TODO it is not save to assume that it is a localized value
+                                value = item.data[picker][_app_.lang]
+                            } else {
+                                value = item.data[picker]
+                            }
+
+                            if (value) {
+                                if (row.data) {
+                                    row.data += ' | '
+                                }
+                                row.data += value
+                            }
+                        })
+                        console.log(pickerFields, item)
+
+                        if(row.data.length> 83){
+                            row.data = row.data.substring(0,80)+'...'
+                        }
+                    }
+
+
+
+                } catch (e) {
                 }
             })
         }
@@ -118,17 +146,19 @@ export default () => {
                         console.error(e, dataToEdit.definition.structure)
                         return
                     }
-                    const data = dataToEdit.data ? (dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data) : {}
+
+                    const dataObject = dataToEdit.data ? (dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data) : {}
+
 
                     const newFields = Object.assign({}, formFields)
-
                     const newDataToEdit = Object.assign({}, dataToEdit)
                     delete newFields.data
                     delete newDataToEdit.data
+                    newFields.definition.readOnly = true
 
                     let overrideTranslations = false, translateTimeout = 0
-                    newFields.definition.readOnly = true
                     const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)
+
                     props.title = <React.Fragment>
                         {struct.title || newDataToEdit.definition.name}{newDataToEdit._id && userHasCapa ? ' (' + newDataToEdit._id + ')' : ''}
                         <div
@@ -138,7 +168,7 @@ export default () => {
                             onClick={() => {
 
                                 const a = document.createElement('a'),
-                                    blob = new Blob([JSON.stringify(JSON.parse(dataToEdit.data), null, 2)], {'type': 'text/plain'})
+                                    blob = new Blob([JSON.stringify(dataObject, null, 2)], {'type': 'text/plain'})
                                 a.href = window.URL.createObjectURL(blob)
                                 // a.download = 'json.txt'
                                 a.target = '_blank'
@@ -148,19 +178,20 @@ export default () => {
                             <SimpleButton key="autoTranslate" size="small" variant="contained"
                                           color="primary"
                                           onClick={() => {
-                                              const json = JSON.parse(dataToEdit.data)
 
                                               struct.fields.forEach(field => {
                                                   if (field.localized) {
 
                                                       const name = field.name.split('_')[1]
 
-                                                      if (json[name] && json[name].constructor === String) {
-                                                          json[name] = {[config.DEFAULT_LANGUAGE]: json[name]}
+                                                      if(!dataObject[name] ){
+                                                          dataObject[name] = newFields[name]
+                                                      }
+                                                      if (dataObject[name] && dataObject[name].constructor === String) {
+                                                          dataObject[name] = {[config.DEFAULT_LANGUAGE]: dataObject[name]}
                                                       }
 
-                                                      const obj = json[name]
-
+                                                      const obj = dataObject[name]
                                                       if (obj) {
                                                           config.LANGUAGES.forEach(lang => {
                                                               if ((overrideTranslations || !obj[lang]) && lang !== config.DEFAULT_LANGUAGE) {
@@ -177,15 +208,15 @@ export default () => {
                                                                   }).then((res) => {
                                                                       const resLang = res.data.translate.toIso
                                                                       const newText = res.data.translate.text.replace(/@_(\w+)_/g, '%$1%').replace(/\\/g, '') //.replace(/"/g,'\\"')
-                                                                      json[name][resLang] = newText
-                                                                      /*dataToEdit.data = JSON.stringify(json)*/
+                                                                      dataObject[name][resLang] = newText
+
                                                                       clearTimeout(translateTimeout)
                                                                       translateTimeout = setTimeout(() => {
                                                                           parentRef.setState({
                                                                               forceSave: true,
                                                                               dataToEdit: {
                                                                                   ...dataToEdit,
-                                                                                  data: JSON.stringify(json)
+                                                                                  data: dataObject
                                                                               }
                                                                           })
                                                                       }, 1000)
@@ -212,9 +243,9 @@ export default () => {
                         field.name = newName
                         newFields[newName] = field
                         if (field.localized) {
-                            newDataToEdit[newName] = data[oriName]
+                            newDataToEdit[newName] = dataObject[oriName]
                         } else {
-                            newDataToEdit[newName] = data[oriName] && data[oriName].constructor === Object ? JSON.stringify(data[oriName]) : data[oriName]
+                            newDataToEdit[newName] = dataObject[oriName] && dataObject[oriName].constructor === Object ? JSON.stringify(dataObject[oriName]) : dataObject[oriName]
                         }
                         if (field.defaultValue && !newDataToEdit[newName]) {
                             try {
@@ -259,35 +290,47 @@ export default () => {
         }
     })
 
-    Hook.on('TypeCreateEditBeforeSave', function ({type, editedData, formFields}) {
+    Hook.on('TypeCreateEditBeforeSave', function ({type, editedData, optimisticData, formFields}) {
         if (type === 'GenericData' && editedData && editedData.definition) {
 
-            const definition = editedData.definition.constructor === Array ? editedData.definition[0] : editedData.definition
+            const definition = editedData.definition.constructor === Array ? editedData.definition[0] : editedData.definition,
+                struct = JSON.parse(definition.structure),
+                dataObject = {},
+                optimisticDataObject = {}
 
-            const struct = JSON.parse(definition.structure)
-            const data = {}
+            // Combine data attributes to the data object
             struct.fields.forEach(field => {
+
                 if (field.genericType) {
+
                     // only keep reference _id
                     const fieldData = editedData['data_' + field.name]
                     if (fieldData && fieldData.constructor === Array && fieldData.length > 0 && fieldData[0]._id) {
-                        data[field.name] = fieldData.map(e => e._id)
+                        dataObject[field.name] = fieldData.map(e => e._id)
                     } else if (fieldData && fieldData._id) {
-                        data[field.name] = fieldData._id
+                        dataObject[field.name] = fieldData._id
                     } else {
-                        data[field.name] = editedData['data_' + field.name]
+                        dataObject[field.name] = editedData['data_' + field.name]
                     }
+                    // we keep resolved values for the optimisticDataObject
+                    optimisticDataObject[field.name] = editedData['data_' + field.name]
                 } else {
-                    if (field.type === 'Object') {
-                        data[field.name] = JSON.parse(editedData['data_' + field.name])
-                    } else {
-                        data[field.name] = editedData['data_' + field.name]
-                    }
-                }
-                delete editedData['data_' + field.name]
-            })
-            editedData.data = JSON.stringify(data)
 
+                    let currentDataAttr
+                    if (field.type === 'Object') {
+                        currentDataAttr = JSON.parse(editedData['data_' + field.name])
+                    } else {
+                        currentDataAttr = editedData['data_' + field.name]
+                    }
+                    dataObject[field.name] = optimisticDataObject[field.name] = currentDataAttr
+                }
+
+                // delete data attribute
+                delete editedData['data_' + field.name]
+                delete optimisticData['data_' + field.name]
+            })
+            editedData.data = JSON.stringify(dataObject)
+            optimisticData.data = optimisticDataObject
 
         }
     })
@@ -319,7 +362,7 @@ export default () => {
                 name: 'Export GenericData to csv', onClick: () => {
                     const items = []
                     this.state.data.results.forEach(res => {
-                        items.push({date: Util.formattedDatetimeFromObjectId(res._id), ...JSON.parse(res.data)})
+                        items.push({date: Util.formattedDatetimeFromObjectId(res._id), ...res.data})
                     })
                     const replacer = (key, value) => value === null ? '' : value // specify how you want to handle null values here
                     const header = Object.keys(items[0])
@@ -345,15 +388,13 @@ export default () => {
                 const structure = JSON.parse(value.definition.structure)
 
                 if (structure.pickerField) {
-                    const data = JSON.parse(value.data)
                     const newData = {}
-
                     const pickerFields = structure.pickerField.constructor === Array ? structure.pickerField : [structure.pickerField]
                     for (const pickerField of pickerFields) {
-                        newData[pickerField] = data[pickerField]
+                        newData[pickerField] = value.data[pickerField]
                     }
 
-                    value.data = JSON.stringify(newData)
+                    value.data = newData
                     delete value.definition
                 }
             } catch (e) {

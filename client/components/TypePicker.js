@@ -188,6 +188,7 @@ class TypePicker extends React.Component {
 
                                                            Hook.call('TypePickerWindowCallback', {value, type})
 
+
                                                            Util.removeNullValues(value, {
                                                                recursiv: true,
                                                                emptyObject: true,
@@ -320,9 +321,9 @@ class TypePicker extends React.Component {
         //TODO: move to extension
         if (type === 'GenericData') {
             if (pickerField && pickerField.constructor === String) {
-                const data = JSON.parse(value.data)
+                const data = value.data
                 const newData = {[pickerField]: data[pickerField]}
-                value.data = JSON.stringify(newData)
+                value.data = newData
             }
         }
         Util.removeNullValues(value, {

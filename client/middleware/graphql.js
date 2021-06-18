@@ -3,6 +3,7 @@ import Util from '../util'
 import {getStore} from '../store/index'
 import {setNetworkStatus} from '../actions/NetworkStatusAction'
 import {addError} from '../actions/ErrorHandlerAction'
+import Hook from '../../util/hook'
 
 
 const NetworkStatus = {
@@ -64,7 +65,7 @@ const createWsSubscription = (id, payload, next) => {
     })
 
     if (wsCurrentConnection && wsCurrentConnection.readyState === 1) {
-        wsCurrentConnection.send(JSON.stringify({type:'start', id, payload}))
+        wsCurrentConnection.send(JSON.stringify({type: 'start', id, payload}))
     }
 }
 
@@ -76,7 +77,7 @@ const removeWsSubscription = (id) => {
     }
     // remove from array by id
     for (let i = 0; i < openWsSubscription.length; i++) {
-        if(openWsSubscription[i].id === id){
+        if (openWsSubscription[i].id === id) {
             openWsSubscription.splice(i, 1)
             break
         }
@@ -99,7 +100,7 @@ const setUpWs = () => {
 
                 for (let i = 0; i < openWsSubscription.length; i++) {
                     const sub = openWsSubscription[i]
-                    wsCurrentConnection.send(JSON.stringify({type:'start', id:sub.id, payload:sub.payload}))
+                    wsCurrentConnection.send(JSON.stringify({type: 'start', id: sub.id, payload: sub.payload}))
                 }
 
                 return false
@@ -232,6 +233,8 @@ export const finalFetch = ({type = RequestType.query, cacheKey, query, variables
                             type,
                             query
                         })
+
+                        Hook.call('ApiClientQueryResponse', {response})
 
                         if (fetchPolicy !== 'no-cache') {
                             client.writeQuery({cacheKey, data: response.data})
@@ -444,7 +447,7 @@ export const useQuery = (query, {variables, hiddenVariables, fetchPolicy = 'cach
     const cacheKey = getCacheKey({query, variables})
 
     const [response, setResponse] = useState({
-        data: _app_.ssr ||  fetchPolicy === 'cache-first'? client.readQuery({cacheKey}) : null,
+        data: _app_.ssr || fetchPolicy === 'cache-first' ? client.readQuery({cacheKey}) : null,
         networkStatus: 0,
         loading: !_app_.ssr,
         fetchMore: getFetchMore({

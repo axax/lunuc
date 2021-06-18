@@ -77,23 +77,14 @@ const BaseLayout = props => {
         }
         setOpenMenuEditor(false)
     }
-    const settings = userKeys.data && userKeys.data.BaseLayoutSettings
+    const settings = userKeys.data && userKeys.data.BaseLayoutSettings || {}
 
     const menuItems = [
         {
             name: 'Home',
             key: 'home',
             to: ADMIN_BASE_URL + '/',
-            icon: <HomeIcon/>,
-            actions: [<SimpleMenu key="menu" mini items={[
-                {
-                    name: _t('BaseLayout.editMenu'),
-                    onClick: handleOpenMenuEditor,
-                    icon: <EditIcon/>
-                }
-            ]}/>],/* items: [
-                {name: 'Dashboard', to: ADMIN_BASE_URL + '/', icon: <HomeIcon/>}
-            ]*/
+            icon: <HomeIcon/>
         },
         {name: 'Profile', to: ADMIN_BASE_URL + '/profile', auth: true, icon: <AccountCircleIcon/>}
     ]
@@ -113,19 +104,39 @@ const BaseLayout = props => {
 
     Hook.call('MenuMenu', {menuItems, user})
 
-    if (settings && settings.menu) {
+    if (settings.menu) {
+
+        const genMenuEntry = (item) => {
+            if(!item){
+                return
+            }
+
+            if(item.constructor === Array){
+                return item.map(genMenuEntry)
+            }
+
+            const Icon = iconComponents[item.icon] || SettingsIcon
+
+            let to
+
+            if(item.to){
+                to = item.to
+            }else if( item.name ){
+                to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}&baseFilter=${encodeURIComponent('definition.name==' + item.name)}`
+            }else if( item.type){
+                to = `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}&title=${encodeURIComponent(item.label || item.type)}`
+            }
+
+            return {
+                name: item.label || item.type,
+                to,
+                auth: true,
+                icon: <Icon/>,
+                items: genMenuEntry(item.items)
+            }
+        }
 
         if (settings.menu.items) {
-
-            const genMenuEntry = (item) => {
-                const Icon = iconComponents[item.icon] || SettingsIcon
-                return {
-                    name: item.label || item.type,
-                    to: item.to || `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}&title=${encodeURIComponent(item.label || item.type)}`,
-                    auth: true,
-                    icon: <Icon/>
-                }
-            }
 
             settings.menu.items.forEach(item => {
                 let existingItem
@@ -142,9 +153,7 @@ const BaseLayout = props => {
                         if(!existingItem.items){
                             existingItem.items = []
                         }
-                        item.items.forEach(subitem=> {
-                            existingItem.items.push(genMenuEntry(subitem))
-                        })
+                        existingItem.items.push(...genMenuEntry(item.items))
                     }
 
                 } else {
@@ -158,18 +167,10 @@ const BaseLayout = props => {
         if (settings.menu.genericTypes) {
             menuItems.push({divider: true, auth: true})
 
-            settings.menu.genericTypes.forEach(type => {
-                const Icon = iconComponents[type.icon] || SettingsIcon
-                menuItems.push({
-                    name: type.label || type.name,
-                    to: ADMIN_BASE_URL + '/types/GenericData?fixType=GenericData&title=' + encodeURIComponent(type.label || type.name) +
-                        '&baseFilter=' + encodeURIComponent('definition.name==' + type.name),
-                    auth: true,
-                    icon: <Icon/>
-                })
+            settings.menu.genericTypes.forEach(item => {
+                menuItems.push(genMenuEntry(item))
             })
         }
-
 
         // deprecated. will probably be removed in the future
         if (settings.menu.hide) {
@@ -186,9 +187,10 @@ const BaseLayout = props => {
     const history = useHistory()
 
     return <UIProvider>
-        <ResponsiveDrawerLayout title={APP_NAME}
+        <ResponsiveDrawerLayout title={settings.title || APP_NAME}
+                                logo={settings.logo}
                                 menuItems={menuItems}
-                                extra={!userKeys.loading && (!settings || settings.history !== false) && history._urlStack && history._urlStack.length > 0 &&
+                                extra={!userKeys.loading && settings.history !== false && history._urlStack && history._urlStack.length > 0 &&
                                 <div style={{
                                     padding: '1rem',
                                     border: '1px solid #f1f1f1',
@@ -200,6 +202,14 @@ const BaseLayout = props => {
                                         overflow: 'hidden'
                                     }} to={u}>{u}</Link>
                                 })}</div>}
+
+                                headerLeft={<SimpleMenu key="menu" mini items={[
+                                    {
+                                        name: _t('BaseLayout.editMenu'),
+                                        onClick: handleOpenMenuEditor,
+                                        icon: <EditIcon/>
+                                    }
+                                ]} />}
                                 headerRight={
                                     [
                                         (isAuthenticated ?

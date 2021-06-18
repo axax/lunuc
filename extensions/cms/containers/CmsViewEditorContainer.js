@@ -1379,11 +1379,11 @@ class CmsViewEditorContainer extends React.Component {
         _cmsActions.editTemplate(null, cmsTemplateEditData.component, cmsTemplateEditData.scope)
     }
 
-    handleEditDataClose(action, {editedData, dataToEdit, type}) {
+    handleEditDataClose(action, {optimisticData, dataToEdit, type}) {
         const {_cmsActions, cmsPage, updateResolvedData, cmsEditData} = this.props
         _cmsActions.editCmsData(null)
 
-        if (editedData) {
+        if (optimisticData) {
             if (!dataToEdit) {
 
                 window.location.href = window.location.href
@@ -1403,17 +1403,16 @@ class CmsViewEditorContainer extends React.Component {
                         results.unshift({_id: dataToEdit._id})
                     }
 
-                    results[idx] = Object.assign(results[idx], editedData)
+                    results[idx] = Object.assign(results[idx], optimisticData)
 
                     const formFields = getFormFields(type)
                     // convert type=Object to Object
                     Object.keys(formFields).forEach(key => {
                         const field = formFields[key]
                         if (field.type === 'Object' && results[idx][key].constructor !== Object) {
-                            results[idx][key] = JSON.parse(editedData[key])
+                            results[idx][key] = JSON.parse(optimisticData[key])
                         }
                     })
-
                     updateResolvedData({json: resolvedDataJson})
                 }
             }

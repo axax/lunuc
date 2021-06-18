@@ -25,7 +25,7 @@ export const typeDataToLabel = (item, pickerField) => {
     if (item.__typename === 'GenericData') {
         const definition = item.definition
         try {
-            if (item.data.constructor === Object) {
+            if ( typeof item.data === 'object') {
                 item = item.data
             } else {
                 item = JSON.parse(item.data)
@@ -37,7 +37,7 @@ export const typeDataToLabel = (item, pickerField) => {
         if (!pickerField) {
             if (definition) {
                 try {
-                    const structur = JSON.parse(item.definition.structure)
+                    const structur = JSON.parse(definition.structure)
                     pickerField = structur.pickerField
                 } catch (e) {
                     console.log(e)
@@ -141,13 +141,24 @@ export const addAlwaysUpdateData = (data, changedData, type) => {
     const typeDef = getFormFields(type)
     Object.keys(typeDef).forEach((key) => {
         if (typeDef[key].alwaysUpdate) {
-            changedData[key] = data[key]
+            if( typeDef[key].reference && data[key] && data[key]._id){
+                changedData[key] = data[key]._id
+            }else {
+                changedData[key] = data[key]
+            }
         }
     })
 }
 
 
-// if the field is a reference remove all attribute but the _id
+/**
+ * Clean up references. If the field is a reference remove all attribute but the _id
+ *
+ * @param {Object} data object
+ * @param {String} type of the data
+ *
+ * @returns {Object} an new object with only ids for references
+ */
 export const referencesToIds = (data, type) => {
     const formFields = getFormFields(type)
     const newData = {}

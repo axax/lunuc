@@ -337,7 +337,8 @@ function gensrcExtension(name, options) {
 
 
         let schema = GENSRC_HEADER + 'export default `\n'
-        let resolver = GENSRC_HEADER + `import {matchExpr} from '../../../client/util/json'\nimport Util from 'api/util'\nimport {ObjectId} from 'mongodb'\nimport {pubsubHooked, pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
+        let resolver = GENSRC_HEADER + `import Util from 'api/util'\nimport {ObjectId} from 'mongodb'\nimport {pubsubHooked, pubsub} from 'api/subscription'\nimport {withFilter} from 'graphql-subscriptions'\n`
+        resolver += `import Hook from '../../../util/hook'\n`
         resolver += `import GenericResolver from 'api/resolver/generic/genericResolver'\n\nexport default db => ({\n`
         let resolverQuery = '\tQuery:{\n'
         let resolverMutation = '\tMutation:{\n'
@@ -494,24 +495,13 @@ function gensrcExtension(name, options) {
                 resolverSubscription += `       subscribe${type.name}: withFilter(() => pubsub.asyncIterator('subscribe${type.name}'),
             async (payload, context) => {
                 if( payload ) {
-                    //return payload.userId === context.id
-                    if(context.variables && context.variables.filter){
                     
-                        const filters = JSON.parse(context.variables.filter),
-                        action = payload.subscribeGenericData.action,
-                        datas = payload.subscribeGenericData.data,
-                        filter = filters[action]
-                        
-                        if( filter ){
-
-                            for(let i = 0; i < datas.length; i++){
-                                const data = datas[i]
-                                if( matchExpr(filter, data)){
-                                    return false
-                                }
-                            }
-                        }
-                        payload.subscribeGenericData.filter = filter
+                    const hookResponse = {}
+                    Hook.call('ResolverBeforePublishSubscription', {payload, context, hookResponse})
+                    
+                    
+                    if(hookResponse.abort){
+                        return false
                     }
                     return await Util.userCanSubscribe(db,context,'${type.name}',payload)
                 }

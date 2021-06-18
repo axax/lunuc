@@ -89,8 +89,8 @@ class TypeEdit extends React.Component {
         const {dataToEdit} = this.state
         let editedData
 
-        const closeModal = () => {
-            onClose(action,{editedData,dataToEdit,type})
+        const closeModal = (optimisticData) => {
+            onClose(action,{optimisticData,dataToEdit,type})
         }
 
         if (action && ['save', 'save_close'].indexOf(action.key) >= 0) {
@@ -100,7 +100,8 @@ class TypeEdit extends React.Component {
             }
             editedData = Object.assign({}, this.createEditForm.state.fields)
             const formFields = getFormFields(type)
-            Hook.call('TypeCreateEditBeforeSave', {type, dataToEdit, editedData, formFields})
+
+
             // convert array to single value for not multivalue references
             Object.keys(formFields).forEach(key => {
                 const field = formFields[key]
@@ -111,8 +112,11 @@ class TypeEdit extends React.Component {
                 }
             })
 
-            const editedDataWithRefs = referencesToIds(editedData, type)
 
+            // we need another object with the already resolved references for the ui
+            const optimisticData = Object.assign({}, editedData)
+
+            Hook.call('TypeCreateEditBeforeSave', {type, dataToEdit, editedData, optimisticData, formFields})
 
             const callback = ({errors, data}) => {
                 // server side validation
@@ -130,26 +134,32 @@ class TypeEdit extends React.Component {
                     }
                 } else {
 
-                    if( !editedData._id && data['create' + type]) {
-                        editedData._id = data['create' + type]._id
+                    // set use for newly created objects
+                    if( !optimisticData._id && data['create' + type]) {
+                        optimisticData._id = data['create' + type]._id
 
-                        if(!editedData.createdBy){
-                            editedData.createdBy = data['create' + type].createdBy
+                        if(!optimisticData.createdBy){
+                            optimisticData.createdBy = data['create' + type].createdBy
                         }
 
                     }
 
+
                     if (action.key === 'save_close') {
-                        closeModal()
+                        closeModal(optimisticData)
                     } else {
-                        this.setState({dataToEdit: {...dataToEdit, ...editedData}})
+                        this.setState({dataToEdit: {...dataToEdit, ...optimisticData}})
                     }
                 }
             }
 
+            const editedDataWithRefs = referencesToIds(editedData, type)
+
+
+            // if dataToEdit is set we are in edit mode
             if (dataToEdit && dataToEdit._id) {
 
-                // if dataToEdit is set we are in edit mode
+                // Attributes are filtered out that have changed
                 const editedDataToUpdate = {}
                 Object.keys(editedDataWithRefs).forEach(k => {
 
@@ -157,21 +167,30 @@ class TypeEdit extends React.Component {
                         editedDataToUpdate[k] = editedDataWithRefs[k]
                     }else {
                         const before = dataToEdit[k]
-
-                        if (before && before.constructor === Object) {
+                        const fieldDefinition = formFields[k]
+                        if (fieldDefinition.reference ) {
                             if (before._id !== editedDataWithRefs[k]) {
                                 editedDataToUpdate[k] = editedDataWithRefs[k]
                             }
+                        } else if( fieldDefinition.type === 'Object'){
+                            // stringify Object and compare
+                            const s1 = before.constructor !== String ? JSON.stringify(before): before
+                            const s2 = editedDataWithRefs[k].constructor !== String ? JSON.stringify(editedDataWithRefs[k]): editedDataWithRefs[k]
+
+                            if( s1 !== s2) {
+                                editedDataToUpdate[k] = s2
+                            }
+
                         } else if (editedDataWithRefs[k] !== before) {
                             editedDataToUpdate[k] = editedDataWithRefs[k]
                         }
                     }
                 })
-                if (Object.keys(editedDataToUpdate).length >= 0) {
+
+                if (Object.keys(editedDataToUpdate).length > 0) {
                     // only send data if they have really changed
                     addAlwaysUpdateData(editedData, editedDataToUpdate, type)
-
-                    updateData({_id: dataToEdit._id, ...editedDataToUpdate}, editedData, meta).then(callback).catch(callback)
+                    updateData({_id: dataToEdit._id, ...editedDataToUpdate}, optimisticData, meta).then(callback).catch(callback)
                 } else {
                     if (action.key === 'save_close') {
                         closeModal()
@@ -180,8 +199,7 @@ class TypeEdit extends React.Component {
 
             } else {
                 // create a new entry
-
-                createData(editedDataWithRefs, editedData, meta).then(callback).catch(callback)
+                createData(editedDataWithRefs, optimisticData, meta).then(callback).catch(callback)
             }
 
         } else if (action && (action.key === 'cancel' || action.key === 'Escape')) {
@@ -189,7 +207,6 @@ class TypeEdit extends React.Component {
         } else {
             Hook.call('TypeCreateEditAction', {
                 type,
-                closeModal,
                 action,
                 dataToEdit,
                 meta,

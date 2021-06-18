@@ -168,7 +168,7 @@ class GenericForm extends React.Component {
             let foundTab = false, relevantTabs = []
             for (const key in validationState.fieldErrors) {
                 // = validationState.fieldErrors[key]
-                if (fields[key].tab) {
+                if (fields[key] && fields[key].tab) {
                     if (fields[key].tab === tabs[state.tabValue]) {
                         foundTab = true
                         break

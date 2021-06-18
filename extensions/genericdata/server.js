@@ -6,6 +6,7 @@ import Cache from 'util/cache'
 import GenericResolver from '../../api/resolver/generic/genericResolver'
 import Util from '../../api/util'
 import {ObjectId} from 'mongodb'
+import {matchExpr} from '../../client/util/json'
 
 async function getGenericTypeDefinitionWithStructure(db, {name, id}) {
 
@@ -282,6 +283,34 @@ Hook.on('AggregationBuilderBeforeQuery', async ({db, type, filters}) => {
                 filters.parts['definition'].value = def._id
             }
         }
+    }
+
+})
+
+
+Hook.on('ResolverBeforePublishSubscription', async ({context, payload, hookResponse}) => {
+
+    //return payload.userId === context.id
+    if(context.variables && context.variables.filter){
+
+        const filters = JSON.parse(context.variables.filter),
+            action = payload.subscribeGenericData.action,
+            datas = payload.subscribeGenericData.data,
+            filter = filters[action]
+
+        if( filter ){
+
+            for(let i = 0; i < datas.length; i++){
+                const data = datas[i]
+                console.log(data, filter)
+                if( matchExpr(filter, data)){
+                    console.log('abort publish')
+                    hookResponse.abort = true
+                    return
+                }
+            }
+        }
+        payload.subscribeGenericData.filter = filter
     }
 
 })

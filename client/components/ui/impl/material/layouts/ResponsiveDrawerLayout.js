@@ -47,7 +47,17 @@ const useStyles = makeStyles(theme => ({
             display: 'none',
         },
     },
-    drawerHeader: theme.mixins.toolbar,
+    drawerLogo: {
+        height: '3rem'
+    },
+    drawerHeaderLeft: {
+        marginLeft: 'auto'
+    },
+    drawerHeader: {
+        ...theme.mixins.toolbar,
+        padding: '0.5rem',
+        display: 'flex'
+    },
     drawerPaper: {
         width: drawerWidth,
         [theme.breakpoints.up('lg')]: {
@@ -103,7 +113,7 @@ const findActiveItem = (props) => {
             if (item.to.indexOf('?') >= 0) {
                 const paramsItem = Util.extractQueryParams(item.to.split('?')[1])
 
-                if ( (params.fixType && params.fixType === paramsItem.fixType && params.baseFilter && params.baseFilter === paramsItem.baseFilter) ||
+                if ((params.fixType && params.fixType === paramsItem.fixType && params.baseFilter && params.baseFilter === paramsItem.baseFilter) ||
                     (!params.baseFilter && params.fixType && params.fixType === paramsItem.fixType) ||
                     (params.key && params.key === paramsItem.key)) {
 
@@ -133,7 +143,7 @@ const MenuList = (props) => {
     const classes = useStyles()
     const history = useHistory()
     const activeItem = findActiveItem(props)
-    return <List disablePadding={depth>0} style={{paddingLeft: (depth*16)+'px'}}>
+    return <List disablePadding={depth > 0} style={{paddingLeft: (depth * 16) + 'px'}}>
         {items.map((item, i) => {
             if (item.auth && isAuthenticated || !item.auth) {
                 if (item.divider) {
@@ -142,8 +152,8 @@ const MenuList = (props) => {
                 return [<ListItem onClick={() => {
                     history.push(item.to)
                 }}
-                                 key={i}
-                                 button>
+                                  key={i}
+                                  button>
                     {
                         item.icon && <ListItemIcon>
                             {item.icon.constructor === String ?
@@ -158,7 +168,7 @@ const MenuList = (props) => {
                     {item.actions}
 
                 </ListItem>,
-                item.items && <MenuList items={item.items} 	depth={depth + 1} isAuthenticated={isAuthenticated}/>]
+                    item.items && <MenuList items={item.items} depth={depth + 1} isAuthenticated={isAuthenticated}/>]
             }
         })}
     </List>
@@ -173,13 +183,17 @@ const ResponsiveDrawer = (props) => {
         setMobileOpen(!mobileOpen)
     }
 
-    const {menuItems, isAuthenticated, children, headerRight, title, toolbarStyle, headerStyle, extra} = props
+    const {menuItems, isAuthenticated, children, headerLeft, headerRight, title, logo, toolbarStyle, headerStyle, extra} = props
 
     const classes = useStyles()
 
     const drawer = (
         <div>
-            <div className={classes.drawerHeader}/>
+            <div className={classes.drawerHeader}>
+
+                <img className={classes.drawerLogo} src={logo || '/favicon.svg'}/>
+                <div className={classes.drawerHeaderLeft}>{headerLeft}</div>
+            </div>
             <Divider/>
             <MenuList depth={0} items={menuItems} isAuthenticated={isAuthenticated}/>
             <Divider/>
