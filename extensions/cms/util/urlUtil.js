@@ -4,8 +4,13 @@ export const scrollByHash = (url, {scrollStep, scrollOffset, scrollTimeout}) => 
     if (url.indexOf('#') >= 0) {
         const checkScroll = (el, c) => {
             if (el) {
-                let w = window, de = w.document.documentElement, mt = parseInt(w.getComputedStyle(el).marginTop),
-                    y = Math.floor(el.getBoundingClientRect().top + w.pageYOffset + (scrollOffset || -mt))
+                let w = window, de = w.document.documentElement, mt = parseInt(w.getComputedStyle(el).marginTop)
+
+                if(isNaN(mt)){
+                    mt = 0
+                }
+
+                let y = Math.floor(el.getBoundingClientRect().top + w.pageYOffset + (scrollOffset || -mt))
                 if (y > de.scrollHeight - w.innerHeight) {
                     y = de.scrollHeight - w.innerHeight
                 }
