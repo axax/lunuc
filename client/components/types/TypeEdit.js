@@ -169,7 +169,7 @@ class TypeEdit extends React.Component {
                         const before = dataToEdit[k]
                         const fieldDefinition = formFields[k]
                         if (fieldDefinition.reference ) {
-                            if (before._id !== editedDataWithRefs[k]) {
+                            if (!before || before._id !== editedDataWithRefs[k]) {
                                 editedDataToUpdate[k] = editedDataWithRefs[k]
                             }
                         } else if( fieldDefinition.type === 'Object'){
