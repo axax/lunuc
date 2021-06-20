@@ -115,6 +115,9 @@ const BaseLayout = props => {
                 return item.map(genMenuEntry)
             }
 
+            if(item.divider){
+                return item
+            }
             const Icon = iconComponents[item.icon] || SettingsIcon
 
             let to

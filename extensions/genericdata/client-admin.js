@@ -24,7 +24,11 @@ const Typography = (props) => <Async {...props} expose="Typography"
 export default () => {
 
 
-    // add some extra data to the table
+    /*
+        TypesContainer: gets called before the table is rendered
+
+        add some extra data to the table
+     */
     Hook.on('TypeTable', ({type, dataSource, data, container}) => {
         if (type === 'GenericData' && data.results.length > 0) {
             dataSource.forEach((row, i) => {
@@ -39,7 +43,7 @@ export default () => {
                     if (structur.pickerField) {
                         // can be a String or an Array
                         pickerFields = structur.pickerField
-                    }else if(item.data.title){
+                    } else if (item.data.title) {
                         // take title attribute if available
                         pickerFields = 'title'
 
@@ -48,11 +52,11 @@ export default () => {
                         // take the fist attribute of the object if none is specified
                         const keys = Object.keys(item.data)
 
-                        if( keys.length > 0){
+                        if (keys.length > 0) {
                             pickerFields = keys[0]
                         }
                     }
-                    if(pickerFields) {
+                    if (pickerFields) {
                         if (pickerFields.constructor !== Array) {
                             pickerFields = [pickerFields]
                         }
@@ -73,13 +77,11 @@ export default () => {
                                 row.data += value
                             }
                         })
-                        console.log(pickerFields, item)
 
-                        if(row.data.length> 83){
-                            row.data = row.data.substring(0,80)+'...'
+                        if (row.data.length > 83) {
+                            row.data = row.data.substring(0, 80) + '...'
                         }
                     }
-
 
 
                 } catch (e) {
@@ -92,27 +94,25 @@ export default () => {
     Hook.on('TypeCreateEdit', function ({type, props, meta, formFields, dataToEdit, parentRef}) {
         if (type === 'GenericData') {
 
-            if((!dataToEdit || !dataToEdit.definition) && meta && meta.baseFilter){
+            if ((!dataToEdit || !dataToEdit.definition) && meta && meta.baseFilter) {
                 let b = decodeURIComponent(meta.baseFilter)
-                if(b.startsWith('definition')){
+                if (b.startsWith('definition')) {
                     b = b.substring(11)
 
-                    dataToEdit = Object.assign({},dataToEdit)
+                    dataToEdit = Object.assign({}, dataToEdit)
 
-                    if(b.startsWith('name')){
+                    if (b.startsWith('name')) {
                         b = b.substring(5)
-                    }else  if(b.startsWith('_id')){
+                    } else if (b.startsWith('_id')) {
                         b = b.substring(3)
                     }
-                    if(b.startsWith('=')){
+                    if (b.startsWith('=')) {
                         b = b.substring(1)
                     }
                     dataToEdit.definition = b
 
                 }
             }
-
-
 
 
             if (dataToEdit && dataToEdit.definition) {
@@ -126,7 +126,10 @@ export default () => {
                         }
                     }).then(response => {
                         if (response.data.genericDataDefinitions.results) {
-                            let newDataToEdit = Object.assign({}, dataToEdit, {definition: response.data.genericDataDefinitions.results[0], createdBy:_app_.user})
+                            let newDataToEdit = Object.assign({}, dataToEdit, {
+                                definition: response.data.genericDataDefinitions.results[0],
+                                createdBy: _app_.user
+                            })
 
                             parentRef.setState({dataToEdit: newDataToEdit})
                         }
@@ -184,7 +187,7 @@ export default () => {
 
                                                       const name = field.name.split('_')[1]
 
-                                                      if(!dataObject[name] ){
+                                                      if (!dataObject[name]) {
                                                           dataObject[name] = newFields[name]
                                                       }
                                                       if (dataObject[name] && dataObject[name].constructor === String) {
@@ -278,7 +281,8 @@ export default () => {
 
                 delete newFields.data
                 // override default
-                props.children = [<Typography key="GenericDataLabel" variant="subtitle1" gutterBottom>{_t('GenericData.createNewHint')}</Typography>,
+                props.children = [<Typography key="GenericDataLabel" variant="subtitle1"
+                                              gutterBottom>{_t('GenericData.createNewHint')}</Typography>,
                     <GenericForm key="genericForm" autoFocus innerRef={ref => {
                         parentRef.createEditForm = ref
                     }} onBlur={event => {
@@ -355,18 +359,39 @@ export default () => {
 
 
     // add some extra data to the table
-    Hook.on('TypeTableAction', function ({type, actions}) {
+    Hook.on('TypeTableAction', function ({type, actions, pageParams}) {
         if (type === 'GenericData') {
 
-            actions.push({
-                name: 'Export GenericData to csv', onClick: () => {
+            const filterdActions = actions.filter(f => f.key === 'export_csv')
+
+            if (filterdActions.length > 0) {
+                // replace cvs export function
+                filterdActions[0].onClick = () => {
                     const items = []
                     this.state.data.results.forEach(res => {
                         items.push({date: Util.formattedDatetimeFromObjectId(res._id), ...res.data})
                     })
-                    const replacer = (key, value) => value === null ? '' : value // specify how you want to handle null values here
                     const header = Object.keys(items[0])
-                    let csv = items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
+                    let csv = items.map(row => header.map(fieldName => {
+
+                        let value = row[fieldName]
+                        if (value) {
+                            if (value.constructor === Array) {
+
+                                value = value.map(item => {
+                                    return item._id
+                                })
+
+
+                            } else if (value.constructor === Object) {
+                                value = JSON.stringify(value)
+                            }
+
+                        } else {
+                            value = ''
+                        }
+                        return '"' + Util.escapeForJson(value) + '"'
+                    }).join(','))
                     csv.unshift(header.join(','))
                     csv = csv.join('\r\n')
 
@@ -374,31 +399,63 @@ export default () => {
                     const a = document.createElement('a'),
                         blob = new Blob([csv], {'type': 'text/comma-separated-values'})
                     a.href = window.URL.createObjectURL(blob)
-                    a.download = 'genericdata.csv'
+                    a.download = (pageParams.title || 'export') + '.csv'
                     a.target = '_blank'
                     a.click()
                 }
-            })
+            }
+
+
         }
     })
 
-    Hook.on('TypePickerWindowCallback', function ({type, value}) {
-        if (type === 'GenericData' && value.definition) {
-            try {
-                const structure = JSON.parse(value.definition.structure)
 
-                if (structure.pickerField) {
+    /*
+        TypePicker: This gets called after the user picks items in a new window
+        filter the object with only the attributes that are specified as pickerFields
+     */
+    Hook.on(['TypePickerWindowCallback', 'TypePickerBeforeHandlePick'], function ({type, value, pickerField}) {
+        if (type === 'GenericData') {
+            try {
+                if (!pickerField) {
+                    const structure = JSON.parse(value.definition.structure)
+                    pickerField = structure.pickerField
+                }
+
+
+                if (pickerField) {
+
                     const newData = {}
-                    const pickerFields = structure.pickerField.constructor === Array ? structure.pickerField : [structure.pickerField]
-                    for (const pickerField of pickerFields) {
-                        newData[pickerField] = value.data[pickerField]
+                    if (pickerField.constructor !== Array) {
+                        pickerField = [pickerField]
+                    }
+
+                    for (const key of pickerField) {
+                        newData[key] = value.data[key]
                     }
 
                     value.data = newData
                     delete value.definition
                 }
+
             } catch (e) {
                 console.log('Error in TypePickerWindowCallback', e)
+            }
+        }
+    })
+
+    /*
+      TypePicker: This gets called after the user types in the picker field and before data are loaded
+   */
+    Hook.on('TypePickerBeforeHandleChange', function ({value, searchFields, type}) {
+        if (type === 'GenericData') {
+
+            if (searchFields) {
+                for (let i = 0; i < searchFields.length; i++) {
+                    if (!searchFields[i].startsWith('data.')) {
+                        searchFields[i] = 'data.' + searchFields[i]
+                    }
+                }
             }
         }
     })

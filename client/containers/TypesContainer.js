@@ -43,7 +43,7 @@ import {
 } from 'util/types'
 import {
     checkFieldType,
-    getFormFields,
+    getFormFieldsByType,
     typeDataToLabel,
     addAlwaysUpdateData
 } from 'util/typesAdmin'
@@ -327,7 +327,7 @@ class TypesContainer extends React.Component {
                                     <img style={{height: '40px'}}
                                          src={fieldValue}/>
                             } else if (['json', 'editor', 'jseditor'].indexOf(field.uitype) >= 0) {
-                                if ( fieldValue && fieldValue.constructor === String) {
+                                if (fieldValue && fieldValue.constructor === String) {
                                     if (fieldValue.length > 50) {
                                         dynamic[field.name] = <span
                                             className={classes.script}>{fieldValue.substring(0, 20) + '...' + fieldValue.substring(fieldValue.length - 20)}</span>
@@ -442,6 +442,7 @@ class TypesContainer extends React.Component {
                     }
                 },
                 {
+                    key: 'export_csv',
                     name: 'Export CSV', onClick: () => {
                         this.setState({
                             simpleDialog: {
@@ -496,7 +497,7 @@ class TypesContainer extends React.Component {
                     }
                 },
                 {
-                    name: 'View settings', onClick: () => {
+                    name: _t('TypesContainer.tableSettings'), onClick: () => {
                         this.setState({viewSettingDialog: true})
                     }
                 },
@@ -519,7 +520,7 @@ class TypesContainer extends React.Component {
                 })
             }
 
-            Hook.call('TypeTableAction', {type, actions}, this)
+            Hook.call('TypeTableAction', {type, actions, pageParams: this.pageParams}, this)
 
             this._renderedTable =
                 <SimpleTable key="typeTable"
@@ -600,7 +601,7 @@ class TypesContainer extends React.Component {
         const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, viewFilterDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
         const {title, classes} = this.props
         const {type, layout, fixType, noLayout} = this.pageParams
-        const formFields = getFormFields(type), columns = this.getTableColumns(type)
+        const formFields = getFormFieldsByType(type), columns = this.getTableColumns(type)
 
         if (!this.types[type]) {
             return <BaseLayout><Typography variant="subtitle1" color="error">Type {type} does not
@@ -617,7 +618,7 @@ class TypesContainer extends React.Component {
 
         if (viewFilterDialog !== undefined) {
 
-            const formFields = getFormFields(type), activeFormFields = {}
+            const formFields = getFormFieldsByType(type), activeFormFields = {}
 
 
             columns.map(c => {
@@ -730,9 +731,9 @@ class TypesContainer extends React.Component {
         const selectedLength = Object.keys(this.state.selectedrows).length
         const {description} = this.types[type]
         const content = [
-            title === false ? null :
+            !title && !this.pageParams.title ? null :
                 <Typography key="typeTitle" variant="h3"
-                            gutterBottom>{title || this.pageParams.title || (fixType ? fixType : 'Types')}</Typography>,
+                            gutterBottom>{title || this.pageParams.title}</Typography>,
             description ?
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : null,
             false && <ButtonGroup size="small" key="layoutChanger" className={classes.layoutChanger} disableElevation
@@ -928,7 +929,7 @@ class TypesContainer extends React.Component {
         }
 
         // check if field is hidden by default
-        const formFields = getFormFields(type)
+        const formFields = getFormFieldsByType(type)
         if (formFields && formFields[id] && formFields[id].hideColumnInTypes) {
             return false
         }
@@ -1116,7 +1117,7 @@ class TypesContainer extends React.Component {
     }
 
     enhanceOptimisticData(o) {
-        const formFields = getFormFields(this.pageParams.type)
+        const formFields = getFormFieldsByType(this.pageParams.type)
         for (let k in o) {
             if (o[k] && formFields[k] && formFields[k].localized) {
                 o[k] = {...o[k], __typename: 'LocalizedString'}
@@ -1339,7 +1340,9 @@ class TypesContainer extends React.Component {
     }
 
 
-    cloneData({type, page, limit, sort, filter, _version}, clonable) {
+    cloneData(clonable, optimisticData) {
+        const {type, page, limit, sort, filter, _version} = this.pageParams
+
         const {user} = this.props
 
         if (type) {
@@ -1351,14 +1354,18 @@ class TypesContainer extends React.Component {
                 mutation: queries.clone,
                 variables: {_version, ...clonable},
                 update: (store, {data}) => {
+                    const clonedData = data['clone' + type]
                     const freshData = {
-                        ...data['clone' + type],
+                        ...optimisticData,
+                        ...clonable,
+                        _id: clonedData._id,
+                        modifiedAt: null,
                         createdBy: {
                             _id: user.userData._id,
-                            username: user.userData.username,
-                            __typename: 'UserPublic'
+                            username: user.userData.username
                         }
                     }
+                    console.log(data['clone' + type], optimisticData)
 
                     const storeKey = this.getStoreKey(type)
 
@@ -1433,8 +1440,8 @@ class TypesContainer extends React.Component {
 
     goTo(args) {
         const {baseUrl} = this.props
-        const {type, page, limit, sort, filter, fixType, _version, layout, multi, baseFilter, noLayout} = Object.assign({}, this.pageParams, args)
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types' + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}&layout=${layout}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
+        const {type, page, limit, sort, filter, fixType, _version, layout, multi, baseFilter, noLayout, title} = Object.assign({}, this.pageParams, args)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types' + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}&layout=${layout}${title ? '&title=' + encodeURIComponent(title) : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
     }
 
 
@@ -1578,7 +1585,7 @@ class TypesContainer extends React.Component {
                 newData[field.name] = tpl.call({data})
             }
         })
-        this.cloneData(this.pageParams, {_id: data._id, ...newData})
+        this.cloneData({_id: data._id, ...newData}, data)
     }
     handleExportClick = (data, fields) => {
 

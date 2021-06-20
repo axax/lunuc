@@ -75,14 +75,22 @@ export const typeDataToLabel = (item, pickerField) => {
     return label.join(' ')
 }
 
-// returns the field informations of a type that are need to create a form
-export const getFormFields = (type) => {
+//
+
+/**
+ * returns a map with informations about the form field of a type
+ *
+ * @param {String} type
+ *
+ * @returns {Object} an object
+ */
+export const getFormFieldsByType = (type) => {
     if (typeFormFields[type]) return typeFormFields[type]
 
     const types = getTypes()
     if (!types[type]) {
         return null
-        //throw new Error('Cannot find type "'+type+'" in getFormFields')
+        //throw new Error('Cannot find type "'+type+'" in getFormFieldsByType')
     }
     typeFormFields[type] = {}
     if (!types[type].noUserRelation /*&& Util.hasCapability({userData: _app_.user}, 'manage_other_users')*/) {
@@ -136,9 +144,18 @@ export const getFormFields = (type) => {
     return typeFormFields[type]
 }
 
+export const getFormFieldsByFieldList = (fieldList) => {
+
+    const fields = {}
+    for (let i = 0; i < fieldList.length; ++i) {
+        fields[ fieldList[i].name ] = fieldList[i]
+    }
+    return fields
+}
+
 /* if the flag alwaysUpdate is set to true on a field that means the server expect the data on an update even if the data has not changed */
 export const addAlwaysUpdateData = (data, changedData, type) => {
-    const typeDef = getFormFields(type)
+    const typeDef = getFormFieldsByType(type)
     Object.keys(typeDef).forEach((key) => {
         if (typeDef[key].alwaysUpdate) {
             if( typeDef[key].reference && data[key] && data[key]._id){
@@ -160,7 +177,7 @@ export const addAlwaysUpdateData = (data, changedData, type) => {
  * @returns {Object} an new object with only ids for references
  */
 export const referencesToIds = (data, type) => {
-    const formFields = getFormFields(type)
+    const formFields = getFormFieldsByType(type)
     const newData = {}
 
     Object.keys(data).map(key => {
@@ -294,7 +311,8 @@ Hook.on('Types', ({types}) => {
                 fullWidth: true,
                 required: true,
                 uitype: 'password',
-                tab: 'General'
+                tab: 'General',
+                hideColumnInTypes: true
             },
             {
                 name: 'email',
@@ -314,17 +332,20 @@ Hook.on('Types', ({types}) => {
             },
             {
                 name: 'emailConfirmed',
-                type: 'Boolean'
+                type: 'Boolean',
+                hideColumnInTypes: true
             },
             {
                 name: 'requestNewPassword',
-                type: 'Boolean'
+                type: 'Boolean',
+                hideColumnInTypes: true
             },
             {
                 name: 'meta',
                 type: 'Object',
                 uitype: 'json',
-                tab: 'Meta'
+                tab: 'Meta',
+                hideColumnInTypes: true
             },
             {
                 name: 'lastLogin',
@@ -346,7 +367,8 @@ Hook.on('Types', ({types}) => {
                 reference: true,
                 multi: true,
                 fields: ['username'],
-                tab: _t('Types.accessControl')
+                tab: _t('Types.accessControl'),
+                hideColumnInTypes: true
             }
         ]
     }

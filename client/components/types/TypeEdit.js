@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import GenericForm from '../GenericForm'
 import Hook from '../../../util/hook'
-import {getFormFields, addAlwaysUpdateData, referencesToIds} from '../../../util/typesAdmin'
+import {getFormFieldsByType, addAlwaysUpdateData, referencesToIds} from '../../../util/typesAdmin'
 import {SimpleDialog} from 'ui/admin'
 import {_t} from 'util/i18n'
 
@@ -45,13 +45,12 @@ class TypeEdit extends React.Component {
             dataToEdit = this.props.initialData
         }
 
-        const formFields = Object.assign({},getFormFields(type))
+        const formFields = Object.assign({},getFormFieldsByType(type))
 
         if( !dataToEdit) {
             // delete createdBy if new data is created
             delete formFields.createdBy
         }
-
         const props = {
             title,
             fullWidth: true,
@@ -99,8 +98,7 @@ class TypeEdit extends React.Component {
                 return
             }
             editedData = Object.assign({}, this.createEditForm.state.fields)
-            const formFields = getFormFields(type)
-
+            const formFields = getFormFieldsByType(type)
 
             // convert array to single value for not multivalue references
             Object.keys(formFields).forEach(key => {
@@ -176,7 +174,6 @@ class TypeEdit extends React.Component {
                             // stringify Object and compare
                             const s1 = before ? before.constructor !== String ? JSON.stringify(before): before : ''
                             const s2 = editedDataWithRefs[k] ? editedDataWithRefs[k].constructor !== String ? JSON.stringify(editedDataWithRefs[k]): editedDataWithRefs[k] : ''
-
                             if( s1 !== s2) {
                                 editedDataToUpdate[k] = s2
                             }
@@ -186,7 +183,6 @@ class TypeEdit extends React.Component {
                         }
                     }
                 })
-
                 if (Object.keys(editedDataToUpdate).length > 0) {
                     // only send data if they have really changed
                     addAlwaysUpdateData(editedData, editedDataToUpdate, type)

@@ -43,7 +43,7 @@ import {propertyByPath, setPropertyByPath} from '../../../client/util/json'
 import GenericForm from '../../../client/components/GenericForm'
 import {_t} from 'util/i18n'
 import config from 'gen/config-client'
-import {getFormFields} from '../../../util/typesAdmin'
+import {getFormFieldsByType} from '../../../util/typesAdmin'
 import Hook from '../../../util/hook'
 import {client, Query, graphql} from '../../../client/middleware/graphql'
 import {withStyles} from '@material-ui/core/styles'
@@ -1405,7 +1405,7 @@ class CmsViewEditorContainer extends React.Component {
 
                     results[idx] = Object.assign(results[idx], optimisticData)
 
-                    const formFields = getFormFields(type)
+                    const formFields = getFormFieldsByType(type)
                     // convert type=Object to Object
                     Object.keys(formFields).forEach(key => {
                         const field = formFields[key]

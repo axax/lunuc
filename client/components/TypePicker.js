@@ -13,19 +13,24 @@ import {
     InputAdornment,
     DeleteIcon,
     SearchIcon,
-    LaunchIcon
+    LaunchIcon,
+    Card,
+    CardActions,
+    CardContent
 } from 'ui/admin'
 import {getImageTag, getImageSrc} from 'client/util/media'
 import {queryStatemantForType} from 'util/types'
 import {typeDataToLabel} from 'util/typesAdmin'
 import classNames from 'classnames'
 import config from 'gen/config-client'
+import {getFormFieldsByFieldList} from '../../util/typesAdmin'
 
 const {DEFAULT_LANGUAGE} = config
 
 import {client} from '../middleware/graphql'
 import Util from '../util'
-import Hook from "../../util/hook";
+import Hook from '../../util/hook'
+import GenericForm from './GenericForm'
 
 const styles = theme => {
     return {
@@ -44,6 +49,7 @@ const styles = theme => {
             display: 'flex',
             width: '100%',
             flexWrap: 'wrap',
+            marginTop: theme.spacing(2),
             marginBottom: theme.spacing(2)
         },
         clip: {
@@ -143,166 +149,221 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, type, filter, label} = this.props
+        const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, metaFields, type, filter, label} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
-        return <FormControl
+        return [<FormControl
             fullWidth={fullWidth} className={classNames(classes.root, className)}>
-            {!value.length || multi ?
-                <TextField error={error}
-                           fullWidth={fullWidth}
-                           className={classes.textField}
-                           helperText={helperText}
-                           value={textValue}
-                           onChange={this.handleChange.bind(this)}
-                           onKeyDown={this.handleKeyDown.bind(this)}
-                           onFocus={() => this.setState({hasFocus: true})}
-                           onBlur={this.handleBlur.bind(this)}
-                           placeholder={placeholder}
-                           label={label}
-                           InputLabelProps={{
-                               shrink: true,
-                           }}
-                           InputProps={{
-                               endAdornment: (
-                                   <InputAdornment position="end">
-                                       <IconButton
-                                           edge="end"
-                                           onClick={() => {
+                {!value.length || multi ?
+                    <TextField error={error}
+                               fullWidth={fullWidth}
+                               className={classes.textField}
+                               helperText={helperText}
+                               value={textValue}
+                               onChange={this.handleChange.bind(this)}
+                               onKeyDown={this.handleKeyDown.bind(this)}
+                               onFocus={() => this.setState({hasFocus: true})}
+                               onBlur={this.handleBlur.bind(this)}
+                               placeholder={placeholder}
+                               label={label}
+                               InputLabelProps={{
+                                   shrink: true,
+                               }}
+                               InputProps={{
+                                   endAdornment: (
+                                       <InputAdornment position="end">
+                                           <IconButton
+                                               edge="end"
+                                               onClick={() => {
 
-                                               const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
-                                                   left = (screen.width / 2) - (w / 2),
-                                                   top = (screen.height / 2) - (h / 2)
+                                                   const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
+                                                       left = (screen.width / 2) - (w / 2),
+                                                       top = (screen.height / 2) - (h / 2)
 
-                                               const newwindow = window.open(
-                                                   `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}`, '_blank',
-                                                   'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
+                                                   const newwindow = window.open(
+                                                       `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`, '_blank',
+                                                       'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
 
-                                               setTimeout(() => {
-                                                   newwindow.addEventListener('beforeunload', (e) => {
-                                                       const value = newwindow.resultValue
+                                                   setTimeout(() => {
+                                                       newwindow.addEventListener('beforeunload', (e) => {
+                                                           const value = newwindow.resultValue
 
-                                                       if(value) {
+                                                           if (value) {
 
-                                                           delete value.createdBy
+                                                               delete value.createdBy
 
-                                                           Hook.call('TypePickerWindowCallback', {value, type})
+                                                               Hook.call('TypePickerWindowCallback', {
+                                                                   value,
+                                                                   type,
+                                                                   pickerField
+                                                               })
 
 
-                                                           Util.removeNullValues(value, {
-                                                               recursiv: true,
-                                                               emptyObject: true,
-                                                               emptyArray: true,
-                                                               nullArrayItems: true
-                                                           })
-                                                           this.selectValue(value)
-                                                       }
-                                                       delete e['returnValue']
-                                                   })
-                                               }, 500)
-                                           }}>
-                                           <SearchIcon/>
-                                       </IconButton>
-                                   </InputAdornment>
-                               ),
-                           }}
-                /> : <InputLabel className={classes.label} shrink>{label}</InputLabel>}
+                                                               Util.removeNullValues(value, {
+                                                                   recursiv: true,
+                                                                   emptyObject: true,
+                                                                   emptyArray: true,
+                                                                   nullArrayItems: true
+                                                               })
+                                                               this.selectValue(value)
+                                                           }
+                                                           delete e['returnValue']
+                                                       })
+                                                   }, 500)
+                                               }}>
+                                               <SearchIcon/>
+                                           </IconButton>
+                                       </InputAdornment>
+                                   ),
+                               }}
+                    /> : <InputLabel className={classes.label} shrink>{label}</InputLabel>}
+
+                <Paper className={classes.suggestions} square>
+
+                    {hasFocus && data && data.results && data.results.map((item, idx) =>
+                        <MenuItem
+                            onClick={this.handlePick.bind(this, idx)}
+                            selected={selIdx === idx}
+                            key={idx}
+                            component="div"
+                            style={{
+                                fontWeight: selIdx === idx ? 500 : 400,
+                            }}
+                        >{item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image') === 0 ? getImageTag(item, {height: 30}) : ''} {typeDataToLabel(item, pickerField)}
+                        </MenuItem>
+                    )}
+
+
+                </Paper>
+            </FormControl>,
 
             <div className={classes.clips}>
-                {value.map((value, i) =>
-                    [
-                        (value && value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
-                            <div draggable={true}
-                                 data-index={i}
-                                 onDragStart={(e) => {
-                                     e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
-                                 }}
-                                 key={i}
-                                 className={classNames(classes.clip, multi && classes.clipMulti)}>
+                {value.map((singleValue, singleValueIndex) => {
+
+                        const components = []
+
+                        if (singleValue && singleValue.__typename === 'Media' && singleValue.mimeType && singleValue.mimeType.indexOf('image') === 0) {
+                            components.push(<div draggable={true}
+                                                 data-index={singleValueIndex}
+                                                 onDragStart={(e) => {
+                                                     e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
+                                                 }}
+                                                 key={singleValueIndex}
+                                                 className={classNames(classes.clip, multi && classes.clipMulti)}>
                                 <img className={classNames(classes.dummyImg, multi && classes.dummyImgMulti)}
-                                     src={getImageSrc(value)}/>
-                                <div className={classes.dummyTxt}>{typeDataToLabel(value, pickerField)}</div>
+                                     src={getImageSrc(singleValue)}/>
+                                <div className={classes.dummyTxt}>{typeDataToLabel(singleValue, pickerField)}</div>
 
                                 <IconButton className={classes.dummyRemove}
                                             edge="end"
-                                            onClick={this.handleRemovePick.bind(this, i)}
+                                            onClick={this.handleRemovePick.bind(this, singleValueIndex)}
                                 >
                                     <DeleteIcon/>
                                 </IconButton>
 
                                 <IconButton className={classes.openFile}
                                             edge="end"
-                                            onClick={()=>{
-                                                window.open(getImageSrc(value), '_blank').focus()
+                                            onClick={() => {
+                                                window.open(getImageSrc(singleValue), '_blank').focus()
                                             }}
                                 >
                                     <LaunchIcon/>
                                 </IconButton>
 
-                            </div> :
-                            <Chip draggable={true}
-                                  data-index={i}
-                                  onDragStart={(e) => {
-                                      e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
-                                  }}
-                                  key={i}
-                                  className={classNames(classes.clip)}
-                                  label={typeDataToLabel(value, pickerField)}
-                                  onDelete={this.handleRemovePick.bind(this, i)}
-                                  onClick={()=>{
-                                      if(value.type==='Media'){
-                                          window.open(getImageSrc(value), '_blank').focus()
-                                      }
-                                  }}
-                                  avatar={value && value.__typename === 'Media' && value.mimeType && value.mimeType.indexOf('image') === 0 ?
-                                      <Avatar src={getImageSrc(value, {height: 30})}/> : null}/>),
-                        <div key={'drop' + i}
-                             data-index={i}
-                             className={classes.clipDrop}
-                             onDrop={(e) => {
-                                 const targetIndex = parseInt(e.currentTarget.getAttribute('data-index')) + 1,
-                                     sourceIndex = parseInt(e.dataTransfer.getData("text"))
-                                 e.target.style.opacity = 0
+                            </div>)
+                        } else {
+                            if(metaFields){
 
-                                 const value = this.state.value.slice(0),
-                                     element = value.splice(sourceIndex, 1) [0]
+                                components.push(<Card variant="outlined" key={'metaFields' + singleValueIndex}>
+                                    <CardContent>
+                                    {typeDataToLabel(singleValue, pickerField)}
+                                    <GenericForm autoFocus
+                                                 innerRef={ref => {
+                                                     //parentRef.createEditForm = ref
+                                                 }}
+                                                 onBlur={event => {
+                                                 }}
+                                                 onChange={field => {
 
-                                 value.splice(targetIndex > sourceIndex ? targetIndex - 1 : targetIndex, 0, element)
 
-                                 this.setState({value})
-                                 this.props.onChange({target: {value, name: this.props.name}})
+                                                     const newValue = this.state.value.slice(0),
+                                                         newSingleValue = Object.assign({},newValue[singleValueIndex])
 
-                             }}
-                             onDragOver={(e) => {
-                                 e.preventDefault()
-                                 e.dataTransfer.dropEffect = 'copy'
-                                 e.target.style.opacity = 1
-                             }}
-                             onDragLeave={(e) => {
-                                 e.target.style.opacity = 0
-                             }}>Hier einfügen</div>]
+                                                     newSingleValue.metaValues = Object.assign({}, newSingleValue.metaValues)
+
+                                                     newSingleValue.metaValues[field.name] = field.value
+
+                                                     newValue[singleValueIndex] = newSingleValue
+
+                                                     this.props.onChange({target: {value: newValue, name: this.props.name}})
+                                                     this.setState({value: newValue, textValue: '', hastFocus: false, data: null})
+
+                                                 }}
+                                                 primaryButton={false}
+                                                 values={singleValue.metaValues}
+                                                 fields={ getFormFieldsByFieldList(metaFields) }/>
+
+                                    </CardContent>
+                                    <CardActions disableSpacing>
+
+                                        <IconButton onClick={this.handleRemovePick.bind(this, singleValueIndex)}>
+                                            <DeleteIcon/>
+                                        </IconButton>
+                                    </CardActions>
+                                </Card>)
+
+                            }else {
+                                components.push(<Chip draggable={true}
+                                                      data-index={singleValueIndex}
+                                                      onDragStart={(e) => {
+                                                          e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
+                                                      }}
+                                                      key={singleValueIndex}
+                                                      className={classNames(classes.clip)}
+                                                      label={typeDataToLabel(singleValue, pickerField)}
+                                                      onDelete={this.handleRemovePick.bind(this, singleValueIndex)}
+                                                      onClick={() => {
+                                                          if (singleValue.type === 'Media') {
+                                                              window.open(getImageSrc(singleValue), '_blank').focus()
+                                                          }
+                                                      }}
+                                                      avatar={singleValue && singleValue.__typename === 'Media' && singleValue.mimeType && singleValue.mimeType.indexOf('image') === 0 ?
+                                                          <Avatar src={getImageSrc(singleValue, {height: 30})}/> : null}/>)
+                            }
+                        }
+
+                        components.push(<div key={'drop' + singleValueIndex}
+                                             data-index={singleValueIndex}
+                                             className={classes.clipDrop}
+                                             onDrop={(e) => {
+                                                 const targetIndex = parseInt(e.currentTarget.getAttribute('data-index')) + 1,
+                                                     sourceIndex = parseInt(e.dataTransfer.getData("text"))
+                                                 e.target.style.opacity = 0
+
+                                                 const newValue = this.state.value.slice(0),
+                                                     element = newValue.splice(sourceIndex, 1) [0]
+
+                                                 newValue.splice(targetIndex > sourceIndex ? targetIndex - 1 : targetIndex, 0, element)
+
+                                                 this.setState({value: newValue})
+                                                 this.props.onChange({target: {value: newValue, name: this.props.name}})
+
+                                             }}
+                                             onDragOver={(e) => {
+                                                 e.preventDefault()
+                                                 e.dataTransfer.dropEffect = 'copy'
+                                                 e.target.style.opacity = 1
+                                             }}
+                                             onDragLeave={(e) => {
+                                                 e.target.style.opacity = 0
+                                             }}>Hier einfügen</div>)
+
+                        return components
+
+                    }
                 )
                 }
-            </div>
-
-            <Paper className={classes.suggestions} square>
-
-                {hasFocus && data && data.results && data.results.map((item, idx) =>
-                    <MenuItem
-                        onClick={this.handlePick.bind(this, idx)}
-                        selected={selIdx === idx}
-                        key={idx}
-                        component="div"
-                        style={{
-                            fontWeight: selIdx === idx ? 500 : 400,
-                        }}
-                    >{item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image') === 0 ? getImageTag(item, {height: 30}) : ''} {typeDataToLabel(item, pickerField)}
-                    </MenuItem>
-                )}
-
-
-            </Paper>
-        </FormControl>
+            </div>]
     }
 
     handleRemovePick(idx) {
@@ -318,14 +379,9 @@ class TypePicker extends React.Component {
         const value = this.state.data.results[idx]
 
         const {type, pickerField} = this.props
-        //TODO: move to extension
-        if (type === 'GenericData') {
-            if (pickerField && pickerField.constructor === String) {
-                const data = value.data
-                const newData = {[pickerField]: data[pickerField]}
-                value.data = newData
-            }
-        }
+
+        Hook.call('TypePickerBeforeHandlePick', {type, pickerField, value})
+
         Util.removeNullValues(value, {
             recursiv: true,
             emptyObject: true,
@@ -358,17 +414,31 @@ class TypePicker extends React.Component {
             this.setState({data: null, textValue: value})
         } else {
             this.setState({textValue: value})
-            const {searchFields} = this.props
-            let filter = ''
-            if (searchFields) {
-                searchFields.forEach(field => {
-                    filter += field + '=' + e.target.value + ' '
-                })
-            } else {
-                filter = e.target.value
-            }
+
+
             this.pickTimeout = setTimeout(() => {
                 clearTimeout(this.pickTimeout)
+
+                const searchFields = this.props.searchFields ? this.props.searchFields.slice() : []
+
+
+                Hook.call('TypePickerBeforeHandleChange', {
+                    value,
+                    searchFields,
+                    pickerField: this.props.pickerField,
+                    type: this.props.type
+                })
+
+
+                let filter = ''
+                if (searchFields.length > 0) {
+                    searchFields.forEach(field => {
+                        filter += field + '=' + value + ' '
+                    })
+                } else {
+                    filter = value
+                }
+
                 this.pickTimeout = 0
                 this.getData(filter + (this.props.filter ? ' && ' + this.props.filter : ''))
             }, 250)
@@ -402,10 +472,15 @@ class TypePicker extends React.Component {
 
             const nameStartLower = type.charAt(0).toLowerCase() + type.slice(1) + 's'
             let queryFields
+
+
+            // Hook.call('TypePickerBeforeGetData', {fields, pickerField, type})
+
+
             // TODO: move to genericData extension
-            if (pickerField && type!=='GenericData') {
+            if (pickerField && type !== 'GenericData') {
                 queryFields = pickerField
-            } else if (fields && type!=='GenericData') {
+            } else if (fields && type !== 'GenericData') {
 
                 queryFields = ''
 

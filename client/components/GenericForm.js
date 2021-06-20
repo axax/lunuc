@@ -377,6 +377,8 @@ class GenericForm extends React.Component {
 
     render() {
         const {fields, primaryButton, caption, classes, subForm} = this.props
+
+
         const fieldKeys = Object.keys(fields), formFields = [], tabs = []
 
 
@@ -479,7 +481,6 @@ class GenericForm extends React.Component {
                 })
 
             } else {
-
                 if (this.createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex})) {
                     continue
                 }
@@ -671,6 +672,7 @@ class GenericForm extends React.Component {
 
 
         } else if (uitype === 'type_picker') {
+
             currentFormFields.push(<TypePicker
                 value={(value ? (value.constructor === Array ? value : [value]) : null)}
                 error={!!this.state.fieldErrors[fieldKey]}
@@ -685,6 +687,7 @@ class GenericForm extends React.Component {
                 multi={field.multi}
                 pickerField={field.pickerField}
                 searchFields={field.searchFields}
+                metaFields={field.metaFields}
                 fields={field.fields}
                 type={field.type} placeholder={field.placeholder}/>)
         } else if (uitype === 'select') {

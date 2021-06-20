@@ -1,7 +1,7 @@
 import Util from '../../util'
 import {ObjectId} from 'mongodb'
 import {getType} from 'util/types'
-import {getFormFields} from 'util/typesAdmin'
+import {getFormFieldsByType} from 'util/typesAdmin'
 import config from 'gen/config'
 import {
     CAPABILITY_MANAGE_TYPES,
@@ -306,7 +306,7 @@ const GenericResolver = {
         }
 
         //check if this field is a reference
-        const fields = getFormFields(typeName)
+        const fields = getFormFieldsByType(typeName)
 
 
         const dataSet = Object.keys(data).reduce((o, k) => {
@@ -535,7 +535,7 @@ const GenericResolver = {
         const collection = db.collection(collectionName)
 
         //check if this field is a reference
-        const fields = getFormFields(typeName)
+        const fields = getFormFieldsByType(typeName)
 
         // clone object but without _id, _version and undefined property
         // null is when a refrence has been removed
@@ -642,7 +642,6 @@ const GenericResolver = {
             const doc = insertResult.ops[0]
 
             const result = {
-                ...clone,
                 _id: doc._id,
                 status: 'created',
                 createdBy: {
@@ -651,7 +650,7 @@ const GenericResolver = {
                 }
             }
             //check if this field is a reference
-            const fields = getFormFields(typeName)
+            const fields = getFormFieldsByType(typeName)
 
             if (fields) {
                 Object.keys(result).forEach(field => {

@@ -85,7 +85,7 @@
     "express": "^4.17.1",
     "express-graphql": "^0.12.0",
     "formidable": "^1.2.2",
-    "graphql": "^15.5.0",
+    "graphql": "^15.5.1",
     "graphql-subscriptions": "^1.2.1",
     "http2-proxy": "^5.0.53",
     "jsonwebtoken": "^8.5.1",

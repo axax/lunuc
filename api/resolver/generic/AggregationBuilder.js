@@ -1,6 +1,6 @@
 import Util from 'api/util'
 import {getType} from 'util/types'
-import {getFormFields} from 'util/typesAdmin'
+import {getFormFieldsByType} from 'util/typesAdmin'
 import {ObjectId} from 'mongodb'
 import config from 'gen/config'
 import Hook from 'util/hook'
@@ -63,7 +63,7 @@ export default class AggregationBuilder {
         } else {
             if (sort.constructor === String) {
 
-                const typeFields = getFormFields(this.type)
+                const typeFields = getFormFieldsByType(this.type)
 
                 // the sort string is in this format "field1 asc, field2 desc"
                 return sort.split(',').reduce((acc, val) => {
@@ -411,7 +411,7 @@ export default class AggregationBuilder {
 
 
     getFieldDefinition(fieldData, type) {
-        const typeFields = getFormFields(type)
+        const typeFields = getFormFieldsByType(type)
 
         let fieldDefinition = {}
         if (fieldData.constructor === Object) {
@@ -500,7 +500,7 @@ export default class AggregationBuilder {
             offset = this.getOffset(),
             page = this.getPage(),
             sort = this.getSort(),
-            typeFields = getFormFields(this.type),
+            typeFields = getFormFieldsByType(this.type),
             filters = this.getParsedFilter(this.options.filter),
             resultFilters = this.getParsedFilter(this.options.resultFilter)
 
@@ -584,7 +584,7 @@ export default class AggregationBuilder {
 
                 if (!refFields) {
                     projectResultData[fieldName] = 1
-                    const refFieldDefinitions = getFormFields(fieldDefinition.type)
+                    const refFieldDefinitions = getFormFieldsByType(fieldDefinition.type)
                     if (refFieldDefinitions) {
                         refFields = Object.keys(refFieldDefinitions)
                     }

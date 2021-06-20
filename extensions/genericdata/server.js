@@ -273,7 +273,6 @@ Hook.on('AggregationBuilderBeforeQuery', async ({db, type, filters}) => {
 
             const def = await getGenericTypeDefinitionWithStructure(db, {name: part.value})
 
-
             if (def) {
                 console.log(`change name ${part.value} to id ${def._id}`)
 
