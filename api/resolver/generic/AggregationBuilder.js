@@ -347,7 +347,7 @@ export default class AggregationBuilder {
             }
         } else if (type === 'Float') {
             filterValue = parseFloat(filterValue)
-        } else if (type === 'Object') {
+        } else if (type === 'Object' && filterValue) {
 
             filterValue = {
                 body: `function(data) {return data && Object.keys(data).some(key => /${filterValue}/i.test(data[key]))}`,

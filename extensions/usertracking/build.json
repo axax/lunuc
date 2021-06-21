@@ -52,7 +52,8 @@
         {
           "name": "data",
           "type": "Object",
-          "uitype": "json"
+          "uitype": "json",
+          "vagueSearchable": false
         },
         {
           "name": "referer",
@@ -60,7 +61,8 @@
         },
         {
           "name": "geodata",
-          "type": "Object"
+          "type": "Object",
+          "vagueSearchable": false
         }
       ]
     }

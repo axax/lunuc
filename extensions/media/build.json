@@ -43,20 +43,23 @@
           "type": "Object",
           "uitype": "json",
           "alwaysLoad": false,
-          "hideColumnInTypes": true
+          "hideColumnInTypes": true,
+          "vagueSearchable": false
         },
         {
           "name": "info",
           "type": "Object",
           "uitype": "json",
           "alwaysLoad": false,
-          "hideColumnInTypes": true
+          "hideColumnInTypes": true,
+          "vagueSearchable": false
         },
         {
           "name": "references",
           "type": "Object",
           "uitype": "json",
-          "hideColumnInTypes": true
+          "hideColumnInTypes": true,
+          "vagueSearchable": false
         },
         {
           "name": "size",
@@ -66,17 +69,20 @@
         {
           "name": "classifyImage",
           "type": "Boolean",
-          "hideColumnInTypes": true
+          "hideColumnInTypes": true,
+          "vagueSearchable": false
         },
         {
           "name": "useCdn",
           "type": "Boolean",
-          "hideColumnInTypes": true
+          "hideColumnInTypes": true,
+          "vagueSearchable": false
         },
         {
           "name": "private",
           "type": "Boolean",
-          "hideColumnInTypes": true
+          "hideColumnInTypes": true,
+          "vagueSearchable": false
         },
         {
           "name": "conversion",
