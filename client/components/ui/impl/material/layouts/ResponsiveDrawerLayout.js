@@ -191,7 +191,7 @@ const ResponsiveDrawer = (props) => {
         <div>
             <div className={classes.drawerHeader}>
 
-                <img className={classes.drawerLogo} src={logo || '/favicon.svg'}/>
+                {logo && <img className={classes.drawerLogo} src={logo}/>}
                 <div className={classes.drawerHeaderLeft}>{headerLeft}</div>
             </div>
             <Divider/>

@@ -14,7 +14,13 @@ import {
     SimpleMenu,
     BackupIcon,
     EditIcon,
-    InsertDriveFileIcon
+    InsertDriveFileIcon,
+    FolderIcon,
+    SubjectIcon,
+    ChatIcon,
+    LaunchIcon,
+    ShoppingCartIcon,
+    WebIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -43,7 +49,13 @@ const iconComponents = {
     settings: SettingsIcon,
     account: AccountCircleIcon,
     edit: EditIcon,
-    drive: InsertDriveFileIcon
+    drive: InsertDriveFileIcon,
+    folder: FolderIcon,
+    subject: SubjectIcon,
+    chat: ChatIcon,
+    launch: LaunchIcon,
+    web: WebIcon,
+    shop: ShoppingCartIcon
 }
 
 const BaseLayout = props => {

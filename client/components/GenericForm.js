@@ -38,8 +38,11 @@ const styles = theme => {
             margin: theme.spacing(3) + 'px 0'
         },
         formField: {
-            minWidth: 'calc(25% - ' + theme.spacing(2) + 'px)',
             margin: theme.spacing(1) + 'px',
+            width: 'calc(100% - ' + theme.spacing(2) + 'px)',
+            [theme.breakpoints.up('md')]: {
+                width: 'calc(50% - ' + theme.spacing(2) + 'px)'
+            }
         },
         formFieldFull: {
             width: 'calc(100% - ' + theme.spacing(2) + 'px)',

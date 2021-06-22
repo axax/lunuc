@@ -123,7 +123,8 @@
         "ViewModule",
         "ViewList",
         "FlipToBack",
-        "FlipToFront"
+        "FlipToFront",
+        "ShoppingCart"
       ],
       "theme":{
         "colors":{
