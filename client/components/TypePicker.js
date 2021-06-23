@@ -49,7 +49,7 @@ const styles = theme => {
             display: 'flex',
             width: '100%',
             flexWrap: 'wrap',
-            marginTop: theme.spacing(2),
+            marginTop: theme.spacing(0),
             marginBottom: theme.spacing(2)
         },
         clip: {

@@ -114,7 +114,7 @@ export const getFormFieldsByType = (type) => {
                 placeholder = _t('Types.selectType', field)
                 label = _t(`${type}.field.${field.name}`, null, `${field.name} -> ${field.type}`)
             } else {
-                label = _t(`${type}.field.${field.name}`, null, field.name)
+                label = _t(`${type}.field.${field.name}`, null, field.label || field.name)
                 placeholder = _t('Types.enterField', field)
             }
             typeFormFields[type][field.name] = Object.assign({},field, {label, placeholder, uitype})

@@ -747,7 +747,7 @@ class CmsViewEditorContainer extends React.Component {
                                 variables={{
                                     _version,
                                     limit: 99,
-                                    filter: `slug=^${slug.split('/')[0]}$ slug=^${slug.split('/')[0]}/`
+                                    filter: `slug=^${cmsPage.realSlug.split('/')[0]}$ slug=^${cmsPage.realSlug.split('/')[0]}/`
                                 }}>
                                 {({loading, error, data}) => {
                                     if (loading) return 'Loading...'
@@ -764,7 +764,7 @@ class CmsViewEditorContainer extends React.Component {
                                             }
                                         }
                                     )
-                                    if (menuItems.length === 0) return 'No related pages'
+                                    if (menuItems.length === 0) return _t('CmsViewEditorContainer.noRelatedPages')
                                     return menuItems
                                 }}
                             </Query>

@@ -460,4 +460,17 @@ export default () => {
         }
     })
 
+
+
+    /*
+      TypesContainer: This gets called before the filter dialog is shown
+   */
+    Hook.on('TypesContainerBeforeFilterDialog', function ({type, filterFields}) {
+        if (type === 'GenericData') {
+
+          //  console.log(this.state.data)
+        }
+    })
+
+
 }

@@ -16,6 +16,7 @@ export const translations = {
         'CmsViewEditorContainer.undochange': 'Änderung Rückgängig',
         'CmsViewEditorContainer.logout': 'Abmelden',
         'CmsViewEditorContainer.noOptions': 'Es sind keine Optionen definiert',
+        'CmsViewEditorContainer.noRelatedPages':'Keine verwandte Seiten',
         'CmsMenu.pages': 'Seiten'
     },
     en: {
@@ -35,6 +36,7 @@ export const translations = {
         'CmsViewEditorContainer.undochange': 'Undo change',
         'CmsViewEditorContainer.logout': 'Logout',
         'CmsViewEditorContainer.noOptions': 'There are no options defined',
+        'CmsViewEditorContainer.noRelatedPages':'No related pages',
         'CmsMenu.pages': 'Pages'
     }
 }

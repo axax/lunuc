@@ -703,7 +703,9 @@ class JsonDom extends React.Component {
                     }
                 }
 
-                if ($is && $is !== 'true') {
+                if( $is === false) {
+                    return
+                }else if ($is && $is !== 'true') {
                     if ($is === 'false' || matchExpr($is, scope)) {
                         return
                     }

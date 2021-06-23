@@ -28,9 +28,6 @@ import {
     SettingsIcon,
     Divider,
     Paper,
-    ButtonGroup,
-    ViewModuleIcon,
-    ViewListIcon,
     CloudUploadIcon
 } from 'ui/admin'
 import Util from 'client/util'
@@ -99,14 +96,6 @@ const styles = theme => ({
     searchDivider: {
         height: 28,
         margin: 4,
-    },
-    layoutChanger: {
-        position: 'absolute',
-        top: '1rem',
-        right: '1rem'
-    },
-    nomargin: {
-        margin: 0
     }
 })
 
@@ -131,7 +120,7 @@ class TypesContainer extends React.Component {
         // initial state
         this.state = {
             selectAllRows: false,
-            selectedrows: {},
+            selectedRows: {},
             confirmDeletionDialog: true,
             viewSettingDialog: undefined,
             viewFilterDialog: undefined,
@@ -223,7 +212,6 @@ class TypesContainer extends React.Component {
             this.pageParams._version !== pageParams._version ||
             this.pageParams.limit !== pageParams.limit ||
             this.pageParams.sort !== pageParams.sort ||
-            this.pageParams.layout !== pageParams.layout ||
             this.pageParams.baseFilter !== pageParams.baseFilter ||
             this.pageParams.filter !== pageParams.filter) {
 
@@ -236,18 +224,15 @@ class TypesContainer extends React.Component {
         return this.state !== state ||
             this.state.data !== state.data ||
             this.state.filter !== state.filter ||
-            this.state.selectedrows !== state.selectedrows ||
+            this.state.selectedRows !== state.selectedRows ||
             this.props.location !== props.location ||
             this.props.baseFilter !== props.baseFilter ||
             settingsChanged
     }
 
     renderTable(columns) {
-        if (this._renderedTable) {
-            return this._renderedTable
-        }
         const {classes} = this.props
-        const {data, selectedrows} = this.state
+        const {data, selectedRows} = this.state
         if (data) {
 
             const {type, page, limit, sort, _version} = this.pageParams
@@ -271,7 +256,7 @@ class TypesContainer extends React.Component {
                     if (columnsMap['check']) {
                         // add a checkbox to the first column
                         dynamic.check = <Checkbox
-                            checked={!!selectedrows[item._id]}
+                            checked={!!selectedRows[item._id]}
                             onChange={this.handleRowSelect.bind(this)}
                             value={item._id}
                         />
@@ -431,7 +416,7 @@ class TypesContainer extends React.Component {
             /* HOOK */
             Hook.call('TypeTable', {type, dataSource, data, fields, container: this})
 
-            const selectedLength = Object.keys(this.state.selectedrows).length
+            const selectedLength = Object.keys(this.state.selectedRows).length
             const actions = [
                 {
                     name: _t('TypesContainer.addNew', {type}), onClick: () => {
@@ -522,8 +507,7 @@ class TypesContainer extends React.Component {
 
             Hook.call('TypeTableAction', {type, actions, pageParams: this.pageParams}, this)
 
-            this._renderedTable =
-                <SimpleTable key="typeTable"
+            return <SimpleTable key="typeTable"
                              style={{marginBottom: window.opener && selectedLength > 0 && this.pageParams.multi === 'true' ? '5rem' : ''}}
                              title=""
                              onRowClick={this.handleRowClick.bind(this)}
@@ -589,7 +573,6 @@ class TypesContainer extends React.Component {
                              onChangePage={this.handleChangePage.bind(this)}
                              onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
 
-            return this._renderedTable
         }
 
         return null
@@ -600,7 +583,7 @@ class TypesContainer extends React.Component {
         const startTime = new Date()
         const {simpleDialog, dataToEdit, createEditDialog, viewSettingDialog, viewFilterDialog, confirmCloneColDialog, manageColDialog, dataToDelete, dataToBulkEdit, confirmDeletionDialog} = this.state
         const {title, classes} = this.props
-        const {type, layout, fixType, noLayout} = this.pageParams
+        const {type, fixType, noLayout} = this.pageParams
         const formFields = getFormFieldsByType(type), columns = this.getTableColumns(type)
 
         if (!this.types[type]) {
@@ -618,17 +601,25 @@ class TypesContainer extends React.Component {
 
         if (viewFilterDialog !== undefined) {
 
-            const formFields = getFormFieldsByType(type), activeFormFields = {}
+            const formFields = getFormFieldsByType(type), filterFields = {}
 
 
             columns.map(c => {
                 if (formFields[c.id] && formFields[c.id].type !== 'Object' && formFields[c.id].uitype !== 'password' && this.isColumnActive(type, c.id)) {
-                    activeFormFields[c.id] = Object.assign({}, formFields[c.id])
-                    activeFormFields[c.id].fullWidth = true
-                    delete activeFormFields[c.id].tab
-                    delete activeFormFields[c.id].required
+                    const filterField = Object.assign({}, formFields[c.id])
+                    filterField.fullWidth = true
+                    delete filterField.tab
+                    delete filterField.required
+                    if(['editor','json'].indexOf(filterField.uitype)>=0 ){
+                        filterField.uitype = 'text'
+                    }
+
+                    filterFields[c.id] = filterField
                 }
             })
+
+            Hook.call('TypesContainerBeforeFilterDialog', {type, filterFields}, this)
+
 
             let formRef
             viewFilterDialogProps = {
@@ -643,14 +634,14 @@ class TypesContainer extends React.Component {
                                 newFilter += ' && '
                             }
 
-                            if (value.constructor === String) {
-                                newFilter += `${fieldKey}=${value}`
-                            } else {
+                            if (value.constructor === Array) {
                                 let ids = []
                                 value.forEach(item => {
                                     ids.push(item._id)
                                 })
                                 newFilter += `${fieldKey}=[${ids.join(',')}]`
+                            } else {
+                                newFilter += `${fieldKey}=${value}`
                             }
 
                         }
@@ -668,9 +659,11 @@ class TypesContainer extends React.Component {
                 children: <div>
                     <GenericForm primaryButton={false} ref={(e) => {
                         formRef = e
-                    }} fields={activeFormFields}/>
+                    }} fields={filterFields}/>
                 </div>
             }
+
+
         }
 
         if (viewSettingDialog !== undefined) {
@@ -728,7 +721,7 @@ class TypesContainer extends React.Component {
                 children: <ManageCollectionClones type={type}/>
             }
         }
-        const selectedLength = Object.keys(this.state.selectedrows).length
+        const selectedLength = Object.keys(this.state.selectedRows).length
         const {description} = this.types[type]
         const content = [
             !title && !this.pageParams.title ? null :
@@ -736,19 +729,6 @@ class TypesContainer extends React.Component {
                             gutterBottom>{title || this.pageParams.title}</Typography>,
             description ?
                 <Typography key="typeDescription" variant="subtitle1" gutterBottom>{description}</Typography> : null,
-            false && <ButtonGroup size="small" key="layoutChanger" className={classes.layoutChanger} disableElevation
-                                  variant="contained" color="primary">
-                <Button onClick={() => {
-                    this.setSettingsForType(this.pageParams.type, {layout: 'list'})
-                    this.goTo({layout: 'list'})
-                }} variant={this.pageParams.layout === 'list' ? 'outlined' : ''}
-                        className={classes.nomargin}><ViewListIcon/></Button>
-                <Button onClick={() => {
-                    this.setSettingsForType(this.pageParams.type, {layout: 'module'})
-                    this.goTo({layout: 'module'})
-                }} variant={this.pageParams.layout === 'module' ? 'outlined' : ''}
-                        className={classes.nomargin}><ViewModuleIcon/></Button>
-            </ButtonGroup>,
             <div key="typeHeader">
                 <Row spacing={2}>
                     {!fixType &&
@@ -795,7 +775,7 @@ class TypesContainer extends React.Component {
                     </Col>
                 </Row>
             </div>,
-            layout === 'list' ? <div key="rebderedTable">{this.renderTable(columns)}</div> : null,
+            this.renderTable(columns),
             dataToDelete &&
             <SimpleDialog key="deleteDialog" open={confirmDeletionDialog} onClose={this.handleConfirmDeletion}
                           actions={[{key: 'yes', label: _t('core.yes')}, {
@@ -887,7 +867,7 @@ class TypesContainer extends React.Component {
 
 
                                 this.state.data.results.forEach(item => {
-                                    if (this.state.selectedrows[item._id]) {
+                                    if (this.state.selectedRows[item._id]) {
                                         items.push(item)
                                     }
                                 })
@@ -965,14 +945,14 @@ class TypesContainer extends React.Component {
         const value = e.target.value
         if (value === 'delete') {
             const dataToDelete = []
-            Object.keys(this.state.selectedrows).forEach(_id => {
+            Object.keys(this.state.selectedRows).forEach(_id => {
                 dataToDelete.push({_id})
             })
             this.setState({dataToDelete, confirmDeletionDialog: true})
 
         } else if (value === 'edit') {
             const dataToBulkEdit = []
-            Object.keys(this.state.selectedrows).forEach(_id => {
+            Object.keys(this.state.selectedRows).forEach(_id => {
                 dataToBulkEdit.push(_id)
             })
             this.setState({dataToBulkEdit})
@@ -982,13 +962,13 @@ class TypesContainer extends React.Component {
 
     handleRowSelect(e) {
         const target = e.target, checked = target.checked, value = target.value
-        const selectedrows = Object.assign({}, this.state.selectedrows)
+        const selectedRows = Object.assign({}, this.state.selectedRows)
 
         const update = (value) => {
             if (checked) {
-                selectedrows[value] = checked
+                selectedRows[value] = checked
             } else {
-                delete selectedrows[value]
+                delete selectedRows[value]
             }
         }
         let selectAllRows = false
@@ -1005,8 +985,7 @@ class TypesContainer extends React.Component {
         } else {
             update(value)
         }
-        this._renderedTable = null
-        this.setState({selectedrows, selectAllRows})
+        this.setState({selectedRows, selectAllRows})
 
     }
 
@@ -1074,7 +1053,7 @@ class TypesContainer extends React.Component {
 
     determinePageParams(props) {
         const {params} = props.match || {}
-        const {p, l, s, f, v, noLayout, fixType, title, baseFilter, multi, layout} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v, noLayout, fixType, title, baseFilter, multi} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
@@ -1105,7 +1084,6 @@ class TypesContainer extends React.Component {
             page: pInt || typeSettings.page || 1,
             sort: s || typeSettings.sort || '',
             filter: f || typeSettings.filter || '',
-            layout: layout || typeSettings.layout || 'list',
             _version: v || typeSettings._version || 'default'
         }
         result.type = type
@@ -1145,8 +1123,6 @@ class TypesContainer extends React.Component {
                         if (storeData && storeData[storeKey]) {
                             // oh data are available in cache. show them first
                             setTimeout(() => {
-
-                                this._renderedTable = null
                                 const newState = {data: storeData[storeKey]}
 
                                 if (typeChanged) {
@@ -1166,7 +1142,6 @@ class TypesContainer extends React.Component {
                     variables
                 }).then(response => {
                     const o = response.data[storeKey]
-                    this._renderedTable = null
                     const newState = {data: o}
 
                     if (typeChanged) {
@@ -1176,7 +1151,6 @@ class TypesContainer extends React.Component {
 
                 }).catch(error => {
                     console.log(error.message)
-                    this._renderedTable = null
                     this.setState({data: null})
                 })
 
@@ -1228,7 +1202,6 @@ class TypesContainer extends React.Component {
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
-                        this._renderedTable = null
                         this.setState({data: newData})
                     }
 
@@ -1271,8 +1244,6 @@ class TypesContainer extends React.Component {
                                 variables,
                                 data: {...storeData, [storeKey]: newData}
                             })
-                            this._renderedTable = null
-
 
                             this.setState({data: newData})
                         }
@@ -1329,7 +1300,6 @@ class TypesContainer extends React.Component {
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
-                        this._renderedTable = null
                         this.setState({data: newData})
 
                     }
@@ -1388,7 +1358,6 @@ class TypesContainer extends React.Component {
                             variables,
                             data: {...storeData, [storeKey]: newData}
                         })
-                        this._renderedTable = null
                         this.setState({data: newData})
                     }
 
@@ -1424,15 +1393,6 @@ class TypesContainer extends React.Component {
                             })
                         }
                     }
-
-                    /*const freshData = {
-                     ...data['clone' + type],
-                     createdBy: {
-                     _id: user.userData._id,
-                     username: user.userData.username,
-                     __typename: 'UserPublic'
-                     }
-                     }*/
                 }
             })
         }
@@ -1440,8 +1400,8 @@ class TypesContainer extends React.Component {
 
     goTo(args) {
         const {baseUrl} = this.props
-        const {type, page, limit, sort, filter, fixType, _version, layout, multi, baseFilter, noLayout, title} = Object.assign({}, this.pageParams, args)
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types' + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}&layout=${layout}${title ? '&title=' + encodeURIComponent(title) : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
+        const {type, page, limit, sort, filter, fixType, _version, multi, baseFilter, noLayout, title} = Object.assign({}, this.pageParams, args)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types' + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
     }
 
 
@@ -1568,7 +1528,6 @@ class TypesContainer extends React.Component {
 
             }).catch(error => {
                 console.log(error.message)
-                this._renderedTable = null
                 this.setState({data: null})
             })
 
@@ -1614,7 +1573,7 @@ class TypesContainer extends React.Component {
                 return acc
             }, []))
         }
-        this.setState({confirmDeletionDialog: false, dataToDelete: false, selectAllRows: false, selectedrows: {}})
+        this.setState({confirmDeletionDialog: false, dataToDelete: false, selectAllRows: false, selectedRows: {}})
     }
 
     handleCloneClollection = (action) => {
@@ -1631,7 +1590,6 @@ class TypesContainer extends React.Component {
     }
 
     handleViewSettingClose = (action) => {
-        this._renderedTable = null
         this.setState({viewSettingDialog: false})
     }
 
