@@ -154,88 +154,88 @@ class TypePicker extends React.Component {
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
         return [<FormControl
             fullWidth={fullWidth} className={classNames(classes.root, className)}>
-                {!value.length || multi ?
-                    <TextField error={error}
-                               fullWidth={fullWidth}
-                               className={classes.textField}
-                               helperText={helperText}
-                               value={textValue}
-                               onChange={this.handleChange.bind(this)}
-                               onKeyDown={this.handleKeyDown.bind(this)}
-                               onFocus={() => this.setState({hasFocus: true})}
-                               onBlur={this.handleBlur.bind(this)}
-                               placeholder={placeholder}
-                               label={label}
-                               InputLabelProps={{
-                                   shrink: true,
-                               }}
-                               InputProps={{
-                                   endAdornment: (
-                                       <InputAdornment position="end">
-                                           <IconButton
-                                               edge="end"
-                                               onClick={() => {
+            {!value.length || multi ?
+                <TextField error={error}
+                           fullWidth={fullWidth}
+                           className={classes.textField}
+                           helperText={helperText}
+                           value={textValue}
+                           onChange={this.handleChange.bind(this)}
+                           onKeyDown={this.handleKeyDown.bind(this)}
+                           onFocus={() => this.setState({hasFocus: true})}
+                           onBlur={this.handleBlur.bind(this)}
+                           placeholder={placeholder}
+                           label={label}
+                           InputLabelProps={{
+                               shrink: true,
+                           }}
+                           InputProps={{
+                               endAdornment: (
+                                   <InputAdornment position="end">
+                                       <IconButton
+                                           edge="end"
+                                           onClick={() => {
 
-                                                   const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
-                                                       left = (screen.width / 2) - (w / 2),
-                                                       top = (screen.height / 2) - (h / 2)
+                                               const w = screen.width / 3 * 2, h = screen.height / 3 * 2,
+                                                   left = (screen.width / 2) - (w / 2),
+                                                   top = (screen.height / 2) - (h / 2)
 
-                                                   const newwindow = window.open(
-                                                       `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`, '_blank',
-                                                       'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
+                                               const newwindow = window.open(
+                                                   `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&multi=${multi}&fixType=${type}${filter ? '&baseFilter=' + encodeURIComponent(filter) : ''}${label ? '&title=' + encodeURIComponent(label) : ''}`, '_blank',
+                                                   'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
 
-                                                   setTimeout(() => {
-                                                       newwindow.addEventListener('beforeunload', (e) => {
-                                                           const value = newwindow.resultValue
+                                               setTimeout(() => {
+                                                   newwindow.addEventListener('beforeunload', (e) => {
+                                                       const value = newwindow.resultValue
 
-                                                           if (value) {
+                                                       if (value) {
 
-                                                               delete value.createdBy
+                                                           delete value.createdBy
 
-                                                               Hook.call('TypePickerWindowCallback', {
-                                                                   value,
-                                                                   type,
-                                                                   pickerField
-                                                               })
-
-
-                                                               Util.removeNullValues(value, {
-                                                                   recursiv: true,
-                                                                   emptyObject: true,
-                                                                   emptyArray: true,
-                                                                   nullArrayItems: true
-                                                               })
-                                                               this.selectValue(value)
-                                                           }
-                                                           delete e['returnValue']
-                                                       })
-                                                   }, 500)
-                                               }}>
-                                               <SearchIcon/>
-                                           </IconButton>
-                                       </InputAdornment>
-                                   ),
-                               }}
-                    /> : <InputLabel className={classes.label} shrink>{label}</InputLabel>}
-
-                <Paper className={classes.suggestions} square>
-
-                    {hasFocus && data && data.results && data.results.map((item, idx) =>
-                        <MenuItem
-                            onClick={this.handlePick.bind(this, idx)}
-                            selected={selIdx === idx}
-                            key={idx}
-                            component="div"
-                            style={{
-                                fontWeight: selIdx === idx ? 500 : 400,
-                            }}
-                        >{item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image') === 0 ? getImageTag(item, {height: 30}) : ''} {typeDataToLabel(item, pickerField)}
-                        </MenuItem>
-                    )}
+                                                           Hook.call('TypePickerWindowCallback', {
+                                                               value,
+                                                               type,
+                                                               pickerField
+                                                           })
 
 
-                </Paper>
-            </FormControl>,
+                                                           Util.removeNullValues(value, {
+                                                               recursiv: true,
+                                                               emptyObject: true,
+                                                               emptyArray: true,
+                                                               nullArrayItems: true
+                                                           })
+                                                           this.selectValue(value)
+                                                       }
+                                                       delete e['returnValue']
+                                                   })
+                                               }, 500)
+                                           }}>
+                                           <SearchIcon/>
+                                       </IconButton>
+                                   </InputAdornment>
+                               ),
+                           }}
+                /> : <InputLabel className={classes.label} shrink>{label}</InputLabel>}
+
+            <Paper className={classes.suggestions} square>
+
+                {hasFocus && data && data.results && data.results.map((item, idx) =>
+                    <MenuItem
+                        onClick={this.handlePick.bind(this, idx)}
+                        selected={selIdx === idx}
+                        key={idx}
+                        component="div"
+                        style={{
+                            fontWeight: selIdx === idx ? 500 : 400,
+                        }}
+                    >{item.__typename === 'Media' && item.mimeType && item.mimeType.indexOf('image') === 0 ? getImageTag(item, {height: 30}) : ''} {typeDataToLabel(item, pickerField)}
+                    </MenuItem>
+                )}
+
+
+            </Paper>
+        </FormControl>,
 
             <div className={classes.clips}>
                 {value.map((singleValue, singleValueIndex) => {
@@ -272,36 +272,46 @@ class TypePicker extends React.Component {
 
                             </div>)
                         } else {
-                            if(metaFields){
+                            if (metaFields) {
 
                                 components.push(<Card variant="outlined" key={'metaFields' + singleValueIndex}>
                                     <CardContent>
-                                    {typeDataToLabel(singleValue, pickerField)}
-                                    <GenericForm autoFocus
-                                                 innerRef={ref => {
-                                                     //parentRef.createEditForm = ref
-                                                 }}
-                                                 onBlur={event => {
-                                                 }}
-                                                 onChange={field => {
+                                        {typeDataToLabel(singleValue, pickerField)}
+                                        <GenericForm autoFocus
+                                                     innerRef={ref => {
+                                                         //parentRef.createEditForm = ref
+                                                     }}
+                                                     onBlur={event => {
+                                                     }}
+                                                     onChange={field => {
 
 
-                                                     const newValue = this.state.value.slice(0),
-                                                         newSingleValue = Object.assign({},newValue[singleValueIndex])
+                                                         const newValue = this.state.value.slice(0),
+                                                             newSingleValue = Object.assign({}, newValue[singleValueIndex])
 
-                                                     newSingleValue.metaValues = Object.assign({}, newSingleValue.metaValues)
+                                                         newSingleValue.metaValues = Object.assign({}, newSingleValue.metaValues)
 
-                                                     newSingleValue.metaValues[field.name] = field.value
+                                                         newSingleValue.metaValues[field.name] = field.value
 
-                                                     newValue[singleValueIndex] = newSingleValue
+                                                         newValue[singleValueIndex] = newSingleValue
 
-                                                     this.props.onChange({target: {value: newValue, name: this.props.name}})
-                                                     this.setState({value: newValue, textValue: '', hastFocus: false, data: null})
+                                                         this.props.onChange({
+                                                             target: {
+                                                                 value: newValue,
+                                                                 name: this.props.name
+                                                             }
+                                                         })
+                                                         this.setState({
+                                                             value: newValue,
+                                                             textValue: '',
+                                                             hastFocus: false,
+                                                             data: null
+                                                         })
 
-                                                 }}
-                                                 primaryButton={false}
-                                                 values={singleValue.metaValues}
-                                                 fields={ getFormFieldsByFieldList(metaFields) }/>
+                                                     }}
+                                                     primaryButton={false}
+                                                     values={singleValue.metaValues}
+                                                     fields={getFormFieldsByFieldList(metaFields)}/>
 
                                     </CardContent>
                                     <CardActions disableSpacing>
@@ -312,7 +322,7 @@ class TypePicker extends React.Component {
                                     </CardActions>
                                 </Card>)
 
-                            }else {
+                            } else {
                                 components.push(<Chip draggable={true}
                                                       data-index={singleValueIndex}
                                                       onDragStart={(e) => {

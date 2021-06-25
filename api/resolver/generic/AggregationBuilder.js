@@ -879,13 +879,13 @@ export default class AggregationBuilder {
         }
 
         if (includeCount) {
-            facet.$facet.meta = [
+            facet.$facet.count = [
                 {$count: 'count'}
             ]
 
 
             if (hasResultMatch) {
-                facet.$facet.meta.unshift({$match: resultMatch})
+                facet.$facet.count.unshift({$match: resultMatch})
             }
         }
 

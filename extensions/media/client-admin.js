@@ -128,18 +128,25 @@ export default () => {
     Hook.on('TypeCreateEdit', function ({type, props, dataToEdit, meta}) {
         if (type === 'Media') {
             fileToUpload=false
-            if (!dataToEdit && meta.option === 'upload') {
+
+            // access data from TypeContainer
+            const createEditDialogOption = meta.TypeContainer.state.createEditDialogOption,
+                mediaSetting = meta.TypeContainer.settings.Media
+
+
+            if (!dataToEdit && createEditDialogOption === 'upload') {
+
                 // remove save button
                 props.actions.splice(1, 1)
 
                 const MediaUploader = () => {
 
                     const [conversion, setConversion] = useState(
-                        meta._this.settings.Media && meta._this.settings.Media.conversion ? meta._this.settings.Media.conversion : []
+                        mediaSetting && mediaSetting.conversion ? mediaSetting.conversion : []
                     )
 
                     const [group, setGroup] = useState(
-                        meta._this.settings.Media && meta._this.settings.Media.group ? meta._this.settings.Media.group : []
+                        mediaSetting && mediaSetting.group ? mediaSetting.group : []
                     )
 
                     const [useCdn, setUseCdn] = useState(
@@ -155,13 +162,13 @@ export default () => {
                             <div style={{position: 'relative', zIndex: 3}} key="typePicker">
                                 <TypePicker value={conversion} onChange={(e) => {
                                     setConversion(e.target.value)
-                                    meta._this.setSettingsForType(type, {conversion: e.target.value})
+                                    meta.TypeContainer.setSettingsForType(type, {conversion: e.target.value})
 
                                 }} name="conversion" placeholder="Select a conversion"
                                             type="MediaConversion"/>
 
                                 <TypePicker value={group} onChange={(e) => {
-                                    meta._this.setSettingsForType(type, {group: e.target.value})
+                                    meta.TypeContainer.setSettingsForType(type, {group: e.target.value})
                                     setGroup(e.target.value)
                                 }} multi={true} name="group" placeholder={_t('Media.selectGroup')}
                                             type="MediaGroup"/>
@@ -179,14 +186,14 @@ export default () => {
                                       maxSize={10000}
                                       imagePreview={false}
                                       onSuccess={r => {
-                                          if (meta._this) {
+                                          if (meta.TypeContainer) {
                                               setTimeout(() => {
-                                                  meta._this.setState({
+                                                  meta.TypeContainer.setState({
                                                       createEditDialog: false,
                                                       createEditDialogOption: null
                                                   })
 
-                                                  meta._this.getData(meta, false)
+                                                  meta.TypeContainer.getData(meta, false)
                                               }, 2000)
 
                                           }
@@ -316,7 +323,6 @@ export default () => {
                     <Col md={3}>
 
                         <TypePicker value={group} onChange={(e) => {
-                            // meta._this.setSettingsForType(type, {group: e.target.value})
                             setGroup(e.target.value)
                         }} multi={true} name="group" placeholder={_t('Media.selectGroup')}
                                     type="MediaGroup"/>

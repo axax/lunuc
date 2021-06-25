@@ -213,6 +213,7 @@ class TypesContainer extends React.Component {
             this.pageParams.limit !== pageParams.limit ||
             this.pageParams.sort !== pageParams.sort ||
             this.pageParams.baseFilter !== pageParams.baseFilter ||
+            this.pageParams.meta !== pageParams.meta ||
             this.pageParams.filter !== pageParams.filter) {
 
             this.pageParams = pageParams
@@ -508,70 +509,70 @@ class TypesContainer extends React.Component {
             Hook.call('TypeTableAction', {type, actions, pageParams: this.pageParams}, this)
 
             return <SimpleTable key="typeTable"
-                             style={{marginBottom: window.opener && selectedLength > 0 && this.pageParams.multi === 'true' ? '5rem' : ''}}
-                             title=""
-                             onRowClick={this.handleRowClick.bind(this)}
-                             dataSource={dataSource}
-                             columns={columnsFiltered}
-                             count={data.total}
-                             rowsPerPage={limit} page={page}
-                             orderBy={asort[0]}
-                             header={this.types[type].collectionClonable &&
-                             <Query query={COLLECTIONS_QUERY}
-                                    fetchPolicy="cache-and-network"
-                                    variables={{filter: '^' + type + '_.*'}}>
-                                 {({loading, error, data}) => {
-                                     if (loading) return 'Loading...'
-                                     if (error) return `Error! ${error.message}`
+                                style={{marginBottom: window.opener && selectedLength > 0 && this.pageParams.multi === 'true' ? '5rem' : ''}}
+                                title=""
+                                onRowClick={this.handleRowClick.bind(this)}
+                                dataSource={dataSource}
+                                columns={columnsFiltered}
+                                count={data.total}
+                                rowsPerPage={limit} page={page}
+                                orderBy={asort[0]}
+                                header={this.types[type].collectionClonable &&
+                                <Query query={COLLECTIONS_QUERY}
+                                       fetchPolicy="cache-and-network"
+                                       variables={{filter: '^' + type + '_.*'}}>
+                                    {({loading, error, data}) => {
+                                        if (loading) return 'Loading...'
+                                        if (error) return `Error! ${error.message}`
 
-                                     if (!data.collections.results) return null
+                                        if (!data.collections.results) return null
 
-                                     const items = data.collections.results.reduce((a, c) => {
-                                         const value = c.name.substring(c.name.indexOf('_') + 1)
-                                         let date, name = 'no name'
+                                        const items = data.collections.results.reduce((a, c) => {
+                                            const value = c.name.substring(c.name.indexOf('_') + 1)
+                                            let date, name = 'no name'
 
-                                         if (value.indexOf('_') >= 0) {
-                                             date = value.substring(0, value.indexOf('_'))
-                                             name = value.substring(value.indexOf('_') + 1).replace('_', ' ')
-                                         } else {
-                                             date = value
-                                         }
+                                            if (value.indexOf('_') >= 0) {
+                                                date = value.substring(0, value.indexOf('_'))
+                                                name = value.substring(value.indexOf('_') + 1).replace('_', ' ')
+                                            } else {
+                                                date = value
+                                            }
 
-                                         a.push({
-                                             value,
-                                             name: Util.formattedDatetime(date) + (name ? ' - ' + name : '')
-                                         })
-                                         return a
-                                     }, [])
-                                     items.unshift({value: 'default', name: 'Default'})
+                                            a.push({
+                                                value,
+                                                name: Util.formattedDatetime(date) + (name ? ' - ' + name : '')
+                                            })
+                                            return a
+                                        }, [])
+                                        items.unshift({value: 'default', name: 'Default'})
 
 
-                                     return <SimpleSelect
-                                         label={_t('TypesContainer.selectVersion')}
-                                         value={_version}
-                                         onChange={(e) => {
-                                             const {type} = this.pageParams
-                                             this.goTo({_version: e.target.value})
-                                             this.setSettingsForType(type, {_version: e.target.value})
-                                         }}
-                                         items={items}
-                                     />
-                                 }}
-                             </Query>
-                             }
-                             actions={actions}
-                             footer={<div style={{display: 'flex', alignItems: 'center'}}><p
-                                 style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows', {count: selectedLength})}</p>{selectedLength ?
-                                 <SimpleSelect
-                                     label="Select action"
-                                     value=""
-                                     onChange={this.handleBatchAction.bind(this)}
-                                     items={[{name: 'Delete', value: 'delete'}, {name: 'Bulk edit', value: 'edit'}]}
-                                 /> : ''}</div>}
-                             orderDirection={asort.length > 1 && asort[1] || null}
-                             onSort={this.handleSortChange}
-                             onChangePage={this.handleChangePage.bind(this)}
-                             onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
+                                        return <SimpleSelect
+                                            label={_t('TypesContainer.selectVersion')}
+                                            value={_version}
+                                            onChange={(e) => {
+                                                const {type} = this.pageParams
+                                                this.goTo({_version: e.target.value})
+                                                this.setSettingsForType(type, {_version: e.target.value})
+                                            }}
+                                            items={items}
+                                        />
+                                    }}
+                                </Query>
+                                }
+                                actions={actions}
+                                footer={<div style={{display: 'flex', alignItems: 'center'}}><p
+                                    style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows', {count: selectedLength})}</p>{selectedLength ?
+                                    <SimpleSelect
+                                        label="Select action"
+                                        value=""
+                                        onChange={this.handleBatchAction.bind(this)}
+                                        items={[{name: 'Delete', value: 'delete'}, {name: 'Bulk edit', value: 'edit'}]}
+                                    /> : ''}</div>}
+                                orderDirection={asort.length > 1 && asort[1] || null}
+                                onSort={this.handleSortChange}
+                                onChangePage={this.handleChangePage.bind(this)}
+                                onChangeRowsPerPage={this.handleChangeRowsPerPage.bind(this)}/>
 
         }
 
@@ -610,7 +611,7 @@ class TypesContainer extends React.Component {
                     filterField.fullWidth = true
                     delete filterField.tab
                     delete filterField.required
-                    if(['editor','json'].indexOf(filterField.uitype)>=0 ){
+                    if (['editor', 'json'].indexOf(filterField.uitype) >= 0) {
                         filterField.uitype = 'text'
                     }
 
@@ -694,6 +695,7 @@ class TypesContainer extends React.Component {
         }
 
         if (createEditDialog !== undefined) {
+
             editDialogProps = {
                 client,
                 type,
@@ -703,7 +705,7 @@ class TypesContainer extends React.Component {
                 updateData: this.updateData.bind(this),
                 createData: this.createData.bind(this),
                 dataToEdit,
-                meta: {_this: this, option: this.state.createEditDialogOption, ...this.pageParams}
+                meta: {TypeContainer: this}
             }
         }
 
@@ -1053,7 +1055,7 @@ class TypesContainer extends React.Component {
 
     determinePageParams(props) {
         const {params} = props.match || {}
-        const {p, l, s, f, v, noLayout, fixType, title, baseFilter, multi} = Util.extractQueryParams(window.location.search.substring(1))
+        const {p, l, s, f, v, noLayout, fixType, title, baseFilter, multi, meta} = Util.extractQueryParams(window.location.search.substring(1))
         const pInt = parseInt(p), lInt = parseInt(l)
 
         const finalFixType = fixType || props.fixType,
@@ -1078,6 +1080,7 @@ class TypesContainer extends React.Component {
             baseFilter: finalBaseFilter,
             multi,
             title,
+            meta,
             fixType: finalFixType,
             noLayout: finalNoLayout,
             limit: lInt || typeSettings.limit || DEFAULT_RESULT_LIMIT,
@@ -1108,12 +1111,12 @@ class TypesContainer extends React.Component {
         return filter + (baseFilter ? (filter ? ' && ' : '') + baseFilter : '')
     }
 
-    getData({type, page, limit, sort, filter, _version}, cacheFirst, typeChanged) {
+    getData({type, page, limit, sort, filter, meta, _version}, cacheFirst, typeChanged) {
         if (type) {
             const queries = getTypeQueries(type, false, {loadAll: false})
             if (queries) {
                 const storeKey = this.getStoreKey(type),
-                    variables = {limit, page, sort, _version, filter: this.extendFilter(filter)}
+                    variables = {limit, page, sort, meta, _version, filter: this.extendFilter(filter)}
                 if (cacheFirst) {
                     try {
                         const storeData = client.readQuery({
@@ -1158,8 +1161,10 @@ class TypesContainer extends React.Component {
         }
     }
 
-    createData(input, optimisticInput, {type, page, limit, sort, filter, _version}) {
+    createData(input, optimisticInput) {
+        const {type, page, limit, sort, filter, meta, _version} = this.pageParams
         const {user} = this.props
+
         if (type) {
             const queries = getTypeQueries(type, false, {loadAll: false})
             return client.mutate({
@@ -1183,7 +1188,7 @@ class TypesContainer extends React.Component {
                     const storeKey = this.getStoreKey(type)
                     const extendedFilter = this.extendFilter(filter)
 
-                    const variables = {limit, page, sort, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort, meta, _version, filter: extendedFilter}
 
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
@@ -1210,7 +1215,10 @@ class TypesContainer extends React.Component {
         }
     }
 
-    updateData(changedData, optimisticData, {type, page, limit, sort, filter, _version}) {
+    updateData(changedData, optimisticData) {
+
+        const {type, page, limit, sort, filter, meta, _version} = this.pageParams
+
         if (type) {
             const queries = getTypeQueries(type, false, {loadAll: false})
             return client.mutate({
@@ -1222,7 +1230,7 @@ class TypesContainer extends React.Component {
                         responseItem = data['update' + type]
                     const extendedFilter = this.extendFilter(filter)
 
-                    const variables = {limit, page, sort, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort, meta, _version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: queries.query,
@@ -1255,7 +1263,7 @@ class TypesContainer extends React.Component {
     }
 
 
-    deleteData({type, page, limit, sort, filter, _version}, ids) {
+    deleteData({type, page, limit, sort, filter, meta, _version}, ids) {
         if (type && ids.length > 0) {
 
             const queries = getTypeQueries(type, false, {loadAll: false}),
@@ -1269,7 +1277,7 @@ class TypesContainer extends React.Component {
                 update: (store, {data}) => {
                     const extendedFilter = this.extendFilter(filter)
 
-                    const variables = {limit, page, sort, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort, meta, _version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: queries.query,
@@ -1311,7 +1319,7 @@ class TypesContainer extends React.Component {
 
 
     cloneData(clonable, optimisticData) {
-        const {type, page, limit, sort, filter, _version} = this.pageParams
+        const {type, page, limit, sort, filter, meta, _version} = this.pageParams
 
         const {user} = this.props
 
@@ -1335,12 +1343,11 @@ class TypesContainer extends React.Component {
                             username: user.userData.username
                         }
                     }
-                    console.log(data['clone' + type], optimisticData)
 
                     const storeKey = this.getStoreKey(type)
 
                     const extendedFilter = this.extendFilter(filter)
-                    const variables = {limit, page, sort, _version, filter: extendedFilter}
+                    const variables = {limit, page, sort, meta, _version, filter: extendedFilter}
                     // Read the data from the cache for this query.
                     const storeData = store.readQuery({
                         query: queries.query,
@@ -1400,8 +1407,8 @@ class TypesContainer extends React.Component {
 
     goTo(args) {
         const {baseUrl} = this.props
-        const {type, page, limit, sort, filter, fixType, _version, multi, baseFilter, noLayout, title} = Object.assign({}, this.pageParams, args)
-        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types' + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
+        const {type, page, limit, sort, filter, fixType, _version, multi, baseFilter, noLayout, title, meta} = Object.assign({}, this.pageParams, args)
+        this.props.history.push(`${baseUrl ? baseUrl : ADMIN_BASE_URL + '/types' + (type ? '/' + type : '')}?p=${page}&l=${limit}&s=${sort}&f=${encodeURIComponent(filter)}&v=${_version}${fixType ? '&fixType=' + fixType : ''}${noLayout ? '&noLayout=' + noLayout : ''}${title ? '&title=' + encodeURIComponent(title) : ''}${meta ? '&meta=' + meta : ''}${multi ? '&multi=' + multi : ''}${baseFilter ? '&baseFilter=' + encodeURIComponent(baseFilter) : ''}`)
     }
 
 
@@ -1483,7 +1490,7 @@ class TypesContainer extends React.Component {
         if (value !== data[key]) {
             const changedData = {_id: data._id, [key]: value}
             addAlwaysUpdateData(data, changedData, this.pageParams.type)
-            this.updateData(changedData, null, this.pageParams)
+            this.updateData(changedData, null)
         }
     }
 
@@ -1507,7 +1514,7 @@ class TypesContainer extends React.Component {
 
         const variables = {_version, filter: '_id=' + data._id}
 
-        Hook.call('TypeTableBeforeEdit', {type, data, fieldsToLoad, variables})
+        Hook.call('TypeTableBeforeEdit', {type, data, variables})
 
         if (fieldsToLoad.length > 0) {
 

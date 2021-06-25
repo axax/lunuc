@@ -1,8 +1,6 @@
 import Hook from 'util/hook'
-import config from 'gen/config-client'
 import {getAllCapabilites} from 'util/capabilities'
 import {getType, getTypes} from './types'
-import Util from '../client/util'
 import {_t} from 'util/i18n'
 import extensionsPrivate from 'gen/extensions-private'
 import extensions from 'gen/extensions'
@@ -12,7 +10,7 @@ Object.keys(extensionsPrivate).forEach(key => {
     extensions[key] = extensionsPrivate[key]
 })
 
-const {LANGUAGES} = config, typeFormFields = {}
+const typeFormFields = {}
 
 export const typeDataToLabel = (item, pickerField) => {
     let label = []
@@ -37,8 +35,7 @@ export const typeDataToLabel = (item, pickerField) => {
         if (!pickerField) {
             if (definition) {
                 try {
-                    const structur = JSON.parse(definition.structure)
-                    pickerField = structur.pickerField
+                    pickerField = definition.structure.pickerField
                 } catch (e) {
                     console.log(e)
                 }

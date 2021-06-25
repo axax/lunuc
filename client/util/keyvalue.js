@@ -9,7 +9,7 @@ export const QUERY_SET_KEY_VALUE_GLOBAL = 'mutation setKeyValueGlobal($key:Strin
 export const useKeyValues = (keys) => {
     const {data, loading} = useQuery(QUERY_KEY_VALUES, {variables: {keys}})
     const enhancedData = {}
-    if (data && data.keyValues.results) {
+    if (data && data.keyValues && data.keyValues.results) {
         for (const i in data.keyValues.results) {
             const o = data.keyValues.results[i]
             try {

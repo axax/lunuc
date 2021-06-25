@@ -46,8 +46,8 @@ export default () => {
             }
             }).then(response => {
 
-                if( meta && meta._this) {
-                    meta._this.setState({mailingResponse: response})
+                if( meta && meta.TypeContainer) {
+                    meta.TypeContainer.setState({mailingResponse: response})
                 }
             }).catch(error => {
                 console.log(error.message)

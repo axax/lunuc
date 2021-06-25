@@ -74,33 +74,33 @@ class GenericForm extends React.Component {
             showTranslations: {},
             tabValue: prevState && prevState.tabValue ? prevState.tabValue : 0
         }
-        Object.keys(props.fields).map(k => {
-            const field = props.fields[k]
+        Object.keys(props.fields).map(fieldKey => {
+            const field = props.fields[fieldKey]
             let fieldValue
             if (field.localized) {
-                if (props.values && props.values[k]) {
-                    if (props.values[k].constructor === String) {
-                        if(!fieldValue){
+                if (props.values && props.values[fieldKey]) {
+                    if (props.values[fieldKey].constructor === String) {
+                        if (!fieldValue) {
                             fieldValue = {}
                         }
                         config.LANGUAGES.forEach(lang => {
-                            fieldValue[lang] = props.values[k]
+                            fieldValue[lang] = props.values[fieldKey]
                         })
                     } else {
-                        fieldValue = Object.assign({}, props.values[k])
+                        fieldValue = Object.assign({}, props.values[fieldKey])
                     }
                 } else {
                     fieldValue = null
                 }
             } else {
                 if (props.values) {
-                    fieldValue = props.values[k]
+                    fieldValue = props.values[fieldKey]
                 } else {
                     // value must be null instead of undefined
                     fieldValue = field.value === undefined ? null : field.value
                 }
             }
-            initalState.fields[k] = fieldValue
+            initalState.fields[fieldKey] = fieldValue
         })
         const formValidation = GenericForm.staticValidate(initalState, props)
         initalState.isValid = formValidation.isValid
@@ -324,16 +324,19 @@ class GenericForm extends React.Component {
         }
     }
 
-    newStateForField(prevState, name, value) {
+    newStateForField(prevState, {name, value, localized}) {
         const newState = Object.assign({}, {fields: {}}, prevState)
+
         // for localization --> name.de / name.en
-        const path = name.split('.')
-        if (path.length == 2) {
+        if( localized ){
+            const path = name.split('.')
+
             if (!newState.fields[path[0]]) {
                 newState.fields[path[0]] = {}
             }
             newState.fields[path[0]][path[1]] = value
-        } else {
+
+        }else{
             newState.fields[name] = value
         }
         return newState
@@ -347,7 +350,7 @@ class GenericForm extends React.Component {
             value = checkFieldType(value, fields[name])
         }
         this.setState((prevState) => {
-            const newState = this.newStateForField(prevState, name, value)
+            const newState = this.newStateForField(prevState, {name, value, localized: target.dataset && !!target.dataset.language})
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
             }
@@ -363,7 +366,7 @@ class GenericForm extends React.Component {
             const field = fields[e.target.name]
             if (field.type === 'Float') {
                 // a float value is expected so convert the iso date to an unix timestamp
-                const newState = this.newStateForField(this.state, e.target.name, Date.parse(e.target.value))
+                const newState = this.newStateForField(this.state, {name: e.target.name, value: Date.parse(e.target.value)})
                 this.setState(newState)
             }
         }
@@ -577,8 +580,8 @@ class GenericForm extends React.Component {
     createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
         const {onKeyDown, classes, autoFocus} = this.props
         let langButtonWasInserted = false
-        if(!field.label){
-            field.label=''
+        if (!field.label) {
+            field.label = ''
         }
         if (['json', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
 
@@ -610,11 +613,15 @@ class GenericForm extends React.Component {
             }
             currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                 className={classNames(classes.formFieldFull)}>
-                <InputLabel key={'label' + fieldKey} shrink>{field.label+ (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel><CodeEditor
+                <InputLabel key={'label' + fieldKey}
+                            shrink>{field.label + (languageCode ? ' [' + languageCode + ']' : '')}</InputLabel><CodeEditor
                 className={classes.editor} key={fieldKey}
                 forceJson={field.type === 'Object'}
                 onChange={(newValue) => this.handleInputChange({
                     target: {
+                        dataset:{
+                            language: languageCode
+                        },
                         name: fieldKey,
                         value: newValue
                     }
@@ -632,6 +639,9 @@ class GenericForm extends React.Component {
 
                             onChange={(newValue) => this.handleInputChange({
                                 target: {
+                                    dataset:{
+                                        language: languageCode
+                                    },
                                     name: fieldKey,
                                     value: newValue
                                 }
@@ -737,12 +747,14 @@ class GenericForm extends React.Component {
                                               InputLabelProps={{
                                                   shrink: true,
                                               }}
-
+                                              inputProps={{
+                                                  'data-language': languageCode
+                                              }}
                                               InputProps={{
                                                   endAdornment: languageCode === _app_.lang &&
-                                                      <InputAdornment position="end">
-                                                          {translateButton}
-                                                      </InputAdornment>
+                                                  <InputAdornment position="end">
+                                                  {translateButton}
+                                                  </InputAdornment>
                                               }}
                                               helperText={this.state.fieldErrors[fieldKey]}
                                               fullWidth={field.fullWidth}
@@ -760,8 +772,9 @@ class GenericForm extends React.Component {
 
         }
 
-        if( !langButtonWasInserted && translateButton && languageCode === _app_.lang) {
-            currentFormFields.splice(currentFormFields.length-1, 0, <div key={'tr'+fieldKey} className={classes.translationAbsolute}>{translateButton}</div>)
+        if (!langButtonWasInserted && translateButton && languageCode === _app_.lang) {
+            currentFormFields.splice(currentFormFields.length - 1, 0, <div key={'tr' + fieldKey}
+                                                                           className={classes.translationAbsolute}>{translateButton}</div>)
         }
 
     }

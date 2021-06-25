@@ -125,7 +125,7 @@ class WordContainer extends React.Component {
         const optimisticData = Object.assign({}, submitData)
         optimisticData.categories = cat
 
-        this.typeContainer.createData(this.typeContainer.pageParams, submitData, optimisticData)
+        this.typeContainer.createData(submitData, optimisticData)
     }
 
     prepareTypeSetting() {

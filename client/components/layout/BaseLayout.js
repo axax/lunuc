@@ -137,7 +137,7 @@ const BaseLayout = props => {
             if(item.to){
                 to = item.to
             }else if( item.name ){
-                to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}&baseFilter=${encodeURIComponent('definition.name==' + item.name)}`
+                to = `${ADMIN_BASE_URL}/types/GenericData?fixType=GenericData&title=${encodeURIComponent(item.label || item.name)}&meta=${item.name}`
             }else if( item.type){
                 to = `${ADMIN_BASE_URL}/types/${item.type}?fixType=${item.type}&title=${encodeURIComponent(item.label || item.type)}`
             }

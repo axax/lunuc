@@ -35,8 +35,8 @@ export default () => {
                     noEntry: runOnlyScript || dataToEdit.noEntry
                 }
             }).then(response => {
-                if( meta && meta._this) {
-                    meta._this.setState({cronjobResponse: response})
+                if( meta && meta.TypeContainer) {
+                    meta.TypeContainer.setState({cronjobResponse: response})
                 }
             }).catch(error => {
                 console.log(error.message)

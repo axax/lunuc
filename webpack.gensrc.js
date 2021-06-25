@@ -423,7 +423,7 @@ function gensrcExtension(name, options) {
             typeSchema += '}\n\n'
 
 
-            typeSchema += 'type ' + type.name + 'Result{\n\tresults:[' + type.name + ']\n\toffset:Int\n\tlimit:Int\n\ttotal:Int\n}\n\n'
+            typeSchema += 'type ' + type.name + 'Result{\n\tresults:[' + type.name + ']\n\toffset:Int\n\tlimit:Int\n\ttotal:Int\n\tmeta:String\n}\n\n'
 
             let mutationResult = type.mutationResult
             if (!mutationResult) {

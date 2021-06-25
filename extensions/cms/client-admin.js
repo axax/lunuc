@@ -159,7 +159,7 @@ export default () => {
             // override default
             props.children = [dataToEdit && <Typography key="CmsPageLabel" variant="subtitle1" gutterBottom>
                 <Link
-                    to={cmsPageEditorUrl(dataToEdit.slug, meta._version)}>
+                    to={cmsPageEditorUrl(dataToEdit.slug, meta.TypeContainer.pageParams._version)}>
                         <span
                             style={{
                                 fontWeight: 'bold',

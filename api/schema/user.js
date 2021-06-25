@@ -38,6 +38,7 @@ export const userSchemaRaw = `
         offset: Int
         limit: Int
         total: Int
+        meta: String
     }
   
 	type UserPublic  {

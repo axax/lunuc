@@ -33,36 +33,37 @@ export default () => {
         if (type === 'GenericData' && data.results.length > 0) {
             dataSource.forEach((row, i) => {
 
-                const item = data.results[i]
+                const item = data.results[i],
+                    structure = item.definition.structure
 
-                try {
-                    const structur = JSON.parse(item.definition.structure)
+                let pickerFields
 
-                    let pickerFields
+                if (structure.pickerField) {
+                    // can be a String or an Array
+                    pickerFields = structure.pickerField
+                } else if (item.data.title) {
+                    // take title attribute if available
+                    pickerFields = 'title'
 
-                    if (structur.pickerField) {
-                        // can be a String or an Array
-                        pickerFields = structur.pickerField
-                    } else if (item.data.title) {
-                        // take title attribute if available
-                        pickerFields = 'title'
+                } else {
 
-                    } else {
+                    // take the fist attribute of the object if none is specified
+                    const keys = Object.keys(item.data)
 
-                        // take the fist attribute of the object if none is specified
-                        const keys = Object.keys(item.data)
-
-                        if (keys.length > 0) {
-                            pickerFields = keys[0]
-                        }
+                    if (keys.length > 0) {
+                        pickerFields = keys[0]
                     }
-                    if (pickerFields) {
-                        if (pickerFields.constructor !== Array) {
-                            pickerFields = [pickerFields]
-                        }
-                        row.data = ''
-                        pickerFields.forEach(picker => {
+                }
+                if (pickerFields) {
+                    if (pickerFields.constructor !== Array) {
+                        pickerFields = [pickerFields]
+                    }
+                    row.data = ''
+                    pickerFields.forEach(picker => {
+                        if (item.data[picker]) {
+
                             let value
+
                             if (item.data[picker].constructor === Object) {
                                 //TODO it is not save to assume that it is a localized value
                                 value = item.data[picker][_app_.lang]
@@ -76,16 +77,14 @@ export default () => {
                                 }
                                 row.data += value
                             }
-                        })
-
-                        if (row.data.length > 83) {
-                            row.data = row.data.substring(0, 80) + '...'
                         }
+                    })
+
+                    if (row.data.length > 83) {
+                        row.data = row.data.substring(0, 80) + '...'
                     }
-
-
-                } catch (e) {
                 }
+
             })
         }
     })
@@ -94,28 +93,23 @@ export default () => {
     Hook.on('TypeCreateEdit', function ({type, props, meta, formFields, dataToEdit, parentRef}) {
         if (type === 'GenericData') {
 
-            if ((!dataToEdit || !dataToEdit.definition) && meta && meta.baseFilter) {
-                let b = decodeURIComponent(meta.baseFilter)
-                if (b.startsWith('definition')) {
-                    b = b.substring(11)
 
-                    dataToEdit = Object.assign({}, dataToEdit)
+            if (!dataToEdit) {
+                // create empty object
+                dataToEdit = {}
 
-                    if (b.startsWith('name')) {
-                        b = b.substring(5)
-                    } else if (b.startsWith('_id')) {
-                        b = b.substring(3)
-                    }
-                    if (b.startsWith('=')) {
-                        b = b.substring(1)
-                    }
-                    dataToEdit.definition = b
-
+                const data = meta.TypeContainer.state.data
+                if(data.meta){
+                    dataToEdit.definition = JSON.parse(data.meta)
                 }
             }
 
 
-            if (dataToEdit && dataToEdit.definition) {
+            if (!dataToEdit.definition && meta.TypeContainer.pageParams.meta) {
+                dataToEdit.definition = meta.TypeContainer.pageParams.meta
+            }
+
+            if (dataToEdit.definition) {
 
                 if (!dataToEdit.definition.structure) {
 
@@ -126,10 +120,14 @@ export default () => {
                         }
                     }).then(response => {
                         if (response.data.genericDataDefinitions.results) {
+
+                            const definition = response.data.genericDataDefinitions.results[0]
+
                             let newDataToEdit = Object.assign({}, dataToEdit, {
-                                definition: response.data.genericDataDefinitions.results[0],
+                                definition: Object.assign({}, definition, {structure: JSON.parse(definition.structure)}),
                                 createdBy: _app_.user
                             })
+
 
                             parentRef.setState({dataToEdit: newDataToEdit})
                         }
@@ -142,15 +140,8 @@ export default () => {
 
                 } else {
 
-                    let struct
-                    try {
-                        struct = JSON.parse(dataToEdit.definition.structure)
-                    } catch (e) {
-                        console.error(e, dataToEdit.definition.structure)
-                        return
-                    }
-
-                    const dataObject = dataToEdit.data ? (dataToEdit.data.constructor === String ? JSON.parse(dataToEdit.data) : dataToEdit.data) : {}
+                    const structure = dataToEdit.definition.structure,
+                        dataObject = dataToEdit.data || {}
 
 
                     const newFields = Object.assign({}, formFields)
@@ -159,11 +150,12 @@ export default () => {
                     delete newDataToEdit.data
                     newFields.definition.readOnly = true
 
+
                     let overrideTranslations = false, translateTimeout = 0
                     const userHasCapa = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_CMS_TEMPLATE)
 
                     props.title = <React.Fragment>
-                        {struct.title || newDataToEdit.definition.name}{newDataToEdit._id && userHasCapa ? ' (' + newDataToEdit._id + ')' : ''}
+                        {structure.title || newDataToEdit.definition.name}{newDataToEdit._id && userHasCapa ? ' (' + newDataToEdit._id + ')' : ''}
                         <div
                             style={{float: 'right', textAlign: 'right'}}>{userHasCapa && [<SimpleButton
                             key="showJson" size="small" variant="contained"
@@ -181,11 +173,10 @@ export default () => {
                             <SimpleButton key="autoTranslate" size="small" variant="contained"
                                           color="primary"
                                           onClick={() => {
-
-                                              struct.fields.forEach(field => {
+                                              structure.fields.forEach(field => {
                                                   if (field.localized) {
 
-                                                      const name = field.name.split('_')[1]
+                                                      const name = field.name
 
                                                       if (!dataObject[name]) {
                                                           dataObject[name] = newFields[name]
@@ -241,10 +232,11 @@ export default () => {
                         </div>
                     </React.Fragment>
 
-                    struct.fields.forEach((field) => {
+                    structure.fields.forEach((field) => {
                         const oriName = field.name, newName = 'data_' + oriName
-                        field.name = newName
-                        newFields[newName] = field
+                        newFields[newName] = Object.assign({}, field, {name: newName})
+
+
                         if (field.localized) {
                             newDataToEdit[newName] = dataObject[oriName]
                         } else {
@@ -298,12 +290,12 @@ export default () => {
         if (type === 'GenericData' && editedData && editedData.definition) {
 
             const definition = editedData.definition.constructor === Array ? editedData.definition[0] : editedData.definition,
-                struct = JSON.parse(definition.structure),
+                structure = definition.structure,
                 dataObject = {},
                 optimisticDataObject = {}
 
             // Combine data attributes to the data object
-            struct.fields.forEach(field => {
+            structure.fields.forEach(field => {
 
                 if (field.genericType) {
 
@@ -340,20 +332,12 @@ export default () => {
     })
 
 
-    Hook.on('TypeTableBeforeEdit', function ({type, data, fieldsToLoad, variables}) {
+    /*
+    Send the name of the generic type as meta data
+     */
+    Hook.on('TypeTableBeforeEdit', function ({type, data, variables}) {
         if (type === 'GenericData' && data.definition) {
-
-            const struct = JSON.parse(data.definition.structure)
-            for (let i = 0; i < struct.fields.length; i++) {
-                const field = struct.fields[i]
-                if (field.genericType) {
-                    fieldsToLoad.push('data') //load
-                    variables.meta = data.definition.name
-                    return
-                }
-            }
-
-
+            variables.meta = data.definition.name
         }
     })
 
@@ -417,9 +401,8 @@ export default () => {
     Hook.on(['TypePickerWindowCallback', 'TypePickerBeforeHandlePick'], function ({type, value, pickerField}) {
         if (type === 'GenericData') {
             try {
-                if (!pickerField) {
-                    const structure = JSON.parse(value.definition.structure)
-                    pickerField = structure.pickerField
+                if (!pickerField && value.definition && value.definition.structure) {
+                    pickerField = value.definition.structure.pickerField
                 }
 
 
@@ -461,14 +444,21 @@ export default () => {
     })
 
 
-
     /*
       TypesContainer: This gets called before the filter dialog is shown
    */
     Hook.on('TypesContainerBeforeFilterDialog', function ({type, filterFields}) {
         if (type === 'GenericData') {
+            if(this.state.data.meta){
+                const definition = JSON.parse(this.state.data.meta)
+                definition.structure.fields.forEach(field=>{
+                    if(field.searchable) {
+                        filterFields['data.' + field.name] = Object.assign({},field,{tab:null, required: false})
+                    }
 
-          //  console.log(this.state.data)
+                })
+            }
+
         }
     })
 

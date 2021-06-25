@@ -235,14 +235,12 @@ const GenericResolver = {
             if (postConvert === false) {
                 result = results[0]
             } else {
-                //console.log(results[0].results[0].data)
                 result = await postConvertData(results[0], {typeName, db, context})
             }
         }
 
-
-        if (result.meta && result.meta.length > 0) {
-            result.total = result.meta[0].count
+        if (result.count && result.count.length > 0) {
+            result.total = result.count[0].count
         } else {
             result.total = estimateCount ? await collection.estimatedDocumentCount() : 0
         }
@@ -251,7 +249,7 @@ const GenericResolver = {
         const aggregateTime = new Date() - startTimeAggregate
         //result.meta.aggregateTime = new Date() - startTimeAggregate
 
-        Hook.call('typeLoaded', {type: typeName, data, db, context, result, dataQuery, collectionName, aggregateTime})
+        Hook.call('typeLoaded', {type: typeName, data, db, context, otherOptions, result, dataQuery, collectionName, aggregateTime})
         if (cacheKey) {
             Cache.set(cacheKey, result, cacheTime)
         }

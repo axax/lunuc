@@ -186,7 +186,7 @@ class TypeEdit extends React.Component {
                 if (Object.keys(editedDataToUpdate).length > 0) {
                     // only send data if they have really changed
                     addAlwaysUpdateData(editedData, editedDataToUpdate, type)
-                    updateData({_id: dataToEdit._id, ...editedDataToUpdate}, optimisticData, meta).then(callback).catch(callback)
+                    updateData({_id: dataToEdit._id, ...editedDataToUpdate}, optimisticData).then(callback).catch(callback)
                 } else {
                     if (action.key === 'save_close') {
                         closeModal()
@@ -195,7 +195,7 @@ class TypeEdit extends React.Component {
 
             } else {
                 // create a new entry
-                createData(editedDataWithRefs, optimisticData, meta).then(callback).catch(callback)
+                createData(editedDataWithRefs, optimisticData).then(callback).catch(callback)
             }
 
         } else if (action && (action.key === 'cancel' || action.key === 'Escape')) {

@@ -108,6 +108,8 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
 
     if (type === 'GenericData') {
 
+        // the generic type name can either be passed with the property genericType (when called from the server)
+        // or with generic property meta (when called via graphql request)
         const genericType = otherOptions.genericType || otherOptions.meta
 
         if (genericType) {
@@ -125,7 +127,6 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
                 }
 
                 match.definition = {$eq: ObjectId(def._id)}
-
                 if (struct.fields) {
                     struct.fields.forEach(field => {
 
@@ -192,15 +193,29 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
 }, 99)
 
 
+/*
+Return the structure of the dynamic type as meta data
+ */
+Hook.on('typeLoaded', async ({type, db, data, result, otherOptions}) => {
+    if( type === 'GenericData'){
+
+        const genericType = otherOptions.genericType || otherOptions.meta
+        if (genericType) {
+
+            const def = await getGenericTypeDefinitionWithStructure(db, {name: genericType})
+            result.meta = JSON.stringify(def)
+
+            // remove definition on entries
+            result.results.forEach(item=>{
+                delete item.definition
+            })
+        }
+    }
+})
+
 Hook.on('typeBeforeUpdate', async ({type, data, _meta, db, context}) => {
 
     if (type === 'GenericData' && data.definition) {
-
-        /*  const def = await getGenericTypeDefinitionWithStructure(db,{id:data.definition})
-
-          if(def.trigger && def.trigger.update){
-              console.log(def.trigger.update)
-          }*/
 
         if (_meta) {
 
