@@ -875,6 +875,7 @@ class JsonDom extends React.Component {
 
                         this.emitJsonError(ex, {loc: "Loop"})
 
+                        console.log('------------- ERROR in '+this.props.slug)
                         console.log(ex, c)
                         if (ex.message.startsWith('Unexpected token')) {
                             console.error('There is an error in the Json. Try to use Util.escapeForJson')
@@ -962,7 +963,9 @@ class JsonDom extends React.Component {
                                 eleProps.checked = this.bindings[eleProps.name] === eleProps.value
 
                             } else if (this.bindings[eleProps.name] === undefined) {
-                                this.bindings[eleProps.name] = eleProps.value
+                                if(eleProps.value) {
+                                    this.bindings[eleProps.name] = eleProps.value
+                                }
                             } else {
                                 eleProps.value = this.bindings[eleProps.name]
                             }

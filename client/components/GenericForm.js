@@ -583,6 +583,11 @@ class GenericForm extends React.Component {
         if (!field.label) {
             field.label = ''
         }
+
+        if(field.description){
+            currentFormFields.push(<p>{field.description}</p>)
+        }
+
         if (['json', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
 
             let highlight, jsonStr

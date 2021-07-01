@@ -20,7 +20,8 @@ import {
     ChatIcon,
     LaunchIcon,
     ShoppingCartIcon,
-    WebIcon
+    WebIcon,
+    ImageIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -55,7 +56,8 @@ const iconComponents = {
     chat: ChatIcon,
     launch: LaunchIcon,
     web: WebIcon,
-    shop: ShoppingCartIcon
+    shop: ShoppingCartIcon,
+    image: ImageIcon
 }
 
 const BaseLayout = props => {
