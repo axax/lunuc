@@ -293,7 +293,7 @@ export const systemResolver = (db) => ({
             let results = await (db.collection(collection).aggregate(jsonParsed, {allowDiskUse: true}).toArray())
             console.log(`Aggregate time = ${new Date() - startTimeAggregate}ms`)
 
-            return {result: JSON.stringify({explanation, data: results[0]})}
+            return {result: JSON.stringify({data: results[0], explanation})}
         },
         importCollection: async ({collection, json}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_COLLECTION)

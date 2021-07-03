@@ -298,13 +298,20 @@ export default () => {
             structure.fields.forEach(field => {
 
                 if (field.genericType) {
-
                     // only keep reference _id
                     const fieldData = editedData['data_' + field.name]
                     if (fieldData && fieldData.constructor === Array && fieldData.length > 0 && fieldData[0]._id) {
-                        dataObject[field.name] = fieldData.map(e => e._id)
+                        if( field.metaFields){
+                            dataObject[field.name] = fieldData.map(e => ({_id:e._id, metaValues: e.metaValues}) )
+                        }else {
+                            dataObject[field.name] = fieldData.map(e => e._id)
+                        }
                     } else if (fieldData && fieldData._id) {
-                        dataObject[field.name] = fieldData._id
+                        if( field.metaFields){
+                            dataObject[field.name] = {_id:fieldData._id, metaValues: fieldData.metaValues}
+                        }else {
+                            dataObject[field.name] = fieldData._id
+                        }
                     } else {
                         dataObject[field.name] = editedData['data_' + field.name]
                     }

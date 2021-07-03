@@ -130,60 +130,98 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
                 if (struct.fields) {
                     struct.fields.forEach(field => {
 
-                        if (field.genericType) {
+                            if (field.genericType) {
 
-                            if (!otherOptions.lookups) {
-                                otherOptions.lookups = []
-                            }
+                                if (!otherOptions.lookups) {
+                                    otherOptions.lookups = []
+                                }
 
-                            let id = {
-                                    $cond:
-                                        {
-                                            if: {$isArray: `$data.${field.name}`},
-                                            then: {
-                                                $map: {
-                                                    input: `$data.${field.name}`, in: {$toObjectId: '$$this'}
-                                                }
-                                            },
-                                            else: {$toObjectId: `$data.${field.name}`}
-                                        }
-                                },
-                                $match = {
-                                    $expr: {
+                                let id = {
                                         $cond:
                                             {
-                                                if: {$isArray: `$$id`},
-                                                then: {$in: ['$_id', '$$id']},
-                                                else: {$eq: ['$_id', '$$id']}
-                                            }
-                                    }
-                                }
-                            otherOptions.lookups.push(
-                                {
-                                    $lookup: {
-                                        from: 'GenericData',
-                                        let: {
-                                            id
-                                        },
-                                        pipeline: [
-                                            {
-                                                $match
-                                            },
-                                            {
-                                                $project: {
-                                                    __typename: 'GenericData',
-                                                    _id: 1,
-                                                    data: 1
+                                                if: {$isArray: `$data.${field.name}`},
+                                                then: {
+                                                    $map: {
+                                                        input: `$data.${field.name}`, in: {
+                                                            $convert: {
+                                                                input: '$$this', to: 'objectId', onError: {
+                                                                    $convert: {input: '$$this._id', to: 'objectId'}
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                else: {
+                                                    $convert: {
+                                                        input: `$data.${field.name}`, to: 'objectId', onError: {
+                                                            $convert: {input: `$data.${field.name}._id`, to: 'objectId'}
+                                                        }
+                                                    }
                                                 }
                                             }
-                                        ],
-                                        as: `data.${field.name}`
+                                    },
+                                    $match = {
+                                        $expr: {
+                                            $cond:
+                                                {
+                                                    if: {$isArray: `$$id`},
+                                                    then: {$in: ['$_id', '$$id']},
+                                                    else: {$eq: ['$_id', '$$id']}
+                                                }
+                                        }
                                     }
-                                })
+                                otherOptions.lookups.push(
+                                    {
+                                        $lookup: {
+                                            from: 'GenericData',
+                                            let: {
+                                                id
+                                            },
+                                            pipeline: [
+                                                {
+                                                    $match
+                                                },
+                                                {
+                                                    $project: {
+                                                        __typename: 'GenericData',
+                                                        _id: 1,
+                                                        data: 1
+                                                    }
+                                                }
+                                            ],
+                                            as: field.metaFields ? `lookupRelation${field.name}` : `data.${field.name}`
+                                        }
+                                    })
+
+                                if (field.metaFields
+                                ) {
+
+                                    // merge lookup result with original object which contains the metaValues
+
+                                    otherOptions.lookups.push({
+                                        $addFields: {
+                                            [`data.${field.name}`]: {
+                                                $map: {
+                                                    input: `$data.${field.name}`,
+                                                    as: 'rel',
+                                                    in: {
+                                                        $mergeObjects: [
+                                                            {__typename: 'GenericData'},
+                                                            '$$rel',
+                                                            {data: {$arrayElemAt: [`$lookupRelation${field.name}.data`, {$indexOfArray: [`$lookupRelation${field.name}._id`, {$toObjectId: '$$rel._id'}]}]}}
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    })
+                                }
+
+
+                            }
 
                         }
-
-                    })
+                    )
                 }
             } else {
                 throw new Error(`Invalid type GenericType.${genericType}`)
@@ -197,7 +235,7 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, otherOptions}) => 
 Return the structure of the dynamic type as meta data
  */
 Hook.on('typeLoaded', async ({type, db, data, result, otherOptions}) => {
-    if( type === 'GenericData'){
+    if (type === 'GenericData') {
 
         const genericType = otherOptions.genericType || otherOptions.meta
         if (genericType) {
@@ -206,7 +244,7 @@ Hook.on('typeLoaded', async ({type, db, data, result, otherOptions}) => {
             result.meta = JSON.stringify(def)
 
             // remove definition on entries
-            result.results.forEach(item=>{
+            result.results.forEach(item => {
                 delete item.definition
             })
         }
@@ -305,19 +343,19 @@ Hook.on('AggregationBuilderBeforeQuery', async ({db, type, filters}) => {
 Hook.on('ResolverBeforePublishSubscription', async ({context, payload, hookResponse}) => {
 
     //return payload.userId === context.id
-    if(context.variables && context.variables.filter){
+    if (context.variables && context.variables.filter) {
 
         const filters = JSON.parse(context.variables.filter),
             action = payload.subscribeGenericData.action,
             datas = payload.subscribeGenericData.data,
             filter = filters[action]
 
-        if( filter ){
+        if (filter) {
 
-            for(let i = 0; i < datas.length; i++){
+            for (let i = 0; i < datas.length; i++) {
                 const data = datas[i]
                 console.log(data, filter)
-                if( matchExpr(filter, data)){
+                if (matchExpr(filter, data)) {
                     console.log('abort publish')
                     hookResponse.abort = true
                     return

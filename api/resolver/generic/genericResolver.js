@@ -215,7 +215,7 @@ const GenericResolver = {
         /* if (typeName.indexOf("GenericData") >= 0) {
              console.log(JSON.stringify(dataQuery, null, 4))
          }*/
-        /// console.log(options,JSON.stringify(dataQuery, null, 4))
+        // console.log(options,JSON.stringify(dataQuery, null, 4))
         const collection = db.collection(collectionName)
         const startTimeAggregate = new Date()
 
@@ -564,6 +564,7 @@ const GenericResolver = {
         if (options.upsert) {
             updateOptions.upsert = true
         }
+
         let result = (await collection.updateOne(params, {
             $set: dataSet
         }, updateOptions))
