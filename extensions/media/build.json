@@ -15,7 +15,7 @@
         {
           "name": "src",
           "fullWidth": true,
-          "tab": "Allgemein",
+          "tab": "Optionen",
           "vagueSearchable": false,
           "hideColumnInTypes": true
         },
@@ -36,6 +36,7 @@
         {
           "name": "mimeType",
           "vagueSearchable": false,
+          "tab": "Optionen",
           "index": 1
         },
         {
@@ -44,7 +45,8 @@
           "uitype": "json",
           "alwaysLoad": false,
           "hideColumnInTypes": true,
-          "vagueSearchable": false
+          "vagueSearchable": false,
+          "tab": "Meta"
         },
         {
           "name": "info",
@@ -52,40 +54,47 @@
           "uitype": "json",
           "alwaysLoad": false,
           "hideColumnInTypes": true,
-          "vagueSearchable": false
+          "vagueSearchable": false,
+          "tab": "Info"
         },
         {
           "name": "references",
           "type": "Object",
           "uitype": "json",
           "hideColumnInTypes": true,
-          "vagueSearchable": false
+          "vagueSearchable": false,
+          "tab": "Refrenzen"
         },
         {
           "name": "size",
           "type": "Float",
+          "tab": "Optionen",
           "vagueSearchable": false
         },
         {
           "name": "classifyImage",
           "type": "Boolean",
+          "tab": "Optionen",
           "hideColumnInTypes": true,
           "vagueSearchable": false
         },
         {
           "name": "useCdn",
           "type": "Boolean",
+          "tab": "Optionen",
           "hideColumnInTypes": true,
           "vagueSearchable": false
         },
         {
           "name": "private",
           "type": "Boolean",
+          "tab": "Optionen",
           "hideColumnInTypes": true,
           "vagueSearchable": false
         },
         {
           "name": "conversion",
+          "tab": "Optionen",
           "type": "MediaConversion",
           "hideColumnInTypes": true
         }

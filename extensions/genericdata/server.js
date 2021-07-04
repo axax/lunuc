@@ -44,11 +44,6 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
-// Hook when the type GenericDataDefinition has changed
-Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
-    Cache.clearStartWith('GenericDataDefinition')
-})
-
 Hook.on('beforePubSub', async ({triggerName, payload, db, context}) => {
     if (triggerName === 'subscribeGenericData') {
         if (payload.subscribeGenericData.action === 'update' || payload.subscribeGenericData.action === 'create') {
@@ -241,7 +236,9 @@ Hook.on('typeLoaded', async ({type, db, data, result, otherOptions}) => {
         if (genericType) {
 
             const def = await getGenericTypeDefinitionWithStructure(db, {name: genericType})
-            result.meta = JSON.stringify(def)
+            if(otherOptions.returnMeta !== false) {
+                result.meta = JSON.stringify(def)
+            }
 
             // remove definition on entries
             result.results.forEach(item => {
@@ -313,9 +310,23 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
 })
 
 
-Hook.on('typeCreated_GenericData', async ({resultData, db, context}) => {
-    // resultData.data = JSON.parse(resultData.data)
+// Hook when the type GenericDataDefinition has changed
+Hook.on('typeUpdated_GenericDataDefinition', ({db, result}) => {
+    Cache.clearStartWith('GenericDataDefinition')
 })
+
+// Clear cache when the type GenericData has changed
+Hook.on('typeUpdated_GenericData', async ({db, result}) => {
+
+    if(result.definition._id) {
+        const def = await getGenericTypeDefinitionWithStructure(db, {id: result.definition._id})
+
+        if(def){
+            Cache.clearStartWith(def.name)
+        }
+    }
+})
+
 
 Hook.on('AggregationBuilderBeforeQuery', async ({db, type, filters}) => {
 

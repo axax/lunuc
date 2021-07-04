@@ -65,11 +65,14 @@ const styles = theme => {
             position: 'relative'
         },
         clipDrop: {
+            textAlign:'center',
+            padding: '0.2rem',
+            writingMode: 'vertical-rl',
             width: '1.6%',
             margin: '0 0 -' + theme.spacing(2) + 'px 0',
             opacity: '0',
             fontSize: '0.8rem',
-            backgroundColor: 'rgba(255,0,0,0.2)'
+            backgroundColor: 'rgba(255,0,0,0.3)'
         },
         dummyImg: {
             pointerEvents: 'none',
@@ -274,7 +277,12 @@ class TypePicker extends React.Component {
                         } else {
                             if (metaFields) {
 
-                                components.push(<Card variant="outlined" key={'metaFields' + singleValueIndex}>
+                                components.push(<Card variant="outlined" key={'metaFields' + singleValueIndex}
+                                                      draggable={true}
+                                                      data-index={singleValueIndex}
+                                                      onDragStart={(e) => {
+                                                          e.dataTransfer.setData('text', e.target.getAttribute('data-index'));
+                                                      }}>
                                     <CardContent>
                                         {typeDataToLabel(singleValue, pickerField)}
                                         <GenericForm autoFocus
