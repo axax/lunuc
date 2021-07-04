@@ -611,7 +611,7 @@ class CodeEditor extends React.Component {
                         } catch (e) {
                             const newStateError = `Fehler in der JSON Struktur: ${e.message}`
                             if (stateError !== newStateError) {
-                                console.error(e)
+                                console.log(e)
                                 this.setState({
                                     data: newDataAsString,
                                     stateError: newStateError

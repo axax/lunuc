@@ -906,7 +906,9 @@ class JsonDom extends React.Component {
                     } else {
                         tagName = t
                     }
-                    if (tagName.indexOf('.') >= 0) {
+                    if(tagName.indexOf('$')>=0){
+                        tagName = 'div'
+                    }else if (tagName.indexOf('.') >= 0) {
                         const arr = tagName.split('.')
                         tagName = arr[0]
                         arr.shift()
