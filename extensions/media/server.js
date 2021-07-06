@@ -12,6 +12,8 @@ import React from 'react'
 import ImageClassfier from './util/imageClassifierLambda'
 import {ObjectId} from 'mongodb'
 import mediaResolver from './gensrc/resolver'
+import Util from '../../api/util'
+import {CAPABILITY_RUN_COMMAND} from '../../util/capabilities'
 
 const {UPLOAD_DIR, UPLOAD_URL} = config
 
@@ -106,14 +108,35 @@ Hook.on('FileUpload', async ({db, context, file, data, response}) => {
     if( !uploadResult || uploadResult.error ){
         // fallback
         // store file under the name of the _id
-        const upload_dir = path.join(__dirname, '../../' + UPLOAD_DIR)
+        let upload_dir, finalName = _id.toString()
+        if(data.uploadDir){
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            upload_dir = data.uploadDir
 
-        fs.copyFile(file.path, path.join(upload_dir, _id.toString()), async (err) => {
+
+            if(data.keepFileName){
+                finalName = file.name
+            }
+
+        }else{
+            upload_dir = path.join(__dirname, '../../' + UPLOAD_DIR)
+        }
+
+        if(!upload_dir || !fs.existsSync(upload_dir)){
+            throw new Error(`Upload dir doesn't exist`)
+        }
+
+
+        fs.copyFile(file.path, path.join(upload_dir, finalName), async (err) => {
             if (err) throw err
-            createMediaEntry({db, _id, file, data, context})
+            if( data.createMediaEntry !== false) {
+                createMediaEntry({db, _id, file, data, context})
+            }
         })
     }else{
-        createMediaEntry({db, file, data, context, _id})
+        if( data.createMediaEntry !== false) {
+            createMediaEntry({db, file, data, context, _id})
+        }
     }
 
 })

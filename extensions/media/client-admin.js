@@ -15,6 +15,7 @@ import {_t, registerTrs} from 'util/i18n'
 import UploadUtil from '../../client/util/upload'
 import {client} from 'client/middleware/graphql'
 import {translations} from './translations/translations'
+import {CAPABILITY_MANAGE_OTHER_USERS} from '../cms/constants'
 
 registerTrs(translations, 'MediaTranslations')
 
@@ -70,52 +71,58 @@ export default () => {
     Hook.on('TypeTableAction', function ({type, actions}) {
         if (type === 'Media') {
 
+            const userCanManageOtherUser = Util.hasCapability({userData: _app_.user}, CAPABILITY_MANAGE_OTHER_USERS)
+
+            if(userCanManageOtherUser) {
+                actions.unshift(
+                    {
+                        name: 'Create Media dump (current results)', onClick: () => {
+                            const ids = []
+                            this.state.data.results.forEach(item => {
+                                ids.push(item._id)
+                            })
+                            client.mutate({
+                                mutation: `mutation createMediaDump($type:String,$ids:[ID]){createMediaDump(type:$type,ids:$ids){name createdAt size}}`,
+                                variables: {ids},
+                                update: (store, {data: {createMediaDump}}) => {
+                                    if (createMediaDump) {
+                                        this.setState({simpleDialog: {children: createMediaDump.name}})
+                                    }
+                                }
+                            })
+                        }
+                    },
+                    {
+                        name: 'Find references for all medias', onClick: () => {
+                            client.query({
+                                fetchPolicy: 'network-only',
+                                forceFetch: true,
+                                query: '{findReferencesForMedia{status}}'
+                            }).then(response => {
+                                if (response.data && response.data.findReferencesForMedia) {
+                                    this.setState({simpleDialog: {children: response.data.findReferencesForMedia.status}})
+                                }
+                            })
+                        }
+                    },
+                    {
+                        name: 'CleanUp Medias', onClick: () => {
+                            client.query({
+                                fetchPolicy: 'network-only',
+                                forceFetch: true,
+                                query: '{cleanUpMedia{status}}'
+                            }).then(response => {
+                                if (response.data && response.data.cleanUpMedia) {
+                                    this.setState({simpleDialog: {children: response.data.cleanUpMedia.status}})
+                                }
+                            })
+                        }
+                    })
+            }
+
             actions.unshift(
                 {
-                    name: 'Create Media dump (current results)', onClick: () => {
-                        const ids=[]
-                        this.state.data.results.forEach(item => {
-                          ids.push(item._id)
-                        })
-                        client.mutate({
-                            mutation: `mutation createMediaDump($type:String,$ids:[ID]){createMediaDump(type:$type,ids:$ids){name createdAt size}}`,
-                            variables: {ids},
-                            update: (store, {data: {createMediaDump}}) => {
-                                if (createMediaDump) {
-                                    this.setState({simpleDialog: {children: createMediaDump.name}})
-                                }
-                            }
-                        })
-                    }
-                },
-                {
-                    name: 'Find references for all medias', onClick: () => {
-                        client.query({
-                            fetchPolicy: 'network-only',
-                            forceFetch: true,
-                            query: '{findReferencesForMedia{status}}'
-                        }).then(response => {
-                            if (response.data && response.data.findReferencesForMedia) {
-                                this.setState({simpleDialog: {children: response.data.findReferencesForMedia.status}})
-                            }
-                        })
-                    }
-                },
-                {
-                    name: 'CleanUp Medias', onClick: () => {
-                        client.query({
-                            fetchPolicy: 'network-only',
-                            forceFetch: true,
-                            query: '{cleanUpMedia{status}}'
-                        }).then(response => {
-                            if (response.data && response.data.cleanUpMedia) {
-                                this.setState({simpleDialog: {children: response.data.cleanUpMedia.status}})
-                            }
-                        })
-                    }
-                },
-                {
-                    name: 'Upload new Media', onClick: () => {
+                    name: _t('Media.uploadMedia'), onClick: () => {
                         setTimeout(() => {
                             this.setState({createEditDialog: true, createEditDialogOption: 'upload'})
                         }, 300)

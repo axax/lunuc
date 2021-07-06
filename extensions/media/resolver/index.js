@@ -5,9 +5,6 @@ import config from 'gen/config'
 const {UPLOAD_DIR} = config
 import fs from 'fs'
 import path from 'path'
-import GenericResolver from '../../../api/resolver/generic/genericResolver'
-import {ObjectId} from 'mongodb'
-import {getTypes} from '../../../util/types'
 
 export default db => ({
     Query: {
@@ -48,121 +45,86 @@ export default db => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
             const allGenericData = []
-            const res = (await db.collection('GenericData').find({}).toArray())
+          /*  const res = (await db.collection('GenericData').find({}).toArray())
 
             res.forEach(item => {
                 allGenericData.push({data: JSON.stringify(item.data), _id: item._id})
-            })
+            })*/
 
 
-            const types = getTypes()
+            const allCollections = await db.listCollections().toArray()
 
-            const ids = await db.collection('Media').distinct("_id", {})
-            //ids.length = 20
+            const ignoreCollections = ['NewsletterMailing',
+                'MediaConversion',
+                'UserTracking',
+                'TelegramCommand',
+                'GenericDataDefinition',
+                'History',
+                'Comment',
+                'BotConversation',
+                'Media',
+                'UserRole',
+                'NewsletterSubscriber',
+                'CrmAddress',
+                'Log',
+                'Word',
+                'Post',
+                'MailClient',
+                'MailTracking',
+                'NewsletterList',
+                'PreProcessor',
+                'MediaGroup',
+                'NewsletterSent',
+                'Rating',
+                'StaticFile',
+                'Chat',
+                'MailClientArchive',
+                'WordCategory',
+                'DnsHost',
+                'NewsletterTracking',
+                'TelegramBot',
+                'Product',
+                'CronJobExecution',
+                'ProductCategory'
+            ]
+
+            const collectionsToSearchIn = []
+            for (const {name} of allCollections) {
+                if(name.indexOf('-')<0 && name.indexOf('_')<0 && ignoreCollections.indexOf(name)<0){
+                    collectionsToSearchIn.push(name)
+                }
+            }
+
+            const ids = await db.collection('Media').find(
+                {},
+                {'_id':1})
+                .sort({'references.lastChecked':1}).limit(250).toArray()
+
+
             let allcount = 0
             for (let i = 0; i < ids.length; i++) {
-                const _id = ids[i], _idStr = _id.toString()
-
+                const _id = ids[i]._id
                 let count = 0
                 const locations = []
+                const $where = `function() { 
+                    return JSON.stringify(this).indexOf('${_id}')>=0
+                }`
 
+                for( const name of collectionsToSearchIn){
 
-                const user = await db.collection('User').findOne({
-                    $or: [
-                        {picture: ObjectId(_id)}
-                       /* {meta: {$regex: _id, $options: 'i'}}*/
-                    ]
-                })
+                    console.log(`search ${_id} in ${name}`)
+                    const item = await db.collection(name).findOne({$where},  { projection: { _id: 1 } } )
 
-                if (user) {
-
-                    count++
-                    locations.push({location: 'User', _id: user._id, name: user.username})
-                }
-
-
-                if (count === 0 && types['CmsPage']) {
-                    const data = await GenericResolver.entities(db, context, 'CmsPage', ['dataResolver', 'script', 'serverScript', 'template', 'style', 'slug'], {
-                        limit: 1,
-                        filter: _idStr
-                    })
-                    if (data.total > 0) {
+                    if( item ){
                         count++
-
-                        data.results.forEach(item => {
-                            locations.push({location: 'CmsPage', _id: item._id, slug: item.slug})
-                        })
-                    }
-                }
-                if (count === 0 && types['GenericData']) {
-                    for (let j = 0; j < allGenericData.length; j++) {
-                        if (allGenericData[j].data.indexOf(_idStr) > -1) {
-                            locations.push({location: 'GenericData', _id: allGenericData[j]._id})
-                            count++
-                            break
-                        }
+                        locations.push({location: name, ...item})
+                        break
                     }
                 }
 
-                if (count === 0 && types['BotCommand']) {
-                    const data = await GenericResolver.entities(db, context, 'BotCommand', ['script', 'name'], {
-                        limit: 1,
-                        filter: _idStr
-                    })
-                    if (data.total > 0) {
-                        count++
-
-                        data.results.forEach(item => {
-                            locations.push({location: 'BotCommand', _id: item._id, name: item.name})
-                        })
-                    }
-                }
-
-                if (count === 0 && types['KeyValue']) {
-                    const data = await GenericResolver.entities(db, context, 'KeyValue', ['value', 'key'], {
-                        limit: 1,
-                        filter: _idStr
-                    })
-                    if (data.total > 0) {
-                        count++
-
-                        data.results.forEach(item => {
-                            locations.push({location: 'KeyValue', _id: item._id, key: item.key})
-                        })
-                    }
-                }
-
-                if (count === 0 && types['KeyValueGlobal']) {
-                    const data = await GenericResolver.entities(db, context, 'KeyValueGlobal', ['value', 'key'], {
-                        limit: 1,
-                        filter: _idStr
-                    })
-                    if (data.total > 0) {
-                        count++
-
-                        data.results.forEach(item => {
-                            locations.push({location: 'KeyValueGlobal', _id: item._id, key: item.key})
-                        })
-                    }
-                }
-
-
-                if (count === 0 && types['CronJob']) {
-                    const data = await GenericResolver.entities(db, context, 'CronJob', ['script', 'name'], {
-                        limit: 1,
-                        filter: _idStr
-                    })
-                    if (data.total > 0) {
-                        count++
-
-                        data.results.forEach(item => {
-                            locations.push({location: 'CronJob', _id: item._id, name: item.name})
-                        })
-                    }
-                }
                 allcount += count
 
-                db.collection('Media').updateOne({_id}, {$set: {references: {count, locations}}})
+                db.collection('Media').updateOne({_id}, {$set: {references: {count, locations, lastChecked: new Date().getTime()}}})
 
             }
             return {status: `${allcount} references found`}

@@ -1,5 +1,6 @@
 export const translations = {
     de: {
+        'Media.uploadMedia': 'Medias hochladen',
         'Media.selectGroup': 'Gruppe wählen',
         'Media.field.name': 'Name',
         'Media.field.src': 'Quelle',
@@ -9,6 +10,7 @@ export const translations = {
         'Media.field.group': 'Gruppe'
     },
     en: {
+        'Media.uploadMedia': 'Upload medias',
         'Media.selectGroup': 'Select a group',
         'Media.field.name': 'Name',
         'Media.field.src': 'Source',

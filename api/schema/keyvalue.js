@@ -29,6 +29,7 @@ export const keyvalueSchemaRaw = `
         offset: Int
         limit: Int
         total: Int
+        meta: String
     }
     
     type Query {
