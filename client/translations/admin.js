@@ -37,7 +37,18 @@ export const translations = {
         'core.cancel': 'Abbrechen',
         'core.yes': 'Ja',
         'core.no': 'Nein',
-        'TablePagination.rowsPerPage': 'Zeilen pro Seite'
+        'TablePagination.rowsPerPage': 'Zeilen pro Seite',
+        'User.field.username': 'Benutzername',
+        'User.field.password': 'Passwort',
+        'User.field.email': 'E-Mail',
+        'User.field.language': 'Sprache',
+        'User.field.picture': 'Bild',
+        'User.field.emailConfirmed': 'E-Mail bestätigt',
+        'User.field.requestNewPassword': 'Neues Passwort anfordern',
+        'User.field.meta': 'Meta',
+        'User.field.lastLogin': 'Letzte Anmeldung',
+        'User.field.role': 'Role',
+        'User.field.junior': 'Untergeordnete Benutzer',
     },
     en: {
         'BaseLayout.editMenu': 'Edit menu',
@@ -77,6 +88,17 @@ export const translations = {
         'core.cancel': 'Cancel',
         'core.yes': 'Yes',
         'core.no': 'No',
-        'TablePagination.rowsPerPage': 'Rows per page'
+        'TablePagination.rowsPerPage': 'Rows per page',
+        'User.field.username': 'Username',
+        'User.field.password': 'Password',
+        'User.field.email': 'E-Mail',
+        'User.field.language': 'Language',
+        'User.field.picture': 'Picture',
+        'User.field.emailConfirmed': 'E-Mail confirmed',
+        'User.field.requestNewPassword': 'Request new password',
+        'User.field.meta': 'Meta',
+        'User.field.lastLogin': 'Last Login',
+        'User.field.role': 'Role',
+        'User.field.junior': 'Junior User',
     }
 }

@@ -346,7 +346,6 @@ Hook.on('Types', ({types}) => {
             },
             {
                 name: 'lastLogin',
-                label: 'Last login',
                 uitype: 'datetime',
                 readOnly: true
             },
@@ -360,7 +359,6 @@ Hook.on('Types', ({types}) => {
             {
                 name: 'junior',
                 type: 'User',
-                label: 'Junior User',
                 reference: true,
                 multi: true,
                 fields: ['username'],

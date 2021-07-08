@@ -320,8 +320,12 @@ export default () => {
                 } else {
 
                     let currentDataAttr
-                    if (field.type === 'Object') {
-                        currentDataAttr = JSON.parse(editedData['data_' + field.name])
+                    if (field.type === 'Object' && !(editedData['data_' + field.name] instanceof Object)) {
+                        try {
+                            currentDataAttr = JSON.parse(editedData['data_' + field.name])
+                        }catch (e) {
+                            console.log(e,editedData['data_' + field.name] )
+                        }
                     } else {
                         currentDataAttr = editedData['data_' + field.name]
                     }
