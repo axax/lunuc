@@ -471,7 +471,7 @@ function gensrcExtension(name, options) {
         },\n`
 
                 resolverMutation += `       create${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}...rest}, req, options) => {
-            const result = await GenericResolver.createEntity(db, req, '${type.name}', {...rest,${refResolversObjectId}})
+            const result = await GenericResolver.createEntity(db, req, '${type.name}', {...rest,${refResolversObjectId}}, options)
             if(options && options.publish!==false){
               ${type.subscription === false ? '//' : ''}pubsubHooked.publish('subscribe${type.name}', {userId:req.context.id,subscribe${type.name}: {action: 'create',data:[result]}}, db, req.context)
             }
