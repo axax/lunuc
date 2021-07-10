@@ -19,7 +19,7 @@ const pubsubDelayed = {
                 }
                 context.delayedPubsubs.push({triggerName, payload})
             }
-        }, 400)
+        }, 600)
     }
 }
 

@@ -1,4 +1,5 @@
-import request from 'request-promise'
+import request from '../api/util/request'
+
 
 
 export const graphqlQuery = (port, query) => request({

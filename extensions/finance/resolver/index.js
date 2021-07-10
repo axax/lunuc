@@ -1,5 +1,4 @@
-import Util from '../../../api/util'
-import request from 'request-promise'
+import request from '../../../api/util/request'
 
 
 const ALPHA_VANTAGE_API_KEY = process.env.LUNUC_ALPHA_VANTAGE_API_KEY
@@ -13,11 +12,11 @@ export default db => ({
                 throw new Error('Api key missing for alpha vantage. Please define the env var LUNUC_ALPHA_VANTAGE_API_KEY')
             }
 
-            const uri = `https://www.alphavantage.co/query?function=BATCH_STOCK_QUOTES&symbols=${symbols.join(',')}&apikey=${ALPHA_VANTAGE_API_KEY}`
-            console.log(uri)
+            const url = `https://www.alphavantage.co/query?function=BATCH_STOCK_QUOTES&symbols=${symbols.join(',')}&apikey=${ALPHA_VANTAGE_API_KEY}`
+            console.log(url)
             const response = (await request({
                 method: 'GET',
-                uri,
+                url,
                 json: true
             }))
             const stockdata = response["Stock Quotes"].map(d => {
@@ -37,10 +36,10 @@ export default db => ({
                 throw new Error('Api key missing for alpha vantage. Please define the env var LUNUC_ALPHA_VANTAGE_API_KEY')
             }
 
-            const uri = `https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=${from}&to_currency=${to}&apikey=${ALPHA_VANTAGE_API_KEY}`
+            const url = `https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=${from}&to_currency=${to}&apikey=${ALPHA_VANTAGE_API_KEY}`
             const response = (await request({
                 method: 'GET',
-                uri,
+                url,
                 json: true
             }))
 

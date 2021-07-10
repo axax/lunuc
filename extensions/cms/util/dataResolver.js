@@ -1,7 +1,7 @@
 import {ObjectId} from 'mongodb'
 import GenericResolver from '../../../api/resolver/generic/genericResolver'
 import Cache from '../../../util/cache'
-import request from 'request-promise'
+import request from '../../../api/util/request'
 import Util from '../../../api/util'
 import ClientUtil from 'client/util'
 import {CAPABILITY_MANAGE_KEYVALUES, CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities'

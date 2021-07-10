@@ -197,6 +197,10 @@ class CmsViewEditorContainer extends React.Component {
             this.watchCmsPageStatus(true)
         }
 
+        if(props.aboutToChange){
+            return false
+        }
+
         /*console.log('children changed', props.children != this.props.children)
         console.log('_props changed', props._props !== this.props._props)
         console.log('slug changed', slugChanged)
@@ -509,6 +513,7 @@ class CmsViewEditorContainer extends React.Component {
                                     lineNumbers
                                     fileSplit
                                     height={800}
+                                    identifier={slug}
                                     fileIndex={EditorPageOptions.styleFileIndex}
                                     onFileChange={this.handleSettingChange.bind(this, 'styleFileIndex', true)}
                                     type="css"
@@ -1213,8 +1218,7 @@ class CmsViewEditorContainer extends React.Component {
 
             const {updateCmsPage} = this.props
             updateCmsPage(
-                Object.assign({}, data, {[key]: value}), key, () => {
-                }
+                Object.assign({}, data, {[key]: value}), key, () => {}
             )
         }
     }

@@ -1,5 +1,5 @@
 import Util from 'api/util'
-import request from 'request-promise'
+import request from '../../../api/util/request'
 import {ObjectId} from 'mongodb'
 
 
@@ -25,7 +25,7 @@ export default (db) => ({
 
                     const response = (await request({
                         method: 'GET',
-                        uri: 'https://api.linkedin.com/v2/me/?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))', //?projection=(ID,localizedFirstName,localizedLastName,localizedHeadline,firstName,lastName,profilePicture,headline,vanityName)', //'/~:(id,first-name,last-name,maiden-name,formatted-name,phonetic-first-name,phonetic-last-name,formatted-phonetic-name,headline,location,industry,current-share,num-connections,num-connections-capped,summary,specialties,positions,picture-url,site-standard-profile-request,api-standard-profile-request,public-profile-url,email-address)?format=json',
+                        url: 'https://api.linkedin.com/v2/me/?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))', //?projection=(ID,localizedFirstName,localizedLastName,localizedHeadline,firstName,lastName,profilePicture,headline,vanityName)', //'/~:(id,first-name,last-name,maiden-name,formatted-name,phonetic-first-name,phonetic-last-name,formatted-phonetic-name,headline,location,industry,current-share,num-connections,num-connections-capped,summary,specialties,positions,picture-url,site-standard-profile-request,api-standard-profile-request,public-profile-url,email-address)?format=json',
                         headers: {
                             'X-RestLi-Protocol-Version': '2.0.0',
                             Authorization: `Bearer ${keyvalueMap.linkedInAccessToken}`
@@ -75,7 +75,7 @@ export default (db) => ({
 
             const response = (await request({
                 method: 'POST',
-                uri: 'https://www.linkedin.com/oauth/v2/accessToken',
+                url: 'https://www.linkedin.com/oauth/v2/accessToken',
                 form: {
                     grant_type: 'authorization_code',
                     code: linkedInCode,
