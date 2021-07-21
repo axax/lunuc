@@ -24,7 +24,10 @@ import {
     ImageIcon,
     DoneIcon,
     ViewListIcon,
-    ViewModuleIcon
+    ViewModuleIcon,
+    LabelIcon,
+    BusinessIcon,
+    EventIcon
 } from 'ui/admin'
 import ErrorHandler from './ErrorHandler'
 import NotificationHandler from './NotificationHandler'
@@ -63,7 +66,10 @@ const iconComponents = {
     image: ImageIcon,
     done: DoneIcon,
     view: ViewListIcon,
-    module: ViewModuleIcon
+    module: ViewModuleIcon,
+    label: LabelIcon,
+    business: BusinessIcon,
+    event: EventIcon
 }
 
 const BaseLayout = props => {

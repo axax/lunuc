@@ -138,6 +138,12 @@
           "name": "active",
           "type": "Boolean",
           "index": 1
+        },
+        {
+          "name": "mailSettings",
+          "type": "Object",
+          "uitype": "json",
+          "tab": "Optional"
         }
       ]
     },

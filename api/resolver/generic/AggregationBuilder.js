@@ -400,11 +400,18 @@ export default class AggregationBuilder {
             }
             match.$or.push({[filterKey]: matchExpression})
         } else {
-            if (match[filterKey]) {
+
+            if (!match.$and) {
+                match.$and = []
+            }
+
+            match.$and.push({[filterKey]: matchExpression})
+
+            /*if (match[filterKey]) {
                 match[filterKey] = {...match[filterKey], ...matchExpression}
             } else {
                 match[filterKey] = matchExpression
-            }
+            }*/
         }
         return {added: true}
     }
@@ -719,9 +726,14 @@ export default class AggregationBuilder {
         let dataQuery = [], dataFacetQuery = []
 
 
+
         const hasMatch = Object.keys(match).length > 0,
             hasResultMatch = Object.keys(resultMatch).length > 0,
             doMatchAfterLookup = (hasMatch && hasMatchInReference)
+
+        this.removeSingleOr(match)
+        this.removeSingleOr(resultMatch)
+
 
         if (Object.keys(rootMatch).length > 0) {
             if (!hasMatchInReference) {
@@ -735,12 +747,7 @@ export default class AggregationBuilder {
                 const finalMatch = {...rootMatch, ...match}
 
                 // remove single or
-                if (finalMatch.$or && finalMatch.$or.length === 1) {
-                    Object.keys(finalMatch.$or[0]).forEach(key => {
-                        finalMatch[key] = finalMatch.$or[0][key]
-                    })
-                    delete finalMatch.$or
-                }
+                this.removeSingleOr(finalMatch)
 
                 dataQuery.push({
                     $match: finalMatch
@@ -902,4 +909,24 @@ export default class AggregationBuilder {
 
     }
 
+    removeSingleOr(match) {
+        if (match.$or && match.$or.length === 1) {
+
+
+            Object.keys(match.$or[0]).forEach(key => {
+                if(match[key]){
+                    if(!match.$and){
+                        match.$and = [{[key]:match[key]}]
+                    }else{
+                        match.$and.push({[key]:match[key]})
+                    }
+                    match.$and.push(match.$or[0])
+                    delete match[key]
+                }else {
+                    match[key] = match.$or[0][key]
+                }
+            })
+            delete match.$or
+        }
+    }
 }

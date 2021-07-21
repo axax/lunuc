@@ -10,10 +10,30 @@ export default db => ({
         sendNewsletter: async ({mailing, subject, template, text, batchSize, list}, req) => {
             await Util.checkIfUserHasCapability(db, req.context, CAPABILITY_RUN_SCRIPT)
             let result
+            const mailingId = ObjectId(mailing)
 
             if(!batchSize){
                 batchSize = 10
             }
+
+            const mailingData = await db.collection('NewsletterMailing').findOne(
+                {
+                    _id: mailingId
+                }
+            )
+
+            let settings
+            if(mailingData){
+
+                if( template === undefined){
+                    template = mailingData.template
+                }
+                if( text === undefined){
+                    text = mailingData.text
+                }
+                settings = mailingData.mailSettings
+            }
+
 
             const subscribers = await db.collection('NewsletterSubscriber').find(
                 {state: 'subscribed', list: {$in: list.map(l => l.constructor===String?ObjectId(l):l)}}
@@ -30,7 +50,7 @@ export default db => ({
                 const sent = await db.collection('NewsletterSent').findOne(
                     {
                         subscriber: sub._id,
-                        mailing: ObjectId(mailing)
+                        mailing: mailingId
                     }
                 )
                 if (!sent) {
@@ -63,7 +83,8 @@ export default db => ({
                         body: sub,
                         text,
                         headerList,
-                        req
+                        req,
+                        settings
                     })
                     emails.push(sub.email)
 

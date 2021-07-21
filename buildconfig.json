@@ -124,7 +124,10 @@
         "ViewList",
         "FlipToBack",
         "FlipToFront",
-        "ShoppingCart"
+        "ShoppingCart",
+        "Label",
+        "Business",
+        "Event"
       ],
       "theme":{
         "colors":{

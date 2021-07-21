@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import {
+    Divider,
     Button,
     TextField,
     SimpleSwitch,
@@ -199,6 +200,9 @@ class GenericForm extends React.Component {
 
 
     shouldComponentUpdate(props, state) {
+        if(props.closing){
+            return false
+        }
         return state !== this.state || state.fieldErrors !== this.state.fieldErrors || state.showTranslations !== this.state.showTranslations
     }
 
@@ -775,6 +779,10 @@ class GenericForm extends React.Component {
                                               onChange={this.handleInputChange}/>)
 
 
+        }
+
+        if( field.divider ) {
+            currentFormFields.push( <Divider key={'divider'+field.name}/>)
         }
 
         if (!langButtonWasInserted && translateButton && languageCode === _app_.lang) {
