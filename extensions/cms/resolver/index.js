@@ -234,6 +234,16 @@ export default db => ({
             }
             console.log(`cms resolver for ${slug} got data in ${(new Date()).getTime() - startTime}ms`)
 
+            //TODO: only experimental
+            if(meta === 'fetchMore'){
+                delete result.dataResolver
+                delete result.serverScript
+                delete result.template
+                delete result.script
+                delete result.style
+                delete result.name
+            }
+
             return result
         },
         cmsPageStatus: async ({slug}, req) => {

@@ -1276,8 +1276,7 @@ class JsonDom extends React.Component {
     }
 
 
-    fetchMore = (callback) => {
-        console.log(this.props)
+    fetchMore = (callback, options) => {
         const scope = this.getScope(this.props)
         if (scope.fetchingMore || !this._ismounted) {
             return
@@ -1298,7 +1297,12 @@ class JsonDom extends React.Component {
             query += `${key}=${scope.params[key]}`
         }
 
-        this.props.onFetchMore(query, (res) => {
+        let meta
+        if(options && options.meta){
+            meta = options.meta
+        }
+
+        this.props.onFetchMore({query, meta}, (res) => {
             if (res.cmsPage && res.cmsPage.resolvedData) {
                 const newData = JSON.parse(res.cmsPage.resolvedData)
 

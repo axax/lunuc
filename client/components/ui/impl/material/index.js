@@ -10,13 +10,13 @@ import React from 'react'
 import blue from '@material-ui/core/colors/blue'
 
 // material theme
-import {MuiThemeProvider, createMuiTheme} from '@material-ui/core/styles'
+import {MuiThemeProvider, createTheme} from '@material-ui/core/styles'
 import defaultTheme from '@material-ui/core/styles/defaultTheme'
 import CssBaseline from '@material-ui/core/CssBaseline'
 
 
 // override the default theme
-export const theme = createMuiTheme({
+export const theme = createTheme({
     palette: {
         primary: blue,
     },

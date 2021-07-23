@@ -117,10 +117,11 @@ class CmsViewContainer extends React.Component {
             subscriptionCallback={cb => {
                 this._subscriptionCallback = cb
             }}
-            onFetchMore={(query, cb) => {
+            onFetchMore={({query, meta}, cb) => {
                 this.props.fetchMore({
                     variables: {
-                        query
+                        query,
+                        meta
                     },
                     updateQuery: (prev, {fetchMoreResult}) => {
 
