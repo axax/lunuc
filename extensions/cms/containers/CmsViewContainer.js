@@ -318,7 +318,7 @@ class CmsViewContainer extends React.Component {
                         }
                         if (subscription.autoUpdate) {
 
-                            if (!supscriptionData.data) {
+                            if (!supscriptionData.data || !supscriptionData.data[subscriptionName]) {
                                 //console.warn('subscription data missing')
                                 return
                             }

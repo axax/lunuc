@@ -1624,6 +1624,9 @@ const m = Math.max((offX+offY) / 2,100)
 
         Object.keys(newJsonElement.options).forEach(key => {
 
+            if(!newJsonElement.options[key]){
+                return
+            }
             let val = propertyByPath('$original_' + key, subJson, '_')
             if (!val) {
                 val = propertyByPath(key, subJson, '_')

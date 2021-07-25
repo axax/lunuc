@@ -77,6 +77,9 @@ class GenericForm extends React.Component {
         }
         Object.keys(props.fields).map(fieldKey => {
             const field = props.fields[fieldKey]
+            if(!field){
+                return
+            }
             let fieldValue
             if (field.localized) {
                 if (props.values && props.values[fieldKey]) {
@@ -123,6 +126,10 @@ class GenericForm extends React.Component {
         const fieldErrors = {}, tabs = []
         Object.keys(fields).forEach(fieldKey => {
             const field = fields[fieldKey]
+
+            if(!field){
+                return
+            }
 
             if (field.tab && options.changeTab) {
                 if (tabs.indexOf(field.tab) < 0) {
@@ -396,6 +403,12 @@ class GenericForm extends React.Component {
         for (let fieldIndex = 0; fieldIndex < fieldKeys.length; fieldIndex++) {
             const fieldKey = fieldKeys[fieldIndex],
                 field = fields[fieldKey]
+
+
+            if(!field){
+                continue
+            }
+
 
             if (field.readOnly || (field.role && !Util.hasCapability({userData: _app_.user}, field.role))) {
                 continue
