@@ -506,7 +506,7 @@ const baseElements = [
             p_className: {
                 fullWidth: true,
                 value: '',
-                label: 'Style',
+                label: 'Klassname',
                 tab: DEFAULT_TAB
             },
             p_target: {

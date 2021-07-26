@@ -53,6 +53,12 @@ class TinyEditor extends React.Component {
                     relative_urls : false,
                     remove_script_host : false,
                     convert_urls : false,
+                    link_class_list: [{title:'Telefon', value:'icon-phone black'},
+                        {title:'Fax', value:'icon-fax black'},
+                        {title:'Email', value:'icon-email black'},
+                        {title:'Schwarz', value:'black'},
+                        {title:'Button', value:'button'}
+                        ],
                     formats: {
                         // Changes the alignment buttons to add a class to each of the matching selector elements
                         alignleft: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'left' },
@@ -73,7 +79,7 @@ class TinyEditor extends React.Component {
                         'bullist numlist outdent indent | link image | print preview media fullpage | ' +
                         'forecolor backcolor emoticons | help',
                     menu: {
-                        favs: {title: 'My Favorites', items: 'code visualaid | searchreplace | spellchecker | emoticons'}
+                        favs: {title: 'Tools', items: 'code visualaid | searchreplace | spellchecker | emoticons'}
                     },
                     menubar: 'favs file edit view insert format tools table help',
                     file_picker_callback: function(callback, value, meta) {
@@ -156,7 +162,7 @@ class TinyEditor extends React.Component {
 
             }
             if (!window.tinymce) {
-                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.7.0/tinymce.min.js', {
+                DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/tinymce.min.js', {
                     onload: assestLoaded
                 },{ignoreIfExist:true})
             } else {
