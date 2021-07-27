@@ -2,9 +2,9 @@ import {NO_SESSION_KEY_VALUES} from 'client/constants'
 import {client, useQuery} from '../middleware/graphql'
 
 export const QUERY_KEY_VALUES = 'query keyValues($keys:[String]){keyValues(keys:$keys){limit offset total results{key value status createdBy{_id username}}}}'
-export const QUERY_SET_KEY_VALUE = 'mutation setKeyValue($key:String!,$value:String!){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}'
+export const QUERY_SET_KEY_VALUE = 'mutation setKeyValue($key:String!,$value:String){setKeyValue(key:$key,value:$value){key value status createdBy{_id username}}}'
 export const QUERY_KEY_VALUES_GLOBAL = 'query keyValueGlobals($keys:[String]){keyValueGlobals(keys:$keys){limit offset total results{key value status}}}'
-export const QUERY_SET_KEY_VALUE_GLOBAL = 'mutation setKeyValueGlobal($key:String!,$value:String!){setKeyValueGlobal(key:$key,value:$value){key value status}}'
+export const QUERY_SET_KEY_VALUE_GLOBAL = 'mutation setKeyValueGlobal($key:String!,$value:String){setKeyValueGlobal(key:$key,value:$value){key value status}}'
 
 export const useKeyValues = (keys) => {
     const {data, loading} = useQuery(QUERY_KEY_VALUES, {variables: {keys}})
