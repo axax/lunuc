@@ -341,7 +341,7 @@ class TypePicker extends React.Component {
                                                       label={typeDataToLabel(singleValue, pickerField)}
                                                       onDelete={this.handleRemovePick.bind(this, singleValueIndex)}
                                                       onClick={() => {
-                                                          if (singleValue.type === 'Media') {
+                                                          if (singleValue.type === 'Media' || singleValue.__typename=== 'Media') {
                                                               window.open(getImageSrc(singleValue), '_blank').focus()
                                                           }
                                                       }}
