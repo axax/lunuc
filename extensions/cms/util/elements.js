@@ -1599,6 +1599,9 @@ const advancedElements = [
             p_className: {
                 label: 'Klassname'
             },
+            p_id: {
+                label: 'Element ID'
+            },
             $is: {
                 label: 'Bedingung'
             }
