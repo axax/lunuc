@@ -61,7 +61,8 @@ const trOptions = key => ({
 
 const classOptions = key => ({
     [`${key}className`]: {
-        label: 'Klassname'
+        label: 'Klassname',
+        tab: DEFAULT_TAB
     }
 })
 
@@ -536,7 +537,7 @@ const baseElements = [
             p_gotop: {
                 fullWidth: true,
                 defaultValue: true,
-                type:'Boolean',
+                type: 'Boolean',
                 label: 'Scroll top',
                 tab: DEFAULT_TAB
             },
@@ -705,7 +706,12 @@ const baseElements = [
             $set: [
                 {
                     key: '__sliderData',
-                    value: []
+                    value: [],
+                    chunkOptions: {
+                        fill: {
+                            data: {}
+                        }
+                    }
                 }
             ],
             c: [
@@ -1497,8 +1503,7 @@ const advancedElements = [
                     slug: 'core/accordion',
                     props: {
                         title: '',
-                        items: [
-                        ]
+                        items: []
                     }
                 }
             }
