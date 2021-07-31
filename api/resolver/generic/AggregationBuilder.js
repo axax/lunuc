@@ -36,7 +36,7 @@ export default class AggregationBuilder {
 
         if (!offset) {
 
-            if (page) {
+            if (page && page>0) {
                 return (page - 1) * this.getLimit()
             } else {
                 return 0

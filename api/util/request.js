@@ -23,7 +23,6 @@ export const request = (options) => {
 
         const req = httpx.request(finalOptions, res => {
 
-            console.log(finalOptions.url, res.statusCode)
             if(finalOptions.followAllRedirects && (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 307)) {
 
 
@@ -64,7 +63,6 @@ export const request = (options) => {
             })
 
         }).on('error', error => {
-console.log(error)
             reject(error)
         })
 
