@@ -12,7 +12,7 @@ export default `
 
     type Query {
     	cleanUpMedia: CleanUpMediaResult
-    	findReferencesForMedia: FindReferencesForMediaResult
+    	findReferencesForMedia(limit: String): FindReferencesForMediaResult
     }
     
 `
