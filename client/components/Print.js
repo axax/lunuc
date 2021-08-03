@@ -67,19 +67,27 @@ const styles = {
     },
     pageBreak: {
         width: '100%',
-       /* borderTop: 'dashed 1px #ffd633',*/
+        borderTop: 'dashed 1px #ffd633',
         position: 'relative',
-        top: 0,
-       /* '&:after': {
+        top: '-2px',
+        '&:after': {
             position: 'absolute',
             right: '10px',
             display: 'block',
-            content: '"Page break"',
+            content: '"Seitenumbruch"',
             color: '#000',
             fontSize: '0.7em',
             background: '#ffd633',
             padding: '3px'
-        }*/
+        }
+    },
+    isPrinting: {
+        '& $pageBreak': {
+            borderTop: 'none',
+            '&:after': {
+                display: 'none'
+            }
+        }
     }
 }
 
@@ -103,6 +111,12 @@ class Print extends React.PureComponent {
         DomUtil.addScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js', {id: 'html2canvas'})
     }
 
+    componentDidUpdate() {
+        if(this.props.showPageBreak) {
+            this.createPdf(true)
+        }
+    }
+
     componentDidMount() {
         if (this.props.onCustomEvent) {
             this.props.onCustomEvent(this)
@@ -113,21 +127,11 @@ class Print extends React.PureComponent {
             }, 300)
         } else {
 
-            setTimeout(() => {
-                const {classes} = this.props
-
-                const printArea = this.$(`.${classes.printArea}`)[0],
-                    printAreaInner = this.$(`.${classes.printAreaInner}`, printArea)[0]
-
-
-                const offsetTop = this.offsetTop(printArea),
-                    paddingTop = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-top')),
-                    paddingBottom = parseInt(window.getComputedStyle(printArea, null).getPropertyValue('padding-bottom'))
-
-
-                this.calculatePageBreaks({printAreaInner, paddingTop, paddingBottom, offsetTop})
-
-            }, 300)
+            if(this.props.showPageBreak) {
+                setTimeout(() => {
+                    this.createPdf(true)
+                }, 500)
+            }
         }
 
 
@@ -135,6 +139,7 @@ class Print extends React.PureComponent {
 
     render() {
         const {classes, children, style, printAreaInnerStyle, buttonLabel, className, showButtons} = this.props
+
         return <div className={classNames(classes.root, className)}>
             {showButtons !== false && <button className={classes.button}
                                               onClick={this.createPdf.bind(this)}>{buttonLabel || 'Create PDF'}</button>}
@@ -160,9 +165,9 @@ class Print extends React.PureComponent {
 
     $ = (expr, p) => (p || document).querySelectorAll(expr)
 
-    createPdf() {
-        if (!window.html2canvas) return false
-        if (!window.pdfMake) return false
+    createPdf(simulation) {
+        if (!simulation && !window.html2canvas) return false
+        if (!simulation && !window.pdfMake) return false
 
         const {classes, pdfName, showDate} = this.props
         const overlay = this.$(`.${classes.overlay}`)[0],
@@ -172,7 +177,16 @@ class Print extends React.PureComponent {
 
         const scale = this.props.scale || 1
 
-        overlay.style.display = 'flex'
+        let watermarkImage
+        if (!simulation) {
+            overlay.style.display = 'flex'
+            printArea.classList.add(classes.isPrinting)
+            printArea.classList.add('print-area-printing')
+            if(this.props.watermark) {
+                watermarkImage= new Image()
+                watermarkImage.src = this.props.watermark
+            }
+        }
 
 
         const offsetTop = this.offsetTop(printArea),
@@ -227,6 +241,8 @@ class Print extends React.PureComponent {
                     createCanvas.width = canvas.width
                     const context = createCanvas.getContext('2d')
                     context.clearRect(0, 0, canvas.width, canvas.height)
+
+
                     context.drawImage(canvas, 0, 0)
 
                     // Cover top and bottom area with a white rect
@@ -239,6 +255,15 @@ class Print extends React.PureComponent {
                         context.fillRect(0, ((page > 0 ? pagePaddingTop : 0) + h) * scale, canvas.width, canvas.height - h * scale)
                     }
 
+
+                    if(watermarkImage) {
+                        const w=watermarkImage.width * scale,
+                            h=watermarkImage.height * scale,
+                            x = canvas.width - w,
+                            y = canvas.height - h
+
+                        context.drawImage(watermarkImage, x, y,  w, h)
+                    }
 
                     // draw page number
                     context.textBaseline = "top"
@@ -262,6 +287,9 @@ class Print extends React.PureComponent {
                     if (page < breaks.length) {
                         nextPage(page + 1)
                     } else {
+
+                        printArea.classList.remove(classes.isPrinting)
+                        printArea.classList.remove('print-area-printing')
                         // $pai.css({marginTop:0})
                         //$pa.css({overflow:"visible",height:"auto"})
 
@@ -313,7 +341,11 @@ class Print extends React.PureComponent {
 
 
             }
-            nextPage(0)
+
+            if (!simulation) {
+
+                nextPage(0)
+            }
 
             /* const doc = new jsPDF()
 
@@ -353,15 +385,32 @@ class Print extends React.PureComponent {
 
         const innerPageHeight = PAGE_HEIGHT - paddingTop - paddingBottom
 
+        let noBreakClassName
+        if(this.props.noBreakClassName){
+            noBreakClassName = this.props.noBreakClassName
+        }else{
+            noBreakClassName = []
+        }
+
         node.childNodes.forEach(childNode => {
+
                 const newOffsetTop = this.offsetTop(childNode)
 
                 let pos = newOffsetTop - offsetTop + this.outerHeight(childNode)
 
                 if (pos > innerPageHeight) {
 
+                    let noBreak = false
+                    noBreakClassName.forEach(cn=>{
+                        if(childNode.classList.contains(cn)){
+                            noBreak = true
+                        }
+                    })
+
+
+
                     // A break is needed
-                    if (childNode.tagName === 'TD' || childNode.tagName === 'TH' || childNode.tagName === 'TR') {
+                    if (!noBreak && (childNode.tagName === 'TD' || childNode.tagName === 'TH' || childNode.tagName === 'TR')) {
 
                         // special treatment for breaks within a table
 
@@ -376,7 +425,7 @@ class Print extends React.PureComponent {
                         offsetTop = this.offsetTop(br)
 
 
-                    } else if (childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
+                    } else if ( !noBreak && childNode.hasChildNodes() && childNode.childNodes[0].nodeType !== Node.TEXT_NODE) {
                         offsetTop = this.setBreakRec(childNode, {offsetTop, PAGE_HEIGHT, paddingBottom, paddingTop})
                     } else {
                         let br = document.createElement('div')
