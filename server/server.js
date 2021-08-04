@@ -409,9 +409,11 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
                 // only update cache if file is old enough
                 const statsFile = fs.statSync(cacheFileName)
                 const now = new Date().getTime(),
-                    modeTime = new Date(statsFile.mtime).getTime() + 3600000 * 3; // a day in miliseconds = 86400000
+                    modeTime = new Date(statsFile.mtime).getTime() + 300000; // a day in miliseconds = 86400000
 
                 if (modeTime > now) {
+
+                    console.log(now, modeTime)
                     return
                 }
             }
