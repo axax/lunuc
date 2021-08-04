@@ -1,4 +1,4 @@
-export const parseUserAgent = (agent, botregex = /AhrefsBot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit/) => {
+export const parseUserAgent = (agent, botregex = /AhrefsBot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit|LinkedInBot|Twitterbot|Xing/) => {
 
 
     let browser, version, isBot = false
