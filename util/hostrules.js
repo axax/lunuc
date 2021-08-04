@@ -26,6 +26,10 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
                     hostrule._basedir = dir
                     hostrule._lastModified = stats.mtime
 
+                    if(hostrule.botregex){
+                        hostrule.botregex = new RegExp(hostrule.botregex)
+                    }
+
                     if (withCertContext) {
                         if (!hostrule.certDir) {
                             hostrule.certDir = '/etc/letsencrypt/live/' + domainname
@@ -45,6 +49,7 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
                 }
             }
         })
+
     }
 }
 

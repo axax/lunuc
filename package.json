@@ -115,15 +115,15 @@
   "optionalDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^1.1.0",
-    "@google-cloud/storage": "^5.11.1",
+    "@google-cloud/storage": "^5.12.0",
     "@google-cloud/translate": "^6.2.6",
     "aws-sdk": "^2.960.0",
     "fluent-ffmpeg": "^2.1.2",
-    "lighthouse": "^8.1.0",
+    "lighthouse": "^8.2.0",
     "mssql": "^7.2.0",
     "native-dns": "^0.7.0",
     "nodemon": "^2.0.12",
-    "puppeteer": "^10.1.0",
+    "puppeteer": "^10.2.0",
     "soap": "^0.40.0",
     "xml2js": "^0.4.23",
     "ytdl-core": "^4.9.0"

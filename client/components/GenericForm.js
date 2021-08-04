@@ -77,7 +77,7 @@ class GenericForm extends React.Component {
         }
         Object.keys(props.fields).map(fieldKey => {
             const field = props.fields[fieldKey]
-            if(!field){
+            if (!field) {
                 return
             }
             let fieldValue
@@ -127,7 +127,7 @@ class GenericForm extends React.Component {
         Object.keys(fields).forEach(fieldKey => {
             const field = fields[fieldKey]
 
-            if(!field){
+            if (!field) {
                 return
             }
 
@@ -207,7 +207,7 @@ class GenericForm extends React.Component {
 
 
     shouldComponentUpdate(props, state) {
-        if(props.closing){
+        if (props.closing) {
             return false
         }
         return state !== this.state || state.fieldErrors !== this.state.fieldErrors || state.showTranslations !== this.state.showTranslations
@@ -339,7 +339,7 @@ class GenericForm extends React.Component {
         const newState = Object.assign({}, {fields: {}}, prevState)
 
         // for localization --> name.de / name.en
-        if( localized ){
+        if (localized) {
             const path = name.split('.')
 
             if (!newState.fields[path[0]]) {
@@ -347,7 +347,7 @@ class GenericForm extends React.Component {
             }
             newState.fields[path[0]][path[1]] = value
 
-        }else{
+        } else {
             newState.fields[name] = value
         }
         return newState
@@ -361,7 +361,11 @@ class GenericForm extends React.Component {
             value = checkFieldType(value, fields[name])
         }
         this.setState((prevState) => {
-            const newState = this.newStateForField(prevState, {name, value, localized: target.dataset && !!target.dataset.language})
+            const newState = this.newStateForField(prevState, {
+                name,
+                value,
+                localized: target.dataset && !!target.dataset.language
+            })
             if (this.props.onChange) {
                 this.props.onChange({name, value, target})
             }
@@ -377,7 +381,10 @@ class GenericForm extends React.Component {
             const field = fields[e.target.name]
             if (field.type === 'Float') {
                 // a float value is expected so convert the iso date to an unix timestamp
-                const newState = this.newStateForField(this.state, {name: e.target.name, value: Date.parse(e.target.value)})
+                const newState = this.newStateForField(this.state, {
+                    name: e.target.name,
+                    value: Date.parse(e.target.value)
+                })
                 this.setState(newState)
             }
         }
@@ -405,7 +412,7 @@ class GenericForm extends React.Component {
                 field = fields[fieldKey]
 
 
-            if(!field){
+            if (!field) {
                 continue
             }
 
@@ -448,29 +455,108 @@ class GenericForm extends React.Component {
 
 
             if (field.subFields) {
+                if (field.multi) {
 
-                let values
-                try {
-                    values = JSON.parse(value)
-                } catch (e) {
-                }
+                    let subFields = field.subFields
 
-                if (!values) {
-                    values = {}
-                }
+                    if (subFields.constructor === Array) {
+                        subFields = subFields.reduce((acc, cur, i) => {
+                            acc[cur.name] = cur
+                            return acc
+                        }, {})
+                    }
+                    let subFieldValues = []
 
+                    if (value) {
+                        value.forEach(val=>{
+                            subFieldValues.push(Object.assign({},val))
+                        })
+                    }
+                    subFieldValues.forEach((values, index) => {
+                        const valueFieldKey = fieldKey + '-' + index
+                        let title = ''
+                        Object.keys(values).map(k => {
+                            if (title && values[k]) {
+                                title += ' / '
+                            }
+                            title += values[k] || ''
+                        })
 
-                currentFormFields.push(<GenericForm onChange={(e) => {
-                    values[e.name] = e.value
-                    this.handleInputChange({
-                        target: {
-                            name: fieldKey,
-                            value: JSON.stringify(values)
-                        }
+                        currentFormFields.push(
+                            <Expandable title={title}
+                                        key={"expandable" + fieldKey}
+                                        onChange={(e) => {
+                                            this.setState({expanded: valueFieldKey})
+                                        }}
+                                        expanded={this.state.expanded === valueFieldKey}>
+                                <GenericForm onChange={(e) => {
+                                    values[e.name] = e.value
+                                    this.handleInputChange({
+                                        target: {
+                                            name: fieldKey,
+                                            value: subFieldValues
+                                        }
+                                    })
+
+                                }} primaryButton={false} values={values} key={valueFieldKey} subForm={true}
+                                             classes={classes}
+                                             fields={subFields}/>
+                                <Button key={'delete'+valueFieldKey}
+                                        color="secondary"
+                                        size="small"
+                                        onClick={() => {
+                                            subFieldValues.splice(index, 1)
+                                            this.handleInputChange({
+                                                target: {
+                                                    name: fieldKey,
+                                                    value: subFieldValues
+                                                }
+                                            })
+                                        }}
+                                        variant="contained">Löschen</Button>
+
+                            </Expandable>)
                     })
+                    currentFormFields.push(<Button key={fieldKey}
+                                                   color="primary"
+                                                   variant="contained"
+                                                   style={field.style}
+                                                   onClick={() => {
+                                                       subFieldValues.push({})
+                                                       this.handleInputChange({
+                                                           target: {
+                                                               name: fieldKey,
+                                                               value: subFieldValues
+                                                           }
+                                                       })
+                                                   }}>{field.label}</Button>)
 
-                }} primaryButton={false} values={values} key={fieldKey} subForm={true} classes={classes}
-                                                    fields={field.subFields}/>)
+                } else {
+
+
+                    let values
+                    try {
+                        values = JSON.parse(value)
+                    } catch (e) {
+                    }
+
+                    if (!values) {
+                        values = {}
+                    }
+                    currentFormFields.push(<GenericForm onChange={(e) => {
+                        values[e.name] = e.value
+                        this.handleInputChange({
+                            target: {
+                                name: fieldKey,
+                                value: JSON.stringify(values)
+                            }
+                        })
+
+                    }} primaryButton={false} values={values} key={fieldKey} subForm={true} classes={classes}
+                                                        fields={field.subFields}/>)
+
+                }
+
 
                 currentFormFields.push(<br key={'brMeta' + fieldKey}/>)
             }
@@ -601,11 +687,13 @@ class GenericForm extends React.Component {
             field.label = ''
         }
 
-        if(field.description){
+        if (field.description) {
             currentFormFields.push(<p>{field.description}</p>)
         }
 
-        if (['json', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
+        if (uitype === 'wrapper') {
+            // do nothing
+        } else if (['json', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
 
             let highlight, jsonStr
             if (uitype === 'css') {
@@ -641,7 +729,7 @@ class GenericForm extends React.Component {
                 forceJson={field.type === 'Object'}
                 onChange={(newValue) => this.handleInputChange({
                     target: {
-                        dataset:{
+                        dataset: {
                             language: languageCode
                         },
                         name: fieldKey,
@@ -661,7 +749,7 @@ class GenericForm extends React.Component {
 
                             onChange={(newValue) => this.handleInputChange({
                                 target: {
-                                    dataset:{
+                                    dataset: {
                                         language: languageCode
                                     },
                                     name: fieldKey,
@@ -770,13 +858,14 @@ class GenericForm extends React.Component {
                                                   shrink: true,
                                               }}
                                               inputProps={{
+                                                  step: field.step || '',
                                                   'data-language': languageCode
                                               }}
                                               InputProps={{
                                                   endAdornment: languageCode === _app_.lang &&
-                                                  <InputAdornment position="end">
-                                                  {translateButton}
-                                                  </InputAdornment>
+                                                      <InputAdornment position="end">
+                                                          {translateButton}
+                                                      </InputAdornment>
                                               }}
                                               helperText={this.state.fieldErrors[fieldKey]}
                                               fullWidth={field.fullWidth}
@@ -794,8 +883,8 @@ class GenericForm extends React.Component {
 
         }
 
-        if( field.divider ) {
-            currentFormFields.push( <Divider key={'divider'+field.name}/>)
+        if (field.divider) {
+            currentFormFields.push(<Divider key={'divider' + field.name}/>)
         }
 
         if (!langButtonWasInserted && translateButton && languageCode === _app_.lang) {

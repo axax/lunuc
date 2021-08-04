@@ -373,7 +373,7 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
     const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
 
     const agent = req.headers['user-agent']
-    const {version, browser, isBot} = parseUserAgent(agent)
+    const {version, browser, isBot} = parseUserAgent(agent, hostrule.botregex || (hostrules.general && hostrules.general.botregex))
 
     if (isBot || (browser === 'firefox' && version <= 12) || (browser === 'chrome' && version <= 16) || (browser === 'msie' && version <= 6)) {
 
@@ -399,16 +399,21 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
             let isFile = fs.existsSync(cacheFileName)
 
             if (isFile) {
-                /*const statsFile = fs.statSync(cacheFileName)
-                const now = new Date().getTime(),
-                    modeTime = new Date(statsFile.mtime).getTime() + 86400000 * 5; // 5days in miliseconds
-                if (modeTime > now) {*/
+
                 //from cache
                 console.log(`send from cache ${cacheFileName}`)
 
                 sendFile(req, res, {headers, filename: cacheFileName, statusCode: 200})
                 sentFromCache = true
-                // }
+
+                // only update cache if file is old enough
+                const statsFile = fs.statSync(cacheFileName)
+                const now = new Date().getTime(),
+                    modeTime = new Date(statsFile.mtime).getTime() + 3600000 * 3; // a day in miliseconds = 86400000
+
+                if (modeTime > now) {
+                    return
+                }
             }
             // return isFile
         }
@@ -965,13 +970,14 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
             }
 
+            console.log(`${req.connection.remoteAddress}: ${parsedUrl.href}`)
+
             //small security check
             if (urlPathname.indexOf('../') >= 0) {
                 sendError(res, 403)
                 return
             }
 
-            console.log(`${req.connection.remoteAddress}: ${urlPathname}`)
 
             if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/' + API_PREFIX)) {
                 // there is also /graphql/upload

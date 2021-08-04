@@ -41,7 +41,7 @@ exports.createServer = (opts, handler) => {
         })
 
         socket.once('end', (e) => {
-            console.log('server socket end')
+            //console.log('server socket end')
         })
 
         socket.on('error', (err) => {

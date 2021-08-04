@@ -6,5 +6,6 @@
   },
   "statusCode": {
     "/404": 404
-  }
+  },
+  "0botregex": "AhrefsBot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit"
 }

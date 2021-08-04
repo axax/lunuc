@@ -1,10 +1,10 @@
-export const parseUserAgent = agent => {
+export const parseUserAgent = (agent, botregex = /AhrefsBot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit/) => {
 
 
     let browser, version, isBot = false
     if (agent) {
 
-        isBot = /AhrefsBot|bingbot|msnbot|YandexBot|PetalBot|Googlebot/.test(agent)
+        isBot = botregex.test(agent)
 
         const agentParts = agent.toLowerCase().split(' ')
 
