@@ -244,7 +244,7 @@ class GenericForm extends React.Component {
         }, {ignoreIfExist: true})
 
 
-        DomUtil.addStyle('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', {id: 'html2canvas'}, {ignoreIfExist: true})
+        DomUtil.addStyle('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', {id: 'flatpickrCss'}, {ignoreIfExist: true})
 
     }
 
@@ -466,8 +466,8 @@ class GenericForm extends React.Component {
                         }, {})
                     }
                     let subFieldValues = []
+                    if (value && value.constructor === Array) {
 
-                    if (value) {
                         value.forEach(val=>{
                             subFieldValues.push(Object.assign({},val))
                         })
@@ -475,12 +475,18 @@ class GenericForm extends React.Component {
                     subFieldValues.forEach((values, index) => {
                         const valueFieldKey = fieldKey + '-' + index
                         let title = ''
-                        Object.keys(values).map(k => {
-                            if (title && values[k]) {
-                                title += ' / '
-                            }
-                            title += values[k] || ''
-                        })
+                        if(field.titleTemplate){
+                            title = Util.replacePlaceholders(field.titleTemplate,values)
+                        }else {
+                            Object.keys(values).map(k => {
+                                if (title && values[k]) {
+                                    title += ' / '
+                                }
+                                title += values[k] || ''
+                            })
+                        }
+
+
 
                         currentFormFields.push(
                             <Expandable title={title}

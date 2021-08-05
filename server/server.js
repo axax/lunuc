@@ -147,7 +147,7 @@ const sendFileFromDir = async (req, res, filePath, headers, parsedUrl) => {
             mimeType = MimeType.detectByExtension(ext)
         }
         const headerExtra = {
-            'Cache-Control': 'public, max-age=31536000',
+            'Cache-Control': 'public, max-age=604800', /* a week */
             'Content-Type': mimeType,
             'Last-Modified': stats.mtime.toUTCString(),
             ...headers
@@ -261,13 +261,17 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         const page = await browser.newPage()
 
         setTimeout(async () => {
-            const procInfo = await browser.process()
-            if (!procInfo.signalCode) {
-                browser.process().kill('SIGINT')
-                console.log('browser still running after 10s. kill process')
+            try {
+                const procInfo = await browser.process()
+                if (!procInfo.signalCode) {
+                    browser.process().kill('SIGINT')
+                    console.log('browser still running after 10s. kill process')
+                }
+            }catch (e) {
+                console.warn("error termination process",e)
             }
 
-        }, 10000)
+        }, 20000)
 
 
         await page.setRequestInterception(true)
@@ -413,7 +417,6 @@ const sendIndexFile = async ({req, res, urlPathname, hostrule, host, parsedUrl})
 
                 if (modeTime > now) {
 
-                    console.log(now, modeTime)
                     return
                 }
             }
@@ -972,7 +975,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 urlPathname = decodeURIComponentSafe(parsedUrl.pathname)
             }
 
-            console.log(`${req.connection.remoteAddress}: ${parsedUrl.href}`)
+            console.log(`${req.connection.remoteAddress}: ${host}${parsedUrl.href} - ${req.headers['user-agent']}`)
 
             //small security check
             if (urlPathname.indexOf('../') >= 0) {

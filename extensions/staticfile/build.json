@@ -10,6 +10,12 @@
           "clone": "${name} (copy)"
         },
         {
+          "name": "modifiedAt",
+          "label": "Geändert am",
+          "hidden": false,
+          "type": "Float"
+        },
+        {
           "name": "preprocessor",
           "reference": true,
           "multi": true,

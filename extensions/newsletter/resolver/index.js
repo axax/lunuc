@@ -102,7 +102,7 @@ export default db => ({
                 status: 'Newsletter sent to: ' + emails.join(',')
             }
         },
-        subscribeNewsletter: async ({email, location, url, meta, list}, req) => {
+        subscribeNewsletter: async ({email, fromEmail, confirmSlug, location, url, meta, list}, req) => {
 
             const {context}  = req
 
@@ -154,10 +154,11 @@ export default db => ({
                 if(url){
                     finalUrl = url
                 }else{
-                    finalUrl = (req.isHttps ? 'https://' : 'http://') + getHostFromHeaders(req.headers) + '/core/newsletter/optin/confirm'
+                    finalUrl = (req.isHttps ? 'https://' : 'http://') + getHostFromHeaders(req.headers) + (confirmSlug || '/core/newsletter/optin/confirm')
                 }
 
                 await sendMail(db, context, {
+                    from: fromEmail,
                     slug: 'core/newsletter/optin/mail',
                     recipient: email,
                     subject: 'Anmeldung Newsletter',
