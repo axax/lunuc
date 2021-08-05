@@ -20,6 +20,7 @@ import {parseUserAgent} from '../util/userAgent'
 import {USE_COOKIES} from "../api/constants";
 import {parseCookies} from "../api/util/parseCookies";
 import {decodeToken} from "../api/util/jwt";
+import puppeteer from 'puppeteer'
 
 const {UPLOAD_DIR, UPLOAD_URL, BACKUP_DIR, BACKUP_URL, API_PREFIX, WEBROOT_ABSPATH} = config
 const ABS_UPLOAD_DIR = path.join(__dirname, '../' + UPLOAD_DIR)
@@ -242,30 +243,37 @@ const sendFile = function (req, res, {headers, filename, statusCode = 200}) {
     }
 }
 
-
+let parseWebsiteBrowser
 const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
 
 
     try {
-        const puppeteer = require('puppeteer')
+        const startTime = new Date().getTime()
 
         console.log(`fetch ${urlToFetch}`)
-        const browser = await puppeteer.launch({
-            ignoreHTTPSErrors: true,
-            args: ['--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--no-zygote' /* Disables the use of a zygote process for forking child processes. Instead, child processes will be forked and exec'd directly.*/
-            ]
-        })
-        const page = await browser.newPage()
+        if(!parseWebsiteBrowser) {
+            parseWebsiteBrowser = await puppeteer.launch({
+                ignoreHTTPSErrors: true,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--no-zygote' /* Disables the use of a zygote process for forking child processes. Instead, child processes will be forked and exec'd directly.*/
+                ]
+            })
+        }
+        const page = await parseWebsiteBrowser.newPage()
 
         setTimeout(async () => {
+            /* if page is still not closed after 20s something is wrong */
             try {
-                const procInfo = await browser.process()
-                if (!procInfo.signalCode) {
-                    browser.process().kill('SIGINT')
-                    console.log('browser still running after 10s. kill process')
+                if(!page._closed) {
+                    const procInfo = await parseWebsiteBrowser.process()
+                    if (!procInfo.signalCode) {
+                        parseWebsiteBrowser.process().kill('SIGINT')
+                        console.log('browser still running after 20s. kill process')
+                    }
+                    parseWebsiteBrowser = false
                 }
             }catch (e) {
                 console.warn("error termination process",e)
@@ -300,23 +308,28 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         await page.evaluateOnNewDocument(() => {
             window._elementWatchForceVisible = true
         })
-
         await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
 
-
-        console.log(`url fetched ${urlToFetch}`)
         let html = await page.content()
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')
 
-        try {
+        console.log(`url fetched ${urlToFetch} in ${new Date().getTime() - startTime}ms`)
 
-            const pages = await browser.pages()
+        page.close()
+
+
+        /*try {
+
+
+            const pages = await parseWebsiteBrowser.pages()
             await pages.forEach(async (page) => await page.close())
 
         }catch (e) {
             console.error(e)
-        }
-        await browser.close()
+        }*/
+        //console.log(`Step 7 ${new Date().getTime() - startTime}ms`)
+
+        //await browser.close()
 
         return {html, statusCode}
     } catch (e) {
@@ -327,7 +340,6 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
 
 
 const doScreenCapture = async (url, filename, options) => {
-    const puppeteer = require('puppeteer')
 
     console.log(`take screenshot ${url}`)
 
