@@ -253,6 +253,8 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         console.log(`fetch ${urlToFetch}`)
         if(!parseWebsiteBrowser) {
             parseWebsiteBrowser = await puppeteer.launch({
+                devtools: false,
+                /*userDataDir: './server/myUserDataDir',*/
                 ignoreHTTPSErrors: true,
                 args: [
                     '--no-sandbox',
@@ -282,7 +284,9 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         }, 20000)
 
 
+        await page.setDefaultTimeout(5000)
         await page.setRequestInterception(true)
+
         await page.setExtraHTTPHeaders({'x-host-rule': host})
         page.on('request', (request) => {
             if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
@@ -308,7 +312,7 @@ const parseWebsite = async (urlToFetch, host, agent, isBot, remoteAddress) => {
         await page.evaluateOnNewDocument(() => {
             window._elementWatchForceVisible = true
         })
-        await page.goto(urlToFetch, {waitUntil: 'networkidle2'})
+        await page.goto(urlToFetch, {waitUntil: 'networkidle0'})
 
         let html = await page.content()
         html = html.replace('</head>', '<script>window.LUNUC_PREPARSED=true</script></head>')

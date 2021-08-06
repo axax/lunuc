@@ -142,7 +142,9 @@ class Print extends React.PureComponent {
 
         return <div className={classNames(classes.root, className)}>
             {showButtons !== false && <button className={classes.button}
-                                              onClick={this.createPdf.bind(this)}>{buttonLabel || 'Create PDF'}</button>}
+                                              onClick={()=>{
+                                                  this.createPdf()
+                                              }}>{buttonLabel || 'Create PDF'}</button>}
             <div className={classes.overlay}></div>
             <div className={classes.wrapper}>
                 <div className={classNames(classes.printArea, 'print-area')} style={style}>
