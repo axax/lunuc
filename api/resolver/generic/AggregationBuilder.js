@@ -175,6 +175,7 @@ export default class AggregationBuilder {
             // explicit search for this field
             if (filterPart) {
 
+
                 let filterPartArray
                 if (filterPart.constructor !== Array) {
                     filterPartArray = [filterPart]
@@ -216,7 +217,6 @@ export default class AggregationBuilder {
                         } else {
                             filterPartArray = filterPart
                         }
-
                         for (const filterPartOfArray of filterPartArray) {
                             const {added} = this.addFilterToMatch({
                                 filterKey,
@@ -726,7 +726,6 @@ export default class AggregationBuilder {
         let dataQuery = [], dataFacetQuery = []
 
 
-
         const hasMatch = Object.keys(match).length > 0,
             hasResultMatch = Object.keys(resultMatch).length > 0,
             doMatchAfterLookup = (hasMatch && hasMatchInReference)
@@ -742,6 +741,12 @@ export default class AggregationBuilder {
                 if (rootMatch.$or && match.$or) {
                     match.$or.push(...rootMatch.$or)
                     delete rootMatch.$or
+                }
+
+                // merge ands
+                if (rootMatch.$and && match.$and) {
+                    match.$and.push(...rootMatch.$and)
+                    delete rootMatch.$and
                 }
 
                 const finalMatch = {...rootMatch, ...match}
