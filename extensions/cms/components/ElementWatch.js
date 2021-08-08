@@ -69,7 +69,6 @@ class ElementWatch extends React.Component {
         if (!initialVisible && !madeVisible && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
 
 
-
             if (tagName === 'SmartImage' && eleProps) {
 
                 let tmpSrc
@@ -86,11 +85,11 @@ class ElementWatch extends React.Component {
                         webp: true
                     })
 
-                }else if (o && o.resize && o.resize.width && o.resize.height) {
-                    tmpSrc = 'data:image/svg+xml;charset=UTF-8,'+ encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${o.resize.width}' height='${o.resize.height}' viewBox='0 0 ${o.resize.width} ${o.resize.height}'><rect fill='#dedfe0' width='${o.resize.width}' height='${o.resize.height}'/></svg>`)
+                } else if (o && o.resize && o.resize.width && o.resize.height) {
+                    tmpSrc = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${o.resize.width}' height='${o.resize.height}' viewBox='0 0 ${o.resize.width} ${o.resize.height}'><rect fill='#dedfe0' width='${o.resize.width}' height='${o.resize.height}'/></svg>`)
                 }
 
-                if(tmpSrc) {
+                if (tmpSrc) {
                     return React.createElement(
                         eleType,
                         {
@@ -111,7 +110,7 @@ class ElementWatch extends React.Component {
                         style={{minHeight: '1rem', minWidth: '1rem'}}></div>
         } else {
             if (eleProps.inlineSvg && ElementWatch.loadedSvgData[tagSrc]) {
-                eleProps.svgData = ElementWatch.loadedSvgData[tagSrc]
+                eleProps.svgData = ElementWatch.loadedSvgData[tagSrc].data
             }
             eleProps['data-element-watch'] = true
             if ($observe.initialClass || $observe.visibleClass) {
@@ -140,17 +139,42 @@ class ElementWatch extends React.Component {
     fetchSvg() {
         const {tagImg, tagSrc} = this.state
 
-        fetch(tagSrc).then((response) => response.blob()).then((blob) => {
-            const reader = new FileReader()
+        if (!tagSrc) {
+            return
+        }
+        let loadedSvgData = ElementWatch.loadedSvgData[tagSrc]
+        if(!loadedSvgData){
+            loadedSvgData = ElementWatch.loadedSvgData[tagSrc] = {loading: false, data: false, cb:[]}
+        }
 
-            reader.addEventListener("load", () => {
-                ElementWatch.hasLoaded[tagSrc] = true
-                ElementWatch.loadedSvgData[tagSrc] = reader.result
+        if(loadedSvgData.data){
+            this.setState({madeVisible: true})
+        }else if(loadedSvgData.loading){
+            loadedSvgData.cb.push(()=>{
                 this.setState({madeVisible: true})
-            }, false)
+            })
+        }else{
+            loadedSvgData.loading = true
+            fetch(tagSrc).then((response) => response.blob()).then((blob) => {
+                const reader = new FileReader()
 
-            reader.readAsText(blob)
-        })
+                reader.addEventListener("load", () => {
+                    loadedSvgData.data = reader.result
+                    ElementWatch.hasLoaded[tagSrc] = true
+                    this.setState({madeVisible: true})
+
+                    while(loadedSvgData.cb.length>0){
+                        let cb = loadedSvgData.cb.shift()
+                        cb()
+                    }
+
+                }, false)
+
+                reader.readAsText(blob)
+            })
+
+
+        }
     }
 
 

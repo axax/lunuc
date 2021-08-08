@@ -31,6 +31,7 @@ import Expandable from 'client/components/Expandable'
 import {_t} from '../../util/i18n'
 import Util from '../util'
 import DomUtil from '../util/dom'
+import {matchExpr} from '../util/json'
 
 const styles = theme => {
     return {
@@ -584,6 +585,7 @@ class GenericForm extends React.Component {
 
                         this.createInputField({
                             uitype,
+                            uistate: field.uistate,
                             field,
                             value: value && value[languageCode] ? value[languageCode] : '',
                             currentFormFields,
@@ -596,7 +598,13 @@ class GenericForm extends React.Component {
                 })
 
             } else {
-                if (this.createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex})) {
+                if (this.createInputField({uitype,
+                    uistate: field.uistate,
+                    field,
+                    value,
+                    currentFormFields,
+                    fieldKey,
+                    fieldIndex})) {
                     continue
                 }
             }
@@ -686,7 +694,7 @@ class GenericForm extends React.Component {
         )
     }
 
-    createInputField({uitype, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
+    createInputField({uitype, uistate, field, value, currentFormFields, fieldKey, fieldIndex, languageCode, translateButton}) {
         const {onKeyDown, classes, autoFocus} = this.props
         let langButtonWasInserted = false
         if (!field.label) {
@@ -696,8 +704,7 @@ class GenericForm extends React.Component {
         if (field.description) {
             currentFormFields.push(<p>{field.description}</p>)
         }
-
-        if (uitype === 'wrapper') {
+        if (uitype === 'wrapper' || (uistate && uistate.visible && matchExpr(uistate.visible, this.state.fields)) ) {
             // do nothing
         } else if (['json', 'editor', 'jseditor', 'css'].indexOf(uitype) >= 0) {
 

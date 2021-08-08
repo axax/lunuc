@@ -41,6 +41,9 @@ export function assignIfObjectOrArray(obj) {
     return obj
 }
 
+/*
+return true if expresion is not valid
+ */
 export function matchExpr(expr, scope) {
     if (expr === 'false') {
         return true
