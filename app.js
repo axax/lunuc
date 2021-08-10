@@ -17,10 +17,11 @@ require("@babel/register")({
         ]
     ]
 })
+const config = require('../gensrc/config').default
 
 // define some global vars for server side rendering
 global.document = {documentElement: {}}
-global._app_ = {lang: 'en', ssr: true}
+global._app_ = {lang: config.DEFAULT_LANGUAGE || 'en', ssr: true}
 
 // Entry point for our server
 const server = require('./api/server')

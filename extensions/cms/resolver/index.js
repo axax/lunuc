@@ -97,7 +97,7 @@ export default db => ({
             } = cmsPages.results[0]
             const scope = {
                 ...createScopeForDataResolver(query, props),
-                page: {slug, host: getHostFromHeaders(headers), meta, referer: req.headers['referer']},
+                page: {slug, host: getHostFromHeaders(headers), meta, referer: req.headers['referer'], lang: context.lang},
                 editmode
             }
             const ispublic = cmsPages.results[0].public
@@ -139,7 +139,6 @@ export default db => ({
                     window.location = globalThis.location = loc
 
                     setGraphQlOptions({url: 'http://localhost:' + PORT + '/graphql'})
-
                     html = await renderToString(<Provider store={store}>
                         <JsonDom template={template}
                                  script={script}
@@ -150,7 +149,7 @@ export default db => ({
                                  resolvedData={JSON.stringify(resolvedData)}
                                  editMode={false}
                                  scope={JSON.stringify(scope)}/>
-                    </Provider>)
+                    </Provider>, context)
 
                 } catch (e) {
                     console.log(e)

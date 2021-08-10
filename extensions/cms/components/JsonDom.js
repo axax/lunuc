@@ -1073,7 +1073,7 @@ class JsonDom extends React.Component {
                  delete this.scope[key]
              })*/
 
-            this.scope.page = {slug: props.slug}
+            this.scope.page = {slug: props.slug, lang: _app_.lang}
             this.scope.user = props.user
             this.scope.editMode = props.editMode
             this.scope.inEditor = props.inEditor
