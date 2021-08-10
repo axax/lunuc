@@ -10,6 +10,10 @@
           "index": 1
         },
         {
+          "name": "language",
+          "required": false
+        },
+        {
           "name": "location",
           "index": 1,
           "compoundIndex": [
@@ -106,12 +110,14 @@
         {
           "name": "subject",
           "required": true,
-          "tab": "General"
+          "tab": "General",
+          "localized": true
         },
         {
           "name": "text",
           "uitype": "editor",
-          "label": "Plain text version"
+          "label": "Plain text version",
+          "localized": true
         },
         {
           "name": "list",

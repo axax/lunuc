@@ -600,9 +600,10 @@ const GenericResolver = {
             }
         }
 
-        Hook.call('typeUpdated', {type: typeName, data, db, context})
-        Hook.call('typeUpdated_' + typeName, {result: returnValue, db})
-
+        if( !options.ignoreHooks ) {
+            Hook.call('typeUpdated', {type: typeName, data, db, context})
+            Hook.call('typeUpdated_' + typeName, {result: returnValue, db})
+        }
         return returnValue
     },
     cloneEntity: async (db, context, typeName, {_id, _version, ...rest}) => {

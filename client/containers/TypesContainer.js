@@ -295,7 +295,13 @@ class TypesContainer extends React.Component {
                                                 let str = ''
                                                 field.fields.forEach(f => {
                                                     if (str) str += ', '
-                                                    str += fieldValue[f]
+                                                    if(fieldValue[f].constructor === Object){
+                                                        str += fieldValue[f][_app_.lang]
+                                                    }else{
+                                                        str += fieldValue[f]
+                                                    }
+
+
                                                 })
                                                 dynamic[field.name] = str
                                             } else {

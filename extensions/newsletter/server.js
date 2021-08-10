@@ -20,7 +20,7 @@ Hook.on('schema', ({schemas}) => {
 
 
 // Hook to add mongodb schema
-Hook.on('NewUserCreated', async ({meta, email, insertResult, db}) => {
+Hook.on('NewUserCreated', async ({meta, email, insertResult, db, language}) => {
     if (insertResult.insertedCount) {
         if (meta && meta.newsletter) {
             const user = (await db.collection('User').findOne({email}))
@@ -39,6 +39,10 @@ Hook.on('NewUserCreated', async ({meta, email, insertResult, db}) => {
 
             if (user && user._id) {
                 data.account = user._id
+            }
+
+            if( language ){
+                data.language = language
             }
 
             const insertResult = await db.collection('NewsletterSubscriber').insertOne(data)

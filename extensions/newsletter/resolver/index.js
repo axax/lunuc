@@ -4,6 +4,7 @@ import {CAPABILITY_RUN_SCRIPT} from '../../../util/capabilities'
 import {sendMail} from "../../../api/util/mail";
 import crypto from "crypto";
 import {getHostFromHeaders} from "../../../util/host";
+import config from 'gen/config'
 
 export default db => ({
     Query: {
@@ -24,13 +25,10 @@ export default db => ({
 
             let settings
             if(mailingData){
-
                 if( template === undefined){
                     template = mailingData.template
                 }
-                if( text === undefined){
-                    text = mailingData.text
-                }
+
                 settings = mailingData.mailSettings
             }
 
@@ -76,12 +74,40 @@ export default db => ({
                         }
                     }
 
-                    const result = await sendMail(db, req.context, {
+
+                    let finalSubject = subject,
+                        finalText = text,
+                        subLang = sub.language || config.DEFAULT_LANGUAGE
+
+                    if(mailingData){
+                        if(mailingData.subject && subject === undefined){
+                            finalSubject = mailingData.subject
+                        }
+                        if(mailingData.text && text === undefined){
+                            finalText = mailingData.text
+                        }
+                    }
+
+                    if(finalSubject.constructor === Object){
+                        if(finalSubject[subLang]){
+                            finalSubject = finalSubject[subLang]
+                        }else{
+                            finalSubject = finalSubject[config.DEFAULT_LANGUAGE]
+                        }
+                    }
+                    if(finalText.constructor === Object){
+                        if(finalText[subLang]){
+                            finalText = finalText[subLang]
+                        }else{
+                            finalText = finalText[config.DEFAULT_LANGUAGE]
+                        }
+                    }
+                    const result = await sendMail(db, Object.assign(req.context, {lang: subLang}), {
                         slug: template,
                         recipient: sub.email,
-                        subject,
+                        subject: finalSubject,
                         body: sub,
-                        text,
+                        text: finalText,
                         headerList,
                         req,
                         settings
@@ -115,6 +141,7 @@ export default db => ({
             // insert or update
             const data = {
                 $set: {
+                    language: context.lang || '',
                     token,
                     email,
                     location,

@@ -95,7 +95,23 @@ export const getTypeQueries = (typeName, queryFields, opts) => {
 
                         query += ' ' + name + '{_id'
                         if (rest.fields) {
-                            query += ' ' + rest.fields.join(' ')
+
+                            const subTypeDef = getType(type)
+                            if(subTypeDef){
+                                subTypeDef.fields.forEach(subField=>{
+                                    if(rest.fields.indexOf(subField.name)>=0){
+                                        query += ' '
+                                        if(subField.localized){
+                                            query += subField.name + '{' + LANGUAGES.join(' ') + '}'
+                                        }else{
+                                            query +=subField.name
+                                        }
+                                    }
+                                })
+
+                            }else {
+                                query += ' ' + rest.fields.join(' ')
+                            }
                         } else {
                             query += queryStatemantForType(type, opts)
                         }

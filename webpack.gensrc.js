@@ -478,7 +478,7 @@ function gensrcExtension(name, options) {
             return result
         },
         update${type.name}: async ({${refResolvers}${refResolvers !== '' ? ',' : ''}${type.noUserRelation ? '' : 'createdBy,'}...rest}, {context}, options) => {
-            const result =  await GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${type.noUserRelation ? '' : 'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}})
+            const result =  await GenericResolver.updateEnity(db, context, '${type.name}', {...rest,${type.noUserRelation ? '' : 'createdBy:(createdBy?ObjectId(createdBy):createdBy),'}${refResolversObjectId}}, options)
             if(options && options.publish!==false){
                 ${type.subscription === false ? '//' : ''}pubsubHooked.publish('subscribe${type.name}', {userId:context.id,subscribe${type.name}: {action: 'update', data: [result]}}, db, context)
             }

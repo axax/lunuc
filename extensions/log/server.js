@@ -61,7 +61,7 @@ process.on('unhandledRejection', (error) => {
 
 Hook.on('typeLoaded', async ({db, context, result, dataQuery, collectionName, aggregateTime}) => {
 
-  if(aggregateTime > 500) {
+  if(aggregateTime > 1000) {
 
       const explanation = await  db.collection(collectionName).aggregate(dataQuery, {allowDiskUse: true}).explain()
 
