@@ -17,7 +17,7 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
                     stats = fs.statSync(absFilePaht)
 
                 // only read file if it has changed
-                if (!hostrules[domainname] || stats.mtime > hostrules[domainname]._lastModified) {
+                if ( (domainname=='general' || !hostrules[domainname]) || stats.mtime > hostrules[domainname]._lastModified) {
 
                     const content = fs.readFileSync(absFilePaht)
 
