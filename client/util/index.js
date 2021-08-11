@@ -210,8 +210,15 @@ const Util = {
     getImageObject(raw, options) {
         let image
         if (!raw) {
+            let src
+            if( options && options.resize && options.resize.height && options.resize.width){
+                src = Util.createDummySvg(options.resize.width, options.resize.height)
+            }else{
+                src = '/placeholder.svg'
+            }
+
             return {
-                src: '/placeholder.svg',
+                src,
                 alt: 'Placeholder'
             }
         } else if (raw.constructor === String) {
@@ -400,6 +407,9 @@ const Util = {
             return res
         }
         return arr
+    },
+    createDummySvg(width, height) {
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}' viewBox='0 0 ${width} ${height}'><rect fill='#dedfe0' width='${width}' height='${height}'/></svg>`)
     }
 }
 export default Util

@@ -48,23 +48,41 @@ class TinyEditor extends React.Component {
                 if (!window.tinymce) return
                 this.isInit = true
                 tinymce.init({
-                    selector:'#TinyEditor' + this.instanceId,
+                    selector: '#TinyEditor' + this.instanceId,
                     height: 450,
-                    relative_urls : false,
-                    remove_script_host : false,
-                    convert_urls : false,
-                    link_class_list: [{title:'Telefon', value:'icon-phone black'},
-                        {title:'Fax', value:'icon-fax black'},
-                        {title:'Email', value:'icon-email black'},
-                        {title:'Schwarz', value:'black'},
-                        {title:'Button', value:'button'}
-                        ],
+                    relative_urls: false,
+                    remove_script_host: false,
+                    convert_urls: false,
+                    link_class_list: [
+                        {title: 'None', value: ''},
+                        {title: 'Schwarz', value: 'black'},
+                        {
+                            title: 'Button', menu: [
+
+                                {title: 'Button 1', value: 'button'},
+                                {title: 'Button 2', value: 'button1'},
+                                {title: 'Button 3', value: 'button2'},
+                                {title: 'Button 4', value: 'button3'},
+                                {title: 'Button 5', value: 'button5'}
+                            ]
+                        },
+                        {
+                            title: 'Icon',
+                            menu: [
+
+                                {title: 'Telefon', value: 'icon-phone black'},
+                                {title: 'Fax', value: 'icon-fax black'},
+                                {title: 'Email', value: 'icon-email black'}
+
+                            ]
+                        }
+                    ],
                     formats: {
                         // Changes the alignment buttons to add a class to each of the matching selector elements
-                        alignleft: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'left' },
-                        aligncenter: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'center' },
-                        alignright: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'right' },
-                        alignjustify: { selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'full' }
+                        alignleft: {selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'left'},
+                        aligncenter: {selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'center'},
+                        alignright: {selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'right'},
+                        alignjustify: {selector: 'p,h1,h2,h3,h4,h5,h6,td,th,div,ul,ol,li,table,img', classes: 'full'}
                     },
                     plugins: [
                         'advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker',
@@ -82,7 +100,7 @@ class TinyEditor extends React.Component {
                         favs: {title: 'Tools', items: 'code visualaid | searchreplace | spellchecker | emoticons'}
                     },
                     menubar: 'favs file edit view insert format tools table help',
-                    file_picker_callback: function(callback, value, meta) {
+                    file_picker_callback: function (callback, value, meta) {
 
                         let baseFilter
                         // Provide file and text for the link dialog
@@ -105,7 +123,7 @@ class TinyEditor extends React.Component {
                             left = (screen.width / 2) - (w / 2), top = (screen.height / 2) - (h / 2)
 
                         const newwindow = window.open(
-                            `${_app_.lang!==DEFAULT_LANGUAGE?'/'+_app_.lang:''}/admin/types/?noLayout=true&fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`, '_blank',
+                            `${_app_.lang !== DEFAULT_LANGUAGE ? '/' + _app_.lang : ''}/admin/types/?noLayout=true&fixType=Media&baseFilter=${encodeURIComponent(baseFilter || '')}`, '_blank',
                             'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
                         setTimeout(() => {
                             newwindow.addEventListener('beforeunload', (e) => {
@@ -117,9 +135,9 @@ class TinyEditor extends React.Component {
                                     // Provide image and alt text for the image dialog
                                     if (meta.filetype == 'image') {
                                         callback(mediaObj.src, {alt: mediaObj.alt})
-                                    }else if (meta.filetype == 'media') {
+                                    } else if (meta.filetype == 'media') {
                                         callback(mediaObj.src, {source2: '', poster: ''})
-                                    }else {
+                                    } else {
                                         callback(mediaObj.src, {text: mediaObj.alt})
                                     }
 
@@ -140,7 +158,7 @@ class TinyEditor extends React.Component {
                                     }*/
                                 }
                             })
-                        },0)
+                        }, 0)
                     },
                     init_instance_callback: (editor) => {
                         editor.on('Change', (e) => {
@@ -157,14 +175,14 @@ class TinyEditor extends React.Component {
                             }
                         })
                     },
-                    content_css : "/css/tinymce.css"
+                    content_css: "/css/tinymce.css"
                 })
 
             }
             if (!window.tinymce) {
                 DomUtil.addScript('https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.8.2/tinymce.min.js', {
                     onload: assestLoaded
-                },{ignoreIfExist:true})
+                }, {ignoreIfExist: true})
             } else {
                 assestLoaded()
             }
@@ -173,9 +191,9 @@ class TinyEditor extends React.Component {
     }
 
     componentDidMount() {
-        setTimeout(()=> {
+        setTimeout(() => {
             this.initEditor()
-        },(this.instanceId-1)*50)
+        }, (this.instanceId - 1) * 50)
         /*this.css = document.createElement('style')
         this.css.innerHTML = `
         `
@@ -184,7 +202,7 @@ class TinyEditor extends React.Component {
     }
 
     componentWillUnmount() {
-        if(window.tinymce) {
+        if (window.tinymce) {
             tinymce.remove('#TinyEditor' + this.instanceId)
         }
         //document.body.removeChild(this.css)
@@ -200,16 +218,17 @@ class TinyEditor extends React.Component {
             return <div className="richtext-content"
                         dangerouslySetInnerHTML={{__html: this.state.value}} {...rest}></div>
         }
-        if( error){
-            if(!rest.style){
+        if (error) {
+            if (!rest.style) {
                 rest.style = {}
             }
-            rest.style.border= 'solid 1px red'
+            rest.style.border = 'solid 1px red'
         }
 
 
         return <div {...rest}>
-            <textarea id={'TinyEditor' + this.instanceId} style={{visibility:'hidden',height:'446px'}} defaultValue={this.state.value} />
+            <textarea id={'TinyEditor' + this.instanceId} style={{visibility: 'hidden', height: '446px'}}
+                      defaultValue={this.state.value}/>
         </div>
 
     }

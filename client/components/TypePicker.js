@@ -37,7 +37,8 @@ const styles = theme => {
         root: {
             position: 'relative',
             zIndex: 'auto',
-            marginLeft: 0
+            marginLeft: 0,
+            minHeight: '69px'
         },
         suggestions: {
             position: 'absolute',
@@ -50,7 +51,7 @@ const styles = theme => {
             width: '100%',
             flexWrap: 'wrap',
             marginTop: theme.spacing(0),
-            marginBottom: theme.spacing(2)
+            marginBottom: theme.spacing(0)
         },
         clip: {
             margin: theme.spacing(2) + 'px 0px 0px ' + theme.spacing(1) + 'px;',
@@ -155,7 +156,7 @@ class TypePicker extends React.Component {
         const {classes, placeholder, multi, error, helperText, className, fullWidth, pickerField, metaFields, type, filter, label} = this.props
         const {data, hasFocus, selIdx, value, textValue} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
-        return [<FormControl
+        return <FormControl
             fullWidth={fullWidth} className={classNames(classes.root, className)}>
             {!value.length || multi ?
                 <TextField error={error}
@@ -238,8 +239,6 @@ class TypePicker extends React.Component {
 
 
             </Paper>
-        </FormControl>,
-
             <div className={classes.clips}>
                 {value.map((singleValue, singleValueIndex) => {
 
@@ -381,7 +380,8 @@ class TypePicker extends React.Component {
                     }
                 )
                 }
-            </div>]
+            </div>
+        </FormControl>
     }
 
     handleRemovePick(idx) {

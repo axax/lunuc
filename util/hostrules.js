@@ -17,7 +17,7 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
                     stats = fs.statSync(absFilePaht)
 
                 // only read file if it has changed
-                if ( (domainname=='general' || !hostrules[domainname]) || stats.mtime > hostrules[domainname]._lastModified) {
+                if ( !hostrules[domainname] || stats.mtime > hostrules[domainname]._lastModified) {
 
                     const content = fs.readFileSync(absFilePaht)
 
@@ -56,8 +56,9 @@ const loadHostRules = (dir, withCertContext, hostrules) => {
 export const loadAllHostrules = (withCertContext, hostrules = {}) => {
     console.log('load all host rules')
 
-    loadHostRules(path.join(__dirname, '../hostrules/'), withCertContext, hostrules)
     loadHostRules(HOSTRULES_ABSPATH, withCertContext, hostrules)
+    loadHostRules(path.join(__dirname, '../hostrules/'), withCertContext, hostrules)
+
 
     return hostrules
 }

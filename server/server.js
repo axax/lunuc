@@ -589,6 +589,8 @@ function transcodeAndStreamVideo({options, headerExtra, res, code, filename}) {
     const ffprobePath = require('@ffprobe-installer/ffprobe').path,
         ffmpeg = require('fluent-ffmpeg')
 
+    console.log(ffmpeg.path, ffmpeg.version)
+
     ffmpeg.setFfprobePath(ffprobePath)
 
     delete headerExtra['Content-Length']

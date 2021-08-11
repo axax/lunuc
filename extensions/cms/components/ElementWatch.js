@@ -86,7 +86,7 @@ class ElementWatch extends React.Component {
                     })
 
                 } else if (o && o.resize && o.resize.width && o.resize.height) {
-                    tmpSrc = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${o.resize.width}' height='${o.resize.height}' viewBox='0 0 ${o.resize.width} ${o.resize.height}'><rect fill='#dedfe0' width='${o.resize.width}' height='${o.resize.height}'/></svg>`)
+                    tmpSrc = Util.createDummySvg(o.resize.width, o.resize.height)
                 }
 
                 if (tmpSrc) {

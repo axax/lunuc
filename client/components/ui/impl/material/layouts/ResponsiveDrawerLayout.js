@@ -16,6 +16,9 @@ import {connect} from 'react-redux'
 import {useHistory} from 'react-router-dom'
 import React, {useState} from 'react'
 import Util from '../../../../../util'
+import ExpandLess from '@material-ui/icons/ExpandLess'
+import ExpandMore from '@material-ui/icons/ExpandMore'
+import Collapse from '@material-ui/core/Collapse'
 
 const drawerWidth = 300;
 
@@ -143,6 +146,15 @@ const MenuList = (props) => {
     const classes = useStyles()
     const history = useHistory()
     const activeItem = findActiveItem(props)
+
+    const initialOpen = {}
+    items.map((item, i) => {
+        initialOpen[i] = !!item.open
+    })
+
+    const [open, setOpen] = React.useState(initialOpen)
+
+
     return <List disablePadding={depth > 0} style={{paddingLeft: (depth * 16) + 'px'}}>
         {items.map((item, i) => {
             if (item.auth && isAuthenticated || !item.auth) {
@@ -150,7 +162,12 @@ const MenuList = (props) => {
                     return <Divider key={i}/>
                 }
                 return [<ListItem onClick={() => {
-                    history.push(item.to)
+                    if(item.items){
+                        setOpen(Object.assign({}, open,{[i]:!open[i]}))
+                    }
+                    if(item.to) {
+                        history.push(item.to)
+                    }
                 }}
                                   key={i}
                                   button>
@@ -166,9 +183,11 @@ const MenuList = (props) => {
                                                        className={(activeItem === item ? classes.listItemActive : '')}>{item.name}</Typography>}/>
 
                     {item.actions}
-
+                    {item.items && (item.open ? <ExpandLess /> : <ExpandMore />)}
                 </ListItem>,
-                    item.items && <MenuList items={item.items} depth={depth + 1} isAuthenticated={isAuthenticated}/>]
+                    item.items && <Collapse in={open[i]} timeout="auto" unmountOnExit>
+                        <MenuList items={item.items} depth={depth + 1} isAuthenticated={isAuthenticated}/>
+                    </Collapse>]
             }
         })}
     </List>
