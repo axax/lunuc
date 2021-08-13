@@ -20,6 +20,7 @@ const MIME_TYPES = {
     'css': 'text/css',
     'mp3': 'audio/mp3',
     'mp4': 'video/mp4',
+    'mov': 'video/quicktime',
     'm4a': 'audio/x-m4a',
     'm4v': 'video/x-m4v',
     'gz': 'application/gzip',

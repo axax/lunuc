@@ -388,7 +388,7 @@ class JsonDom extends React.Component {
     }
 
     triggerMountEvent() {
-        if (!this._ismounted) {
+        if (!this._ismounted && !this.props.loading) {
             this._ismounted = true
             setTimeout(()=>{
                 this.node = ReactDOM.findDOMNode(this)
@@ -800,8 +800,6 @@ class JsonDom extends React.Component {
                                         }
                                         this.props.serverMethod(name, args, (response) => {
                                             this.serverMethodMap[d] = JSON.parse(response.data.cmsServerMethod.result)
-                                            console.log(this.serverMethodMap[d] = JSON.parse(response.data.cmsServerMethod.result))
-                                            //this.forceUpdate()
                                         })
                                     }
                                 })
@@ -1235,7 +1233,6 @@ class JsonDom extends React.Component {
             }]
         }
 
-
         if (t && t.length && !this.error) {
             for (let i = 0; i < t.length; i++) {
                 const cb = t[i]
@@ -1324,7 +1321,6 @@ class JsonDom extends React.Component {
 
             JsonDom.instanceCounter++
             const key = 'serverMethod' + JsonDom.instanceCounter
-
             this.props.serverMethod(name, args, (response) => {
                 Util.$('#' + key).innerHTML = response.data.cmsServerMethod.result
             })
