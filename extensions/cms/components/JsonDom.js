@@ -316,6 +316,8 @@ class JsonDom extends React.Component {
                 this.scriptResult = null
                 this.runScript = true
                 this.jsOnStack = {}
+            }else if(propsChanged){
+                this.runJsEvent('propschanged', true, {props: props._props})
             }
 
             if (resourcesChanged) {
